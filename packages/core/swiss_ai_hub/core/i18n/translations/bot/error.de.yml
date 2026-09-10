@@ -2,3 +2,5 @@
 response_timeout: Entschuldigung, meine Antwort dauert zu lange. Bitte versuchen Sie
   es erneut.
 generic_error: Entschuldigung, etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.
+user_not_provisioned: Sie haben anscheinend noch kein Swiss AI Hub-Konto. Bitte melden
+  Sie sich einmal unter %{url} an und schreiben Sie mir anschliessend erneut.

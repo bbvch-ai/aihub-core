@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-Proprietary
 export function useMainAppNavigation() {
   const config = useRuntimeConfig()
   const { $i18n } = useNuxtApp()

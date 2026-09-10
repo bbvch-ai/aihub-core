@@ -1,14 +1,14 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 import logging
 from typing import Annotated, Self
 
-from fastapi import HTTPException, Security, status
+from fastapi import HTTPException, Request, Security, status
 from mongoengine.errors import NotUniqueError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.sysadmin_api.i18n import SysadminApiLocaleString
+from swiss_ai_hub.sysadmin_api.routes.access.platform_access_proxy import PlatformAccessProxy
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.tenant_response import TenantResponse
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.dto.update_tenant_metadata_request import UpdateTenantMetadataRequest
@@ -54,6 +54,17 @@ class TenantAdminController(Controller):
 
         return self
 
+    def get_default_access_rules(self, route: str = "/default-access-rules") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_default_access_rules(
+            http_request: Request,
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
+        ) -> list[str]:
+            """The ceiling a new tenant starts with, so the configure form can show it before saving."""
+            return await self._fetch_default_access_rules(http_request)
+
+        return self
+
     def get_tenant(self, route: str = _TENANT_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_tenant(
@@ -69,9 +80,16 @@ class TenantAdminController(Controller):
         @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
         async def create_tenant_metadata(
             data: CreateTenantMetadataRequest,
+            http_request: Request,
             _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Attaches metadata (name, description, access rules) to an existing Keycloak tenant group."""
+            # Omitting the rules means "whatever this instance considers standard", which only the platform
+            # API can answer. Resolving it here rather than in the service keeps the proxy hop — and the
+            # Request it needs — in the HTTP layer, and still runs before any side effect, so a gateway
+            # failure leaves the tenant Unconfigured and retryable rather than half-built.
+            if data.access_rules is None:
+                data = data.model_copy(update={"access_rules": await self._fetch_default_access_rules(http_request)})
             try:
                 return await TenantAdminService.create_tenant_metadata(data)
             except NotUniqueError:
@@ -109,3 +127,11 @@ class TenantAdminController(Controller):
             await TenantAdminService.delete_tenant_metadata(tenant_id)
 
         return self
+
+    async def _fetch_default_access_rules(self, http_request: Request) -> list[str]:
+        """Proxied to the platform API, which owns the model-gateway connection. ``active`` resolves to the
+        acting sysadmin's own tenant — the response does not depend on which tenant asks."""
+        base_url = PlatformAccessProxy.base_url_or_raise(self._runner.platform_api_base_url)
+        return await PlatformAccessProxy.fetch_default_tenant_rules(
+            base_url, AuthHandler.ACTIVE_TENANT_SLUG, http_request
+        )

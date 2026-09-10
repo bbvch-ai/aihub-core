@@ -68,7 +68,7 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
             collection_name="my_collection",
             embedding_vector_dimension=1024,
         )
-        vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
+        vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store, document_store_name="my_doc_store")
 
         defs = Definitions(
             assets=[text_nodes, downstream_asset],

@@ -882,3 +882,55 @@ Some following text."""
     # The other content should still be present
     text_nodes = [n for n in nodes if "Some following text" in n.text]
     assert len(text_nodes) == 1
+
+
+def _parser_with_embedding_ceiling(max_embedding_tokens: int) -> MarkdownStructuralNodeParser:
+    metadata = {
+        NAMESPACE: "test",
+        SOURCE: "test.md",
+        CREATED_AT: int(time()),
+        UPDATED_AT: int(time()),
+        INSERTED_AT: int(time()),
+    }
+    return MarkdownStructuralNodeParser(
+        metadata=metadata, chunk_size=512, chunk_overlap=0, max_embedding_tokens=max_embedding_tokens
+    )
+
+
+def test_unparseable_table_is_capped_at_the_embedding_ceiling():
+    """The table-parse fallback used to emit the whole table as one unbounded node."""
+    parser = _parser_with_embedding_ceiling(max_embedding_tokens=200)
+    digits = " ".join(str(number) for number in range(4000))
+
+    nodes = parser.get_nodes_from_node(Document(text=f"# Section\n<table>{digits}</table>"))
+
+    table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
+    assert len(table_nodes) > 1
+    # _count_tokens without an llm_config estimates 4 characters per token.
+    assert all(len(n.text) // 4 <= int(200 * 0.85) for n in table_nodes)
+
+
+def test_figure_description_is_capped_at_the_embedding_ceiling():
+    """The figure branch had no size check at all; vision-LLM descriptions are unbounded."""
+    parser = _parser_with_embedding_ceiling(max_embedding_tokens=200)
+    description = " ".join(f"word{i}" for i in range(4000))
+
+    nodes = parser.get_nodes_from_node(Document(text=f"# Section\n<figure>{description}</figure>"))
+
+    figure_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "figure"]
+    assert len(figure_nodes) > 1
+    assert all(len(n.text) // 4 <= int(200 * 0.85) for n in figure_nodes)
+
+
+def test_ceiling_leaves_small_tables_and_figures_alone():
+    parser = _parser_with_embedding_ceiling(max_embedding_tokens=8192)
+    text = """# Section
+<table>| Col1 | Col2 |
+|------|------|
+| A    | B    |</table>
+<figure>A short figure description</figure>"""
+
+    nodes = parser.get_nodes_from_node(Document(text=text))
+
+    assert len([n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]) == 1
+    assert len([n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "figure"]) == 1

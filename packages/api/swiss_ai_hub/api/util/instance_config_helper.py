@@ -2,8 +2,18 @@ from typing import Any, NamedTuple, TypeVar
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
-from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
+from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
+from swiss_ai_hub.core.form import (
+    FormkitElement,
+    Group,
+    Repeater,
+    normalize_empty_locale_strings,
+    normalize_empty_objects_to_none,
+)
+from swiss_ai_hub.core.i18n import LOCALES, LocaleString
+from swiss_ai_hub.core.persistence import AgentInstanceRef
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.scheduling import CronSchedule, ScheduleAdmission
 
 
 class ConfigMetadata(NamedTuple):
@@ -28,6 +38,8 @@ T = TypeVar("T")
 class InstanceConfigHelper:
     """Pure helper for configuration normalization, validation, and metadata extraction."""
 
+    IDENTITY_LOCALE_FIELDS = ("name", "description")
+
     @staticmethod
     def normalize_form_configuration(config: dict[str, Any]) -> dict[str, Any]:
         """Strip FormKit internal fields (prefixed with '_') and normalize empty values."""
@@ -37,10 +49,14 @@ class InstanceConfigHelper:
         return config
 
     @staticmethod
-    def validate_config_for_create(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def validate_config_for_create(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance creation with detailed field-path error messages."""
         try:
-            return config_model.model_validate(config)
+            instance = config_model.model_validate(config)
         except ValidationError as e:
             error_messages = []
             for error in e.errors():
@@ -48,13 +64,194 @@ class InstanceConfigHelper:
                 error_messages.append(f"{field_path}: {error['msg']}")
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
 
+        InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_cron_field(config, agent)
+        return instance
+
     @staticmethod
-    def validate_config_for_update(config: dict[str, Any], config_model: type[BaseModel]) -> BaseModel:
+    def validate_config_for_update(
+        config: dict[str, Any],
+        config_model: type[BaseModel],
+        agent: AgentInstanceRef | None = None,
+    ) -> BaseModel:
         """Validate configuration for instance update with simple error passthrough."""
         try:
-            return config_model.model_validate(config)
+            instance = config_model.model_validate(config)
         except ValidationError as e:
             raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
+
+        InstanceConfigHelper.validate_identity_locale_fields(instance)
+        InstanceConfigHelper.validate_cron_field(config, agent)
+        return instance
+
+    @staticmethod
+    def reject_undeclared_fields(elements: list[FormkitElement], config: dict[str, Any]) -> None:
+        """Reject a submission carrying a field the announced form never declared.
+
+        The generated model cannot do this: jambo builds it with Pydantic's default `extra="ignore"`, so an
+        unrecognised key validates and is dropped rather than refused — and the caller stores what was
+        submitted, so a mistyped knob is persisted and then silently ignored by whoever reads it back.
+
+        Checked against the announced elements rather than by forbidding extras on the generated model, which
+        does work: jambo ignores `additionalProperties`, so the submission schema cannot carry the rule, but
+        mutating each built model's `extra` and rebuilding does reject the same keys with better error
+        locations. It is declined on scope and coupling. `create_config_model` is shared with the agent and
+        process paths, where an unannounced key is legitimate — `AgentConfig.cron` is deliberately absent from
+        the form and injected only for schedulable classes — so forbidding extras would change those surfaces
+        blind. And the rebuild is only correct while jambo's ref cache happens to hold children before parents,
+        which it does not promise.
+        """
+        undeclared = InstanceConfigHelper._undeclared_fields(elements, config, prefix="")
+        if not undeclared:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(undeclared)}")
+
+    @staticmethod
+    def _undeclared_fields(elements: list[FormkitElement], config: dict[str, Any], prefix: str) -> list[str]:
+        """Every config path with no element of that name, deepest-last, as `field`, `group.field`,
+        `repeater.0.field`."""
+        declared = {name for element in elements if (name := getattr(element, "name", None))}
+        # `normalize_form_configuration` strips FormKit's own keys only at the top level, and making it
+        # recursive would change what the agent and process paths persist — `Form.deserialize_form` dispatches
+        # on a nested `_form_name`. So the same convention is applied locally, at every depth.
+        undeclared = [
+            f"{prefix}{key}: not a configurable field of the announced form"
+            for key in config
+            if key not in declared and not key.startswith("_")
+        ]
+
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                undeclared.extend(
+                    InstanceConfigHelper._undeclared_in_element(element, config.get(name), f"{prefix}{name}")
+                )
+
+        return undeclared
+
+    @staticmethod
+    def _undeclared_in_element(element: FormkitElement, value: Any, field_path: str) -> list[str]:
+        """One element of an announced form: a container to walk into, or a leaf whose value is opaque.
+
+        Only a group and a repeater put a caller-supplied key space underneath them; anything a leaf holds is
+        that element's own value, and descending into it would start rejecting the keys of a `LocaleString`.
+        """
+        if isinstance(element, Group) and isinstance(value, dict):
+            return InstanceConfigHelper._undeclared_fields(element.children, value, f"{field_path}.")
+        if isinstance(element, Repeater) and isinstance(value, list):
+            return InstanceConfigHelper._undeclared_in_entries(element.children, value, field_path)
+        return []
+
+    @staticmethod
+    def _undeclared_in_entries(children: list[FormkitElement], entries: list[Any], field_path: str) -> list[str]:
+        """Each repeated entry against the same announced children, indexed so a rejection names the row."""
+        undeclared: list[str] = []
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                undeclared.extend(InstanceConfigHelper._undeclared_fields(children, entry, f"{field_path}.{index}."))
+        return undeclared
+
+    @staticmethod
+    def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:
+        """Reject a config whose cron schedule is malformed or too costly, before it is stored.
+
+        Same jambo gap as `validate_identity_locale_fields`, with a far wider blast radius. `CronSchedule` rejects a
+        bad expression and an unknown timezone in a `model_validator`, which the generated model does not carry: every
+        position is a bare string in the JSON schema, so a cleared field arrives as `""` and validates. Stored, it
+        then breaks the whole profile rather than only its schedule — `AgentDispatcher` re-validates the real config
+        on every control event, so manually triggered runs die too, and they die before any step runs, which means no
+        `ExceptionEvent` and nothing in the UI to say why.
+
+        Keyed on the field name because `CRON_CONFIG_KEY` is platform-owned: `cron` lives on the `AgentConfig` base
+        and the scheduler reads a profile's schedule from exactly this top-level key, so a blueprint cannot use the
+        name for anything else.
+
+        The same call also rejects a schedule that is well-formed but produces more runs than the deployment allows.
+        How many a cron expression produces is computable from the expression alone, so the admin who typed it can be
+        told now — which is the only moment the answer is useful.
+        """
+        cron = config.get(CRON_CONFIG_KEY)
+        if not isinstance(cron, dict):
+            return
+        if CronSchedule.is_unscheduled(cron):
+            # An all-blank schedule means unscheduled, not invalid — rejecting it would 400 every profile
+            # save on a schedulable agent whose owner did not want a schedule. Owned by `CronSchedule`
+            # rather than spelled out here because the scheduler has to reach the same verdict on the
+            # stored row: this is what it saves, and a second opinion there is an ERROR every tick.
+            # It subsumes the empty-dict case too, so there is no separate falsy check above.
+            return
+
+        try:
+            schedule = CronSchedule.model_validate(cron)
+        except ValidationError as e:
+            details = "; ".join(InstanceConfigHelper._cron_error_message(error) for error in e.errors())
+            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {details}")
+
+        if agent is None:
+            # Only the agent save path knows which profile is being written, and only agents carry a
+            # schedule at all — `cron` lives on `AgentConfig`. Without an identity the aggregate check
+            # would count the profile being edited against itself, so it is skipped rather than guessed.
+            return
+
+        rejection = ScheduleAdmission.rejection_reason(schedule, agent.agent_class, agent.agent_id)
+        if rejection:
+            raise HTTPException(
+                status_code=400, detail=f"Configuration validation failed: {CRON_CONFIG_KEY}: {rejection}"
+            )
+
+    @staticmethod
+    def _cron_error_message(error: Any) -> str:
+        """One schedule error, named by the position that caused it.
+
+        A `model_validator` failure carries no field in `loc` — the cron expression is only invalid as a whole — so
+        those are reported against the schedule itself rather than as a blank field path.
+        """
+        field_path = ".".join(str(loc) for loc in error["loc"] if isinstance(loc, str))
+        return f"{CRON_CONFIG_KEY}.{field_path}: {error['msg']}" if field_path else f"{CRON_CONFIG_KEY}: {error['msg']}"
+
+    @staticmethod
+    def validate_identity_locale_fields(config_instance: BaseModel) -> None:
+        """Reject a config whose name or description carries no text in any language.
+
+        `AgentConfig`/`ProcessConfig` already assert this, but neither validator runs here:
+        submissions are checked against a model jambo builds from the class's JSON schema,
+        which reproduces the schema's shape and none of its Python validators. Since every
+        locale field is individually optional, an all-blank name satisfies the generated
+        model and gets stored, leaving a record that renders as nothing wherever it is read.
+        """
+        empty_fields = [
+            field
+            for field in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+            if hasattr(config_instance, field)
+            and not InstanceConfigHelper._locale_value_has_content(getattr(config_instance, field))
+        ]
+        if not empty_fields:
+            return
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Configuration validation failed: {', '.join(empty_fields)} "
+                "must have content in at least one language."
+            ),
+        )
+
+    @staticmethod
+    def _locale_value_has_content(value: Any) -> bool:
+        """Whether a locale value holds text in at least one language.
+
+        Duck-typed rather than going straight to `LocaleString.has_content()`: on this path
+        the value is an instance of the LocaleString class jambo generated from the JSON
+        schema, which is a distinct class from the core one.
+        """
+        if value is None:
+            return False
+        if isinstance(value, LocaleString):
+            return value.has_content()
+        if isinstance(value, dict):
+            return any((value.get(locale) or "").strip() for locale in LOCALES)
+        return any((getattr(value, locale, None) or "").strip() for locale in LOCALES)
 
     @staticmethod
     def extract_config_metadata(config_instance: BaseModel, fallback_icon: str) -> ConfigMetadata:

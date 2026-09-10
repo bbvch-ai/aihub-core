@@ -236,7 +236,7 @@ class BaseDispatcher(abc.ABC):
         logger.debug(f"[{step_method.__name__}] All base input requirements satisfied.")
         return True
 
-    async def _build_event_kwargs(
+    def _build_event_kwargs(
         self,
         trigger_event: Annotated[BaseEvent, "The event that caused this step to trigger."],
         method: Annotated[Callable, "The method to prepare the args for."],

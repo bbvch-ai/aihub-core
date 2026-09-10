@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Path, Query, Security
+from fastapi import Depends, HTTPException, Path, Query, Response, Security, status
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
@@ -18,18 +18,24 @@ from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import access_catalog_entry
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_request import BatchDeleteDocumentsRequest
+from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import BatchDeleteDocumentsResponse
+from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
 from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.database_dto import DatabaseDTO
+from swiss_ai_hub.api.routes.knowledge.dto.database_response import DatabaseResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_request import DocumentUploadRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_response import DocumentUploadResponse
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_request import DocumentUploadValidationRequest
 from swiss_ai_hub.api.routes.knowledge.dto.document_upload_validation_response import DocumentUploadValidationResponse
+from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.paginated_documents_response import PaginatedDocumentsResponse
@@ -57,8 +63,14 @@ class KnowledgeController(TenantScopedController):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
+        # Two policies, deliberately not one set: a name may be closed to creation while the database
+        # already sitting on it stays readable. Both are settings-derived, so they are fixed for the
+        # lifetime of the process — changing the legacy visibility needs a restart, as it always did.
+        self._reserved_database_names = KnowledgeService.reserved_database_names()
+        self._non_browsable_database_names = KnowledgeService.non_browsable_database_names()
         self.translation_llm_config = translation_llm_config
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")
     def get_databases(self, route: str = "/databases") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_databases(
@@ -84,6 +96,8 @@ class KnowledgeController(TenantScopedController):
                             name=db.name,
                             display_name=db.display_name,
                             auto_sync=db.auto_sync,
+                            deletable=db.deletable,
+                            ingestor=db.ingestor,
                             namespaces=accessible_namespaces,
                         )
                     )
@@ -91,6 +105,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.use")
     def get_documents_for_namespace(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents"
     ) -> Self:
@@ -117,7 +132,7 @@ class KnowledgeController(TenantScopedController):
             Optionally filter by document title or filename using the search parameter.
             Supports sorting by document_title, created_at, or updated_at.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             total, documents = KnowledgeService.get_paginated_documents(
                 db=database,
@@ -152,7 +167,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns a single document by its ID.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_document_by_id(db=database, document_id=document_id)
 
@@ -175,7 +190,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_nodes(
                 db=database,
@@ -204,7 +219,7 @@ class KnowledgeController(TenantScopedController):
             """
             Returns nodes for a given document.
             """
-            if database in ["admin", "local", "config"]:
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             return KnowledgeService.get_summary_nodes(
                 db=database,
@@ -216,21 +231,66 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    def get_ingestors(self, route: str = "/ingestors") -> Self:
+        @self.router.get(route, tags=self.tags, summary="Get selectable ingestion pipelines")
+        async def get_ingestors(
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[IngestorDTO]:
+            """
+            Returns the ingestion pipelines that can be assigned to a new knowledge database.
+            """
+            return KnowledgeService.get_ingestors(t)
+
+        return self
+
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.create")
+    def create_database(self, route: str = "/databases/{database}") -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def create_database(
+            # Deliberately the same loose pattern as every other route: a stricter one here would be
+            # answered by FastAPI with a 422 whose body is a regex mismatch, before the handler runs, so
+            # the caller would never see the service's message naming the actual rule.
+            database: Annotated[
+                str,
+                Path(
+                    title="Database name",
+                    description="Lowercase letters and digits, starting with a letter, 3 to 63 characters",
+                    pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$",
+                ),
+            ],
+            request: CreateDatabaseRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+        ) -> DatabaseResponse:
+            """
+            Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
+            """
+            if database in self._reserved_database_names:
+                raise HTTPException(
+                    status_code=400, detail=f"Database name '{database}' is reserved and cannot be used."
+                )
+            return await KnowledgeService.create_database(database, request, t, s3_service, user)
+
+        return self
+
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
     def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_namespace(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: CreateNamespaceRequest,
-            _: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
-            ],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NamespaceResponse:
             """
             Creates a new namespace (folder) in the specified database.
             """
-            return await KnowledgeService.create_namespace(database, namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.create_namespace(
+                database, namespace, request, t, user, self.translation_llm_config
+            )
 
         return self
 
@@ -240,7 +300,7 @@ class KnowledgeController(TenantScopedController):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: UpdateNamespaceRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
@@ -248,7 +308,7 @@ class KnowledgeController(TenantScopedController):
             """
             Updates display name and description for an existing namespace.
             """
-            return await KnowledgeService.update_namespace(namespace, request, t, self.translation_llm_config)
+            return await KnowledgeService.update_namespace(namespace, request, t, user, self.translation_llm_config)
 
         return self
 
@@ -312,12 +372,19 @@ class KnowledgeController(TenantScopedController):
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            download: Annotated[
+                bool, Query(description="Force a browser download (Content-Disposition: attachment) instead of preview")
+            ] = False,
         ) -> SignedUrlDto:
-            """Generates a presigned URL for downloading a document's source file."""
-            if database in ["admin", "local", "config"]:
+            """Generates a presigned URL for a document's source file (inline preview, or attachment download)."""
+            if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
             url = KnowledgeService.get_document_url(
-                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+                as_attachment=download,
             )
             return SignedUrlDto(url=url)
 
@@ -333,5 +400,102 @@ class KnowledgeController(TenantScopedController):
             that can be used for client-side validation.
             """
             return KnowledgeService.get_supported_file_types()
+
+        return self
+
+    def delete_document(
+        self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
+    ) -> Self:
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete document")
+        async def delete_document(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            document_id: Annotated[str, Path(title="Document ID")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> Response:
+            """
+            Deletes the document's source file from the data lake and schedules cleanup of the
+            doc store and vector store via the pipeline's reconciliation.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            await KnowledgeService.delete_document(
+                nc=nc,
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                s3_service=s3_service,
+            )
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def delete_database(self, route: str = "/databases/{database}") -> Self:
+        @self.router.delete(
+            route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete a knowledge database"
+        )
+        async def delete_database(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+        ) -> Response:
+            """
+            Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+            database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            KnowledgeService.delete_database(database=database)
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def delete_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete a namespace")
+        async def delete_namespace(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+        ) -> Response:
+            """
+            Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+            vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            KnowledgeService.delete_namespace(database=database, namespace=namespace)
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+
+        return self
+
+    def batch_delete_documents(self, route: str = "/databases/{database}/namespaces/{namespace}/documents") -> Self:
+        @self.router.delete(
+            route, tags=self.tags, status_code=status.HTTP_202_ACCEPTED, summary="Delete multiple documents"
+        )
+        async def batch_delete_documents(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            request: BatchDeleteDocumentsRequest,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+            nc: Annotated[NATS, Depends(use_nats)],
+        ) -> BatchDeleteDocumentsResponse:
+            """Best-effort scheduling of multiple document deletions with a per-document result."""
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            return await KnowledgeService.batch_delete_documents(
+                nc=nc,
+                db=database,
+                namespace=namespace,
+                document_ids=request.document_ids,
+                s3_service=s3_service,
+            )
 
         return self

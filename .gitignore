@@ -4,6 +4,7 @@ __pycache__/
 /packages/pipeline/.env
 /packages/agent/playground/agent/RAGAgent/.env
 .env
+.env.backup-*
 .docker-volumes
 /node_modules/
 docs/node_modules
@@ -13,6 +14,7 @@ docs/.vitepress/dist
 docs/swiss-ai-hub
 /infra/configs/traefik/certs/dev-cert.pem
 /infra/configs/traefik/certs/dev-key.pem
+/infra/configs/traefik/certs/rootCA.pem
 .idea/copilot*
 .idea/compiler.xml
 .idea/misc.xml
@@ -25,6 +27,7 @@ aihub_*/.idea/
 .idea/*.iml
 .idea/modules.xml
 .idea/pyLspTools.xml
+.vscode/
 
 # Claude Code local overrides (personal preferences, not shared)
 CLAUDE.local.md
@@ -48,3 +51,6 @@ CLAUDE.local.md
 /models/
 /dist/
 /data/
+
+# Local-only manual test runbook (kept out of the PR)
+/keycloak-config-lifecycle-test.md

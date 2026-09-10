@@ -84,7 +84,7 @@ class MilvusHandler(BackupHandler):
 
             self._drop_all_collections()
 
-            backup_name = sorted(backup_names)[-1]
+            backup_name = max(backup_names)
             logger.info("Restoring Milvus backup: %s from %s", backup_name, backup_prefix)
 
             result = subprocess.run(

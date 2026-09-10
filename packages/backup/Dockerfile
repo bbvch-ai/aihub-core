@@ -45,7 +45,7 @@ RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "amd64") && \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-COPY packages/backup/pyproject.toml packages/backup/README.md ./packages/backup/
+COPY packages/backup/pyproject.toml packages/backup/README.md packages/backup/LICENSE ./packages/backup/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --package swiss-ai-hub-backup
 

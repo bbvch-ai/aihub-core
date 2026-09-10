@@ -1,10 +1,9 @@
 import copy
 
-from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
 from swiss_ai_hub.core.events import EventSpecs
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
+from swiss_ai_hub.core.form import ConfigSpecs
+from swiss_ai_hub.jambo import SchemaConverter
 
 
 class ModelCreationService:
@@ -53,13 +52,8 @@ class ModelCreationService:
         )
 
     @staticmethod
-    def create_agent_config_model(agent_config_specs: AgentConfigSpecs) -> type[BaseModel]:
-        schema = copy.deepcopy(agent_config_specs.agent_config_schema)
-        return SchemaConverter.build(schema)
-
-    @staticmethod
-    def create_process_config_model(process_config_specs: ProcessConfigSpecs) -> type[BaseModel]:
-        schema = copy.deepcopy(process_config_specs.process_config_schema)
+    def create_config_model(config_specs: ConfigSpecs) -> type[BaseModel]:
+        schema = copy.deepcopy(config_specs.config_schema)
         return SchemaConverter.build(schema)
 
     @staticmethod

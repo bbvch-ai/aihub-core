@@ -84,7 +84,7 @@ context_sufficient_guard:
     {{ block.text }}
     {% endif %}
     {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
+    {{ block.url | string | image }}
     {% endif %}
     {% endfor %}
     </message>
@@ -105,7 +105,7 @@ context_sufficient_guard:
     {{ block.text }}
     {% endif %}
     {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image }}
+    {{ block.url | string | image }}
     {% endif %}
     {% endfor %}
     </Contesto>

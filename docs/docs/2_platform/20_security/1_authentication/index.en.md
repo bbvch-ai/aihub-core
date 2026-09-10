@@ -93,9 +93,7 @@ initiates the OIDC Authorization Code Flow with `kc_idp_hint` set to the provide
 to the upstream identity provider without showing Keycloak's login theme.
 
 This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a
-Keycloak-only change. See
-[ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
-for the full rationale and implementation details.
+Keycloak-only change.
 
 ### Configuring Provider Icons
 
@@ -103,7 +101,8 @@ Each identity provider can have a custom icon displayed on its login button. Ico
 Keycloak identity provider's `config` map as the `icon` field using PrimeIcon CSS classes (e.g., `pi-microsoft`,
 `pi-google`). Providers without an icon configured fall back to `pi-sign-in`.
 
-To set an icon, add the `icon` field to the identity provider's configuration in `keycloak-identity-providers.json.j2`:
+To set an icon, add the `icon` field to the identity provider's configuration in
+`infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2`:
 
 ```json
 "config": {
@@ -127,9 +126,15 @@ forwarding authenticated requests to the upstream service. Only users with the `
 services.
 
 Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
-URLs), OIDC discovery is skipped and endpoints are configured explicitly. See
-[ADR: Skip OIDC Discovery for OAuth2 Proxy](../../../../arc42/decisions/2026_02_26_skip_oidc_discovery_for_oauth2_proxy.md)
-for the technical rationale.
+URLs), OIDC discovery is skipped and endpoints are configured explicitly.
+
+## Langfuse Access
+
+Langfuse does not sit behind an OAuth2 Proxy — it uses its native Keycloak SSO integration (OIDC client `langfuse`).
+Access is restricted to users with the `AIHubSysAdmin` role directly in Keycloak: the `langfuse` client carries the
+marker client scope `langfuse-sysadmin-gate`, which activates a conditional deny in the authentication flows
+(`browser-aihub` browser flow and the post-broker-login flow). Users without `AIHubSysAdmin` are denied at the Keycloak
+login — on fresh logins via the identity provider as well as on existing SSO sessions.
 
 ## Hardening: Keycloak Admin Console Access
 
@@ -178,74 +183,74 @@ dashboard itself if it is enabled in production.
 ## Keycloak Realm Roles and Automatic Assignment
 
 Keycloak manages realm-level roles that determine whether a user may access the platform. These roles are coarse access
-gates — fine-grained permissions are managed locally by the platform (see
+gates — fine-grained permissions are managed locally by the platform through tenant-scoped roles (see
 [Permissions](../../11_access_management/2_permissions/)).
 
-| Role             | Purpose                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `AIHubAccess`    | Required for platform login. Users without this role are denied at the Keycloak login flow. |
-| `AIHubAdmin`     | Full administrative access                                                                  |
-| `AIHubUser`      | Standard user access                                                                        |
-| `AIHubDeveloper` | Developer tools access (Dagster, Attu, etc.)                                                |
-| `AIHubSysAdmin`  | System administrator access to infrastructure tools                                         |
+Two realm roles take effect in the platform:
 
-By default, no roles are automatically assigned to new users. This ensures that users federated from an external
-identity provider only receive the roles explicitly mapped from their IdP claims, following the principle of least
-privilege.
+| Role            | Effect                                                                                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AIHubAccess`   | Required for platform login. Users without this role are denied at the Keycloak login flow.                                                              |
+| `AIHubSysAdmin` | Platform administrator. Read from the token to grant admin access and gate the OAuth2-Proxy admin tools (Dagster, Attu, SeaweedFS, Backup) and Langfuse. |
 
-### Configuring Automatic Role Assignment
+::: info Realm roles vs. platform roles
+The `aihub` realm defines only these two roles. Fine-grained, day-to-day permissions are handled separately by
+**tenant-scoped roles** managed inside the platform — these may share names such as `AIHubUser` or `AIHubAdmin` but are
+unrelated to Keycloak realm roles and are not derived from the IdP. Assign only `AIHubAccess` and `AIHubSysAdmin` in
+your identity provider.
 
-If your deployment requires that all new users receive a default role (e.g., `AIHubUser`), this can be configured in
-Keycloak:
+For the operator setup of the Azure app registration and role assignment, see
+[Identity Provider Setup](../../3_deployment_guide/10_identity_provider_setup/).
+:::
 
-**Option 1: Realm default roles (applies to all new users)**
+By default, no realm roles are automatically assigned to new users: a federated user receives only the realm roles
+explicitly mapped from their IdP claims (principle of least privilege). At the Keycloak / IdP level there are only ever
+**two** roles to assign — `AIHubAccess` and `AIHubSysAdmin` (see the info box above). `AIHubUser` / `AIHubAdmin` and the
+other "platform roles" are **not** Keycloak realm roles and are never set on the IdP; they are tenant-scoped and
+configured inside the platform (see [Default platform roles](#default-platform-roles) below).
 
-In the Keycloak admin console, navigate to **Realm Settings > User Registration > Default Roles** and add the desired
-roles. Alternatively, set the `defaultRoles` array in the realm configuration template (`keycloak-realm.json.j2`):
+### Mapping the realm roles from the IdP
 
-```json
-"defaultRoles": ["AIHubUser"]
-```
-
-**Option 2: Identity provider mappers (applies per IdP)**
-
-For more granular control, configure role mappers on individual identity providers. This allows different roles for
-users from different organizations. In the Keycloak admin console, navigate to **Identity Providers > [your IdP] >
-Mappers** and add a **Hardcoded Role** mapper:
-
-| Field       | Value               |
-| ----------- | ------------------- |
-| Name        | `default-user-role` |
-| Mapper Type | Hardcoded Role      |
-| Role        | `AIHubUser`         |
-
-This assigns the role only to users authenticating through that specific identity provider.
-
-**Option 3: Claim-based role mapping (conditional assignment)**
-
-For conditional role assignment based on IdP claims (e.g., Azure AD app roles), use the existing `oidc-role-idp-mapper`
-pattern already configured in `keycloak-identity-providers.json.j2`. Each Azure AD app role is mapped to a corresponding
-Keycloak realm role. To add a new mapping, add an entry to the `identityProviderMappers` array:
+The `azure-ad` provider already maps the two realm roles from the Azure `roles` claim via two `oidc-role-idp-mapper`
+entries in `infra/deployment/templates/configs/keycloak/bootstrap/identity-providers.json.j2` (`role-mapper-access` →
+`AIHubAccess`, `role-mapper-sysadmin` → `AIHubSysAdmin`). To federate the same two roles from a different provider, add
+the equivalent mappers — targeting only `AIHubAccess` and `AIHubSysAdmin`:
 
 ```json
 {
-  "name": "role-mapper-my-role",
-  "identityProviderAlias": "azure-ad",
+  "name": "role-mapper-access",
+  "identityProviderAlias": "<your-idp-alias>",
   "identityProviderMapper": "oidc-role-idp-mapper",
   "config": {
     "syncMode": "INHERIT",
     "claim": "roles",
-    "claim.value": "MyAzureAppRole",
-    "role": "AIHubUser"
+    "claim.value": "AIHubAccess",
+    "role": "AIHubAccess"
   }
 }
 ```
 
-::: warning
-The `AIHubAccess` role is enforced at the Keycloak login flow level via the "Post Broker Login - AIHubAccess Check"
-authentication flow. Users without this role are denied access regardless of any other role assignments. Ensure that
-your role mapping strategy includes `AIHubAccess` for users who should be able to log in.
+::: warning Identity providers are bootstrap config
+Identity providers and their mappers are seeded from `bootstrap/identity-providers.json.j2` by the realm import on the
+**first start only** — they are not reconciled by keycloak-config-cli. Edits made in the Keycloak admin console survive
+restarts, and changes to the config file reach an already-initialized deployment only via the admin console (or a fresh
+realm database).
 :::
+
+::: warning AIHubAccess is required to log in
+`AIHubAccess` is enforced at the Keycloak login flow ("Post Broker Login - AIHubAccess Check"): a user without it is
+denied regardless of any other assignment. Make sure your IdP grants `AIHubAccess` to everyone who should be able to log
+in.
+:::
+
+### Default platform roles
+
+Day-to-day permissions come from **platform roles** (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, …), which are
+tenant-scoped and managed inside the platform — not in Keycloak and not from the IdP. Which roles a new user receives is
+controlled by the `AIHUB_USER_SIGNUP_*` environment variables (`AIHUB_USER_SIGNUP_DEFAULT_ROLES`,
+`AIHUB_USER_SIGNUP_REGULAR_USER_ROLES`, `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES`), and each tenant is seeded with its
+default role set at creation. See [Access Management](../../11_access_management/1_authentication_setup/) and
+[Permissions](../../11_access_management/2_permissions/).
 
 ## Security Standards and Operational Capabilities
 

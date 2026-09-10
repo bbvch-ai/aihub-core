@@ -34,11 +34,86 @@ export const AccessSchema = {
   title: "Access",
 } as const;
 
+export const AccessCapabilitiesRequestSchema = {
+  properties: {
+    access_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Access Rules",
+      description:
+        "Draft access rules to evaluate the capability catalog against.",
+    },
+    restrict_to_tenant: {
+      type: "boolean",
+      title: "Restrict To Tenant",
+      description:
+        "Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).",
+      default: true,
+    },
+    is_sys_admin: {
+      type: "boolean",
+      title: "Is Sys Admin",
+      description:
+        "Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.",
+      default: false,
+    },
+  },
+  type: "object",
+  required: ["access_rules"],
+  title: "AccessCapabilitiesRequest",
+} as const;
+
+export const AccessCapabilitiesResponseSchema = {
+  properties: {
+    groups: {
+      items: {
+        $ref: "#/components/schemas/CapabilityGroup",
+      },
+      type: "array",
+      title: "Groups",
+      description: "Top-level groups, one per controller/service.",
+    },
+  },
+  type: "object",
+  required: ["groups"],
+  title: "AccessCapabilitiesResponse",
+} as const;
+
 export const AccessLevelSchema = {
   type: "integer",
   enum: [0, 1, 2],
   title: "AccessLevel",
   description: "Defines the possible outcomes of a permission check.",
+} as const;
+
+export const AccessPresetDTOSchema = {
+  properties: {
+    rule: {
+      type: "string",
+      title: "Rule",
+      description: "The access rule string this preset adds.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "Short, human-readable name for the preset.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What this preset grants.",
+    },
+    category: {
+      type: "string",
+      title: "Category",
+      description: "Stable category key for grouping in the UI.",
+    },
+  },
+  type: "object",
+  required: ["rule", "name", "description", "category"],
+  title: "AccessPresetDTO",
 } as const;
 
 export const AgentHealthChecksSchema = {
@@ -142,6 +217,127 @@ export const AuthProviderResponseSchema = {
   description: "Represents a single identity provider available for login.",
 } as const;
 
+export const CapabilitySchema = {
+  properties: {
+    key: {
+      type: "string",
+      title: "Key",
+      description: "Stable identifier for this capability.",
+    },
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Short human-readable action label.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What holding this capability lets the user do.",
+    },
+    rule: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Rule",
+      description:
+        "Exact access rule that grants this capability, or null for read-only capabilities.",
+    },
+    companion_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Companion Rules",
+      description:
+        "Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.",
+      default: [],
+    },
+    granted: {
+      type: "boolean",
+      title: "Granted",
+      description:
+        "Whether the draft rules grant every rule of this capability.",
+    },
+    locked: {
+      type: "boolean",
+      title: "Locked",
+      description:
+        "Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.",
+    },
+    toggleable: {
+      type: "boolean",
+      title: "Toggleable",
+      description:
+        "Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.",
+    },
+  },
+  type: "object",
+  required: [
+    "key",
+    "label",
+    "description",
+    "rule",
+    "granted",
+    "locked",
+    "toggleable",
+  ],
+  title: "Capability",
+} as const;
+
+export const CapabilityGroupSchema = {
+  properties: {
+    key: {
+      type: "string",
+      title: "Key",
+      description:
+        "Stable identifier (a controller/service, a class, an instance, ...).",
+    },
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Display title for the group.",
+    },
+    icon: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Icon",
+      description: "Iconify icon for the group (service or class), if any.",
+    },
+    capabilities: {
+      items: {
+        $ref: "#/components/schemas/Capability",
+      },
+      type: "array",
+      title: "Capabilities",
+      description: "Capabilities directly on this group.",
+      default: [],
+    },
+    groups: {
+      items: {
+        $ref: "#/components/schemas/CapabilityGroup",
+      },
+      type: "array",
+      title: "Groups",
+      description: "Nested groups (e.g. classes, then instances).",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["key", "label"],
+  title: "CapabilityGroup",
+} as const;
+
 export const CreateRoleRequestSchema = {
   properties: {
     name: {
@@ -204,13 +400,20 @@ export const CreateTenantMetadataRequestSchema = {
       default: "",
     },
     access_rules: {
-      items: {
-        type: "string",
-      },
-      type: "array",
+      anyOf: [
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
       title: "Access Rules",
-      description: "Access rules granted to this tenant.",
-      default: [],
+      description:
+        "Access rules granted to this tenant. Omit to start from this instance's default ceiling (every served model minus the configured exclusions); pass an empty list for a tenant that starts with no access at all.",
     },
   },
   type: "object",
@@ -400,6 +603,11 @@ export const HealthResponseSchema = {
       title: "Code",
       description: "HTTP status code.",
     },
+    version: {
+      type: "string",
+      title: "Version",
+      description: "Running service version.",
+    },
     checks: {
       anyOf: [
         {
@@ -420,7 +628,7 @@ export const HealthResponseSchema = {
     },
   },
   type: "object",
-  required: ["status", "code"],
+  required: ["status", "code", "version"],
   title: "HealthResponse",
   description: "Standard health check response.",
 } as const;
@@ -762,11 +970,11 @@ export const UserAccessSchema = {
       type: "string",
       title: "Name",
       description:
-        "Name of the service/agent/process to which user has access to",
+        "Name of the service/agent/process to which access is evaluated",
     },
     level: {
       $ref: "#/components/schemas/AccessLevel",
-      description: "Users access level to service/agent/process",
+      description: "Access level to the service/agent/process",
     },
   },
   type: "object",
@@ -896,9 +1104,18 @@ export const UserWithAccessDTOSchema = {
       $ref: "#/components/schemas/Access",
       description: "User access levels",
     },
+    access_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Access Rules",
+      description:
+        "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
   },
   type: "object",
-  required: ["id", "name", "email", "access"],
+  required: ["id", "name", "email", "access", "access_rules"],
   title: "UserWithAccessDTO",
 } as const;
 

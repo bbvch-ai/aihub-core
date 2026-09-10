@@ -11,6 +11,7 @@ from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.routes import TenantScopedController
 
+from swiss_ai_hub.api.decorators.access_catalog import access_catalog_entry
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
@@ -54,21 +55,32 @@ class AgentController(TenantScopedController):
 
     # ==================== Agent Classes Endpoints ====================
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.agent.see")
     def get_agent_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_classes(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
         ) -> list[AgentClassDTO]:
             """
-            Retrieve all available agent classes.
+            Retrieve the agent classes this caller may reach.
             Use `?online=true` for online classes only, `?online=false` for offline only.
             """
-            return await AgentService.get_agent_classes(t, online=online)
+            agent_classes = await AgentService.get_agent_classes(t, online=online)
+            # Filtered per class because the route guard is an existence query that any single agent rule
+            # satisfies, so without this a tenant curated down to a subset still sees every blueprint and
+            # learns of the block only on click-through.
+            access_checker = AccessChecker.from_user(user)
+            return [
+                agent_class
+                for agent_class in agent_classes
+                if access_checker.has_access_to_agent_class(agent_class.agent_class)
+            ]
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.agent.see_class")
     def get_agent_class(self, route: str = "/classes/{agent_class}") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_class(
@@ -102,6 +114,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.agent.create")
     def create_agent_instance(self, route: str = "/classes/{agent_class}/instances") -> Self:
         from fastapi import status
 
@@ -119,6 +132,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.agent.use")
     def get_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_instance(
@@ -136,6 +150,7 @@ class AgentController(TenantScopedController):
 
         return self
 
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.agent.manage")
     def update_agent_instance(self, route: str = _AGENT_INSTANCE_ROUTE) -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_agent_instance(
@@ -220,12 +235,17 @@ class AgentController(TenantScopedController):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
+            agent_class: Annotated[str | None, Query(description="Filter by agent class")] = None,
+            search: Annotated[str | None, Query(description="Search by agent name")] = None,
         ) -> list[FullAgentInstanceDTO]:
             """
             Retrieve a list of all agent instances across all classes.
             Use `?online=true` for online instances only, `?online=false` for offline only.
+            Use `?search={agentName}` to search an agent with its name.
             """
-            agents = await AgentService.get_all_agent_instances(t, online=online)
+            agents = await AgentService.get_all_agent_instances(
+                t, online=online, search=search, agent_class=agent_class
+            )
             return [
                 agent
                 for agent in agents

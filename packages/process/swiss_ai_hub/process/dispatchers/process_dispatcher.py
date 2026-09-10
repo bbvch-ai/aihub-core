@@ -298,7 +298,7 @@ class ProcessDispatcher(BaseDispatcher):
         events: Annotated[dict[str, list[WorkEvent]], "All events for this run, keyed by event name."],
         process_config: Annotated[ProcessConfig, "Configuration for the process."],
     ) -> EventsAndKwargs:
-        events_and_kwargs: EventsAndKwargs = await self._build_event_kwargs(trigger_event, method, events)
+        events_and_kwargs: EventsAndKwargs = self._build_event_kwargs(trigger_event, method, events)
 
         step_signature = inspect.signature(method)
         for param in step_signature.parameters.values():

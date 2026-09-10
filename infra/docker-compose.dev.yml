@@ -13,7 +13,7 @@
 # distributed under the Apache License 2.0 (see the root LICENSE).
 #
 # The SERVICES it orchestrates carry their OWN licenses — Apache-2.0, AGPL-3.0,
-# proprietary, and various permissive third-party terms. Each service block
+# and various permissive third-party terms. Each service block
 # below is annotated with `# License: <SPDX>` for at-a-glance reference.
 #
 # Authoritative sources for license details:
@@ -31,7 +31,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose:
       - '9333'   # Master HTTP port
@@ -69,7 +69,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     expose: ['8080', '18080']
     command: >
@@ -77,7 +77,7 @@ services:
       -mserver="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -101,7 +101,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [8889:8888, '18888']
     command: >
@@ -153,7 +153,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
     restart: always
     ports: [9000:9000]
     volumes:
@@ -678,7 +678,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.5
     restart: unless-stopped
     entrypoint: /bin/bash
     ports: [8180:8080]
@@ -705,6 +705,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
@@ -714,7 +715,6 @@ services:
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.dev.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.dev.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test:
@@ -735,6 +735,63 @@ services:
         max-file: 2
     networks:
       - data  # PostgreSQL access for Keycloak database
+
+  # One-shot reconciler: applies the managed realm config (clients, scopes,
+  # roles, flows, identity providers) on every stack start via the Admin API.
+  # File wins over admin-console drift; users and tenant groups are never
+  # touched. Nothing depends on it completing — a failure (non-zero exit in
+  # `docker compose ps -a`) means the realm keeps running with old config.
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  keycloak-config:
+    container_name: keycloak-config
+    image: ghcr.io/bbvch-ai/aihub-core/keycloak-config-cli:6.5.1-26.5.5
+    restart: on-failure
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: 'true'
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: /config/*.json
+      IMPORT_VARSUBSTITUTION_ENABLED: 'true'
+      # Reapply on every start even when file checksums are unchanged, so
+      # admin-console drift on managed objects is always reverted.
+      IMPORT_CACHE_ENABLED: 'false'
+      # Defense in depth — no managed file may contain groups (tenants are
+      # runtime data, see ADR 2026_04_15_keycloak_as_tenant_existence_authority).
+      IMPORT_MANAGED_GROUP: no-delete
+      # Defense in depth — identity providers are bootstrap-only (first-start
+      # --import-realm); no managed file declares them, so kcc must never delete
+      # the ones seeded by the realm import or configured in the admin console.
+      IMPORT_MANAGED_IDENTITYPROVIDER: no-delete
+      IMPORT_MANAGED_IDENTITYPROVIDERMAPPER: no-delete
+      # Client secrets (substituted into the managed config files)
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      # Azure Entra ID vars are NOT needed here — identity providers are
+      # bootstrap-only (seeded by the keycloak container's --import-realm), not
+      # reconciled by keycloak-config-cli.
+    volumes:
+      - ./configs/keycloak/managed/10-roles.dev.json:/config/10-roles.json:ro
+      - ./configs/keycloak/managed/20-client-scopes.dev.json:/config/20-client-scopes.json:ro
+      - ./configs/keycloak/managed/30-clients.dev.json:/config/30-clients.json:ro
+      - ./configs/keycloak/managed/40-auth-flows.dev.json:/config/40-auth-flows.json:ro
+      - ./configs/keycloak/managed/60-service-accounts.dev.json:/config/60-service-accounts.json:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data  # Keycloak Admin API access on its data-network interface
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1062,10 +1119,13 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
+      SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
       SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
       SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
       SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_MODEL: ${SWISS_LLM_CLOUD_WHISPER_MODEL}
       SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
       SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
       SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
@@ -1074,13 +1134,20 @@ services:
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
-    volumes: [./configs/litellm/litellm-config.dev.yml:/app/config.yml]
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
+      RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
+    volumes:
+      - ./configs/litellm/litellm-config.dev.yml:/app/config.yml
+      - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.yml
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       presidio-analyzer:
@@ -1137,6 +1204,42 @@ services:
         max-file: 2
     networks:
       - backend
+
+  # License: MIT — third-party (see LICENSE_REPORT.md)
+  open-terminal:
+    container_name: open-terminal
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    restart: always
+    ports: [8200:8000]
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
+    environment:
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+      OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Tool-context guidance: files surface in the Files panel; use read-file for documents
+      OPEN_TERMINAL_SYSTEM_PROMPT: >-
+        You have access to a sandboxed Linux computer with Python and common
+        document libraries (pandas, openpyxl, python-docx, reportlab, fpdf2,
+        weasyprint, matplotlib). Use your tools to run commands, read and write
+        files, and search the filesystem. Verify the current state before making
+        changes and check command output to confirm success. Files you create in
+        your working directory automatically appear in the user's Files panel,
+        where they can download them — after creating a file, tell the user its
+        filename. To read the contents of a document such as a PDF, DOCX or XLSX,
+        use the read-file tool, which extracts the text; do not use display for that.
+    healthcheck:
+      # No documented health endpoint; probe the Swagger /docs route instead
+      test: [CMD, curl, -f, http://localhost:8000/docs]
+      interval: 15s
+      timeout: 3s
+      start_period: 40s  # Generous cold-start for the ~1.2 GB image
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - code-sandbox  # Isolated single-tenant zone (callers join it to reach this sandbox)
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
@@ -1195,7 +1298,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -1215,7 +1318,8 @@ services:
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
-      # Processing configuration
+      # Processing configuration. This cap is the only server-wide memory bound:
+      # baseline + cap x (MINERU_PAGE_BATCH_SIZE x ~30 MB) must fit the memory limit below.
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/openapi.json]
@@ -1248,17 +1352,36 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   otel-collector:
     container_name: otel-collector
-    image: otel/opentelemetry-collector-contrib:latest
+    image: ghcr.io/bbvch-ai/aihub-core/otel/opentelemetry-collector-contrib:0.154.0
     restart: always
     command: [--config=/etc/otel-config.yml]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      # Read by otel-config's resource/deployment processor. Written per-VM into .env by
+      # aihub-playbook (env.j2). The `:-` default is a deliberate exception to the "defaults live
+      # in .env.dev/.env.prod" rule: an empty value makes the processor fail to build and the
+      # collector exit, and nothing depends_on it — so an unset var would silently take down all
+      # telemetry instead of just this attribute. The fallback keeps that impossible.
+      # The stage name is a truthful degradation for the environment — it *is* the stage. It is not
+      # one for the host: it would fill SigNoz's Hostname filter with a value that reads as a real
+      # machine and collapse every VM in the stage into one entry, which is worse than the empty
+      # column this fixes, because empty is visibly broken and "latest" is not.
+      - OTEL_DEPLOYMENT_ENVIRONMENT=${OTEL_DEPLOYMENT_ENVIRONMENT:-dev}
+      - OTEL_HOST_NAME=${OTEL_HOST_NAME:-unset-dev}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes: [./configs/otel/otel-config.dev.yml:/etc/otel-config.yml]
-    ports: [4317:4317, 4318:4318, 13133:13133, 55679:55679]
-    depends_on: [langfuse-web]
+    ports:
+      - 4317:4317
+      - 4318:4318
+      - 13133:13133
+      - 55679:55679
+    # Deliberately no depends_on: this must be the first thing listening on 4317. Every app SDK
+    # gives up after OTEL_EXPORTER_OTLP_TIMEOUT and DROPS the batch, so gating the collector behind
+    # langfuse-web (and through it postgres/clickhouse/seaweedfs health) costs the startup log of
+    # every service on a cold start. The otlphttp/langfuse exporter has retry_on_failure and needs
+    # no start-order guarantee — langfuse-web is up long before the first OpenInference trace.
     healthcheck:
       test: [NONE]
     labels:
@@ -1271,8 +1394,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    # This collector is dual-homed, so its container name is registered in Docker DNS on
+    # both networks — and the egress address is NOT reachable container-to-container,
+    # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
+    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # The alias below is registered on backend only and can therefore resolve to nothing
+    # but the reachable address; every OTLP client targets it instead of the name.
     networks:
-      - backend
+      backend:
+        aliases: [otel-collector-backend]
+      egress: {}
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1290,13 +1422,15 @@ services:
     network_mode: host
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
     depends_on:
+      otel-collector:
+        condition: service_started
       postgres:
         condition: service_healthy
       seaweedfs-s3:
         condition: service_healthy
       litellm:
         condition: service_healthy
-      jupyter:
+      open-terminal:
         condition: service_healthy
       playwright:
         condition: service_healthy
@@ -1324,8 +1458,12 @@ services:
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
+      # Traces always on. Metrics are opt-in: OpenWebUI emits very high-cardinality
+      # HTTP-server metrics that dominate SigNoz ingestion (see issue 1496), so they
+      # default off (ENABLE_OTEL_METRICS=false in .env.dev/.env.prod) and any deploy
+      # can turn them back on via its own env.
       ENABLE_OTEL: true
-      ENABLE_OTEL_METRICS: true
+      ENABLE_OTEL_METRICS: ${ENABLE_OTEL_METRICS}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: true
@@ -1342,6 +1480,7 @@ services:
       ENABLE_OAUTH_SIGNUP: true
       ENABLE_OAUTH_ROLE_MANAGEMENT: true
       OAUTH_ROLES_CLAIM: roles
+      OAUTH_ALLOWED_ROLES: AIHubAccess,${OAUTH_ADMIN_ROLES_OPENWEBUI}
       OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
       OAUTH_PROVIDER_NAME: Keycloak
       OAUTH_CLIENT_ID: openwebui
@@ -1373,21 +1512,28 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://localhost:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/gemma-4-31B-it
-      TASK_MODEL_EXTERNAL: text-generation/gemma-4-31B-it
+      TASK_MODEL: aihub-model-text-generation-gemma-4-31B-it
+      TASK_MODEL_EXTERNAL: aihub-model-text-generation-gemma-4-31B-it
       ENABLE_OLLAMA_API: false
       ENABLE_OPENAI_API: true
-
-      # --- Image Generation ---
-      IMAGE_GENERATION_MODEL: image-generation
+      # Conversation metadata is owned by the agent pipeline (#1047): the agent emits the title and
+      # follow-up questions as protocol events and the pipeline relays them (plus deterministic tags),
+      # so OpenWebUI must NOT generate its own — otherwise it overwrites the agent-produced values.
+      ENABLE_TITLE_GENERATION: false
+      ENABLE_TAGS_GENERATION: false
+      ENABLE_FOLLOW_UP_GENERATION: false
+      # --- Image Generation (cloud-only; GPU stages have no local image model yet) ---
+      IMAGE_GENERATION_MODEL: image-generation/flux
       IMAGES_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: true
+      # Infomaniak flux rejects prompts > 400 chars; disable LLM prompt expansion so raw prompts pass through
+      ENABLE_IMAGE_PROMPT_GENERATION: false
 
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
-      AUDIO_STT_MODEL: transcription
+      AUDIO_STT_MODEL: transcription/whisper-large-v3
       AUDIO_STT_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -1405,6 +1551,7 @@ services:
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: aihub/
       AIHUB_REQUEST_TIMEOUT: 60
+      OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
       # --- Database & Cache ---
       DATABASE_TYPE: postgres
@@ -1425,20 +1572,19 @@ services:
       CORS_ALLOW_ORIGIN: http://localhost:8080
 
       # --- Admin ---
-      ENABLE_ADMIN_EXPORT: true
+      # OpenWebUI admin is the AIHubSysAdmin realm role (OAUTH_ADMIN_ROLES below). Upstream lets that role
+      # read every user's files and export every user's chats across all tenants; both are scoped to the
+      # admin's own data by default here and can be opened up per deployment (issue #104).
+      ENABLE_ADMIN_EXPORT: ${OPENWEBUI_ENABLE_ADMIN_EXPORT}
       ENABLE_ADMIN_CHAT_ACCESS: false
+      BYPASS_ADMIN_ACCESS_CONTROL: ${OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL}
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
-      # --- Code Execution ---
-      CODE_EXECUTION_ENGINE: jupyter
-      CODE_EXECUTION_JUPYTER_URL: http://localhost:8888
-      CODE_EXECUTION_JUPYTER_AUTH: token
-      CODE_EXECUTION_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
-      CODE_INTERPRETER_ENGINE: jupyter
-      CODE_INTERPRETER_JUPYTER_URL: http://localhost:8888
-      CODE_INTERPRETER_JUPYTER_AUTH: token
-      CODE_INTERPRETER_JUPYTER_AUTH_TOKEN: ${JUPYTER_TOKEN}
+      # --- Code Execution (Open Terminal) ---
+      # Native execute_code connection (plain LLM models). "permission":"read" is the
+      # connection-access grant, NOT a filesystem mode; key must be alphanumeric/hex (single-quoted JSON).
+      TERMINAL_SERVER_CONNECTIONS: '[{"id":"open-terminal","name":"Open Terminal","enabled":true,"url":"http://localhost:8200","key":"${OPEN_TERMINAL_API_KEY}","auth_type":"bearer","config":{"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]}}]'
 
       # --- Vector DB ---
       VECTOR_DB: milvus
@@ -1492,7 +1638,7 @@ services:
       USER_PERMISSIONS_CHAT_SHARE: false
       USER_PERMISSIONS_CHAT_EXPORT: false
       USER_PERMISSIONS_CHAT_STT: true
-      USER_PERMISSIONS_CHAT_TTS: true
+      USER_PERMISSIONS_CHAT_TTS: false
       USER_PERMISSIONS_CHAT_CALL: true
       USER_PERMISSIONS_CHAT_MULTIPLE_MODELS: true
       USER_PERMISSIONS_CHAT_TEMPORARY: true
@@ -1514,7 +1660,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
@@ -1583,6 +1729,10 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: 'false'
+  # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
+  code-sandbox:
+    name: code-sandbox
+    driver: bridge
 # ===================================================================
 # Named Volumes
 # ===================================================================

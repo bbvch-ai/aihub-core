@@ -29,7 +29,7 @@ class LangfuseSettings(EnvironmentSettings):
         return Langfuse(
             public_key=self.PUBLIC_KEY,
             secret_key=self.SECRET_KEY.get_secret_value(),
-            host=self.BASE_URL,
+            base_url=self.BASE_URL,
             timeout=self.TIMEOUT,
             tracing_enabled=False,
         )

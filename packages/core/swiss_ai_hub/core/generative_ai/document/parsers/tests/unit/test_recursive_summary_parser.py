@@ -1,16 +1,38 @@
+import json
+import logging
 from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.llms.openai_like import OpenAILike
 
-from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
+from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import (
+    SUMMARIZATION_BUDGET_SAFETY_FACTOR,
+    LLMSummarizer,
+    RecursiveNodeSummarizer,
+)
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import HEADING_LEVEL, INDEX, NODE_TYPE_SUMMARY, TYPE
 
 
 @pytest.fixture
 def mock_llm():
     return MagicMock(spec=OpenAILike)
+
+
+def _recording_predict(prompts: list[str]):
+    """A `predict` side effect that records the exact rendered prompt each call sent."""
+
+    def predict(template, text):
+        prompts.append(template.format(text=text))
+        return "s"
+
+    return predict
+
+
+def _one_token_per_char(text: str) -> list[int]:
+    """A token counter with a 1:1 char-to-token ratio, so budget arithmetic in assertions is exact."""
+    return [0] * len(text)
 
 
 def test_nodes_with_next_relationship(mock_llm):
@@ -255,6 +277,123 @@ def test_sequential_indices(mock_llm):
     assert len(summary_nodes) == 2
     assert summary_nodes[0].metadata.get(INDEX) == 0
     assert summary_nodes[1].metadata.get(INDEX) == 1
+
+
+def test_flat_headerless_root_map_reduces_within_budget(mock_llm):
+    """Reproduces issue #158: a headerless root fans in every h1-only sibling as its child."""
+    prompts: list[str] = []
+    mock_llm.predict.side_effect = _recording_predict(prompts)
+
+    siblings = [TextNode(text="short section text", metadata={"h1": f"Section {i}"}) for i in range(2500)]
+    headerless_root = TextNode(text="", metadata={})
+    nodes = [headerless_root, *siblings]
+
+    summarizer = RecursiveNodeSummarizer(llm=mock_llm, max_input_tokens=4000, token_counter=_one_token_per_char)
+    summarized_nodes = summarizer.summarize_nodes(nodes)
+
+    budget = int(4000 * SUMMARIZATION_BUDGET_SAFETY_FACTOR)
+    assert prompts
+    assert all(len(p) <= budget for p in prompts)
+    assert mock_llm.predict.call_count > 1
+
+    summaries = [n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    assert len(summaries) == len(siblings) + 1
+
+
+def test_all_headerless_document_map_reduces_within_budget(mock_llm):
+    """A chain of headerless nodes merges into one group via the NEXT-relationship walk, not fan-in."""
+    prompts: list[str] = []
+    mock_llm.predict.side_effect = _recording_predict(prompts)
+
+    nodes = [TextNode(id_=f"n{i}", text="chunk of body text. " * 3, metadata={}) for i in range(2000)]
+    for previous_node, current_node in zip(nodes, nodes[1:]):
+        previous_node.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=current_node.node_id)
+
+    summarizer = RecursiveNodeSummarizer(llm=mock_llm, max_input_tokens=4000, token_counter=_one_token_per_char)
+    summarized_nodes = summarizer.summarize_nodes(nodes)
+
+    budget = int(4000 * SUMMARIZATION_BUDGET_SAFETY_FACTOR)
+    assert prompts
+    assert all(len(p) <= budget for p in prompts)
+
+    summaries = [n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    assert len(summaries) == 1
+
+
+def test_parent_with_many_children_map_reduces_within_budget(mock_llm):
+    """Proves map-reduce actually ran, which `test_recursive_splitting_and_summarization` only claims by name."""
+    prompts: list[str] = []
+    mock_llm.predict.side_effect = _recording_predict(prompts)
+
+    parent = TextNode(text="Parent overview", metadata={"h1": "Parent"})
+    children = [
+        TextNode(text="child body text " * 5, metadata={"h1": "Parent", "h2": f"Child {i}"}) for i in range(600)
+    ]
+    nodes = [parent, *children]
+
+    summarizer = RecursiveNodeSummarizer(llm=mock_llm, max_input_tokens=3000, token_counter=_one_token_per_char)
+    summarizer.summarize_nodes(nodes)
+
+    budget = int(3000 * SUMMARIZATION_BUDGET_SAFETY_FACTOR)
+    assert prompts
+    assert all(len(p) <= budget for p in prompts)
+    assert mock_llm.predict.call_count > 1
+
+
+def test_unreducible_summary_is_skipped_and_logged(mock_llm, caplog):
+    """A budget smaller than the prompt template's own fixed overhead can never be satisfied by any input."""
+    node = TextNode(text="This section cannot ever be reduced to fit.", metadata={"h1": "Stuck Section"})
+
+    summarizer = RecursiveNodeSummarizer(
+        llm=mock_llm, min_summarization_length=0, max_input_tokens=1, token_counter=_one_token_per_char
+    )
+
+    with caplog.at_level(logging.WARNING):
+        summarized_nodes = summarizer.summarize_nodes([node])
+
+    summaries = [n for n in summarized_nodes if n.metadata.get(TYPE) == NODE_TYPE_SUMMARY]
+    assert summaries == []
+    assert "Stuck Section" in caplog.text
+    mock_llm.predict.assert_not_called()
+
+
+def test_token_counter_transport_failure_propagates_instead_of_being_swallowed(mock_llm):
+    """
+    A malformed response from the token-counter or LLM gateway (e.g. a 413/502 HTML error page) must not be
+    mistaken for the deliberate "this section can't be reduced" signal and silently dropped.
+    """
+
+    def raising_token_counter(text: str) -> list[int]:
+        raise json.JSONDecodeError("Expecting value", "<html>502 Bad Gateway</html>", 0)
+
+    node = TextNode(text="x" * 2000, metadata={"h1": "Section"})
+
+    summarizer = RecursiveNodeSummarizer(llm=mock_llm, max_input_tokens=4000, token_counter=raising_token_counter)
+
+    with pytest.raises(json.JSONDecodeError):
+        summarizer.summarize_nodes([node])
+
+
+def test_fits_short_circuits_without_touching_the_token_counter():
+    """The char-count thresholds in `_fits` are load-bearing: they keep oversized payloads off the network."""
+    calls: list[str] = []
+
+    def counting_token_counter(text: str) -> list[int]:
+        calls.append(text)
+        return [0] * len(text)
+
+    summarizer = LLMSummarizer(
+        llm=MagicMock(spec=OpenAILike),
+        t=LocaleHandler(locale="en"),
+        max_input_tokens=4000,
+        token_counter=counting_token_counter,
+    )
+    budget = summarizer._budget
+    calls.clear()  # __init__ already measured the template overhead once
+
+    assert summarizer._fits("s" * 10) is True
+    assert summarizer._fits("s" * (budget * 5)) is False
+    assert calls == []
 
 
 def test_sibling_relationships(mock_llm):

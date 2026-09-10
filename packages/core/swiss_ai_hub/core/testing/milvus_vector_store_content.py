@@ -38,7 +38,11 @@ def run_with_event_loop(func: callable, *args, **kwargs) -> T:
     references to AsyncMilvusClient which needs the loop.
     """
 
-    async def _wrapper():
+    # `_wrapper` must remain async: `loop.run_until_complete(...)` below requires an
+    # awaitable. The body just delegates to the sync caller-supplied func, so there
+    # is no real await to add — this is the event-loop-binding idiom for sync calls
+    # that need a running loop in scope (here: MilvusVectorStore / AsyncMilvusClient).
+    async def _wrapper():  # noqa: S7503
         return func(*args, **kwargs)
 
     try:

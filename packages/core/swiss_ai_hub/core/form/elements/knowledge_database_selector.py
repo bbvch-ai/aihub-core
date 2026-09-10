@@ -59,8 +59,14 @@ class KnowledgeDatabaseSelector(PrimeVueElement):
         return self_copy
 
     def validate_authorization(
-        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
     ) -> list[ConfigAuthorizationViolation]:
+        """Selecting a database here reads all of its namespaces, so partial namespace access is not enough."""
         if not isinstance(value, list):
             return []
 
@@ -68,13 +74,13 @@ class KnowledgeDatabaseSelector(PrimeVueElement):
         for db_name in value:
             if not isinstance(db_name, str):
                 continue
-            if not access_checker.has_access(f"aihub.user.knowledge.{db_name}.?>"):
+            if not access_checker.has_access_to_all_knowledge_namespaces(db_name):
                 violations.append(
                     ConfigAuthorizationViolation(
                         field=field_path,
                         resource_type="knowledge_database",
                         resource=db_name,
-                        message=t("lib.common.authorization.no_access_knowledge_database", name=db_name),
+                        message=t("lib.common.authorization.no_access_whole_knowledge_database", name=db_name),
                     )
                 )
         return violations

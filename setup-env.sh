@@ -76,6 +76,17 @@ gen_hex_64() {
     openssl rand -hex 32 | tr -d '\n'
 }
 
+# Random UUIDv4 derived from openssl so the script keeps a single crypto
+# dependency (no uuidgen). openssl emits lowercase hex already.
+gen_uuid() {
+    local h
+    h=$(openssl rand -hex 16)
+    printf '%s-%s-4%s-%x%s-%s' \
+        "${h:0:8}" "${h:8:4}" "${h:13:3}" \
+        $((0x8 | (0x${h:16:1} & 0x3))) "${h:17:3}" \
+        "${h:20:12}"
+}
+
 # Replace all occurrences of a placeholder one at a time, each with a unique value.
 # Returns the number of replacements made.
 replace_placeholder() {
@@ -106,6 +117,7 @@ declare -A PLACEHOLDERS=(
     ["pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"]="gen_langfuse_pk"
     ["sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"]="gen_langfuse_sk"
     ["REPLACE_WITH_64_HEX_CHARS"]="gen_hex_64"
+    ["REPLACE_WITH_RANDOM_UUID"]="gen_uuid"
     ["REPLACE_WITH_RANDOM_STRING"]="gen_urlsafe_32"
 )
 
@@ -118,6 +130,7 @@ ORDERED_KEYS=(
     "pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"
     "sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"
     "REPLACE_WITH_64_HEX_CHARS"
+    "REPLACE_WITH_RANDOM_UUID"
     "REPLACE_WITH_RANDOM_STRING"
 )
 

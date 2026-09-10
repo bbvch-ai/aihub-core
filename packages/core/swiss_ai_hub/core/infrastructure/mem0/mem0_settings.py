@@ -20,6 +20,16 @@ class Mem0Settings(EnvironmentSettings):
     LLM_NAME: Annotated[str, Field(description="Name of the LLM to use")]
     EMBEDDING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
     RERANKING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
+    SEARCH_QUERY_EMBEDDING_WINDOW: Annotated[
+        int | None,
+        Field(
+            description="Override for the embedding model's input window, in the model's own tokens. "
+            "Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at "
+            "first use. Queries are truncated to half this value: they can only be counted with tiktoken, "
+            "which undercounts the embedder's tokenizer by up to 2x.",
+            gt=0,
+        ),
+    ] = None
 
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
@@ -28,11 +38,28 @@ class Mem0Settings(EnvironmentSettings):
         self,
         custom_fact_extraction_prompt: Annotated[str | None, "How LLM extracts facts from conversations"] = None,
         custom_update_memory_prompt: Annotated[str | None, "How LLM decides to ADD/UPDATE/DELETE memories"] = None,
+        enable_graph: Annotated[bool, "Include the Neo4j graph store. When False, mem0 skips the graph branch."] = True,
     ) -> MemoryConfig:
         litellm = LiteLLMProxySettings()
         milvus = MilvusSettings()
         neo4j = Neo4jSettings()
         os.environ["CO_API_URL"] = litellm.BASE_URL
+        graph_store = (
+            GraphStoreConfig(
+                provider="neo4j",
+                config=Neo4jConfig(
+                    url=neo4j.URL,
+                    username=neo4j.USERNAME,
+                    password=neo4j.PASSWORD.get_secret_value(),
+                    base_label=False,
+                ),
+            )
+            if enable_graph
+            # Empty GraphStoreConfig → mem0 sets enable_graph=False and skips the graph branch (base.py: it
+            # keys enable_graph on graph_store.config being truthy). The field is non-Optional, so pass an
+            # empty config rather than None.
+            else GraphStoreConfig()
+        )
         return MemoryConfig(
             custom_fact_extraction_prompt=custom_fact_extraction_prompt,
             custom_update_memory_prompt=custom_update_memory_prompt,
@@ -77,13 +104,5 @@ class Mem0Settings(EnvironmentSettings):
                     "max_chunks_per_doc": None,
                 },
             ),
-            graph_store=GraphStoreConfig(
-                provider="neo4j",
-                config=Neo4jConfig(
-                    url=neo4j.URL,
-                    username=neo4j.USERNAME,
-                    password=neo4j.PASSWORD.get_secret_value(),
-                    base_label=False,
-                ),
-            ),
+            graph_store=graph_store,
         )

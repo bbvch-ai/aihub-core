@@ -3,6 +3,13 @@ display_event:
   name: Display Event
   description: An event that displays information to the user without affecting the
     workflow.
+conversation_title_event:
+  name: Conversation Title
+  description: The agent generated a title summarizing the topic of the conversation.
+follow_up_questions_event:
+  name: Follow-up Questions
+  description: The agent suggested follow-up questions the user might want to ask
+    next.
 aitl_exception_event:
   name: Error in Task Delegation
   description: Another agent to which a task was delegated reported an error and couldn't
@@ -53,6 +60,11 @@ guard_accept_event:
 guard_rejection_event:
   name: Request Rejected
   description: The request was rejected for security reasons or due to policy violations.
+meta_question_detected_event:
+  name: Meta Question Detected
+  description: The user asked about the assistant itself — its identity, capabilities,
+    or behaviour — so the assistant answers from its own configuration instead of
+    running its normal workflow.
 few_shot_guard_accept_event:
   name: Few-Shot Guard Accepted
   description: The request matches the patterns from few-shot examples and is allowed
@@ -201,6 +213,11 @@ rag_start_event:
   description: Retrieval-augmented generation has started. The agent is fetching relevant
     context from the selected knowledge sources — using the chosen namespaces and
     any additional metadata filters — before generating an answer.
+cron_start_event:
+  name: Scheduled Run Started
+  description: A scheduled run was started automatically by the cron scheduler at
+    its configured time. No user initiated it — the run executes as a system run without
+    an execution identity.
 rag_success_stop_event:
   name: RAG Success
   description: The retrieval-augmented run produced an answer for the user.
@@ -208,3 +225,21 @@ rag_failure_stop_event:
   name: RAG Failure
   description: The retrieval-augmented run failed to produce a useful answer. The
     reason field explains which path led to the failure.
+unread_mail_listed_event:
+  name: Unread Mail Listed
+  description: The agent listed the unread messages in the configured inbox folder.
+mail_fetched_event:
+  name: Mail Fetched
+  description: The agent fetched a message including its body and attachments.
+mail_moved_event:
+  name: Mail Moved
+  description: The agent moved a message from its source folder into a target folder.
+mail_batch_classified_event:
+  name: Batch Classified
+  description: The agent classified a batch of unread messages and filed each one
+    into the folder for its category, or into the fallback folder when it was not
+    confident.
+mail_batch_drafted_event:
+  name: Batch Drafted
+  description: The agent drafted replies for a batch of messages and appended them
+    to the drafts folder for a human to review and send.

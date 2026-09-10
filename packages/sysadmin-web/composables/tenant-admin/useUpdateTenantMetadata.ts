@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-Proprietary
 import { updateTenantMetadata as updateTenantMetadataApi, type UpdateTenantMetadataRequest } from '~/sdk/client'
 
 export const useUpdateTenantMetadata = defineMutation(() => {

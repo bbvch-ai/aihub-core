@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
     from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
+    from swiss_ai_hub.core.events.agent.control.start.cron_start_event import CronStartEvent
     from swiss_ai_hub.core.events.agent.control.start.rag_start_event import RAGStartEvent
     from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason import RAGFailureReason
@@ -41,10 +42,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
         AgentClassDiscoveryResponseEvent,
     )
-    from swiss_ai_hub.core.events.agent.discovery.agent_config_specs import AgentConfigSpecs
-    from swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity import AgentConfigSpecsEntity
     from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
+    from swiss_ai_hub.core.events.agent.display.conversation_title_event import ConversationTitleEvent
     from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
+    from swiss_ai_hub.core.events.agent.display.follow_up_questions_event import FollowUpQuestionsEvent
     from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_accept_event import AgentSuitabilityAcceptEvent
     from swiss_ai_hub.core.events.agent.guard.agent_suitability_reject_event import AgentSuitabilityRejectEvent
@@ -83,6 +84,16 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
         HumanInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.imap.drafted_reply_ref import DraftedReplyRef
+    from swiss_ai_hub.core.events.agent.imap.mail_attachment_ref import MailAttachmentRef
+    from swiss_ai_hub.core.events.agent.imap.mail_batch_classified_event import MailBatchClassifiedEvent
+    from swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event import MailBatchDraftedEvent
+    from swiss_ai_hub.core.events.agent.imap.mail_classification_ref import MailClassificationRef
+    from swiss_ai_hub.core.events.agent.imap.mail_fetched_event import MailFetchedEvent
+    from swiss_ai_hub.core.events.agent.imap.mail_message_ref import MailMessageRef
+    from swiss_ai_hub.core.events.agent.imap.mail_moved_event import MailMovedEvent
+    from swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event import UnreadMailListedEvent
+    from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
     from swiss_ai_hub.core.events.agent.memory.history.add_memory_to_chat_history_event import (
         AddMemoryToChatHistoryEvent,
     )
@@ -91,6 +102,12 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event import (
         AddUserMemoryToChatHistoryEvent,
+    )
+    from swiss_ai_hub.core.events.agent.memory.request.memory_storage_requested_event import (
+        MemoryStorageRequestedEvent,
+    )
+    from swiss_ai_hub.core.events.agent.memory.request.store_user_memory_requested_event import (
+        StoreUserMemoryRequestedEvent,
     )
     from swiss_ai_hub.core.events.agent.memory.retrieve.base_retrieve_memory_event import BaseRetrieveMemoryEvent
     from swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event import (
@@ -102,6 +119,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
     from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
     from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
+    from swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event import MetaQuestionDetectedEvent
+    from swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event import NotAMetaQuestionEvent
     from swiss_ai_hub.core.events.agent.semantic.agent.agent_event import AgentEvent
     from swiss_ai_hub.core.events.agent.semantic.chain.chain_event import ChainEvent
     from swiss_ai_hub.core.events.agent.semantic.embedding.embedding import Embedding
@@ -122,8 +141,6 @@ __all__ = [
     "AddOrganizationMemoryToChatHistoryEvent",
     "AddUserMemoryToChatHistoryEvent",
     "AgentClassDiscoveryResponseEvent",
-    "AgentConfigSpecs",
-    "AgentConfigSpecsEntity",
     "AgentEvent",
     "AgentInTheLoop",
     "AgentInTheLoopExceptionEvent",
@@ -144,7 +161,9 @@ __all__ = [
     "ContextSufficientAcceptEvent",
     "ControlAndDisplayEvent",
     "ControlEvent",
+    "ConversationTitleEvent",
     "CostEvent",
+    "CronStartEvent",
     "DisplayEvent",
     "Embedding",
     "EmbeddingEvent",
@@ -152,6 +171,7 @@ __all__ = [
     "ExpertRejectEvent",
     "FewShotAcceptEvent",
     "FewShotRejectEvent",
+    "FollowUpQuestionsEvent",
     "GuardAcceptEvent",
     "GuardEvent",
     "GuardRejectionEvent",
@@ -173,7 +193,17 @@ __all__ = [
     "LLMStopEvent",
     "LanguageEvent",
     "LimitChatHistoryEvent",
+    "DraftedReplyRef",
+    "MailAttachmentRef",
+    "MailBatchClassifiedEvent",
+    "MailBatchDraftedEvent",
+    "MailClassificationRef",
+    "MailFetchedEvent",
+    "MailMessageRef",
+    "MailMovedEvent",
     "Message",
+    "MetaQuestionDetectedEvent",
+    "NotAMetaQuestionEvent",
     "RAGFailureReason",
     "RAGFailureStopEvent",
     "RAGStartEvent",
@@ -194,10 +224,14 @@ __all__ = [
     "StopEvent",
     "StoreOrganizationMemoryEvent",
     "StoreUserMemoryEvent",
+    "StoreUserMemoryRequestedEvent",
+    "MemoryStorageRequestedEvent",
     "TeamsConfig",
     "TextContent",
     "ThoughtEvent",
     "ToolEvent",
+    "UnreadMailListedEvent",
+    "UnreadMailSummary",
     "UserMessageEvent",
     "UserUploadedFile",
 ]
@@ -207,8 +241,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "AddOrganizationMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_organization_memory_to_chat_history_event",
     "AddUserMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event",
     "AgentClassDiscoveryResponseEvent": "swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event",
-    "AgentConfigSpecs": "swiss_ai_hub.core.events.agent.discovery.agent_config_specs",
-    "AgentConfigSpecsEntity": "swiss_ai_hub.core.events.agent.discovery.agent_config_specs_entity",
     "AgentEvent": "swiss_ai_hub.core.events.agent.semantic.agent.agent_event",
     "AgentInTheLoop": "swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop",
     "AgentInTheLoopExceptionEvent": "swiss_ai_hub.core.events.agent.aitl.exception.agent_in_the_loop_exception_event",
@@ -225,11 +257,13 @@ _LAZY_IMPORTS: dict[str, str] = {
     "BotInTheLoopResponseEvent": "swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event",
     "ChainEvent": "swiss_ai_hub.core.events.agent.semantic.chain.chain_event",
     "ChunkEvent": "swiss_ai_hub.core.events.agent.display.chunk_event",
+    "ConversationTitleEvent": "swiss_ai_hub.core.events.agent.display.conversation_title_event",
     "ContextInsufficientRejectEvent": "swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event",
     "ContextSufficientAcceptEvent": "swiss_ai_hub.core.events.agent.guard.context_sufficient_accept_event",
     "ControlAndDisplayEvent": "swiss_ai_hub.core.events.agent.control_and_display_event",
     "ControlEvent": "swiss_ai_hub.core.events.agent.control.control_event",
     "CostEvent": "swiss_ai_hub.core.events.agent.cost.cost_event",
+    "CronStartEvent": "swiss_ai_hub.core.events.agent.control.start.cron_start_event",
     "DisplayEvent": "swiss_ai_hub.core.events.agent.display.display_event",
     "Embedding": "swiss_ai_hub.core.events.agent.semantic.embedding.embedding",
     "EmbeddingEvent": "swiss_ai_hub.core.events.agent.semantic.embedding.embedding_event",
@@ -237,6 +271,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ExpertRejectEvent": "swiss_ai_hub.core.events.agent.guard.expert_reject_event",
     "FewShotAcceptEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_accept_event",
     "FewShotRejectEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_reject_event",
+    "FollowUpQuestionsEvent": "swiss_ai_hub.core.events.agent.display.follow_up_questions_event",
     "GuardAcceptEvent": "swiss_ai_hub.core.events.agent.guard.guard_accept_event",
     "GuardEvent": "swiss_ai_hub.core.events.agent.semantic.guard.guard_event",
     "GuardRejectionEvent": "swiss_ai_hub.core.events.agent.guard.guard_rejection_event",
@@ -258,7 +293,17 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LLMStopEvent": "swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event",
     "LanguageEvent": "swiss_ai_hub.core.events.agent.common.language_event",
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
+    "DraftedReplyRef": "swiss_ai_hub.core.events.agent.imap.drafted_reply_ref",
+    "MailAttachmentRef": "swiss_ai_hub.core.events.agent.imap.mail_attachment_ref",
+    "MailBatchClassifiedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_classified_event",
+    "MailBatchDraftedEvent": "swiss_ai_hub.core.events.agent.imap.mail_batch_drafted_event",
+    "MailClassificationRef": "swiss_ai_hub.core.events.agent.imap.mail_classification_ref",
+    "MailFetchedEvent": "swiss_ai_hub.core.events.agent.imap.mail_fetched_event",
+    "MailMessageRef": "swiss_ai_hub.core.events.agent.imap.mail_message_ref",
+    "MailMovedEvent": "swiss_ai_hub.core.events.agent.imap.mail_moved_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
+    "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",
+    "NotAMetaQuestionEvent": "swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event",
     "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
     "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
@@ -279,10 +324,16 @@ _LAZY_IMPORTS: dict[str, str] = {
     "StopEvent": "swiss_ai_hub.core.events.agent.control.stop.stop_event",
     "StoreOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_organization_memory_event",
     "StoreUserMemoryEvent": "swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event",
+    "StoreUserMemoryRequestedEvent": (
+        "swiss_ai_hub.core.events.agent.memory.request.store_user_memory_requested_event"
+    ),
+    "MemoryStorageRequestedEvent": "swiss_ai_hub.core.events.agent.memory.request.memory_storage_requested_event",
     "TeamsConfig": "swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event",
     "TextContent": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "ThoughtEvent": "swiss_ai_hub.core.events.agent.display.thought_event",
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
+    "UnreadMailListedEvent": "swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event",
+    "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
 }

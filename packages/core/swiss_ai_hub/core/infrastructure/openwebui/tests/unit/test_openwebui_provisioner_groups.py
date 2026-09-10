@@ -310,3 +310,40 @@ class TestSyncGroupsOrchestration:
 
             mock_create.assert_not_called()
             mock_delete.assert_not_called()
+
+
+class TestSyncGroupsLocking:
+    @pytest.mark.asyncio
+    async def test_group_sync_uses_dedicated_blocking_lock(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.UserTenantRoleEntity"),
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.KeycloakAdminService") as mock_kc,
+            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
+            patch.object(provisioner._openwebui, "list_users", return_value=[]),
+        ):
+            mock_tenant.objects.return_value = []
+            mock_role.get_roles_for_tenant.return_value = []
+            mock_kc.get_all_users = AsyncMock(return_value=[])
+
+            await provisioner._sync_groups()
+
+        lock_keys = [call.args[0] for call in mock_redis.lock.call_args_list]
+        assert "openwebui:sync:groups" in lock_keys
+
+    @pytest.mark.asyncio
+    async def test_group_sync_skipped_when_lock_not_acquired(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        mock_redis.lock.return_value.acquire = AsyncMock(return_value=False)
+
+        with patch.object(provisioner._openwebui, "list_groups") as mock_list_groups:
+            await provisioner._sync_groups()
+
+        # No group reconciliation happens when the serialization lock is contended.
+        mock_list_groups.assert_not_called()

@@ -25,20 +25,26 @@ class LiteLLMService:
         if user.id in LiteLLMService._user_cache:
             return LiteLLMService._user_cache[user.id]
 
-        client = litellm_proxy.httpx_aclient
-        key_alias = f"{user.name} - Auto Generated Key"
+        api_key = LiteLLMService.generate_key_for_user(user)
 
+        client = litellm_proxy.httpx_aclient
+        if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
+            await LiteLLMService._generate_key(client, user, api_key)
+
+        LiteLLMService._user_cache[user.id] = api_key
+        return api_key
+
+    @staticmethod
+    async def _create_user_if_absent(
+        client: httpx.AsyncClient, litellm_proxy: LiteLLMProxySettings, user: UserIdentity
+    ) -> bool:
+        """Create the LiteLLM user when missing; return True only when a fresh key must still be generated."""
         user_response = await client.get("/user/info", params={"user_id": user.id})
 
-        # LiteLLM ≥ 1.83 returns 404 when the user doesn't exist; 1.80 returned 200 with empty fields.
-        if user_response.status_code == 404:
-            user_exists = False
-        else:
+        # LiteLLM ≥ 1.83 returns 404 only when the user is absent; any 2xx means the user (and its key) exist.
+        if user_response.status_code != 404:
             user_response.raise_for_status()
-            user_exists = user_response.json().get("user_info", {}).get("user_alias")
-
-        if user_exists:
-            return LiteLLMService.generate_key_for_user(user)
+            return False
 
         new_user_response = await client.post(
             "/user/new",
@@ -58,38 +64,40 @@ class LiteLLMService:
                 "send_invite_email": False,
             },
         )
-        new_user_response.raise_for_status()
 
-        generated_key = await client.post(
+        # A concurrent first-login request can create the user between the GET and the POST, yielding 409.
+        # The concurrent request may not have generated the key yet, so still attempt key generation below.
+        if new_user_response.status_code != 409:
+            new_user_response.raise_for_status()
+        return True
+
+    @staticmethod
+    async def _generate_key(client: httpx.AsyncClient, user: UserIdentity, api_key: str) -> None:
+        key_response = await client.post(
             "/key/generate",
-            json={"key_alias": key_alias, "user_id": user.id, "key": LiteLLMService.generate_key_for_user(user)},
+            json={"key_alias": f"{user.name} - Auto Generated Key", "user_id": user.id, "key": api_key},
         )
-        generated_key.raise_for_status()
-        data = generated_key.json()
-        key = data["key"]
-        LiteLLMService._user_cache[user.id] = key
-        return key
+        # A concurrent provisioner may have already created this deterministic key; 409 means it exists already.
+        if key_response.status_code != 409:
+            key_response.raise_for_status()
 
     @staticmethod
-    async def httpx_client_for_user(user: UserIdentity) -> httpx.Client:
-        api_key = await LiteLLMService.api_key_for_user(user)
-        return httpx.Client(
-            headers={"Authorization": f"Bearer {api_key}"},
-            base_url=LiteLLMProxySettings().BASE_URL,
-        )
+    async def authorization_header_for_user(user: UserIdentity) -> dict[str, str]:
+        """
+        Pass this per request on the shared `LiteLLMProxySettings.httpx_aclient` rather than minting a client
+        per user: httpx merges request headers over the client's, so the user's key wins over the master key.
 
-    @staticmethod
-    async def httpx_aclient_for_user(user: UserIdentity) -> httpx.AsyncClient:
-        api_key = await LiteLLMService.api_key_for_user(user)
-        return httpx.AsyncClient(
-            headers={"Authorization": f"Bearer {api_key}"},
-            base_url=LiteLLMProxySettings().BASE_URL,
-        )
+        A per-user client would only differ by this header while owning a connection pool nothing bounds or
+        evicts, growing with the user count for the process lifetime.
+        """
+        return {"Authorization": f"Bearer {await LiteLLMService.api_key_for_user(user)}"}
 
     @staticmethod
     async def openai_aclient_for_user(user: UserIdentity) -> openai.AsyncClient:
-        api_key = await LiteLLMService.api_key_for_user(user)
-        return openai.AsyncClient(
-            api_key=api_key,
-            base_url=LiteLLMProxySettings().BASE_URL,
-        )
+        """
+        Scoped to the user's key, and callers must not close it — see `LiteLLMProxySettings.httpx_client`.
+
+        `with_options` copies the shared client while reusing its underlying httpx client, so per-user
+        authentication costs an object rather than a connection pool.
+        """
+        return LiteLLMProxySettings().openai_aclient.with_options(api_key=await LiteLLMService.api_key_for_user(user))

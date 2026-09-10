@@ -62,19 +62,23 @@ def mock_tenant_entity():
     def mock_get_user_ids_in_tenant(tenant_id):
         return [TEST_USER_OID]
 
-    async def mock_resolve_active_tenant(*_args, **_kwargs):
+    # The five mocks below patch real `async def` methods. The signature must
+    # remain async so call sites that do `await KeycloakAdminService.tenant_exists(...)`,
+    # `await AuthHandler._resolve_active_tenant(...)`, etc. receive an awaitable.
+    # Returning canned values requires no real await.
+    async def mock_resolve_active_tenant(*_args, **_kwargs):  # noqa: S7503
         return mock_tenant
 
-    async def mock_tenant_exists(tenant_id):
+    async def mock_tenant_exists(tenant_id):  # noqa: S7503
         return True
 
-    async def mock_filter_existing_tenant_ids(tenant_ids):
+    async def mock_filter_existing_tenant_ids(tenant_ids):  # noqa: S7503
         return set(tenant_ids)
 
-    async def mock_get_user_tenant_ids(user_id):
+    async def mock_get_user_tenant_ids(user_id):  # noqa: S7503
         return {TEST_TENANT_ID}
 
-    async def mock_is_user_member_of_tenant(user_id, tenant_id):
+    async def mock_is_user_member_of_tenant(user_id, tenant_id):  # noqa: S7503
         return True
 
     with (

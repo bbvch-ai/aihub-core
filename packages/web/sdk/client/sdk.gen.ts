@@ -11,6 +11,7 @@ import { client } from "./client.gen";
 import {
   createDatasetResponseTransformer,
   createTokenEndpointResponseTransformer,
+  getAccessCapabilitiesResponseTransformer,
   getAgentEventTimeseriesResponseTransformer,
   getDatasetResponseTransformer,
   getDatasetsResponseTransformer,
@@ -30,12 +31,18 @@ import type {
   AssignRoleData,
   AssignRoleError,
   AssignRoleResponse,
+  BatchDeleteDocumentsData,
+  BatchDeleteDocumentsError,
+  BatchDeleteDocumentsResponse2,
   ChatCompletionWithAssistantsData,
   ChatCompletionWithAssistantsError,
   ChatCompletionWithAssistantsResponse,
   CreateAgentInstanceData,
   CreateAgentInstanceError,
   CreateAgentInstanceResponse,
+  CreateDatabaseData,
+  CreateDatabaseError,
+  CreateDatabaseResponse,
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
@@ -66,6 +73,12 @@ import type {
   DeleteAllOrganizationMemoriesResponse,
   DeleteAllUserMemoriesData,
   DeleteAllUserMemoriesResponse,
+  DeleteDatabaseData,
+  DeleteDatabaseError,
+  DeleteDocumentData,
+  DeleteDocumentError,
+  DeleteNamespaceData,
+  DeleteNamespaceError,
   DeleteOrganizationMemoryData,
   DeleteOrganizationMemoryError,
   DeleteOrganizationMemoryResponse,
@@ -81,6 +94,11 @@ import type {
   GenerateImageData,
   GenerateImageError,
   GenerateImageResponse,
+  GetAccessCapabilitiesData,
+  GetAccessCapabilitiesError,
+  GetAccessCapabilitiesResponse,
+  GetAccessPresetsData,
+  GetAccessPresetsResponse,
   GetAgentClassData,
   GetAgentClassError,
   GetAgentClassesData,
@@ -121,6 +139,8 @@ import type {
   GetDatasetResponse,
   GetDatasetsData,
   GetDatasetsResponse,
+  GetDefaultTenantRulesData,
+  GetDefaultTenantRulesResponse,
   GetDocumentByIdData,
   GetDocumentByIdError,
   GetDocumentByIdResponse,
@@ -138,6 +158,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIngestorsData,
+  GetIngestorsResponse,
   GetLitellmModelData,
   GetLitellmModelError,
   GetLitellmModelResponse,
@@ -146,6 +168,12 @@ import type {
   GetLitellmModelsByModeResponse,
   GetLitellmModelsData,
   GetLitellmModelsResponse,
+  GetLlmSpendByTenantData,
+  GetLlmSpendByTenantError,
+  GetLlmSpendByTenantResponse,
+  GetLlmSpendByUserData,
+  GetLlmSpendByUserError,
+  GetLlmSpendByUserResponse,
   GetLocaleData,
   GetLocaleResponse,
   GetModelsData,
@@ -245,6 +273,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveThreadForDisplayData,
+  ResolveThreadForDisplayError,
+  ResolveThreadForDisplayResponse,
   RevokeRoleData,
   RevokeRoleError,
   RevokeRoleResponse,
@@ -793,6 +824,38 @@ export const getAgentEventsInThread = <
   });
 
 /**
+ * Resolve Thread For Display
+ *
+ * Resolves the thread that owns a display so the chat-UI side panel can open the correct per-agent thread
+ * without recomputing the salted thread_id.
+ */
+export const resolveThreadForDisplay = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveThreadForDisplayResponse =
+    ResolveThreadForDisplayResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveThreadForDisplayData,
+    ResolveThreadForDisplayResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    ResolveThreadForDisplayResponse | DefaultT,
+    ResolveThreadForDisplayError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/agents/displays/{display_id}/thread",
+    ...options,
+  });
+
+/**
  * Get Agent Event Timeseries
  *
  * Retrieves time-based statistics.
@@ -826,6 +889,72 @@ export const getAgentEventTimeseries = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/events/agents/timeseries/{time_range}",
+    ...options,
+  });
+
+/**
+ * Get Llm Spend By User
+ *
+ * LLM spend per user, from the platform's own cost events.
+ *
+ * Scoped to the caller's acting tenant: spend reveals who used which agents and how much,
+ * so a tenant admin must not see other tenants' users. Only a sysadmin, who acts outside
+ * any single tenant, sees the whole platform.
+ */
+export const getLlmSpendByUser = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetLlmSpendByUserResponse = GetLlmSpendByUserResponse,
+>(
+  options: Options<
+    TComposable,
+    GetLlmSpendByUserData,
+    GetLlmSpendByUserResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetLlmSpendByUserResponse | DefaultT,
+    GetLlmSpendByUserError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/spend/users",
+    ...options,
+  });
+
+/**
+ * Get Llm Spend By Tenant
+ *
+ * LLM spend per tenant across the whole platform.
+ *
+ * Sysadmin-only: a cross-tenant total is exactly the view a single tenant must not have.
+ */
+export const getLlmSpendByTenant = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetLlmSpendByTenantResponse = GetLlmSpendByTenantResponse,
+>(
+  options: Options<
+    TComposable,
+    GetLlmSpendByTenantData,
+    GetLlmSpendByTenantResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetLlmSpendByTenantResponse | DefaultT,
+    GetLlmSpendByTenantError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/events/spend/tenants",
     ...options,
   });
 
@@ -1176,7 +1305,7 @@ export const getOpenChatHitl = <
 /**
  * Get Agent Classes
  *
- * Retrieve all available agent classes.
+ * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
 export const getAgentClasses = <
@@ -1429,6 +1558,7 @@ export const getAgentInstanceThreads = <
  *
  * Retrieve a list of all agent instances across all classes.
  * Use `?online=true` for online instances only, `?online=false` for offline only.
+ * Use `?search={agentName}` to search an agent with its name.
  */
 export const getAllAgentInstances = <
   TComposable extends Composable = "$fetch",
@@ -2167,6 +2297,103 @@ export const createRole = <
   });
 
 /**
+ * Evaluate Access Capabilities
+ *
+ * Returns the catalog of concrete capabilities (per service, agent and process), each with its exact access rule and whether the supplied draft rules grant it.
+ */
+export const getAccessCapabilities = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessCapabilitiesResponse =
+    GetAccessCapabilitiesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessCapabilitiesData,
+    GetAccessCapabilitiesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    GetAccessCapabilitiesResponse | DefaultT,
+    GetAccessCapabilitiesError,
+    DefaultT
+  >({
+    responseTransformer: getAccessCapabilitiesResponseTransformer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/capabilities",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Access Presets
+ *
+ * Returns a curated, described library of common access rules for one-click authoring.
+ */
+export const getAccessPresets = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAccessPresetsResponse = GetAccessPresetsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAccessPresetsData,
+    GetAccessPresetsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAccessPresetsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/presets",
+    ...options,
+  });
+
+/**
+ * Derive Default Tenant Access Rules
+ *
+ * Returns the access ceiling a newly created tenant should start with, derived from the models this instance actually serves minus the configured exclusions.
+ */
+export const getDefaultTenantRules = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetDefaultTenantRulesResponse =
+    GetDefaultTenantRulesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetDefaultTenantRulesData,
+    GetDefaultTenantRulesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetDefaultTenantRulesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/default-tenant-rules",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -2512,6 +2739,122 @@ export const updateDataset = <
   });
 
 /**
+ * Get selectable ingestion pipelines
+ *
+ * Returns the ingestion pipelines that can be assigned to a new knowledge database.
+ */
+export const getIngestors = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIngestorsResponse = GetIngestorsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIngestorsData,
+    GetIngestorsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIngestorsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/ingestors",
+    ...options,
+  });
+
+/**
+ * Delete a knowledge database
+ *
+ * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
+ * database and S3 bucket — via the pipeline's Dagster teardown job. Returns immediately with 202.
+ */
+export const deleteDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteDatabaseData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+  });
+
+/**
+ * Create Database
+ *
+ * Creates a new self-service knowledge database (bucket) ingested by the document ingestion pipeline.
+ */
+export const createDatabase = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateDatabaseResponse = CreateDatabaseResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateDatabaseData,
+    CreateDatabaseResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateDatabaseResponse | DefaultT,
+    CreateDatabaseError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete a namespace
+ *
+ * Schedules asynchronous teardown of one namespace — its S3 folder, doc-store rows and Milvus
+ * vectors (deleted by metadata filter, never a partition drop). Returns immediately with 202.
+ */
+export const deleteNamespace = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteNamespaceData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteNamespaceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}",
+    ...options,
+  });
+
+/**
  * Create Namespace
  *
  * Creates a new namespace (folder) in the specified database.
@@ -2611,6 +2954,41 @@ export const getDatabases = <
   });
 
 /**
+ * Delete multiple documents
+ *
+ * Best-effort scheduling of multiple document deletions with a per-document result.
+ */
+export const batchDeleteDocuments = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends BatchDeleteDocumentsResponse2 =
+    BatchDeleteDocumentsResponse2,
+>(
+  options: Options<
+    TComposable,
+    BatchDeleteDocumentsData,
+    BatchDeleteDocumentsResponse2,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    BatchDeleteDocumentsResponse2 | DefaultT,
+    BatchDeleteDocumentsError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Get Documents For Namespace
  *
  * Returns paginated documents for a specific namespace within a database.
@@ -2640,6 +3018,32 @@ export const getDocumentsForNamespace = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents",
+    ...options,
+  });
+
+/**
+ * Delete document
+ *
+ * Deletes the document's source file from the data lake and schedules cleanup of the
+ * doc store and vector store via the pipeline's reconciliation.
+ */
+export const deleteDocument = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, DeleteDocumentData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    unknown | DefaultT,
+    DeleteDocumentError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}",
     ...options,
   });
 
@@ -2846,7 +3250,7 @@ export const getSupportedFileTypes = <
 /**
  * Get signed document URL
  *
- * Generates a presigned URL for downloading a document's source file.
+ * Generates a presigned URL for a document's source file (inline preview, or attachment download).
  */
 export const getDocumentUrl = <
   TComposable extends Composable = "$fetch",

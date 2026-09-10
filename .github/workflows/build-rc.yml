@@ -1,0 +1,149 @@
+---
+# =============================================================================
+# Build Release Candidate
+# =============================================================================
+# On every push to a release/* branch (after the freeze: reverts of dropped
+# tickets and bug fixes), build a release candidate and put it on staging:
+#   1. rc-tag   - compute the next rc number for this line (rc.1, rc.2, ...),
+#                 cut the immutable tag vX.Y.Z-rc.N, move the rolling `staging`
+#                 pointer to it, and work out the changelog base ref.
+#   2. fan-out  - dispatch the per-image build-*.yml at the rc tag, tagging
+#                 images vX.Y.Z-rc.N and the rolling :staging.
+#   3. publish  - create-release.yml (channel=staging): refresh the rolling
+#                 `staging` bundle the QC VM fetches AND publish the immutable,
+#                 preserved per-rc release "Swiss AI Hub vX.Y.Z-rc.N" + rc notes.
+#
+# There is no approval gate: pushing to a release branch deploys the candidate
+# to the QC staging VM directly. QC's sign-off is the gate for promote (flow 4).
+# The rc changelog is a PER-BUILD DELTA (since the previous rc, or the last
+# stable for rc.1), not cumulative.
+# =============================================================================
+name: Build Release Candidate
+on:
+  push:
+    branches: [release/**]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  # Serialise rc tagging per release line so two quick pushes to the SAME branch
+  # cannot race the rc counter or the rolling `staging` pointer. Keyed on the ref
+  # on purpose: two lines run in parallel (release/0.317 and release/0.318) each
+  # count their own rc tags independently, which is the intended behaviour.
+  group: build-rc-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  rc-tag:
+    name: Tag rc & move staging pointer
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    # Serialise the `staging` git-pointer move across workflows: build-rc and
+    # promote-to-staging both force-push refs/tags/staging, so they share this
+    # job-level group to avoid clobbering each other mid-flight.
+    concurrency:
+      group: staging-pointer
+      cancel-in-progress: false
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      notes_from: ${{ steps.notes.outputs.notes_from }}
+    steps:
+      # Deploy key: pushing tags can touch workflow files, which GITHUB_TOKEN
+      # may not push. Same key as add-tag.yml / set-latest.yml. fetch-depth 0
+      # for tag discovery + changelog range.
+      - name: Checkout release branch (full history)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
+      - name: Guard - release branch matches the pyproject version line
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
+          line="${core%.*}"
+          expected="release/${line}"
+          if [ "$BRANCH" != "$expected" ]; then
+            echo "::error::Release branch '$BRANCH' does not match pyproject version '$core' (expected '$expected')."
+            exit 1
+          fi
+          echo "Branch '$BRANCH' matches pyproject '$core'."
+      - name: Compute rc version
+        id: compute
+        uses: ./.github/actions/compute-version
+        with:
+          channel: rc
+      - name: Create immutable rc tag and move the staging pointer
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TARGET="$(git rev-parse HEAD)"
+          if git rev-parse "$VERSION" >/dev/null 2>&1 \
+            || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "::notice::Tag $VERSION already exists; not recreating."
+          else
+            git tag -a "$VERSION" -m "Release $VERSION" "$TARGET"
+            git push origin "refs/tags/$VERSION"
+          fi
+          # Rolling pointer: newest rc. Annotated so its message carries the
+          # full version for the deploy to parse.
+          git tag -f -a staging "$TARGET" -m "Release $VERSION"
+          git push origin refs/tags/staging --force
+          echo "Tagged $TARGET as $VERSION and moved 'staging'."
+      - name: Determine changelog base ref (per-build delta)
+        id: notes
+        env:
+          CORE: ${{ steps.compute.outputs.core }}
+          RCNUM: ${{ steps.compute.outputs.build }}
+        run: |
+          set -euo pipefail
+          if [ "$RCNUM" -gt 1 ]; then
+            notes_from="${CORE}-rc.$((RCNUM - 1))"
+          else
+            # rc.1: base at the previous stable release (cumulative-to-first-rc).
+            notes_from="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)"
+          fi
+          echo "notes_from=$notes_from" >> "$GITHUB_OUTPUT"
+          echo "rc changelog base: ${notes_from:-<none>}"
+  fan-out:
+    name: Dispatch image builds at the rc tag
+    needs: rc-tag
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Dispatch build workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.rc-tag.outputs.version }}
+        run: |-
+          set -euo pipefail
+          BUILDS=(
+            build-agents.yml
+            build-pipelines.yml
+            build-api-and-bot.yml
+            build-dagster.yml
+            build-web.yml
+            build-backup.yml
+            build-sysadmin.yml
+          )
+          for wf in "${BUILDS[@]}"; do
+            echo "Dispatching $wf @ $VERSION"
+            gh workflow run "$wf" --ref "$VERSION" \
+              -f release_version="$VERSION" -f secondary_tag=staging
+          done
+  publish-rc-bundle:
+    name: Publish rc release + refresh rolling staging
+    needs: rc-tag
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.rc-tag.outputs.version }}
+      channel: staging
+      notes_from: ${{ needs.rc-tag.outputs.notes_from }}
+    secrets: inherit

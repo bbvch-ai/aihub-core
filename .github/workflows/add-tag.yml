@@ -1,418 +1,117 @@
 ---
-name: Auto Tag, Gen-Changelog & Release
+# =============================================================================
+# Nightly Tag & Build
+# =============================================================================
+# On every push to main (each merged PR), cut an immutable nightly tag and move
+# the rolling `nightly` pointer, dispatch the image builds and docs, and refresh
+# the single rolling `nightly` prerelease (the bundle the nightly VM fetches via
+# aihub-playbook roles/aihub_application/tasks/fetch.yml).
+# Lightweight trunk path: no version bump, no changelog, no versioned Release,
+# no npm/PyPI. create-release runs here in `nightly` (rolling) mode only.
+#
+# Triggered on `push` (not `pull_request`) on purpose: push events run the
+# workflow file from the pushed commit, so merging THIS change activates the new
+# scheme on that very merge. pull_request events run the base branch's (old)
+# copy, which would let the old workflow handle its own replacement.
+#
+# Version: v<core>-nightly.<git-height>, where <core> is the clean semver in
+# pyproject.toml and <git-height> is the commit count on main.
+# =============================================================================
+name: Nightly Tag & Build
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
 permissions:
   contents: write
   actions: read
+concurrency:
+  # Serialise nightly tagging: two near-simultaneous merges must not race on the
+  # rolling `nightly` pointer (force-push race) or move it backwards.
+  group: nightly-tag
+  cancel-in-progress: false
 jobs:
-  compute-and-initial-tag:
-    name: Compute Version & Initial Tag
-    if: github.event.pull_request.merged == true || github.event_name == 'push'
+  nightly-tag:
+    name: Tag nightly & move pointer
     runs-on: ubuntu-slim
     timeout-minutes: 10
     outputs:
-      version: ${{ steps.create-tag.outputs.version }}
+      version: ${{ steps.compute.outputs.version }}
+      created: ${{ steps.tag.outputs.created }}
     steps:
-      - name: Checkout the repository
+      # Deploy key (not GITHUB_TOKEN): pushing any tag whose target commit
+      # differs in .github/workflows/** content requires the `workflow` scope,
+      # which GITHUB_TOKEN cannot hold. That covers both the immutable per-merge
+      # tag and the moving `nightly` pointer, so both use
+      # RELEASE_FINALIZE_DEPLOY_KEY (same key as set-latest.yml). fetch-depth 0
+      # is required for git-height.
+      - name: Checkout main (full history)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          fetch-depth: 0  # Important: fetch all history for git diff to work
-      - name: Create new version number & tag
-        id: create-tag
-        env:
-          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
-        run: |
-          # List all tags that match the pattern 'v*' and check if the list is empty
-          tags=$(git tag -l "v*")
-          if [ -z "$tags" ]; then
-            echo "No version tags found, starting with v0.0.0"
-            latest_tag="v0.0.0"
-          else
-            # Get the latest tag matching 'v*'
-            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
-          fi
-          echo "Latest tag: $latest_tag"
-
-          # Remove the 'v' prefix for version manipulation
-          version_number=${latest_tag#"v"}
-
-          # Split into components
-          major=$(echo "$version_number" | cut -d. -f1)
-          minor=$(echo "$version_number" | cut -d. -f2)
-          patch=$(echo "$version_number" | cut -d. -f3)
-
-          # Check PR labels to determine version bump type
-          # Default to patch if no label is found
-          bump_type="patch"
-          echo "PR Labels: $PR_LABELS"
-
-          # Check for version bump labels
-          if echo "$PR_LABELS" | grep -q '"major"'; then
-            bump_type="major"
-            echo "Found 'major' label - will bump major version"
-          elif echo "$PR_LABELS" | grep -q '"minor"'; then
-            bump_type="minor"
-            echo "Found 'minor' label - will bump minor version"
-          elif echo "$PR_LABELS" | grep -q '"patch"'; then
-            bump_type="patch"
-            echo "Found 'patch' label - will bump patch version"
-          else
-            echo "No version label found - defaulting to patch bump"
-          fi
-
-          # Perform the version bump based on the determined type
-          case $bump_type in
-            major)
-              new_major=$((major + 1))
-              new_minor=0
-              new_patch=0
-              ;;
-            minor)
-              new_major=$major
-              new_minor=$((minor + 1))
-              new_patch=0
-              ;;
-            patch)
-              new_major=$major
-              new_minor=$minor
-              new_patch=$((patch + 1))
-              ;;
-          esac
-          new_tag="v$new_major.$new_minor.$new_patch"
-          echo "New tag: $new_tag (bump type: $bump_type)"
-
-          # Expose it to subsequent steps via outputs (not just GITHUB_ENV).
-          echo "version=$new_tag" >> $GITHUB_OUTPUT
-      - name: Tag the commit and push the tag
-        env:
-          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-        run: |
-          set -euo pipefail
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          TAG_NAME="${{ steps.create-tag.outputs.version }}"
-          TAG_MESSAGE="Initial Tag for: $TAG_NAME"
-
-          # Check if tag already exists (locally or remotely)
-          if git rev-parse "$TAG_NAME" >/dev/null 2>&1 || git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
-            echo "Error: Tag $TAG_NAME already exists. Aborting."
-            exit 1
-          fi
-
-          # Create annotated tag
-          TARGET_SHA="$MERGE_COMMIT_SHA"
-          if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
-            # For squash/rebase merges, use the base branch tip after merge
-            git fetch origin main
-            TARGET_SHA="$(git rev-parse origin/main)"
-          fi
-          git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" "$TARGET_SHA"
-
-          # Verify tag exists locally
-          if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            echo "Error: Failed to create tag $TAG_NAME."
-            exit 1
-          fi
-
-          # Push the tag
-          echo "Pushing tag $TAG_NAME..."
-          git push origin "$TAG_NAME"
-
-          # Verify the tag was pushed successfully
-          echo "Verifying tag was pushed..."
-          git fetch origin --tags
-          if git tag -l "$TAG_NAME" | grep -q "^$TAG_NAME$"; then
-            echo "Success: Tag $TAG_NAME confirmed on remote."
-
-            # Show it's now the latest tag (consistent with your tag discovery logic)
-            latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
-            echo "Latest tag is now: $latest_tag"
-          else
-            echo "Error: Tag $TAG_NAME not found after push."
-            echo ""
-            echo "Available tags (last 10):"
-            git tag -l "v*" | sort -V | tail -10
-            echo ""
-            echo "Expected: $TAG_NAME"
-            exit 1
-          fi
-  changelog:
-    name: Generate Changelog
-    needs: [compute-and-initial-tag]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 30
-    continue-on-error: true
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          fetch-depth: 0
-      - name: Use Python 3.13
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-        with:
-          python-version: '3.13'
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
-        with:
-          enable-cache: true
-      - name: Install Dependencies
-        run: uv sync --all-packages --dev --frozen
-      - name: Setup LLM for Changelog Generation
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "Installing llm and llm-gemini plugin..."
-          uv tool install llm --with llm-gemini
-          echo "Setting Gemini API key..."
-          llm keys set gemini --value "$GEMINI_API_KEY"
-          echo "Ensuring changelog script is executable..."
-          chmod +x ./generate-changelog.sh
-      - name: Generate Changelog
-        id: changelog_generator
-        run: make changelog
-      - name: Upload changelog artifact
-        if: ${{ hashFiles('CHANGELOG.md') != '' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: changelog
-          path: CHANGELOG.md
-  license-report:
-    name: Generate License Report
-    needs: [compute-and-initial-tag]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 20
-    continue-on-error: true
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          fetch-depth: 0
-      - name: Use Python 3.13
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-        with:
-          python-version: '3.13'
-      - name: Install additional dependencies for license check
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-      - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
-        with:
-          node-version: 25.x
-      - name: Install pnpm via corepack
-        run: |
-          npm install -g --ignore-scripts corepack@0.34.7
-          corepack enable pnpm
-          corepack install
-        working-directory: packages/web
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
-        with:
-          enable-cache: true
-      - name: Install Dependencies
-        run: uv sync --all-packages --dev --frozen
-      - name: Update License Report
-        id: license_generator
-        run: |
-          chmod +x ./generate-license.sh
-          make license-check
-      - name: Upload license artifact
-        if: ${{ hashFiles('LICENSE_REPORT.md') != '' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: licenses
-          path: LICENSE_REPORT.md
-  env-docs:
-    name: Generate Environment Variables Reference
-    needs: [compute-and-initial-tag]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
-    continue-on-error: true
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          fetch-depth: 0
-      - name: Use Python 3.13
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-        with:
-          python-version: '3.13'
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
-        with:
-          enable-cache: true
-      - name: Install Dependencies
-        run: uv sync --all-packages --dev --frozen
-      - name: Generate compose files
-        run: make generate-compose
-      - name: Generate environment-variables reference page
-        run: make generate-env-docs
-      - name: Upload env-docs artifact
-        if: ${{ hashFiles('docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md') != '' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: env-docs
-          path: docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md
-  sync-docs:
-    name: Sync Documentation Translations
-    needs: [compute-and-initial-tag]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 60
-    continue-on-error: true
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          fetch-depth: 0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093  # v6.0.8
-        with:
-          package_json_file: docs/package.json
-      - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
-        with:
-          node-version: '25'
-          cache: pnpm
-          cache-dependency-path: docs/pnpm-lock.yaml
-      - name: Install dependencies
-        working-directory: ./docs
-        run: pnpm install
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
-        with:
-          enable-cache: true
-      - name: Setup LLM for translation
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "Installing llm and llm-gemini plugin..."
-          uv tool install llm --with llm-gemini
-          echo "Setting Gemini API key..."
-          llm keys set gemini --value "$GEMINI_API_KEY"
-      - name: Sync documentation
-        working-directory: ./docs
-        run: pnpm run docs:sync
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: docs
-          path: docs/
-  finalize-release:
-    name: Commit Artifacts & Finalize Tag
-    needs:
-      - compute-and-initial-tag
-      - changelog
-      - license-report
-      - env-docs
-      - sync-docs
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
-    steps:
-      # Authenticate via a deploy key (not the default GITHUB_TOKEN) because this
-      # job amends the merge commit and force-pushes it to `main`. The `main`
-      # branch is protected (PR-only, required status checks, no force-push), and
-      # GITHUB_TOKEN cannot bypass those rules. The deploy key stored in
-      # RELEASE_FINALIZE_DEPLOY_KEY is registered with bypass permissions, so
-      # pushes from this step are accepted.
-      - name: Checkout the repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
+          ref: main
           fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
-      - name: Download changelog (if any)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+      - name: Compute nightly version
+        id: compute
+        uses: ./.github/actions/compute-version
         with:
-          name: changelog
-          path: .
-        continue-on-error: true
-      - name: Download licenses (if any)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
-        with:
-          name: licenses
-          path: .
-        continue-on-error: true
-      - name: Download env-docs (if any)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
-        with:
-          name: env-docs
-          path: docs/docs/2_platform/3_deployment_guide/9_environment_variables/
-        continue-on-error: true
-      - name: Download docs (if any)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
-        with:
-          name: docs
-          path: docs/
-        continue-on-error: true
-      - name: Set up Python 3.13
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-        with:
-          python-version: '3.13'
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
-        with:
-          enable-cache: true
-      - name: Increment version in project files
+          channel: nightly
+      - name: Create nightly tag and move the nightly pointer
+        id: tag
         env:
-          VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
+          VERSION: ${{ steps.compute.outputs.version }}
         run: |
-          PEP_VERSION="${VERSION#v}"
-          make version-bump VERSION="$PEP_VERSION"
-      - name: Generate and lint Docker Compose files
-        run: |
-          make generate-compose
-          make format-yaml
-      - name: Commit Changelog, License Report, Version Update and Finalize Tag
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          TARGET="$(git rev-parse HEAD)"
 
-          # Detect changes (only if files exist and differ)
-          changed=false
-          if [ -f CHANGELOG.md ]; then
-            if [ -n "$(git status --porcelain CHANGELOG.md)" ]; then
-              git add CHANGELOG.md
-              changed=true
-              echo "Changelog updated."
-            fi
+          # Immutable per-merge tag. The annotated message embeds the full
+          # version so the Ansible deploy can resolve it from the tag object
+          # (see roles/aihub_application/tasks/fetch.yml in aihub-playbook).
+          if git rev-parse "$VERSION" >/dev/null 2>&1 \
+            || git ls-remote --tags origin | grep -q "refs/tags/$VERSION$"; then
+            echo "::notice::Tag $VERSION already exists; not recreating or dispatching."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            git tag -a "$VERSION" -m "Release $VERSION" "$TARGET"
+            git push origin "refs/tags/$VERSION"
+            echo "created=true" >> "$GITHUB_OUTPUT"
           fi
-          if [ -f LICENSE_REPORT.md ]; then
-            if [ -n "$(git status --porcelain LICENSE_REPORT.md)" ]; then
-              git add LICENSE_REPORT.md
-              changed=true
-              echo "License report updated."
-            fi
-          fi
-          if [ -n "$(git status --porcelain docs/)" ]; then
-            git add docs/
-            changed=true
-            echo "Documentation translations updated."
-          fi
-          git add -A
-          git commit --amend --no-edit || echo "No file changes to commit."
-          git push origin HEAD:"$BASE_REF" --force-with-lease
-          echo "Creating final tag $VERSION and pushing..."
-          git tag -a -f "${VERSION}" -m "Release ${VERSION}"
-          git push origin "refs/tags/${VERSION}" --force
-          echo "Setting 'nightly' tag to same commit as $VERSION..."
-          git tag -f nightly "${VERSION}"
+
+          # Rolling pointer: newest nightly. Annotated so its message carries
+          # the full version for the deploy to parse.
+          git tag -f -a nightly "$TARGET" -m "Release $VERSION"
           git push origin refs/tags/nightly --force
+          echo "Tagged $TARGET as $VERSION and moved 'nightly'."
   notify-release:
-    name: Notify Release Dispatch
-    needs: [finalize-release, compute-and-initial-tag]
+    name: Dispatch build & bundle
+    needs: nightly-tag
+    # Skip when the tag already existed (e.g. a workflow re-run): the images for
+    # this nightly tag were already built and dispatched.
+    if: needs.nightly-tag.outputs.created == 'true'
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - name: Dispatch release-ready
+      # `release-ready` is still a live event: every build-*.yml
+      # (repository_dispatch: [release-ready]) builds the nightly images with
+      # secondary_tag=nightly, and deploy-docs.yml publishes the docs. Only
+      # create-release.yml stopped listening (it is now workflow_call only).
+      # The rolling nightly bundle is handled by the publish-nightly-bundle job.
+      - name: Dispatch release-ready (nightly image builds + docs)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
+          VERSION: ${{ needs.nightly-tag.outputs.version }}
         run: |-
-          gh api repos/${{ github.repository }}/dispatches \
+          gh api "repos/${{ github.repository }}/dispatches" \
             -F event_type=release-ready \
-            -F client_payload[release_version]=$VERSION
+            -F "client_payload[release_version]=$VERSION"
+  publish-nightly-bundle:
+    name: Refresh rolling nightly prerelease
+    needs: nightly-tag
+    # Skip when the tag already existed (re-run): the pointer/bundle are current.
+    if: needs.nightly-tag.outputs.created == 'true'
+    uses: ./.github/workflows/create-release.yml
+    with:
+      release_version: ${{ needs.nightly-tag.outputs.version }}
+      channel: nightly
+    secrets: inherit

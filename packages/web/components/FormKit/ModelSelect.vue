@@ -4,6 +4,7 @@
     :options="models"
     option-label="model_name"
     option-value="model_name"
+    :aria-label="placeholder ?? t('common.selectModel')"
     :placeholder="placeholder ?? t('common.selectModel')"
     :filter="filter"
     :show-clear="showClear"

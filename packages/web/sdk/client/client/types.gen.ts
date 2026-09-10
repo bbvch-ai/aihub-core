@@ -33,14 +33,12 @@ export type QuerySerializer = (
 
 type WithRefs<TData> = {
   [K in keyof TData]: NonNullable<TData[K]> extends object
-    ?
-        | WithRefs<NonNullable<TData[K]>>
-        | Ref<NonNullable<TData[K]>>
-        | Extract<TData[K], null>
-    :
-        | NonNullable<TData[K]>
-        | Ref<NonNullable<TData[K]>>
-        | Extract<TData[K], null>;
+    ? | WithRefs<NonNullable<TData[K]>>
+      | Ref<NonNullable<TData[K]>>
+      | Extract<TData[K], null>
+    : | NonNullable<TData[K]>
+      | Ref<NonNullable<TData[K]>>
+      | Extract<TData[K], null>;
 };
 
 // copied from Nuxt
@@ -206,8 +204,4 @@ type FetchOptions<TData> = Omit<
 >;
 
 export type Composable =
-  | "$fetch"
-  | "useAsyncData"
-  | "useFetch"
-  | "useLazyAsyncData"
-  | "useLazyFetch";
+  "$fetch" | "useAsyncData" | "useFetch" | "useLazyAsyncData" | "useLazyFetch";

@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div class="flex h-screen flex-col items-center justify-center gap-6 bg-zinc-900 px-6 text-center text-white">
     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-red-900/40 text-red-300">

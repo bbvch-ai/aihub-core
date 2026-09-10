@@ -3,6 +3,12 @@
     <NuxtPage />
     <Toast />
     <ConfirmDialog />
+    <div
+      v-if="homeResolving"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-surface-900"
+    >
+      <ProgressSpinner />
+    </div>
   </NuxtLayout>
 </template>
 
@@ -17,6 +23,10 @@ const localePath = useLocalePath()
 const route = useRoute()
 const toast = useToast()
 useNotificationPoller()
+
+// Overlay lives at the root, not the page: the home-redirect middleware
+// redirects before any page mounts, so the page can't show it.
+const homeResolving = useHomeResolving()
 client.setConfig({
   baseURL: '/api/v1',
   auth: async () => {
@@ -38,9 +48,16 @@ client.setConfig({
     if (!route.params.tenant) return
 
     const rawDetail = response._data?.detail
-    const message = typeof rawDetail === 'object' && rawDetail?.message
-      ? rawDetail.message
-      : rawDetail
+
+    let message = rawDetail
+
+    if (Array.isArray(rawDetail) && rawDetail.every(e => typeof e.msg === 'string')) {
+      message = rawDetail.map(e => e.msg).join('\n')
+    }
+    else if (typeof rawDetail === 'object' && rawDetail?.message) {
+      message = rawDetail.message
+    }
+
     toast.add({
       severity: 'error',
       summary: t(`http_error.code.${response.status}`),

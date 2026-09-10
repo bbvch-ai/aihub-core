@@ -16,7 +16,7 @@
         v-for="(val, key) in event.event.parameters"
         :key="key"
       >
-        <Button :label="useChangeCase(key, 'capitalCase')" />
+        <Button :label="capitalCase(key)" />
         <InputText
           :placeholder="val"
           readonly
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { ThreadDto, ToolEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 

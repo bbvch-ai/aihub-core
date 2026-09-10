@@ -98,9 +98,10 @@ The system supports two types of permission checks:
 - Short-circuits `AccessChecker.access_level()` to `ACCESS_ADMIN` for every resource in every tenant
 - Bypasses both the tenant-access-rules check and the `UserTenantRoleEntity` membership check
 - No synthetic identity or "virtual tenant" — sysadmins are real Keycloak users with real ids
-- The platform seeds a real Keycloak user from `SUPERUSER_USERNAME`/`SUPERUSER_EMAIL`/`SUPERUSER_PASSWORD`/
-  `SUPERUSER_FIRSTNAME`/`SUPERUSER_LASTNAME`/`SUPERUSER_ROLES_JSON` in the realm import and materializes
-  `SUPERUSER_TOKEN` as a regular bearer token bound to that user (validated by `TokenAuthHandler`, no dedicated handler)
+- The platform seeds a real Keycloak user from `SUPERUSER_EMAIL`/`SUPERUSER_PASSWORD`/`SUPERUSER_FIRSTNAME`/
+  `SUPERUSER_LASTNAME`/`SUPERUSER_ROLES_JSON` in the realm import — the username is seeded equal to `SUPERUSER_EMAIL`
+  (the realm enforces `registrationEmailAsUsername`, so login is by email) — and materializes `SUPERUSER_TOKEN` as a
+  regular bearer token bound to that user (validated by `TokenAuthHandler`, no dedicated handler)
 
 ### Development Authentication
 

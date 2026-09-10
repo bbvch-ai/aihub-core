@@ -1,6 +1,7 @@
 # This user-agent directive applies to all web crawlers.
 User-agent: *
 
-# The disallow directive with a forward slash tells crawlers
-# not to access any page or file on the entire site.
-Disallow: /
+# An empty disallow allows crawlers to access the entire site.
+Disallow:
+
+Sitemap: https://docs.ai-hub.bbv.ch/sitemap.xml

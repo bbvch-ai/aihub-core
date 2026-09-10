@@ -17,7 +17,7 @@ class ProcessConfigDTO(BaseModel):
     def from_process_config(cls, process_config: ProcessConfig, t: LocaleHandler) -> Self:
         return cls(
             process_id=process_config.process_id,
-            name=t.extract(process_config.name),
-            description=t.extract(process_config.description),
+            name=t.extract_required(process_config.name, field_name="process.name"),
+            description=t.extract_required(process_config.description, field_name="process.description"),
             icon=process_config.icon,
         )

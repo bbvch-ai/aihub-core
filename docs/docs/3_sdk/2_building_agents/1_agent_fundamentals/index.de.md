@@ -140,8 +140,8 @@ LLM-Modellen), ohne seinen Code zu ändern.
 
 ::: tip Über die UI editierbare Konfiguration
 Um die Konfiguration Ihres Agents über die Admin-UI editierbar zu machen, siehe
-[Konfigurierbare Agent-Formulare](/de/docs/8_configurable_agents/). Das Form Duality Pattern ermöglicht es
-Administratoren, Agent-Profile ohne Code-Änderungen zu erstellen und anzupassen.
+[Konfigurierbare Agent-Formulare](../8_configurable_agents/). Das Form Duality Pattern ermöglicht es Administratoren,
+Agent-Profile ohne Code-Änderungen zu erstellen und anzupassen.
 :::
 
 ### `AgentConfig`: Globale Konfiguration
@@ -222,5 +222,5 @@ async def complex_step(
 
 ## Nächste Schritte
 
-Nachdem Sie die Grundlagen verstanden haben, erkunden Sie die **[Kernmuster](/de/docs/2_core_patterns/)**, um zu sehen,
-wie diese Konzepte zum Erstellen von Agent-Workflows verwendet werden.
+Nachdem Sie die Grundlagen verstanden haben, erkunden Sie die **[Kernmuster](../2_core_patterns/)**, um zu sehen, wie
+diese Konzepte zum Erstellen von Agent-Workflows verwendet werden.

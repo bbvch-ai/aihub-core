@@ -4,7 +4,10 @@
       :title="t('process.title')"
       :loading="isLoading"
     >
-      <div class="flex flex-col gap-12">
+      <div
+        v-if="groupedProcesses.length > 0"
+        class="flex flex-col gap-12"
+      >
         <div
           v-for="group in groupedProcesses"
           :key="group.processClass"
@@ -36,6 +39,12 @@
             />
           </div>
         </div>
+      </div>
+      <div
+        v-else
+        class="flex items-center justify-center py-8 text-surface-500"
+      >
+        <span class="text-xl">{{ t('process.no_results') }}</span>
       </div>
       <ProcessCreateModal
         v-model="createModalOpen"

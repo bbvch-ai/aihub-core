@@ -21,12 +21,15 @@ class InputNumber(PrimeVueElement):
     max: Annotated[float | None, Field(description="Maximum value")] = None
     step: Annotated[float | None, Field(description="Step factor for increment/decrement")] = None
     use_grouping: Annotated[bool, Field(description="Whether to use grouping separators", alias="useGrouping")] = True
+    # PrimeVue InputNumber is integer-only unless fraction digits are configured. Default to
+    # accepting up to 6 decimals so fractional fields (e.g. temperature) take a decimal point;
+    # integer-typed fields are still validated as ints by the config model on submit.
     min_fraction_digits: Annotated[
-        int | None, Field(description="Minimum number of fraction digits", alias="minFractionDigits")
-    ] = None
+        int, Field(description="Minimum number of fraction digits", alias="minFractionDigits")
+    ] = 0
     max_fraction_digits: Annotated[
-        int | None, Field(description="Maximum number of fraction digits", alias="maxFractionDigits")
-    ] = None
+        int, Field(description="Maximum number of fraction digits", alias="maxFractionDigits")
+    ] = 6
     locale: Annotated[str | None, Field(description="Locale to use for number formatting")] = None
     mode: Annotated[Literal["decimal", "currency"] | None, Field(description="Input mode")] = None
     currency: Annotated[str | None, Field(description="Currency code for currency mode")] = None

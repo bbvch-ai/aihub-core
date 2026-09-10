@@ -3,6 +3,13 @@ display_event:
   name: Evento di Visualizzazione
   description: Un evento che mostra informazioni all'utente senza influenzare il flusso
     di lavoro.
+conversation_title_event:
+  name: Titolo della Conversazione
+  description: L'agente ha generato un titolo che riassume l'argomento della conversazione.
+follow_up_questions_event:
+  name: Domande di Approfondimento
+  description: L'agente ha suggerito domande di approfondimento che l'utente potrebbe
+    voler porre in seguito.
 aitl_exception_event:
   name: Errore nella Delega del Compito
   description: Un altro agente a cui è stato delegato un compito ha segnalato un errore
@@ -57,6 +64,11 @@ guard_rejection_event:
   name: Richiesta Respinta
   description: La richiesta è stata respinta per motivi di sicurezza o a causa di
     violazioni delle politiche.
+meta_question_detected_event:
+  name: Meta-domanda rilevata
+  description: L'utente ha chiesto informazioni sull'assistente stesso — identità,
+    capacità o comportamento — quindi l'assistente risponde dalla propria configurazione
+    invece di eseguire il suo normale flusso di lavoro.
 few_shot_guard_accept_event:
   name: Guardia Few-Shot Accettato
   description: La richiesta corrisponde ai modelli degli esempi few-shot ed è autorizzata
@@ -212,6 +224,11 @@ rag_start_event:
     recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
     i namespace scelti e gli eventuali filtri di metadati — prima di generare una
     risposta.
+cron_start_event:
+  name: Esecuzione Pianificata Avviata
+  description: Un'esecuzione pianificata è stata avviata automaticamente dallo scheduler
+    cron all'orario configurato. Nessun utente l'ha avviata — l'esecuzione avviene
+    come esecuzione di sistema senza identità di esecuzione.
 rag_success_stop_event:
   name: Successo RAG
   description: L'esecuzione aumentata dal recupero ha prodotto una risposta per l'utente.
@@ -219,3 +236,23 @@ rag_failure_stop_event:
   name: Fallimento RAG
   description: L'esecuzione aumentata dal recupero non è riuscita a produrre una risposta
     utile. Il campo reason spiega quale percorso ha portato al fallimento.
+unread_mail_listed_event:
+  name: E-mail Non Lette Elencate
+  description: L'agente ha elencato i messaggi non letti nella cartella della posta
+    in arrivo configurata.
+mail_fetched_event:
+  name: E-mail Recuperata
+  description: L'agente ha recuperato un messaggio, incluso il corpo e gli allegati.
+mail_moved_event:
+  name: E-mail Spostata
+  description: L'agente ha spostato un messaggio dalla cartella di origine a una cartella
+    di destinazione.
+mail_batch_classified_event:
+  name: Lotto classificato
+  description: L'agente ha classificato un lotto di messaggi non letti e ha archiviato
+    ciascuno nella cartella della sua categoria, o nella cartella di riserva quando
+    non era sicuro.
+mail_batch_drafted_event:
+  name: Lotto Redatto
+  description: L'agente ha redatto risposte per un lotto di messaggi e le ha aggiunte
+    alla cartella delle bozze affinché una persona le revisioni e le invii.

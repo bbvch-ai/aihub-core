@@ -1,0 +1,114 @@
+from datetime import datetime
+from email.message import EmailMessage
+from email.utils import parsedate_to_datetime
+
+from swiss_ai_hub.core.events.agent import UnreadMailSummary
+
+from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
+from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
+
+
+class MailParser:
+    """Turns raw RFC822 bytes into domain objects — header summaries and fully parsed messages."""
+
+    @staticmethod
+    def parse_summary(message_id: str, message: EmailMessage, flags: list[str]) -> UnreadMailSummary:
+        return UnreadMailSummary(
+            message_id=message_id,
+            sender=message.get("From", ""),
+            subject=MailParser._bounded_subject(message),
+            date=MailParser._parse_date(message.get("Date")),
+            flags=flags,
+        )
+
+    @staticmethod
+    def parse_message(
+        message_id: str,
+        message: EmailMessage,
+        max_body_bytes: int,
+        max_attachment_bytes: int,
+        raw: bytes,
+    ) -> ParsedMessage:
+        """Parse a MIME message, truncating bodies and dropping oversized attachments so a hostile or
+        oversized mail can never bloat the persisted/streamed event or the agent's memory footprint.
+
+        ``raw`` is carried through untouched — the truncation above is what the *event* may show, never
+        what is archived, so the stored original stays byte-identical to what the server sent. It has no
+        default: a caller that does not archive must say so with ``b""`` rather than lose the original by
+        omission.
+        """
+        body_text: str | None = None
+        body_html: str | None = None
+        attachments: list[ParsedAttachment] = []
+
+        for part in message.walk():
+            if part.is_multipart():
+                continue
+            content_type = part.get_content_type()
+            filename = part.get_filename()
+            disposition = part.get_content_disposition()
+
+            if disposition == "attachment" or filename:
+                payload = part.get_payload(decode=True) or b""
+                if len(payload) > max_attachment_bytes:
+                    continue
+                attachments.append(
+                    ParsedAttachment(
+                        filename=MailParser._safe_filename(filename or "attachment"),
+                        content_type=content_type,
+                        content=payload,
+                    )
+                )
+            elif content_type == "text/plain" and body_text is None:
+                body_text = MailParser._decode_text(part, max_body_bytes)
+            elif content_type == "text/html" and body_html is None:
+                body_html = MailParser._decode_text(part, max_body_bytes)
+
+        return ParsedMessage(
+            message_id=message_id,
+            sender=message.get("From", ""),
+            subject=MailParser._bounded_subject(message),
+            date=MailParser._parse_date(message.get("Date")),
+            rfc_message_id=message.get("Message-ID"),
+            references=message.get("References"),
+            reply_to=message.get("Reply-To"),
+            body_text=body_text,
+            body_html=body_html,
+            attachments=attachments,
+            raw=raw,
+        )
+
+    @staticmethod
+    def _bounded_subject(message: EmailMessage) -> str:
+        """Cap the subject at parse time, the same place and for the same reason the body is capped.
+
+        The subject is attacker-controlled and reaches far more than the prompts: it is rendered into `ThoughtEvent`s
+        streamed to the frontend, persisted on `MailClassificationRef` in the audit trail, and copied onto the
+        drafted reply's own `Subject` header by `ReplyComposer`. Bounding it here rather than at each of those sites
+        is what stops the next one added from being unbounded again — a 196,000-character subject reached a real
+        mailbox before this existed.
+        """
+        return message.get("Subject", "")[:MAX_SUBJECT_CHARACTERS]
+
+    @staticmethod
+    def _decode_text(part: EmailMessage, max_bytes: int) -> str:
+        payload = part.get_payload(decode=True) or b""
+        charset = part.get_content_charset() or "utf-8"
+        text = payload.decode(charset, errors="replace")
+        encoded = text.encode("utf-8")
+        if len(encoded) <= max_bytes:
+            return text
+        return encoded[:max_bytes].decode("utf-8", errors="ignore")
+
+    @staticmethod
+    def _parse_date(raw_date: str | None) -> datetime | None:
+        if not raw_date:
+            return None
+        try:
+            return parsedate_to_datetime(raw_date)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _safe_filename(filename: str) -> str:
+        return filename.replace("/", "_").replace("\\", "_").replace("..", "_")

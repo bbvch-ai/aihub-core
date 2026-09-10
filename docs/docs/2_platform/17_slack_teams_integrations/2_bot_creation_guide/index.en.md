@@ -44,7 +44,7 @@ For automated setup details, see the [Azure Bot Service Integration guide](../1_
 
 - **[Slack & Teams Integrations Overview](../)** - High-level concepts and business value
 - **[Azure Bot Service Integration](../1_setup/)** - Automated setup guide
-- **[Swiss AI Hub Bot Developer's Guide](../../../6_code_deep_dive/aihub_bot/)** - Technical implementation details
+- **[Swiss AI Hub Bot Developer's Guide](../../../6_code_deep_dive/packages/bot/)** - Technical implementation details
 - **[Bot-in-the-Loop Documentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** - Human-AI collaboration
   workflows
 
@@ -149,7 +149,7 @@ devtunnel host
 # Use the https URL (e.g., https://abc123-8000.devtunnels.ms/api/v1/messages)
 ```
 
-See the [Developer's Guide](../../../6_code_deep_dive/aihub_bot/) for detailed local development setup.
+See the [Developer's Guide](../../../6_code_deep_dive/packages/bot/) for detailed local development setup.
 :::
 
 ### Step 4: Create Client Secret
@@ -738,7 +738,7 @@ After completing the manual bot setup:
 2. **Review Logs**: Check application logs for any errors or warnings during bot interactions
 3. **Configure Additional Features**: Explore [Bot-in-the-Loop](../../../3_sdk/6_feature_overview/bot-in-the-loop/) for
    human-AI collaboration
-4. **Implement Custom Logic**: See the [Developer's Guide](../../../6_code_deep_dive/aihub_bot/) for custom bot
+4. **Implement Custom Logic**: See the [Developer's Guide](../../../6_code_deep_dive/packages/bot/) for custom bot
    implementations
 5. **Monitor Performance**: Set up observability and monitoring for production deployments
 

@@ -7,8 +7,8 @@ class TextToSpeechRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     model: Annotated[
-        Literal["tts-1", "tts-1-hd"],
-        Field(description="The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'."),
+        str,
+        Field(min_length=1, description="The TTS model to use, e.g. 'speech/<model-name>'."),
     ]
 
     input: Annotated[

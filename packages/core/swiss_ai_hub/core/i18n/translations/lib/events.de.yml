@@ -3,6 +3,13 @@ display_event:
   name: Anzeigeereignis
   description: Ein Ereignis, das dem Benutzer Informationen anzeigt, ohne den Arbeitsablauf
     zu beeinflussen.
+conversation_title_event:
+  name: Gesprächstitel
+  description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.
+follow_up_questions_event:
+  name: Folgefragen
+  description: Der Agent hat Folgefragen vorgeschlagen, die der Benutzer als Nächstes
+    stellen könnte.
 aitl_exception_event:
   name: Fehler bei Aufgabendelegation
   description: Ein anderer Agent, an den eine Aufgabe delegiert wurde, hat einen Fehler
@@ -57,6 +64,11 @@ guard_rejection_event:
   name: Anfrage abgelehnt
   description: Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen
     abgelehnt.
+meta_question_detected_event:
+  name: Meta-Frage erkannt
+  description: Die Nutzerin oder der Nutzer hat nach dem Assistenten selbst gefragt
+    — Identität, Fähigkeiten oder Verhalten — daher antwortet der Assistent aus seiner
+    eigenen Konfiguration, statt seinen normalen Arbeitsablauf auszuführen.
 few_shot_guard_accept_event:
   name: Few-Shot-Prüfung bestanden
   description: Die Anfrage entspricht den Mustern aus Few-Shot-Beispielen und darf
@@ -213,6 +225,11 @@ rag_start_event:
     relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
     gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
     wird.
+cron_start_event:
+  name: Geplanter Lauf Gestartet
+  description: Ein geplanter Lauf wurde vom Cron-Scheduler automatisch zur konfigurierten
+    Zeit gestartet. Kein Benutzer hat ihn ausgelöst — der Lauf wird als Systemlauf
+    ohne Ausführungsidentität ausgeführt.
 rag_success_stop_event:
   name: RAG Erfolg
   description: Der Retrieval-Augmented-Lauf hat eine Antwort für den Benutzer erzeugt.
@@ -220,3 +237,24 @@ rag_failure_stop_event:
   name: RAG Fehlschlag
   description: Der Retrieval-Augmented-Lauf konnte keine nützliche Antwort liefern.
     Das Reason-Feld erklärt, welcher Pfad zum Fehlschlag geführt hat.
+unread_mail_listed_event:
+  name: Ungelesene E-Mails Aufgelistet
+  description: Der Agent hat die ungelesenen Nachrichten im konfigurierten Posteingang-Ordner
+    aufgelistet.
+mail_fetched_event:
+  name: E-Mail Abgerufen
+  description: Der Agent hat eine Nachricht einschließlich Text und Anhängen abgerufen.
+mail_moved_event:
+  name: E-Mail Verschoben
+  description: Der Agent hat eine Nachricht aus ihrem Quellordner in einen Zielordner
+    verschoben.
+mail_batch_classified_event:
+  name: Stapel klassifiziert
+  description: Der Agent hat einen Stapel ungelesener Nachrichten klassifiziert und
+    jede in den Ordner ihrer Kategorie abgelegt, oder in den Ausweichordner, wenn
+    er unsicher war.
+mail_batch_drafted_event:
+  name: Stapel Entworfen
+  description: Der Agent hat Antworten für einen Stapel von Nachrichten entworfen
+    und sie in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
+    kann.

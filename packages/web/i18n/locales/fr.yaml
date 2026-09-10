@@ -11,6 +11,7 @@ common:
   loading: Chargement...
   selectModel: Sélectionner un modèle
   selectDatabase: Sélectionner une base de données
+  selectTenant: Sélectionner un locataire
 models:
   title: Modèles
   error: Erreur lors du chargement des modèles
@@ -39,7 +40,9 @@ models:
     outputCostAbove128k: Coût de sortie (au-dessus de 128K)
     outputCostAbove200k: Coût de sortie (au-dessus de 200K)
     imageCost: Coût d'image
-    searchContextCost: Coût du contexte de recherche
+    searchContextCostLow: Coût du contexte de recherche (Faible)
+    searchContextCostMedium: Coût du contexte de recherche (Moyen)
+    searchContextCostHigh: Coût du contexte de recherche (Élevé)
     rateLimits: Limites de taux
     tokensPerMinute: Jetons par minute
     requestsPerMinute: Requêtes par minute
@@ -89,6 +92,7 @@ user:
   title: Utilisateurs
   logout: Déconnexion
   language: Langue
+  version: Version
   role_chips:
     no_roles: Aucun rôle assigné
     assign: Assigner un rôle
@@ -136,6 +140,15 @@ thread:
     numEvents: Nombre d'événements
     status: Statut
     pending: En attente
+    search_placeholder: Rechercher par nom
+    filter:
+      status_placeholder: Filtrer par statut
+      active: Actif
+      completed: Terminé
+      failed: Échoué
+      agent_name_placeholder: Filtrer par agent
+      user_name_placeholder: Filtrer par utilisateur
+      date_range_placeholder: Filtrer par date
   utils:
     pendingTypes:
       hitl: Humain dans la boucle
@@ -157,6 +170,7 @@ thread:
     title: Vue hiérarchique des tours
   chat:
     title: Vue Chat
+    placeholder: Saisie du chat
   memories:
     title: Mémoires du fil de discussion
     description: Mémoires collectées pendant {threadName}
@@ -253,6 +267,11 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
+  metaQuestionDetected:
+    category:
+      identity: Identité
+      capabilities: Capacités
+      behavior: Comportement
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
@@ -311,6 +330,21 @@ agent:
     status: 'Statut:'
     online: En ligne
     offline: Hors ligne
+  import:
+    button: Importer
+    error:
+      title: Échec de l'import
+      invalidJson: Le fichier sélectionné n'est pas un JSON valide.
+      invalidStructure: Le fichier sélectionné n'est pas un export de configuration
+        d'agent valide.
+      missingFields: Il manque des champs obligatoires dans le fichier (schemaVersion,
+        agentClass ou configuration).
+      unsupportedVersion: Le fichier utilise une version de schéma d'export non prise
+        en charge.
+      blueprintNotFound: Le modèle d'agent « {agentClass} » n'est pas disponible dans
+        cet environnement.
+  export:
+    button: Exporter
   configuration:
     title: Configuration de l'agent
     description: Configurez le comportement d'exécution et les paramètres de cet agent
@@ -335,6 +369,13 @@ agent:
     online: En ligne
     offline: Hors ligne
     clone: Cloner
+    search_placeholder: Rechercher par nom
+    no_results: Aucun agent trouvé
+    filter:
+      type_placeholder: Filtrer par type d'agent
+      status_placeholder: Filtrer par statut
+      enabled: Activé
+      disabled: Désactivé
   workflow:
     title: Flux de travail agentique
     view_tooltip: Afficher le flux de travail
@@ -405,6 +446,21 @@ document:
     number_of_pages: Nombre de pages
     download: Télécharger
     is_processing: Traitement en cours
+    actions: Actions
+    selected_count: '{count} document(s) sélectionné(s)'
+  delete:
+    title: Supprimer le document
+    deleting: Suppression en cours
+    button: Supprimer
+    button_selected: Supprimer la sélection
+    confirmMessage: Voulez-vous vraiment supprimer « {title} » ? Il sera définitivement
+      retiré de la base de connaissances. Cette action est irréversible.
+    confirmMessageBatch: Voulez-vous vraiment supprimer {count} document(s) ? Ils
+      seront définitivement retirés de la base de connaissances. Cette action est
+      irréversible.
+    success: Suppression du document planifiée
+    partial: Suppression de {deleted} document(s) planifiée, {failed} en échec
+    error: Échec de la suppression du document
 knowledge:
   title: Bases de connaissances
   created_at: 'Créé le:'
@@ -455,21 +511,66 @@ knowledge:
     title: Ajouter une collection
     description: Créer une nouvelle collection de connaissances
     cancel: Annuler
+  add_database:
+    title: Ajouter une base de connaissances
+    description: Créer une nouvelle base de connaissances en libre-service
   auto_sync:
     title: Synchronisé automatiquement
     description: Les collections sont gérées automatiquement
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
+  pipeline: 'Pipeline : {name}'
   edit_namespace: Modifier la collection
   upload_documents: Télécharger des documents
+  delete_namespace: Supprimer la collection
+  delete_database: Supprimer la base de données
+  delete:
+    confirm_label: Saisissez {name} pour confirmer
+    database:
+      title: Supprimer la base de connaissances
+      warning: Cette action supprime définitivement la base de données {name}, toutes
+        ses collections et ses {count} documents. Cette action est irréversible.
+    namespace:
+      title: Supprimer la collection
+      warning: Cette action supprime définitivement la collection {name} et ses {count}
+        documents. Cette action est irréversible.
+    actions:
+      delete: Supprimer
+    scheduled:
+      summary: Suppression lancée
+      detail: La suppression s’exécute en arrière-plan et peut prendre un moment.
+    error:
+      summary: Échec de la suppression
+      detail: La suppression n’a pas pu être lancée. Veuillez réessayer.
   form:
     create:
       title: Créer une collection
+    create_error: Échec de la création de la collection. Veuillez réessayer.
+    create_database:
+      title: Créer une base de connaissances
+      success: Base de connaissances créée
+      error: La base de connaissances n'a pas pu être créée
+      no_ingestors: Aucun pipeline d'ingestion disponible. Assurez-vous qu'au moins
+        un pipeline est en cours d'exécution.
+      steps:
+        basic_info: Informations de base
     edit:
       title: Modifier la collection
     database:
       label: Base de connaissances
       placeholder: Nom de la base de connaissances
+    database_name:
+      label: Nom de la base de données
+      placeholder: mabasedeconnaissances
+      help: Seules les lettres minuscules et les chiffres sont autorisés, en commençant
+        par une lettre, de 3 à 63 caractères. Le nom ne peut pas être modifié ultérieurement.
+      validation_error: Le nom de la base de données doit commencer par une lettre
+        minuscule et ne contenir que des lettres minuscules et des chiffres, entre
+        3 et 63 caractères
+    ingestor:
+      label: Pipeline d'ingestion
+      placeholder: Sélectionner un pipeline d'ingestion
+      help: Le pipeline qui traite les documents téléversés dans cette base de données.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection
@@ -500,7 +601,9 @@ auth:
     description: Veuillez vous connecter pour accéder à l'application
     tagline: Découvrez l'avenir de l'intelligence artificielle
     welcome: Bienvenue sur le AI Hub de {companyName}
+    welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
+    pleaseLoginWith: Veuillez vous connecter avec {provider}
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise
@@ -589,6 +692,24 @@ role:
   access_rules_help_agent_instances: Toutes les instances de MyAgent
   access_rules_help_service: Service Knowledge
   access_rules_help_admin: Accès admin à tout
+  presets_button: Modèles
+  presets_title: Modèles d'accès
+  preset_category_everything: Tout
+  preset_category_agents: Agents
+  preset_category_processes: Processus
+  preset_category_models: Modèles
+  preset_category_knowledge: Connaissances
+  capabilities_title: Ce que ces règles accordent
+  capabilities_subtitle: Cochez une capacité pour l'accorder. Les éléments verrouillés
+    sont couverts par une règle plus large.
+  capabilities_readonly_title: Accès effectif
+  capabilities_readonly_subtitle: Ce que cet utilisateur peut faire, selon ses rôles
+    et dans les limites du tenant.
+  capabilities_empty: Cet utilisateur n'a aucun accès.
+  capability_locked: Accordé par une règle plus large — supprimez cette règle pour
+    changer ceci.
+  capability_readonly: Aucune règle unique ne l'accorde — utilisez un modèle ou une
+    règle plus large.
   pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
   pattern_help_all: Tous les agents
   pattern_help_wildcard: Toutes les instances de MyAgent
@@ -659,6 +780,7 @@ bar:
   show_notifications: Afficher les notifications
 process:
   title: Processus
+  no_results: Aucun processus trouvé
   overview:
     name: Nom
     class: Classe
@@ -715,7 +837,33 @@ process:
 form:
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+  warnings:
+    org_memory_performance: Cette fonctionnalité peut ne pas fonctionner comme prévu
+      dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
+      temporairement jusqu'à la publication d'un correctif.
 lib:
+  cron:
+    errors:
+      required: Chaque position est requise — une position vide ne constitue pas une
+        planification valide.
+      invalid: Seuls les chiffres et les caractères * , - / ? sont autorisés ici.
+      range: Les valeurs doivent être comprises entre {min} et {max}.
+    expression: 'Expression cron résultante :'
+    minute:
+      label: Minute
+    hour:
+      label: Heure
+    day_of_month:
+      label: Jour du mois
+    month:
+      label: Mois
+    day_of_week:
+      label: Jour de la semaine
+    timezone:
+      label: Fuseau horaire
+      placeholder: Sélectionner un fuseau horaire
+      help: Les positions cron sont interprétées dans ce fuseau horaire, afin qu'une
+        planification quotidienne conserve la même heure lors des changements d'heure.
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
@@ -723,8 +871,12 @@ lib:
       label: Base de données
     namespaces:
       label: Espaces de noms
-      placeholder: Sélectionner les espaces de noms (vide = tous)
-      help: Laisser vide pour rechercher tous les espaces de noms
+      placeholder: Sélectionner au moins un espace de noms
+      help: Seuls les espaces de noms sélectionnés sont recherchés
+    allNamespaces:
+      label: Rechercher dans tous les espaces de noms
+      help: Chaque espace de noms de cette base est recherché, y compris ceux ajoutés
+        plus tard ({count} aujourd'hui).
     allowedFilterFields:
       label: Champs de filtre autorisés
       placeholder: Saisir une clé de métadonnées puis appuyer sur Entrée
@@ -734,8 +886,10 @@ memory:
   title: Souvenirs
   graph:
     title: Graphe de connaissances
+    no_results: Aucun souvenir trouvé
   list:
     title: Liste des souvenirs
+    no_results: Aucun souvenir trouvé
   detail:
     title: Détails du souvenir
     created_at: Créé le

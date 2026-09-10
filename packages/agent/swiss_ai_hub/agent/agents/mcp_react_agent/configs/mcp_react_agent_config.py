@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
@@ -22,6 +22,18 @@ class McpReactAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM used for reasoning and tool selection."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Model for this agent's auxiliary steps: conversation title and follow-up question "
+                "generation. The ReAct reasoning loop always uses the main model. Generation parameters are "
+                "inherited from the main model. Falls back to the main model when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     system_prompt: Annotated[
         LocaleString | LocaleInput | None,
         Field(description="System prompt defining the agent's behavior when reasoning about tool use."),
@@ -37,6 +49,16 @@ class McpReactAgentConfig(AgentConfig):
         Gt(0),
     ]
 
+    @model_validator(mode="after")
+    def derive_task_llm_from_main_llm(self) -> Self:
+        """Only the task model is configurable: its generation parameters always mirror the main llm, and
+        an unset or blank picker falls back to the main model."""
+        if not isinstance(self.llm.model_name, str):
+            return self
+        task_model_name = self.task_llm.model_name if self.task_llm else None
+        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         base = AgentConfig.as_form()
@@ -47,6 +69,7 @@ class McpReactAgentConfig(AgentConfig):
             icon=base.icon,
             mcp=McpClientConfig.as_form(),
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(include_default_parameter=False),
             system_prompt=LocaleInput(
                 label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.label"),
                 help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.help"),

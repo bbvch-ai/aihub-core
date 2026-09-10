@@ -13,7 +13,7 @@ from swiss_ai_hub.backup.settings import BackupSettings
 
 logger = logging.getLogger(__name__)
 
-_SAFE_DBNAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_SAFE_DBNAME_RE = re.compile(r"^[a-zA-Z_]\w*$", re.ASCII)
 
 # pg_dump skips data for extension-owned tables, expecting CREATE EXTENSION to repopulate them.
 # The DocumentDB extension (github.com/documentdb/documentdb) owns its catalog tables but never

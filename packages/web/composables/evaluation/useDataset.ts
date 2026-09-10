@@ -10,11 +10,14 @@ export const useDataset = defineQuery(() => {
     staleTime: minutesToMilliseconds(5),
     enabled: useTenantReady('dataset_id'),
     query: async () => {
+      const datasetId = route.params.dataset_id as string | undefined
+      if (!datasetId) return
+
       return await getDataset({
         composable: '$fetch',
         path: {
           tenant_id: tenantId.value!,
-          dataset_id: route.params.dataset_id as string,
+          dataset_id: datasetId,
         },
       })
     },

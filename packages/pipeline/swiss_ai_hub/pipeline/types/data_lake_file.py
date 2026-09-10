@@ -22,7 +22,14 @@ class DataLakeFile(BaseModel):
     size: Annotated[int, Field(description="The size of the file in bytes.")]
     content_type: Annotated[str, Field(description="The MIME type of the file content.")]
     owner: Annotated[str, Field(description="The owner of the file.")]
-    hash: Annotated[str, Field(description="The MD5 hash of the file content, base64-encoded.")]
+    hash: Annotated[
+        str,
+        Field(
+            description="Opaque content-version token. Base64-encoded MD5 for locally produced content and for "
+            "plain-MD5 S3 ETags, but a verbatim chunked ETag ('<md5hex>-<n>') for objects the store chunked. "
+            "Only assume base64-MD5 where the file came from from_content() — see AzureDataLakeIOManager."
+        ),
+    ]
 
     created: Annotated[int, Field(description="The UNIX timestamp when the file was created.")]
     updated: Annotated[int, Field(description="The UNIX timestamp when the file was last updated.")]

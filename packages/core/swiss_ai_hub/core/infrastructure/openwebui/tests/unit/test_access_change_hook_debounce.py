@@ -1,8 +1,49 @@
 import asyncio
+import gc
 
 import pytest
+from mongoengine import signals
 
 from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+
+_WATCHED_ENTITIES = [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]
+
+
+class TestSignalSubscriptionSurvives:
+    """Regression for the weak-ref GC bug: ``connect`` wired a local closure with blinker's
+    default weak reference, so it was garbage-collected the instant ``connect`` returned and no
+    access change ever triggered a sync. The debounce tests below never caught this because they
+    call ``_schedule_sync`` directly, bypassing the signal connection."""
+
+    def test_connect_subscription_survives_gc(self):
+        was_connected = AccessChangeHook._connected
+        AccessChangeHook._connected = False
+
+        class _DummyProvisioner:
+            async def sync_access(self) -> None:
+                pass
+
+        try:
+            AccessChangeHook.connect(_DummyProvisioner())
+            gc.collect()  # a weakly-referenced local closure would be collected here
+
+            for entity in _WATCHED_ENTITIES:
+                assert list(signals.post_save.receivers_for(entity)), (
+                    f"post_save receiver for {entity.__name__} was dropped — connect must use weak=False"
+                )
+                assert list(signals.post_delete.receivers_for(entity)), (
+                    f"post_delete receiver for {entity.__name__} was dropped — connect must use weak=False"
+                )
+        finally:
+            for sig in (signals.post_save, signals.post_delete):
+                for entity in _WATCHED_ENTITIES:
+                    for receiver in list(sig.receivers_for(entity)):
+                        sig.disconnect(receiver, sender=entity)
+            AccessChangeHook._connected = was_connected
+            AccessChangeHook._provisioner = None
 
 
 class TestDebounce:

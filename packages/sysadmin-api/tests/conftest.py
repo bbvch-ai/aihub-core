@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))

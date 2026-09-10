@@ -1,5 +1,6 @@
 """Tests for AgentRunTracer — OTEL + Langfuse span enrichment for agent runs."""
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -7,6 +8,7 @@ from bson import ObjectId
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
+from pydantic import BaseModel
 from swiss_ai_hub.core.dispatcher import TraceStore
 from swiss_ai_hub.core.events.agent import StartEvent
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -14,6 +16,16 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 from swiss_ai_hub.agent.tracing.agent_run_tracer import AgentRunTracer
 
 _FAKE_TRACEPARENT = {"traceparent": "00-0000000000000000000000000000dead-000000000000beef-01"}
+
+
+class _DatedItem(BaseModel):
+    """Stand-in for a nested payload holding a datetime, e.g. UnreadMailSummary with its Date header."""
+
+    date: datetime | None = None
+
+
+class _DatedEvent(StartEvent):
+    items: list[_DatedItem] = []
 
 
 @pytest.fixture
@@ -160,6 +172,34 @@ class TestTraceStepStart:
 
             mock_ctx.detach.assert_called_once_with("token")
             mock_span.end.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_serializes_event_carrying_nested_datetime(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic
+    ) -> None:
+        """A step input holding a datetime must not break span creation — real mail servers always set Date,
+        so the IMAP agent died here while GreenMail fixtures (no parseable Date) kept it hidden."""
+        mock_span = MagicMock()
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
+        tracer.tracer = mock_tracer
+
+        async def dummy_step():
+            pass
+
+        event = _DatedEvent(items=[_DatedItem(date=datetime(2022, 11, 28, 11, 51, 27, tzinfo=UTC))])
+
+        with (
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
+        ):
+            mock_ctx.attach.return_value = "token"
+
+            async with tracer.trace_step_start(topic, dummy_step, {"event": event}) as span:
+                assert span is mock_span
+
+        attributes = mock_tracer.start_span.call_args.kwargs["attributes"]
+        assert "2022-11-28 11:51:27" in attributes[SpanAttributes.INPUT_VALUE]
 
 
 class TestTraceStepStop:

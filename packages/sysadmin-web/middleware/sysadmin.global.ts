@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-Proprietary
 import { getMyIdentity } from '~/sdk/client'
 
 // Global guard for sysadmin-web with two responsibilities:

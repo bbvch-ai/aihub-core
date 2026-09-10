@@ -12,6 +12,7 @@ from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
+from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
@@ -62,7 +63,9 @@ class LLMParameter(Form):
                 min=0.0,
                 max=2.0,
                 step=0.1,
-                value=0.1,
+                value=0.0,
+                min_fraction_digits=0,
+                max_fraction_digits=1,
             ),
             logprobs=Checkbox(
                 label=LocaleString.from_i18n_path("lib.llm.config.logprobs.label"),
@@ -104,23 +107,51 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
     ] = LLMParameter()
 
     @classmethod
-    def as_form(cls) -> Self:
-        """Factory method to create a form-mode LLMConfig."""
+    def as_form(cls, include_default_parameter: bool = True) -> Self:
+        """
+        Factory method to create a form-mode LLMConfig.
+
+        Pass `include_default_parameter=False` to render the model picker alone, for configs whose
+        generation parameters are derived from another LLMConfig rather than chosen by the user.
+        """
         return cls(
             model_name=ModelSelect(
                 label=LocaleString.from_i18n_path("lib.llm.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.model.help"),
                 mode="chat",
             ),
-            default_parameter=LLMParameter.as_form(),
+            default_parameter=LLMParameter.as_form() if include_default_parameter else LLMParameter(),
         )
 
-    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
+    def as_task_llm(self, model_name: str) -> Self:
+        """
+        A task variant of this config for auxiliary/classification steps.
+
+        Those steps reuse the main model's generation parameters and never need log probabilities,
+        so only the model itself is configurable.
+        """
+        return self.model_copy(
+            deep=True,
+            update={
+                "model_name": model_name,
+                "default_parameter": LLMParameter(
+                    temperature=self.default_parameter.temperature,
+                    timeout=self.default_parameter.timeout,
+                    logprobs=False,
+                ),
+            },
+        )
+
+    def to_llama_index(
+        self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
+    ) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
-        This uses the OpenAILike wrapper since it mimics OpenAI-like APIs. The tokenizer is retrieved
-        from the local model, and parameters are merged to configure the model's behavior.
+        Streamed calls ask the gateway to report real token usage on the final chunk, so
+        ``TokenCountingHandler`` doesn't fall back to re-tokenizing the whole chat history locally on
+        every call. That request lives in ``ResilientOpenAILike`` rather than in ``additional_kwargs``
+        here, because endpoints that reject ``stream_options`` need a plain-stream retry.
         """
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
@@ -129,6 +160,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         is_chat_model = model_info["model_info"]["mode"] == "chat"
         is_function_calling_model = model_info["model_info"]["supports_function_calling"]
         max_tokens = model_info["model_info"]["max_output_tokens"]
+        supports_response_schema = model_info["model_info"].get("supports_response_schema") or False
 
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
@@ -142,15 +174,15 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         if extra_headers:
             default_headers.update(extra_headers)
 
-        open_ai_like = OpenAILike(
+        open_ai_like = ResilientOpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
-            api_key=config.API_KEY.get_secret_value(),
+            api_key=api_key or config.API_KEY.get_secret_value(),
             temperature=self.default_parameter.temperature,
             context_window=context_size,
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
-            tokenizer=self.tokenizer,
+            should_use_structured_outputs=supports_response_schema,
             max_tokens=max_tokens,
             logprobs=self.default_parameter.logprobs,
             top_logprobs=self.default_parameter.top_logprobs,

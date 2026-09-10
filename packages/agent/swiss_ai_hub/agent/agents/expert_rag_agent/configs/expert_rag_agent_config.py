@@ -33,6 +33,7 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
             icon=base_form.icon,
             agent_id=base_form.agent_id,
             llm=base_form.llm,
+            task_llm=base_form.task_llm,
             retrievers=base_form.retrievers,
             number_of_input_tokens=base_form.number_of_input_tokens,
             context_sufficient_guard=base_form.context_sufficient_guard,

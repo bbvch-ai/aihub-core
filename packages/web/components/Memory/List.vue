@@ -14,6 +14,12 @@
       striped-rows
       @update:selection="handleSelection"
     >
+      <template #empty>
+        <div class="py-8 text-center text-surface-500 dark:text-surface-400">
+          {{ t('memory.list.no_results') }}
+        </div>
+      </template>
+
       <Column
         field="memory"
         :header="t('memory.table.memory')"

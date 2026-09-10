@@ -3,10 +3,10 @@ from typing import Annotated
 from pydantic import Field
 
 from swiss_ai_hub.core.agents.visualizers.types.workflow_graph import WorkflowGraph
-from swiss_ai_hub.core.events.agent.discovery.agent_config_specs import AgentConfigSpecs
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
@@ -33,6 +33,9 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
     ]
+    is_schedulable: Annotated[
+        bool, Field(description="Whether the agent can be run automatically on a cron schedule")
+    ] = False
     form: Annotated[
         list[ALL_FORM_OPTIONS],
         Field(
@@ -41,7 +44,7 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
         ),
     ]
     agent_config_specs: Annotated[
-        AgentConfigSpecs,
+        ConfigSpecs,
         Field(
             description="Validation specification including the JSON schema for form submissions. "
             "Used by ModelCreationService to create Pydantic models for validation.",

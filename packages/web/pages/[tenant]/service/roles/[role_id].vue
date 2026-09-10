@@ -6,9 +6,7 @@
     size="small"
   >
     <div class="flex flex-col gap-4">
-      <RoleEdit
-        v-model="clonedRole"
-      />
+      <RoleEdit v-model="clonedRole" />
       <div class="flex justify-end">
         <Button
           type="button"
@@ -40,12 +38,12 @@ const clonedRole = ref<CreateRoleRequest>({
   description: '',
   access_rules: [],
 })
-watch(role, (newRole: RoleResponse) => {
+watch(role, (newRole: RoleResponse | undefined) => {
   if (!newRole) {
     return
   }
   clonedRole.value = cloneDeep(newRole)
-})
+}, { immediate: true })
 
 const saveRole = async () => {
   await updateRole({ roleId: role.value.id, updatedRole: clonedRole.value, tenantId: tenantId.value! })

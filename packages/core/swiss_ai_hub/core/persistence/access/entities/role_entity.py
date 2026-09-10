@@ -85,7 +85,15 @@ class RoleEntity(Document):
             tenant_id=tenant_id,
         ).only("name")
 
-        return list(set(role.name for role in existing_roles_query))
+        return list({role.name for role in existing_roles_query})
+
+    @classmethod
+    @trace_fn
+    def tenant_role_exists(cls, name: str, tenant_id: str) -> bool:
+        """Whether a single named role exists within the tenant. Kept as a dedicated
+        method so idempotent seeding has a stable, mockable seam instead of inlining
+        ``cls.objects(...).first()``."""
+        return cls.objects(name=name, tenant_id=tenant_id).first() is not None
 
     @classmethod
     @trace_fn
@@ -168,6 +176,17 @@ class RoleEntity(Document):
 
         role.delete()
         return True
+
+    @classmethod
+    @trace_fn
+    def delete_role_from_all_tenants(cls, role_name: str) -> int:
+        """Deletes a role by name across every tenant that defines it. Returns the count removed.
+
+        Reuses ``delete_role`` per tenant so the ``UserTenantRoleEntity`` cascade runs. Used to
+        clean up per-instance roles when the underlying agent instance is deleted.
+        """
+        tenant_ids = {role.tenant_id for role in cls.objects(name=role_name).only("tenant_id")}
+        return sum(1 for tenant_id in tenant_ids if cls.delete_role(role_name, tenant_id))
 
     @classmethod
     @trace_fn

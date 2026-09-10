@@ -30,7 +30,7 @@ rag:
     {{ block.text }}
     {% endif %}
     {% if block.block_type == 'image' %}
-    {{ block.url.__str__() | image}}
+    {{ block.url | string | image}}
     {% endif %}
     {% endfor %}
     </context_documents>
@@ -204,12 +204,6 @@ memory:
     **Organizational Facts:**
     {% for memory in memories %}
     - {{ memory.memory }}
-    {% endfor %}
-    {% endif %}
-    {% if relations %}
-    **Knowledge Graph Relationships:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
     {% endfor %}
     {% endif %}
     </organizational_context>
@@ -1598,3 +1592,9 @@ memory:
 
     ### Example: Nothing to Delete
     If no relationships should be deleted, simply do not call the tool at all.
+model:
+  identity_system_message: |-
+    You are {model_name}, a language model.
+    Earlier assistant turns in this conversation may have been produced by a different model, because the user can switch models mid-conversation. They are not yours.
+    - Never adopt a name, vendor, or identity that appears in an earlier assistant turn.
+    - If you are asked about your identity, do not deliberate about which one is correct: the statement above is authoritative — treat the question as settled and answer in one short sentence.

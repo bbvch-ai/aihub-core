@@ -18,11 +18,14 @@ from swiss_ai_hub.core.events.agent import (
     ChunkEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ConversationTitleEvent,
+    CronStartEvent,
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    FollowUpQuestionsEvent,
     GuardAcceptEvent,
     GuardEvent,
     GuardRejectionEvent,
@@ -38,6 +41,11 @@ from swiss_ai_hub.core.events.agent import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    MailBatchClassifiedEvent,
+    MailBatchDraftedEvent,
+    MailFetchedEvent,
+    MailMovedEvent,
+    MetaQuestionDetectedEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
@@ -56,6 +64,7 @@ from swiss_ai_hub.core.events.agent import (
     StoreUserMemoryEvent,
     ThoughtEvent,
     ToolEvent,
+    UnreadMailListedEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -83,6 +92,8 @@ DisplayEvents = (
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
+    | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
+    | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]
     | Annotated[RouterEvent, Tag("RouterEvent")]
     | Annotated[GuardRejectionEvent, Tag("GuardRejectionEvent")]
@@ -92,11 +103,13 @@ DisplayEvents = (
     | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
     | Annotated[LLMEvent, Tag("LLMEvent")]
     | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
+    | Annotated[MetaQuestionDetectedEvent, Tag("MetaQuestionDetectedEvent")]
     | Annotated[RerankerEvent, Tag("RerankerEvent")]
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
     | Annotated[ToolEvent, Tag("ToolEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
+    | Annotated[CronStartEvent, Tag("CronStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[RAGSuccessStopEvent, Tag("RAGSuccessStopEvent")]
     | Annotated[RAGFailureStopEvent, Tag("RAGFailureStopEvent")]
@@ -117,6 +130,11 @@ DisplayEvents = (
     | Annotated[RetrieveOrganizationMemoryEvent, Tag("RetrieveOrganizationMemoryEvent")]
     | Annotated[RetrieveUserMemoryEvent, Tag("RetrieveUserMemoryEvent")]
     | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]
+    | Annotated[UnreadMailListedEvent, Tag("UnreadMailListedEvent")]
+    | Annotated[MailFetchedEvent, Tag("MailFetchedEvent")]
+    | Annotated[MailMovedEvent, Tag("MailMovedEvent")]
+    | Annotated[MailBatchDraftedEvent, Tag("MailBatchDraftedEvent")]
+    | Annotated[MailBatchClassifiedEvent, Tag("MailBatchClassifiedEvent")]
 )
 
 

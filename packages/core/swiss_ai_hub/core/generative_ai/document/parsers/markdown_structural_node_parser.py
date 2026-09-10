@@ -16,6 +16,8 @@ from pydantic import ConfigDict, Field, model_validator
 from swiss_ai_hub.core.generative_ai.document.extractors import MetadataExtractor
 from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.parsers.split import Split
+from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChunk
+from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk_size_limiter import TextChunkSizeLimiter
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
     parse_markdown_table,
     split_dataframe_into_chunks,
@@ -33,8 +35,14 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     PAGE,
     SECTION_END_LINE,
     SECTION_START_LINE,
-    NodeContentType,
 )
+
+DEFAULT_EMBEDDING_MAX_INPUT_TOKENS = 8192
+
+# Absorbs two unknowns the chunker cannot measure: the MetadataMode.EMBED prefix that embed_nodes prepends
+# (~150 tokens of metadata that no chunk budget sees), and the tokenizer mismatch — LiteLLM's token counter
+# reports tiktoken counts for bge-m3, not its real XLM-R tokenizer.
+EMBEDDING_BUDGET_SAFETY_FACTOR = 0.85
 
 
 @dataclass
@@ -46,12 +54,6 @@ class MarkdownHeader:
     @property
     def level(self) -> int:
         return len(self.hashes)
-
-
-@dataclass(frozen=True)
-class TextChunk:
-    content: str
-    content_type: NodeContentType
 
 
 def find_markdown_headers(content: str) -> list[MarkdownHeader]:
@@ -160,7 +162,13 @@ class NodeCreatorFromSplits:
     Creates nodes from splits. Nodes are linked together using PREV and NEXT relationships based on the header levels.
     """
 
-    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 20, llm_config: LLMConfig | None = None):
+    def __init__(
+        self,
+        chunk_size: int = 512,
+        chunk_overlap: int = 20,
+        llm_config: LLMConfig | None = None,
+        max_embedding_tokens: int = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS,
+    ):
         self.include_metadata = True
         self.metadata = {}
         self.sentence_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -168,6 +176,10 @@ class NodeCreatorFromSplits:
         self.current_index = 0  # Initialize the index counter
         self.header_references = {}
         self.llm_config = llm_config
+        self.size_limiter = TextChunkSizeLimiter(
+            max_tokens=int(max_embedding_tokens * EMBEDDING_BUDGET_SAFETY_FACTOR),
+            token_counter=self._count_tokens,
+        )
 
     def _count_tokens(self, text: str) -> int:
         """
@@ -278,6 +290,8 @@ class NodeCreatorFromSplits:
                     ]
                 )
 
+            text_chunks = self.size_limiter.enforce(text_chunks)
+
             split_nodes = [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
@@ -376,6 +390,11 @@ class MarkdownStructuralNodeParser(NodeParser):
     chunk_overlap: Annotated[int, Field(description="Number of overlapping tokens between chunks.")] = 20
     include_prev_next_rel: Annotated[bool, Field(description="Include prev/next node relationships.")] = False
 
+    max_embedding_tokens: Annotated[
+        int,
+        Field(description="Input limit of the embedding model that will consume these nodes."),
+    ] = DEFAULT_EMBEDDING_MAX_INPUT_TOKENS
+
     llm_config: Annotated[
         LLMConfig | None, Field(description="LLM configuration for table header detection and tokenization.")
     ] = None
@@ -408,6 +427,7 @@ class MarkdownStructuralNodeParser(NodeParser):
                 chunk_size=values.get("chunk_size", 512),
                 chunk_overlap=values.get("chunk_overlap", 20),
                 llm_config=values.get("llm_config", None),
+                max_embedding_tokens=values.get("max_embedding_tokens", DEFAULT_EMBEDDING_MAX_INPUT_TOKENS),
             )
         return values
 

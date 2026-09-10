@@ -72,7 +72,7 @@ class DispatchableWorkflow(abc.ABC):
         This provides a global view of which events can drive the workflow.
         """
         steps = cls.get_steps()
-        return set(event_class for method in steps for event_class in getattr(method, cls.INPUT_EVENTS_ANNOTATION))
+        return {event_class for method in steps for event_class in getattr(method, cls.INPUT_EVENTS_ANNOTATION)}
 
     @classmethod
     @functools.cache
@@ -82,4 +82,4 @@ class DispatchableWorkflow(abc.ABC):
         This provides a global view of which events the can emit.
         """
         steps = cls.get_steps()
-        return set(event_class for method in steps for event_class in getattr(method, cls.OUTPUT_EVENTS_ANNOTATION))
+        return {event_class for method in steps for event_class in getattr(method, cls.OUTPUT_EVENTS_ANNOTATION)}

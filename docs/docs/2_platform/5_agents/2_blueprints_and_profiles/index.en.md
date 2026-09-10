@@ -1,0 +1,173 @@
+---
+title: Blueprints & Profiles
+---
+
+# Agent Blueprints & Profiles
+
+The Swiss AI Hub platform separates agent definitions from their configurations. This lets administrators create
+multiple customized versions of the same agent type without requiring code changes.
+
+## Key Concepts
+
+### Agent Blueprint
+
+An **Agent Blueprint** is a template that defines what an agent can do:
+
+- The workflow steps it follows (what actions it takes)
+- The types of inputs it accepts (text, files, images)
+- The configuration options available (model selection, parameters)
+- The events it produces (what it outputs)
+
+Blueprints are created by developers and appear automatically in the platform when agents come online. You cannot modify
+a blueprint through the UI. Think of blueprints as read-only templates.
+
+### Agent Profile
+
+An **Agent Profile** is a configured instance of a blueprint:
+
+- Has a unique identifier (agent ID)
+- Has a custom name, description, and icon
+- Uses specific settings from the blueprint's options
+- Can be assigned specific permissions
+
+You can create multiple profiles from the same blueprint. Each profile operates independently with its own
+configuration. For example, from a "RAG Agent" blueprint, you could create:
+
+- "HR Policy Agent" profile configured to search the HR document collection
+- "Legal FAQ Agent" profile configured to search legal documents
+- "IT Support Agent" profile configured to search IT knowledge base
+
+Each profile is a separate agent that users can interact with.
+
+## Managing Blueprints
+
+### Viewing Available Blueprints
+
+Navigate to **Admin > Agents > Blueprints** to see the agent templates available to your tenant.
+
+The list is not the full set the platform runs. A tenant is granted a standard blueprint set when it is created, and
+blueprints outside it are absent from this list rather than shown and refused. A sysadmin grants a further blueprint per
+tenant in the tenant editor — no redeploy, and it appears here immediately. See
+[Access control](../../16_multi_tenancy/4_access_control/) for how the ceiling is derived.
+
+Each blueprint displays:
+
+- **Name**: The blueprint identifier
+- **Description**: What the agent does
+- **Status**: Whether any instances are currently online
+- **Configuration Form**: The settings available for profiles
+
+### Blueprint Status
+
+Blueprints show online/offline status based on whether any running agent instances have registered recently. An offline
+blueprint means no agents of that type are currently running, but you can still create and configure profiles. Those
+profiles will become active when the agent service starts.
+
+## Managing Profiles
+
+### Creating a New Profile
+
+1. Navigate to the blueprint you want to use
+2. Click **Create Profile**
+3. Pick a starting point. Blueprints ship with profile templates — ready-made configurations for common use cases.
+   Selecting one prefills every field, leaving you to review and adjust. Skip this step to start from a blank form.
+4. Fill in the required fields:
+   - **Agent ID**: A unique identifier (lowercase letters, numbers, underscores, hyphens)
+   - **Name**: Display name in the selected languages
+   - **Description**: What this specific profile does
+   - **Icon**: Visual identifier
+5. Configure the agent-specific settings (model, parameters, etc.)
+6. Click **Save**
+
+Templates are curated per blueprint, not per tenant: a blueprint you can see offers every template it ships. Browse them
+all under the **Templates** tab.
+
+The profile becomes available immediately. Users with appropriate permissions can start interacting with it.
+
+### Editing a Profile
+
+1. Navigate to **Admin > Agents > Profiles**
+2. Find and select the profile
+3. Click **Edit**
+4. Modify the configuration
+5. Click **Save**
+
+Changes take effect for new conversations. Existing active conversations continue with the previous configuration until
+they complete.
+
+### Deleting a Profile
+
+1. Navigate to the profile
+2. Click **Delete**
+3. Confirm the deletion
+
+Deleting a profile removes its configuration. Historical conversation data with that profile is preserved for audit
+purposes. The blueprint remains available for creating new profiles.
+
+## Configuration Options
+
+The settings available for each profile depend on the blueprint. Common configuration options include:
+
+### Model Selection
+
+Choose which language model the agent uses. Options depend on which models are available through your LiteLLM
+configuration.
+
+### Task LLM
+
+Optional second model for the agent's auxiliary work — short classification and rewriting tasks such as turning a
+follow-up question into a standalone one, the relevance and context-sufficiency guards, request routing, and generating
+the conversation title and follow-up suggestions. Pointing them at a smaller, cheaper model reduces cost and latency
+without affecting answer quality. The exact set of steps depends on the blueprint and is listed in the tooltip next to
+the **Enable Task LLM** checkbox.
+
+Only the model is selectable: temperature and timeout are inherited from **Model Selection**, and log probabilities are
+always off for these steps. Leave the whole section disabled and every step runs on the main model.
+
+The knowledge-grounded answer the user reads is always generated by the main model. The one user-facing exception is the
+reply to a meta question about the agent itself ("what can you do?"), which the task model also handles.
+
+### Temperature
+
+Controls response creativity:
+
+- Lower values (0.0-0.3): More focused, deterministic responses
+- Higher values (0.7-1.0): More creative, varied responses
+
+### Knowledge Base
+
+For RAG-enabled agents, select which document collections the agent can search.
+
+### System Prompt
+
+Some agents allow customizing the system prompt to adjust behavior and personality.
+
+## Permissions
+
+Access to profiles follows the platform's permission system:
+
+- **Blueprint access** (`aihub.admin.agent.{blueprint}.*`): Manage profiles for a specific blueprint
+- **Profile access** (`aihub.user.agent.{blueprint}.{profile_id}`): Use a specific profile
+- **Wildcard access** (`aihub.user.agent.*.>`): Access all agents (typically for administrators)
+
+See the [Access Management](../../11_access_management/) section for details on configuring permissions.
+
+## Best Practices
+
+### Naming Conventions
+
+- Use descriptive profile names that indicate the purpose ("HR Policy Assistant" not "RAG Agent 1")
+- Keep agent IDs short but meaningful (`hr_policy`, `legal_faq`)
+- Include the target audience in descriptions ("For employees with HR questions")
+
+### Configuration Strategy
+
+- Start with conservative settings (lower temperature, smaller context windows)
+- Test with representative questions before deploying widely
+- Create separate profiles for different use cases rather than one generic profile
+
+### Lifecycle Management
+
+- Review profile usage periodically through audit logs
+- Retire unused profiles to reduce confusion
+- Document configuration choices for team knowledge sharing

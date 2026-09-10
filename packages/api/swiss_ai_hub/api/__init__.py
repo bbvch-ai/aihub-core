@@ -5,6 +5,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
     from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
+    from swiss_ai_hub.api.routes.access.access_controller import AccessController
+    from swiss_ai_hub.api.routes.access.dto.access_capabilities_dto import AccessCapabilitiesResponse
+    from swiss_ai_hub.api.routes.access.dto.access_capabilities_request import AccessCapabilitiesRequest
+    from swiss_ai_hub.api.routes.access.dto.access_preset_dto import AccessPresetDTO
     from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
     from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
     from swiss_ai_hub.api.routes.event.event_controller import EventController
@@ -25,6 +29,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
 __all__ = [
+    "AccessCapabilitiesRequest",
+    "AccessCapabilitiesResponse",
+    "AccessController",
+    "AccessPresetDTO",
     "AgentController",
     "ApiHealthController",
     "ApiLocaleHandler",
@@ -46,6 +54,10 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AccessCapabilitiesRequest": "swiss_ai_hub.api.routes.access.dto.access_capabilities_request",
+    "AccessCapabilitiesResponse": "swiss_ai_hub.api.routes.access.dto.access_capabilities_dto",
+    "AccessController": "swiss_ai_hub.api.routes.access.access_controller",
+    "AccessPresetDTO": "swiss_ai_hub.api.routes.access.dto.access_preset_dto",
     "AgentController": "swiss_ai_hub.api.routes.agent.agent_controller",
     "ApiHealthController": "swiss_ai_hub.api.routes.health.api_health_controller",
     "ApiLocaleHandler": "swiss_ai_hub.api.i18n.api_locale_handler",

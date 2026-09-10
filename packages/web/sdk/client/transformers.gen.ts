@@ -3,6 +3,7 @@
 import type {
   CreateDatasetResponse,
   CreateTokenEndpointResponse,
+  GetAccessCapabilitiesResponse,
   GetAgentEventTimeseriesResponse,
   GetDatasetResponse,
   GetDatasetsResponse,
@@ -56,6 +57,29 @@ export const createTokenEndpointResponseTransformer = async (
   data: any,
 ): Promise<CreateTokenEndpointResponse> => {
   data = createTokenResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+const capabilityGroupSchemaResponseTransformer = (data: any) => {
+  if (data.groups) {
+    data.groups = data.groups.map((item: any) =>
+      capabilityGroupSchemaResponseTransformer(item),
+    );
+  }
+  return data;
+};
+
+const accessCapabilitiesResponseSchemaResponseTransformer = (data: any) => {
+  data.groups = data.groups.map((item: any) =>
+    capabilityGroupSchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const getAccessCapabilitiesResponseTransformer = async (
+  data: any,
+): Promise<GetAccessCapabilitiesResponse> => {
+  data = accessCapabilitiesResponseSchemaResponseTransformer(data);
   return data;
 };
 

@@ -1,36 +1,30 @@
 Feature: Agent Description Guard
 
-  Scenario: Validate agent description guard with valid inputs
-    Given a locale handler with locale "de"
-    And an agent description "Test agent description"
-    And a user query "Test user query"
-    And the following messages:
-      | role      | content         |
-      | USER      | User message 1  |
-      | ASSISTANT | Agent message 1 |
-    When the agent description guard is executed
-    Then structured_predict should be called
-    And structured_predict should be called with prompt:
-      """
-      Die Beschreibung eines Agenten lautet wiefolgt:
-      <Agentenbeschreibung>
-      Test agent description
-      </Agentenbeschreibung>
-      Der Agent hat eventuell Zugriff auf weitere Informationsquellen, die ihm bei der Beantwortung der Frage helfen könnten.
-      Entscheide, ob die vom Benutzer gestellte Frage im Kontext des Gespräches diesem Agenten gestellt werden soll. Lasse alle Fragen zu, die
-      möglicherweise in den Themenbereich des Agenten fallen. Blockiere alle Fragen, die ganz offensichtlich
-      überhaupt nichts mit dem Agenten zu tun haben. Im zweifelsfall entscheide dich für das Zulassen der Frage.
-      <Benutzer Anfrage>
-      Test user query
-      </Benutzer Anfrage>
-      <vergangener Gesprächsverlauf>
-      <Benutzer>
-      User message 1
-      </Benutzer>
-      <Agent>
-      Agent message 1
-      </Agent>
+  The guard asks the model for a plain-text ALLOW/BLOCK verdict (reasoning models cannot reliably
+  produce structured output) and parses it. On an unrecognizable response it fails open (accepts).
 
-      </vergangener Gesprächsverlauf>
-      Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
-      """
+  Scenario: Accepts an in-scope question
+    Given a locale handler with locale "en"
+    And an agent description "An assistant that answers HR policy questions"
+    And a user query "How many vacation days do I get?"
+    And the guard model replies "ALLOW Within the HR scope"
+    When the agent description guard is executed
+    Then the guard should accept the request
+    And the reasoning should be "Within the HR scope"
+
+  Scenario: Blocks an out-of-scope question
+    Given a locale handler with locale "en"
+    And an agent description "An assistant that answers HR policy questions"
+    And a user query "What is the capital of France?"
+    And the guard model replies "BLOCK Unrelated to HR"
+    When the agent description guard is executed
+    Then the guard should reject the request
+    And the reasoning should be "Unrelated to HR"
+
+  Scenario: Accepts (fail-open) when the model returns no recognizable verdict
+    Given a locale handler with locale "en"
+    And an agent description "An assistant that answers HR policy questions"
+    And a user query "How many vacation days do I get?"
+    And the guard model replies "I am unable to decide right now."
+    When the agent description guard is executed
+    Then the guard should accept the request

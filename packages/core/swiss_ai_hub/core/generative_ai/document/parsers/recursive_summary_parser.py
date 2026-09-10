@@ -1,8 +1,12 @@
+import logging
+from collections.abc import Callable
 from typing import Any
 
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from openai import BadRequestError
 
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -18,16 +22,120 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
 )
 
+logger = logging.getLogger(__name__)
+
+DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default; Infomaniak serves gemma-4-31B-it at 100000
+
+# Absorbs the prompt-template overhead the budget check cannot measure until render time and the tokenizer
+# mismatch between our counter and the model actually enforcing the limit.
+SUMMARIZATION_BUDGET_SAFETY_FACTOR = 0.85
+
+# Worst-case tokens per character assumed by `_fits`'s accept short-circuit. Deployments process Latin-script
+# EU-language content (German, English, and other EU languages) -- even a multi-byte accented character
+# under byte-level BPE fallback costs at most ~2 tokens, well short of CJK's worst case of ~3. Raise this back
+# toward 3 if this pipeline ever needs to process CJK content.
+SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2
+
+MAX_REDUCE_ROUNDS = 4
+
+
+class SummaryDidNotConvergeError(Exception):
+    """A section still exceeds the token budget after MAX_REDUCE_ROUNDS of map-reduce."""
+
 
 class LLMSummarizer:
-    def __init__(self, llm: LLM, t: LocaleHandler):
+    def __init__(
+        self,
+        llm: LLM,
+        t: LocaleHandler,
+        max_input_tokens: int = DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS,
+        token_counter: Callable[[str], list[int]] | None = None,
+    ):
         self._llm: LLM = llm
         prompt_str: str = t("lib.prompt.summarizer.summarize")
         self._summarize_prompt_template: PromptTemplate = PromptTemplate(prompt_str)
+        self._token_counter = token_counter
+        self._budget = int(max_input_tokens * SUMMARIZATION_BUDGET_SAFETY_FACTOR)
+
+        # The splitter only ever sees raw text, but `_fits` measures the rendered template around it. Sizing
+        # the splitter to the full budget let it hand back chunks that were already over budget once wrapped,
+        # for any budget where the fixed template overhead isn't dwarfed by the safety factor's margin.
+        template_overhead = self._count_tokens(self._summarize_prompt_template.format(text=""))
+        self._splitter = SentenceSplitter(
+            chunk_size=max(1, self._budget - template_overhead),
+            chunk_overlap=0,
+            tokenizer=lambda text: [0] * self._count_tokens(text),
+        )
 
     def summarize(self, text: str) -> str:
         if not text or not text.strip():
             return ""
+        return self._summarize_within_budget(text, reduce_round=0)
+
+    def _summarize_within_budget(self, text: str, reduce_round: int) -> str:
+        if self._fits(text):
+            return self._predict(text)
+        if reduce_round >= MAX_REDUCE_ROUNDS:
+            raise SummaryDidNotConvergeError(
+                f"summary did not converge within {MAX_REDUCE_ROUNDS} reduce rounds "
+                f"({self._count_tokens(text)} tokens against a {self._budget}-token budget)"
+            )
+        partial = [
+            self._predict(batch) if already_fits else self._summarize_within_budget(batch, reduce_round + 1)
+            for batch, already_fits in self._batches(text)
+        ]
+        return self._summarize_within_budget("\n\n".join(p for p in partial if p), reduce_round + 1)
+
+    def _batches(self, text: str) -> list[tuple[str, bool]]:
+        """
+        Group paragraphs into batches that fit, measuring the joined string that will actually be sent.
+
+        Additive per-segment token counts drift from the real payload once separators and boundary effects
+        accumulate over many segments. Halving the segment list instead measures the real payload and always
+        makes progress, so it cannot loop.
+
+        Each batch is tagged with whether `_fits` already confirmed it, so the caller can predict directly
+        instead of re-measuring a string that hasn't changed since. Splitter leaves are tagged False:
+        `SentenceSplitter`'s boundary math is close but unverified, so they still need the recursive re-check
+        (and its termination bound) as a safety net.
+        """
+
+        def group(segments: list[str]) -> list[tuple[str, bool]]:
+            joined = "\n\n".join(segments)
+            if self._fits(joined):
+                return [(joined, True)]
+            if len(segments) == 1:
+                return [(leaf, False) for leaf in self._splitter.split_text(segments[0])]
+            mid = len(segments) // 2
+            return group(segments[:mid]) + group(segments[mid:])
+
+        return group(text.split("\n\n"))
+
+    def _fits(self, text: str) -> bool:
+        """
+        Decide whether `text`, once wrapped in the summarize prompt, is within budget.
+
+        For the Latin-script EU-language content this pipeline processes, a character never costs more than
+        `SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` tokens, so a render at or under `budget /
+        SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER` is guaranteed to fit without the network round trip
+        `_count_tokens` costs. Symmetrically, no tokenizer we route through produces more than one token per
+        character, so a render past 4x the budget is guaranteed to overflow it. That round trip is only
+        load-bearing in the boundary between those two — never on a whole oversized document or a large
+        map-reduce batch, which the reject short-circuit keeps off `/utils/token_counter` entirely.
+        """
+        rendered = self._summarize_prompt_template.format(text=text)
+        if len(rendered) <= self._budget // SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER:
+            return True
+        if len(rendered) > self._budget * 4:
+            return False
+        return self._count_tokens(rendered) <= self._budget
+
+    def _count_tokens(self, text: str) -> int:
+        if self._token_counter is None:
+            return len(text) // 4
+        return len(self._token_counter(text))
+
+    def _predict(self, text: str) -> str:
         response: str = self._llm.predict(self._summarize_prompt_template, text=text)
         return response.strip()
 
@@ -37,9 +145,13 @@ class RecursiveNodeSummarizer:
         self,
         llm: LLM,
         min_summarization_length: int = 250,
+        max_input_tokens: int = DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS,
+        token_counter: Callable[[str], list[int]] | None = None,
     ):
         self._llm = llm
         self.min_summarization_length = min_summarization_length
+        self._max_input_tokens = max_input_tokens
+        self._token_counter = token_counter
         self.node_id_to_node = {}
 
     @trace_fn
@@ -49,7 +161,12 @@ class RecursiveNodeSummarizer:
 
         locale = nodes[0].metadata.get(LANGUAGE, NODE_LANGUAGE_ENGLISH)
         locale_handler = LocaleHandler(locale=locale)
-        llm_summarizer: LLMSummarizer = LLMSummarizer(llm=self._llm, t=locale_handler)
+        llm_summarizer: LLMSummarizer = LLMSummarizer(
+            llm=self._llm,
+            t=locale_handler,
+            max_input_tokens=self._max_input_tokens,
+            token_counter=self._token_counter,
+        )
 
         self.node_id_to_node = {node.node_id: node for node in nodes}
         grouped_nodes = self._group_nodes_by_level(nodes)
@@ -99,16 +216,11 @@ class RecursiveNodeSummarizer:
         if not combined_text:
             return None
 
-        summary_text: str = combined_text
-        if len(combined_text) >= self.min_summarization_length or level == 0:
-            summary_text = summarizer.summarize(combined_text)
-            if not summary_text.strip() and combined_text:
-                summary_text = combined_text
-
-        if not summary_text.strip():
+        reference_node: TextNode = child_summaries[0]
+        summary_text: str | None = self._summarize_combined_text(combined_text, level, summarizer, reference_node)
+        if summary_text is None:
             return None
 
-        reference_node: TextNode = child_summaries[0]
         summary_node: TextNode = self._create_summary_node(reference_node, summary_text, level, index=index)
 
         for child in child_summaries:
@@ -172,13 +284,8 @@ class RecursiveNodeSummarizer:
             if not combined_text:
                 continue
 
-            summary_text: str = combined_text
-            if len(combined_text) >= self.min_summarization_length or level == 0:
-                summary_text = summarizer.summarize(combined_text)
-                if not summary_text.strip() and combined_text:
-                    summary_text = combined_text
-
-            if not summary_text.strip():
+            summary_text: str | None = self._summarize_combined_text(combined_text, level, summarizer, node)
+            if summary_text is None:
                 continue
 
             summary_node: TextNode = self._create_summary_node(node, summary_text, level, index=current_index_for_level)
@@ -192,6 +299,33 @@ class RecursiveNodeSummarizer:
             summarized_nodes_for_this_level.append(summary_node)
 
         return summarized_nodes_for_this_level
+
+    def _summarize_combined_text(
+        self, combined_text: str, level: int, summarizer: LLMSummarizer, reference_node: TextNode
+    ) -> str | None:
+        """
+        Return the summary for `combined_text`, or None if it should be skipped.
+
+        Catches summarization failure instead of letting it propagate (deviates from the repo's fail-fast
+        convention): one section that cannot be reduced within budget would otherwise abort the whole
+        document and discard every sibling summary already completed in this run, sometimes tens of
+        minutes of LLM work.
+        """
+        summary_text = combined_text
+        if len(combined_text) >= self.min_summarization_length or level == 0:
+            try:
+                summary_text = summarizer.summarize(combined_text)
+            except (SummaryDidNotConvergeError, BadRequestError) as summarization_failure:
+                logger.warning(
+                    "Skipping summary for %s: %s",
+                    self._get_header_hierarchy(reference_node),
+                    summarization_failure,
+                )
+                return None
+            if not summary_text.strip() and combined_text:
+                summary_text = combined_text
+
+        return summary_text if summary_text.strip() else None
 
     @staticmethod
     def _is_node_truly_headerless(node: TextNode) -> bool:

@@ -4,6 +4,9 @@ from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
+_ADMIN_PREFIX = "aihub.admin."
+_USER_PREFIX = "aihub.user."
+
 
 class AccessChecker:
     """
@@ -26,6 +29,14 @@ class AccessChecker:
         - User Access Rule: `aihub.user.agent.class_a.*`
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match!
         - Permission Template: `aihub.user.agent.?>` -> Match!
+        A '?>' asks "any access at or below this node", so a rule naming exactly that node also matches:
+        - User Access Rule: `aihub.user.knowledge.db_a`
+        - Permission Template: `aihub.user.knowledge.db_a.?>` -> Match!
+        A literal '*' in a template asks for *every* child: only a rule holding a wildcard there satisfies it.
+        - User Access Rule: `aihub.user.knowledge.db_a.reports`
+        - Permission Template: `aihub.user.knowledge.db_a.*` -> No match (one namespace is not all of them)
+        - User Access Rule: `aihub.user.knowledge.db_a.>`
+        - Permission Template: `aihub.user.knowledge.db_a.*` -> Match!
 
     3.  Admin Check: aihub.admin are automatically also aihub.user. To differentiate whether a user accessing an
         endpoint has user or admin privilege, we use AccessLevel.ACCESS_ADMIN or AccessLevel.ACCESS_USER.
@@ -35,6 +46,11 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
+    # Public aliases of the permission-template prefixes, so callers building or recognizing
+    # rules (e.g. the access-capability catalog) reuse the grammar instead of restating literals.
+    USER_PREFIX = _USER_PREFIX
+    ADMIN_PREFIX = _ADMIN_PREFIX
+
     def __init__(self, user_access_rules: list[str], tenant_access_rules: list[str], is_sys_admin: bool = False):
         # Sysadmin short-circuit — the ``AIHubSysAdmin`` realm role grants implicit
         # admin access to every resource in every tenant. This sidesteps the normal
@@ -43,13 +59,13 @@ class AccessChecker:
 
         # User access rules
         self.user_valid_access_rules = self._get_validated_access_rules(user_access_rules)
-        self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.admin.")}
-        self.user_user_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.user.")}
+        self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith(_ADMIN_PREFIX)}
+        self.user_user_access_rules = {r for r in self.user_valid_access_rules if r.startswith(_USER_PREFIX)}
 
         # Tenant access rules (required - if empty, user has no access to anything)
         self.tenant_valid_access_rules = self._get_validated_access_rules(tenant_access_rules)
-        self.tenant_admin_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.admin.")}
-        self.tenant_user_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.user.")}
+        self.tenant_admin_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith(_ADMIN_PREFIX)}
+        self.tenant_user_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith(_USER_PREFIX)}
 
     @property
     def access_rules(self):
@@ -89,7 +105,7 @@ class AccessChecker:
     @staticmethod
     def validate_user_access_rule(access_rule: str) -> bool:
         """Ensures a users access_rules follows the strict format."""
-        if not access_rule.startswith(("aihub.user.", "aihub.admin.")):
+        if not access_rule.startswith((_USER_PREFIX, _ADMIN_PREFIX)):
             return False
         if not re.fullmatch(r"[a-zA-Z0-9\.\-\_\*\>]+", access_rule):
             return False
@@ -101,18 +117,22 @@ class AccessChecker:
     @staticmethod
     def validate_permission_template(template: str):
         """Ensures a permission template follows the strict format."""
-        if not template.startswith(("aihub.user.", "aihub.admin.")):
+        if not template.startswith((_USER_PREFIX, _ADMIN_PREFIX)):
             raise ValueError(
                 f"Invalid permission template: Must start with 'aihub.user.' or 'aihub.admin.'. Got: {template}"
             )
         parts = template.split(".")
         for part in parts:
             is_valid_token = re.fullmatch(r"[a-z0-9\-\_]+", part, re.IGNORECASE)
-            is_special_wildcard = part in ["?*", "?>"]
+            is_special_wildcard = part in ["?*", "?>", "*"]
             if not (is_valid_token or is_special_wildcard):
                 raise ValueError(f"Invalid permission template: Contains invalid token '{part}' in '{template}'")
         if "?>" in parts and parts[-1] != "?>":
             raise ValueError(f"Invalid permission template: '?>' must be the last token. Got: {template}")
+        if "*" in parts and (parts[-1] != "*" or len(parts) < 5):
+            raise ValueError(
+                f"Invalid permission template: '*' may only close a template below a named resource. Got: {template}"
+            )
 
     def _get_validated_access_rules(self, access_rules: list[str]) -> set[str]:
         """Filters and validates the user's access_rules."""
@@ -152,9 +172,117 @@ class AccessChecker:
             if r_part != t_part:
                 return False
             ti, ri = ti + 1, ri + 1
-        if ri < len(access_rule_parts) and access_rule_parts[ri] == ">":
+        return self._unconsumed_parts_match(access_rule_parts[ri:], template_parts[ti:])
+
+    @staticmethod
+    def _unconsumed_parts_match(access_rule_remainder: list[str], template_remainder: list[str]) -> bool:
+        """Decides the walk once either side runs out: a rule continuing with '>' covers whatever the
+        template still asks for, and an exhausted rule still satisfies a '?>' naming its own subtree root."""
+        if access_rule_remainder[:1] == [">"]:
             return True
-        return ri == len(access_rule_parts) and ti == len(template_parts)
+        if access_rule_remainder:
+            return False
+        return template_remainder in ([], ["?>"])
+
+    @staticmethod
+    def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:
+        """Canonical admin permission for a specific agent instance (not the agent class/blueprint)."""
+        return f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def agent_instance_user_rule(agent_class: str, agent_id: str) -> str:
+        """Canonical user permission for a specific agent instance (not the agent class/blueprint)."""
+        return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
+
+    @staticmethod
+    def knowledge_database_admin_rule(database: str) -> str:
+        """Canonical admin permission for one knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_database_user_rule(database: str) -> str:
+        """Canonical user permission for one knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}"
+
+    @staticmethod
+    def knowledge_namespace_admin_rule(database: str, namespace: str) -> str:
+        """Canonical admin permission for one namespace inside a knowledge database."""
+        return f"{_ADMIN_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
+    def knowledge_namespace_user_rule(database: str, namespace: str) -> str:
+        """Canonical user permission for one namespace inside a knowledge database."""
+        return f"{_USER_PREFIX}knowledge.{database}.{namespace}"
+
+    @staticmethod
+    def knowledge_all_namespaces_user_rule(database: str) -> str:
+        """Template satisfied only by a rule covering every namespace of the database (``.*`` or ``.>``).
+
+        Reading a whole database, as a retriever configured without namespaces does, needs this; a rule
+        naming one namespace must not qualify.
+        """
+        return f"{_USER_PREFIX}knowledge.{database}.*"
+
+    @staticmethod
+    def model_user_rule(model_capability: str, model_name: str) -> str:
+        """Canonical user permission for a specific llm (not the llm capability e.x. reranking, text etc.)."""
+        normalized_capability = AccessChecker._normalize_model_segment(model_capability)
+        normalized_model = AccessChecker._normalize_model_segment(model_name)
+        return f"{_USER_PREFIX}model.{normalized_capability}.{normalized_model}"
+
+    @staticmethod
+    def _normalize_model_segment(value: str) -> str:
+        """Collapse a model identifier into one permission segment.
+
+        Model names carry version dots and provider slashes (``gpt-4.1``,
+        ``text-generation/gpt-4``) that the matcher would otherwise read as extra
+        hierarchy levels — or reject outright. Mapping every character outside
+        ``[a-zA-Z0-9_-]`` to ``_`` keeps the name on a single level so a capability
+        wildcard (``...text-generation.*``) covers it.
+        """
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", value)
+
+    @staticmethod
+    def normalize_model_access_rule(rule: str) -> str:
+        """Collapses the model-name part of a model access rule to a single segment (``.``/``/`` → ``_``).
+
+        A hand-authored rule such as ``aihub.user.model.text-generation.Kimi-K2.6`` reads its version dot
+        as a hierarchy separator, so it can never match the template ``model_user_rule`` builds (which
+        normalizes the name to ``Kimi-K2_6``). Rewriting the name on save makes the two sides line up.
+        Wildcard tails (``*``/``>``) and non-model rules pass through unchanged, and the transform is
+        idempotent (an already-normalized name has no characters left to collapse).
+        """
+        for prefix in (_USER_PREFIX, _ADMIN_PREFIX):
+            model_prefix = f"{prefix}model."
+            if not rule.startswith(model_prefix):
+                continue
+            capability, separator, model_name = rule[len(model_prefix) :].partition(".")
+            if not separator or "*" in model_name or ">" in model_name:
+                return rule
+            return f"{model_prefix}{capability}.{AccessChecker._normalize_model_segment(model_name)}"
+        return rule
+
+    @classmethod
+    def rules_grant_admin_to_agent_instance(cls, rules: list[str], agent_class: str, agent_id: str) -> bool:
+        """Whether a flat rule list already grants admin to a concrete agent instance.
+
+        Used to decide whether a per-instance grant is redundant (e.g. a tenant already
+        holding ``aihub.admin.>``), without the two-tier tenant/user evaluation.
+        """
+        return cls.rules_grant_admin(rules, cls.agent_instance_admin_rule(agent_class, agent_id))
+
+    @classmethod
+    def rules_grant_admin(cls, rules: list[str], admin_permission: str) -> bool:
+        """Whether a flat rule list already grants admin to a concrete permission.
+
+        Used to decide whether a per-resource grant is redundant (e.g. a tenant already holding
+        ``aihub.admin.>``), without the two-tier tenant/user evaluation.
+        """
+        checker = cls(user_access_rules=rules, tenant_access_rules=[])
+        return any(
+            checker._access_rule_matches_concrete_permission(access_rule, admin_permission)
+            for access_rule in checker.user_admin_access_rules
+        )
 
     def access_level(self, permission_template: str) -> AccessLevel:
         """
@@ -180,7 +308,7 @@ class AccessChecker:
             else self._access_rule_matches_concrete_permission
         )
 
-        admin_perm_to_check = permission_template.replace("aihub.user.", "aihub.admin.", 1)
+        admin_perm_to_check = permission_template.replace(_USER_PREFIX, _ADMIN_PREFIX, 1)
 
         # STAGE 1: Determine what level of access the TENANT has
         tenant_has_admin_access = False
@@ -193,7 +321,7 @@ class AccessChecker:
                 break
 
         # Check tenant user access (only if permission is user-level)
-        if permission_template.startswith("aihub.user."):
+        if permission_template.startswith(_USER_PREFIX):
             for access_rule in self.tenant_user_access_rules:
                 if match_func(access_rule, permission_template):
                     tenant_has_user_access = True
@@ -214,7 +342,7 @@ class AccessChecker:
                 break
 
         # Check user user access (only if permission is user-level)
-        if permission_template.startswith("aihub.user."):
+        if permission_template.startswith(_USER_PREFIX):
             for access_rule in self.user_user_access_rules:
                 if match_func(access_rule, permission_template):
                     user_has_user_access = True
@@ -237,9 +365,29 @@ class AccessChecker:
         """Convenience method to check if a user has access to a specific resource."""
         return self.access_level(permission_template) != AccessLevel.ACCESS_DENIED
 
+    @staticmethod
+    def process_user_rule(process_class: str, process_id: str) -> str:
+        """Canonical user-level permission rule for a specific process instance."""
+        return f"{_USER_PREFIX}process.{process_class}.{process_id}"
+
+    @staticmethod
+    def process_admin_rule(process_class: str, process_id: str) -> str:
+        """Canonical admin-level permission rule for a specific process instance."""
+        return f"{_ADMIN_PREFIX}process.{process_class}.{process_id}"
+
+    @staticmethod
+    def service_user_rule(service_name: str) -> str:
+        """Canonical user-level permission rule for a platform service."""
+        return f"{_USER_PREFIX}service.{service_name}"
+
+    @staticmethod
+    def service_admin_rule(service_name: str) -> str:
+        """Canonical admin-level permission rule for a platform service."""
+        return f"{_ADMIN_PREFIX}service.{service_name}"
+
     def access_level_for_agent(self, agent_class: str, agent_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific agent."""
-        return self.access_level(f"aihub.user.agent.{agent_class}.{agent_id}")
+        return self.access_level(self.agent_instance_user_rule(agent_class, agent_id))
 
     def has_access_to_agent(self, agent_class: str, agent_id: str) -> bool:
         """Convenience method to check access level for a specific agent."""
@@ -247,11 +395,28 @@ class AccessChecker:
 
     def has_access_to_agent_class(self, agent_class: str) -> bool:
         """Convenience method to check access level for a specific agent."""
-        return self.access_level(f"aihub.user.agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+        return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+
+    def has_access_to_knowledge_namespace(self, database: str, namespace: str) -> bool:
+        return self.has_access(self.knowledge_namespace_user_rule(database, namespace))
+
+    def has_access_to_all_knowledge_namespaces(self, database: str) -> bool:
+        return self.has_access(self.knowledge_all_namespaces_user_rule(database))
+
+    def access_level_for_model(self, model_capability: str, model_name: str) -> AccessLevel:
+        """Convenience method to check access level for a specific model."""
+        return self.access_level(self.model_user_rule(model_capability, model_name))
+
+    def has_access_to_model(self, model_capability: str, model_name: str) -> bool:
+        return self.access_level_for_model(model_capability, model_name) != AccessLevel.ACCESS_DENIED
+
+    def has_access_to_model_capability(self, model_capability: str) -> bool:
+        normalized_capability = AccessChecker._normalize_model_segment(model_capability)
+        return self.access_level(f"aihub.user.model.{normalized_capability}.?*") != AccessLevel.ACCESS_DENIED
 
     def access_level_for_process(self, process_class: str, process_id: str) -> AccessLevel:
         """Convenience method to check access level for a specific process."""
-        return self.access_level(f"aihub.user.process.{process_class}.{process_id}")
+        return self.access_level(self.process_user_rule(process_class, process_id))
 
     def has_access_to_process(self, process_class: str, process_id: str) -> bool:
         """Convenience method to check access level for a specific process."""
@@ -259,11 +424,11 @@ class AccessChecker:
 
     def has_access_to_process_class(self, process_class: str) -> bool:
         """Convenience method to check access level for a specific process."""
-        return self.access_level(f"aihub.user.process.{process_class}.?*") != AccessLevel.ACCESS_DENIED
+        return self.access_level(f"{_USER_PREFIX}process.{process_class}.?*") != AccessLevel.ACCESS_DENIED
 
     def access_level_for_service(self, service_name) -> AccessLevel:
         """Convenience method to check access level for a specific service."""
-        return self.access_level(f"aihub.user.service.{service_name}")
+        return self.access_level(self.service_user_rule(service_name))
 
     def has_access_to_service(self, service_name) -> bool:
         """Convenience method to check access level for a specific service."""

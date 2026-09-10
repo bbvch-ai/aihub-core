@@ -6,7 +6,8 @@ from scim2_models import Group
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
-    AIHUB_MODEL_PREFIX,
+    AIHUB_AGENT_PREFIX,
+    AIHUB_LLM_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
 
@@ -21,7 +22,7 @@ class TestComputeAccessForModel:
     def test_group_with_matching_rules_gets_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
-        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.rag.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -30,7 +31,7 @@ class TestComputeAccessForModel:
     def test_group_without_matching_rules_denied(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
-        role_rules = {"R1": ["aihub.user.agent.other.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.other.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -39,7 +40,7 @@ class TestComputeAccessForModel:
     def test_tenant_ceiling_blocks_role_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.other.*"]}
-        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.rag.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -48,7 +49,7 @@ class TestComputeAccessForModel:
     def test_wildcard_rules_grant_broad_access(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
-        role_rules = {"R1": ["aihub.user.agent.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.>"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -57,7 +58,7 @@ class TestComputeAccessForModel:
     def test_empty_tenant_rules_deny_all(self) -> None:
         groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": []}
-        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.rag.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -70,8 +71,8 @@ class TestComputeAccessForModel:
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {
-            "R1": ["aihub.user.agent.rag.*"],
-            "R2": ["aihub.user.agent.llm.*"],
+            ("T1", "R1"): ["aihub.user.agent.rag.*"],
+            ("T1", "R2"): ["aihub.user.agent.llm.*"],
         }
 
         result_rag = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
@@ -87,7 +88,7 @@ class TestComputeAccessForModel:
             _group("aihub:T1:R1", "grp-good"),
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
-        role_rules = {"R1": ["aihub.user.agent.>"]}
+        role_rules = {("T1", "R1"): ["aihub.user.agent.>"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
@@ -97,17 +98,17 @@ class TestComputeAccessForModel:
 
 class TestParseAgentFromModel:
     def test_parses_from_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
     def test_returns_none_without_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": ""}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": ""}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
     def test_returns_none_for_malformed_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
+        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
@@ -122,7 +123,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
@@ -138,11 +139,13 @@ class TestSyncAccessGrants:
         ):
             tenant = MagicMock()
             tenant.name = "T1"
+            tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
             mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
+            role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.>"]
             mock_role.objects.return_value = [role]
 
@@ -150,7 +153,7 @@ class TestSyncAccessGrants:
 
             mock_update.assert_called_once()
             call_args = mock_update.call_args
-            assert call_args[0][1] == f"{AIHUB_MODEL_PREFIX}rag-default"
+            assert call_args[0][1] == f"{AIHUB_AGENT_PREFIX}rag-default"
             grants = call_args[0][2]
             assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
 
@@ -164,7 +167,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
                 ],
             ),
             patch.object(
@@ -180,11 +183,13 @@ class TestSyncAccessGrants:
         ):
             tenant = MagicMock()
             tenant.name = "T1"
+            tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.my-rag.*"]
             mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
+            role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.my-rag.*"]
             mock_role.objects.return_value = [role]
 
@@ -203,7 +208,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_models",
-                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}rag-default"}],
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}rag-default"}],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -218,11 +223,13 @@ class TestSyncAccessGrants:
         ):
             tenant = MagicMock()
             tenant.name = "T1"
+            tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.rag.*"]
             mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
+            role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.rag.*"]
             mock_role.objects.return_value = [role]
 
@@ -239,7 +246,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_models",
-                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -254,11 +261,13 @@ class TestSyncAccessGrants:
         ):
             tenant = MagicMock()
             tenant.name = "T1"
+            tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
             mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
             role.name = "R1"
+            role.tenant_id = "T1"
             role.access_rules = ["aihub.user.agent.>"]
             mock_role.objects.return_value = [role]
 
@@ -275,7 +284,7 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_models",
                 return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
@@ -294,14 +303,17 @@ class TestSyncAccessGrants:
         ):
             tenant = MagicMock()
             tenant.name = "T1"
+            tenant.id = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
             mock_tenant.objects.return_value = [tenant]
 
             role1 = MagicMock()
             role1.name = "R1"
+            role1.tenant_id = "T1"
             role1.access_rules = ["aihub.user.agent.>"]
             role2 = MagicMock()
             role2.name = "R2"
+            role2.tenant_id = "T1"
             role2.access_rules = ["aihub.user.agent.>"]
             mock_role.objects.return_value = [role1, role2]
 
@@ -323,3 +335,150 @@ class TestSyncAccessGrants:
             await provisioner._sync_access_grants(mock_client)
 
             mock_list_groups.assert_not_called()
+
+
+class TestBuildRoleRules:
+    def test_same_role_name_in_different_tenants_do_not_collide(self) -> None:
+        """Roles are unique per (tenant_id, name), so the same name exists in every tenant with its
+        own rules. A name-only key collapsed them and let the last tenant's rules mask the rest;
+        the (tenant name, role name) key keeps them distinct."""
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant_a = MagicMock()
+            tenant_a.id = "ta"
+            tenant_a.name = "TenantA"
+            tenant_b = MagicMock()
+            tenant_b.id = "tb"
+            tenant_b.name = "TenantB"
+            mock_tenant.objects.return_value = [tenant_a, tenant_b]
+
+            role_a = MagicMock()
+            role_a.name = "Shared"
+            role_a.tenant_id = "ta"
+            role_a.access_rules = ["aihub.user.agent.rag.*"]
+            role_b = MagicMock()
+            role_b.name = "Shared"
+            role_b.tenant_id = "tb"
+            role_b.access_rules = ["aihub.user.agent.other.*"]
+            mock_role.objects.return_value = [role_a, role_b]
+
+            result = OpenWebuiProvisioner._build_role_rules()
+
+        assert result == {
+            ("TenantA", "Shared"): ["aihub.user.agent.rag.*"],
+            ("TenantB", "Shared"): ["aihub.user.agent.other.*"],
+        }
+
+    def test_role_of_unknown_tenant_is_skipped(self) -> None:
+        """A role whose tenant has no TenantMetadataEntity has no OpenWebUI group either, so its
+        rules are never looked up — dropping it keeps the lookup key well-defined."""
+        with (
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.id = "ta"
+            tenant.name = "TenantA"
+            mock_tenant.objects.return_value = [tenant]
+
+            orphan = MagicMock()
+            orphan.name = "Ghost"
+            orphan.tenant_id = "deleted"
+            orphan.access_rules = ["aihub.user.agent.>"]
+            mock_role.objects.return_value = [orphan]
+
+            assert OpenWebuiProvisioner._build_role_rules() == {}
+
+
+class TestDeleteShadowingBaseModels:
+    """A registry entry at a workspace model's ``base_model_id`` makes OpenWebUI's
+    ``has_base_model_access`` deny every non-admin without a grant on it, so the model stays in the
+    picker but chat fails with "Model not found". ``POST /models/sync`` — which the OpenWebUI workspace
+    issues when an admin saves the model list — writes such an entry for every model it renders.
+    Only ``list_base_models`` can see them: OpenWebUI's model search filters on
+    ``base_model_id != None``, so ``list_models`` never returns them."""
+
+    @staticmethod
+    def _sync_with(provisioner: OpenWebuiProvisioner, workspace_models, base_models):
+        return (
+            patch.object(provisioner._openwebui, "list_models", return_value=workspace_models),
+            patch.object(provisioner._openwebui, "list_base_models", return_value=base_models),
+            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
+        )
+
+    @pytest.mark.asyncio
+    async def test_deletes_entry_shadowing_an_llm_base(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_LLM_MODEL_PREFIX}text-generation-Kimi", "base_model_id": "text-generation/Kimi"}]
+        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [{"id": "text-generation/Kimi"}])
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, "text-generation/Kimi")
+
+    @pytest.mark.asyncio
+    async def test_deletes_entry_shadowing_an_agent_pipe(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The half #1595 never covered: agent presets point at ``aihub-pipeline.*`` bases, which
+        shadow identically once the workspace materialises a row for them."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(
+            provisioner, workspace, [{"id": "aihub-pipeline.RAGAgent.doc"}]
+        )
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, "aihub-pipeline.RAGAgent.doc")
+
+    @pytest.mark.asyncio
+    async def test_leaves_unregistered_base_alone(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The healthy state: the raw model has no registry entry, so there is nothing to repair."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [])
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_does_not_delete_foreign_base_models(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Only bases of models we provision are repaired; entries owned by anyone else stay put."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
+        list_models, list_base, list_groups = self._sync_with(
+            provisioner, workspace, [{"id": "text-generation/somebody-elses-model"}]
+        )
+
+        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_not_called()
+
+
+class TestCrossTenantIsolation:
+    def test_same_role_name_in_two_tenants_stay_isolated(self) -> None:
+        """The regression: a role name shared by two tenants must grant each tenant's own rules.
+        With the old name-only key both groups resolved to the same (colliding) rule set."""
+        groups = [
+            _group("aihub:TenantA:Shared", "grp-a"),
+            _group("aihub:TenantB:Shared", "grp-b"),
+        ]
+        tenant_rules = {"TenantA": ["aihub.user.agent.>"], "TenantB": ["aihub.user.agent.>"]}
+        role_rules = {
+            ("TenantA", "Shared"): ["aihub.user.agent.rag.*"],
+            ("TenantB", "Shared"): ["aihub.user.agent.other.*"],
+        }
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert [g.principal_id for g in result] == ["grp-a"]

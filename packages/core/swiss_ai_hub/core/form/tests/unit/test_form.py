@@ -15,6 +15,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.chips_input import ChipsInput
 from swiss_ai_hub.core.form.elements.group import Group
@@ -874,11 +875,32 @@ class FormWithNullableSubForm(Form):
     ] = None
 
 
+class FormWithTitledNonNullableSubForm(Form):
+    """Outer form whose nested form is mandatory but still carries a title and description."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm, Field(description="Inner form", title="Inner")]
+
+
 class FormWithNullableLeaf(Form):
     """Form with an optional scalar leaf."""
 
     name: Annotated[str | InputText, Field(description="Name")]
     count: Annotated[int | InputNumber | None, Field(description="Count")] = None
+
+
+class FormWithDefaultedNullableLeaf(Form):
+    """Optional scalar leaf whose data default is a concrete non-null value."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    count: Annotated[int | InputNumber | None, Field(description="Count")] = 5
+
+
+class FormWithDefaultedNullableSubForm(Form):
+    """Optional nested form whose data default is a concrete (non-null) instance."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm | None, Field(description="Inner", title="Inner")] = NullableInnerForm(value=5)
 
 
 class TestNullableFlag:
@@ -925,6 +947,35 @@ class TestNullableFlag:
         )
         for element in form.to_formkit_form():
             assert element.nullable is False
+            assert element.default_enabled is None
+
+    def test_nullable_leaf_default_enabled_reflects_default(self) -> None:
+        # default is None -> toggle should start off
+        none_default = FormWithNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count")),
+        ).to_formkit_form()
+        assert next(e for e in none_default if e.name == "count").default_enabled is False
+
+        # default is a concrete value -> toggle should start on
+        value_default = FormWithDefaultedNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count")),
+        ).to_formkit_form()
+        assert next(e for e in value_default if e.name == "count").default_enabled is True
+
+    def test_nullable_subform_default_enabled_reflects_default(self) -> None:
+        none_default = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        ).to_formkit_form()
+        assert next(e for e in none_default if e.name == "inner").default_enabled is False
+
+        value_default = FormWithDefaultedNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        ).to_formkit_form()
+        assert next(e for e in value_default if e.name == "inner").default_enabled is True
 
     def test_nullable_subform_submission_accepts_null(self) -> None:
         Model = FormWithNullableSubForm.to_form_submission_model()
@@ -936,3 +987,82 @@ class TestNullableFlag:
         override = {"inner": None}
         merged = Form.deep_merge(base, override)
         assert merged["inner"] is None
+
+
+class TestGroupHelp:
+    """Tests for help text on nested Groups, rendered on the group's enable toggle."""
+
+    def test_help_comes_from_description_when_the_label_is_an_explicit_title(self) -> None:
+        form = FormWithNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        )
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.label == "Inner"
+        assert inner.help == "Inner form"
+
+    def test_placeholder_group_for_a_none_value_also_carries_help(self) -> None:
+        form = FormWithNullableSubForm(name=InputText(label=LocaleString(en="Name")), inner=None)
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.help == "Inner form"
+
+    def test_no_help_on_a_non_nullable_group_even_with_a_title(self) -> None:
+        """A non-nullable group has no enable toggle, so help would be data no surface renders."""
+        form = FormWithTitledNonNullableSubForm(
+            name=InputText(label=LocaleString(en="Name")),
+            inner=NullableInnerForm.as_form(),
+        )
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+
+        assert inner.nullable is False
+        assert inner.label == "Inner"
+        assert inner.help is None
+
+    def test_no_help_when_the_label_already_fell_back_to_the_description(self) -> None:
+        """Without a title the label *is* the description — repeating it would print it twice."""
+        form = NestedOuterForm(
+            name=InputText(label=LocaleString(en="Name")),
+            address=NestedInnerForm(
+                street=InputText(label=LocaleString(en="Street")),
+                city=InputText(label=LocaleString(en="City")),
+            ),
+        )
+        address = next(e for e in form.to_formkit_form() if e.name == "address")
+
+        assert address.label == "Address"
+        assert address.help is None
+
+
+class FormWithDataModeSubForm(Form):
+    """Outer form whose nested form is instantiated in data mode, so it renders no elements."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[NullableInnerForm, Field(description="Inner form", title="Inner")] = NullableInnerForm(value=1)
+
+
+class FormWithEmptyNullableSubForm(Form):
+    """Outer form whose optional nested form renders no elements but still needs its enable toggle."""
+
+    name: Annotated[str | InputText, Field(description="Name")]
+    inner: Annotated[
+        NullableInnerForm | None,
+        Field(description="Inner form", title="Inner"),
+    ] = NullableInnerForm(value=1)
+
+
+class TestEmptyGroups:
+    """A nested Form that renders no elements must not become an empty fieldset."""
+
+    def test_non_nullable_group_without_children_is_skipped(self) -> None:
+        form = FormWithDataModeSubForm(name=InputText(label=LocaleString(en="Name")))
+
+        assert [element.name for element in form.to_formkit_form()] == ["name"]
+
+    def test_nullable_group_without_children_is_kept_for_its_toggle(self) -> None:
+        form = FormWithEmptyNullableSubForm(name=InputText(label=LocaleString(en="Name")))
+
+        inner = next(e for e in form.to_formkit_form() if e.name == "inner")
+        assert inner.nullable
+        assert inner.children == []

@@ -50,4 +50,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html
 USER nginx
 EXPOSE 8080
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --spider -q http://127.0.0.1:8080/ || exit 1
+
 CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]

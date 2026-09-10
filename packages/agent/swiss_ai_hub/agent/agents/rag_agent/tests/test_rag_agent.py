@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    MetaQuestionDetectedEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
@@ -184,6 +185,7 @@ def test_collection(event_loop):
         uri="http://localhost",
         collection_name="development",
         dimensions=1024,
+        all_namespaces=True,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -301,6 +303,20 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
+
+
+@then("a MetaQuestionDetectedEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_class(MetaQuestionDetectedEvent), (
+        "Agent did not classify the message as a meta question"
+    )
+
+
+@then("no RetrieverEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert not agent_runner.has_event_of_class(RetrieverEvent), (
+        "Retrieval ran for a meta question — the self-awareness gate failed"
+    )
 
 
 @then(parsers.parse('a RetrieverEvent is present with more than "{node_count:d}" retrieved nodes'))

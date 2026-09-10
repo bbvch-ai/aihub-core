@@ -31,6 +31,9 @@ thoughts:
   forwarding_to_rag: Relevante Informationen werden gesucht
   rag_error: 'Bei der Suche ist ein Fehler aufgetreten: %{error_message}'
 messages:
+  determination_failed: Ich konnte nicht ermitteln, welche Wissensquellen für diese
+    Anfrage durchsucht werden sollen. Können Sie sie umformulieren oder mir sagen,
+    welches Thema Sie meinen?
   default_follow_up: Könnten Sie bitte weitere Details zu Ihrer Anfrage angeben, damit
     ich die relevantesten Wissensquellen bestimmen kann?
   user_rejected_selection: Ich habe die vorgeschlagene Namespace-Auswahl abgelehnt.
@@ -54,7 +57,9 @@ prompts:
     \ Bucket MUSS genau EINEN Namespace ausgewählt haben - nicht mehr, nicht weniger.\n\
     - Ihre follow_up_question MUSS die exakten Namespace-Namen aus <available_namespaces>\
     \ oben als Optionen auflisten.\n- Erfinden Sie KEINE Namen - verwenden Sie nur\
-    \ die tatsächlichen Namen, die oben angezeigt werden.\n"
+    \ die tatsächlichen Namen, die oben angezeigt werden.\n- Geben Sie IMMER alle\
+    \ vier Felder an - has_enough_information, selected_namespaces, follow_up_question\
+    \ und reasoning - auch wenn ein Wert null ist. Lassen Sie niemals ein Feld weg.\n"
 steps:
   initialize_determination:
     name: Namespace-Bestimmung initialisieren

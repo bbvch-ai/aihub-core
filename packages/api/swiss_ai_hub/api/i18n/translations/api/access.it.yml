@@ -1,0 +1,109 @@
+---
+presets:
+  user_everything:
+    name: Usa tutto
+    description: Accedi e usa ogni servizio, agente e processo — senza crearli né
+      gestirli.
+  admin_everything:
+    name: Amministra tutto
+    description: Controllo completo su ogni servizio, agente e processo, inclusi creazione,
+      configurazione ed eliminazione.
+  user_all_agents:
+    name: Usa tutti gli agenti
+    description: Chatta e usa ogni istanza di agente.
+  admin_all_agents:
+    name: Gestisci tutti gli agenti
+    description: Crea, configura ed elimina ogni istanza di agente.
+  user_all_processes:
+    name: Usa tutti i processi
+    description: Avvia e partecipa a ogni processo.
+  admin_all_processes:
+    name: Gestisci tutti i processi
+    description: Crea, configura ed elimina ogni processo.
+  user_all_models:
+    name: Usa tutti i modelli
+    description: Usa ogni modello disponibile.
+  user_knowledge:
+    name: Usa tutte le basi di conoscenza
+    description: Sfoglia e cerca in ogni base di conoscenza e nei suoi documenti.
+  admin_knowledge_create:
+    name: Crea basi di conoscenza
+    description: Crea nuove basi di conoscenza. Da combinare con «Gestisci basi di
+      conoscenza» per amministrarle.
+  admin_knowledge:
+    name: Gestisci le basi di conoscenza
+    description: Controllo completo sulle basi di conoscenza e i loro documenti.
+capabilities:
+  ops:
+    service:
+      use:
+        label: Visualizza & usa
+        description: Apri questo servizio e usa le sue funzionalità.
+      administer:
+        label: Amministra
+        description: Gestisci la configurazione e i dati di questo servizio.
+    agent:
+      see:
+        label: Vedi tutti gli assistenti
+        description: Visualizza l'elenco degli assistenti e i loro blueprint.
+      see_class:
+        label: Vedi istanze
+        description: Visualizza le istanze di questo tipo di assistente.
+      create:
+        label: Accesso completo a questo tipo
+        description: Crea, configura e utilizza assistenti di questo tipo.
+      use:
+        label: Usa
+        description: Chatta con e usa questo assistente.
+      manage:
+        label: Configura & elimina
+        description: Modifica la configurazione di questo assistente o eliminalo.
+    requires:
+      agent_admin:
+        label: Richiede admin assistenti
+        description: Questo servizio è protetto da accesso admin agli assistenti.
+    process:
+      see:
+        label: Vedi processi
+        description: Visualizza l'elenco dei processi.
+      see_admin:
+        label: Vedi tutti i processi
+        description: Visualizza ogni definizione di processo.
+      see_class:
+        label: Vedi istanze
+        description: Visualizza le istanze di questo tipo di processo.
+      create:
+        label: Crea istanze
+        description: Crea nuovi processi di questo tipo.
+      use:
+        label: Usa
+        description: Avvia e partecipa a questo processo.
+      manage:
+        label: Configura & elimina
+        description: Modifica la configurazione di questo processo o eliminalo.
+    knowledge:
+      create:
+        label: Crea basi di conoscenza
+        description: Crea nuove basi di conoscenza e le loro cartelle.
+      see:
+        label: Vedi basi di conoscenza
+        description: Visualizza l'elenco delle basi di conoscenza.
+      use:
+        label: Usa
+        description: Cerca e leggi questo namespace di conoscenza.
+      manage:
+        label: Gestisci
+        description: Configura e inserisci documenti in questo namespace.
+    model:
+      use:
+        description: Usa questo modello.
+        conversation_metadata_description: Usa questo modello. Genera anche i titoli
+          delle chat e le domande di approfondimento — senza accesso, entrambe le
+          funzioni non sono disponibili.
+    memory:
+      org:
+        label: Usa memoria organizzazione
+        description: Leggi e gestisci la memoria condivisa dell'organizzazione.
+      personal:
+        label: Usa memoria personale
+        description: Leggi e gestisci la tua memoria personale.

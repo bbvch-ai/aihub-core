@@ -8,6 +8,15 @@ The Swiss AI Hub suite interface is designed for extensibility, enabling organiz
 integrate proprietary systems, and tailor the platform to specific business requirements - all while maintaining the
 unified suite experience and without modifying core platform code.
 
+::: tip Licensing note
+The extension model described here — custom services and your own components built *on* the platform — leaves your
+service code under whatever license you choose; you are not modifying the platform itself. The bundled UI
+(`packages/web`) is, however, licensed under **AGPL-3.0**. If you modify that UI itself and offer it as a network
+service, AGPL-3.0 requires you to publish those UI modifications under the same license. See
+[Why the backend and UI use different licenses](../../../4_ecosystem/3_certification/2_sdk_licensing/) and
+[LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the details.
+:::
+
 ## Architectural Foundations for Extensibility
 
 The suite's extensibility stems from deliberate architectural decisions that separate extension points from core

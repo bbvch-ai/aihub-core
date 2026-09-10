@@ -14,11 +14,11 @@ on:
 jobs:
   claude-review:
     if: >-
-      !github.event.pull_request.draft &&
+      ${{ !github.event.pull_request.draft &&
       github.event.sender.type != 'Bot' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
-      github.event.pull_request.author_association)
+      github.event.pull_request.author_association) }}
     runs-on: ubuntu-slim
     timeout-minutes: 20
     permissions:
@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@86eb26bf0139bdd75acd15ea5f00f45ee0a284c2  # v1.0.122
+        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b  # v1.0.183
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

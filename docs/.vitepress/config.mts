@@ -8,7 +8,8 @@ export default withMermaid({
   title: "Swiss AI-Hub",
   description: "Developer focused documentation of the Swiss AI-Hub Agentic Platform",
   lastUpdated: true,
-  base: '/aihub-core/',
+  base: '/',
+  sitemap: { hostname: 'https://docs.ai-hub.bbv.ch/' },
 
   rewrites: {
     ':path(.*)/index.en.md': ':path/index.md',
@@ -21,6 +22,15 @@ export default withMermaid({
 
   srcExclude: ['public/**/*.md', 'translate-prompt.md'],
   ignoreDeadLinks: true,
+
+  vue: {
+    template: {
+      compilerOptions: {
+        // Treat <likec4-*> tags as native custom elements (registered by likec4-webcomponent.js).
+        isCustomElement: (tag) => tag.startsWith('likec4-')
+      }
+    }
+  },
 
   markdown: {
     config(md) {

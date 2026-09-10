@@ -17,3 +17,8 @@ config:
     label: Symbol
     help: Wählen Sie ein voreingestelltes Symbol oder geben Sie einen Iconify-Symbolnamen
       ein
+  cron:
+    label: Zeitplan
+    help: Wann dieses Profil automatisch läuft. Leer lassen, um geplante Läufe zu
+      deaktivieren.
+    timezone_placeholder: Zeitzone auswählen...

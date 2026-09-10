@@ -54,9 +54,9 @@ timeouts, routes tasks to the appropriate participant, and provides a visual pro
 
 ### Development and licensing
 
-The platform is developed by bbv Software Services, a Swiss software engineering company. The platform uses a
-mixed-license model: Apache 2.0 for the runtime and SDK, AGPL-3.0 for the web UI and backup orchestration, and a
-proprietary license for the multi-tenant administration plane. The full per-package breakdown lives in
+The platform is developed by bbv Software Services, a Swiss software engineering company. The platform is fully
+open-source under a dual-license model: Apache 2.0 for the runtime and SDK, and AGPL-3.0-or-later for the web UI, the
+multi-tenant administration plane, and backup orchestration. The full per-package breakdown lives in
 [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md).
 
 ### Key functional requirements
@@ -99,4 +99,4 @@ stakeholders (regulated Swiss organizations and the platform development team).
 | **Organization leadership** (CIOs, CDOs, managing partners)    | Predictable, transparent costs (per-user and per-token tracking). No vendor lock-in (open-source, model-agnostic). Compliance with Swiss data protection law and professional secrecy obligations. A platform that scales from a pilot project to organization-wide deployment without re-architecture. |
 | **Platform developer**                                         | A codebase that supports rapid iteration (monorepo, shared libraries, automated testing). A clear boundary between platform and SDK that allows independent release cycles. Open-source distribution that builds trust in regulated markets.                                                            |
 | **Integration partners** (IT service providers)                | A platform they can deploy and operate for their own clients without deep AI expertise. Clear documentation and tooling. Clear licensing terms.                                                                                                                                                         |
-| **Open-source community**                                      | Permissive licensing (Apache 2.0) for the platform runtime + SDK (other components AGPL or proprietary — see `LICENSES.md`). Transparent development practices (public repository, issue tracker, CI).                                                                                                  |
+| **Open-source community**                                      | Permissive licensing (Apache 2.0) for the platform runtime + SDK (other components AGPL-3.0-or-later — see `LICENSES.md`). Transparent development practices (public repository, issue tracker, CI).                                                                                                    |

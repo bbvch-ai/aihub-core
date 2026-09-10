@@ -29,10 +29,14 @@ class Action:
     def _str_to_object_id(
         self, context_id: Annotated[Optional[str], "Context ID to hash"]
     ) -> Annotated[str, "ObjectId string"]:
-        """Convert a string to an ObjectId by hashing it with MD5."""
+        """Convert a string to an ObjectId by hashing it with MD5.
+
+        Mirrors the producing pipe's `_str_to_object_id` exactly (empty-salt form `md5(":" + context_id)`) so the
+        `display_id` matches the persisted events the AI-Hub frontend resolves the thread from.
+        """
         if not context_id:
             return str(ObjectId())
-        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        hashed = hashlib.md5(f":{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed)).lower()
 
     async def action(
@@ -42,17 +46,14 @@ class Action:
         __event_emitter__=None,
         __event_call__=None,
     ) -> dict | None:
-        chat_id = body.get("chat_id")
         message_id = body.get("id")
 
-        thread_id = self._str_to_object_id(chat_id)
         display_id = self._str_to_object_id(message_id)
 
         try:
             code = f"""
             window.parent.postMessage({{
                 type: 'show-memories',
-                thread_id: '{thread_id}',
                 display_id: '{display_id}',
             }}, '{self.valves.AIHUB_FRONTEND_URL}');
             """

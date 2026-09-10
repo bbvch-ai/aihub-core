@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 
 import mongoengine.errors
 from bson import ObjectId
@@ -35,6 +36,7 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_respon
 from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
     HumanInTheLoopResponseEvent,
 )
+from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
@@ -48,6 +50,12 @@ from swiss_ai_hub.core.topic_managers.agents.agent_thread_topic_manager import A
 from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
+
+# After a run's terminal event arrives, give trailing display events this long to surface before the
+# consumer finishes. NCSubscriber dispatches one asyncio task per message, so the stop event's task can
+# set the stop signal before a preceding chunk's task has finished enqueuing it — without this grace the
+# consumer ends on the stop and silently drops those in-flight chunks.
+DISPLAY_STREAM_DRAIN_GRACE_SECONDS = 0.25
 
 
 @dataclass
@@ -82,6 +90,39 @@ class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
     """
+
+    @staticmethod
+    async def iter_streamed_display_events(
+        resources: StreamingResources,
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> AsyncGenerator[DisplayEvent]:
+        """
+        Yield queued display events until the run has stopped AND no event has surfaced for the drain
+        grace. The grace drains trailing events whose handler tasks finish after the terminal stop's
+        task sets the stop signal; ending on the bare stop signal would drop them. The subscription is
+        torn down by the aggregator that handles the stop event, not here.
+        """
+        while True:
+            try:
+                event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=drain_grace_seconds)
+                resources.chunk_queue.task_done()
+                yield event
+            except TimeoutError:
+                if resources.stop_signal.is_set():
+                    return
+
+    @staticmethod
+    async def wait_for_stop_then_drain(
+        resources: StreamingResources | JsonResources,
+        drain_grace_seconds: float = DISPLAY_STREAM_DRAIN_GRACE_SECONDS,
+    ) -> None:
+        """
+        Block until the run stops, then wait out the drain grace so trailing display-event handler
+        tasks finish before the caller reads the collected events. The subscription is already torn
+        down by the aggregator that handles the stop event.
+        """
+        await resources.stop_signal.wait()
+        await asyncio.sleep(drain_grace_seconds)
 
     @staticmethod
     def _initialize_interaction(
@@ -251,7 +292,12 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction via WebSocket
-        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
+        await external_agent_event_distributor.distribute_event(
+            external_event,
+            user,
+            aihub_headers=aihub_headers,
+            target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id),
+        )
 
         return resources
 
@@ -356,22 +402,49 @@ class ChatService:
         logger.debug(f"Subscriber created for subject: {subscriber.subject}")
 
         # Trigger the agent interaction
-        await external_agent_event_distributor.distribute_event(external_event, user, aihub_headers=aihub_headers)
+        await external_agent_event_distributor.distribute_event(
+            external_event,
+            user,
+            aihub_headers=aihub_headers,
+            target_agent=AgentInstanceRef(agent_class=agent_class, agent_id=agent_id),
+        )
 
         return resources
+
+    @staticmethod
+    def terminal_output_text(output_messages: list[Any] | None) -> str:
+        """Return terminal answer text from live LlamaIndex/core messages or raw persisted payloads."""
+        if not output_messages:
+            return ""
+        last_message = output_messages[-1]
+        if isinstance(last_message, ChatMessage):
+            return last_message.content or ""
+        if isinstance(last_message, Message):
+            return last_message.content
+        return Message.model_validate(last_message).content
+
+    @staticmethod
+    def missing_suffix(streamed: str, full_answer: str) -> str:
+        """Return the unstreamed suffix when the full answer extends the streamed prefix."""
+        if full_answer and full_answer.startswith(streamed):
+            return full_answer[len(streamed) :]
+        return "" if streamed else full_answer
 
     @staticmethod
     @trace_fn
     def build_json_response_content(
         chunk_events: list[ChunkEvent | ThoughtEvent], stop_event: StopEvent | HumanInTheLoopRequestEvent | None
     ) -> ChatContent:
-        """
-        Construct a JSON response from collected chunk events.
-        """
+        """Construct a JSON response from collected chunk events."""
         sorted_chunks = sorted(chunk_events, key=lambda x: x.created_at)
-        chat_content = ChatContent(content="", reasoning_content="")
-        chat_content.content = "".join(chunk.content for chunk in sorted_chunks)
+        streamed = "".join(chunk.content for chunk in sorted_chunks)
+        chat_content = ChatContent(content=streamed, reasoning_content="")
         chat_content.reasoning_content = "".join(getattr(chunk, "reasoning_content", "") for chunk in sorted_chunks)
         if stop_event.is_hitl_request_event:
             chat_content.content += stop_event.question
+            return chat_content
+        full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
+        suffix = ChatService.missing_suffix(streamed, full_answer)
+        if suffix:
+            chat_content.content = streamed + suffix
         return chat_content

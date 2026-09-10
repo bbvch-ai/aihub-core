@@ -83,8 +83,7 @@ async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
     return StopEvent()
 ```
 
-Siehe [Die Verletzung des "Dangling Stop"](/de/docs/9_execution_model/#the-dangling-stop-violation) für die allgemeine
-Regel.
+Siehe [Die Verletzung des "Dangling Stop"](../9_execution_model/#die-dangling-stop-verletzung) für die allgemeine Regel.
 :::
 
 ### Vollständiges Beispiel
@@ -351,7 +350,6 @@ class OrganizationMemoryAgent(Agent):
         extended_chat_history = extend_chat_history_with_organization_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
-            relations=memory_event.relations,
             t=t,
         )
         return AddOrganizationMemoryToChatHistoryEvent(extended_history=extended_chat_history)
@@ -488,7 +486,6 @@ class HybridMemoryAgent(Agent):
         chat_history = extend_chat_history_with_organization_memory(
             chat_history=chat_history,  # Already has user memory
             memories=org_mem.memories,
-            relations=org_mem.relations,
             t=t
         )
         return CombinedMemoryEvent(extended_history=chat_history)
@@ -581,7 +578,7 @@ def check_storage_complete(
 Die Vorbedingung `check_memory_ready` blockiert den Schritt zur Historien-Erweiterung, bis alle aktivierten
 Speichertypen abgerufen wurden. Die Vorbedingung `check_storage_complete` blockiert den letzten Stop-Schritt, bis die
 Speicherung abgeschlossen ist (falls aktiviert). Dies verhindert die
-[optionale Parameterfalle](/de/docs/9_execution_model/#the-optional-parameter-trap), bei der Schritte vorzeitig mit
+[optionale Parameterfalle](../9_execution_model/#die-falle-der-optionalen-parameter), bei der Schritte vorzeitig mit
 `None`-Werten ausgeführt werden.
 
 ## Observability

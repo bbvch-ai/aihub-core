@@ -2,3 +2,5 @@
 response_timeout: Mi dispiace, sto impiegando troppo tempo per rispondere. Per favore,
   riprova.
 generic_error: Mi dispiace, qualcosa è andato storto. Per favore, riprova.
+user_not_provisioned: Sembra che tu non abbia ancora un account Swiss AI Hub. Accedi
+  una volta su %{url}, poi torna a scrivermi qui.

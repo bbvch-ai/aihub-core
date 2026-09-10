@@ -10,6 +10,8 @@ from swiss_ai_hub.core.tracing.nats_message_headers import NATSMessageHeaders
 
 logger = logging.getLogger(__name__)
 
+_RPC_SUCCESS_ATTR = "rpc.success"
+
 
 class NCRequester(AbstractRequester[TRequest, TResponse]):
     """
@@ -79,19 +81,19 @@ class NCRequester(AbstractRequester[TRequest, TResponse]):
                 # Deserialize response
                 response = self.response_cls.model_validate_json(response_msg.data)
 
-                span.set_attribute("rpc.success", True)
+                span.set_attribute(_RPC_SUCCESS_ATTR, True)
                 logger.debug(f"{self.name} received response from {subject}")
 
                 return response
 
             except NatsTimeoutError:
-                span.set_attribute("rpc.success", False)
+                span.set_attribute(_RPC_SUCCESS_ATTR, False)
                 span.set_attribute("rpc.error", "timeout")
                 logger.warning(f"{self.name} request to {subject} timed out after {timeout}s")
                 raise TimeoutError(f"Request to {subject} timed out after {timeout}s") from None
 
             except Exception as e:
-                span.set_attribute("rpc.success", False)
+                span.set_attribute(_RPC_SUCCESS_ATTR, False)
                 span.record_exception(e)
                 logger.exception(f"{self.name} request to {subject} failed: {e}")
                 raise

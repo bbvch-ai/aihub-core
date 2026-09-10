@@ -29,6 +29,42 @@ export type Access = {
 };
 
 /**
+ * AccessCapabilitiesRequest
+ */
+export type AccessCapabilitiesRequest = {
+  /**
+   * Access Rules
+   *
+   * Draft access rules to evaluate the capability catalog against.
+   */
+  access_rules: Array<string>;
+  /**
+   * Restrict To Tenant
+   *
+   * Hide capabilities the acting tenant's ceiling cannot grant (role editor). Set false when editing the tenant ceiling itself (sysadmin).
+   */
+  restrict_to_tenant?: boolean;
+  /**
+   * Is Sys Admin
+   *
+   * Evaluate the catalog as a platform sysadmin (AIHubSysAdmin), who holds admin on every resource regardless of rules — the user page passes the viewed user's flag. False for rule editing.
+   */
+  is_sys_admin?: boolean;
+};
+
+/**
+ * AccessCapabilitiesResponse
+ */
+export type AccessCapabilitiesResponse = {
+  /**
+   * Groups
+   *
+   * Top-level groups, one per controller/service.
+   */
+  groups: Array<CapabilityGroup>;
+};
+
+/**
  * AccessLevel
  *
  * Defines the possible outcomes of a permission check.
@@ -45,6 +81,36 @@ export const AccessLevel = {
  * Defines the possible outcomes of a permission check.
  */
 export type AccessLevel = (typeof AccessLevel)[keyof typeof AccessLevel];
+
+/**
+ * AccessPresetDTO
+ */
+export type AccessPresetDto = {
+  /**
+   * Rule
+   *
+   * The access rule string this preset adds.
+   */
+  rule: string;
+  /**
+   * Name
+   *
+   * Short, human-readable name for the preset.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What this preset grants.
+   */
+  description: string;
+  /**
+   * Category
+   *
+   * Stable category key for grouping in the UI.
+   */
+  category: string;
+};
 
 /**
  * ActiveTenantDTO
@@ -289,6 +355,7 @@ export type AgentClassDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -302,7 +369,6 @@ export type AgentClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -310,6 +376,7 @@ export type AgentClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -318,7 +385,7 @@ export type AgentClassDto = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -353,6 +420,12 @@ export type AgentClassDto = {
    * Whether the agent class can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent class can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
   /**
    * Is Online
    *
@@ -416,6 +489,7 @@ export type AgentConfigDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -429,7 +503,6 @@ export type AgentConfigDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -437,40 +510,12 @@ export type AgentConfigDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
     | VectorStoreInput
   > | null;
-};
-
-/**
- * AgentConfigSpecs
- *
- * Validation specification for agent configuration form submissions.
- *
- * Contains ONLY the agent class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, agent_id) are stored
- * separately in AgentConfigEntityDocument and provided by the Agent class.
- *
- * The JSON schema is generated from the agent's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type AgentConfigSpecs = {
-  /**
-   * Agent Class
-   *
-   * The class name of the agent.
-   */
-  agent_class: string;
-  /**
-   * Agent Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the agent's configurable fields via to_configurable_submission_model().
-   */
-  agent_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -697,6 +742,12 @@ export type AgentInTheLoopExceptionEvent = {
    */
   exception_event: ExceptionEvent;
   /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -770,9 +821,15 @@ export type AgentInTheLoopRequestEvent = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   /**
    * Event Name
    *
@@ -822,6 +879,12 @@ export type AgentInTheLoopResponseEvent = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEvent;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   /**
    * Event Name
    *
@@ -967,6 +1030,11 @@ export type AgentProcessStepDto = {
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
  *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
+ *
  * ### Form Duality
  *
  * When used with AgentRef, the form submission is validated directly into AgentRef:
@@ -1025,6 +1093,12 @@ export type AgentSelector = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -1082,6 +1156,12 @@ export type AgentSelector = {
    */
   startEvent?: string | null;
   /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
+  /**
    * Classplaceholder
    *
    * Placeholder for agent class select
@@ -1101,6 +1181,13 @@ export type AgentSelector = {
   filter?: boolean;
   /**
    * Validation
+   *
+   * Emits `agentRefRequired` where other elements emit FormKit's `required`.
+   *
+   * FormKit's `required` rule only asks whether a value is present, and this element's value is
+   * always an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with
+   * a blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.
+   * `agentRefRequired` (registered in the frontend FormKit config) looks at both halves.
    */
   readonly validation: string;
   [key: string]: unknown;
@@ -1689,6 +1776,34 @@ export type BaseStoreMemoryEvent = {
 };
 
 /**
+ * BatchDeleteDocumentsRequest
+ *
+ * Request payload for deleting multiple documents from a knowledge namespace.
+ */
+export type BatchDeleteDocumentsRequest = {
+  /**
+   * Document Ids
+   *
+   * IDs of the documents to delete
+   */
+  document_ids: Array<string>;
+};
+
+/**
+ * BatchDeleteDocumentsResponse
+ *
+ * Per-document results of a best-effort batch deletion.
+ */
+export type BatchDeleteDocumentsResponse = {
+  /**
+   * Results
+   *
+   * Deletion outcome per requested document
+   */
+  results: Array<DocumentDeletionResult>;
+};
+
+/**
  * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
@@ -1825,6 +1940,96 @@ export type CachePoint = {
 };
 
 /**
+ * Capability
+ */
+export type Capability = {
+  /**
+   * Key
+   *
+   * Stable identifier for this capability.
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Short human-readable action label.
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * What holding this capability lets the user do.
+   */
+  description: string;
+  /**
+   * Rule
+   *
+   * Exact access rule that grants this capability, or null for read-only capabilities.
+   */
+  rule: string | null;
+  /**
+   * Companion Rules
+   *
+   * Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.
+   */
+  companion_rules?: Array<string>;
+  /**
+   * Granted
+   *
+   * Whether the draft rules grant every rule of this capability.
+   */
+  granted: boolean;
+  /**
+   * Locked
+   *
+   * Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here.
+   */
+  locked: boolean;
+  /**
+   * Toggleable
+   *
+   * Whether ticking the box can add a rule. False for ?-wildcard guards with no concrete grant.
+   */
+  toggleable: boolean;
+};
+
+/**
+ * CapabilityGroup
+ */
+export type CapabilityGroup = {
+  /**
+   * Key
+   *
+   * Stable identifier (a controller/service, a class, an instance, ...).
+   */
+  key: string;
+  /**
+   * Label
+   *
+   * Display title for the group.
+   */
+  label: string;
+  /**
+   * Icon
+   *
+   * Iconify icon for the group (service or class), if any.
+   */
+  icon?: string | null;
+  /**
+   * Capabilities
+   *
+   * Capabilities directly on this group.
+   */
+  capabilities?: Array<Capability>;
+  /**
+   * Groups
+   *
+   * Nested groups (e.g. classes, then instances).
+   */
+  groups?: Array<CapabilityGroup>;
+};
+
+/**
  * CascadeSelect
  *
  * https://formkit-primevue.netlify.app/inputs/CascadeSelect
@@ -1854,6 +2059,12 @@ export type CascadeSelect = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -2594,10 +2805,7 @@ export type ChatCompletionRequest = {
    * Function Call
    */
   function_call?:
-    | "none"
-    | "auto"
-    | ChatCompletionFunctionCallOptionParam
-    | null;
+    "none" | "auto" | ChatCompletionFunctionCallOptionParam | null;
   /**
    * Functions
    */
@@ -2642,13 +2850,7 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    | "none"
-    | "minimal"
-    | "low"
-    | "medium"
-    | "high"
-    | "xhigh"
-    | null;
+    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
   /**
    * Response Format
    */
@@ -2894,6 +3096,12 @@ export type Checkbox = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -3030,6 +3238,12 @@ export type ChipsInput = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Chips input element.
@@ -3101,11 +3315,7 @@ export type Choice = {
    * Finish Reason
    */
   finish_reason:
-    | "stop"
-    | "length"
-    | "tool_calls"
-    | "content_filter"
-    | "function_call";
+    "stop" | "length" | "tool_calls" | "content_filter" | "function_call";
   /**
    * Index
    */
@@ -3293,6 +3503,12 @@ export type ColorPicker = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue ColorPicker element.
@@ -3420,6 +3636,31 @@ export type CompletionUsage = {
   completion_tokens_details?: CompletionTokensDetails | null;
   prompt_tokens_details?: PromptTokensDetails | null;
   [key: string]: unknown;
+};
+
+/**
+ * ConfigSpecs
+ *
+ * Validation specification for a form-duality configuration, as announced by the service that owns it.
+ *
+ * Carries only the JSON schema the API validates submissions against, so a configuration class defined in
+ * an agent, process or pipeline container can be enforced by the API without that class being installed there.
+ */
+export type ConfigSpecs = {
+  /**
+   * Config Class
+   *
+   * The class name of the configuration this schema describes.
+   */
+  config_class?: string;
+  /**
+   * Config Schema
+   *
+   * JSON schema for validating form submissions. Generated from the configuration's configurable fields via to_configurable_submission_model().
+   */
+  config_schema?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -3625,6 +3866,8 @@ export type ContextualizedAgentEvent = {
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | ConversationTitleEvent
+    | FollowUpQuestionsEvent
     | GuardEvent
     | RouterEvent
     | GuardRejectionEvent
@@ -3634,11 +3877,13 @@ export type ContextualizedAgentEvent = {
     | EmbeddingEvent
     | LlmEvent
     | LlmStopEvent
+    | MetaQuestionDetectedEvent
     | RerankerEvent
     | RetrieverEvent
     | ToolEvent
     | UserMessageEvent
     | RagStartEvent
+    | CronStartEvent
     | ExceptionEvent
     | RagSuccessStopEvent
     | RagFailureStopEvent
@@ -3658,7 +3903,12 @@ export type ContextualizedAgentEvent = {
     | BaseStoreMemoryEvent
     | RetrieveOrganizationMemoryEvent
     | RetrieveUserMemoryEvent
-    | StoreOrganizationMemoryEvent;
+    | StoreOrganizationMemoryEvent
+    | UnreadMailListedEvent
+    | MailFetchedEvent
+    | MailMovedEvent
+    | MailBatchDraftedEvent
+    | MailBatchClassifiedEvent;
 };
 
 /**
@@ -3704,6 +3954,57 @@ export type ControlEvent = {
 };
 
 /**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * CreateAgentInstanceRequest
  *
  * Request body for creating a new agent instance.
@@ -3720,6 +4021,26 @@ export type CreateAgentInstanceRequest = {
    * Configuration
    *
    * The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements.
+   */
+  configuration?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * CreateDatabaseRequest
+ */
+export type CreateDatabaseRequest = {
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that processes this database's documents. Valid values are served by GET /knowledge/ingestors.
+   */
+  ingestor?: string;
+  /**
+   * Configuration
+   *
+   * The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.
    */
   configuration?: {
     [key: string]: unknown;
@@ -3876,6 +4197,208 @@ export type CreateTokenResponse = {
 };
 
 /**
+ * CronInput
+ *
+ * A FormKit element for editing the cron schedule of a schedulable agent profile.
+ *
+ * The element renders the five cron positions plus a timezone selector, and the submitted value
+ * matches the fields of `CronSchedule`:
+ * {
+ * "minute": str,
+ * "hour": str,
+ * "day_of_month": str,
+ * "month": str,
+ * "day_of_week": str,
+ * "timezone": str,
+ * }
+ *
+ * Presets and the plain-language summary of the current schedule are delivered by the Admin UI
+ * (see the cron schedule configuration UI issue); this element only declares the contract.
+ *
+ * ### Form Duality
+ * ```python
+ * from swiss_ai_hub.core.form.elements.cron_input import CronInput
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
+ *
+ * class MyAgentConfig(AgentConfig):
+ * schedule: Annotated[
+ * CronSchedule | CronInput | None,
+ * Field(description="When this profile runs automatically"),
+ * ] = None
+ *
+ * # Form mode - for rendering:
+ * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
+ *
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
+ * ```
+ */
+export type CronInput = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Cron schedule input element.
+   */
+  formkit?: "cronInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Timezoneplaceholder
+   *
+   * Placeholder for the timezone select
+   */
+  timezonePlaceholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search on the timezone select
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * Custom
  *
  * The custom tool that the model called.
@@ -4005,11 +4528,67 @@ export type DatabaseDto = {
    */
   auto_sync: boolean;
   /**
+   * Deletable
+   *
+   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   */
+  deletable: boolean;
+  /**
+   * Ingestor
+   *
+   * Identifier of the ingestion pipeline that processes this database, as served by GET /knowledge/ingestors. Visible to anyone who can see the database, so a database-level rule holder learns how it is configured without seeing its namespaces.
+   */
+  ingestor: string;
+  /**
    * Namespaces
    *
    * List of namespaces
    */
   namespaces: Array<NamespaceDto>;
+};
+
+/**
+ * DatabaseResponse
+ */
+export type DatabaseResponse = {
+  /**
+   * Name
+   *
+   * The database name (also the Milvus collection and Mongo store name).
+   */
+  name: string;
+  /**
+   * Bucket Name
+   *
+   * The S3 bucket / data lake container name.
+   */
+  bucket_name: string;
+  /**
+   * Ingestor
+   *
+   * The deployed ingestion pipeline that owns this database.
+   */
+  ingestor: string;
+  /**
+   * Configuration
+   *
+   * The ingestor's settings for this database, as validated against its announced schema.
+   */
+  configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Display Name
+   *
+   * A user-friendly display name for the database.
+   */
+  display_name?: string | null;
+  /**
+   * Description
+   *
+   * A brief description of the database's contents.
+   */
+  description?: string | null;
 };
 
 /**
@@ -4168,6 +4747,12 @@ export type DatePicker = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -4565,6 +5150,26 @@ export type DocumentDto = {
 };
 
 /**
+ * DocumentDeletionResult
+ *
+ * Outcome of a single document deletion within a batch request.
+ */
+export type DocumentDeletionResult = {
+  /**
+   * Document Id
+   *
+   * ID of the document
+   */
+  document_id: string;
+  /**
+   * Status
+   *
+   * Deletion outcome for this document
+   */
+  status: "scheduled" | "not_found" | "failed";
+};
+
+/**
  * DocumentParsingMetadata
  *
  * Metadata about the converted document.
@@ -4719,6 +5324,56 @@ export type DocumentUploadValidationResponse = {
    * Name of the container/bucket
    */
   container: string;
+};
+
+/**
+ * DraftedReplyRef
+ *
+ * A single reply draft produced during a batch drafting run — one per source message.
+ */
+export type DraftedReplyRef = {
+  /**
+   * Source Uid
+   *
+   * IMAP UID the source message had in the folder it was read from. A blueprint that files the message before drafting (EmailClassificationAgent) reports the pre-move UID, which no longer resolves on the server — it identifies the message within the run, not for a later fetch.
+   */
+  source_uid: string;
+  /**
+   * Category
+   *
+   * Category the source message was classified under, when drafting followed a classification run. Null when the drafting blueprint does not classify.
+   */
+  category?: string | null;
+  /**
+   * Drafts Folder
+   *
+   * Folder the draft was appended to.
+   */
+  drafts_folder: string;
+  /**
+   * Draft Uid
+   *
+   * IMAP UID assigned to the appended draft when the server reports APPENDUID.
+   */
+  draft_uid?: string | null;
+  /**
+   * In Reply To
+   *
+   * RFC Message-ID of the original message this draft replies to.
+   */
+  in_reply_to?: string | null;
+  /**
+   * Subject
+   *
+   * Subject of the draft reply.
+   */
+  subject: string;
+  /**
+   * Recipient
+   *
+   * Recipient the draft reply is addressed to.
+   */
+  recipient: string;
 };
 
 /**
@@ -5218,6 +5873,56 @@ export type FileFile = {
 };
 
 /**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -5252,6 +5957,12 @@ export type FullAgentInstanceDto = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
   /**
    * Start Events
    *
@@ -5350,7 +6061,7 @@ export type FullProcessInstanceDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -5363,6 +6074,7 @@ export type FullProcessInstanceDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -5376,7 +6088,6 @@ export type FullProcessInstanceDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5384,6 +6095,7 @@ export type FullProcessInstanceDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -5508,6 +6220,12 @@ export type Group = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -5526,6 +6244,12 @@ export type Group = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
+  /**
    * Children
    *
    * Child form elements contained within this group
@@ -5537,6 +6261,7 @@ export type Group = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -5550,7 +6275,6 @@ export type Group = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5558,11 +6282,24 @@ export type Group = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
     | VectorStoreInput
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -5746,6 +6483,12 @@ export type HealthResponse = {
    */
   code: number;
   /**
+   * Version
+   *
+   * Running service version.
+   */
+  version: string;
+  /**
    * Checks
    *
    * Individual health check results.
@@ -5791,6 +6534,12 @@ export type HtmlElement = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * $El
    *
@@ -5868,6 +6617,7 @@ export type HumanInDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -5881,7 +6631,6 @@ export type HumanInDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5889,6 +6638,7 @@ export type HumanInDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -5948,6 +6698,7 @@ export type HumanInSpecs = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -5961,7 +6712,6 @@ export type HumanInSpecs = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -5969,6 +6719,7 @@ export type HumanInSpecs = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -6669,6 +7420,12 @@ export type IconSelector = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -7107,6 +7864,69 @@ export type IngestedNode = {
 };
 
 /**
+ * IngestorDTO
+ */
+export type IngestorDto = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
+
+/**
  * InputAudio
  */
 export type InputAudio = {
@@ -7151,6 +7971,12 @@ export type InputMask = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7294,6 +8120,12 @@ export type InputNumber = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue InputNumber element.
@@ -7391,13 +8223,13 @@ export type InputNumber = {
    *
    * Minimum number of fraction digits
    */
-  minFractionDigits?: number | null;
+  minFractionDigits?: number;
   /**
    * Maxfractiondigits
    *
    * Maximum number of fraction digits
    */
-  maxFractionDigits?: number | null;
+  maxFractionDigits?: number;
   /**
    * Locale
    *
@@ -7477,6 +8309,12 @@ export type InputOtp = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7601,6 +8439,12 @@ export type InputText = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7758,6 +8602,12 @@ export type Knob = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -7945,6 +8795,12 @@ export type KnowledgeDatabaseSelector = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Knowledge database selector element.
@@ -8088,6 +8944,18 @@ export type LlmCostEvent = {
    */
   llm_name: string;
   /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8223,6 +9091,59 @@ export type LlmEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * LLMSpend
+ *
+ * LLM spend aggregated over one attribution key (a user or a tenant).
+ *
+ * Costs come from the platform's own `LLMCostEvent` records rather than from LiteLLM's spend log:
+ * the gateway can only attribute the user, so the tenant dimension exists here alone (see #1451).
+ */
+export type LlmSpend = {
+  /**
+   * User Id
+   *
+   * Invoking user, None when grouping by tenant.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, None for runs outside a tenant.
+   */
+  tenant_id?: string | null;
+  /**
+   * Calls
+   *
+   * Number of LLM calls attributed to this key.
+   */
+  calls?: number;
+  /**
+   * Prompt Tokens Costs
+   *
+   * Cost of prompt tokens.
+   */
+  prompt_tokens_costs?: number;
+  /**
+   * Completion Tokens Costs
+   *
+   * Cost of completion tokens.
+   */
+  completion_tokens_costs?: number;
+  /**
+   * Embedding Tokens Costs
+   *
+   * Cost of embedding tokens.
+   */
+  embedding_tokens_costs?: number;
+  /**
+   * Total Costs
+   *
+   * Sum of prompt, completion and embedding costs.
+   */
+  total_costs?: number;
 };
 
 /**
@@ -8424,6 +9345,12 @@ export type Listbox = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -8594,6 +9521,12 @@ export type LocaleInput = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Locale input element.
@@ -8664,6 +9597,13 @@ export type LocaleInput = {
   placeholder?: LocaleString | string | null;
   /**
    * Validation
+   *
+   * Emits `localeRequired` where other elements emit FormKit's `required`.
+   *
+   * FormKit's `required` rule only asks whether a value is present, and this element's
+   * value is always a `{de, en, fr, it}` object — non-empty, therefore passing, even when
+   * every locale inside it is blank. `localeRequired` (registered in the frontend FormKit
+   * config) looks at the locale values themselves.
    */
   readonly validation: string;
   [key: string]: unknown;
@@ -8773,6 +9713,457 @@ export type Logprob = {
    * Logprob
    */
   logprob?: number | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailAttachmentRef
+ *
+ * Reference to a fetched mail attachment whose bytes are stored in S3, not carried in the event.
+ *
+ * Mirrors ``UserUploadedFile``: attachments are referenced by ``file_id`` (the S3 object key within the
+ * agent's dedicated bucket) so large binaries never bloat the persisted/streamed event.
+ */
+export type MailAttachmentRef = {
+  /**
+   * Filename
+   *
+   * Original attachment filename, including extension. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the attachment.
+   */
+  content_type: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored attachment in bytes.
+   */
+  size_bytes: number;
+};
+
+/**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailClassificationRef
+ *
+ * One classified message and where it was filed — the per-message detail behind a run summary.
+ */
+export type MailClassificationRef = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the source folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Category
+   *
+   * Configured category the message was filed under, or null when it went to the fallback folder because no category clearly fitted.
+   */
+  category?: string | null;
+  /**
+   * Target Folder
+   *
+   * Folder the message was filed into.
+   */
+  target_folder: string;
+  /**
+   * Reason
+   *
+   * Model's stated reason for the choice — the audit trail for a misfile.
+   */
+  reason: string;
+  /**
+   * Folder Created
+   *
+   * Whether this message's target folder was created during the run. Folders are created once up front for the whole batch, so every message routed to a newly created folder carries this, not only the first one.
+   */
+  folder_created?: boolean;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3.
+   */
+  original_message?: MailMessageRef | null;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3, or null when it was not stored.
+   */
+  original_message?: MailMessageRef | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMessageRef
+ *
+ * Reference to a fetched message's original RFC822 bytes, stored in S3 rather than carried in the event.
+ *
+ * Mirrors ``MailAttachmentRef``: the message is referenced by ``file_id`` so the raw mail — which may be
+ * orders of magnitude larger than the summary the event carries — never enters the audit trail or the
+ * WebSocket stream. The stored object is the message **verbatim**, so it also preserves what the event
+ * deliberately omits: the recipients and the untrusted HTML body.
+ */
+export type MailMessageRef = {
+  /**
+   * Filename
+   *
+   * Filename the message is stored under, e.g. '1234.eml'. Must not contain path separators.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * MIME type of the stored message.
+   */
+  content_type?: string;
+  /**
+   * File Id
+   *
+   * UUID4 file identifier; the S3 object key is derived from the agent identity at runtime.
+   */
+  file_id: string;
+  /**
+   * Size Bytes
+   *
+   * Size of the stored message in bytes.
+   */
+  size_bytes: number;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -9132,6 +10523,74 @@ export const MessageRole = {
  */
 export type MessageRole = (typeof MessageRole)[keyof typeof MessageRole];
 
+export const MetaQuestionCategory = {
+  IDENTITY: "identity",
+  CAPABILITIES: "capabilities",
+  BEHAVIOR: "behavior",
+} as const;
+
+export type MetaQuestionCategory =
+  (typeof MetaQuestionCategory)[keyof typeof MetaQuestionCategory];
+
+/**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
 /**
  * Metadata
  */
@@ -9214,6 +10673,12 @@ export type MinimalAgentInstanceDto = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
 };
 
 /**
@@ -9359,7 +10824,7 @@ export type ModelInfoDto = {
    *
    * The mode of the model (e.g., 'chat', 'completion', 'embedding')
    */
-  mode: string;
+  mode?: string | null;
   /**
    * Max Input Tokens
    *
@@ -9457,11 +10922,9 @@ export type ModelInfoDto = {
    */
   output_cost_per_image?: number | null;
   /**
-   * Search Context Cost Per Query
-   *
-   * Cost per search context query
+   * Cost per search context query by context size
    */
-  search_context_cost_per_query?: number | null;
+  search_context_cost_per_query?: SearchContextCostPerQueryDto | null;
   /**
    * Output Vector Size
    *
@@ -9669,6 +11132,12 @@ export type ModelSelect = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -9804,6 +11273,12 @@ export type MultiSelect = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -10225,142 +11700,6 @@ export type OpenWebuiWebhookUser = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInput = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  /**
-   * Validation
-   */
-  readonly validation: string;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -10648,6 +11987,12 @@ export type Password = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Password element.
@@ -10810,6 +12155,7 @@ export type ProcessClassDto = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -10823,7 +12169,6 @@ export type ProcessClassDto = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -10831,6 +12176,7 @@ export type ProcessClassDto = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -10839,7 +12185,7 @@ export type ProcessClassDto = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *
@@ -10900,35 +12246,6 @@ export type ProcessConfigDto = {
    * The icon representing the process.
    */
   icon?: string;
-};
-
-/**
- * ProcessConfigSpecs
- *
- * Validation specification for process configuration form submissions.
- *
- * Contains the process class identifier and JSON schema for validation.
- * Instance-level fields (name, description, icon, process_id) are stored
- * separately in ProcessConfigEntityDocument and provided by the Process class.
- *
- * The JSON schema is generated from the process's configurable fields via
- * to_configurable_submission_model() and is used to validate form submissions.
- */
-export type ProcessConfigSpecs = {
-  /**
-   * Process Class
-   *
-   * The class name of the process.
-   */
-  process_class?: string;
-  /**
-   * Process Config Schema
-   *
-   * JSON schema for validating form submissions. Generated from the process's configurable fields via to_configurable_submission_model().
-   */
-  process_config_schema?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -11351,9 +12668,9 @@ export type RagStartEvent = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -11476,6 +12793,12 @@ export type RadioButton = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -11602,6 +12925,12 @@ export type Rating = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -11755,6 +13084,12 @@ export type Repeater = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * $Formkit
    *
    * FormKit repeater element
@@ -11826,6 +13161,7 @@ export type Repeater = {
     | Checkbox
     | ChipsInput
     | ColorPicker
+    | CronInput
     | DatePicker
     | Group
     | IconSelector
@@ -11839,7 +13175,6 @@ export type Repeater = {
     | LocaleInput
     | ModelSelect
     | MultiSelect
-    | OrgMemoryTenantInput
     | Password
     | RadioButton
     | Rating
@@ -11847,6 +13182,7 @@ export type Repeater = {
     | Select
     | SelectButton
     | Slider
+    | TenantSelect
     | Textarea
     | ToggleButton
     | ToggleSwitch
@@ -12409,6 +13745,32 @@ export type RunStatistics = {
 };
 
 /**
+ * SearchContextCostPerQueryDTO
+ *
+ * LiteLLM reports search context cost per query broken down by context size, not as a single value.
+ */
+export type SearchContextCostPerQueryDto = {
+  /**
+   * Search Context Size Low
+   *
+   * Cost per query with low search context size
+   */
+  search_context_size_low?: number | null;
+  /**
+   * Search Context Size Medium
+   *
+   * Cost per query with medium search context size
+   */
+  search_context_size_medium?: number | null;
+  /**
+   * Search Context Size High
+   *
+   * Cost per query with high search context size
+   */
+  search_context_size_high?: number | null;
+};
+
+/**
  * Select
  *
  * https://formkit-primevue.netlify.app/inputs/Select
@@ -12438,6 +13800,12 @@ export type Select = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -12588,6 +13956,12 @@ export type SelectButton = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -12972,6 +14346,12 @@ export type Slider = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Slider element.
@@ -13070,6 +14450,16 @@ export type Slider = {
   readonly validation: string;
   [key: string]: unknown;
 };
+
+/**
+ * SortOrder
+ */
+export const SortOrder = { 1: 1, "-1": -1 } as const;
+
+/**
+ * SortOrder
+ */
+export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
 
 /**
  * StandaloneQuestionCondenserEvent
@@ -13488,6 +14878,137 @@ export type TenantMembershipDto = {
 };
 
 /**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelect = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -13528,9 +15049,9 @@ export type TextToSpeechRequest = {
   /**
    * Model
    *
-   * The TTS model to use. Available options: 'tts-1' or 'tts-1-hd'.
+   * The TTS model to use, e.g. 'speech/<model-name>'.
    */
-  model: "tts-1" | "tts-1-hd";
+  model: string;
   /**
    * Input
    *
@@ -13597,6 +15118,12 @@ export type Textarea = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -13943,6 +15470,20 @@ export type ThreadDto = {
 };
 
 /**
+ * ThreadReference
+ *
+ * The thread that owns a display, resolved so the chat-UI side panel can open the correct per-agent thread.
+ */
+export type ThreadReference = {
+  /**
+   * Thread Id
+   *
+   * The thread ID that owns the requested display
+   */
+  thread_id: string;
+};
+
+/**
  * TimeRange
  */
 export const TimeRange = {
@@ -13987,6 +15528,12 @@ export type ToggleButton = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -14117,6 +15664,12 @@ export type ToggleSwitch = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -14518,6 +16071,90 @@ export type TranslationResponse = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * UnreadMailSummary
+ *
+ * Lightweight header summary of one unread message — enough for an agent to decide what to fetch.
+ */
+export type UnreadMailSummary = {
+  /**
+   * Message Id
+   *
+   * IMAP UID of the message within the inbox folder — stable across connections.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Flags
+   *
+   * IMAP flags set on the message.
+   */
+  flags?: Array<string>;
+};
+
+/**
  * UpdateAgentInstanceDTO
  *
  * Request body for updating an agent instance configuration.
@@ -14804,11 +16441,11 @@ export type UserAccess = {
   /**
    * Name
    *
-   * Name of the service/agent/process to which user has access to
+   * Name of the service/agent/process to which access is evaluated
    */
   name: string;
   /**
-   * Users access level to service/agent/process
+   * Access level to the service/agent/process
    */
   level: AccessLevel;
 };
@@ -15061,6 +16698,12 @@ export type UserWithAccessDto = {
    * User access levels
    */
   access: Access;
+  /**
+   * Access Rules
+   *
+   * The user's resolved access rules (union of their roles), to drive the capability view.
+   */
+  access_rules: Array<string>;
 };
 
 /**
@@ -15099,13 +16742,14 @@ export type ValidationError = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -15167,6 +16811,12 @@ export type VectorStoreInput = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -15608,6 +17258,7 @@ export type AgentClassDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -15621,7 +17272,6 @@ export type AgentClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -15629,6 +17279,7 @@ export type AgentClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -15637,7 +17288,7 @@ export type AgentClassDtoWritable = {
   /**
    * Validation specification including the JSON schema for form submissions. Used by ModelCreationService to create Pydantic models for validation.
    */
-  agent_config_specs: AgentConfigSpecs;
+  agent_config_specs: ConfigSpecs;
   /**
    * Start Events
    *
@@ -15672,6 +17323,12 @@ export type AgentClassDtoWritable = {
    * Whether the agent class can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent class can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
   /**
    * Is Online
    *
@@ -15735,6 +17392,7 @@ export type AgentConfigDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -15748,7 +17406,6 @@ export type AgentConfigDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -15756,6 +17413,7 @@ export type AgentConfigDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -15822,6 +17480,12 @@ export type AgentInTheLoopExceptionEventWritable = {
    * The exception event from the delegated agent containing error details and failure context.
    */
   exception_event: ExceptionEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` that failed. Carried here for the same reason the response carries it — a fan-out caller that cannot attribute a failure cannot complete its batch.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -15883,9 +17547,15 @@ export type AgentInTheLoopRequestEventWritable = {
   /**
    * Share Run Id
    *
-   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
+   * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run! The response subscription is scoped to the delegated run id, so sharing it makes every subscriber of a fan-out fire on every delegate.
    */
   share_run_id?: boolean;
+  /**
+   * Timeout Seconds
+   *
+   * How long to wait for the delegated agent before synthesizing a failure. `None` (the default) waits forever, which is what a delegate that never starts — an offline agent, a mistyped agent_id — costs the caller: no stop event is ever published, so the caller's run never resumes. Set it when the caller cannot tolerate that, and note it only covers a delegate that does not answer: the timer lives in the caller's dispatcher process, so it dies with the response subscription it guards.
+   */
+  timeout_seconds?: number | null;
   [key: string]: unknown;
 };
 
@@ -15922,6 +17592,12 @@ export type AgentInTheLoopResponseEventWritable = {
    * The stop event from the delegated agent containing the task results and marks the completion.
    */
   stop_event: StopEventWritable;
+  /**
+   * Request Event Id
+   *
+   * `event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out receives N of these on one topic and nothing else on the payload distinguishes them.
+   */
+  request_event_id: string;
   [key: string]: unknown;
 };
 
@@ -15985,6 +17661,11 @@ export type AgentProcessStepDtoWritable = {
  *
  * This is similar to ModelSelect's `mode` parameter for filtering by model type.
  *
+ * ### Pinning to One Agent Class
+ *
+ * When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+ * that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
+ *
  * ### Form Duality
  *
  * When used with AgentRef, the form submission is validated directly into AgentRef:
@@ -16043,6 +17724,12 @@ export type AgentSelectorWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -16099,6 +17786,12 @@ export type AgentSelectorWritable = {
    * Optional filter: only show agent classes that accept this start event type. Matches against event_name or event_parents in the agent's start_events.
    */
   startEvent?: string | null;
+  /**
+   * Agentclass
+   *
+   * Pin the selection to one agent class. The class dropdown is not rendered and the profile dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers — a dropdown offering one choice asks the admin to make a decision that was never theirs.
+   */
+  agentClass?: string | null;
   /**
    * Classplaceholder
    *
@@ -16502,6 +18195,12 @@ export type CascadeSelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue CascadeSelect element.
@@ -16681,6 +18380,12 @@ export type CheckboxWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -16812,6 +18517,12 @@ export type ChipsInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -16949,6 +18660,12 @@ export type ColorPickerWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -17204,6 +18921,8 @@ export type ContextualizedAgentEventWritable = {
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | ConversationTitleEventWritable
+    | FollowUpQuestionsEventWritable
     | GuardEventWritable
     | RouterEventWritable
     | GuardRejectionEventWritable
@@ -17213,11 +18932,13 @@ export type ContextualizedAgentEventWritable = {
     | EmbeddingEventWritable
     | LlmEventWritable
     | LlmStopEventWritable
+    | MetaQuestionDetectedEventWritable
     | RerankerEventWritable
     | RetrieverEventWritable
     | ToolEventWritable
     | UserMessageEventWritable
     | RagStartEventWritable
+    | CronStartEventWritable
     | ExceptionEventWritable
     | RagSuccessStopEventWritable
     | RagFailureStopEventWritable
@@ -17237,7 +18958,12 @@ export type ContextualizedAgentEventWritable = {
     | BaseStoreMemoryEventWritable
     | RetrieveOrganizationMemoryEventWritable
     | RetrieveUserMemoryEventWritable
-    | StoreOrganizationMemoryEventWritable;
+    | StoreOrganizationMemoryEventWritable
+    | UnreadMailListedEventWritable
+    | MailFetchedEventWritable
+    | MailMovedEventWritable
+    | MailBatchDraftedEventWritable
+    | MailBatchClassifiedEventWritable;
 };
 
 /**
@@ -17266,6 +18992,229 @@ export type ControlEventWritable = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationTitleEvent
+ *
+ * Carries a generated title for the whole conversation (thread), produced by the agent once a
+ * topic becomes identifiable. The agent has the richest context about the conversation, so it
+ * owns this metadata instead of leaving it to the chat UI's task model.
+ *
+ * A thread receives a single, stable title: the agent emits this event only on the turn where a
+ * title is first determined and never again for that thread.
+ */
+export type ConversationTitleEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Title
+   *
+   * The generated title for the conversation.
+   */
+  title: string;
+  [key: string]: unknown;
+};
+
+/**
+ * CronInput
+ *
+ * A FormKit element for editing the cron schedule of a schedulable agent profile.
+ *
+ * The element renders the five cron positions plus a timezone selector, and the submitted value
+ * matches the fields of `CronSchedule`:
+ * {
+ * "minute": str,
+ * "hour": str,
+ * "day_of_month": str,
+ * "month": str,
+ * "day_of_week": str,
+ * "timezone": str,
+ * }
+ *
+ * Presets and the plain-language summary of the current schedule are delivered by the Admin UI
+ * (see the cron schedule configuration UI issue); this element only declares the contract.
+ *
+ * ### Form Duality
+ * ```python
+ * from swiss_ai_hub.core.form.elements.cron_input import CronInput
+ * from swiss_ai_hub.core.scheduling.cron_schedule import CronSchedule
+ *
+ * class MyAgentConfig(AgentConfig):
+ * schedule: Annotated[
+ * CronSchedule | CronInput | None,
+ * Field(description="When this profile runs automatically"),
+ * ] = None
+ *
+ * # Form mode - for rendering:
+ * config = MyAgentConfig(schedule=CronInput(label=LocaleString(en="Schedule")))
+ *
+ * # Data mode - from submission (Pydantic validates into CronSchedule):
+ * config = MyAgentConfig(schedule=CronSchedule(hour="12", timezone="Europe/Zurich"))
+ * ```
+ */
+export type CronInputWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Cron schedule input element.
+   */
+  formkit?: "cronInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Timezoneplaceholder
+   *
+   * Placeholder for the timezone select
+   */
+  timezonePlaceholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search on the timezone select
+   */
+  filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * CronStartEvent
+ *
+ * Start event fired by the cron scheduler — handling it is what makes an agent schedulable.
+ *
+ * Mirrors how accepting a `UserMessageEvent` makes an agent conversational: `AgentRunner` derives
+ * `is_schedulable` from the start events an agent declares, so a blueprint opts in by adding a step
+ * that consumes this event, with no separate registration.
+ *
+ * Scheduled runs are system runs, so `user` is always None and the agent must not depend on an
+ * initiating identity. Whatever tenant context the agent needs comes from its own profile
+ * configuration (as `OrgMemoryWriteConfig.tenant_id` already does), never from the run.
+ */
+export type CronStartEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * The locale the scheduled run reports its display output in.
+   */
+  locale?: string;
+  /**
+   * Always None — scheduled runs are system-initiated and carry no execution identity.
+   */
+  user?: UserIdentity | null;
+  /**
+   * Scheduled For
+   *
+   * The cron occurrence this run fires for, in UTC. Distinct from `created_at`, which records when the scheduler published the event — the two differ by the scheduler's tick latency.
+   */
+  scheduled_for: Date;
   [key: string]: unknown;
 };
 
@@ -17299,6 +19248,12 @@ export type DatePickerWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -17702,6 +19657,43 @@ export type FewShotRejectEventWritable = {
 };
 
 /**
+ * FollowUpQuestionsEvent
+ *
+ * Carries follow-up questions the user might want to ask next, produced by the agent after each
+ * answer. These are non-blocking UI suggestions — unlike the namespace-selection
+ * ``FollowUpQuestion`` HITL events, the user is never required to answer them.
+ *
+ * Regenerated every turn since they depend on the latest answer.
+ */
+export type FollowUpQuestionsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Questions
+   *
+   * The suggested follow-up questions for the user.
+   */
+  questions: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -17736,6 +19728,12 @@ export type FullAgentInstanceDtoWritable = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
   /**
    * Start Events
    *
@@ -17834,7 +19832,7 @@ export type FullProcessInstanceDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Form
    *
@@ -17847,6 +19845,7 @@ export type FullProcessInstanceDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -17860,7 +19859,6 @@ export type FullProcessInstanceDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -17868,6 +19866,7 @@ export type FullProcessInstanceDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -17931,6 +19930,12 @@ export type GroupWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -17949,6 +19954,12 @@ export type GroupWritable = {
    */
   label?: LocaleString | string | null;
   /**
+   * Help
+   *
+   * Optional explanatory text rendered on the group's enable toggle
+   */
+  help?: LocaleString | string | null;
+  /**
    * Children
    *
    * Child form elements contained within this group
@@ -17960,6 +19971,7 @@ export type GroupWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -17973,7 +19985,6 @@ export type GroupWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -17981,11 +19992,24 @@ export type GroupWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
     | VectorStoreInputWritable
   >;
+  /**
+   * Accessrule
+   *
+   * Access rule the user must satisfy to submit this section as enabled
+   */
+  accessRule?: string | null;
+  /**
+   * Accessdeniedmessagepath
+   *
+   * i18n path for the message shown when access_rule is not satisfied
+   */
+  accessDeniedMessagePath?: string;
   [key: string]: unknown;
 };
 
@@ -18151,6 +20175,7 @@ export type HumanInDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -18164,7 +20189,6 @@ export type HumanInDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18172,6 +20196,7 @@ export type HumanInDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -18231,6 +20256,7 @@ export type HumanInSpecsWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -18244,7 +20270,6 @@ export type HumanInSpecsWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -18252,6 +20277,7 @@ export type HumanInSpecsWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -18656,6 +20682,12 @@ export type IconSelectorWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -18722,6 +20754,69 @@ export type IconSelectorWritable = {
 };
 
 /**
+ * IngestorDTO
+ */
+export type IngestorDtoWritable = {
+  /**
+   * Name
+   *
+   * Ingestor identifier, as served by GET /knowledge/ingestors.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the ingestion pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of what the pipeline does.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database of this ingestor is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+};
+
+/**
  * InputMask
  *
  * https://formkit-primevue.netlify.app/inputs/InputMask
@@ -18751,6 +20846,12 @@ export type InputMaskWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -18890,6 +20991,12 @@ export type InputNumberWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue InputNumber element.
@@ -18987,13 +21094,13 @@ export type InputNumberWritable = {
    *
    * Minimum number of fraction digits
    */
-  minFractionDigits?: number | null;
+  minFractionDigits?: number;
   /**
    * Maxfractiondigits
    *
    * Maximum number of fraction digits
    */
-  maxFractionDigits?: number | null;
+  maxFractionDigits?: number;
   /**
    * Locale
    *
@@ -19069,6 +21176,12 @@ export type InputOtpWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19189,6 +21302,12 @@ export type InputTextWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19315,6 +21434,12 @@ export type KnobWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -19498,6 +21623,12 @@ export type KnowledgeDatabaseSelectorWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Knowledge database selector element.
@@ -19636,6 +21767,18 @@ export type LlmCostEventWritable = {
    * The name of the LLM service (e.g., 'openai/gpt-4') this event pertains to.
    */
   llm_name: string;
+  /**
+   * User Id
+   *
+   * Invoking user, so spend is queryable per user. None for runs with no user context.
+   */
+  user_id?: string | null;
+  /**
+   * Tenant Id
+   *
+   * Acting tenant, so spend is queryable per tenant. None for sysadmins and system runs.
+   */
+  tenant_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -19921,6 +22064,12 @@ export type ListboxWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -20087,6 +22236,12 @@ export type LocaleInputWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * Locale input element.
@@ -20159,6 +22314,273 @@ export type LocaleInputWritable = {
 };
 
 /**
+ * MailBatchClassifiedEvent
+ *
+ * Summarises one classification run: how many messages were classified and where each was filed.
+ *
+ * One event per run rather than one per message, matching `MailBatchDraftedEvent` — the per-message detail rides in
+ * `classified`. Filing is what prevents reprocessing: every message leaves the source folder, so the next unread
+ * listing cannot see it again.
+ */
+export type MailBatchClassifiedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the classified messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of messages classified and filed in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many messages were filed under each configured category.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Fallback Count
+   *
+   * How many messages went to the fallback folder instead of a category.
+   */
+  fallback_count?: number;
+  /**
+   * Failed Count
+   *
+   * How many messages the classifier could not reach a verdict on at all. They are filed into the failure folder rather than left in the inbox, where they would be re-selected on every run forever.
+   */
+  failed_count?: number;
+  /**
+   * Classified
+   *
+   * Per-message classification verdicts and filing destinations.
+   */
+  classified?: Array<MailClassificationRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailBatchDraftedEvent
+ *
+ * Records that a batch of reply drafts was appended to the Drafts folder for a human to review and send.
+ *
+ * The agent never sends — the drafts sitting in Drafts are the human handoff. Each source message is left unread and
+ * marked as drafted so it is not drafted again on the next run.
+ */
+export type MailBatchDraftedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Source Folder
+   *
+   * Folder the drafted messages were read from.
+   */
+  source_folder: string;
+  /**
+   * Count
+   *
+   * Number of reply drafts created in this run.
+   */
+  count: number;
+  /**
+   * Per Category
+   *
+   * How many drafts were created for each category, when drafting followed a classification run. Empty when the drafting blueprint does not classify.
+   */
+  per_category?: {
+    [key: string]: number;
+  };
+  /**
+   * Skipped Count
+   *
+   * Messages in the batch that got no draft: usually because their category was not opted in, or no category fitted them at all.
+   */
+  skipped_count?: number;
+  /**
+   * Drafted
+   *
+   * Per-message references to the created reply drafts.
+   */
+  drafted?: Array<DraftedReplyRef>;
+  [key: string]: unknown;
+};
+
+/**
+ * MailFetchedEvent
+ *
+ * Carries a single fetched message — headers, body, and references to its stored attachments.
+ */
+export type MailFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the fetched message within the inbox folder.
+   */
+  message_id: string;
+  /**
+   * Sender
+   *
+   * Raw From header of the message.
+   */
+  sender: string;
+  /**
+   * Subject
+   *
+   * Subject header of the message.
+   */
+  subject: string;
+  /**
+   * Date
+   *
+   * Date header of the message, if parseable.
+   */
+  date?: Date | null;
+  /**
+   * Body Text
+   *
+   * Plain-text body of the message, if present.
+   */
+  body_text?: string | null;
+  /**
+   * Rfc Message Id
+   *
+   * RFC Message-ID header of the message — used to thread a reply draft.
+   */
+  rfc_message_id?: string | null;
+  /**
+   * References
+   *
+   * RFC References header of the message, if present.
+   */
+  references?: string | null;
+  /**
+   * Reply To
+   *
+   * Reply-To header of the message, if present.
+   */
+  reply_to?: string | null;
+  /**
+   * Attachments
+   *
+   * References to the message's attachments stored in S3.
+   */
+  attachments?: Array<MailAttachmentRef>;
+  /**
+   * Reference to the original RFC822 message stored in S3, or null when it was not stored.
+   */
+  original_message?: MailMessageRef | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MailMovedEvent
+ *
+ * Records that a message was moved from its source folder into a target folder on the IMAP server.
+ */
+export type MailMovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Message Id
+   *
+   * IMAP UID of the moved message within its source folder.
+   */
+  message_id: string;
+  /**
+   * Source Folder
+   *
+   * Folder the message was moved out of.
+   */
+  source_folder: string;
+  /**
+   * Target Folder
+   *
+   * Folder the message was moved into.
+   */
+  target_folder: string;
+  /**
+   * Folder Created
+   *
+   * Whether the target folder did not exist and was created by this move — an agent adding a folder to someone's mailbox is a visible side effect and belongs in the audit trail.
+   */
+  folder_created?: boolean;
+  [key: string]: unknown;
+};
+
+/**
  * Message
  */
 export type MessageWritable = {
@@ -20211,6 +22633,52 @@ export type MessageWritable = {
 };
 
 /**
+ * MetaQuestionDetectedEvent
+ *
+ * Emitted when the user's message is a meta question about the agent itself —
+ * its identity, its capabilities, or why it behaved a certain way — rather than a
+ * task for the agent to perform. Routes the run to the self-awareness answer step
+ * instead of the agent's normal workflow.
+ */
+export type MetaQuestionDetectedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Query
+   *
+   * The user message classified as a meta question.
+   */
+  user_query: string;
+  /**
+   * Which aspect of the agent the question is about.
+   */
+  category: MetaQuestionCategory;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a meta question.
+   */
+  reasoning: string;
+  [key: string]: unknown;
+};
+
+/**
  * MinimalAgentInstanceDTO
  *
  * Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.
@@ -20242,6 +22710,12 @@ export type MinimalAgentInstanceDtoWritable = {
    * Whether the agent can participate in a chat-based conversation
    */
   is_conversational: boolean;
+  /**
+   * Is Schedulable
+   *
+   * Whether the agent can be run automatically on a cron schedule
+   */
+  is_schedulable?: boolean;
 };
 
 /**
@@ -20326,6 +22800,12 @@ export type ModelSelectWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -20459,6 +22939,12 @@ export type MultiSelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue MultiSelect element.
@@ -20575,138 +23061,6 @@ export type OpenChatHitlResponseWritable = {
 };
 
 /**
- * OrgMemoryTenantInput
- *
- * Text input for the organization-memory `tenant_id` field that also enforces
- * config-time access control.
- *
- * Renders identically to a plain `InputText` (same UI), but its presence in a
- * submitted config means the section is enabled — so we require the configuring user
- * to hold `aihub.user.memory.organization`. When the parent `org_memory` section is
- * null the walker never reaches this element, so no check fires.
- */
-export type OrgMemoryTenantInputWritable = {
-  /**
-   * Is Formkit Element
-   *
-   * Indicates that this element is a FormKit element
-   */
-  is_formkit_element?: true;
-  /**
-   * If
-   *
-   * Conditional expression to show this element
-   */
-  if?: string | null;
-  /**
-   * Id
-   *
-   * Unique identifier for this element
-   */
-  id?: string | null;
-  /**
-   * Nullable
-   *
-   * Render with a sibling toggle that sets this field to null when off
-   */
-  nullable?: boolean;
-  /**
-   * Formkit
-   *
-   * Organization-memory tenant_id input element.
-   */
-  formkit?: "orgMemoryTenantInput";
-  /**
-   * Name
-   *
-   * Name of this field
-   */
-  name?: string | null;
-  /**
-   * Label
-   *
-   * Label of this field
-   */
-  label: LocaleString | string;
-  /**
-   * Help
-   *
-   * Help text of this field
-   */
-  help?: LocaleString | string | null;
-  /**
-   * Value
-   *
-   * Default value for this field
-   */
-  value?:
-    | string
-    | number
-    | number
-    | boolean
-    | Array<string>
-    | {
-        [key: string]: string;
-      }
-    | null;
-  /**
-   * Required
-   *
-   * Whether this field is required
-   */
-  required?: boolean;
-  /**
-   * Additional Validation Rules
-   *
-   * Validation expression
-   */
-  additional_validation_rules?: string | null;
-  /**
-   * Disabled
-   *
-   * Whether the input is disabled
-   */
-  disabled?: boolean;
-  /**
-   * Readonly
-   *
-   * Whether the input is readonly
-   */
-  readonly?: boolean;
-  /**
-   * Placeholder
-   *
-   * Placeholder text
-   */
-  placeholder?: LocaleString | string | null;
-  /**
-   * Prefix
-   *
-   * Prefix text
-   */
-  prefix?: LocaleString | string | null;
-  /**
-   * Suffix
-   *
-   * Suffix text
-   */
-  suffix?: LocaleString | string | null;
-  /**
-   * Iconprefix
-   *
-   * Icon prefix
-   */
-  iconPrefix?: string | null;
-  /**
-   * Iconsuffix
-   *
-   * Icon suffix
-   */
-  iconSuffix?: string | null;
-  [key: string]: unknown;
-};
-
-/**
  * PaginatedProcessWalkthroughsResponse
  *
  * Paginated response containing process walkthroughs with detailed step information.
@@ -20810,6 +23164,12 @@ export type PasswordWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -20969,6 +23329,7 @@ export type ProcessClassDtoWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -20982,7 +23343,6 @@ export type ProcessClassDtoWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -20990,6 +23350,7 @@ export type ProcessClassDtoWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -20998,7 +23359,7 @@ export type ProcessClassDtoWritable = {
   /**
    * Configuration specifications of the process class, including schema and parameters.
    */
-  process_config_specs: ProcessConfigSpecs;
+  process_config_specs: ConfigSpecs;
   /**
    * Human Inputs
    *
@@ -21181,9 +23542,9 @@ export type RagStartEventWritable = {
    */
   locale?: string;
   /**
-   * User on whose behalf the RAG run is executed.
+   * User on whose behalf the RAG run is executed, when there is one. Optional because a delegating agent forwards whatever identity its own start event carries, and a scheduled run carries none — there is no service account to substitute. The RAG agent's user-memory steps are what read it, and they are skipped without it rather than attributing one caller's memories to a shared identity.
    */
-  user: UserIdentity;
+  user?: UserIdentity | null;
   /**
    * Messages
    *
@@ -21280,6 +23641,12 @@ export type RadioButtonWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -21402,6 +23769,12 @@ export type RatingWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -21551,6 +23924,12 @@ export type RepeaterWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * $Formkit
    *
    * FormKit repeater element
@@ -21622,6 +24001,7 @@ export type RepeaterWritable = {
     | CheckboxWritable
     | ChipsInputWritable
     | ColorPickerWritable
+    | CronInputWritable
     | DatePickerWritable
     | GroupWritable
     | IconSelectorWritable
@@ -21635,7 +24015,6 @@ export type RepeaterWritable = {
     | LocaleInputWritable
     | ModelSelectWritable
     | MultiSelectWritable
-    | OrgMemoryTenantInputWritable
     | PasswordWritable
     | RadioButtonWritable
     | RatingWritable
@@ -21643,6 +24022,7 @@ export type RepeaterWritable = {
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
+    | TenantSelectWritable
     | TextareaWritable
     | ToggleButtonWritable
     | ToggleSwitchWritable
@@ -22038,6 +24418,12 @@ export type SelectWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue Select element.
@@ -22183,6 +24569,12 @@ export type SelectButtonWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -22461,6 +24853,12 @@ export type SliderWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -22795,6 +25193,133 @@ export type StoreUserMemoryEventWritable = {
 };
 
 /**
+ * TenantSelect
+ *
+ * A FormKit element for selecting one of the tenants the user belongs to.
+ *
+ * Renders as a select dropdown listing tenant *names*, while the submitted value is the
+ * tenant *id*. The frontend populates the options from the user's memberships and
+ * pre-selects their active tenant.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * tenant_id: Annotated[
+ * str | TenantSelect,
+ * Field(description="Tenant to scope against"),
+ * ]
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * tenant_id=TenantSelect(
+ * label=LocaleString(en="Tenant"),
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(tenant_id="507f1f77bcf86cd799439011")
+ * ```
+ */
+export type TenantSelectWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Tenant select element.
+   */
+  formkit?: "tenantSelect";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
  * Textarea
  *
  * https://formkit-primevue.netlify.app/inputs/Textarea
@@ -22824,6 +25349,12 @@ export type TextareaWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -23131,6 +25662,12 @@ export type ToggleButtonWritable = {
    */
   nullable?: boolean;
   /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleButton element.
@@ -23256,6 +25793,12 @@ export type ToggleSwitchWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -23406,6 +25949,39 @@ export type ToolEventWritable = {
 };
 
 /**
+ * UnreadMailListedEvent
+ *
+ * Carries the unread messages found in the configured inbox folder.
+ */
+export type UnreadMailListedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Messages
+   *
+   * Header summaries of the unread messages in the inbox.
+   */
+  messages?: Array<UnreadMailSummary>;
+  [key: string]: unknown;
+};
+
+/**
  * UserMessageEvent
  *
  * A start event triggered directly by a user's message, bridging both display and control functionalities.
@@ -23483,13 +26059,14 @@ export type UserMessageEventWritable = {
  *
  * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
- * 2. Namespace multi-select (populated based on selected database)
+ * 2. "All namespaces" switch, or a namespace multi-select populated from the selected database
  * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * The output matches the configurable fields of `MilvusVectorStoreConfig`:
  * {
  * "collection_name": str,
  * "index_namespaces": list[str],
+ * "all_namespaces": bool,
  * "allowed_metadata_filter_fields": list[str],
  * }
  *
@@ -23551,6 +26128,12 @@ export type VectorStoreInputWritable = {
    * Render with a sibling toggle that sets this field to null when off
    */
   nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
   /**
    * Formkit
    *
@@ -24109,6 +26692,44 @@ export type GetAgentEventsInThreadResponses = {
 export type GetAgentEventsInThreadResponse =
   GetAgentEventsInThreadResponses[keyof GetAgentEventsInThreadResponses];
 
+export type ResolveThreadForDisplayData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Display ID
+     */
+    display_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/events/agents/displays/{display_id}/thread";
+};
+
+export type ResolveThreadForDisplayErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveThreadForDisplayError =
+  ResolveThreadForDisplayErrors[keyof ResolveThreadForDisplayErrors];
+
+export type ResolveThreadForDisplayResponses = {
+  /**
+   * Successful Response
+   */
+  200: ThreadReference;
+};
+
+export type ResolveThreadForDisplayResponse =
+  ResolveThreadForDisplayResponses[keyof ResolveThreadForDisplayResponses];
+
 export type GetAgentEventTimeseriesData = {
   body?: never;
   path: {
@@ -24165,6 +26786,92 @@ export type GetAgentEventTimeseriesResponses = {
 
 export type GetAgentEventTimeseriesResponse =
   GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
+
+export type GetLlmSpendByUserData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/users";
+};
+
+export type GetLlmSpendByUserErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByUserError =
+  GetLlmSpendByUserErrors[keyof GetLlmSpendByUserErrors];
+
+export type GetLlmSpendByUserResponses = {
+  /**
+   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByUserResponse =
+  GetLlmSpendByUserResponses[keyof GetLlmSpendByUserResponses];
+
+export type GetLlmSpendByTenantData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Since
+     *
+     * Only count calls at or after this time. Defaults to the last 30 days.
+     */
+    since?: Date | null;
+  };
+  url: "/{tenant_id}/events/spend/tenants";
+};
+
+export type GetLlmSpendByTenantErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetLlmSpendByTenantError =
+  GetLlmSpendByTenantErrors[keyof GetLlmSpendByTenantErrors];
+
+export type GetLlmSpendByTenantResponses = {
+  /**
+   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   *
+   * Successful Response
+   */
+  200: Array<LlmSpend>;
+};
+
+export type GetLlmSpendByTenantResponse =
+  GetLlmSpendByTenantResponses[keyof GetLlmSpendByTenantResponses];
 
 export type GetLitellmModelsData = {
   body?: never;
@@ -24282,6 +26989,42 @@ export type GetUserThreadsData = {
   };
   query?: {
     /**
+     * Search
+     *
+     * Search by thread name
+     */
+    search?: string | null;
+    /**
+     * Agent Id
+     *
+     * Filter by agent id
+     */
+    agent_id?: string | null;
+    /**
+     * User Id
+     *
+     * Filter by user id
+     */
+    user_id?: string | null;
+    /**
+     * Status
+     *
+     * Filter by status: active, completed, failed
+     */
+    status?: string | null;
+    /**
+     * From
+     *
+     * Filter threads created from this date
+     */
+    from?: Date | null;
+    /**
+     * To
+     *
+     * Filter threads created up to this date
+     */
+    to?: Date | null;
+    /**
      * Page Number
      *
      * Page number to retrieve (starting from 1)
@@ -24293,6 +27036,16 @@ export type GetUserThreadsData = {
      * Number of items per page (maximum 100)
      */
     page_size?: number;
+    /**
+     * Sort Field
+     *
+     * Field to sort by: name, created_at
+     */
+    sort_field?: string;
+    /**
+     * Sort order: 1 for ascending, -1 for descending
+     */
+    sort_order?: SortOrder;
   };
   url: "/{tenant_id}/threads/";
 };
@@ -24944,6 +27697,18 @@ export type GetAllAgentInstancesData = {
      * Filter by online status
      */
     online?: boolean | null;
+    /**
+     * Agent Class
+     *
+     * Filter by agent class
+     */
+    agent_class?: string | null;
+    /**
+     * Search
+     *
+     * Search by agent name
+     */
+    search?: string | null;
   };
   url: "/{tenant_id}/agents/instances";
 };
@@ -25909,6 +28674,92 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
+export type GetAccessCapabilitiesData = {
+  body: AccessCapabilitiesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/capabilities";
+};
+
+export type GetAccessCapabilitiesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAccessCapabilitiesError =
+  GetAccessCapabilitiesErrors[keyof GetAccessCapabilitiesErrors];
+
+export type GetAccessCapabilitiesResponses = {
+  /**
+   * Successful Response
+   */
+  200: AccessCapabilitiesResponse;
+};
+
+export type GetAccessCapabilitiesResponse =
+  GetAccessCapabilitiesResponses[keyof GetAccessCapabilitiesResponses];
+
+export type GetAccessPresetsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/presets";
+};
+
+export type GetAccessPresetsResponses = {
+  /**
+   * Response Get Access Presets  Tenant Id  Access Presets Get
+   *
+   * Successful Response
+   */
+  200: Array<AccessPresetDto>;
+};
+
+export type GetAccessPresetsResponse =
+  GetAccessPresetsResponses[keyof GetAccessPresetsResponses];
+
+export type GetDefaultTenantRulesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/access/default-tenant-rules";
+};
+
+export type GetDefaultTenantRulesResponses = {
+  /**
+   * Response Get Default Tenant Rules  Tenant Id  Access Default Tenant Rules Get
+   *
+   * Successful Response
+   */
+  200: Array<string>;
+};
+
+export type GetDefaultTenantRulesResponse =
+  GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
+
 export type GetModelsData = {
   body?: never;
   path: {
@@ -26272,6 +29123,146 @@ export type UpdateDatasetResponses = {
 export type UpdateDatasetResponse =
   UpdateDatasetResponses[keyof UpdateDatasetResponses];
 
+export type GetIngestorsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/ingestors";
+};
+
+export type GetIngestorsResponses = {
+  /**
+   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   *
+   * Successful Response
+   */
+  200: Array<IngestorDto>;
+};
+
+export type GetIngestorsResponse =
+  GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type DeleteDatabaseData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type DeleteDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDatabaseError =
+  DeleteDatabaseErrors[keyof DeleteDatabaseErrors];
+
+export type DeleteDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
+export type CreateDatabaseData = {
+  body: CreateDatabaseRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     *
+     * Lowercase letters and digits, starting with a letter, 3 to 63 characters
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}";
+};
+
+export type CreateDatabaseErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateDatabaseError =
+  CreateDatabaseErrors[keyof CreateDatabaseErrors];
+
+export type CreateDatabaseResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type CreateDatabaseResponse =
+  CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type DeleteNamespaceData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}";
+};
+
+export type DeleteNamespaceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteNamespaceError =
+  DeleteNamespaceErrors[keyof DeleteNamespaceErrors];
+
+export type DeleteNamespaceResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
+
 export type CreateNamespaceData = {
   body: CreateNamespaceRequest;
   path: {
@@ -26382,6 +29373,48 @@ export type GetDatabasesResponses = {
 export type GetDatabasesResponse =
   GetDatabasesResponses[keyof GetDatabasesResponses];
 
+export type BatchDeleteDocumentsData = {
+  body: BatchDeleteDocumentsRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents";
+};
+
+export type BatchDeleteDocumentsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type BatchDeleteDocumentsError =
+  BatchDeleteDocumentsErrors[keyof BatchDeleteDocumentsErrors];
+
+export type BatchDeleteDocumentsResponses = {
+  /**
+   * Successful Response
+   */
+  202: BatchDeleteDocumentsResponse;
+};
+
+export type BatchDeleteDocumentsResponse2 =
+  BatchDeleteDocumentsResponses[keyof BatchDeleteDocumentsResponses];
+
 export type GetDocumentsForNamespaceData = {
   body?: never;
   path: {
@@ -26454,6 +29487,49 @@ export type GetDocumentsForNamespaceResponses = {
 
 export type GetDocumentsForNamespaceResponse =
   GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
+
+export type DeleteDocumentData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+    /**
+     * Namespace
+     */
+    namespace: string;
+    /**
+     * Document ID
+     */
+    document_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}";
+};
+
+export type DeleteDocumentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteDocumentError =
+  DeleteDocumentErrors[keyof DeleteDocumentErrors];
+
+export type DeleteDocumentResponses = {
+  /**
+   * Successful Response
+   */
+  202: unknown;
+};
 
 export type GetDocumentByIdData = {
   body?: never;
@@ -26729,7 +29805,14 @@ export type GetDocumentUrlData = {
      */
     document_id: string;
   };
-  query?: never;
+  query?: {
+    /**
+     * Download
+     *
+     * Force a browser download (Content-Disposition: attachment) instead of preview
+     */
+    download?: boolean;
+  };
   url: "/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url";
 };
 

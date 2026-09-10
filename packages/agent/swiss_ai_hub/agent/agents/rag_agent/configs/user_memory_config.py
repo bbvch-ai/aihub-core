@@ -3,6 +3,7 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.form import Checkbox
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -26,6 +27,15 @@ class UserMemoryConfig(Form):
         bool | Checkbox,
         Field(description="Whether to store new memories from conversations for future retrieval."),
     ] = True
+    enable_async_memory_storage: Annotated[
+        bool | Checkbox,
+        Field(
+            description="When storage is enabled, persist user memory in an independent MemoryWriterAgent run "
+            "instead of inline on the chat run's critical path (issue #1179). Off = current inline+blocking "
+            "behavior; on = the run finalizes as soon as the answer is ready and memory persists in the "
+            "background."
+        ),
+    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
@@ -44,5 +54,21 @@ class UserMemoryConfig(Form):
             enable_user_memory_storage=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.help"),
+                ref="check_user_memory_storage_enabled",
+            ),
+            enable_async_memory_storage=Checkbox(
+                label=LocaleString(
+                    de="Speicher asynchron schreiben",
+                    en="Store memory asynchronously",
+                    fr="Enregistrer la mémoire de manière asynchrone",
+                    it="Salva la memoria in modo asincrono",
+                ),
+                help=LocaleString(
+                    de="Persistiert Nutzerspeicher ausserhalb des kritischen Pfads über den Memory-Writer-Agenten.",
+                    en="Persist user memory off the chat critical path via the memory-writer agent.",
+                    fr="Persiste la mémoire utilisateur hors du chemin critique via l'agent d'écriture mémoire.",
+                    it="Persiste la memoria utente fuori dal percorso critico tramite l'agente di scrittura memoria.",
+                ),
+                condition_if="$get(check_user_memory_storage_enabled).value",
             ),
         )

@@ -11,6 +11,7 @@ common:
   loading: Laden...
   selectModel: Modell auswählen
   selectDatabase: Datenbank auswählen
+  selectTenant: Mandant auswählen
 models:
   title: Modelle
   error: Fehler beim Laden der Modelle
@@ -39,7 +40,9 @@ models:
     outputCostAbove128k: Output-Kosten (über 128K)
     outputCostAbove200k: Output-Kosten (über 200K)
     imageCost: Bild-Kosten
-    searchContextCost: Suchkontext-Kosten
+    searchContextCostLow: Suchkontext-Kosten (Niedrig)
+    searchContextCostMedium: Suchkontext-Kosten (Mittel)
+    searchContextCostHigh: Suchkontext-Kosten (Hoch)
     rateLimits: Rate Limits
     tokensPerMinute: Token pro Minute
     requestsPerMinute: Anfragen pro Minute
@@ -90,6 +93,7 @@ user:
   title: Benutzer
   logout: Abmelden
   language: Sprache
+  version: Version
   role_chips:
     no_roles: Keine Rollen zugewiesen
     assign: Rolle zuweisen
@@ -137,6 +141,15 @@ thread:
     numEvents: Anzahl der Ereignisse
     status: Status
     pending: Ausstehend
+    search_placeholder: Nach Namen suchen
+    filter:
+      status_placeholder: Nach Status filtern
+      active: Aktiv
+      completed: Abgeschlossen
+      failed: Fehlgeschlagen
+      agent_name_placeholder: Nach Agent filtern
+      user_name_placeholder: Nach Benutzer filtern
+      date_range_placeholder: Nach Datum filtern
   utils:
     pendingTypes:
       hitl: Mensch in der Schleife
@@ -158,6 +171,7 @@ thread:
     title: Hierarchische Ansicht der Turns
   chat:
     title: Chat-Ansicht
+    placeholder: Chat-Eingabe
   memories:
     title: Thread-Erinnerungen
     description: Während {threadName} gesammelte Erinnerungen
@@ -255,6 +269,11 @@ event:
     noChunksFound: Keine Abschnitte gefunden
     noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte
       gefunden.
+  metaQuestionDetected:
+    category:
+      identity: Identität
+      capabilities: Fähigkeiten
+      behavior: Verhalten
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
@@ -313,6 +332,19 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  import:
+    button: Importieren
+    error:
+      title: Import fehlgeschlagen
+      invalidJson: Die ausgewählte Datei ist kein gültiges JSON.
+      invalidStructure: Die ausgewählte Datei ist kein gültiger Agenten-Konfigurationsexport.
+      missingFields: In der Datei fehlen erforderliche Felder (schemaVersion, agentClass
+        oder configuration).
+      unsupportedVersion: Die Datei verwendet eine nicht unterstützte Export-Schemaversion.
+      blueprintNotFound: Die Agenten-Vorlage "{agentClass}" ist in dieser Umgebung
+        nicht verfügbar.
+  export:
+    button: Exportieren
   configuration:
     title: Agentenkonfiguration
     description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
@@ -338,6 +370,13 @@ agent:
     online: Online
     offline: Offline
     clone: Klonen
+    search_placeholder: Nach Namen suchen
+    no_results: Keine Agenten gefunden
+    filter:
+      type_placeholder: Nach Agententyp filtern
+      status_placeholder: Nach Status filtern
+      enabled: Aktiviert
+      disabled: Deaktiviert
   workflow:
     title: Agenten-Workflow
     view_tooltip: Workflow anzeigen
@@ -408,6 +447,21 @@ document:
     number_of_pages: Anzahl der Seiten
     download: Download
     is_processing: Verarbeitung läuft
+    actions: Aktionen
+    selected_count: '{count} Dokument(e) ausgewählt'
+  delete:
+    title: Dokument löschen
+    deleting: Wird gelöscht
+    button: Löschen
+    button_selected: Ausgewählte löschen
+    confirmMessage: Möchten Sie "{title}" wirklich löschen? Es wird dauerhaft aus
+      der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
+    confirmMessageBatch: Möchten Sie {count} Dokument(e) wirklich löschen? Sie werden
+      dauerhaft aus der Wissensdatenbank entfernt. Diese Aktion kann nicht rückgängig
+      gemacht werden.
+    success: Löschung des Dokuments geplant
+    partial: Löschung von {deleted} Dokument(en) geplant, {failed} fehlgeschlagen
+    error: Dokument konnte nicht gelöscht werden
 knowledge:
   title: Wissensdatenbanken
   created_at: 'Erstellt:'
@@ -456,21 +510,67 @@ knowledge:
     title: Sammlung hinzufügen
     description: Eine neue Wissenssammlung erstellen
     cancel: Abbrechen
+  add_database:
+    title: Wissensdatenbank hinzufügen
+    description: Eine neue Self-Service-Wissensdatenbank erstellen
   auto_sync:
     title: Automatisch synchronisiert
     description: Sammlungen werden automatisch verwaltet
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Sammlung bearbeiten
   upload_documents: Dokumente hochladen
+  delete_namespace: Sammlung löschen
+  delete_database: Datenbank löschen
+  delete:
+    confirm_label: Geben Sie zur Bestätigung {name} ein
+    database:
+      title: Wissensdatenbank löschen
+      warning: Dadurch werden die Datenbank {name}, alle ihre Sammlungen und ihre
+        {count} Dokumente unwiderruflich gelöscht. Dies kann nicht rückgängig gemacht
+        werden.
+    namespace:
+      title: Sammlung löschen
+      warning: Dadurch werden die Sammlung {name} und ihre {count} Dokumente unwiderruflich
+        gelöscht. Dies kann nicht rückgängig gemacht werden.
+    actions:
+      delete: Löschen
+    scheduled:
+      summary: Löschung gestartet
+      detail: Die Löschung läuft im Hintergrund und kann einen Moment dauern.
+    error:
+      summary: Löschung fehlgeschlagen
+      detail: Die Löschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.
   form:
     create:
       title: Sammlung erstellen
+    create_error: Die Sammlung konnte nicht erstellt werden. Bitte versuchen Sie es
+      erneut.
+    create_database:
+      title: Wissensdatenbank erstellen
+      success: Wissensdatenbank erstellt
+      error: Die Wissensdatenbank konnte nicht erstellt werden
+      no_ingestors: Keine Ingestion-Pipeline verfügbar. Stellen Sie sicher, dass mindestens
+        eine Pipeline läuft.
+      steps:
+        basic_info: Grundinformationen
     edit:
       title: Sammlung bearbeiten
     database:
       label: Wissensdatenbank
       placeholder: Name der Wissensdatenbank
+    database_name:
+      label: Datenbankname
+      placeholder: meinewissensdatenbank
+      help: Nur Kleinbuchstaben und Ziffern sind erlaubt, beginnend mit einem Buchstaben,
+        3 bis 63 Zeichen. Der Name kann später nicht geändert werden.
+      validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
+        und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
+    ingestor:
+      label: Ingestion-Pipeline
+      placeholder: Ingestion-Pipeline auswählen
+      help: Die Pipeline, die in diese Datenbank hochgeladene Dokumente verarbeitet.
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung
@@ -502,7 +602,9 @@ auth:
     description: Bitte melden Sie sich an, um auf die Anwendung zuzugreifen
     tagline: Erleben Sie die Zukunft der künstlichen Intelligenz
     welcome: Willkommen im AI Hub von {companyName}
+    welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
+    pleaseLoginWith: Bitte melden Sie sich mit {provider} an
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens
@@ -590,6 +692,24 @@ role:
   access_rules_help_agent_instances: Alle Instanzen von MyAgent
   access_rules_help_service: Knowledge-Service
   access_rules_help_admin: Admin-Zugriff auf alles
+  presets_button: Vorlagen
+  presets_title: Zugriffsvorlagen
+  preset_category_everything: Alles
+  preset_category_agents: Agenten
+  preset_category_processes: Prozesse
+  preset_category_models: Modelle
+  preset_category_knowledge: Wissen
+  capabilities_title: Was diese Regeln gewähren
+  capabilities_subtitle: Aktiviere eine Fähigkeit, um sie zu gewähren. Gesperrte Einträge
+    sind durch eine breitere Regel abgedeckt.
+  capabilities_readonly_title: Effektiver Zugriff
+  capabilities_readonly_subtitle: Was dieser Benutzer tun kann, basierend auf seinen
+    Rollen und innerhalb der Grenzen des Tenants.
+  capabilities_empty: Dieser Benutzer hat keinen Zugriff.
+  capability_locked: Durch eine breitere Regel gewährt — entferne diese Regel, um
+    dies zu ändern.
+  capability_readonly: Keine einzelne Regel gewährt dies allein — nutze eine Vorlage
+    oder eine breitere Regel.
   pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
   pattern_help_all: Alle Agenten
   pattern_help_wildcard: Alle Instanzen von MyAgent
@@ -660,6 +780,7 @@ bar:
   show_notifications: Benachrichtigungen anzeigen
 process:
   title: Prozesse
+  no_results: Keine Prozesse gefunden
   overview:
     name: Name
     class: Klasse
@@ -716,7 +837,33 @@ process:
 form:
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+  warnings:
+    org_memory_performance: Diese Funktion funktioniert in manchen Fällen möglicherweise
+      nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie
+      sie bitte vorübergehend, bis eine Korrektur veröffentlicht wird.
 lib:
+  cron:
+    errors:
+      required: Jede Position ist erforderlich — eine leere ergibt keinen gültigen
+        Zeitplan.
+      invalid: Hier sind nur Ziffern und die Zeichen * , - / ? erlaubt.
+      range: Werte müssen zwischen {min} und {max} liegen.
+    expression: 'Resultierender Cron-Ausdruck:'
+    minute:
+      label: Minute
+    hour:
+      label: Stunde
+    day_of_month:
+      label: Tag des Monats
+    month:
+      label: Monat
+    day_of_week:
+      label: Wochentag
+    timezone:
+      label: Zeitzone
+      placeholder: Zeitzone auswählen
+      help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
+        täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen
@@ -724,8 +871,12 @@ lib:
       label: Datenbank
     namespaces:
       label: Namensräume
-      placeholder: Namensräume auswählen (leer = alle)
-      help: Leer lassen, um alle Namensräume zu durchsuchen
+      placeholder: Mindestens einen Namensraum auswählen
+      help: Nur die ausgewählten Namensräume werden durchsucht
+    allNamespaces:
+      label: Alle Namensräume durchsuchen
+      help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
+        ({count} heute).
     allowedFilterFields:
       label: Erlaubte Filterfelder
       placeholder: Metadatenschlüssel eingeben und Enter drücken
@@ -735,8 +886,10 @@ memory:
   title: Erinnerungen
   graph:
     title: Wissensgraph
+    no_results: Keine Erinnerungen gefunden
   list:
     title: Erinnerungsliste
+    no_results: Keine Erinnerungen gefunden
   detail:
     title: Erinnerungsdetails
     created_at: Erstellt am

@@ -1,7 +1,7 @@
 # packages/sysadmin-api — Swiss AI Hub system administration API
 
-**License**: Proprietary — All Rights Reserved (`LicenseRef-Proprietary`). No use granted; commercial license required
-for any use. See `LICENSE` for full terms.
+**License**: AGPL-3.0-or-later. Network-copyleft: hosted modifications must publish their source. See `LICENSE` for full
+terms.
 
 System administration plane for Swiss AI Hub. Carries endpoints that operate **above** the per-tenant data plane:
 managing tenants, sysadmin role-gated platform actions, and (in future) other AIHubSysAdmin-only operations. Runs as its
@@ -9,9 +9,9 @@ own FastAPI service on `sysadmin.${DOMAIN}/api/v1/*`.
 
 ## Why a separate package?
 
-The main `packages/api` ships under Apache-2.0. The sysadmin plane is the platform's commercial value-add and ships
-under a strict proprietary "All Rights Reserved" notice, so it must be a separately-licensed artifact. Keeping it
-physically separate also avoids accidentally pulling proprietary terms onto any Apache-2.0 dependency.
+The main `packages/api` ships under Apache-2.0. The sysadmin plane ships under AGPL-3.0-or-later (network-copyleft), so
+it must be a separately-licensed artifact. Keeping it physically separate also avoids accidentally pulling AGPL terms
+onto any Apache-2.0 dependency.
 
 ## What's in it
 
@@ -55,8 +55,8 @@ and are imported here, not duplicated.
    `Security(self.sys_admin_user())` from the `Controller` base class — every endpoint in this package must be
    sysadmin-gated.
 2. Add an i18n entry for `name`/`description` under `swiss_ai_hub/sysadmin_api/i18n/translations/sysadmin/controllers.*`
-   using `SysadminApiLocaleString` (the proprietary counterpart of `ApiLocaleString` — keeps proprietary strings out of
-   the Apache-2.0 `packages/api`).
+   using `SysadminApiLocaleString` (the sysadmin counterpart of `ApiLocaleString` — keeps AGPL strings out of the
+   Apache-2.0 `packages/api`).
 3. Register on `runner.mount(...)` in `swiss_ai_hub/sysadmin_api/main.py` using the fluent builder pattern.
 4. Add unit + sysadmin-gate tests in `tests/<domain>/`.
 

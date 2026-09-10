@@ -7,9 +7,14 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs, UserMessageEvent
+from swiss_ai_hub.core.events.agent import (
+    AgentClassDiscoveryResponseEvent,
+    CronStartEvent,
+    UserMessageEvent,
+)
+from swiss_ai_hub.core.form import ConfigSpecs, FormkitElement
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MilvusSettings, MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.publishers import NCPublisher
@@ -59,7 +64,16 @@ class AgentRunner(HealthCheckProvider):
             raise ValueError("agent_type must be a subclass of Agent.")
 
         self.agent_type = agent_type
+        # Schedulability is derived, never declared — handling CronStartEvent is the whole opt-in, exactly
+        # as handling UserMessageEvent is what makes an agent conversational. This is the only place that
+        # knows both halves needed to offer a schedule: the config, and the agent's start events.
+        self.is_schedulable = any(issubclass(event, CronStartEvent) for event in agent_type.get_start_events())
         self.agent_config = agent_config
+        # The config as discovery publishes it, deliberately kept beside `agent_config` rather than over
+        # it: the runner must not alter what it was handed. `AgentTestRunner` serves `agent_config` back
+        # as the run's actual config, so overwriting a real `CronSchedule` there with the form element
+        # would hand an agent its own form to execute against.
+        self.published_config = agent_config.for_discovery(is_schedulable=self.is_schedulable)
         self.templates = templates or []
         self.agent_config_type = agent_config.__class__
 
@@ -67,7 +81,7 @@ class AgentRunner(HealthCheckProvider):
         self.description = agent_type.description
         self.icon = agent_type.icon
 
-        self.form = agent_config.to_formkit_form()
+        self.form = self._published_form()
 
         self.running = False
         self._stop_signal = asyncio.Event()
@@ -95,6 +109,19 @@ class AgentRunner(HealthCheckProvider):
             default_port=health_port,
             port_env_var="AGENT_HEALTH_PORT",
         )
+
+    def _published_form(self) -> list[FormkitElement]:
+        """The published form, with the platform's schedule control after the blueprint's own settings.
+
+        `cron` lives on `AgentConfig` and Pydantic orders base fields before subclass ones, so left where
+        it falls it would sit between the identity fields and a blueprint's first real setting — above
+        `system_prompt` on every schedulable agent. It is platform-injected rather than part of what the
+        blueprint asks an admin to configure, so it goes last.
+        """
+        elements = self.published_config.to_formkit_form()
+        blueprint_elements = [element for element in elements if element.name != CRON_CONFIG_KEY]
+        cron_elements = [element for element in elements if element.name == CRON_CONFIG_KEY]
+        return blueprint_elements + cron_elements
 
     @property
     def entity_name(self) -> str:
@@ -140,9 +167,9 @@ class AgentRunner(HealthCheckProvider):
 
         network_graph = WorkflowVisualizer(agent=self.agent_type).build()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
+        agent_config_specs = ConfigSpecs.from_form(self.published_config, self.agent_class)
 
-        templates_data: list[TemplateData] = [t.to_template_data(self.agent_config) for t in self.templates]
+        templates_data: list[TemplateData] = [t.to_template_data(self.published_config) for t in self.templates]
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
@@ -152,6 +179,7 @@ class AgentRunner(HealthCheckProvider):
             form=self.form,
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
+            is_schedulable=self.is_schedulable,
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,
@@ -178,9 +206,18 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
+        # Connect to Milvus. Optional on purpose: this client only feeds the readiness report - RAG
+        # builds its own connection through MilvusVectorStoreConfig - so letting it raise turned a
+        # slow Milvus start into a restart loop across every agent container, the same way it did
+        # for the API on staging 2026-09-03.
         milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        try:
+            self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+        # Broad on purpose: pymilvus re-raises the codes in its own IGNORE_RETRY_CODES as bare
+        # grpc.RpcError instead of MilvusException, so naming MilvusException would let an
+        # UNAUTHENTICATED from a token mismatch crash-loop the container exactly as before.
+        except Exception:
+            logger.exception("Milvus unreachable at startup, continuing without a client")
 
         # Connect to MongoDB (skip if already connected)
         try:
@@ -203,14 +240,17 @@ class AgentRunner(HealthCheckProvider):
         )
         await self.dispatcher.start()
 
-        self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
-            self.nc,
-            AgentTopicManager(),
-            self.discovery_handler,
-            subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
-        )
-        await self.discovery_event_subscriber.start()
+        # Internal/system agents (discoverable=False) skip discovery, so they never register a user-facing
+        # blueprint in the Admin UI. They still subscribe to control events below and run normally.
+        if self.agent_type.discoverable:
+            self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
+            self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
+                self.nc,
+                AgentTopicManager(),
+                self.discovery_handler,
+                subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
+            )
+            await self.discovery_event_subscriber.start()
 
         # Subscribe to control events
         self.control_event_subscriber = AgentJSSubscriber.for_agent_class_control_events(

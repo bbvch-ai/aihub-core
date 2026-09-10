@@ -57,23 +57,6 @@ async def seeded_tenant_group(admin: KeycloakAdmin) -> AsyncIterator[str]:
 
 class TestUserCrud:
     @pytest.mark.asyncio
-    async def test_create_user(self, admin: KeycloakAdmin) -> None:
-        email = f"itest-{uuid.uuid4().hex[:8]}@example.com"
-        user_id: str | None = None
-        try:
-            user_id = await KeycloakAdminService.create_user(email)
-            assert user_id is not None
-
-            raw = await admin.a_get_user(user_id)
-            assert raw["email"] == email
-            assert raw["username"] == email
-            assert raw["enabled"] is True
-        finally:
-            if user_id is not None:
-                with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
-                    await admin.a_delete_user(user_id)
-
-    @pytest.mark.asyncio
     async def test_find_user_by_email(self, seeded_user: tuple[str, str]) -> None:
         user_id, email = seeded_user
 

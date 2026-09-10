@@ -6,20 +6,66 @@
       :loading="isLoading"
       size="large"
     >
-      <SelectButton
-        :model-value="activeNavItem"
-        :options="navItems"
-        data-key="key"
-        option-label="name"
-        size="small"
-        @update:model-value="toNavItem"
-      />
-      <div class="flex flex-col gap-12 pt-4">
+      <div class="flex justify-between">
+        <SelectButton
+          :model-value="activeNavItem"
+          :options="navItems"
+          data-key="key"
+          option-label="name"
+          size="small"
+          @update:model-value="toNavItem"
+        />
+        <div class="flex items-center gap-4">
+          <Button
+            icon="pi pi-file-import"
+            severity="secondary"
+            :label="t('agent.import.button')"
+            @click="triggerImport"
+          />
+          <Select
+            v-model="agentClass"
+            :options="agentClassOptions"
+            option-label="label"
+            option-value="value"
+            :aria-label="t('agent.list.filter.type_placeholder')"
+            :placeholder="t('agent.list.filter.type_placeholder')"
+            show-clear
+            class="w-52"
+          />
+          <Select
+            v-model="status"
+            :options="statusOptions"
+            option-label="label"
+            option-value="value"
+            :aria-label="t('agent.list.filter.status_placeholder')"
+            :placeholder="t('agent.list.filter.status_placeholder')"
+            show-clear
+            class="w-52"
+          />
+          <InputText
+            v-model="searchQuery"
+            :placeholder="t('agent.list.search_placeholder')"
+            class="w-80"
+          />
+          <input
+            ref="fileInput"
+            type="file"
+            accept="application/json,.json"
+            :aria-label="t('agent.import.button')"
+            class="hidden"
+            @change="handleFileSelected"
+          >
+        </div>
+      </div>
+      <div class="flex flex-col gap-8 pt-4">
         <div
           v-for="group in groupedAgents"
           :key="group.agentClass"
         >
-          <div class="pb-4">
+          <div
+            v-if="(group.instances.length > 0 || (group.isAvailable && !hasActiveFilters)) && !showNoResults"
+            class="pb-4"
+          >
             <div class="flex items-center gap-2 pb-2">
               <Icon
                 :name="group.icon"
@@ -58,10 +104,16 @@
               @clone="handleClone"
             />
             <AgentEmptyCard
-              v-if="group.isAvailable"
+              v-if="group.isAvailable && !hasActiveFilters"
               @add="openCreateModal(group.agentClass)"
             />
           </div>
+        </div>
+        <div
+          v-if="showNoResults"
+          class="mb-28 flex items-center justify-center text-surface-500"
+        >
+          <span class="text-xl">{{ t('agent.list.no_results') }}</span>
         </div>
       </div>
       <AgentCreateModal
@@ -82,6 +134,8 @@
 </template>
 
 <script setup lang="ts">
+import { AgentConfigImportError } from '@core/composables/agent/useImportAgentInstance'
+
 import type { FullAgentInstanceDto, WorkflowGraph } from '@core/sdk/client'
 
 type AgentGroup = {
@@ -97,11 +151,15 @@ type AgentGroup = {
 const router = useRouter()
 const route = useRoute()
 const tenantPath = useTenantPath()
+const { tenantId } = useTenant()
 const { t, locale } = useI18n()
 
-const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
+const toast = useToast()
+
+const { agentInstances, agentInstancesAreLoading, searchQuery, agentClass, status } = useAgentInstances()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
+const { readAgentConfigFile } = useImportAgentInstance()
 
 const isLoading = computed(() => agentInstancesAreLoading.value || agentClassesAreLoading.value)
 const isTemplatesRoute = computed(() => route.path.includes('/service/agents/templates'))
@@ -110,8 +168,37 @@ const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
 const initialDataForCreate = ref<Record<string, unknown> | null>(null)
 
+const fileInput = ref<HTMLInputElement | null>(null)
+
 const workflowModalOpen = ref(false)
 const selectedGroupForWorkflow = ref<AgentGroup | null>(null)
+
+const agentClassOptions = computed(() => {
+  if (!agentClasses.value) return []
+
+  return agentClasses.value.map(c => ({
+    label: c.name?.[locale.value] ?? c.agent_class,
+    value: c.agent_class,
+  }))
+},
+)
+
+const statusOptions = computed(() => [
+  { label: t('agent.list.filter.enabled'), value: 'enabled' },
+  { label: t('agent.list.filter.disabled'), value: 'disabled' },
+])
+
+const hasActiveFilters = computed(() =>
+  !!searchQuery.value || !!agentClass.value || !!status.value,
+)
+
+const hasVisibleInstances = computed(() =>
+  groupedAgents.value.some(group => group.instances.length > 0),
+)
+
+const showNoResults = computed(() =>
+  !hasVisibleInstances.value && hasActiveFilters.value,
+)
 
 const openWorkflowModal = (group: AgentGroup) => {
   selectedGroupForWorkflow.value = group
@@ -128,6 +215,50 @@ const handleClone = (agent: FullAgentInstanceDto) => {
   selectedClassForCreate.value = agent.agent_class
   initialDataForCreate.value = agent.configuration ?? null
   createModalOpen.value = true
+}
+
+const triggerImport = () => fileInput.value?.click()
+
+const handleFileSelected = async () => {
+  const input = fileInput.value
+  const file = input?.files?.[0]
+  if (input) input.value = ''
+  if (!file) return
+
+  try {
+    const exported = await readAgentConfigFile(file)
+
+    const blueprintExists = agentClasses.value?.find(c => c.agent_class === exported.agentClass)
+    if (!blueprintExists) {
+      toast.add({
+        severity: 'error',
+        summary: t('agent.import.error.title'),
+        detail: t('agent.import.error.blueprintNotFound', { agentClass: exported.agentClass }),
+        life: 5000,
+      })
+      return
+    }
+
+    const configuration: Record<string, unknown> = { ...exported.configuration, tenant_id: tenantId.value }
+
+    const orgMemory = configuration.org_memory
+    if (orgMemory && typeof orgMemory === 'object' && !Array.isArray(orgMemory)) {
+      configuration.org_memory = { ...orgMemory, tenant_id: tenantId.value }
+    }
+
+    selectedClassForCreate.value = exported.agentClass
+    initialDataForCreate.value = configuration
+    createModalOpen.value = true
+  }
+  catch (error) {
+    const reason = error instanceof AgentConfigImportError ? error.reason : 'invalidStructure'
+    toast.add({
+      severity: 'error',
+      summary: t('agent.import.error.title'),
+      detail: t(`agent.import.error.${reason}`),
+      life: 5000,
+    })
+  }
 }
 
 const groupedAgents = computed<AgentGroup[]>(() => {

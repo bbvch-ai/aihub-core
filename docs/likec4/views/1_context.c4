@@ -1,0 +1,12 @@
+// C4 Level 1 view. `include *` pulls in all root-level model elements (actors,
+// the SUT, externals); the SUT's internal containers stay hidden because they
+// are nested inside `hub` and `*` does not recurse.
+
+views {
+  view index {
+    title       "Swiss AI Hub — System Context"
+    description "C4 Level 1: people and external systems that interact with the platform."
+
+    include *
+  }
+}

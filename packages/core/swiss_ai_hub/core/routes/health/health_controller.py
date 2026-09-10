@@ -2,6 +2,7 @@ from typing import Self
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.routes.controller import Controller
 from swiss_ai_hub.core.routes.health.dto.health_response import HealthResponse
 
@@ -38,6 +39,7 @@ class HealthController(Controller):
         self, *, auth: AuthHandler, route: str = "/health", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
+        self._version = AIHubSettings().VERSION
 
     def get_health(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
@@ -46,6 +48,6 @@ class HealthController(Controller):
             A simple liveness check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.
             """
-            return HealthResponse(status="ok", code=200)
+            return HealthResponse(status="ok", code=200, version=self._version)
 
         return self

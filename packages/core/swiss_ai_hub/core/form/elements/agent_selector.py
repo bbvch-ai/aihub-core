@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
@@ -27,6 +27,11 @@ class AgentSelector(PrimeVueElement):
     whose `start_events` contain an event with matching `event_name` or `event_parents`.
 
     This is similar to ModelSelect's `mode` parameter for filtering by model type.
+
+    ### Pinning to One Agent Class
+
+    When `agent_class` is specified, the class dropdown is not rendered at all and the profile dropdown lists only
+    that class's profiles. `start_event` is redundant then — the class is already decided — so set one or the other.
 
     ### Form Duality
 
@@ -75,6 +80,16 @@ class AgentSelector(PrimeVueElement):
         ),
     ] = None
 
+    agent_class: Annotated[
+        str | None,
+        Field(
+            description="Pin the selection to one agent class. The class dropdown is not rendered and the profile "
+            "dropdown lists only that class's profiles. Use it when the config already knows which blueprint answers "
+            "— a dropdown offering one choice asks the admin to make a decision that was never theirs.",
+            alias="agentClass",
+        ),
+    ] = None
+
     class_placeholder: Annotated[
         LocaleString | str | None,
         Field(description="Placeholder for agent class select", alias="classPlaceholder"),
@@ -87,6 +102,23 @@ class AgentSelector(PrimeVueElement):
 
     filter: Annotated[bool, Field(description="Whether to enable filtering/search")] = True
 
+    @computed_field
+    @property
+    def validation(self) -> str:
+        """Emits `agentRefRequired` where other elements emit FormKit's `required`.
+
+        FormKit's `required` rule only asks whether a value is present, and this element's value is
+        always an `{agent_class, agent_id}` object. Picking a class alone emits a non-empty object with
+        a blank `agent_id`, which passes `required` and then delegates to a NATS wildcard at runtime.
+        `agentRefRequired` (registered in the frontend FormKit config) looks at both halves.
+        """
+        rules: list[str] = []
+        if self.required:
+            rules.append("agentRefRequired")
+        if self.additional_validation_rules:
+            rules.append(self.additional_validation_rules)
+        return "|".join(rules)
+
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.class_placeholder, LocaleString):
@@ -95,19 +127,38 @@ class AgentSelector(PrimeVueElement):
             self_copy.id_placeholder = t.extract(self_copy.id_placeholder)
         return self_copy
 
+    @staticmethod
+    def _reference_half(raw: Any) -> str:
+        """Normalizes one half of the reference to the segment `has_access_to_agent` can actually be asked about.
+
+        Anything that is not a non-blank string collapses to `""`, which the caller denies without
+        consulting the checker: `validate_permission_template` raises on a blank or malformed segment
+        rather than returning False, so asking would turn an intended 403 into a 500.
+        """
+        return raw.strip() if isinstance(raw, str) else ""
+
     def validate_authorization(
-        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
     ) -> list[ConfigAuthorizationViolation]:
         if not isinstance(value, dict):
             return []
 
-        agent_class = value.get("agent_class")
-        agent_id = value.get("agent_id")
-        if not agent_class or not agent_id:
+        agent_class = AgentSelector._reference_half(value.get("agent_class"))
+        agent_id = AgentSelector._reference_half(value.get("agent_id"))
+
+        # An entirely unset reference is the untouched-field case, which `required` owns.
+        if not agent_class and not agent_id:
             return []
 
+        # A half-filled reference is denied without consulting the checker: asking it about a blank
+        # segment raises instead of answering, which would turn this 403 into a 500.
         agent_ref = f"{agent_class}/{agent_id}"
-        if not access_checker.has_access_to_agent(agent_class, agent_id):
+        if not agent_class or not agent_id or not access_checker.has_access_to_agent(agent_class, agent_id):
             return [
                 ConfigAuthorizationViolation(
                     field=field_path,

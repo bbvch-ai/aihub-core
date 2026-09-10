@@ -37,7 +37,7 @@ config:
       \ fornisce informazioni cruciali rilevanti per il contesto dato.\n\nDi seguito\
       \ sono riportati i documenti pertinenti:\n\n<context_documents>\n{% for block\
       \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nIstruzione: Utilizzando le\
       \ informazioni dai documenti forniti, genera una risposta dettagliata e ben\
       \ strutturata\nalla domanda dell'utente.\n{% endchat %}\n"
@@ -88,6 +88,10 @@ steps:
     name: Guardia contesto sufficiente
     description: Protegge il contesto per assicurarsi che sia sufficiente per generare
       una risposta.
+  persist_grounding_nodes:
+    name: Conserva i documenti di base
+    description: Conserva i principali documenti che hanno fondato questa risposta
+      affinché una domanda di follow-up possa riutilizzarli.
   limit_chat_history_with_context:
     name: Limita cronologia con contesto
     description: Include il contesto combinato e tronca nuovamente la cronologia della

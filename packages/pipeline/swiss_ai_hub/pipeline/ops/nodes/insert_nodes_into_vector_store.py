@@ -1,11 +1,15 @@
-from dagster import DataVersion, MetadataValue, Out, Output, op
+from dagster import Backoff, DataVersion, MetadataValue, Out, Output, RetryPolicy, op
 from llama_index.core.schema import TextNode
 
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.meta_utils import nodes_metadata_table, ref_doc_metadata
 
 
-@op(code_version="v1", out=Out(io_manager_key="vector_store_io_manager"))
+@op(
+    code_version="v1",
+    out=Out(io_manager_key="vector_store_io_manager"),
+    retry_policy=RetryPolicy(max_retries=2, delay=10, backoff=Backoff.EXPONENTIAL),
+)
 def insert_nodes_into_vector_store(nodes: list[TextNode], ref_doc: RefDocDocument) -> Output[list[TextNode]]:
     """Inserts a list of nodes into the vector store by having the appropriate
     IO manager set as the output IO Manager"""

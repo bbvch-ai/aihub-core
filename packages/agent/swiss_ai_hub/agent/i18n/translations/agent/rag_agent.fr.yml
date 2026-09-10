@@ -38,7 +38,7 @@ config:
       \ Le contenu\nde ces documents fournit des informations cruciales pertinentes\
       \ pour le contexte donné.\n\nVoici les documents pertinents :\n\n<context_documents>\n\
       {% for block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url | string | image}}\n\
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
       \ les informations des documents fournis, générez une réponse détaillée et bien\
       \ structurée\nà la question de l'utilisateur.\n{% endchat %}\n"
@@ -90,6 +90,10 @@ steps:
     name: Garde de contexte suffisant
     description: Protège le contexte pour s'assurer qu'il est suffisant pour générer
       une réponse.
+  persist_grounding_nodes:
+    name: Conserver les documents de référence
+    description: Conserve les principaux documents ayant fondé cette réponse afin
+      qu'une question de suivi puisse les réutiliser.
   limit_chat_history_with_context:
     name: Limiter l'historique avec contexte
     description: Inclut le contexte combiné et tronque à nouveau l'historique du chat.

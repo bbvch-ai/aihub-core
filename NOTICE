@@ -1,0 +1,12 @@
+Swiss AI Hub
+Copyright 2024-2026 bbv Software Services AG
+
+This product includes software developed by bbv Software Services AG
+(https://www.bbv.ch) and the Swiss AI Hub contributors.
+
+This repository is fully open-source under a dual-license model (Apache-2.0
+and AGPL-3.0-or-later). Unless otherwise noted, its contents are licensed
+under the Apache License, Version 2.0 (see LICENSE); some subtrees are
+distributed under the GNU Affero General Public License, version 3 or later.
+The per-package LICENSE file is authoritative for everything in that subtree.
+See LICENSES.md for the full per-package matrix and rationale.

@@ -3,6 +3,13 @@ display_event:
   name: Événement d'Affichage
   description: Un événement qui affiche des informations à l'utilisateur sans affecter
     le flux de travail.
+conversation_title_event:
+  name: Titre de la Conversation
+  description: L'agent a généré un titre résumant le sujet de la conversation.
+follow_up_questions_event:
+  name: Questions de Suivi
+  description: L'agent a suggéré des questions de suivi que l'utilisateur pourrait
+    vouloir poser ensuite.
 aitl_exception_event:
   name: Erreur de Délégation de Tâche
   description: Un autre agent à qui une tâche a été déléguée a signalé une erreur
@@ -55,6 +62,11 @@ guard_rejection_event:
   name: Demande Rejetée
   description: La demande a été rejetée pour des raisons de sécurité ou en raison
     de violations de politique.
+meta_question_detected_event:
+  name: Méta-question détectée
+  description: L'utilisateur a posé une question sur l'assistant lui-même — son identité,
+    ses capacités ou son comportement — l'assistant répond donc à partir de sa propre
+    configuration au lieu d'exécuter son flux de travail normal.
 few_shot_guard_accept_event:
   name: Garde Few-Shot Accepté
   description: La demande correspond aux modèles des exemples few-shot et est autorisée
@@ -211,6 +223,11 @@ rag_start_event:
     le contexte pertinent depuis les sources de connaissances sélectionnées — en utilisant
     les namespaces choisis et d'éventuels filtres de métadonnées — avant de générer
     une réponse.
+cron_start_event:
+  name: Exécution Planifiée Démarrée
+  description: Une exécution planifiée a été démarrée automatiquement par le planificateur
+    cron à l'heure configurée. Aucun utilisateur ne l'a initiée — l'exécution se déroule
+    comme une exécution système sans identité d'exécution.
 rag_success_stop_event:
   name: Succès RAG
   description: L'exécution augmentée par récupération a produit une réponse pour l'utilisateur.
@@ -218,3 +235,23 @@ rag_failure_stop_event:
   name: Échec RAG
   description: L'exécution augmentée par récupération n'a pas pu produire de réponse
     utile. Le champ reason explique quel chemin a conduit à l'échec.
+unread_mail_listed_event:
+  name: E-mails Non Lus Répertoriés
+  description: L'agent a répertorié les messages non lus dans le dossier de réception
+    configuré.
+mail_fetched_event:
+  name: E-mail Récupéré
+  description: L'agent a récupéré un message, y compris son corps et ses pièces jointes.
+mail_moved_event:
+  name: E-mail Déplacé
+  description: L'agent a déplacé un message de son dossier source vers un dossier
+    cible.
+mail_batch_classified_event:
+  name: Lot classé
+  description: L'agent a classé un lot de messages non lus et a rangé chacun dans
+    le dossier de sa catégorie, ou dans le dossier de repli lorsqu'il n'était pas
+    sûr.
+mail_batch_drafted_event:
+  name: Lot Rédigé
+  description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
+    au dossier des brouillons pour qu'un humain les révise et les envoie.

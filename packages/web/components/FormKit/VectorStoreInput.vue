@@ -10,6 +10,7 @@
       </label>
       <Select
         v-model="selectedDatabase"
+        :aria-label="t('lib.vectorStore.database.label')"
         input-id="vector-store-database-select"
         :options="databaseOptions"
         option-label="displayName"
@@ -43,8 +44,28 @@
       </Select>
     </div>
 
-    <!-- Namespace Selection (shown when database selected) -->
-    <div v-if="selectedDatabase">
+    <!-- Namespace scope (shown when database selected) -->
+    <div
+      v-if="selectedDatabase"
+      class="flex items-center gap-2"
+    >
+      <ToggleSwitch
+        v-model="allNamespaces"
+        input-id="vector-store-all-namespaces"
+      />
+      <label
+        for="vector-store-all-namespaces"
+        class="text-sm"
+      >{{ t('lib.vectorStore.allNamespaces.label') }}</label>
+    </div>
+    <small
+      v-if="selectedDatabase && allNamespaces"
+      class="-mt-3 text-surface-500"
+    >
+      {{ t('lib.vectorStore.allNamespaces.help', { count: namespaceOptions.length }) }}
+    </small>
+
+    <div v-if="selectedDatabase && !allNamespaces">
       <label
         for="vector-store-namespaces-select"
         class="mb-1 block text-sm font-medium"
@@ -96,13 +117,14 @@
 <script setup lang="ts">
 import ChipsInput from '@core/components/FormKit/ChipsInput.vue'
 import { getDatabases } from '@core/sdk/client'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
 
 interface VectorStoreInputValue {
   collection_name: string
   index_namespaces: string[]
+  all_namespaces: boolean
   allowed_metadata_filter_fields: string[]
 }
 
@@ -153,10 +175,20 @@ const selectedDatabase = computed({
   set: (value: string | null) => {
     if (value) {
       // When database changes, reset namespaces and allowed filter fields
-      emitValue(value, [], [])
+      emitValue(value, [], false, [])
     }
     else {
       props.context.node.input(null)
+    }
+  },
+})
+
+// Whole-database scope: switching it on discards any named namespaces so the two never coexist
+const allNamespaces = computed({
+  get: () => currentValue.value?.all_namespaces ?? false,
+  set: (value: boolean) => {
+    if (selectedDatabase.value) {
+      emitValue(selectedDatabase.value, value ? [] : selectedNamespaces.value, value, allowedFilterFields.value)
     }
   },
 })
@@ -166,7 +198,7 @@ const selectedNamespaces = computed({
   get: () => currentValue.value?.index_namespaces ?? [],
   set: (value: string[]) => {
     if (selectedDatabase.value) {
-      emitValue(selectedDatabase.value, value, allowedFilterFields.value)
+      emitValue(selectedDatabase.value, value, false, allowedFilterFields.value)
     }
   },
 })
@@ -178,7 +210,7 @@ const chipsInputContext = computed(() => ({
   node: {
     input: (value: string[]) => {
       if (selectedDatabase.value) {
-        emitValue(selectedDatabase.value, selectedNamespaces.value, value)
+        emitValue(selectedDatabase.value, selectedNamespaces.value, allNamespaces.value, value)
       }
     },
   },
@@ -188,10 +220,16 @@ const chipsInputContext = computed(() => ({
 }))
 
 // Emit complete value object
-function emitValue(collectionName: string, namespaces: string[], allowedFilterFieldKeys: string[]) {
+function emitValue(
+  collectionName: string,
+  namespaces: string[],
+  wholeDatabase: boolean,
+  allowedFilterFieldKeys: string[],
+) {
   props.context.node.input({
     collection_name: collectionName,
     index_namespaces: namespaces,
+    all_namespaces: wholeDatabase,
     allowed_metadata_filter_fields: allowedFilterFieldKeys,
   })
 }
@@ -200,7 +238,7 @@ function emitValue(collectionName: string, namespaces: string[], allowedFilterFi
 const databaseOptions = computed<DatabaseOption[]>(() =>
   databases.value.map(db => ({
     name: db.name,
-    displayName: db.display_name || useChangeCase(db.name, 'capitalCase'),
+    displayName: db.display_name || capitalCase(db.name),
   })),
 )
 
@@ -213,7 +251,7 @@ const namespaceOptions = computed<NamespaceOption[]>(() => {
     return []
   return db.namespaces.map(ns => ({
     name: ns.name,
-    displayName: ns.display_name || useChangeCase(ns.name, 'capitalCase'),
+    displayName: ns.display_name || capitalCase(ns.name),
   }))
 })
 

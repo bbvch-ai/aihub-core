@@ -10,7 +10,7 @@ development and production deployments.
 
 ### Network topology
 
-The following diagram shows the production deployment topology with all five network zones and the services assigned to
+The following diagram shows the production deployment topology with all six network zones and the services assigned to
 each. Services that span multiple zones appear at the boundary. The API is the most connected service, attaching to four
 networks.
 
@@ -36,7 +36,7 @@ graph TB
             MinerU2["MinerU :8002 (GPU only)"]
             Pres["Presidio :3001"]
             OTELc["OTEL Collector"]
-            Jupy["Jupyter :8888"]
+            Jupy["Jupyter :8888 (retained)"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
         end
@@ -63,12 +63,18 @@ graph TB
         subgraph egress["egress  · outbound only, ICC disabled"]
             PW["Playwright :3036"]
         end
+
+        subgraph codesandbox["code-sandbox  · sandbox + callers only"]
+            OpenTerm["Open Terminal :8200 (dev)"]
+        end
     end
 
     Internet -->|":443 HTTPS"| Traefik
     Traefik --> API
     Traefik --> OWUI
     Traefik --> LfWeb
+
+    OWUI --- OpenTerm
 
     API --- NATS2
     API --- FDB
@@ -106,6 +112,7 @@ graph TB
     style data fill:#d1fae5,stroke:#059669
     style storage fill:#ede9fe,stroke:#7c3aed
     style egress fill:#fee2e2,stroke:#dc2626
+    style codesandbox fill:#ffe4e6,stroke:#e11d48
     style host fill:#f8fafc,stroke:#64748b
 ```
 
@@ -116,9 +123,9 @@ routes requests to backend services. Services that need to be directly reachable
 web UI, SeaweedFS S3 gateway) attach to this network.
 
 The **backend** network connects application services that process requests but should not be directly reachable from
-outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Jupyter, and all
-agents and pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied
-requests.
+outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Jupyter (retained;
+no longer the OpenWebUI code path), and all agents and pipeline workers communicate over this network. Traefik also
+attaches to backend so it can forward proxied requests.
 
 The **data** network connects databases, caches, and the message broker: PostgreSQL (both instances), FerretDB, Milvus,
 Neo4j, ClickHouse, NATS, Valkey, and etcd. Services that need database access (API, Langfuse, Dagster, LiteLLM) attach
@@ -131,6 +138,13 @@ uploads). etcd attaches to storage because SeaweedFS filer uses it for directory
 The **egress** network provides outbound internet access with inter-container communication disabled
 (`com.docker.network.bridge.enable_icc: "false"`). Only Playwright attaches to this network. A compromised Playwright
 container can reach the internet (necessary for web scraping) but cannot reach any other container.
+
+The **code-sandbox** network is a single-tenant zone for Open Terminal, the code-execution sandbox for OpenWebUI, which
+runs arbitrary user-submitted code. Its only resident is the sandbox; its callers join in addition to their own networks
+(OpenWebUI now, agents as a follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is
+what prevents a breakout from laterally reaching LiteLLM, vLLM, MinerU, Presidio, Speaches, OTEL, or the `data` tier —
+the sandbox can reach only its callers. `internal: true` in non-dev stages additionally denies it outbound internet. See
+ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
 The API service is the most connected, attaching to four networks (proxy, backend, data, storage) because it must accept
 external requests, communicate with application services, query databases, and access file storage. A database like

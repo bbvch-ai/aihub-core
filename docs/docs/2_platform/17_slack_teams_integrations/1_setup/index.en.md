@@ -233,5 +233,5 @@ To implement Azure Bot Service Integration in your Swiss AI Hub deployment:
 
 For detailed setup instructions, troubleshooting guidance, and advanced configuration options, refer to the
 [Bot-in-the-Loop documentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/) for human-AI collaboration
-workflows, the [Expert Agents documentation](../../5_agents/3_expert_asking_agent/) for knowledge consultation patterns,
-and the Swiss AI Hub Bot Developer's Guide for implementation details.
+workflows, the [Expert Agents documentation](../../5_agents/9_expert_coordinator_agent/) for knowledge consultation
+patterns, and the Swiss AI Hub Bot Developer's Guide for implementation details.

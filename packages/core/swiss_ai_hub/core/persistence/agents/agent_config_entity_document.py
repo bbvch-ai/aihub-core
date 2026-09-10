@@ -1,7 +1,10 @@
 from datetime import UTC, datetime
+from functools import reduce
+from operator import or_
 
-from mongoengine import DateTimeField, Document
+from mongoengine import DateTimeField, Document, Q
 
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents import AgentConfigEntity
 
@@ -32,9 +35,30 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
 
     @classmethod
     @trace_fn
+    def find_with_config_key(cls, config_key: str) -> list["AgentConfigEntityDocument"]:
+        """Every profile carrying `config_key`, whatever class it belongs to.
+
+        Takes the key rather than naming one, so this stays a persistence query: which key matters is the
+        caller's business, and the entity has no reason to know what a schedule is.
+        """
+        return list(cls.objects(**{f"config_data__{config_key}__exists": True}))
+
+    @classmethod
+    @trace_fn
     def find_for_class(cls, agent_class: str) -> list["AgentConfigEntityDocument"]:
         """Find all configurations for a specific agent class."""
         return cls.objects(agent_class=agent_class)
+
+    @classmethod
+    @trace_fn
+    def find_for_name(cls, agent_class: str, name: str | None = None) -> list["AgentConfigEntityDocument"]:
+        if name is None:
+            return list(cls.find_for_class(agent_class))
+        name_matches = reduce(
+            or_,
+            (Q(**{f"name__{locale}__icontains": name}) for locale in LocaleHandler.LOCALE_WHITE_LIST),
+        )
+        return list(cls.objects(name_matches, agent_class=agent_class))
 
     @classmethod
     @trace_fn

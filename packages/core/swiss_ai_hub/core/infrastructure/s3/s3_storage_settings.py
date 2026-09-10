@@ -26,6 +26,16 @@ class S3StorageSettings(EnvironmentSettings):
             "endpoints differ (e.g., Docker internal vs Traefik-routed external).",
         ),
     ]
+    INTERNAL_ENDPOINT: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="The in-cluster s3 endpoint (Docker DNS) for presigned URLs that are "
+            "fetched by other in-cluster services (e.g. the LiteLLM gateway inlining RAG figures). "
+            "Only ever signed against, never connected to, so it works from the host without DNS "
+            "resolution. If not set, falls back to ENDPOINT.",
+        ),
+    ]
     ACCESS_KEY: Annotated[str, Field(description="The access key for the s3 endpoint.")]
     SECRET_KEY: Annotated[SecretStr, Field(description="The secret key for the s3 endpoint.")]
     REGION: Annotated[str, Field(description="The region for the s3 endpoint. For minio, value does not matter")] = (
@@ -43,3 +53,7 @@ class S3StorageSettings(EnvironmentSettings):
     def get_public_endpoint(self) -> str:
         """Returns the public endpoint for presigned URLs, falling back to ENDPOINT if not set."""
         return self.PUBLIC_ENDPOINT or self.ENDPOINT
+
+    def get_internal_endpoint(self) -> str:
+        """Returns the in-cluster endpoint for internally-fetched presigned URLs (falls back to ENDPOINT)."""
+        return self.INTERNAL_ENDPOINT or self.ENDPOINT

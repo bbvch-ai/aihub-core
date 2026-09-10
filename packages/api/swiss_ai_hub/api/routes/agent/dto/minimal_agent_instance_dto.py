@@ -28,6 +28,9 @@ class MinimalAgentInstanceDTO(BaseModel):
     is_conversational: Annotated[
         bool, Field(description="Whether the agent can participate in a chat-based conversation")
     ]
+    is_schedulable: Annotated[
+        bool, Field(description="Whether the agent can be run automatically on a cron schedule")
+    ] = False
 
     @property
     def name(self) -> str:
@@ -51,4 +54,5 @@ class MinimalAgentInstanceDTO(BaseModel):
             agent_id=config_entity.agent_id,
             agent_config=agent_config_dto,
             is_conversational=class_entity.is_conversational,
+            is_schedulable=class_entity.is_schedulable,
         )

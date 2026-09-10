@@ -11,6 +11,7 @@ common:
   loading: Loading...
   selectModel: Select a model
   selectDatabase: Select a database
+  selectTenant: Select a tenant
 models:
   title: Models
   error: Error loading models
@@ -39,7 +40,9 @@ models:
     outputCostAbove128k: Output Cost (Above 128K)
     outputCostAbove200k: Output Cost (Above 200K)
     imageCost: Image Cost
-    searchContextCost: Search Context Cost
+    searchContextCostLow: Search Context Cost (Low)
+    searchContextCostMedium: Search Context Cost (Medium)
+    searchContextCostHigh: Search Context Cost (High)
     rateLimits: Rate Limits
     tokensPerMinute: Tokens per Minute
     requestsPerMinute: Requests per Minute
@@ -89,6 +92,7 @@ user:
   title: Users
   logout: Logout
   language: Language
+  version: Version
   role_chips:
     no_roles: No roles assigned
     assign: Assign role
@@ -136,6 +140,15 @@ thread:
     numEvents: Number of Events
     status: Status
     pending: Pending
+    search_placeholder: Search by name
+    filter:
+      status_placeholder: Filter by status
+      active: Active
+      completed: Completed
+      failed: Failed
+      agent_name_placeholder: Filter by agent
+      user_name_placeholder: Filter by user
+      date_range_placeholder: Filter by date
   utils:
     pendingTypes:
       hitl: Human in the Loop
@@ -157,6 +170,7 @@ thread:
     title: Hierarchical View on Turns
   chat:
     title: Chat view
+    placeholder: Chat input
   memories:
     title: Thread Memories
     description: Memories collected during {threadName}
@@ -252,6 +266,11 @@ event:
     noChunksFound: No chunks found
     noChunksFoundDescription: The retrieval search didn't find any relevant content
       chunks.
+  metaQuestionDetected:
+    category:
+      identity: Identity
+      capabilities: Capabilities
+      behavior: Behaviour
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
@@ -310,6 +329,19 @@ agent:
     status: 'Status:'
     online: Online
     offline: Offline
+  import:
+    button: Import
+    error:
+      title: Import failed
+      invalidJson: The selected file is not valid JSON.
+      invalidStructure: The selected file is not a valid agent configuration export.
+      missingFields: The file is missing required fields (schemaVersion, agentClass,
+        or configuration).
+      unsupportedVersion: The file uses an unsupported export schema version.
+      blueprintNotFound: The agent blueprint "{agentClass}" is not available in this
+        environment.
+  export:
+    button: Export
   configuration:
     title: Agent Configuration
     description: Configure the runtime behavior and settings for this agent
@@ -334,6 +366,13 @@ agent:
     online: Online
     offline: Offline
     clone: Clone
+    search_placeholder: Search by name
+    no_results: No agents found
+    filter:
+      type_placeholder: Filter by agent type
+      status_placeholder: Filter by status
+      enabled: Enabled
+      disabled: Disabled
   workflow:
     title: Agentic Workflow
     view_tooltip: View workflow
@@ -402,6 +441,20 @@ document:
     number_of_pages: Number of Pages
     download: Download
     is_processing: Processing
+    actions: Actions
+    selected_count: '{count} document(s) selected'
+  delete:
+    title: Delete Document
+    deleting: Deleting
+    button: Delete
+    button_selected: Delete selected
+    confirmMessage: Are you sure you want to delete "{title}"? It will be permanently
+      removed from the knowledge base. This action cannot be undone.
+    confirmMessageBatch: Are you sure you want to delete {count} document(s)? They
+      will be permanently removed from the knowledge base. This action cannot be undone.
+    success: Document scheduled for deletion
+    partial: '{deleted} document(s) scheduled for deletion, {failed} failed'
+    error: Failed to delete document
 knowledge:
   title: Knowledge Databases
   created_at: 'Created:'
@@ -451,21 +504,65 @@ knowledge:
     title: Add Collection
     description: Create a new knowledge collection
     cancel: Cancel
+  add_database:
+    title: Add Knowledge Database
+    description: Create a new self-service knowledge database
   auto_sync:
     title: Auto-synchronized
     description: Collections are automatically managed
   manual_management:
     description: Collections can be created and managed manually
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Edit collection
   upload_documents: Upload documents
+  delete_namespace: Delete collection
+  delete_database: Delete database
+  delete:
+    confirm_label: Type {name} to confirm
+    database:
+      title: Delete knowledge database
+      warning: This permanently deletes the database {name}, all its collections,
+        and its {count} documents. This cannot be undone.
+    namespace:
+      title: Delete collection
+      warning: This permanently deletes the collection {name} and its {count} documents.
+        This cannot be undone.
+    actions:
+      delete: Delete
+    scheduled:
+      summary: Deletion started
+      detail: The deletion runs in the background and may take a moment.
+    error:
+      summary: Deletion failed
+      detail: The deletion could not be started. Please try again.
   form:
     create:
       title: Create Collection
+    create_error: Failed to create the collection. Please try again.
+    create_database:
+      title: Create Knowledge Database
+      success: Knowledge database created
+      error: Failed to create the knowledge database
+      no_ingestors: No ingestion pipeline is available. Make sure at least one pipeline
+        is running.
+      steps:
+        basic_info: Basic Info
     edit:
       title: Edit Collection
     database:
       label: Knowledge Database
       placeholder: Knowledge Database Name
+    database_name:
+      label: Database Name
+      placeholder: myknowledgebase
+      help: Only lowercase letters and digits are allowed, starting with a letter,
+        3 to 63 characters. The name cannot be changed later.
+      validation_error: The database name must start with a lowercase letter and contain
+        only lowercase letters and digits, between 3 and 63 characters
+    ingestor:
+      label: Ingestion Pipeline
+      placeholder: Select an ingestion pipeline
+      help: The pipeline that processes documents uploaded to this database.
     folder_name:
       label: Collection Name
       placeholder: my-collection
@@ -495,7 +592,9 @@ auth:
     description: Please log in to access the application
     tagline: Experience the future of artificial intelligence
     welcome: Welcome to the AI Hub of {companyName}
+    welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
+    pleaseLoginWith: Please log in with {provider}
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
@@ -582,6 +681,23 @@ role:
   access_rules_help_agent_instances: All instances of MyAgent
   access_rules_help_service: Knowledge service
   access_rules_help_admin: Admin access to everything
+  presets_button: Presets
+  presets_title: Access presets
+  preset_category_everything: Everything
+  preset_category_agents: Agents
+  preset_category_processes: Processes
+  preset_category_models: Models
+  preset_category_knowledge: Knowledge
+  capabilities_title: What these rules grant
+  capabilities_subtitle: Tick a capability to grant it. Locked items are covered by
+    a broader rule.
+  capabilities_readonly_title: Effective access
+  capabilities_readonly_subtitle: What this user can do, based on their roles and
+    within the tenant's limits.
+  capabilities_empty: This user has no access.
+  capability_locked: Granted by a broader rule — remove that rule to change this.
+  capability_readonly: No single rule grants this on its own — use a preset or a broader
+    rule.
   pattern_help_intro: 'Patterns use wildcards to match agents:'
   pattern_help_all: All agents
   pattern_help_wildcard: All instances of MyAgent
@@ -651,6 +767,7 @@ bar:
   show_notifications: Show notifications
 process:
   title: Processes
+  no_results: No processes found
   overview:
     name: Name
     class: Class
@@ -707,7 +824,31 @@ process:
 form:
   locale_input:
     translate_tooltip: Translate to all languages
+  warnings:
+    org_memory_performance: This feature may not work as expected in some cases. To
+      avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  cron:
+    errors:
+      required: Every position is required — a blank one is not a valid schedule.
+      invalid: Only digits and the characters * , - / ? are allowed here.
+      range: Values must be between {min} and {max}.
+    expression: 'Resulting cron expression:'
+    minute:
+      label: Minute
+    hour:
+      label: Hour
+    day_of_month:
+      label: Day of month
+    month:
+      label: Month
+    day_of_week:
+      label: Day of week
+    timezone:
+      label: Timezone
+      placeholder: Select a timezone
+      help: The cron positions are interpreted in this timezone, so a daily schedule
+        keeps the same wall-clock time across daylight-saving changes.
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -715,8 +856,12 @@ lib:
       label: Database
     namespaces:
       label: Namespaces
-      placeholder: Select namespaces (empty = all)
-      help: Leave empty to search all namespaces
+      placeholder: Select at least one namespace
+      help: Only the selected namespaces are searched
+    allNamespaces:
+      label: Search all namespaces
+      help: Every namespace of this database is searched, including ones added later
+        ({count} today).
     allowedFilterFields:
       label: Allowed Filter Fields
       placeholder: Add a metadata key and press Enter
@@ -726,8 +871,10 @@ memory:
   title: Memories
   graph:
     title: Knowledge Graph
+    no_results: No memories found
   list:
     title: Memory List
+    no_results: No memories found
   detail:
     title: Memory Details
     created_at: Created At

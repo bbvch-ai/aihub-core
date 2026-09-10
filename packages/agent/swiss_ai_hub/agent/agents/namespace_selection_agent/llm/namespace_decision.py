@@ -29,14 +29,19 @@ class NamespaceDecision(BaseModel):
             description=(
                 "Map of bucket_name to exactly ONE namespace_name. "
                 "Each bucket MUST have exactly one namespace selected - no more, no less. "
-                "Only set if has_enough_information is True."
+                "Always provide this field; use null when has_enough_information is false."
             )
         ),
     ] = None
 
     follow_up_question: Annotated[
         str | None,
-        Field(description=("Question to ask the user for clarification. Only set if has_enough_information is False.")),
+        Field(
+            description=(
+                "Question to ask the user for clarification. "
+                "Always provide this field; use null when has_enough_information is true."
+            )
+        ),
     ] = None
 
     reasoning: Annotated[

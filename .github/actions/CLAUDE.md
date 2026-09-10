@@ -66,14 +66,21 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 - `huggingface_api_key`: added to `.env.dev` for model downloads
 - `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
+- `pytest_timeout_seconds`: per-test budget passed as `--timeout` (default 300). Keep it well under the calling job's
+  `timeout-minutes`, otherwise a hung test consumes the whole job and the forced stop discards `pytest.xml`,
+  `coverage.xml` and the traceback — the run then reports only "The operation was canceled". `pytest-timeout` comes from
+  the workspace root dev group, so every module has it.
 - Health check polling: waits up to 10 minutes for Docker services to become healthy
+- Pre-pull login is **best-effort**: the `docker login ghcr.io` in the pre-pull step must not fail the job
+  (`|| echo "::warning::..."`). The mirrored images under `ghcr.io/bbvch-ai/aihub-core/*` are public, so an
+  expired/absent `PAT_GITHUB_READ_PACKAGES` still lets anonymous pulls succeed. Do NOT make this login fatal again.
 
 **pytest_coverage_comment**: Downloads `{working_directory}-pytest-report` and `{working_directory}-coverage-report`
 artifacts from `test_backend`, posts formatted coverage report as PR comment via
 `MishaKav/pytest-coverage-comment@main`.
 
 **sonarcloud_scan**: Downloads `{working_directory}-coverage-report` artifact when `report_coverage: true`. Runs
-`SonarSource/sonarqube-scan-action@v5`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
+`SonarSource/sonarqube-scan-action@v6`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
 `bbv-ai`.
 
 ## Local vs Remote References

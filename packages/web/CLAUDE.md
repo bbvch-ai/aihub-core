@@ -47,7 +47,8 @@ packages/web/
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
 `pnpm dev` runs `nuxi dev .app`. The parent `packages/web/` provides components, composables, pages, and config. `.app/`
-adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
+adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars). FormKit registration lives in the layer itself
+(`packages/web/formkit.config.ts`, wired via `formkit.configFile` in `nuxt.config.ts`), so extenders inherit it.
 
 ## Page Composition Pattern
 
@@ -146,8 +147,22 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 **Flow**: Backend `AgentConfig.as_form()` → SDK `FormkitElement[]` → `useFormKitTransform().buildFormKitSchema()` →
 `<FormKitSchema :schema="schema" />` → rendered form.
 
-**Custom FormKit inputs** (registered in `.app/formkit.config.ts`): `agentSelector`, `knowledgeDatabaseSelector`,
-`iconSelector`, `localeInput`, `modelSelect`, `vectorStoreInput`.
+**Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`,
+`tenantSelect`, `vectorStoreInput`.
+
+**Custom validation rules** are registered in the same file under `rules`, with their messages under `messages` (one
+entry per locale). The backend attaches a rule to a field via `PrimeVueElement.additional_validation_rules`, which
+surfaces as the FormKit node's `validation` string. Cross-field rules read siblings with `node.at('<field_name>')` —
+FormKit tracks whatever the rule reads, so it re-runs when that sibling changes too. Such rules are advisory: the API
+validates submissions against a JSON Schema and never sees them.
+
+An element whose value is an **object** needs more than that. FormKit's built-in `required` only asks whether a value is
+present, so it passes on a `localeInput` with every locale blank, or an `agentSelector` with a class chosen and no
+instance. Such an element overrides the `validation` computed property on the Python side to emit its own rule instead
+of `required` (`localeRequired`, `agentRefRequired`), and that rule must set `skipEmpty = false` or it never runs on a
+never-touched field, whose value is still `null` — precisely the case it exists to catch. Add a message for all four
+locales.
 
 Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
 `context.node.input(newValue)`.
@@ -218,14 +233,15 @@ use this. Use `dark:` Tailwind prefix for dark-mode styles.
 
 ## Sysadmin Layout
 
-A separate `sysadmin.vue` layout powers the `/sysadmin/tenants/...` route tree, used exclusively for tenant
-administration by users with the `AIHubSysAdmin` Keycloak realm role. The route shape is independent of the regular
+Tenant administration lives in the `packages/sysadmin-web` layer (its own `sysadmin.vue` layout + pages), used
+exclusively by users with the `AIHubSysAdmin` Keycloak realm role. Because that app IS the sysadmin app, its routes are
+mounted at `/tenants/...` — there is NO `/sysadmin/` URL prefix. The route shape is independent of the regular
 `/[tenant]/service/...` admin pages:
 
-- `/sysadmin/tenants` — tenant list (Active + Orphaned + Unconfigured states)
-- `/sysadmin/tenants/[tenant_id]/overview` — metadata edit
-- `/sysadmin/tenants/[tenant_id]/roles` — role management within the tenant
-- `/sysadmin/tenants/[tenant_id]/users` — user list within the tenant (read-only; user lifecycle managed in Keycloak)
+- `/tenants` — tenant list (Active + Orphaned + Unconfigured states)
+- `/tenants/[tenant_id]/overview` — metadata edit
+- `/tenants/[tenant_id]/roles` — role management within the tenant
+- `/tenants/[tenant_id]/users` — user list within the tenant (read-only; user lifecycle managed in Keycloak)
 
 `useTenant()` reads from either `route.params.tenant` (regular routes) or `route.params.tenant_id` (sysadmin routes), so
 role/user composables work transparently in both contexts.
@@ -264,7 +280,7 @@ The UI strictly separates blueprint from profile:
 
 - Nuxt config: `nuxt.config.ts`
 - Nuxt layer entry: `.app/nuxt.config.ts`
-- FormKit config: `.app/formkit.config.ts`
+- FormKit config (inputs, validation rules, messages): `formkit.config.ts`
 - ESLint config: `eslint.config.js`
 - Tailwind config: `tailwind.config.mjs`
 - PrimeVue theme: `themes/aihub-theme.ts`

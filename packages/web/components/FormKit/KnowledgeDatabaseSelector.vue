@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { getDatabases } from '@core/sdk/client'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
 
@@ -64,7 +64,7 @@ const selectedDatabases = computed({
 const databaseOptions = computed<DatabaseOption[]>(() =>
   databases.value.map(db => ({
     name: db.name,
-    displayName: db.display_name || useChangeCase(db.name, 'capitalCase').value,
+    displayName: db.display_name || capitalCase(db.name),
   })),
 )
 

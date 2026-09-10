@@ -68,6 +68,8 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
             yield client
 
+    await runner.stop_simulation()
+
 
 @pytest.fixture
 def create_thread_request(agent_class, agent_id):

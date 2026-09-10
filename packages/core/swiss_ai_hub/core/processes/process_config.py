@@ -16,11 +16,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _locale_string_has_content(value: LocaleString) -> bool:
-    """Check if a LocaleString has at least one non-empty locale value."""
-    return any(getattr(value, locale, None) not in (None, "") for locale in ("de", "en", "fr", "it"))
-
-
 class ProcessConfig(Form):
     """
     Each process instance can be configured with its own parameters.
@@ -54,9 +49,9 @@ class ProcessConfig(Form):
     @model_validator(mode="after")
     def validate_locale_strings_have_content(self) -> Self:
         """Validate that name and description LocaleStrings have at least one non-empty value."""
-        if isinstance(self.name, LocaleString) and not _locale_string_has_content(self.name):
+        if isinstance(self.name, LocaleString) and not self.name.has_content():
             raise ValueError("name must have at least one language with content")
-        if isinstance(self.description, LocaleString) and not _locale_string_has_content(self.description):
+        if isinstance(self.description, LocaleString) and not self.description.has_content():
             raise ValueError("description must have at least one language with content")
         return self
 

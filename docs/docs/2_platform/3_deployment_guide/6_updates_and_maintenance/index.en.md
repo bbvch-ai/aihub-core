@@ -194,4 +194,4 @@ ______________________________________________________________________
 - [Deployment Options](../1_deployment_options/) - Per-instance architecture
 - [Multi-tenancy](../../16_multi_tenancy/) - Logical separation within instances
 - [Backup and Recovery](../4_backup_and_recovery/) - Backup strategies
-- [Core Components](../../2_architecture/1_core_components/) - Component dependencies
+- [Core Components](../../../1_vision_and_positioning/3_core_components/) - Component dependencies

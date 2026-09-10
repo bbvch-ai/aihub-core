@@ -1,0 +1,109 @@
+---
+name: Publish @swiss-ai-hub/web to npm
+run-name: Publish web to npm - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
+# Publishes @swiss-ai-hub/web to npm via OIDC trusted publishing.
+# Only invoked at promote time for a flat, latest release (never on nightly or
+# staging). Triggered via workflow_dispatch by the promote workflow or manually;
+# the release-ready repository_dispatch trigger was removed so per-merge nightly
+# builds do not publish.
+on:
+  workflow_call:
+    inputs:
+      release_version:
+        description: Release version tag to publish (e.g., v0.290.12)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version tag to publish (e.g., v0.290.12)
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: publish-npm-${{ github.event.client_payload.release_version || github.event.inputs.release_version }}
+  cancel-in-progress: false
+jobs:
+  publish-web:
+    name: Publish @swiss-ai-hub/web
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    environment: npm
+    steps:
+      - name: Extract version
+        id: version
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          if [ -z "$RELEASE_VERSION" ]; then
+            echo "No release_version provided. Failing."
+            exit 1
+          fi
+          VERSION="$RELEASE_VERSION"
+          # Strict flat-version check: refuses nightly/staging pre-releases, and
+          # guards the checkout `ref` below against injection.
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Refusing to publish: '$VERSION' is not a valid vX.Y.Z release tag."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Checkout at release tag
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ steps.version.outputs.version }}
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Upgrade npm for trusted publishing
+        run: npm install --global npm@latest
+      - name: Publish to npm
+        working-directory: packages/web
+        env:
+          TAG: ${{ steps.version.outputs.version }}
+        run: |-
+          set -euo pipefail
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          # Guard against publishing a version that doesn't match the release tag.
+          if [ "$PKG_VERSION" != "${TAG#v}" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match release tag ($TAG)."
+            exit 1
+          fi
+          echo "Resolved ${PKG_NAME}@${PKG_VERSION} (npm $(npm --version))"
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version >/dev/null 2>&1; then
+            echo "${PKG_NAME}@${PKG_VERSION} is already on the registry — skipping."
+            exit 0
+          fi
+          # A backport/hotfix publishes a version lower than the current `latest`
+          # dist-tag. npm refuses to implicitly move `latest` backwards, so pin such
+          # releases to a per-line dist-tag (release-X.Y) instead of moving `latest`.
+          # Newer releases (the normal main path) keep the implicit `latest`.
+          PUBLISH_ARGS=(--provenance --access public)
+          # Resolve the registry's current `latest`. E404 (package/tag not yet
+          # published — the first-publish case) is treated as empty; any other
+          # npm failure (e.g. registry unreachable) fails loudly rather than
+          # silently falling through to an implicit `latest` publish.
+          set +e
+          LATEST_OUT="$(npm view "${PKG_NAME}@latest" version 2>&1)"
+          LATEST_RC=$?
+          set -e
+          if [ "$LATEST_RC" -eq 0 ]; then
+            LATEST="$LATEST_OUT"
+          elif printf '%s' "$LATEST_OUT" | grep -q 'E404'; then
+            LATEST=""
+          else
+            echo "::error::Could not query the current 'latest' version from npm: $LATEST_OUT"
+            exit 1
+          fi
+          if [ -n "$LATEST" ] && [ "$LATEST" != "$PKG_VERSION" ]; then
+            HIGHEST="$(printf '%s\n%s\n' "$PKG_VERSION" "$LATEST" | sort -V | tail -n1)"
+            if [ "$HIGHEST" = "$LATEST" ]; then
+              LINE_TAG="release-$(printf '%s' "$PKG_VERSION" | cut -d. -f1-2)"
+              PUBLISH_ARGS+=(--tag "$LINE_TAG")
+              echo "Backport publish: ${PKG_VERSION} < latest ${LATEST}; using dist-tag ${LINE_TAG} (not moving 'latest')."
+            fi
+          fi
+          npm publish "${PUBLISH_ARGS[@]}"

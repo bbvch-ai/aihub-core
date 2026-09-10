@@ -1,0 +1,298 @@
+# Cron-Scheduled Agent Runs
+
+## Context
+
+Agents run only in response to a user- or agent-initiated start event. There is no way to run one unattended on a fixed
+schedule, which rules out the whole class of agents whose value is periodic work — inbox triage, recurring reports,
+scheduled ingestion checks.
+
+Adding scheduling raises four questions that each have more than one defensible answer:
+
+- **How does an agent opt in?** The platform already distinguishes conversational agents from programmatic ones, and it
+  does so by *derivation*: `AgentRunner` reports `is_conversational` by checking whether any declared start event
+  subclasses `UserMessageEvent`. A schedulability flag could instead be declared explicitly on the runner.
+- **Where does the scheduler run?** A cron scheduler is singleton background work. The API already hosts several such
+  jobs (event persistence, endpoint discovery, OpenWebUI provisioning), but
+  [#1203](https://github.com/bbvch-ai/aihub-core/issues/1203) plans to extract all of them into a new `aihub-daemon`
+  deployed with `replicas: 1`. That extraction has not started.
+- **What identity does a scheduled run execute under?** Every existing run carries a `UserIdentity`, which drives access
+  checks, usage limits, and thread visibility.
+- **How is "exactly once" guaranteed** when N API replicas each host a scheduler?
+
+## Decision Drivers
+
+- **Opt-in must be impossible to get half-right**: a blueprint that handles the event but forgets to register itself, or
+  registers itself but handles nothing, should not be representable.
+- **The later `aihub-daemon` move must not become a migration**: whatever we build now should relocate by rewiring, not
+  by porting logic.
+- **No new execution-identity concept**: "run as user" for unattended runs implies credential storage and delegated
+  authority, which is a much larger decision than scheduling.
+- **Correct under horizontal scaling**, including a replica dying mid-tick — not merely correct when one replica runs.
+
+## Decision
+
+> **Terminology.** This ADR was written against the names the feature first shipped with — `ScheduledStartEvent`,
+> `AgentSchedule`, `ScheduledAgentService`, and a `schedule` config field. Those are now `CronStartEvent`,
+> `CronSchedule`, `CronScheduler`, and `cron`; the decisions themselves are unchanged except where a section says
+> otherwise. The names below are the current ones so that a reader is not sent looking for symbols the code does not
+> have.
+
+### 1. Schedulability is derived from a new `CronStartEvent`
+
+An agent becomes schedulable by handling `CronStartEvent`, exactly as it becomes conversational by handling
+`UserMessageEvent`. `AgentRunner` derives `is_schedulable` during discovery and reports it on
+`AgentClassDiscoveryResponseEvent`; it is persisted on `AgentClassEntity` and surfaced through the agent DTOs.
+
+This makes the inconsistent states unrepresentable: the capability *is* the handled event, so there is nothing to keep
+in sync. It also means a schedulable agent that handles no `UserMessageEvent` stays out of the chat UI for free.
+
+### 2. The schedule is per-profile configuration, owned by the platform
+
+> **Revised.** This section originally had the *blueprint* declare a `schedule` field which the scheduler read back by
+> name. That is recorded at the end of the section, along with why it was replaced — the mitigation it depended on could
+> not be made to work.
+
+The five cron positions plus an IANA timezone form `CronSchedule`, a data-mode model paired with a new `CronInput` form
+element — the same duality `MilvusVectorStoreConfig`/`VectorStoreInput` and `OrgMemoryWriteConfig.tenant_id`/
+`TenantSelect` already use. The field is `cron`, it lives on the **`AgentConfig` base**, and its value lands in
+`config_data` like every other setting, reusing the existing persistence, validation, and DTO paths.
+
+Positions are stored separately rather than as one `"0 12 * * *"` string so the Admin UI can offer per-position editing
+and presets without parsing, and so an invalid position is rejected at the field that caused it.
+
+Every position is **required**. Defaulting them would let any unrecognised payload — a form-mode `CronInput` dict that
+reached storage, say — validate silently into `0 * * * *` and start unattended hourly runs nobody configured. A schedule
+must be stated, never inferred.
+
+`AgentConfig.as_form()` deliberately leaves `cron` unset, and `AgentRunner` sets the form element for schedulable
+classes and clears it otherwise. That single assignment settles **both** published surfaces, because a field is
+configurable only while its value *is* a form element: `to_formkit_form()` and `to_configurable_submission_model()` both
+derive from it. So a non-schedulable agent advertises no schedule anywhere, and no blueprint needs a `cron=` line of its
+own — which is why none of the existing `as_form()` overrides changed.
+
+The runner keeps this published view **beside** the config it was handed rather than over it. `AgentTestRunner` serves
+that config back as a run's actual configuration, so writing the form element onto it would hand an agent its own form
+to execute against. The control is also appended after the blueprint's own settings: `cron` is a base field and Pydantic
+orders base fields first, so left in place it would sit between the identity fields and a blueprint's first real
+setting.
+
+`CronSchedule` is a plain `BaseModel`, not a `Form`, even though it is the data half of a duality pair. Being a `Form`
+bought nothing — in form mode the field holds the `CronInput` instead, so it never rendered as a nested group — and cost
+two things: a `_form_name` computed field that stopped a schedule surviving its own `model_dump()`, and, once the field
+moved to the base, a placeholder `Group` emitted on *every* agent's form for a nullable `Form`-typed field.
+
+**What this replaced, and why.** The original decision had each blueprint declare its own field, which meant nothing
+prevented a schedulable blueprint from naming it something else: it was advertised as schedulable, it saved whatever an
+admin entered, and it never fired. The scheduler could not repair that — the field name belonged to the blueprint — so
+it inspected the discovered form and logged a warning naming the class and the cron fields it did find. Owning the field
+removes the failure mode instead of describing it, along with that warning machinery and its tests, and makes
+"non-schedulable agents expose no schedule configuration" structural rather than conventional.
+
+### 3. The scheduler lives in `packages/core`, wired from the API
+
+`swiss_ai_hub.core.scheduling` holds the calculator, the Redis state store, and `CronScheduler`. The API's
+`lifetime_manager.py` constructs and starts it alongside the existing discovery services.
+
+Placing the logic in core rather than `packages/api` is what keeps #1203 cheap. `OpenWebuiProvisioner` is the precedent:
+it lives in `core/infrastructure/`, is instantiated by the API, and is on #1203's list of things to "move" — a move that
+relocates twelve lines of wiring, not 558 lines of logic. The scheduler needs a NATS-backed distributor, Redis, and the
+mongoengine connection; unlike `AgentEndpointsDiscoveryService` it takes no `FastAPI` or controller and registers no
+routes, so nothing ties it to the API process.
+
+### 4. Scheduled runs are system runs, sharing one thread per profile
+
+The run carries `user=None` and fires into a thread with no members. `ExternalAgentEventDistributor.distribute_event`
+already accepts `user=None` and skips the thread-membership check in that case, so no new control path is needed and the
+agent runner consumes the event unchanged.
+
+Every scheduled run of one profile lands in the **same** thread, whose id is derived from
+`sha256("{agent_class}/{agent_id}")`. One thread per occurrence was the first shape and is rejected: a profile running
+every five minutes would leave ~105k single-run threads a year with nothing to clean them up — harmless only while the
+threads have no members, and a wall of identical entries in the user's list the moment
+[#1582](https://github.com/bbvch-ai/aihub-core/issues/1582) gives them some. Many runs in one thread is the ordinary
+Thread → Display → Run model; a chat conversation is exactly that, and the fix is far cheaper before a backlog exists
+than after.
+
+Deriving the id beats looking the thread up by field: two replicas racing a leadership handover converge on one document
+instead of creating a second. The cost is that the id no longer encodes a creation time the way a generated `ObjectId`
+does, so a scheduled thread's age must be read from `created_at`.
+
+This is safe because the agent runtime never reads tenancy from the initiating user — `packages/agent` contains no
+reference to `acting_within_tenant`. Where an agent needs a tenant it reads one from its own profile
+(`OrgMemoryWriteConfig.tenant_id`), which is admin-set and independent of who starts the run. Tenant *authorization* is
+enforced at the HTTP boundary, which a scheduled run never crosses.
+
+### 5. Exactly-once uses a leader lease **and** per-occurrence claims
+
+Both are required and they solve different problems:
+
+- The **leader lease** (`scheduler:leader`, a Redis lock with TTL, non-blocking acquire) stops two replicas ticking
+  concurrently. Modelled on `OpenWebuiProvisioner._sync_lock`.
+- The **per-occurrence claim** (`SET NX EX` on `scheduler:fired:{class}:{id}:{occurrence}`) stops the same occurrence
+  firing twice when a leader dies mid-tick, before its watermark advanced, and another replica takes over.
+
+A leader lease alone would satisfy "only one replica fires" while still permitting a duplicate run on failover.
+
+All scheduler state — leadership, the tick watermark, and the claims — lives in Redis and nowhere else, which is the
+property that makes the daemon lift a rewiring.
+
+### 6. Ticks work in windows, with a bounded catch-up
+
+Ticks are periodic, so an occurrence between two ticks would be missed if the scheduler asked "is it due now?". Each
+tick fires every occurrence in `(watermark, now]`. Occurrences are enumerated in the schedule's own timezone and
+returned in UTC, so "every day at 12:00" survives DST shifts as a wall-clock time.
+
+The window start is clamped to `now - 15 minutes`. Without a bound, a scheduler down for three days would come back and
+fire seventy-odd stale hourly runs at once. Occurrences dropped by the clamp are logged, not silently discarded. A cold
+start adopts the current time and fires nothing.
+
+### 7. The watermark stays free to move backwards, and says so in the log
+
+A tick that outruns its 120s lease lets a second replica tick concurrently. No run is duplicated — the per-occurrence
+claims hold — but the two replicas capture `now` at different moments and write it in whichever order they finish, so
+the watermark can move backwards and the next tick re-scans a window it already covered.
+
+Making the watermark monotonic was considered and **rejected**. The watermark is wall-clock, so a replica with a fast
+clock (or an NTP step) writes one ahead of real time; every replica then computes an inverted window and fires nothing.
+Today that heals itself the moment a correctly-clocked replica writes the next watermark. Under a monotonic rule the bad
+value becomes a floor nobody can go below, turning a self-correcting inefficiency into a silent, unrecoverable outage.
+Enforcing it atomically would also need a Lua `EVAL`, since read-compare-write across replicas is racy and Redis has no
+"set if greater" — a new mechanism with no precedent here, bought for a benign issue.
+
+So the behaviour is kept and made observable instead: a tick logs when the stored watermark sits ahead of this replica's
+clock (the dangerous, otherwise-silent case), and when its own duration exceeded the lease (the benign root cause). Both
+are warnings that can be alerted on; neither changes what runs.
+
+### 8. `croniter` for cron parsing
+
+Nothing in the tree parsed cron. `croniter` is a small, widely used library with timezone-aware iteration; the
+alternative is hand-rolling field parsing, ranges, steps, and DST handling.
+
+### 9. A schedule's cost is checked when it is saved, not metered while it runs
+
+*Added after review of [#1759](https://github.com/bbvch-ai/aihub-core/pull/1759), which first proposed the opposite.*
+
+A cron expression is a declaration, not traffic. `CronScheduleCalculator` can say exactly how many runs it produces
+before the first one fires, so the question "is this more work than this deployment wants?" is answerable while an admin
+is still looking at the form. Two ceilings live in `SchedulerSettings` and are enforced by `ScheduleAdmission` from the
+config save path:
+
+- `SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH` bounds one schedule. It **defaults to 43,200** — every-minute, the tightest
+  expression cron can produce — so out of the box it rejects nothing that can be written. It exists for a deployment
+  that wants to allow less, not as a number the platform picked on a customer's behalf.
+- `SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH` bounds every schedule together, because 400 hourly profiles are 288,000 runs a
+  month and each of those configs is unremarkable alone. **Disabled by default**, on the same principle as retention: a
+  check that can reject an admin's save has to be something an operator turned on.
+
+Both are paired with a scan-side skip, exactly as a malformed schedule is: write-time validation only covers rows
+written since it existed and only while the setting held its value, so lowering a ceiling must not leave the profiles
+admitted under the old one firing forever.
+
+**The rejected alternative was runtime metering** — a synthetic `scheduler` principal billed to the startup tenant
+against a seeded `AIHubScheduler` role holding a default of 5000 runs/day. It was implemented and withdrawn, for reasons
+worth recording because they generalise:
+
+- **The default failed at both jobs it could have had.** Four every-minute profiles are 5,760 runs/day, so the cap
+  refused a configuration the engine advertises as supported; and 5,000 is far too low to read as "no correct scheduler
+  fires this much". A platform-wide constant is only defensible as a backstop against our own bugs, and that is not a
+  number that also bounds customer cost.
+- **The guard was removable and failed open.** The role was tenant-scoped, so `RoleService.delete_role` permitted it;
+  afterwards the limit lookup returned "no limits", which reads as *unlimited*. A budget an admin can delete from the
+  role editor, leaving one line in a background log, does not hold.
+- **The counter's scope matched nothing.** Counters key on the matched pattern, so one seeded wildcard is a single
+  bucket for every scheduled run — one runaway profile spending what the well-behaved ones needed.
+- **Enforcement sat where nobody was looking.** Over the cap, runs stopped with no notification, no thread entry, and no
+  UI state, because a scheduled run fires into a thread with no members (#1582). For an inbox classifier that is mail
+  quietly ceasing to be filed.
+- **Counting runs cannot see the runaway.** One run doing a fifty-step retrieval loop is one unit at any threshold.
+
+That last point is the real division of labour: bounding *how often* an agent starts is admission control and belongs
+here; bounding *what it costs* belongs in [#1766](https://github.com/bbvch-ai/aihub-core/issues/1766) (per-run call
+cap), [#1767](https://github.com/bbvch-ai/aihub-core/issues/1767) (per-agent spend),
+[#1452](https://github.com/bbvch-ai/aihub-core/issues/1452) and
+[#441](https://github.com/bbvch-ai/aihub-core/issues/441) (per-user and per-tenant spend). #1452 plans to extend
+`core/auth/usage/` from invocation-count to cost, so shipping a default limit in invocation-count would have been the
+platform's first default cap in the unit that module is scheduled to leave.
+
+Still open: a circuit breaker against the scheduler *itself* misfiring — a bug firing far more than any schedule
+declares. Admission control cannot see that, because the declarations would all be admissible. It wants its own issue.
+
+## Consequences
+
+**Positive**
+
+- Opt-in is a single handled event; the capability cannot drift from the implementation.
+- The #1203 lift is a wiring change — no agent- or runner-side code is involved.
+- Correct across N replicas today, including failover, without waiting on the daemon extraction.
+- No new execution-identity concept, and no new tenancy plumbing.
+
+**Negative**
+
+- **Scheduled runs are bounded in frequency, not in spend.** Decision 9 rejects a schedule that declares more runs than
+  the deployment allows, which is everything computable from the schedule itself. What one run then costs is not: a
+  single scheduled run doing a fifty-step retrieval loop is one run at any ceiling. `UsageLimits` is still reachable
+  only as a FastAPI `Depends`, and a scheduled run has neither a user nor an HTTP request, so nothing meters its spend.
+  That gap is real and is tracked in #1766/#1767/#1452/#441 rather than papered over with a run count here.
+
+- **Scheduled runs are invisible in the UI.** A thread with no members appears in nobody's thread list. This is the
+  documented v1 behaviour; configurable membership is [#1582](https://github.com/bbvch-ai/aihub-core/issues/1582).
+
+- **The leader lease becomes dead code** once the scheduler moves into the single-replica daemon.
+
+- **Occurrences missed beyond the catch-up window never run.** Deliberate, but it means extended downtime silently skips
+  work beyond a warning in the logs.
+
+- **A malformed stored schedule is skipped, not fatal.** This is a deliberate exception to the codebase's fail-fast
+  rule. The profile store is shared across every scheduled agent, and `_due_instances` reads all of them before firing
+  any, so letting one bad row raise would abort the tick before the watermark advanced — and every later tick would
+  rediscover the same row. One malformed profile would permanently starve every other schedule. It is logged at error
+  level and skipped instead, confining the blast radius to the profile that is actually broken.
+
+- **A profile's scheduled runs all share one thread.** Bounding thread growth to one per profile means that thread's run
+  history only ever grows, so a long-lived `*/5` schedule eventually makes an expensive thread to open — a retention
+  problem on one document rather than a proliferation problem across 105k. `SCHEDULER_EVENT_RETENTION_DAYS` now prunes
+  events past a configurable age, **disabled by default**: deleting history has to be something an operator turned on,
+  never something a deploy started doing. Only the events go; the thread id is derived from the profile, so deleting the
+  document would merely have the next fire recreate it. Threads are identified by recomputing that derived id from live
+  profiles rather than by a marker field, which makes over-deletion unrepresentable and needs no backfill — there is no
+  migration mechanism in this repo to write one with. The cost: a deleted profile orphans its events, since there is no
+  longer an id to recompute. A Mongo TTL index cannot serve this at all, because `event_data.created_at` is integer
+  nanoseconds rather than a BSON date.
+
+- **Occurrences due while a blueprint is offline are dropped, not queued.** Deliberate — the scheduler does not queue
+  work for an agent that cannot consume it, and the watermark advances regardless — but it means a runner that crashes
+  overnight loses that night's runs. Each drop is logged with the class, the profile, and how long it has been offline.
+
+- **A run that fails to start is not retried.** The claim is taken *before* the run is published, so a publish that
+  raises leaves the occurrence claimed and the next tick passes over it. That makes the failure at-most-once rather than
+  at-least-once, which is the right way round given the acceptance criterion is "no duplicate runs" — but it does mean a
+  transient publish failure drops that occurrence. The claim, not the tick aborting, is what stops the drop repeating:
+  the failure is caught at the occurrence, so one unreachable broker cannot cost every *other* profile its due
+  occurrences. Each lost run is logged by class, profile, and occurrence; under a systemic outage the stacks are
+  identical, so the first failure of a tick carries the traceback and the rest carry the identity, with a per-tick
+  summary giving the total.
+
+- Discovery auto-registers a REST endpoint per start event, so schedulable agents also gain a `POST .../CronStartEvent`
+  route — an unplanned but useful manual trigger, which does carry a real user because it arrives over HTTP.
+
+- **The tick reads Mongo off the event loop.** The scheduler shares a process with every HTTP and WebSocket request, so
+  its synchronous mongoengine reads stalled all of them for the tick's duration, and the stall grew with the profile
+  count. All of them now go through one `asyncio.to_thread` hop per tick — a single snapshot read replacing what had
+  become five round-trips — bounded at half the lease so a slow database costs a skipped tick rather than a pinned
+  lease. Cancellation cannot kill the worker thread; what it buys is releasing the lease.
+
+- **A malformed schedule is rejected at save time.** Decision 2 accepted that it could not be, because the profile save
+  path validates against a jambo-generated model carrying none of `CronSchedule`'s validators. `InstanceConfigHelper`
+  now re-validates the raw submission and returns 400, following the precedent already set there for locale fields. The
+  scan-side skip stays exactly as it is: a row that predates this validation must still not be able to starve every
+  other schedule.
+
+## Related
+
+- Issue [#1580](https://github.com/bbvch-ai/aihub-core/issues/1580) — this change
+- Issue [#1581](https://github.com/bbvch-ai/aihub-core/issues/1581) — the cron schedule editing UI
+- Issue [#1582](https://github.com/bbvch-ai/aihub-core/issues/1582) — configurable thread membership
+- Issue [#1203](https://github.com/bbvch-ai/aihub-core/issues/1203) — `aihub-daemon` extraction. Its out-of-scope list
+  currently excludes hosting scheduled jobs, which contradicts the lift path assumed here; the two need reconciling.
+- [Dynamic Agent Configuration](2026_01_07_enable_dynamic_agent_configuration_ui.md) — the blueprint/profile split the
+  schedule field builds on

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+    from swiss_ai_hub.core.auth.keycloak.user_not_provisioned_error import UserNotProvisionedError
     from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 
 # KeycloakAuthHandler and TokenAndOauth2Handler are excluded because they
@@ -35,6 +36,7 @@ __all__ = [
     "TenantIdentity",
     "TokenAuthHandler",
     "UserIdentity",
+    "UserNotProvisionedError",
 ]
 
 _LAZY_IMPORTS = {
@@ -50,6 +52,7 @@ _LAZY_IMPORTS = {
     "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
     "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",
     "UserIdentity": "swiss_ai_hub.core.auth.identity.user_identity",
+    "UserNotProvisionedError": "swiss_ai_hub.core.auth.keycloak.user_not_provisioned_error",
 }
 
 
