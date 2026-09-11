@@ -58,6 +58,7 @@ packages/core/swiss_ai_hub/core/
 ├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
+│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
 │   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
@@ -76,6 +77,11 @@ packages/core/swiss_ai_hub/core/
 │   └── utils/                       # Shared AI utilities
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
+├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
+├── secrets/                         # Secret configuration fields at rest
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, plaintext passes through, fail-closed
+│   ├── secret_masker.py              # SecretMasker: MASK in responses, restore-on-resubmit
+│   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
