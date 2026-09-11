@@ -2,10 +2,16 @@ from datetime import datetime
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 
-from swiss_ai_hub.core.events.agent import UnreadMailSummary
+from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
+from swiss_ai_hub.core.imap.parsed_attachment import ParsedAttachment
+from swiss_ai_hub.core.imap.parsed_message import ParsedMessage
 
-from swiss_ai_hub.agent.imap.parsed_message import ParsedAttachment, ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
+# A subject longer than this is not a subject. Both mail prompts put it in a fixed part they do not trim — the
+# drafting envelope and the classification header — so without a bound here one inbound message could exceed any
+# budget before a single trimmable character is considered. The subject is attacker-controlled, which is what makes
+# that reachable. It lives beside the parser that enforces it rather than in the agent's token budget, so every
+# consumer of a parsed subject inherits the same bound.
+MAX_SUBJECT_CHARACTERS = 512
 
 
 class MailParser:

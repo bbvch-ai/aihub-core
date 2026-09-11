@@ -7,10 +7,9 @@ from enum import StrEnum
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel, Field, create_model
-from swiss_ai_hub.core.imap import EmailClassificationSettings, MailCategory
+from swiss_ai_hub.core.imap import MAX_SUBJECT_CHARACTERS, EmailClassificationSettings, MailCategory, ParsedMessage
 
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS, TokenBudget
+from swiss_ai_hub.agent.imap.token_budget import TokenBudget
 
 logger = logging.getLogger(__name__)
 

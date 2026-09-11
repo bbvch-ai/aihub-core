@@ -2,8 +2,7 @@ import email
 from email.message import EmailMessage
 from email.policy import default as default_policy
 
-from swiss_ai_hub.agent.imap.mail_parser import MailParser
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
+from swiss_ai_hub.core.imap.mail_parser import MAX_SUBJECT_CHARACTERS, MailParser
 
 _MAX_BODY_BYTES = 1_000_000
 _MAX_ATTACHMENT_BYTES = 10_000_000
