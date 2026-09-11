@@ -60,14 +60,16 @@ class TestRouting:
         assert loader.aload_data_from_bytes.await_args.kwargs["fs"] is None
 
     def test_an_unreadable_type_raises_rather_than_returning_empty(self):
+        extraction = DocumentExtractor.extract_from_bytes(content=b"x", filename="archive.zip")
         with pytest.raises(UnsupportedDocumentTypeError) as raised:
-            asyncio.run(DocumentExtractor.extract_from_bytes(content=b"x", filename="archive.zip"))
+            asyncio.run(extraction)
         assert "archive.zip" in str(raised.value)
         assert raised.value.extension == "zip"
 
     def test_a_nameless_file_without_a_content_type_raises(self):
+        extraction = DocumentExtractor.extract_from_bytes(content=b"x", filename="noname")
         with pytest.raises(UnsupportedDocumentTypeError):
-            asyncio.run(DocumentExtractor.extract_from_bytes(content=b"x", filename="noname"))
+            asyncio.run(extraction)
 
     def test_content_type_routes_when_the_filename_carries_no_extension(self):
         """A mail part can arrive as `attachment` with a MIME type and no usable name."""

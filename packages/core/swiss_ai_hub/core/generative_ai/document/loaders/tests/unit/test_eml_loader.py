@@ -47,7 +47,8 @@ def test_headers_do_not_leak_into_the_content():
 
 def test_attachment_bytes_never_reach_the_content():
     text = _load(_mail(attach=True))
-    assert "JVBERi" not in text and "WFhY" not in text
+    assert "JVBERi" not in text
+    assert "WFhY" not in text
 
 
 def test_attachment_filename_is_listed():
@@ -78,8 +79,9 @@ def test_no_page_count_is_invented_for_a_mail():
 
 
 def test_sync_load_data_refuses():
+    loader = EmlLoader()
     with pytest.raises(RuntimeError):
-        EmlLoader().load_data("anfrage.eml")
+        loader.load_data("anfrage.eml")
 
 
 def test_a_filename_cannot_forge_markdown_structure():
