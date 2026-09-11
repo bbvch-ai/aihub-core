@@ -2,9 +2,9 @@
 
 ## Context
 
-Issue [#111](https://github.com/bbvch-ai/aihub-core-private/issues/111), part of the M-Files spike (#48), needs a
-document turned into a **title and a body** before it can be classified. M-Files sends the real file content, not
-pre-extracted text, so extraction is on the PoC path and sits upstream of classification (#113).
+An inbound document-management integration (M-Files) posts files into the platform as raw content — PDFs, scans, Office
+documents and `.eml` mail — rather than as pre-extracted text. Before any of it can be classified, every file has to
+become a **title and a body**, whatever its format and whichever loader handles it.
 
 Most of the machinery already existed. `DocumentLoaderSelector` routes an extension to a loader,
 `S3AnonymousFileAccessService.download_file` reads bytes from a bucket, and every loader shares one
@@ -68,9 +68,9 @@ labels a scan's title by visual prominence), then the filename stem.
 
 ## Consequences
 
-- **`AttachmentTextExtractor` is the second consumer**, which is what satisfies the issue's "reused by more than one
-  feature" criterion with a real existing feature rather than one written for the issue. Its bounds and outcome
-  semantics are unchanged, including that an unreadable type still costs no S3 fetch.
+- **`AttachmentTextExtractor` is the second consumer**, so the helper is reused by more than one feature — a real
+  existing one, rather than a consumer written to satisfy that requirement. Its bounds and outcome semantics are
+  unchanged, including that an unreadable type still costs no S3 fetch.
 - **A shipped behaviour changes**: an `.eml` attachment reaching the IMAP drafting path stops being a raw MIME dump and
   becomes clean markdown with a subject heading. This is a latent-bug fix, but it changes what that feature sees and
   must be reviewed as such. **It applies only to an `.eml` attached as a generic binary part.** Measured against a real
