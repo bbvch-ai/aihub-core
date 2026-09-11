@@ -49,6 +49,11 @@ config:
   enable_user_memory_storage:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.
+  memory_llm:
+    label: Memory model
+    help: Model that extracts and reconciles user memories. Extraction is short and
+      mechanical, so a smaller model is usually enough. Leave disabled to use the
+      platform default.
 steps:
   retrieve_user_memory:
     name: Retrieve User Memory

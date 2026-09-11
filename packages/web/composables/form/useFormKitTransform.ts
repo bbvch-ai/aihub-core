@@ -348,6 +348,13 @@ function combineConditions(toggleCondition: string, existing: string | undefined
   return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
 }
 
+/**
+ * The toggle inherits the element's own `condition_if` so it disappears with the section it belongs to.
+ * Without this, a nullable field gated on a sibling checkbox (e.g. the memory model, which only applies
+ * while memory storage is on) would hide its input but leave a stray "Enable X" checkbox behind.
+ * The element's nullable-toggle condition is deliberately NOT inherited — that is the condition this very
+ * node controls.
+ */
 function buildNullableToggleNode(
   element: FormElement,
   label: string | undefined,
@@ -355,6 +362,7 @@ function buildNullableToggleNode(
 ): Record<string, unknown> {
   const fieldName = element.name as string
   const toggleId = nullableToggleId(element)
+  const gatingCondition = element.if as string | undefined
   return {
     $formkit: 'primeCheckbox',
     name: nullableToggleName(fieldName),
@@ -362,6 +370,7 @@ function buildNullableToggleNode(
     key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
     ...(help ? { help } : {}),
+    ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
   }
 }

@@ -1,7 +1,7 @@
 from typing import Annotated, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.form import Checkbox
+from swiss_ai_hub.core.form import Checkbox, ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
 
@@ -36,6 +36,15 @@ class UserMemoryConfig(Form):
             "background."
         ),
     ] = False
+    memory_llm: Annotated[
+        str | ModelSelect | None,
+        Field(
+            description="Model that extracts and reconciles user memories (issue #1590). Extraction is short "
+            "and mechanical, so a smaller model than the answer model is usually enough. Leave disabled to "
+            "use the platform default. Pick a vision-capable model if this agent stores memory from image "
+            "conversations."
+        ),
+    ] = None
 
     @classmethod
     def as_form(cls) -> Self:
@@ -69,6 +78,12 @@ class UserMemoryConfig(Form):
                     fr="Persiste la mémoire utilisateur hors du chemin critique via l'agent d'écriture mémoire.",
                     it="Persiste la memoria utente fuori dal percorso critico tramite l'agente di scrittura memoria.",
                 ),
+                condition_if="$get(check_user_memory_storage_enabled).value",
+            ),
+            memory_llm=ModelSelect(
+                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.memory_llm.label"),
+                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.memory_llm.help"),
+                mode="chat",
                 condition_if="$get(check_user_memory_storage_enabled).value",
             ),
         )

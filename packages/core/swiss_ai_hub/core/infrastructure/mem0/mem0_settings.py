@@ -17,9 +17,11 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 class Mem0Settings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("MEM0_")
-    LLM_NAME: Annotated[str, Field(description="Name of the LLM to use")]
+    LLM_NAME: Annotated[
+        str, Field(description="Name of the LLM to use. Platform default; an agent may override it per profile.")
+    ]
     EMBEDDING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
-    RERANKING_MODEL_NAME: Annotated[str, Field(description="Name of the embedding model to use")]
+    RERANKING_MODEL_NAME: Annotated[str, Field(description="Name of the reranking model to use")]
     SEARCH_QUERY_EMBEDDING_WINDOW: Annotated[
         int | None,
         Field(
@@ -39,6 +41,7 @@ class Mem0Settings(EnvironmentSettings):
         custom_fact_extraction_prompt: Annotated[str | None, "How LLM extracts facts from conversations"] = None,
         custom_update_memory_prompt: Annotated[str | None, "How LLM decides to ADD/UPDATE/DELETE memories"] = None,
         enable_graph: Annotated[bool, "Include the Neo4j graph store. When False, mem0 skips the graph branch."] = True,
+        llm_name: Annotated[str | None, "Per-agent extraction model; falls back to LLM_NAME when unset"] = None,
     ) -> MemoryConfig:
         litellm = LiteLLMProxySettings()
         milvus = MilvusSettings()
@@ -66,7 +69,7 @@ class Mem0Settings(EnvironmentSettings):
             llm=LlmConfig(
                 provider="openai",
                 config={
-                    "model": self.LLM_NAME,
+                    "model": llm_name or self.LLM_NAME,
                     "temperature": 0.2,
                     "max_tokens": 16_000,
                     "api_key": litellm.API_KEY.get_secret_value(),

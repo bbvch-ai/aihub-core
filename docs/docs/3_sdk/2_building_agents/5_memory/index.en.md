@@ -585,6 +585,38 @@ conversation thread), `display_id` (UI display context), `run_id` (workflow exec
 belongs to or who documented it). This enables complete auditability—you can trace back to which conversation taught the
 agent a particular preference.
 
+Storage events also carry `llm_model_name`, the model that extracted the memories, so a stored fact can be attributed to
+the model that produced it. It is empty for organization memory, which stores the text you pass verbatim and runs no
+model.
+
+## Choosing the extraction model
+
+Extraction and reconciliation are several model calls per stored conversation, and they are short, mechanical tasks — so
+they do not need the agent's answer model. `AgentMemory` takes an optional `llm_model_name`; unset, it uses the
+platform-wide default (`MEM0_LLM_NAME`). The dispatcher supplies it from the agent config when injecting `AgentMemory`,
+reading `AgentConfig.memory_llm_model_name`.
+
+That property is the platform's hook: it returns `None` on the base class, and a blueprint that offers a memory-model
+picker overrides it to point at its own field. `RAGAgentConfig` does exactly that, exposing `memory_llm` inside its
+`UserMemoryConfig` so administrators pick the model per profile.
+
+```python
+class MyAgentConfig(AgentConfig):
+    memory_llm: Annotated[str | ModelSelect | None, Field(description="Model that extracts memories.")] = None
+
+    @property
+    @override
+    def memory_llm_model_name(self) -> str | None:
+        # A form-mode element or a blank submission both mean "use the platform default".
+        return self.memory_llm if isinstance(self.memory_llm, str) and self.memory_llm else None
+```
+
+Only the extraction model is per-agent. Embedding and reranking stay deployment-wide, because memories written with one
+embedding model cannot be searched with another.
+
+If the agent stores memory asynchronously, the model travels to the `MemoryWriterAgent` on the start event
+(`origin_memory_llm`), so a delegated write extracts on the same model an inline write would have used.
+
 ## Best practices
 
 Use user memory for preferences ("User prefers brief responses") and organization memory for facts ("We deploy on

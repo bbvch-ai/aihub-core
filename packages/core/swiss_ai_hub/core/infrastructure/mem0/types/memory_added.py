@@ -19,5 +19,12 @@ class MemoryAdded(BaseModel):
     tenant_namespace: Annotated[
         str | None, Field(description="The tenant namespace for department-level scoping.", alias="_tenant_namespace")
     ]
+    llm_model_name: Annotated[
+        str | None,
+        Field(
+            description="Model that extracted the memories, or None when the write stored verbatim text "
+            "without inference."
+        ),
+    ]
     results: Annotated[list[ModifiedMemory], Field(description="The list of modified memories.")] = []
     relations: Annotated[ModifiedRelations, Field(description="The list of modified relations.")] = ModifiedRelations()

@@ -16,6 +16,10 @@ class MemoryStoredStopEvent(StopEvent):
     added_memories: Annotated[list[str], Field(default_factory=list, description="Newly added memory texts")]
     updated_memories: Annotated[list[str], Field(default_factory=list, description="Updated memory texts")]
     deleted_memories: Annotated[list[str], Field(default_factory=list, description="Deleted memory texts")]
+    llm_model_name: Annotated[
+        str | None,
+        Field(description="Model that extracted these memories (issue #1590)."),
+    ] = None
 
     @classmethod
     def from_store_event(cls, store_event: StoreUserMemoryEvent) -> Self:
@@ -24,4 +28,5 @@ class MemoryStoredStopEvent(StopEvent):
             added_memories=store_event.added_memories,
             updated_memories=store_event.updated_memories,
             deleted_memories=store_event.deleted_memories,
+            llm_model_name=store_event.llm_model_name,
         )

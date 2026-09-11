@@ -52,6 +52,11 @@ config:
   enable_user_memory_storage:
     label: Activer le stockage de mémoire utilisateur
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
+  memory_llm:
+    label: Modèle de mémoire
+    help: Modèle qui extrait et réconcilie les mémoires utilisateur. L'extraction
+      est courte et mécanique, un modèle plus petit suffit généralement. Laisser désactivé
+      pour utiliser le modèle par défaut de la plateforme.
 steps:
   retrieve_user_memory:
     name: Récupérer la mémoire utilisateur
