@@ -27,6 +27,18 @@ class UserUploadedFile(BaseModel):
             description="UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.",
         ),
     ]
+    source_file_id: Annotated[
+        str | None,
+        Field(
+            default=None,
+            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            description=(
+                "The chat client's own identifier for the same file. Present when the client indexed the "
+                "file before forwarding it, so retrieval can read those vectors instead of parsing and "
+                "embedding the document a second time."
+            ),
+        ),
+    ]
 
     AGENT_FILES_BUCKET: ClassVar[str] = "agent-files"
 

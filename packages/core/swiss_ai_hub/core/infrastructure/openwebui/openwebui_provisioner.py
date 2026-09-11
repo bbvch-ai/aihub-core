@@ -296,15 +296,23 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _agent_capabilities() -> dict[str, bool]:
-        """Turns OpenWebUI's own web search off for agent workspace models.
+        """Turns OpenWebUI's own web search and file-context injection off for agent workspace models.
 
-        OpenWebUI runs the search before the pipe and hands the hits over as a ``files`` entry with no
-        file id, which the pipe's file processing drops — so the agent never sees a single result and
-        answers "not in the documents" while the UI claims it searched. Hiding the toggle beats leaving
-        a button that silently does nothing. Plain LLM workspace models keep web search: they bypass the
-        pipe and reach LiteLLM directly, where OpenWebUI's own RAG injection works.
+        ``web_search``: OpenWebUI runs the search before the pipe and hands the hits over as a ``files``
+        entry with no file id, which the pipe's file processing drops — so the agent never sees a single
+        result and answers "not in the documents" while the UI claims it searched. Hiding the toggle beats
+        leaving a button that silently does nothing.
+
+        ``file_context``: OpenWebUI otherwise inlines the attached documents into the user message, which
+        is what makes an agent answer from a file the user attached turns ago (issue #147) — the injection
+        is unconditional, so every attachment of the chat lands in every prompt regardless of the question.
+        The agent reaches the same documents through retrieval instead: the pipe already hands their ids
+        over, and OpenWebUI has already embedded each one into its own Milvus collection.
+
+        Plain LLM workspace models keep both: they bypass the pipe and reach LiteLLM directly, where
+        OpenWebUI's own RAG injection is the only thing that gets a document into the prompt.
         """
-        return {"web_search": False}
+        return {"web_search": False, "file_context": False}
 
     def _build_model_data(self, agent: OnlineAgent) -> dict[str, Any]:
         return {

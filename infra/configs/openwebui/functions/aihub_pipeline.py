@@ -1656,6 +1656,10 @@ class FileProcessingService:
             "filename": filename,
             "file_type": content_type,
             "file_id": agent_file_id,
+            # Open WebUI already parsed, chunked and embedded this file into its own vector collection
+            # when the user uploaded it. Forwarding its id lets the agent read those vectors instead of
+            # doing the same work again — parsing alone costs seconds per file.
+            "source_file_id": owui_file_id,
         }
 
     def _read_file_content(self, file_obj: Any) -> bytes:

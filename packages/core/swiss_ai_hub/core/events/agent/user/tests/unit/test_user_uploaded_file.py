@@ -30,9 +30,27 @@ class TestUserUploadedFile:
     def test_serialization_roundtrip(self):
         f = UserUploadedFile(filename="image.png", file_type="image/png", file_id=VALID_UUID4)
         data = f.model_dump()
-        assert data == {"filename": "image.png", "file_type": "image/png", "file_id": VALID_UUID4}
+        assert data == {
+            "filename": "image.png",
+            "file_type": "image/png",
+            "file_id": VALID_UUID4,
+            "source_file_id": None,
+        }
         restored = UserUploadedFile.model_validate(data)
         assert restored == f
+
+    def test_source_file_id_survives_the_roundtrip(self):
+        """Retrieval reads the client's own collection, so its file id has to reach the agent intact."""
+        f = UserUploadedFile(
+            filename="image.png",
+            file_type="image/png",
+            file_id=VALID_UUID4,
+            source_file_id=VALID_UUID4,
+        )
+
+        restored = UserUploadedFile.model_validate(f.model_dump())
+
+        assert restored.source_file_id == VALID_UUID4
 
     def test_rejects_filename_with_forward_slash(self):
         with pytest.raises(ValidationError):
