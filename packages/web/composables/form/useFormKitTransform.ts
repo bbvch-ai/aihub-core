@@ -339,13 +339,16 @@ function nullableToggleId(element: FormElement): string {
 
 /**
  * Combines a synthetic toggle condition with any existing condition_if.
+ *
+ * The `$` on every `$get(...)` must survive. `$:` marks the string as an expression; it does not put the
+ * references inside it into scope. Stripping their `$` made FormKit's compiler see a bare `get`, which it
+ * treats as a literal rather than a provided function — the expression then evaluated to the truthy string
+ * `"0{[nativecode]}.value"`, so a gated field rendered unconditionally and neither checkbox could hide it.
  */
 function combineConditions(toggleCondition: string, existing: string | undefined): string {
   if (!existing) return toggleCondition
-  if (existing.startsWith('$:')) {
-    return `$: ${toggleCondition.slice(1)} && (${existing.slice(2).trim()})`
-  }
-  return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
+  const existingExpression = existing.startsWith('$:') ? existing.slice(2).trim() : existing
+  return `$: ${toggleCondition} && (${existingExpression})`
 }
 
 /**
@@ -365,6 +368,10 @@ function buildNullableToggleNode(
   const gatingCondition = element.if as string | undefined
   return {
     $formkit: 'primeCheckbox',
+    // `preserve: true` for the same reason the gated input itself carries it: when this toggle's own
+    // condition unmounts it, FormKit would otherwise drop `__<field>__enabled` from the group data, and the
+    // state seeded from the saved value is lost — an already-configured field then remounts reading "off".
+    preserve: true,
     name: nullableToggleName(fieldName),
     id: toggleId,
     key: toggleId,
@@ -703,6 +710,19 @@ export function coerceNullableToggles(
  * process edit forms.
  */
 /**
+ * A nullable leaf stored as `null` is seeded with its default too, mirroring how `seedGroupDefault`
+ * materialises a null nullable group: `null` means "the toggle is off", not "the input holds nothing",
+ * so the field behind the toggle should still offer the default the backend ships (e.g. the memory
+ * model starting on the platform-wide one). Safe in both directions — `seedNullableToggles` has
+ * already decided the toggle from the raw null-ness, so this cannot switch one on, and
+ * `coerceNullableToggles` re-nullifies a disabled field at submit time, so the seeded value is never
+ * persisted while the toggle is off.
+ */
+function isDisabledNullableLeaf(element: FormElement, value: unknown): boolean {
+  return element.nullable === true && value === null
+}
+
+/**
  * Seed a group field's value: always materialise its children's defaults (starting from
  * the existing object when present, `{}` otherwise — including for a saved `null`). A null
  * nullable group must still hold an object so FormKit can mount and render its children
@@ -753,7 +773,7 @@ export function seedFormDefaults(
     else if (formkitType === 'repeater') {
       result[name] = seedRepeaterDefault(value, children)
     }
-    else if (!(name in result) && element.value !== undefined) {
+    else if (element.value !== undefined && (!(name in result) || isDisabledNullableLeaf(element, value))) {
       result[name] = element.value
     }
   }

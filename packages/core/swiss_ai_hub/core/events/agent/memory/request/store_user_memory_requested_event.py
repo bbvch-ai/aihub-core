@@ -57,8 +57,8 @@ class StoreUserMemoryRequestedEvent(StartEvent):
     origin_memory_llm: Annotated[
         str | None,
         Field(
-            description="Originating agent's memory model (issue #1590) — the writer extracts on the same "
-            "model an inline write would have used. None means the platform default."
+            description="Originating agent's memory model (issue #1590) — the writer extracts on the model "
+            "that profile configured. None means the platform default."
         ),
     ] = None
 

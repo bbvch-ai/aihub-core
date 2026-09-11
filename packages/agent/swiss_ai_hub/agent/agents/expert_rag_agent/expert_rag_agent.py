@@ -27,7 +27,6 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StoreUserMemoryEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -207,7 +206,6 @@ async def memory_added_to_chat_history(
 @precondition()
 async def ready_for_stop(
     config: ExpertRAGAgentConfig,
-    store_memory_event: StoreUserMemoryEvent | None = None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
     user: UserIdentity | None = None,
 ) -> bool:
@@ -220,7 +218,7 @@ async def ready_for_stop(
     event, and a precondition is only handed events its step declares. Requiring one here raised `TypeError` on
     every RAG run — the kwarg was simply never built.
     """
-    return check_ready_for_stop(config, user is not None, store_memory_event, memory_storage_request)
+    return check_ready_for_stop(config, user is not None, memory_storage_request)
 
 
 class ExpertRAGAgent(Agent):
@@ -853,33 +851,23 @@ class ExpertRAGAgent(Agent):
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
         llm_event: LLMEvent,
-        memory: AgentMemory,
         topic: AgentInstanceTopic,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
-    ) -> StoreUserMemoryEvent | MemoryStorageRequestedEvent:
+    ) -> MemoryStorageRequestedEvent:
         """
-        Store new user memories from the conversation.
+        Delegate the user-memory write to the `MemoryWriterAgent` on its own run (issue #1179).
 
-        Inline (default): write via mem0 and return the result event. Async (issue #1179): delegate the write
-        to the `MemoryWriterAgent` so the chat run finalizes as soon as the answer is ready.
+        The returned event is a delegation marker, so the chat run finalizes as soon as the answer is ready
+        instead of waiting on the ~5-call save.
         """
-        if agent_config.user_memory.enable_async_memory_storage:
-            return build_memory_storage_request(
-                user=user_message_event.user,
-                messages=llm_event.chat_messages,
-                topic=topic,
-                agent_config=agent_config,
-                locale=t.locale,
-            )
-        memory_added = await memory.add_user_memory(
+        return build_memory_storage_request(
+            user=user_message_event.user,
             messages=llm_event.chat_messages,
-            user_id=user_message_event.user.id,
-            thread_id=topic.thread_id,
-            display_id=topic.display_id,
-            run_id=topic.run_id,
+            topic=topic,
+            agent_config=agent_config,
+            locale=t.locale,
         )
-        return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
@@ -889,7 +877,6 @@ class ExpertRAGAgent(Agent):
     async def stop_step(
         self,
         llm_event: LLMEvent,
-        _store_memory_event: StoreUserMemoryEvent | None,
         _memory_storage_request: MemoryStorageRequestedEvent | None,
         expert_answer_context: ExpertAnswerContextEvent | None,
         few_shot_reject: FewShotRejectEvent | None,

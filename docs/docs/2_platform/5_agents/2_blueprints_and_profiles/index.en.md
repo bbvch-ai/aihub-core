@@ -136,12 +136,13 @@ smaller model is usually enough, and it is worth choosing one: extraction is sev
 conversation, which makes it a meaningful share of an agent's spend.
 
 Leave the **Enable Memory model** checkbox off and extraction runs on the platform-wide default configured at
-deployment. Existing profiles are unaffected. The picker only appears while user-memory storage is enabled, since
-nothing extracts otherwise. If the agent stores memory from conversations containing images, choose a vision-capable
-model.
+deployment. Existing profiles are unaffected. Ticking the checkbox reveals the picker already set to that same default,
+so it is a starting point to move away from rather than an empty field — saving it unchanged keeps the model the
+platform would have used anyway. The picker only appears while user-memory storage is enabled, since nothing extracts
+otherwise. If the agent stores memory from conversations containing images, choose a vision-capable model.
 
-The choice applies whether memory is written inline or in the background, so switching the storage mode never changes
-which model does the extracting. Two things stay deployment-wide: the embedding and reranking models, because memories
+The write itself always happens in the background, after the answer has been delivered, so the chosen model never
+affects how long the user waits. Two things stay deployment-wide: the embedding and reranking models, because memories
 written with one embedding model cannot be searched with another; and organization memory, which stores the text an
 agent hands it verbatim and runs no model at all.
 

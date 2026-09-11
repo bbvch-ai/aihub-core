@@ -55,7 +55,8 @@ config:
     label: Modello di memoria
     help: Modello che estrae e riconcilia le memorie utente. L'estrazione è breve
       e meccanica, quindi di solito basta un modello più piccolo. Lasciare disabilitato
-      per usare il modello predefinito della piattaforma.
+      per usare il modello predefinito della piattaforma; abilitandolo si parte dallo
+      stesso modello.
 steps:
   retrieve_user_memory:
     name: Recupera memoria utente

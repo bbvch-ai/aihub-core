@@ -13,6 +13,7 @@ from swiss_ai_hub.core.agents import AgentConfig, AgentRef
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, ModelSelect  # noqa: F401 — triggers Group/Repeater rebuild
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import Mem0Settings
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent_config import (
     ChannelConfig,
@@ -132,6 +133,24 @@ def test_the_picker_offers_an_unset_state(config_type: type[AgentConfig]) -> Non
     assert picker.nullable is True
     assert picker.default_enabled is False
     assert picker.required is False
+
+
+@pytest.mark.parametrize("config_type", CONFIG_TYPES, ids=lambda t: t.__name__)
+def test_the_picker_starts_on_the_platform_default(config_type: type[AgentConfig]) -> None:
+    """Enabling the picker is a starting point to move away from, not an empty field to fill in.
+
+    The value is the deployment's own `MEM0_LLM_NAME`, so an admin who enables the picker and saves without
+    touching it keeps extracting on the model the platform would have used anyway. `default_enabled` is
+    asserted alongside because the value must not switch the toggle on — that is what would silently pin
+    every new profile to today's platform model.
+    """
+    form = config_type.as_form()
+
+    user_memory_group = next(element for element in form.to_formkit_form() if element.name == "user_memory")
+    picker = next(child for child in user_memory_group.children if child.name == "memory_llm")
+
+    assert picker.value == Mem0Settings().LLM_NAME
+    assert picker.default_enabled is False
 
 
 @pytest.mark.parametrize("config_type", CONFIG_TYPES, ids=lambda t: t.__name__)

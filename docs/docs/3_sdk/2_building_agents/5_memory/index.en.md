@@ -614,8 +614,9 @@ class MyAgentConfig(AgentConfig):
 Only the extraction model is per-agent. Embedding and reranking stay deployment-wide, because memories written with one
 embedding model cannot be searched with another.
 
-If the agent stores memory asynchronously, the model travels to the `MemoryWriterAgent` on the start event
-(`origin_memory_llm`), so a delegated write extracts on the same model an inline write would have used.
+The RAG blueprints do not write user memory themselves — they delegate it to the `MemoryWriterAgent` so the run
+finalizes as soon as the answer is ready. The chosen model travels there on the start event (`origin_memory_llm`), which
+is what keeps extraction on the profile's own model rather than the platform default.
 
 ## Best practices
 

@@ -56,7 +56,8 @@ config:
     label: Modèle de mémoire
     help: Modèle qui extrait et réconcilie les mémoires utilisateur. L'extraction
       est courte et mécanique, un modèle plus petit suffit généralement. Laisser désactivé
-      pour utiliser le modèle par défaut de la plateforme.
+      pour utiliser le modèle par défaut de la plateforme ; l'activer part de ce même
+      modèle.
 steps:
   retrieve_user_memory:
     name: Récupérer la mémoire utilisateur

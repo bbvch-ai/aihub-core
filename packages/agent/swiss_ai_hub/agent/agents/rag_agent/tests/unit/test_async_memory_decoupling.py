@@ -1,7 +1,8 @@
 """Unit tests for decoupled memory storage wiring (issue #1179).
 
-Covers the stop-gate precondition (`check_ready_for_stop`) across the three modes and the delegation-event
-builder (`build_memory_storage_request`).
+Covers the stop-gate precondition (`check_ready_for_stop`) and the delegation-event builder
+(`build_memory_storage_request`). Delegation is the only storage mode — see ADR
+`2026_09_11_async_user_memory_storage_as_the_only_mode`.
 """
 
 from types import SimpleNamespace
@@ -21,43 +22,27 @@ from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserM
 from swiss_ai_hub.agent.rag.preconditions import check_ready_for_stop
 from swiss_ai_hub.agent.rag.step_functions import build_memory_storage_request
 
-_STORE_EVENT = object()  # stand-in for a StoreUserMemoryEvent (check is identity/None only)
-_MARKER = object()  # stand-in for a MemoryStorageRequestedEvent
+_MARKER = object()  # stand-in for a MemoryStorageRequestedEvent (check is identity/None only)
 
 
-def _config(storage_enabled: bool, async_enabled: bool) -> SimpleNamespace:
-    return SimpleNamespace(
-        user_memory=SimpleNamespace(
-            enable_user_memory_storage=storage_enabled,
-            enable_async_memory_storage=async_enabled,
-        )
-    )
+def _config(storage_enabled: bool) -> SimpleNamespace:
+    return SimpleNamespace(user_memory=SimpleNamespace(enable_user_memory_storage=storage_enabled))
 
 
 def test_storage_disabled_never_gates():
-    assert check_ready_for_stop(_config(storage_enabled=False, async_enabled=False), True, None, None) is True
-
-
-def test_inline_mode_gates_on_store_event():
-    config = _config(storage_enabled=True, async_enabled=False)
-    assert check_ready_for_stop(config, True, None, None) is False
-    assert check_ready_for_stop(config, True, _STORE_EVENT, None) is True
-    # In inline mode the async marker must NOT satisfy the gate.
-    assert check_ready_for_stop(config, True, None, _MARKER) is False
+    assert check_ready_for_stop(_config(storage_enabled=False), True, None) is True
 
 
 def test_an_identity_less_run_never_gates_on_a_write_it_will_not_perform():
     """A delegated run with no user skips the storage step, so gating the stop on its event would hang the run."""
-    config = _config(storage_enabled=True, async_enabled=False)
-    assert check_ready_for_stop(config, False, None, None) is True
+    assert check_ready_for_stop(_config(storage_enabled=True), False, None) is True
 
 
-def test_async_mode_gates_on_marker_not_store_event():
-    config = _config(storage_enabled=True, async_enabled=True)
-    assert check_ready_for_stop(config, True, None, None) is False
-    assert check_ready_for_stop(config, True, None, _MARKER) is True
-    # In async mode the run must finalize on the cheap marker, not wait for a StoreUserMemoryEvent.
-    assert check_ready_for_stop(config, True, _STORE_EVENT, None) is False
+def test_storage_gates_on_the_delegation_marker():
+    """The run finalizes on the millisecond-cheap marker, never on the write it delegated."""
+    config = _config(storage_enabled=True)
+    assert check_ready_for_stop(config, True, None) is False
+    assert check_ready_for_stop(config, True, _MARKER) is True
 
 
 def test_build_memory_storage_request_targets_writer_and_carries_origin():
