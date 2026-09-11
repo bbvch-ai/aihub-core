@@ -37,6 +37,7 @@ from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
     format_expert_conversation,
+    limit_chat_history,
     narrow_retrievers,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -75,6 +76,7 @@ from swiss_ai_hub.agent.rag.preconditions import (
     check_user_memory_storage_enabled,
 )
 from swiss_ai_hub.agent.rag.step_functions import (
+    build_memory_conversation,
     build_memory_storage_request,
     do_condense_standalone_question,
     do_context_sufficient_guard,
@@ -117,15 +119,21 @@ async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, 
 @precondition()
 async def context_ready_for_history_limit(
     context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
+    config: ExpertRAGAgentConfig,
+    user: UserIdentity | None = None,
     context_sufficient_event: ContextSufficientAcceptEvent | None = None,
+    memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
     """
     Precondition for limit_chat_history_with_context_step.
     Allows the step to run when:
     - ExpertAnswerContextEvent is present (expert flow), OR
     - InOrderNodeCombinerEvent is present AND ContextSufficientAcceptEvent is present (normal RAG flow)
+    In both flows the memory-extended history must exist when a memory source is enabled.
     """
-    return check_context_ready_for_history_limit_with_expert(context_event, context_sufficient_event)
+    return check_context_ready_for_history_limit_with_expert(
+        context_event, context_sufficient_event
+    ) and check_memory_added_to_chat_history(config, user is not None, memory_history_event)
 
 
 @precondition()
@@ -141,25 +149,27 @@ async def is_no_answer_response(event: AgentInTheLoop.response) -> bool:
 
 
 @precondition()
-async def organization_memory_enabled(
-    config: ExpertRAGAgentConfig,
+async def passed_meta_question_gate(
     start_event: UserMessageEvent | RAGStartEvent,
     clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
-    """Precondition to check if organization memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_organization_memory_enabled(config)
+    """Precondition gating the raw chat entry step until meta-question detection clears the message."""
+    return check_passed_meta_question_gate(start_event, clear)
+
+
+@precondition()
+async def organization_memory_enabled(config: ExpertRAGAgentConfig) -> bool:
+    """Precondition to check if organization memory retrieval is enabled."""
+    return check_organization_memory_enabled(config)
 
 
 @precondition()
 async def user_memory_retrieval_enabled(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
+    user: UserIdentity | None = None,
 ) -> bool:
-    """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(
-        config, has_user=start_event.user is not None
-    )
+    """Precondition to check if user memory retrieval is enabled and this run has an identity to read for."""
+    return check_user_memory_retrieval_enabled(config, has_user=user is not None)
 
 
 @precondition()
@@ -180,28 +190,22 @@ async def user_memory_storage_enabled(
 @precondition()
 async def memory_ready_for_chat_history(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
+    user: UserIdentity | None = None,
     user_memory_event: RetrieveUserMemoryEvent | None = None,
     org_memory_event: RetrieveOrganizationMemoryEvent | None = None,
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
-    return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
-        config, start_event.user is not None, user_memory_event, org_memory_event
-    )
+    return check_memory_ready_for_chat_history(config, user is not None, user_memory_event, org_memory_event)
 
 
 @precondition()
 async def memory_added_to_chat_history(
     config: ExpertRAGAgentConfig,
-    start_event: UserMessageEvent | RAGStartEvent,
-    clear: NotAMetaQuestionEvent | None = None,
+    user: UserIdentity | None = None,
     memory_history_event: AddMemoryToChatHistoryEvent | None = None,
 ) -> bool:
-    """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
-        config, start_event.user is not None, memory_history_event
-    )
+    """Precondition to ensure memory has been added to chat history when a memory source is enabled."""
+    return check_memory_added_to_chat_history(config, user is not None, memory_history_event)
 
 
 @precondition()
@@ -344,14 +348,15 @@ class ExpertRAGAgent(Agent):
     )
     async def retrieve_user_memory_step(
         self,
-        event: UserMessageEvent | RAGStartEvent,
+        event: StandaloneQuestionCondenserEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
-        """Retrieve user memories for personalized context."""
+        """Retrieve user memories for personalized context, searching with the condensed question (#1753)."""
         return await do_retrieve_user_memory(
-            event=event,
+            query=event.condensed_question,
+            user_id=start_event.user.id,
             memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
         )
@@ -364,15 +369,18 @@ class ExpertRAGAgent(Agent):
     )
     async def retrieve_organization_memory_step(
         self,
-        event: UserMessageEvent | RAGStartEvent,
+        event: StandaloneQuestionCondenserEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveOrganizationMemoryEvent:
-        """Retrieve organization memories for expert knowledge context."""
+        """Retrieve organization memories for expert knowledge context, searching with the condensed question."""
         assert agent_config.org_memory is not None  # precondition enforces this
+        requested = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         return await do_retrieve_organization_memory(
-            event=event,
+            query=event.condensed_question,
+            requested_namespaces=requested,
+            user_id=start_event.user.id if start_event.user else None,
             org_memory=agent_config.org_memory,
             memory=memory,
         )
@@ -385,15 +393,22 @@ class ExpertRAGAgent(Agent):
     )
     async def add_memory_to_chat_history_step(
         self,
-        user_message_event: UserMessageEvent | RAGStartEvent,
+        chat_history_event: LimitChatHistoryEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         user_memory_event: RetrieveUserMemoryEvent | None,
         org_memory_event: RetrieveOrganizationMemoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
-        _clear: NotAMetaQuestionEvent | None = None,
     ) -> AddMemoryToChatHistoryEvent:
-        """Extend chat history with memory context (user and/or organization)."""
-        chat_history = user_message_event.messages
+        """Extend the limited chat history with memory context (user and/or organization).
+
+        Re-limited before it leaves this step, for the reasons spelled out on `RAGAgent`'s copy: every
+        consumer reads `extended_history` unchecked, and `limit_chat_history_with_context` reserves system
+        messages rather than trimming them. The memory blocks are what gets dropped when the result does not
+        fit, matching the pre-#1753 order.
+        """
+        # The extend helpers mutate in place; other steps read limited_history off the same event instance.
+        chat_history = [*chat_history_event.limited_history]
 
         # Add user memory first (more personal context)
         if agent_config.user_memory.enable_user_memory_retrieval and user_memory_event is not None:
@@ -401,7 +416,7 @@ class ExpertRAGAgent(Agent):
                 chat_history=chat_history,
                 memories=user_memory_event.memories,
                 relations=user_memory_event.relations,
-                user=user_message_event.user,
+                user=start_event.user,
                 t=t,
             )
 
@@ -413,24 +428,26 @@ class ExpertRAGAgent(Agent):
                 t=t,
             )
 
-        return AddMemoryToChatHistoryEvent(extended_history=chat_history)
+        return AddMemoryToChatHistoryEvent(
+            extended_history=limit_chat_history(
+                chat_history=chat_history,
+                number_of_input_tokens=agent_config.number_of_input_tokens,
+            )
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
-        precondition=memory_added_to_chat_history,
+        precondition=passed_meta_question_gate,
     )
     async def limit_chat_history_step(
         self,
         user_event: UserMessageEvent | RAGStartEvent,
-        memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
         _clear: NotAMetaQuestionEvent | None = None,
     ) -> LimitChatHistoryEvent:
-        # Use extended history if memory was added, otherwise use original messages
-        messages = memory_history_event.extended_history if memory_history_event is not None else user_event.messages
-        return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
+        return do_limit_chat_history(user_event.messages, agent_config.number_of_input_tokens)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
@@ -464,7 +481,7 @@ class ExpertRAGAgent(Agent):
         user: UserIdentity,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content,
+            event.condensed_question,
             agent_config.few_shot_guard_examples,
             agent_config.task_llm,
             displayer,
@@ -514,7 +531,7 @@ class ExpertRAGAgent(Agent):
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
-            condense_event.condensed_chat_message.content,
+            condense_event.condensed_question,
             agent_config.reranking_config,
             displayer,
             t,
@@ -540,6 +557,7 @@ class ExpertRAGAgent(Agent):
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.description"),
         icon="mage:check-circle",
+        precondition=memory_added_to_chat_history,
     )
     async def context_sufficient_guard_step(
         self,
@@ -550,11 +568,17 @@ class ExpertRAGAgent(Agent):
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         chat_history_event: LimitChatHistoryEvent,
+        memory_history_event: AddMemoryToChatHistoryEvent | None,
         run_context: RunContext,
         user: UserIdentity,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+        chat_history = (
+            memory_history_event.extended_history
+            if memory_history_event is not None
+            else chat_history_event.limited_history
+        )
         return await do_context_sufficient_guard(
-            user_query_event.condensed_chat_message.content,
+            user_query_event.condensed_question,
             event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
@@ -562,7 +586,7 @@ class ExpertRAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
-            chat_history=chat_history_event.limited_history,
+            chat_history=chat_history,
             user=user,
         )
 
@@ -578,13 +602,19 @@ class ExpertRAGAgent(Agent):
         self,
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
+        memory_history_event: AddMemoryToChatHistoryEvent | None,
         _: ContextSufficientAcceptEvent | None,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
+        chat_history = (
+            memory_history_event.extended_history
+            if memory_history_event is not None
+            else chat_history_event.limited_history
+        )
         return do_limit_chat_history_with_context(
             context_event.context_message,
-            chat_history_event.limited_history,
+            chat_history,
             start_event.last_user_message,
             agent_config.llm.token_counter,
             agent_config.number_of_input_tokens,
@@ -650,6 +680,7 @@ class ExpertRAGAgent(Agent):
     async def forward_to_expert_asking_agent_step(
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
+        condense_event: StandaloneQuestionCondenserEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -672,7 +703,7 @@ class ExpertRAGAgent(Agent):
             agent_class=agent_config.expert_escalation.agent.agent_class,
             agent_id=agent_config.expert_escalation.agent.agent_id,
             start_event=AskExpertStartEvent(
-                question_to_expert=user_message_event.user_query,
+                question_to_expert=condense_event.condensed_question,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
                 org_memory_namespace=ExpertRAGAgent._resolve_expert_write_namespace(
@@ -786,22 +817,29 @@ class ExpertRAGAgent(Agent):
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
         description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.description"),
         icon="mage:message",
+        precondition=memory_added_to_chat_history,
     )
     async def respond_with_llm_step(
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
+        memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity,
     ) -> LLMEvent:
+        chat_history = (
+            memory_history_event.extended_history
+            if memory_history_event is not None
+            else limited_history_without_context.limited_history
+        )
         # Use as_stop_step=False to return LLMEvent (not LLMStopEvent)
         # This allows store_user_memory_step to run before the final stop_step
         return await do_respond_with_llm(
             event,
-            limited_history_without_context.limited_history,
+            chat_history,
             guard_config.context_insufficient_prompt,
             agent_config.system_prompt,
             agent_config.llm,
@@ -853,6 +891,7 @@ class ExpertRAGAgent(Agent):
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
         llm_event: LLMEvent,
+        condense_event: StandaloneQuestionCondenserEvent,
         memory: AgentMemory,
         topic: AgentInstanceTopic,
         agent_config: ExpertRAGAgentConfig,
@@ -861,19 +900,23 @@ class ExpertRAGAgent(Agent):
         """
         Store new user memories from the conversation.
 
+        The payload is the condensed question plus the answer — never the final LLM input, whose USER-role
+        RAG context and client-augmented message would feed document text into fact extraction (#1753).
+
         Inline (default): write via mem0 and return the result event. Async (issue #1179): delegate the write
         to the `MemoryWriterAgent` so the chat run finalizes as soon as the answer is ready.
         """
+        messages = build_memory_conversation(condense_event, llm_event)
         if agent_config.user_memory.enable_async_memory_storage:
             return build_memory_storage_request(
                 user=user_message_event.user,
-                messages=llm_event.chat_messages,
+                messages=messages,
                 topic=topic,
                 agent_config=agent_config,
                 locale=t.locale,
             )
         memory_added = await memory.add_user_memory(
-            messages=llm_event.chat_messages,
+            messages=messages,
             user_id=user_message_event.user.id,
             thread_id=topic.thread_id,
             display_id=topic.display_id,

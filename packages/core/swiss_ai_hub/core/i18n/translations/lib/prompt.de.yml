@@ -13,7 +13,8 @@ condenser:
     1. **Kontext aus Verlauf auflösen**: Ersetze Pronomen oder Referenzen, die sich auf frühere Nachrichten im Chatverlauf beziehen, durch die konkreten Begriffe aus dem Verlauf.
     2. **Bild-Referenzen**: NUR wenn der Benutzer explizit auf ein Bild verweist (z.B. "Was ist **das**?", "Was siehst du **hier**?"), ersetze das Pronomen durch eine kurze Beschreibung des sichtbaren Objekts.
     3. **Keine neuen Informationen hinzufügen**: Füge NIEMALS Details hinzu, die nicht in der ursprünglichen Frage enthalten sind. Die umformulierte Frage muss semantisch äquivalent zur ursprünglichen sein.
-    4. **Output**: Gib NUR den neuen Satz aus.
+    4. **Persönliche Aussagen beibehalten**: Wenn die Nachricht des Benutzers eine Tatsache über ihn selbst enthält (z.B. "Ich bin Vegetarier — was steht auf der Speisekarte?"), behalte diese Tatsache in der eigenständigen Frage bei (z.B. "Was steht für einen Vegetarier auf der Speisekarte?"). Dies gilt nur für kurze persönliche Aussagen — übernimm niemals umfangreiche Inhalte wie eingefügte Dokumente, Logs oder Code in die Frage.
+    5. **Output**: Gib NUR den neuen Satz aus.
     </instructions>
 rag:
   context_prompt: |

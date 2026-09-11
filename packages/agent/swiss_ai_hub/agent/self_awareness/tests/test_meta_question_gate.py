@@ -37,16 +37,29 @@ def test_gate_lets_programmatic_starts_through():
 
 def test_detection_is_the_only_step_firing_on_a_raw_chat_message_among_entry_steps():
     """
-    The 4 normal entry steps must wait on NotAMetaQuestionEvent (the gate), so detection is the
+    The sole normal entry step must wait on NotAMetaQuestionEvent (the gate), so detection is the
     sole gatekeeper of a raw chat message. This is the structural guard against the race condition.
+
+    Since #1753 the memory steps hang off the condenser instead of the start event, so
+    limit_chat_history_step is the only raw-chat entry left — everything else is gated transitively.
     """
     gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(NotAMetaQuestionEvent)}
-    assert gated == {
-        "retrieve_user_memory_step",
-        "retrieve_organization_memory_step",
-        "add_memory_to_chat_history_step",
-        "limit_chat_history_step",
-    }
+    assert gated == {"limit_chat_history_step"}
+
+
+def test_memory_steps_are_gated_transitively_through_the_condenser():
+    """
+    The memory steps dropped their explicit `_clear` dependency (#1753); what keeps them from racing
+    detection is that they require events only reachable through the gated limit_chat_history_step.
+    A refactor that re-anchors them on the start event alone must restore the explicit gate.
+    """
+    from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+
+    condenser_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(StandaloneQuestionCondenserEvent)}
+    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= condenser_gated
+
+    limit_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(LimitChatHistoryEvent)}
+    assert "add_memory_to_chat_history_step" in limit_gated
 
 
 def test_detect_step_does_not_run_on_programmatic_start():

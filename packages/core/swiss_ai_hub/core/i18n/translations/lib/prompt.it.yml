@@ -13,7 +13,8 @@ condenser:
     1. **Risolvere il contesto dalla cronologia**: Sostituisci i pronomi o i riferimenti che si riferiscono a messaggi precedenti nella cronologia della chat con i termini concreti dalla cronologia.
     2. **Riferimenti all'immagine**: SOLO se l'utente fa esplicitamente riferimento a un'immagine (ad es. "Cos'è **questo**?", "Cosa vedi **qui**?"), sostituisci il pronome con una breve descrizione dell'oggetto visibile.
     3. **Non aggiungere nuove informazioni**: Non aggiungere MAI dettagli che non sono presenti nella domanda originale. La domanda riformulata deve essere semanticamente equivalente all'originale.
-    4. **Output**: Restituisci SOLO la nuova frase.
+    4. **Preservare le dichiarazioni personali**: Se il messaggio dell'utente contiene un fatto che riguarda l'utente stesso (ad es. "Sono vegetariano — cosa c'è nel menù?"), mantieni questo fatto nella domanda autonoma (ad es. "Come vegetariano, cosa c'è nel menù?"). Questo vale solo per brevi dichiarazioni personali — non riportare mai contenuti voluminosi come documenti incollati, log o codice nella domanda.
+    5. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
 rag:
   context_prompt: |
