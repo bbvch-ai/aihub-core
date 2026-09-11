@@ -27,6 +27,11 @@ class SuiteService:
             if user_service_access == AccessLevel.ACCESS_DENIED:
                 continue
 
+            if controller.suite_visibility_permission and not access_checker.has_access(
+                controller.suite_visibility_permission
+            ):
+                continue
+
             if controller.additionally_required_permission:
                 user_special_access = access_checker.access_level(controller.additionally_required_permission)
                 if user_special_access == AccessLevel.ACCESS_DENIED:

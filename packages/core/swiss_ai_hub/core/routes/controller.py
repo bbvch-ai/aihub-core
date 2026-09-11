@@ -56,6 +56,14 @@ class Controller(abc.ABC):
     description = LocaleString.from_i18n_path("lib.controllers.base.description")
     icon = "mage:server"  # https://icon-sets.iconify.design/
 
+    suite_visibility_permission: str | None = None
+    """Gates listing this controller's app in the suite navigation — and nothing else.
+
+    Unlike ``additionally_required_permission`` this is never consulted at request time. A controller whose
+    management routes are admin-guarded per resource keeps serving its user-level routes to everyone holding
+    them; those users simply are not offered the management app they could not use.
+    """
+
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
         self.auth: AuthHandler = auth
