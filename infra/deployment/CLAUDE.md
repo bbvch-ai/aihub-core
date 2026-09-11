@@ -191,7 +191,7 @@ routes through Traefik.
 | Network        | Purpose                           | Internal | ICC | Key Services                                                  |
 | -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
 | `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
+| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
 | `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
 | `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |

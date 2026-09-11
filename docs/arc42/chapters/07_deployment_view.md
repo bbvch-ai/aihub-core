@@ -36,7 +36,6 @@ graph TB
             MinerU2["MinerU :8002 (GPU only)"]
             Pres["Presidio :3001"]
             OTELc["OTEL Collector"]
-            Jupy["Jupyter :8888 (retained)"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
         end
@@ -123,9 +122,8 @@ routes requests to backend services. Services that need to be directly reachable
 web UI, SeaweedFS S3 gateway) attach to this network.
 
 The **backend** network connects application services that process requests but should not be directly reachable from
-outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Jupyter (retained;
-no longer the OpenWebUI code path), and all agents and pipeline workers communicate over this network. Traefik also
-attaches to backend so it can forward proxied requests.
+outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, and all agents and
+pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied requests.
 
 The **data** network connects databases, caches, and the message broker: PostgreSQL (both instances), FerretDB, Milvus,
 Neo4j, ClickHouse, NATS, Valkey, and etcd. Services that need database access (API, Langfuse, Dagster, LiteLLM) attach

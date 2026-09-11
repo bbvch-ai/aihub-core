@@ -245,12 +245,6 @@
       "notes": "Permissive license, used by Langfuse for analytics"
     },
     {
-      "service": "jupyter",
-      "license": "BSD-3-Clause",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
       "service": "litellm",
       "license": "MIT",
       "status": "✅",
@@ -309,12 +303,6 @@
       "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
-    },
-    {
-      "service": "minimal-notebook",
-      "license": "BSD-3-Clause",
-      "status": "✅",
-      "notes": "Jupyter base image"
     },
     {
       "service": "opentelemetry-collector-contrib",
