@@ -27,6 +27,7 @@ from swiss_ai_hub.core.events.agent import (
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryRequestedEvent,
     UserMessageEvent,
+    UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
@@ -35,6 +36,8 @@ from swiss_ai_hub.core.generative_ai import (
     OrgMemoryNamespaceResolver,
     OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
+    UploadedFileRetriever,
+    UploadedFileRetrieverConfig,
     combine_nodes_in_order,
     condense_standalone_question,
     context_sufficient_guard,
@@ -249,15 +252,49 @@ async def do_retrieve(
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
     user: UserIdentity | None,
+    uploaded_files: list[UserUploadedFile] | None = None,
 ) -> RetrieverEvent:
-    """Retrieve nodes from all sources and return RetrieverEvent."""
+    """Retrieve nodes from the configured knowledge sources and from what the user attached to the chat.
+
+    The two sets are merged unranked on purpose: the chat client indexes with COSINE while the platform's
+    own collections use IP, so their scores are not on one scale and sorting by them would order the
+    merged set wrongly. The reranker downstream is what puts them in order.
+    """
     if isinstance(event, StandaloneQuestionCondenserEvent):
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
-    nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
+    knowledge_nodes, uploaded_nodes = await asyncio.gather(
+        retrieve_from_all_sources(query, runtime_configs, t, user),
+        do_retrieve_uploaded_files(query, uploaded_files, runtime_configs, t, user),
+    )
+    nodes_with_score = [node.to_llama_index_node_with_score() for node in [*uploaded_nodes, *knowledge_nodes]]
     return RetrieverEvent.from_nodes(nodes_with_score)
+
+
+async def do_retrieve_uploaded_files(
+    query: str,
+    uploaded_files: list[UserUploadedFile] | None,
+    runtime_configs: list[RetrievalRuntimeConfig],
+    t: LocaleHandler,
+    user: UserIdentity | None,
+) -> list[IngestedNode]:
+    """Retrieve from the collections the chat client built when the user uploaded the files.
+
+    The embedding model is taken from the agent's first configured retriever rather than from a setting of
+    its own: a query has to be embedded by the model that produced the stored vectors, and in every
+    deployment that is the single model this platform hands to the chat client. An agent with no retriever
+    configured has no model to borrow, so its uploads stay unread — it is not doing retrieval either way.
+    """
+    files = [file for file in uploaded_files or [] if file.source_file_id]
+    if not files or not runtime_configs:
+        return []
+
+    retriever = UploadedFileRetriever(
+        config=UploadedFileRetrieverConfig(embed_model=runtime_configs[0].config.embed_model),
+        files=files,
+    )
+    return await retriever.retrieve(query, t, user)
 
 
 async def do_rerank_nodes(
