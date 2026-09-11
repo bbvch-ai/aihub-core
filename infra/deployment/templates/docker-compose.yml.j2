@@ -2333,6 +2333,14 @@ services:
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
+      {#- Model that synthesizes OpenWebUI's "Merge Responses" output. Raw LiteLLM name, exactly like
+          OPENWEBUI_CONVERSATION_METADATA_MODEL below: the agent pipeline sends the merge straight to the
+          AI-Hub model gateway rather than through OpenWebUI's own registry, so this must NOT be the
+          `aihub-model-…` workspace id used for TASK_MODEL. Derived from `default_model` and never from
+          `task_model`, whose `/`→`-` substitution is not reversible. Same silent-failure class as
+          TASK_MODEL (see the note above it): a role without `aihub.user.model.<capability>.<name>` for
+          this model gets a visible warning in place of a merged answer. #}
+      AIHUB_MERGE_MODEL: {{ default_model }}
       AIHUB_REQUEST_TIMEOUT: 60
       OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
