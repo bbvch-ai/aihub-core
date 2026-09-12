@@ -1601,7 +1601,10 @@ class FileProcessingService:
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
         owui_file_id = file.get("id", "")
-        file_obj = Files.get_file_by_id(owui_file_id)
+        # Awaited: Open WebUI made this coroutine-returning, and the un-awaited call raised
+        # ``'coroutine' object has no attribute 'meta'`` inside the per-file try, so every upload was
+        # dropped and the agent received an empty file list no matter what the user attached.
+        file_obj = await Files.get_file_by_id(owui_file_id)
 
         if not file_obj:
             logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
