@@ -238,10 +238,14 @@ def load_template(env, template_path):
 
 
 def generate_config(template, context, output_path):
-    """Render template and write to file"""
+    """Render template and write to file.
+
+    ``newline="\\n"`` because these files are read inside Linux containers: generating on Windows otherwise
+    writes CRLF, and ``sh`` then fails on the shebang of every entrypoint script with "Illegal option -".
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = template.render(context)
-    output_path.write_text(rendered, encoding="utf-8")
+    output_path.write_text(rendered, encoding="utf-8", newline="\n")
 
 
 def generate_keycloak_realm(env, context, output_path):
