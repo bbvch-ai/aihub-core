@@ -122,4 +122,35 @@ the answer.
 | R.2 | Same query on production | same |
 | R.3 | `select distinct f->>'type' from chat, jsonb_array_elements((chat::jsonb)->'files') f;` | only `file` is safe; `collection` needs handling first |
 | R.4 | Add `file_context` and `web_search` to the Open WebUI upgrade checklist | both rely on v0.9.5 internals |
-| R.5 | Decide on `RAG_FILE_MAX_COUNT` | now 20 and global. Agents retrieve, but the plain-LLM path still inlines: 20 policy-sized PDFs measure ~70k–93k tokens, above Apertus-70B's 65k input limit |
+| R.5 | Re-measure before raising `RAG_FILE_MAX_COUNT` | the default stays 4; an admin can raise it at runtime, or clear it to unlimited. See the note below |
+
+## Raising the attachment cap
+
+`RAG_FILE_MAX_COUNT` defaults to 4. It is a `PersistentConfig`, so an admin can raise it at runtime from the
+Open WebUI admin UI — or clear it, which removes the limit entirely. The cap is a **frontend guard only**: the
+backend never enforces it, it is exposed through `/api/config` as `file.max_count`, and the bundle blocks the
+attach. There is no per-model variant of it; the frontend reads one global value regardless of the selected
+model.
+
+So the question is not what the default should be, but whether both paths survive an admin raising it.
+
+**Agents: yes, measured.** D.1 and D.2 ran with 20 attachments — 20 nodes from 20 distinct files, 94.5 s, zero
+exceptions. Agents retrieve rather than inline, so the cost of another file is one more vector search.
+
+**Plain LLM: yes at the sizes measured.** This path still inlines every attachment, so the concern was the
+model's input limit. Measured against `text-generation/Apertus-70B-Instruct-2509`, which declares the smallest
+`max_input_tokens` of any configured model (65,536):
+
+| Probe | Prompt | Result |
+| --- | --- | --- |
+| Summarise a long repetitive document | ~106k tokens | HTTP 200 in 21.3 s, correct summary |
+| Two unique markers, one at the very start and one at the very end | ~98k tokens | HTTP 200 in 16.5 s, **both** returned |
+
+The second probe is the one that matters: repetitive filler cannot distinguish "read it all" from "silently
+truncated and summarised the first part", and silent truncation is the dangerous failure — a confident answer
+missing half its evidence. Both markers came back, so the prompt was processed end to end at roughly 1.5x the
+declared limit.
+
+Conclusion: `max_input_tokens` in LiteLLM's `model_info` is routing and cost metadata, **not an enforced
+ceiling**. Do not treat it as one. If a future deployment needs a hard guarantee, measure the provider first —
+these numbers are for this stack's providers at these sizes, and nothing was measured above ~106k tokens.
