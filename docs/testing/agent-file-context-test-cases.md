@@ -1,0 +1,125 @@
+# Agent file context — test cases
+
+Coverage for the change that stops Open WebUI inlining attachments into agent prompts and has agents read the vectors
+the chat client already built. Fixes [aihub-core-private#147](https://github.com/bbvch-ai/aihub-core-private/issues/147).
+
+Groups A and B run with `pytest` and need no stack. Groups C and D are end-to-end on the dev stack.
+
+**Measurement rule for C and D:** read results from `aihub.agent_events` in FerretDB, never from the browser. Driving
+`/api/chat/completions` with a fabricated `chat_id` makes Open WebUI raise inside its own event emitter
+(`socket/main.py`, the `source`/`citation` branch dereferences a chat row that does not exist), which leaves the
+response open. A run is finished when its events contain `RAGSuccessStopEvent`, `RAGFailureStopEvent`, `LLMStopEvent`
+or `ExceptionEvent`.
+
+Before running group A or B: **stop any locally running RAG agent.** `make test` in `packages/agent` starts real
+`RAGAgent` runners on the same NATS queue group (`agent_runner_RAGAgent`), so a local agent and the test runners take
+each other's events — six RAGAgent tests fail and live chats stall at two events.
+
+## A · Unit — provisioning, retriever, wiring
+
+| # | Case | Asserts |
+| --- | --- | --- |
+| A.1 | Agent workspace model is provisioned with capabilities | `{web_search: false, file_context: false}` |
+| A.2 | Plain LLM model carries no capabilities | stays `null` — structural guard for goal 1 |
+| A.3 | Drift: missing capability back-filled, admin-set capability (vision) preserved | `_compute_model_diff` iterates desired keys generically |
+| A.4 | `source_file_id` is optional, survives serialisation round-trip, rejects a non-UUID4 | `UserUploadedFile` |
+| A.5 | Collection name matches Open WebUI's sanitisation | `-` → `_`, prefix `open_webui_file_` |
+| A.6 | Collection does not exist yet → returns empty, does not raise | upload-then-ask-immediately is normal |
+| A.7 | File without `source_file_id` is skipped | nothing to read |
+| A.8 | 20 files → 20 searches, all issued | `asyncio.gather` fan-out |
+| A.9 | A hit maps to a node with filename, document_id, namespace, score | `_to_ingested_node` |
+| A.10 | No attachments → knowledge retrieval only, no retriever constructed | no behaviour change without files |
+| A.11 | Agent with no configured retriever leaves uploads unread | rather than guessing an embedding model |
+| A.12 | Embedding model is taken from the agent's first retriever | query and stored vectors must share a model |
+| A.13 | Uploaded chunks lead the merged result | attachment enters the prompt ahead of the corpus |
+| A.14 | An attachment that yielded no node is named to the user | `agent.thought.attachments_unreadable` |
+| A.15 | A readable attachment produces no such message | no false alarms |
+| A.16 | Knowledge retrieval still runs when no file is attached | regression guard |
+
+## B · No side effects
+
+| # | Case | Asserts |
+| --- | --- | --- |
+| B.1 | `packages/core` suite | 1724 passed |
+| B.2 | `packages/agent` suite | 637 passed, 3 skipped |
+| B.3 | Meta-question gate unchanged | `test_self_awareness_wiring.py` |
+| B.4 | User and organization memory unchanged | `test_do_retrieve_memory.py` |
+| B.5 | Non-RAG agents still import and keep their step count | LLMWrapping, FewShot, NamespaceSelection, Retrieval, Imap, EmailClassification |
+| B.6 | `expert_rag_agent` suite | 4 passed — second call site of `do_retrieve` |
+| B.7 | `make pr-ready` clean on every modified scope | format, lint, compose generation, license check |
+
+## C · The five goals, end to end
+
+| # | Goal | Case | Result |
+| --- | --- | --- | --- |
+| C.1 | 1 | Plain LLM + 1 file, 5 questions | 5/5 HTTP 200, every answer grounded in the file |
+| C.2 | 1 | Plain LLM + a 44-chunk document, ask about a section at the very end | answers §6.1 and §2.3.3 — full context not truncated |
+| C.3 | 2 | Agent, no file, question only the knowledge base answers | 11 nodes from the corpus, all five departments correct |
+| C.4 | 3 | Agent + 1 file | quotes the chunk verbatim, guard reports sufficient, no escalation |
+| C.5 | 3 | Agent + 2 files, question only the knowledge base answers | uploads contribute 21 of 33 nodes yet the answer comes only from the corpus |
+| C.6 | 3 | Bridging question spanning file and knowledge base | one answer, both sources cited separately by name |
+| C.7 | 4 | Turn 1 file A, turn 2 add file B, ask about B | cites B, never A — this is #147 |
+| C.8 | 4 | Ask back about A while B is still attached | cites A, never B, though B contributes 16 of 33 nodes |
+| C.9 | 5 | `RetrieverEvent` labels each chunk | `source`, `source_origin=user_upload`, `namespace`, `document_title` |
+| C.10 | 5 | No `ExceptionEvent` in any scenario above | zero across every passing run |
+
+C.5 through C.8 must run against a **populated** knowledge base. With an empty corpus the only competitor for the
+targeted file is the other attachment, which is a weaker test.
+
+## D · Scale and edges
+
+| # | Case | Result |
+| --- | --- | --- |
+| D.1 | 20 files attached to one chat | 20 nodes from 20 distinct files, 94.5 s, zero exceptions |
+| D.2 | 20 files, ask about the 17th | cites `Merkblatt 17`, `VHS-1017`, `34 Arbeitstage`; no bleed from the other 19 |
+| D.3 | File uploaded but not yet indexed, attached beside a good file | skipped quietly, good file still answers, nothing invented |
+| D.4 | Corrupt PDF that cannot be parsed | user sees `Could not read these attachments yet, answering without them: …` and the answer still lands |
+| D.5 | Knowledge collection attached in the chat | warning names the collection instead of dropping it silently |
+| D.6 | Agent with no retriever configured + an attachment | upload left unread, no error |
+| D.7 | Ten-turn conversation with files interleaved | see below |
+
+### D.7 in detail
+
+Files enter at turns 1, 4 and 7 and stay attached. Ten turns, zero `ExceptionEvent`.
+
+| turn | files | seconds | turn | files | seconds |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 20.0 | 6 | 2 | 27.6 |
+| 2 | 1 | 21.9 | 7 | 3 | 29.2 |
+| 3 | 1 | 18.3 | 8 | 3 | 26.0 |
+| 4 | 2 | 29.8 | 9 | 3 | 23.8 |
+| 5 | 2 | 29.4 | 10 | 3 | 30.0 |
+
+No latency growth with conversation length. The single step is at turn 4, where the second file is attached — that is
+the cost of one more vector search, not accumulation. Within a fixed file count the numbers are flat or fall.
+
+No memory leak: agent RSS 349.5 MB → 186.3 MB, Valkey `steps:*` unchanged at 8 (per-run state is cleared at teardown),
+`step_markers:*` 188 → 198. The markers grow by exactly one per completed run and are **meant** to outlive teardown, so
+a redelivered terminal event is a no-op.
+
+### D.7 #147 checkpoints
+
+Run these as their own conversation with a real alternating history — user turn, assistant answer, user turn. Sending
+only user messages makes the model treat the thread as a list of unanswered questions and summarise all of them, which
+invalidates the check.
+
+| turn | attached | asked about | must cite | must not cite | result |
+| --- | --- | --- | --- | --- | --- |
+| 1 | A | A | A | — | pass |
+| 2 | A, B | B | B | A | pass |
+| 3 | A, B, C | C | C | A, B | pass — C won from **1 of 34 nodes** |
+| 4 | A, B, C | A | A | B, C | pass |
+
+A = `bbv_AI_Guidelines.pdf` (5 chunks), B = `Spesenreglement_bbv.pdf` (44 chunks), C = `merkblatt_17_Elternzeit.md`
+(1 chunk). Turn 3 is the strongest evidence: the newly attached file supplies 3% of the retrieved nodes and still owns
+the answer.
+
+## Before rollout
+
+| # | Check | Why |
+| --- | --- | --- |
+| R.1 | `select count(*) from knowledge;` on the staging openwebui database | `0` is safe. Above `0` means someone uses Open WebUI Knowledge, which agents will not read |
+| R.2 | Same query on production | same |
+| R.3 | `select distinct f->>'type' from chat, jsonb_array_elements((chat::jsonb)->'files') f;` | only `file` is safe; `collection` needs handling first |
+| R.4 | Add `file_context` and `web_search` to the Open WebUI upgrade checklist | both rely on v0.9.5 internals |
+| R.5 | Decide on `RAG_FILE_MAX_COUNT` | now 20 and global. Agents retrieve, but the plain-LLM path still inlines: 20 policy-sized PDFs measure ~70k–93k tokens, above Apertus-70B's 65k input limit |
