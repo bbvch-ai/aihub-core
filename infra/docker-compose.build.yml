@@ -1887,10 +1887,7 @@ services:
       RAG_FULL_CONTEXT: true
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: true
-      # An agent reads attachments out of the chat client's own vector collections, so a large batch costs it
-      # a vector search per file rather than a place in the prompt. Four was the ceiling while attachments
-      # could only be inlined.
-      RAG_FILE_MAX_COUNT: 20
+      RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
