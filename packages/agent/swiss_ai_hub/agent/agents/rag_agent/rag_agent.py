@@ -469,9 +469,7 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
-        return await do_retrieve(
-            event, runtime_configs, t, user, uploaded_files=start_event.files, displayer=displayer
-        )
+        return await do_retrieve(event, runtime_configs, t, user, uploaded_files=start_event.files, displayer=displayer)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),

@@ -136,7 +136,9 @@ async def test_uploaded_chunks_lead_the_merged_result():
     )
 
     with (
-        patch(f"{_MODULE}.retrieve_from_all_sources", AsyncMock(return_value=[_node("from knowledge base", "corpus.pdf")])),
+        patch(
+            f"{_MODULE}.retrieve_from_all_sources", AsyncMock(return_value=[_node("from knowledge base", "corpus.pdf")])
+        ),
         patch(f"{_MODULE}.do_retrieve_uploaded_files", AsyncMock(return_value=[_node("from upload", "handbook.pdf")])),
     ):
         retriever_event = await do_retrieve(event, [_runtime_config()], LocaleHandler(), None, uploaded_files=[_file()])
