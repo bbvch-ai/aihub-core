@@ -2128,6 +2128,34 @@ class Pipe:
             logger.warning(f"Failed to check open chat HITL: {e}")
         return None
 
+    @staticmethod
+    async def _warn_about_attached_collections(
+        files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"],
+        event_emitter: Annotated[Any, "Event emitter function"],
+    ) -> None:
+        """Say so when a knowledge collection is attached, because the agent will not read it.
+
+        An agent answers from the knowledge bases configured on its own profile; a collection attached in
+        the chat carries no file id to forward, so it reaches ``_process_single_file`` as a lookup that
+        finds nothing. Without this the user gets an answer that quietly ignores what they attached.
+        """
+        collections = [file.get("name") or file.get("id", "") for file in files or [] if file.get("type") == "collection"]
+        if not collections:
+            return
+
+        await event_emitter(
+            {
+                "type": "notification",
+                "data": {
+                    "type": "warning",
+                    "content": (
+                        "This agent answers from its own configured knowledge bases. "
+                        f"Attached collections are not read: {', '.join(collections)}"
+                    ),
+                },
+            }
+        )
+
     async def pipe(
         self,
         body: Annotated[dict[str, Any], "Request body"],
@@ -2189,6 +2217,7 @@ class Pipe:
 
                 # Process files — upload to agent's dedicated bucket
                 files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
+                await self._warn_about_attached_collections(__files__, __event_emitter__)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
