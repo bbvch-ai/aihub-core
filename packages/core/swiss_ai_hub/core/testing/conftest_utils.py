@@ -2,9 +2,14 @@ import pytest
 
 
 def mark_tests_by_directory(items: list[pytest.Item]) -> None:
-    """Automatically assigns ``unit`` or ``integration`` markers based on the test file's directory."""
+    """Automatically assigns ``unit`` or ``integration`` markers based on the test file's directory.
+
+    Matched on the POSIX spelling of the path because ``fspath`` separates with backslashes on Windows:
+    the literal ``/tests/unit/`` never matched there, so ``pytest -m unit`` silently deselected every test
+    that did not also carry an explicit marker.
+    """
     for item in items:
-        path = str(item.fspath)
+        path = item.path.as_posix()
         if "/tests/unit/" in path:
             item.add_marker(pytest.mark.unit)
         elif "/tests/integration/" in path:

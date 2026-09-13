@@ -12,6 +12,7 @@ from swiss_ai_hub.core.generative_ai.retrievers.base_retriever import BaseRetrie
 from swiss_ai_hub.core.generative_ai.retrievers.uploaded_file_retriever_config import UploadedFileRetrieverConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
+from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     DOCUMENT_ID,
@@ -21,7 +22,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     SOURCE,
     SOURCE_ORIGIN,
 )
-from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 
 logger = logging.getLogger(__name__)
 
