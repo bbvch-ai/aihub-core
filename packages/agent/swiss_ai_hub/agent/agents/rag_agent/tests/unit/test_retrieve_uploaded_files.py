@@ -92,6 +92,43 @@ async def test_the_query_is_embedded_with_the_agents_own_model():
 
 
 @pytest.mark.asyncio
+async def test_an_attachment_that_yielded_nothing_is_reported_to_the_user():
+    """A vector search has no similarity floor, so no node at all means the file was never readable."""
+    retriever = MagicMock()
+    retriever.retrieve = AsyncMock(return_value=[])
+    displayer = MagicMock()
+    displayer.display_thought = AsyncMock()
+
+    with (
+        patch(f"{_MODULE}.UploadedFileRetriever", return_value=retriever),
+        patch(f"{_MODULE}.UploadedFileRetrieverConfig"),
+    ):
+        await do_retrieve_uploaded_files("q", [_file()], [_runtime_config()], LocaleHandler(), None, displayer)
+
+    displayer.display_thought.assert_awaited_once()
+    assert "handbook.pdf" in displayer.display_thought.await_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_a_readable_attachment_is_not_reported():
+    """The node carries the client's file id as its namespace, which is what marks the file as read."""
+    node = _node("chunk", "handbook.pdf")
+    node.namespace = _FILE_ID
+    retriever = MagicMock()
+    retriever.retrieve = AsyncMock(return_value=[node])
+    displayer = MagicMock()
+    displayer.display_thought = AsyncMock()
+
+    with (
+        patch(f"{_MODULE}.UploadedFileRetriever", return_value=retriever),
+        patch(f"{_MODULE}.UploadedFileRetrieverConfig"),
+    ):
+        await do_retrieve_uploaded_files("q", [_file()], [_runtime_config()], LocaleHandler(), None, displayer)
+
+    displayer.display_thought.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_uploaded_chunks_lead_the_merged_result():
     """The attachment is what the user just pointed at, so it goes into the prompt ahead of the corpus."""
     event = StandaloneQuestionCondenserEvent(

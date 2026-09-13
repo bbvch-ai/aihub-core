@@ -12,3 +12,4 @@ no_few_shot_examples: Es wurden keine Few-Shot-Beispiele konfiguriert und verwen
 reranking_results: Neuordnung der abgerufenen Ergebnisse für bessere Relevanz
 context_sufficient: Genügend Informationen gefunden, um die Frage zu beantworten
 trying_another_retrieval_hop: Mehr Informationen benötigt, suche erneut
+attachments_unreadable: "Diese Anhänge konnten noch nicht gelesen werden, Antwort erfolgt ohne sie: %{filenames}"

@@ -253,6 +253,7 @@ async def do_retrieve(
     t: LocaleHandler,
     user: UserIdentity | None,
     uploaded_files: list[UserUploadedFile] | None = None,
+    displayer: EventDisplayer | None = None,
 ) -> RetrieverEvent:
     """Retrieve nodes from the configured knowledge sources and from what the user attached to the chat.
 
@@ -266,7 +267,7 @@ async def do_retrieve(
         query = event.new_query
     knowledge_nodes, uploaded_nodes = await asyncio.gather(
         retrieve_from_all_sources(query, runtime_configs, t, user),
-        do_retrieve_uploaded_files(query, uploaded_files, runtime_configs, t, user),
+        do_retrieve_uploaded_files(query, uploaded_files, runtime_configs, t, user, displayer),
     )
     nodes_with_score = [node.to_llama_index_node_with_score() for node in [*uploaded_nodes, *knowledge_nodes]]
     return RetrieverEvent.from_nodes(nodes_with_score)
@@ -278,6 +279,7 @@ async def do_retrieve_uploaded_files(
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
     user: UserIdentity | None,
+    displayer: EventDisplayer | None = None,
 ) -> list[IngestedNode]:
     """Retrieve from the collections the chat client built when the user uploaded the files.
 
@@ -294,7 +296,30 @@ async def do_retrieve_uploaded_files(
         config=UploadedFileRetrieverConfig(embed_model=runtime_configs[0].config.embed_model),
         files=files,
     )
-    return await retriever.retrieve(query, t, user)
+    nodes = await retriever.retrieve(query, t, user)
+    await _display_unreadable_attachments(files, nodes, t, displayer)
+    return nodes
+
+
+async def _display_unreadable_attachments(
+    files: list[UserUploadedFile],
+    nodes: list[IngestedNode],
+    t: LocaleHandler,
+    displayer: EventDisplayer | None,
+) -> None:
+    """Tell the user which attachments contributed nothing, instead of answering as if they were never sent.
+
+    A vector search returns its nearest neighbours without a similarity floor, so a file that yielded no node
+    at all is one the chat client has not finished indexing or could not parse — the two cases the user needs
+    to hear about, because the answer they get is about the other files.
+    """
+    if not displayer:
+        return
+
+    read = {node.namespace for node in nodes}
+    unreadable = [file.filename for file in files if file.source_file_id not in read]
+    if unreadable:
+        await displayer.display_thought(t("agent.thought.attachments_unreadable", filenames=", ".join(unreadable)))
 
 
 async def do_rerank_nodes(
