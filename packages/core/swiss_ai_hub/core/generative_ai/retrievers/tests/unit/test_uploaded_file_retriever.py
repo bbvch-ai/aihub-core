@@ -130,6 +130,63 @@ async def test_the_searched_collection_is_the_one_the_client_indexed():
 
 
 @pytest.mark.asyncio
+async def test_attachments_are_ordered_against_each_other_by_score():
+    """Left in gather order the oldest attachment of the thread leads the prompt, which is #147 again.
+
+    Open WebUI forwards every file of the thread on every turn, oldest first, and the downstream combiner
+    groups by document in first-appearance order. These scores all come from one COSINE index and one
+    embedding model, so — unlike the later merge with the knowledge nodes — they are on one scale.
+    """
+    stale = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="stale.pdf")
+    middle = _file(source_file_id="bbbbbbbb-2222-4222-9222-222222222222", filename="middle.pdf")
+    just_attached = _file(source_file_id="cccccccc-3333-4333-a333-333333333333", filename="just-attached.pdf")
+
+    hits_by_collection = {
+        UploadedFileRetriever.collection_name_for(stale.source_file_id): [
+            _hit("stale", distance=0.41),
+            _hit("staler", distance=0.40),
+        ],
+        UploadedFileRetriever.collection_name_for(middle.source_file_id): [_hit("middle", distance=0.55)],
+        UploadedFileRetriever.collection_name_for(just_attached.source_file_id): [_hit("answer", distance=0.72)],
+    }
+    client = MagicMock()
+    client.has_collection.return_value = True
+    client.search.side_effect = lambda **kwargs: [hits_by_collection[kwargs["collection_name"]]]
+
+    retriever = UploadedFileRetriever(_config(), [stale, middle, just_attached])
+    milvus_patch, embed_patch = _patched(client)
+    with milvus_patch, embed_patch:
+        nodes = await retriever.retrieve("q", LocaleHandler())
+
+    assert [node.score for node in nodes] == [0.72, 0.55, 0.41, 0.40]
+    assert nodes[0].source == "just-attached.pdf"
+
+
+@pytest.mark.asyncio
+async def test_a_file_without_scores_sinks_instead_of_leading():
+    """A hit carrying no distance must not sort ahead of a real match just because it compares as nothing."""
+    scored = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="scored.pdf")
+    unscored = _file(source_file_id="bbbbbbbb-2222-4222-9222-222222222222", filename="unscored.pdf")
+
+    unscored_hit = _hit("no distance")
+    unscored_hit.pop("distance")
+    hits_by_collection = {
+        UploadedFileRetriever.collection_name_for(scored.source_file_id): [_hit("real match", distance=0.30)],
+        UploadedFileRetriever.collection_name_for(unscored.source_file_id): [unscored_hit],
+    }
+    client = MagicMock()
+    client.has_collection.return_value = True
+    client.search.side_effect = lambda **kwargs: [hits_by_collection[kwargs["collection_name"]]]
+
+    retriever = UploadedFileRetriever(_config(), [unscored, scored])
+    milvus_patch, embed_patch = _patched(client)
+    with milvus_patch, embed_patch:
+        nodes = await retriever.retrieve("q", LocaleHandler())
+
+    assert [node.source for node in nodes] == ["scored.pdf", "unscored.pdf"]
+
+
+@pytest.mark.asyncio
 async def test_every_attached_file_is_searched():
     """Twenty attachments must all be reachable — one collection per file, searched in parallel."""
     client = _client(hits=[_hit("chunk")])
