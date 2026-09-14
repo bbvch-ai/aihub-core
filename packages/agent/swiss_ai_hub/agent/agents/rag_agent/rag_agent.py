@@ -399,11 +399,20 @@ class RAGAgent(Agent):
         user_event: UserMessageEvent | RAGStartEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> LimitChatHistoryEvent:
+    ) -> LimitChatHistoryEvent | RAGFailureStopEvent:
         # Use extended history if memory was added, otherwise use original messages
         messages = memory_history_event.extended_history if memory_history_event is not None else user_event.messages
-        return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
+        return await do_limit_chat_history(
+            messages,
+            agent_config.number_of_input_tokens,
+            user_event.last_user_message,
+            [agent_config.llm, agent_config.task_llm],
+            displayer,
+            t,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),

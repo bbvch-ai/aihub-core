@@ -38,12 +38,14 @@ from swiss_ai_hub.core.generative_ai import (
     combine_nodes_in_order,
     condense_standalone_question,
     context_sufficient_guard,
+    estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
     limit_chat_history_with_context,
     merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
+    usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -69,13 +71,64 @@ PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
 MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
 
 
-def do_limit_chat_history(
+async def do_limit_chat_history(
     messages: list[ChatMessage],
     number_of_input_tokens: int,
-) -> LimitChatHistoryEvent:
-    """Truncate chat messages to fit within token limit."""
-    limited = limit_chat_history(chat_history=messages, number_of_input_tokens=number_of_input_tokens)
+    last_user_message: ChatMessage,
+    llm_configs: list[LLMConfig | None],
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> LimitChatHistoryEvent | RAGFailureStopEvent:
+    """Truncate chat messages to the configured token limit, and refuse the run if the result still cannot be sent.
+
+    Truncation alone cannot bound the prompt. `ChatMemoryBuffer` keeps the most recent message whatever its size --
+    deliberately, so the model reports the overflow rather than the history silently losing the question -- and
+    `number_of_input_tokens` is an admin's cost ceiling, which may sit above the model's actual context window. A
+    chat client that pastes a whole document into one turn therefore reaches the model regardless, and comes back as
+    a provider 400 wrapped in the gateway's fallback bookkeeping.
+
+    Only the last turn is irreducible, and it is what decides. `condense_standalone_question` renders the limited
+    history into its system prompt and then appends `last_user_message` again -- and that message is always in the
+    history -- so the turn is paid for twice whatever truncation does. Everything older is negotiable, so the history
+    is trimmed against the model's window rather than the admin's ceiling and only a turn that cannot fit on its own
+    refuses the run.
+
+    Refusing loses the thread's title, which `generate_conversation_title_step` anchors on the event this no longer
+    emits. Generating one here would hand the same oversized turn to the same model and fail the same way.
+    """
+    budget = usable_input_budget(llm_configs)
+    if budget is None:
+        return LimitChatHistoryEvent(
+            limited_history=limit_chat_history(chat_history=messages, number_of_input_tokens=number_of_input_tokens)
+        )
+
+    answering_config = next(config for config in llm_configs if config is not None)
+    last_turn_tokens = estimate_prompt_tokens([last_user_message], answering_config.token_counter)
+    if last_turn_tokens * 2 > budget:
+        return await _refuse_oversized_input(last_turn_tokens * 2, budget, answering_config.model_name, displayer, t)
+
+    limited = limit_chat_history(
+        chat_history=messages,
+        number_of_input_tokens=min(number_of_input_tokens, budget - last_turn_tokens),
+    )
     return LimitChatHistoryEvent(limited_history=limited)
+
+
+async def _refuse_oversized_input(
+    needed: int,
+    budget: int,
+    model_name: str,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> RAGFailureStopEvent:
+    """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
+
+    The chunk is what the chat renders; `answer` carries the same text for non-streaming consumers.
+    """
+    await displayer.display_thought(t("agent.rag_agent.thoughts.input_too_large", tokens=needed, budget=budget))
+    refusal = t("agent.rag_agent.messages.input_too_large")
+    await displayer.display_chunk(refusal, model_name=model_name)
+    return RAGFailureStopEvent(reason=RAGFailureReason.INPUT_TOO_LARGE, answer=refusal)
 
 
 async def do_condense_standalone_question(

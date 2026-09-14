@@ -218,6 +218,8 @@ event:
         produce a grounded response.
       few_shot_rejected: The query did not match any known pattern, so the answer
         was produced without retrieval.
+      input_too_large: The message or attached file exceeded the model's context window,
+        so this run was stopped before calling the model.
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant

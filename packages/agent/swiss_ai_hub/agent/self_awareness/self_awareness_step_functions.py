@@ -4,7 +4,12 @@ from openai import BadRequestError
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent, NotAMetaQuestionEvent
-from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
+from swiss_ai_hub.core.generative_ai import (
+    LLMConfig,
+    estimate_prompt_tokens,
+    merge_consecutive_messages,
+    usable_input_budget,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.self_awareness.meta_question_detector import (
@@ -22,6 +27,19 @@ async def do_detect_meta_question(
 ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
     """Classify the user message and emit the routing event for the self-awareness branch."""
     await displayer.display_thought(t("agent.self_awareness.thought.detecting"))
+
+    # A query past the model's window cannot be classified, and trying costs more than the doomed call: entering
+    # `cost_reporting_llm` mints a per-user gateway key over HTTP first. Release the normal pipeline instead and let
+    # the input-size guard produce the refusal, which is the only step that can explain the size to the user.
+    budget = usable_input_budget([llm_config])
+    if (
+        budget is not None
+        and estimate_prompt_tokens([ChatMessage(role=MessageRole.USER, content=user_query)], llm_config.token_counter)
+        > budget
+    ):
+        return NotAMetaQuestionEvent(
+            reasoning="Skipped detection: the message does not fit the model's context window."
+        )
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         classification = await detect_meta_question(llm=llm, t=t, user_query=user_query)

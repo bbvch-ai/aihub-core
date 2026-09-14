@@ -102,3 +102,10 @@ steps:
   stop:
     name: Stop
     description: Completes the workflow after all required steps are done
+thoughts:
+  input_too_large: 'The input does not fit the model context window: about %{tokens}
+    tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
+messages:
+  input_too_large: This file is too large for me to read in one go. Please upload
+    a smaller file, split it into parts, or switch to an assistant that uses a model
+    with a larger context window.

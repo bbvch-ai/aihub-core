@@ -107,3 +107,11 @@ steps:
     name: Stop
     description: Completa il workflow dopo che tutti i passaggi richiesti sono stati
       completati
+thoughts:
+  input_too_large: "L'input non rientra nella finestra di contesto del modello: circa\
+    \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\
+    \ al modello viene rifiutata."
+messages:
+  input_too_large: Questo file è troppo grande perché io possa leggerlo in una volta
+    sola. Carica un file più piccolo, dividilo in parti, oppure passa a un assistente
+    che usa un modello con una finestra di contesto più ampia.

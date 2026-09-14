@@ -218,6 +218,9 @@ event:
         non ha prodotto una risposta fondata.
       few_shot_rejected: La richiesta non corrispondeva a nessun pattern noto, quindi
         la risposta è stata prodotta senza recupero.
+      input_too_large: Il messaggio o il file allegato superava la finestra di contesto
+        del modello, quindi questa esecuzione è stata interrotta prima di chiamare
+        il modello.
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente

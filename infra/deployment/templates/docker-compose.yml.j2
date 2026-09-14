@@ -2366,7 +2366,8 @@ services:
       RAG_FULL_CONTEXT: True
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: True
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
