@@ -43,6 +43,16 @@ class UploadedFileRetriever(BaseRetriever):
     VECTOR_FIELD: str = "vector"
     SOURCE_ORIGIN_NAME: str = "user_upload"
 
+    DECISIVELY_BETTER_MATCH: float = 0.1
+    """How far another attachment must out-score the one just attached before it leads the prompt instead.
+
+    Naming a document in the question lifts it clear of the field — a question naming one of eleven
+    attachments scored it 0.759 against a next-best 0.493 — while a question that names nothing leaves the
+    attachments within a few hundredths of each other, 0.519 down to 0.368 across the same eleven. A margin
+    of this size is what separates "the user pointed at another file" from "nothing here is singled out, so
+    the reference is the file they just attached".
+    """
+
     def __init__(
         self,
         config: UploadedFileRetrieverConfig,
@@ -79,19 +89,30 @@ class UploadedFileRetriever(BaseRetriever):
         document in first-appearance order — so the oldest attachment of the thread leads the prompt however
         little it has to do with the question.
 
-        What the user attached to *this* message leads regardless of score, because that is what "this
-        document" refers to and no similarity score can recover the reference. Files from earlier turns
-        keep their place below, so a question that reaches back still finds them.
+        What the user attached to *this* message then leads, because "this document" is a reference no
+        similarity score carries — but only while nothing else is decisively a better match. A question
+        that names an earlier file scores that file far above the field, and it has to win: the reference
+        is only ambiguous when the user did not resolve it themselves.
         """
+        by_score = sorted(nodes, key=self._score_of, reverse=True)
         current_turn = {file.source_file_id for file in self.files if file.attached_in_current_turn}
-        return sorted(
-            nodes,
-            key=lambda node: (
-                node.namespace in current_turn,
-                node.score if node.score is not None else float("-inf"),
-            ),
-            reverse=True,
-        )
+        if not current_turn or not by_score:
+            return by_score
+
+        just_attached = [node for node in by_score if node.namespace in current_turn]
+        carried = [node for node in by_score if node.namespace not in current_turn]
+        if not just_attached:
+            return by_score
+
+        beaten_by = self._score_of(by_score[0]) - self._score_of(just_attached[0])
+        if beaten_by > self.DECISIVELY_BETTER_MATCH:
+            return by_score
+        return [*just_attached, *carried]
+
+    @staticmethod
+    def _score_of(node: IngestedNode) -> float:
+        """An absent score sorts last rather than ahead of every real match."""
+        return node.score if node.score is not None else float("-inf")
 
     async def _embed_query(self, query: str, user: UserIdentity | None) -> list[float]:
         api_key = await LiteLLMService.api_key_for_user(user) if user else None

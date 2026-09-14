@@ -166,8 +166,9 @@ async def test_attachments_are_ordered_against_each_other_by_score():
 async def test_what_the_user_just_attached_leads_even_on_a_weaker_score():
     """Asking what is in "this document" means the file of this message, which no score carries.
 
-    The corpus the thread already carries can easily out-score a freshly attached file — that is what put
-    the answer on a document from five turns earlier.
+    A question that singles out nothing leaves the attachments within a few hundredths of each other, so
+    whichever carried file edges ahead decides the answer — that is what put it on a document from five
+    turns earlier. The scores here are the measured ones from that thread.
     """
     carried = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="carried.pdf")
     just_attached = UserUploadedFile(
@@ -179,8 +180,8 @@ async def test_what_the_user_just_attached_leads_even_on_a_weaker_score():
     )
 
     hits_by_collection = {
-        UploadedFileRetriever.collection_name_for(carried.source_file_id): [_hit("carried", distance=0.90)],
-        UploadedFileRetriever.collection_name_for(just_attached.source_file_id): [_hit("asked about", distance=0.31)],
+        UploadedFileRetriever.collection_name_for(carried.source_file_id): [_hit("carried", distance=0.519)],
+        UploadedFileRetriever.collection_name_for(just_attached.source_file_id): [_hit("asked about", distance=0.435)],
     }
     client = MagicMock()
     client.has_collection.return_value = True
@@ -192,6 +193,38 @@ async def test_what_the_user_just_attached_leads_even_on_a_weaker_score():
         nodes = await retriever.retrieve("what is in this document?", LocaleHandler())
 
     assert [node.source for node in nodes] == ["just-attached.pdf", "carried.pdf"]
+
+
+@pytest.mark.asyncio
+async def test_naming_an_earlier_file_beats_the_one_just_attached():
+    """The user resolved the reference themselves, so the attachment must not shoulder the named file aside.
+
+    Naming a document lifts it clear of the field; that is a stronger signal than the attachment, which
+    only matters while the reference is ambiguous.
+    """
+    named = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="expenses.pdf")
+    just_attached = UserUploadedFile(
+        filename="just-attached.pdf",
+        file_type="application/pdf",
+        file_id=_FILE_ID,
+        source_file_id="bbbbbbbb-2222-4222-9222-222222222222",
+        attached_in_current_turn=True,
+    )
+
+    hits_by_collection = {
+        UploadedFileRetriever.collection_name_for(named.source_file_id): [_hit("the rule", distance=0.76)],
+        UploadedFileRetriever.collection_name_for(just_attached.source_file_id): [_hit("unrelated", distance=0.41)],
+    }
+    client = MagicMock()
+    client.has_collection.return_value = True
+    client.search.side_effect = lambda **kwargs: [hits_by_collection[kwargs["collection_name"]]]
+
+    retriever = UploadedFileRetriever(_config(), [named, just_attached])
+    milvus_patch, embed_patch = _patched(client)
+    with milvus_patch, embed_patch:
+        nodes = await retriever.retrieve("what does expenses.pdf say about travel?", LocaleHandler())
+
+    assert [node.source for node in nodes] == ["expenses.pdf", "just-attached.pdf"]
 
 
 @pytest.mark.asyncio

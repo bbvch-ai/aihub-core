@@ -36,7 +36,8 @@ each other's events — six RAGAgent tests fail and live chats stall at two even
 | A.15 | A readable attachment produces no such message | no false alarms |
 | A.16 | Knowledge retrieval still runs when no file is attached | regression guard |
 | A.17 | Attachments are ordered against each other by score | one COSINE index, one model — unlike the knowledge merge these are comparable |
-| A.18 | The file attached to this message leads even on a weaker score | `attached_in_current_turn`; "this document" is a reference no score carries |
+| A.18 | The file attached to this message leads on a marginally weaker score | `attached_in_current_turn`; "this document" is a reference no score carries |
+| A.18b | Naming an earlier file beats the one just attached | `DECISIVELY_BETTER_MATCH` — the user resolved the reference themselves |
 | A.19 | A turn that attaches nothing ranks purely on relevance | asking back about an earlier file must still reach it |
 | A.20 | A hit with no distance sinks instead of leading | an absent score must not sort as better than everything |
 | A.21 | `attached_in_current_turn` survives serialisation, defaults to false | `UserUploadedFile` |
@@ -130,9 +131,24 @@ measured from the `RetrieverEvent` in `aihub.agent_events`.
 | --- | --- | --- |
 | E.1 | The flag survives pipe → API → agent | `UserMessageEvent.files` carries `attached_in_current_turn: true` on exactly the one file of that message, `false` on the other ten |
 | E.2 | Nothing attached this turn, 11 carried files | uploads ordered purely by score, 0.519 → 0.368; knowledge nodes still follow them, unchanged |
-| E.3 | Same question, same scores, one file attached this turn | that file leads from 5th place on score (0.435 against 0.519), every other document keeps its relevance order |
+| E.3 | Same question, one file attached this turn | that file leads from 5th place on score (0.415 against a top of 0.473), every other document keeps its relevance order |
 
 E.2 and E.3 are the same question one after the other, so the attachment is the only variable.
+
+### How a user refers to a file
+
+Both ways of pointing at a document have to work, and they pull against each other — the second is why the
+just-attached file leads on a tie rather than outright. `DECISIVELY_BETTER_MATCH` is the line between them, and the
+numbers below are what it was set from.
+
+| # | The user says | Attached this turn | Result |
+| --- | --- | --- | --- |
+| E.4 | "this document", naming nothing | one file | the attachment leads from 0.415 against a top of 0.473 — a question that singles out nothing leaves the field within a few hundredths, so the reference is the attachment |
+| E.5 | names an earlier file (`Spesenreglement`) | a **different** file | the named file leads at 0.759 against a next-best 0.493, and the attachment drops to 9th on its own 0.410 — the user resolved the reference themselves |
+| E.6 | names an earlier file | nothing | same as E.5 without the contest: relevance alone finds it |
+
+E.5 is the regression guard for E.4. An unconditional "the attachment always leads" put a 0.410 file ahead of the
+0.759 one the question named.
 
 Two traps when driving this by hand. The API must be restarted after a change to `UserUploadedFile`, or its own
 Pydantic model silently drops the new field and every file arrives `false`. And a synthetic assistant message may reach
