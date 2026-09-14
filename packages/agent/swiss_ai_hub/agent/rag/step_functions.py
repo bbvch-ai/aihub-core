@@ -81,11 +81,13 @@ async def do_limit_chat_history(
 ) -> LimitChatHistoryEvent | RAGFailureStopEvent:
     """Truncate chat messages to the configured token limit, and refuse the run if the result still cannot be sent.
 
-    Truncation alone cannot bound the prompt. `ChatMemoryBuffer` keeps the most recent message whatever its size --
-    deliberately, so the model reports the overflow rather than the history silently losing the question -- and
-    `number_of_input_tokens` is an admin's cost ceiling, which may sit above the model's actual context window. A
-    chat client that pastes a whole document into one turn therefore reaches the model regardless, and comes back as
-    a provider 400 wrapped in the gateway's fallback bookkeeping.
+    Truncation alone cannot bound the prompt. `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when even
+    one message exceeds the limit (llama-index-core 0.14.22) -- deliberately, so the model reports the overflow
+    rather than the history silently losing the question -- and `number_of_input_tokens` is an admin's cost ceiling,
+    which may sit above the model's actual context window. A chat client that pastes a whole document into one turn
+    therefore reaches the model regardless, and comes back as a provider 400 wrapped in the gateway's fallback
+    bookkeeping. Re-check that branch on a llama-index upgrade: a version returning `[]` instead would drop the
+    user's question rather than keep it.
 
     Only the last turn is irreducible, and it is what decides: everything older is negotiable, so the history is
     trimmed against the model's window rather than the admin's ceiling, and the run is refused only when the turn
@@ -111,10 +113,12 @@ async def do_limit_chat_history(
     if last_turn_tokens > budget:
         return await _refuse_oversized_input(last_turn_tokens, budget, answering_config.model_name, displayer, t)
 
-    limited = limit_chat_history(
-        chat_history=messages,
-        number_of_input_tokens=min(number_of_input_tokens, budget - last_turn_tokens),
-    )
+    # Trim only what precedes the last turn, then put it back -- the same shape `limit_chat_history_with_context`
+    # uses. Reserving room for the turn and then handing the trimmer a list that still contains it charges the turn
+    # twice: no subset holding it fits the reduced limit, so `ChatMemoryBuffer` falls through to its most-recent-
+    # message branch and the whole earlier conversation is dropped for any turn past half the budget.
+    older_limit = min(number_of_input_tokens, budget - last_turn_tokens)
+    limited = [*limit_chat_history(chat_history=messages[:-1], number_of_input_tokens=older_limit), *messages[-1:]]
     return LimitChatHistoryEvent(limited_history=limited)
 
 

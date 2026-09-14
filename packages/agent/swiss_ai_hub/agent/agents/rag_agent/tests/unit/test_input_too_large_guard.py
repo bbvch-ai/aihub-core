@@ -1,7 +1,8 @@
 """The input-size guard that turns an oversized upload into a refusal instead of a provider 400.
 
 Reproduces aihub-core-private#241: OpenWebUI runs with `RAG_FULL_CONTEXT` and prepends a whole document into the
-user message, which no truncation removes -- `ChatMemoryBuffer` keeps the most recent message whatever its size.
+user message, which no truncation removes -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when one
+message alone exceeds the limit (llama-index-core 0.14.22).
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -125,7 +126,23 @@ class TestAnInputTooLargeForTheModelIsRefused:
         result = await _run([turn], turn, displayer)
 
         assert isinstance(result, LimitChatHistoryEvent)
+        assert result.limited_history, "the user's question must survive truncation"
         displayer.display_chunk.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_large_turn_does_not_cost_the_earlier_conversation(self):
+        """Reserving room for the last turn must not also charge the trimmer for it. A turn past half the budget
+        would otherwise leave no subset containing it under the reduced limit, and every earlier message would be
+        dropped -- losing the conversation for the title, the context guard and the reject path."""
+        older = [_message(5_000), _message(5_000, MessageRole.ASSISTANT), _message(5_000)]
+        turn = _message(60_000)
+        displayer = _displayer()
+
+        result = await _run([*older, turn], turn, displayer)
+
+        assert isinstance(result, LimitChatHistoryEvent)
+        assert len(result.limited_history) == len(older) + 1
+        assert result.limited_history[-1].content == turn.content
 
     @pytest.mark.asyncio
     async def test_the_narrower_of_the_two_model_windows_decides(self):

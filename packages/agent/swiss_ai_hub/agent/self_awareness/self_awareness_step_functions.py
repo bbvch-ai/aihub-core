@@ -29,8 +29,10 @@ async def do_detect_meta_question(
     await displayer.display_thought(t("agent.self_awareness.thought.detecting"))
 
     # A query past the model's window cannot be classified, and trying costs more than the doomed call: entering
-    # `cost_reporting_llm` mints a per-user gateway key over HTTP first. Release the normal pipeline instead and let
-    # the input-size guard produce the refusal, which is the only step that can explain the size to the user.
+    # `cost_reporting_llm` mints a per-user gateway key over HTTP first. Release the normal pipeline instead, which is
+    # where the size is handled -- as a refusal in the blueprints that run the input-size guard (RAG, ExpertRAG), and
+    # otherwise as the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a sentence naming the limit.
+    # Either way the user learns the size is the problem, which a silent meta-question verdict could not tell them.
     budget = usable_input_budget([llm_config])
     if (
         budget is not None
