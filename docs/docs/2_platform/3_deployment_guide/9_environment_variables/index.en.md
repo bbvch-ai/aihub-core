@@ -26,6 +26,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `ACME_EMAIL` |  | `traefik` |  |
 | `ADMIN_EMAIL` |  | `open-webui` |  |
 | `ADMIN_PASSWORD_HASH` |  | `traefik` |  |
+| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline` | Fernet key (url-safe base64, 32 bytes) used to encrypt secret configuration fields at rest. Generate one with `python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'`. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
 | `AIHUB_DEFAULT_NAMESPACE_NAME` | `AIHubSettings.DEFAULT_NAMESPACE_NAME` | `api` | Name of the default namespace |
