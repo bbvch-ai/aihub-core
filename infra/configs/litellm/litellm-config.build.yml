@@ -67,6 +67,8 @@ model_list:
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
+      # Ministral's Mistral tokenizer 400s on `chat_template_kwargs`, and has no reasoning to disable.
+      additional_drop_params: [chat_template_kwargs]
     model_info:
       mode: chat
       # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model; see the note on
