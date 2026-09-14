@@ -698,18 +698,6 @@ export function coerceNullableToggles(
 }
 
 /**
- * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
- * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
- * the v-model on registration), so defaults must be merged into the form data instead.
- * Existing values — including falsy ones like `false` or `""` — are preserved.
- *
- * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
- * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
- * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
- * `element.value` looks like; behaviour here is exercised end-to-end on agent and
- * process edit forms.
- */
-/**
  * A nullable leaf stored as `null` is seeded with its default too, mirroring how `seedGroupDefault`
  * materialises a null nullable group: `null` means "the toggle is off", not "the input holds nothing",
  * so the field behind the toggle should still offer the default the backend ships (e.g. the memory
@@ -755,6 +743,18 @@ function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
   return value === undefined ? [] : value
 }
 
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
+ */
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
