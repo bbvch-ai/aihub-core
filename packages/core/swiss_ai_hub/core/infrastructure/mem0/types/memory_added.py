@@ -23,7 +23,8 @@ class MemoryAdded(BaseModel):
         str | None,
         Field(
             description="Model that extracted the memories, or None when the write stored verbatim text "
-            "without inference."
+            "without inference. Not persisted in mem0's metadata — this reflects only the call that just "
+            "ran, for the store event; it does not make the memory record itself queryable by model."
         ),
     ]
     results: Annotated[list[ModifiedMemory], Field(description="The list of modified memories.")] = []

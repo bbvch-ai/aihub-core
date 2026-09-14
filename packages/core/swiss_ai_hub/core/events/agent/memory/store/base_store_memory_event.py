@@ -40,7 +40,8 @@ class BaseStoreMemoryEvent(ControlAndDisplayEvent, ABC):
         str | None,
         Field(
             description="Model that extracted these memories (issue #1590), or None when the write stored "
-            "verbatim text. Recorded so a memory can be attributed to the model that produced it."
+            "verbatim text. Carried on this event only, for observability — it is not stored in mem0's "
+            "metadata, so it cannot be recovered from the memory record itself once this event is gone."
         ),
     ] = None
 
