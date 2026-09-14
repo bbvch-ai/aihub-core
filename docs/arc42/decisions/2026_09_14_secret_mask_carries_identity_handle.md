@@ -22,9 +22,11 @@ silently, with the masked response identical before and after.
 
 ## Decision
 
-A mask is `<mask>:<handle>`, where the handle is an HMAC-SHA256 of the stored value under a key derived
-from the encryption key, truncated to 16 hex characters. Restoring a submission builds a handle-to-secret
-map from the stored document and resolves each mask through it, so position carries no meaning.
+A mask is `<mask>:<handle>`, where the handle is an HMAC-SHA256 over the field's dotted path and the stored
+value, under a key derived from the encryption key, truncated to 16 hex characters. Restoring a submission
+builds a handle-to-secret map from the stored document and resolves each mask through it, so position
+carries no meaning. The path is part of the message so that a handle minted at one secret field cannot
+resolve at another, even when both fields happen to hold the same value.
 
 The HMAC is keyed rather than a plain digest because `decrypt` passes plaintext through unchanged, so rows
 written before encryption still hold plaintext passwords. Publishing an unkeyed digest of one would be an
@@ -32,8 +34,8 @@ offline dictionary attack on a low-entropy secret. Handles are looked up in a di
 with `hmac.compare_digest`: the server is not verifying an attacker-supplied MAC against a computed one,
 and forging a handle would only move a credential between rows of a document the caller can already edit.
 
-`SecretMasker` merged into `SecretEncryptionService`. Masking now needs the key, and the service already
-depended on the masker for the mask constant, so keeping them apart would have closed an import cycle.
+`SecretMasker` merged into `SecretEncryptionService`. Masking needs the key, and the two classes are always
+constructed from the same key and used together, so the split had stopped paying for itself.
 
 ## Consequences
 
@@ -46,8 +48,14 @@ encrypted one straight from the database. Masking one representation and restori
 every handle miss, which fails closed but is easy to misdiagnose.
 
 Rotating the encryption key changes both the ciphertext and the handles, so any form open in a browser at
-rotation time fails on save and has to be reloaded. Two rows holding the same secret produce the same
-handle; they restore correctly, and the only disclosure is that the two rows share a credential.
+rotation time fails on save and has to be reloaded.
+
+A handle is derived from the stored value, and Fernet is randomized, so two encrypted rows holding the same
+plaintext get different handles and disclose nothing. Two rows still holding the *same plaintext* from
+before encryption do share a handle, and so do the same field of two different documents. That is an
+equality oracle over legacy plaintext secrets, readable by anyone who can read both masked responses. It
+closes as those rows are re-saved and encrypted; mixing a document id into the handle would close it
+sooner, at the cost of plumbing an id the service does not otherwise need.
 
 Whether a secret field absent from a submission means "unchanged" or "delete" is still undefined, and
 belongs to the layer that writes to the database rather than here.

@@ -119,6 +119,18 @@ class TestMaskPaths:
         assert "sk-top" not in str(masked)
         assert "enc:v1:" not in str(masked)
 
+    def test_a_legacy_plaintext_secret_is_masked_rather_than_echoed(self, service: SecretEncryptionService):
+        """Rows written before encryption still hold plaintext; masking must not hand it back."""
+        masked = service.mask_paths({"api_key": "hunter2"}, {"api_key"})
+
+        assert "hunter2" not in str(masked)
+
+    def test_a_plaintext_secret_that_looks_like_a_mask_is_still_masked(self, service: SecretEncryptionService):
+        """The mask is not a trustworthy marker on a stored value, so masking never short-circuits on it."""
+        masked = service.mask_paths({"api_key": f"{SecretEncryptionService.MASK}hunter2"}, {"api_key"})
+
+        assert "hunter2" not in str(masked)
+
     def test_distinct_secrets_get_distinct_handles(self, service: SecretEncryptionService):
         stored = service.encrypt_paths({"servers": [{"api_key": "a"}, {"api_key": "b"}]}, {"servers.api_key"})
 
@@ -126,12 +138,11 @@ class TestMaskPaths:
 
         assert masked["servers"][0]["api_key"] != masked["servers"][1]["api_key"]
 
-    def test_masking_is_idempotent(self, service: SecretEncryptionService):
+    def test_a_handle_is_stable_across_separate_mask_calls(self, service: SecretEncryptionService):
+        """A reloaded page must mint the same handle, or the mask it sends back would no longer resolve."""
         stored = service.encrypt_paths({"api_key": "sk-top"}, {"api_key"})
 
-        once = service.mask_paths(stored, {"api_key"})
-
-        assert service.mask_paths(once, {"api_key"}) == once
+        assert service.mask_paths(stored, {"api_key"}) == service.mask_paths(stored, {"api_key"})
 
     def test_a_non_string_secret_is_rejected(self, service: SecretEncryptionService):
         with pytest.raises(TypeError):
@@ -195,14 +206,18 @@ class TestRestoreMaskedPaths:
 
         assert self._secrets(service, restored) == [None, "beta"]
 
-    def test_rows_sharing_a_secret_both_restore_it_after_a_reorder(self, service: SecretEncryptionService):
-        stored = {"servers": [{"api_key": "enc:v1:same"}, {"api_key": "enc:v1:same"}]}
+    def test_rows_holding_an_identical_stored_value_collapse_to_one_handle_without_losing_a_row(
+        self, service: SecretEncryptionService
+    ):
+        """Identical stored values share a handle; both rows must still resolve rather than one dropping out."""
+        stored = {"servers": [{"api_key": "enc:v1:same"}, {"api_key": "enc:v1:same"}, {"api_key": "enc:v1:other"}]}
         masked = service.mask_paths(stored, self.PATHS)
-        submitted = {"servers": [masked["servers"][1], masked["servers"][0]]}
+        assert masked["servers"][0]["api_key"] == masked["servers"][1]["api_key"]
+        submitted = {"servers": [masked["servers"][2], masked["servers"][1], masked["servers"][0]]}
 
         restored = service.restore_masked_paths(submitted, stored, self.PATHS)
 
-        assert [row["api_key"] for row in restored["servers"]] == ["enc:v1:same", "enc:v1:same"]
+        assert [row["api_key"] for row in restored["servers"]] == ["enc:v1:other", "enc:v1:same", "enc:v1:same"]
 
     def test_a_legacy_plaintext_secret_survives_the_round_trip_and_is_encrypted_on_the_way_out(
         self, service: SecretEncryptionService
@@ -227,14 +242,14 @@ class TestRestoreMaskedPaths:
         stored = self._stored(service, "alpha")
         submitted = {"servers": [{"api_key": SecretEncryptionService.MASK}]}
 
-        with pytest.raises(ValueError, match="servers.api_key"):
+        with pytest.raises(ValueError, match="bare mask"):
             service.restore_masked_paths(submitted, stored, self.PATHS)
 
     def test_an_unknown_handle_is_a_client_error(self, service: SecretEncryptionService):
         stored = self._stored(service, "alpha")
         submitted = {"servers": [{"api_key": f"{SecretEncryptionService.MASK}:deadbeefdeadbeef"}]}
 
-        with pytest.raises(ValueError, match="servers.api_key"):
+        with pytest.raises(ValueError, match="no stored secret matches"):
             service.restore_masked_paths(submitted, stored, self.PATHS)
 
     def test_a_handle_minted_under_another_key_does_not_resolve(self, service: SecretEncryptionService):
@@ -242,16 +257,27 @@ class TestRestoreMaskedPaths:
         other = SecretEncryptionService(Fernet.generate_key().decode())
         submitted = other.mask_paths(stored, self.PATHS)
 
-        with pytest.raises(ValueError, match="servers.api_key"):
+        with pytest.raises(ValueError, match="no stored secret matches"):
             service.restore_masked_paths(submitted, stored, self.PATHS)
 
-    def test_a_handle_does_not_resolve_against_a_different_path(self, service: SecretEncryptionService):
-        stored = service.encrypt_paths({"mcp": {"api_key": "m"}, "servers": [{"api_key": "s"}]}, {"mcp.api_key"})
+    def test_a_handle_does_not_resolve_against_a_different_path_holding_the_same_secret(
+        self, service: SecretEncryptionService
+    ):
+        """The path is part of the handle, so isolation holds even when both paths store an identical value."""
+        stored = {"mcp": {"api_key": "enc:v1:same"}, "servers": [{"api_key": "enc:v1:same"}]}
         masked = service.mask_paths(stored, {"mcp.api_key"})
         submitted = {"mcp": stored["mcp"], "servers": [{"api_key": masked["mcp"]["api_key"]}]}
 
-        with pytest.raises(ValueError, match="servers.api_key"):
+        with pytest.raises(ValueError, match="no stored secret matches"):
             service.restore_masked_paths(submitted, stored, self.PATHS)
+
+    def test_restoring_against_a_different_representation_fails_closed(self, service: SecretEncryptionService):
+        """The documented caller footgun: masking the decrypted document and restoring against the encrypted one."""
+        stored = self._stored(service, "alpha")
+        masked = service.mask_paths(service.decrypt_paths(stored, self.PATHS), self.PATHS)
+
+        with pytest.raises(ValueError, match="no stored secret matches"):
+            service.restore_masked_paths(masked, stored, self.PATHS)
 
     def test_a_non_string_at_a_secret_path_does_not_crash_restore(self, service: SecretEncryptionService):
         stored = self._stored(service, "alpha")
