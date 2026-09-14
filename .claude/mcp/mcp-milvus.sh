@@ -6,6 +6,10 @@ set -e
 #
 # Connection uses credentials from .env (MILVUS_ROOT_PASSWORD).
 # Requires pipx (python -m pip install pipx) for isolated execution.
+#
+# The version is pinned so every developer runs the same build. Upstream only ever published
+# 0.1.1.dev9 (2025-11-11), a dev pre-release, so the pin also stops pipx resolving something
+# unexpected should a newer pre-release appear.
 PROJECT_ROOT="$(dirname "$0")/../.."
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd)"
 
@@ -28,4 +32,4 @@ MILVUS_AUTH="${MILVUS_TOKEN:-root:${MILVUS_ROOT_PASSWORD:-Milvus}}"
 cd /tmp
 export MILVUS_URI="$MILVUS_HOST"
 export MILVUS_TOKEN="$MILVUS_AUTH"
-exec pipx run --pip-args='mcp<2' mcp-server-milvus
+exec pipx run --pip-args='mcp<2' mcp-server-milvus==0.1.1.dev9
