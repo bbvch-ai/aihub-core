@@ -30,7 +30,7 @@ The citation gives a clear rundown of the different parts used to generate the a
 
 Agents read attached files too, and they keep working across turns: attach a second file later in the
 conversation and the agent answers from it, while the earlier one stays available for questions that call for
-it. Up to 20 files can be attached to one chat.
+it. How many files one chat accepts is set by your administrator; the default is four.
 
 An agent searches each attachment rather than reading it whole, so it says which attachments it could not
 read — a file the upload has not finished indexing, or one that could not be parsed — instead of answering as

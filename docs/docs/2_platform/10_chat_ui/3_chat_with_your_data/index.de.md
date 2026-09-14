@@ -32,7 +32,7 @@ Die Zitation bietet eine klare Übersicht über die verschiedenen Teile, die zur
 
 Auch Agenten lesen angehängte Dateien, und zwar über mehrere Gesprächsrunden hinweg: Hängen Sie später eine
 zweite Datei an, antwortet der Agent aus dieser, während die frühere für Fragen verfügbar bleibt, die sie
-erfordern. Pro Chat können bis zu 20 Dateien angehängt werden.
+erfordern. Wie viele Dateien ein Chat annimmt, legt Ihre Administration fest; der Standardwert ist vier.
 
 Ein Agent durchsucht jeden Anhang, statt ihn vollständig zu lesen. Deshalb nennt er die Anhänge, die er nicht
 lesen konnte — eine Datei, deren Indexierung noch läuft, oder eine, die nicht verarbeitet werden konnte —
