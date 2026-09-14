@@ -18,8 +18,6 @@ import swiss_ai_hub.agent.agents.rag_agent  # noqa: F401  (import-order guard, n
 from swiss_ai_hub.agent.rag.step_functions import do_limit_chat_history
 
 MODEL_WINDOW = 100_000
-# 0.85 of the window, mirroring BUDGET_SAFETY_FACTOR.
-USABLE_BUDGET = 85_000
 
 # One token per repetition under tiktoken, so a message's size is the count of these.
 TOKEN_WORD = " hello"
@@ -116,16 +114,18 @@ class TestAnInputTooLargeForTheModelIsRefused:
         displayer.display_thought.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_the_condense_step_sending_the_turn_twice_is_accounted_for(self):
-        """`condense_standalone_question` renders the limited history into its system prompt *and* appends the last
-        user message again, so a turn at 60% of the budget costs 120% of it. Measuring only the history would let
-        this through to the provider."""
-        turn = _message(int(USABLE_BUDGET * 0.6))
+    async def test_a_turn_that_merely_strains_the_window_is_left_to_the_model(self):
+        """The threshold is the impossible case, not a prediction of any one step's prompt. tiktoken is not the
+        served model's tokenizer and over-counts non-Latin scripts enough that budgeting for the downstream
+        doubling refuses prompts the provider accepts -- 121k tiktoken tokens of Vietnamese fit a declared 100k
+        window, measured against gemma-4-31B-it. Such a prompt gets the provider's own (now rewritten) 400."""
+        turn = _message(int(MODEL_WINDOW * 0.6))
         displayer = _displayer()
 
         result = await _run([turn], turn, displayer)
 
-        assert isinstance(result, RAGFailureStopEvent)
+        assert isinstance(result, LimitChatHistoryEvent)
+        displayer.display_chunk.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_the_narrower_of_the_two_model_windows_decides(self):
@@ -163,6 +163,22 @@ class TestAnUnknownWindowLeavesTheRunAlone:
         result = await _run([oversized], oversized, displayer, windows=(None, None))
 
         assert isinstance(result, LimitChatHistoryEvent)
+
+    @pytest.mark.asyncio
+    async def test_a_window_that_is_not_a_positive_int_skips_the_check(self):
+        """`model_info` is an untyped dict off the gateway, so a window is usable only once it proves to be one."""
+        oversized = _message(200_000)
+
+        for declared in ("100000", 0, -1):
+            displayer = _displayer()
+            with patch.object(
+                LLMConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": declared}}
+            ):
+                result = await do_limit_chat_history(
+                    [oversized], 128_000, oversized, [_llm_config()], displayer, _locale_handler()
+                )
+
+            assert isinstance(result, LimitChatHistoryEvent), f"declared={declared!r} must fail open"
 
 
 class TestImagesAreCountedWithoutBeingFetched:

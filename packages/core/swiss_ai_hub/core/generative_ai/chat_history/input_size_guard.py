@@ -8,11 +8,13 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMC
 
 logger = logging.getLogger(__name__)
 
-# Absorbs what the count cannot know: the tokenizer reached through `LLMConfig.token_counter` is tiktoken, not the
-# tokenizer of whichever model LiteLLM routes to, and the chat envelope around the rendered messages costs tokens of
-# its own. Same value and same reasoning as SUMMARIZATION_BUDGET_SAFETY_FACTOR in `recursive_summary_parser` and
-# BUDGET_SAFETY_FACTOR in the agent package's `imap/token_budget`.
-BUDGET_SAFETY_FACTOR = 0.85
+# No safety factor here, unlike `recursive_summary_parser` and the agent package's `imap/token_budget`. Those shrink a
+# budget they then *fill*, where over-counting only wastes room. This one decides whether to refuse a user outright, so
+# shrinking it refuses prompts the model would have accepted. The tokenizer reached through `LLMConfig.token_counter`
+# is tiktoken, not the served model's, and the error runs both ways: measured against gemma-4-31B-it, 121k tiktoken
+# tokens of Vietnamese fit a declared 100k window. Only an input that exceeds the window on a single reading is
+# impossible for certain, and that is the only thing worth refusing over -- anything subtler is left to the model,
+# whose own 400 `ModelGatewayErrorHandler` now rewrites into a sentence naming the limit.
 
 # llama-index's own per-image estimate, taken as a constant. Asking `ImageBlock.aestimate_tokens` for it would make
 # the block resolve itself -- downloading the image -- to return this same number, and a guard that exists to avoid a
@@ -41,14 +43,18 @@ def usable_input_budget(llm_configs: list[LLMConfig | None]) -> int | None:
                 type(window_lookup_failure).__name__,
             )
             return None
-        if window is None:
+        # `model_info` is an untyped dict straight off the gateway, so a window is usable only once it proves to be
+        # a positive int. Anything else is "no window established", which fails open like a missing entry.
+        if not isinstance(window, int) or isinstance(window, bool) or window <= 0:
             logger.warning(
-                "[input-size-guard] %s declares no max_input_tokens; skipping the size check.", llm_config.model_name
+                "[input-size-guard] %s declares no usable max_input_tokens (%r); skipping the size check.",
+                llm_config.model_name,
+                window,
             )
             return None
         windows.append(window)
 
-    return int(min(windows) * BUDGET_SAFETY_FACTOR) if windows else None
+    return min(windows) if windows else None
 
 
 def estimate_prompt_tokens(messages: list[ChatMessage], token_counter: Callable[[str], list[int]]) -> int:

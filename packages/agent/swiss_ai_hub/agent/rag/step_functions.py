@@ -87,11 +87,15 @@ async def do_limit_chat_history(
     chat client that pastes a whole document into one turn therefore reaches the model regardless, and comes back as
     a provider 400 wrapped in the gateway's fallback bookkeeping.
 
-    Only the last turn is irreducible, and it is what decides. `condense_standalone_question` renders the limited
-    history into its system prompt and then appends `last_user_message` again -- and that message is always in the
-    history -- so the turn is paid for twice whatever truncation does. Everything older is negotiable, so the history
-    is trimmed against the model's window rather than the admin's ceiling and only a turn that cannot fit on its own
-    refuses the run.
+    Only the last turn is irreducible, and it is what decides: everything older is negotiable, so the history is
+    trimmed against the model's window rather than the admin's ceiling, and the run is refused only when the turn
+    alone already exceeds the window. That threshold is deliberately the impossible case rather than a prediction of
+    any one step's prompt. `condense_standalone_question` really does pay for the turn twice -- it renders the
+    limited history into its system prompt and appends the message again -- but tiktoken is not the served model's
+    tokenizer and over-counts enough on non-Latin scripts that budgeting for the doubling refuses prompts the model
+    accepts (121k tiktoken tokens of Vietnamese fit gemma-4-31B-it's declared 100k). A prompt that fits here and
+    still overflows downstream gets the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a
+    sentence naming the limit.
 
     Refusing loses the thread's title, which `generate_conversation_title_step` anchors on the event this no longer
     emits. Generating one here would hand the same oversized turn to the same model and fail the same way.
@@ -104,8 +108,8 @@ async def do_limit_chat_history(
 
     answering_config = next(config for config in llm_configs if config is not None)
     last_turn_tokens = estimate_prompt_tokens([last_user_message], answering_config.token_counter)
-    if last_turn_tokens * 2 > budget:
-        return await _refuse_oversized_input(last_turn_tokens * 2, budget, answering_config.model_name, displayer, t)
+    if last_turn_tokens > budget:
+        return await _refuse_oversized_input(last_turn_tokens, budget, answering_config.model_name, displayer, t)
 
     limited = limit_chat_history(
         chat_history=messages,
