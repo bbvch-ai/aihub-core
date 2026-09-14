@@ -5,6 +5,7 @@
 // 0.runtime-config.client.ts reads globalThis.__AIHUB_CONFIG__ with no fetch,
 // no async, no plugin-ordering concerns. One image, many environments.
 globalThis.__AIHUB_CONFIG__ = {
+  APP_VERSION: '${APP_VERSION}',
   OAUTH_CLIENT_ID: '${OAUTH_CLIENT_ID}',
   OAUTH_AUTHORITY_URL: '${OAUTH_AUTHORITY_URL}',
   WEBUI_URL: '${WEBUI_URL}',
