@@ -79,9 +79,8 @@ packages/core/swiss_ai_hub/core/
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
-├── secrets/                         # Secret configuration fields at rest
-│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, plaintext passes through, fail-closed
-│   ├── secret_masker.py              # SecretMasker: MASK in responses, restore-on-resubmit
+├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
