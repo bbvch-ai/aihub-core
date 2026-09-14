@@ -171,9 +171,7 @@ class TestAnUnknownWindowLeavesTheRunAlone:
 
         for declared in ("100000", 0, -1):
             displayer = _displayer()
-            with patch.object(
-                LLMConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": declared}}
-            ):
+            with patch.object(LLMConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": declared}}):
                 result = await do_limit_chat_history(
                     [oversized], 128_000, oversized, [_llm_config()], displayer, _locale_handler()
                 )
