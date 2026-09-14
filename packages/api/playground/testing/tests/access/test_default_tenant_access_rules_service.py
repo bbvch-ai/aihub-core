@@ -112,8 +112,10 @@ async def test_non_model_families_stay_reachable(monkeypatch: pytest.MonkeyPatch
 
     checker = _checker(await DefaultTenantAccessRulesService.derive())
 
-    # A standard blueprint: the agent family is curated rather than wildcarded, so only these reach it.
-    assert checker.has_access_to_agent(_STANDARD_CLASS, "shared-knowledge-rag")
+    # A standard blueprint: the agent family is curated rather than wildcarded, so only these reach it —
+    # and only as far as the blueprint. Its existing profiles are deliberately not reachable; see
+    # test_a_standard_blueprint_does_not_carry_its_existing_profiles.
+    assert checker.has_access_to_agent_class(_STANDARD_CLASS)
     assert checker.has_access_to_process("SomeProcess", "some-id")
     assert checker.has_access_to_service("model")
     # The knowledge root, not the subtree: creating a database is guarded on the bare rule, which
@@ -188,12 +190,17 @@ async def test_the_derived_ceiling_permits_every_route_guard(monkeypatch: pytest
     _stub_roster(monkeypatch, _CPU_ROSTER)
     checker = _checker(await DefaultTenantAccessRulesService.derive())
 
-    guards = {
-        template.format_map(_DummyPathParams())
+    templates = {
+        template
         for controller in runner.controllers
         for route in controller.router.routes
         if isinstance(route, APIRoute) and (template := AccessCapabilityService._route_template(route)) is not None
     }
+    # Per-profile agent guards are the one depth the ceiling deliberately does not reach. A profile that
+    # does not exist yet cannot be named by a rule, and naming the whole subtree would hand the tenant every
+    # profile of the class in the deployment. ``AgentService._grant_instance_access`` grants each profile's
+    # rule to the tenant that creates it, which is what covers this depth afterwards.
+    guards = {template.format_map(_DummyPathParams()) for template in templates if "{agent_id}" not in template}
 
     assert guards, "no route guards discovered — the closure walk broke, not the ceiling"
     for guard in sorted(guards):
@@ -212,6 +219,39 @@ async def test_only_the_standard_blueprints_reach_a_new_tenant(monkeypatch: pyte
         assert checker.has_access_to_agent_class(standard), standard
     for withheld in (_NON_STANDARD_CLASS, "EmailClassificationAgent", "ConditionalAgent"):
         assert not checker.has_access_to_agent_class(withheld), withheld
+
+
+@pytest.mark.asyncio
+async def test_a_standard_blueprint_does_not_carry_its_existing_profiles(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The regression guard for aihub-core-private#257.
+
+    Profiles live in one global collection with no tenant column, so ``aihub.admin.agent.<Class>.>`` would
+    not mean "this tenant's profiles of this blueprint" — it would mean every profile of it in the
+    deployment. A new tenant was therefore created already holding assistants other tenants had built.
+    """
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    checker = _checker(rules)
+
+    assert f"aihub.admin.agent.{_STANDARD_CLASS}.>" not in rules
+    assert not checker.has_access_to_agent(_STANDARD_CLASS, "shared-knowledge-rag")
+    # Creating one is still permitted — that is the whole point of keeping the bare root.
+    assert checker.has_access(f"aihub.admin.agent.{_STANDARD_CLASS}")
+
+
+@pytest.mark.asyncio
+async def test_a_profile_the_tenant_creates_becomes_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The other half of the contract: the depth the ceiling no longer covers is covered per profile by
+    ``AgentService._grant_instance_access``, so a tenant reaches what it built and nothing else."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    rules.append(AccessChecker.agent_instance_admin_rule(_STANDARD_CLASS, "our-own-profile"))
+    checker = _checker(rules)
+
+    assert checker.has_access_to_agent(_STANDARD_CLASS, "our-own-profile")
+    assert not checker.has_access_to_agent(_STANDARD_CLASS, "someone-elses-profile")
 
 
 @pytest.mark.asyncio

@@ -22,6 +22,10 @@ class TenantDefaultAccessSettings(EnvironmentSettings):
     roster is still empty when the startup tenant is seeded, so an exclusion would have nothing to
     subtract from and would grant that tenant no agents at all.
 
+    Each name becomes the bare class rule and never its subtree. Agent profiles share one global
+    collection with no tenant column, so a subtree rule would grant every profile of the class in the
+    deployment rather than the tenant's own.
+
     Read once, when a tenant is created. Afterwards the tenant's stored rules are the only
     authority, so re-granting an excluded model later is an ordinary access-rule edit.
     """
@@ -46,9 +50,11 @@ class TenantDefaultAccessSettings(EnvironmentSettings):
         Field(
             description=(
                 "Comma-separated agent classes a new tenant's default ceiling grants, each named as the "
-                "blueprint reports itself (e.g. ``RAGAgent``). Every other blueprint stays hidden from that "
-                "tenant until a sysadmin grants it. An allow list rather than exclusions because the "
-                "discovered-class roster is still empty when the startup tenant is seeded."
+                "blueprint reports itself (e.g. ``RAGAgent``). The grant is the blueprint itself, not its "
+                "existing profiles: the tenant may create assistants of these types, and reaches only the "
+                "ones it creates. Every other blueprint stays hidden from that tenant until a sysadmin "
+                "grants it. An allow list rather than exclusions because the discovered-class roster is "
+                "still empty when the startup tenant is seeded."
             ),
         ),
     ] = "LLMWrappingAgent,FewShotAgent,RAGAgent"

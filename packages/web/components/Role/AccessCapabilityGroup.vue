@@ -78,9 +78,9 @@
         </span>
         <code
           v-if="cap.rule"
-          v-tooltip.top="cap.companion_rules?.length ? [cap.rule, ...cap.companion_rules].join('\n') : undefined"
+          v-tooltip.top="alsoClearedTooltip(cap)"
           class="mt-0.5 shrink-0 font-mono text-[11px] text-surface-300 transition-colors group-hover/cap:text-surface-500 dark:text-surface-600 dark:group-hover/cap:text-surface-400"
-        >{{ cap.companion_rules?.length ? `${cap.rule} +${cap.companion_rules.length}` : cap.rule }}</code>
+        >{{ cap.rule }}</code>
       </label>
     </div>
 
@@ -124,12 +124,21 @@ const emit = defineEmits<{
   remove: [rules: string[]]
 }>()
 
-// A row can need more than one rule: the grammar has no form covering a node and its subtree at once,
-// so a class-level row carries both. They travel as one payload because the parent writes them through a
-// single `v-model`, which cannot absorb two writes in the same tick — the second would read a model value
-// the first had not yet updated and silently drop it.
+// Asymmetric on purpose. Ticking grants the row's own rule and nothing else — a class-level `.>` would
+// hand over every instance of the class, other tenants' included. Unticking still clears that `.>`, so a
+// ceiling written before the rule shape changed can be cleaned out here rather than by hand. Each direction
+// emits one payload because the parent writes them through a single `v-model`, which cannot absorb two
+// writes in the same tick — the second would read a model value the first had not yet updated.
+// Companion rules are only ever cleared, so naming them on the badge would advertise a grant that ticking
+// does not make. The tooltip says what unticking takes with it instead.
+const alsoClearedTooltip = (cap: Capability) =>
+  cap.companion_rules?.length
+    ? t('role.capability_also_cleared', { rules: cap.companion_rules.join(', ') })
+    : undefined
+
 const onToggle = (cap: Capability, value: boolean) => {
   if (props.readonly || !cap.rule) return
-  emit(value ? 'add' : 'remove', [cap.rule, ...(cap.companion_rules ?? [])])
+  if (value) emit('add', [cap.rule])
+  else emit('remove', [cap.rule, ...(cap.companion_rules ?? [])])
 }
 </script>

@@ -710,6 +710,7 @@ role:
     dies zu ändern.
   capability_readonly: Keine einzelne Regel gewährt dies allein — nutze eine Vorlage
     oder eine breitere Regel.
+  capability_also_cleared: 'Das Abwählen entfernt zusätzlich: {rules}'
   pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
   pattern_help_all: Alle Agenten
   pattern_help_wildcard: Alle Instanzen von MyAgent

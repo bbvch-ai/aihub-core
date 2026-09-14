@@ -15,13 +15,13 @@ class Capability(BaseModel):
         list[str],
         Field(
             description=(
-                "Rules written and removed together with `rule`. A capability needs more than one when the "
-                "rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, "
-                "so a row meaning 'this whole resource' has to carry both forms."
+                "Rules removed together with `rule`, never written with it. A class-level row carries "
+                "`<rule>.>` here: granting it would hand over every instance of the class, but a ceiling "
+                "written before that was understood still holds it, and unticking the row must clear it too."
             )
         ),
     ] = []
-    granted: Annotated[bool, Field(description="Whether the draft rules grant every rule of this capability.")]
+    granted: Annotated[bool, Field(description="Whether the draft rules grant this capability's own rule.")]
     locked: Annotated[
         bool,
         Field(description="Granted via a broader rule (e.g. a wildcard preset) and so cannot be toggled off here."),

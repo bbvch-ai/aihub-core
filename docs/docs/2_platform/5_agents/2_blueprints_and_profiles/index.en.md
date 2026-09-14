@@ -146,9 +146,12 @@ Some agents allow customizing the system prompt to adjust behavior and personali
 
 Access to profiles follows the platform's permission system:
 
-- **Blueprint access** (`aihub.admin.agent.{blueprint}.*`): Manage profiles for a specific blueprint
-- **Profile access** (`aihub.user.agent.{blueprint}.{profile_id}`): Use a specific profile
-- **Wildcard access** (`aihub.user.agent.*.>`): Access all agents (typically for administrators)
+- **Blueprint access** (`aihub.admin.agent.{blueprint}`): Create profiles from a specific blueprint. This is what a
+  tenant is granted for each of its standard blueprints; it does not carry the profiles already built from them.
+- **Profile access** (`aihub.user.agent.{blueprint}.{profile_id}`): Use a specific profile. A profile's own rule is
+  added to the creating tenant's ceiling automatically, so a tenant reaches the profiles it builds.
+- **Wildcard access** (`aihub.user.agent.*.>`): Access all agents (typically for administrators). Deployment-wide, not
+  per tenant — profiles are not separated by tenant in storage, so grant it deliberately.
 
 See the [Access Management](../../11_access_management/) section for details on configuring permissions.
 

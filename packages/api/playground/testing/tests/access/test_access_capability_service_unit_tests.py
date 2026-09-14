@@ -422,12 +422,12 @@ async def test_knowledge_resolver_nests_namespaces_under_databases():
 
 
 @pytest.mark.asyncio
-async def test_a_class_level_row_carries_its_subtree():
-    """The row means "this tenant/role gets this blueprint", so it writes the root and the subtree together.
+async def test_a_class_level_row_offers_its_subtree_for_removal_only():
+    """The subtree rule rides along as something the checkbox *clears*, never something it writes.
 
-    Neither form works alone: the root is what creating an instance is guarded on, while only the subtree
-    reaches the class list and its instances. A checkbox offering one of them is unusable, which is why the
-    sysadmin previously had to type both rules by hand.
+    Granting it would hand the tenant every instance of the class — other tenants' included, since
+    instances carry no tenant of their own — but a ceiling written before that was understood still holds
+    it, and unticking the blueprint has to take it with them.
     """
     caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)])
 
@@ -437,18 +437,21 @@ async def test_a_class_level_row_carries_its_subtree():
 
 
 @pytest.mark.asyncio
-async def test_a_half_granted_class_reads_as_not_granted():
-    """Holding only the root leaves the blueprint invisible, so reporting it as granted would be a lie —
-    and would render a ticked box the sysadmin cannot use to fix the gap."""
+async def test_the_bare_root_alone_grants_the_class():
+    """What a curated tenant holds. Reading it as not granted would render an unticked box beside a
+    blueprint the tenant can already build on, and ticking it would write a rule it already has."""
     caps = await _capabilities(
         ["aihub.admin.agent.WeatherAgent"], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)]
     )
 
-    assert not _by_rule(caps, "aihub.admin.agent.WeatherAgent").granted
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.granted and not blueprint.locked
 
 
 @pytest.mark.asyncio
-async def test_both_forms_together_grant_the_class():
+async def test_a_legacy_ceiling_holding_both_forms_stays_untickable():
+    """A tenant seeded before the subtree was dropped. The row must stay unlocked so one untick clears
+    both rules — locking it would leave the wildcard reachable only by hand-editing the rule list."""
     caps = await _capabilities(
         ["aihub.admin.agent.WeatherAgent", "aihub.admin.agent.WeatherAgent.>"],
         [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
@@ -456,6 +459,7 @@ async def test_both_forms_together_grant_the_class():
 
     blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
     assert blueprint.granted and not blueprint.locked
+    assert blueprint.companion_rules == ["aihub.admin.agent.WeatherAgent.>"]
 
 
 @pytest.mark.asyncio
@@ -468,13 +472,15 @@ async def test_an_instance_row_carries_no_subtree():
 
 
 @pytest.mark.asyncio
-async def test_a_ceiling_that_cannot_grant_the_subtree_hides_the_row():
-    """The ceiling check spans the row's rules too, so a tenant capped to the bare root does not get a
-    checkbox promising more than the tenant can hold."""
+async def test_a_ceiling_capped_to_the_bare_root_still_shows_the_row():
+    """A curated tenant's ceiling is exactly this. The role editor must still offer the blueprint, or a
+    tenant admin could not grant one of its own roles the right to create assistants of a type it holds."""
     caps = await _capabilities(
         ["aihub.admin.>"],
         [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
         tenant_rules=["aihub.admin.service.>", "aihub.admin.agent.WeatherAgent"],
     )
 
-    assert not any(cap.rule == "aihub.admin.agent.WeatherAgent" for cap in caps.values())
+    assert _by_rule(caps, "aihub.admin.agent.WeatherAgent").granted
+    # The instances under it are a different matter: the ceiling names none of them, so they stay hidden.
+    assert not any(cap.rule == "aihub.admin.agent.WeatherAgent.inst1" for cap in caps.values())
