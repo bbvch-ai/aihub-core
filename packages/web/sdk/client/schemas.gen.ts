@@ -18560,6 +18560,7 @@ export const RAGFailureReasonSchema = {
     "expert_declined",
     "expert_errored",
     "few_shot_rejected",
+    "input_too_large",
   ],
   title: "RAGFailureReason",
   description: "Why a RAG run failed to produce a useful answer.",
