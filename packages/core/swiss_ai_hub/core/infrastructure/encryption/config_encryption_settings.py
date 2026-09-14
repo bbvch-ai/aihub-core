@@ -19,9 +19,5 @@ class ConfigEncryptionSettings(EnvironmentSettings):
 
     ENCRYPTION_KEY: Annotated[
         SecretStr | None,
-        Field(
-            description="Fernet key (url-safe base64, 32 bytes) used to encrypt secret configuration fields at rest. "
-            "Generate one with `python -c 'from cryptography.fernet import Fernet; "
-            "print(Fernet.generate_key().decode())'`."
-        ),
+        Field(description="Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest."),
     ] = None
