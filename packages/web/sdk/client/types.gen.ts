@@ -1760,6 +1760,12 @@ export type BaseStoreMemoryEvent = {
    */
   deleted_relations: Array<MemoryRelation>;
   /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -14674,6 +14680,12 @@ export type StoreOrganizationMemoryEvent = {
    */
   deleted_relations: Array<MemoryRelation>;
   /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -14747,6 +14759,12 @@ export type StoreUserMemoryEvent = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
   /**
    * Event Name
    *
@@ -18161,6 +18179,12 @@ export type BaseStoreMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 
@@ -25128,6 +25152,12 @@ export type StoreOrganizationMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 
@@ -25189,6 +25219,12 @@ export type StoreUserMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 

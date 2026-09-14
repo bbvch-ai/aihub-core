@@ -2293,6 +2293,19 @@ export const BaseStoreMemoryEventSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -21694,6 +21707,19 @@ export const StoreOrganizationMemoryEventSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -21801,6 +21827,19 @@ export const StoreUserMemoryEventSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
     },
     _event_name: {
       type: "string",
@@ -26599,6 +26638,19 @@ export const BaseStoreMemoryEventWritableSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
     },
   },
   additionalProperties: true,
@@ -37604,6 +37656,19 @@ export const StoreOrganizationMemoryEventWritableSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -37692,6 +37757,19 @@ export const StoreUserMemoryEventWritableSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
     },
   },
   additionalProperties: true,
