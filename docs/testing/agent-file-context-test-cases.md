@@ -11,9 +11,11 @@ Groups A and B run with `pytest` and need no stack. Groups C and D are end-to-en
 response open. A run is finished when its events contain `RAGSuccessStopEvent`, `RAGFailureStopEvent`, `LLMStopEvent`
 or `ExceptionEvent`.
 
-Before running group A or B: **stop any locally running RAG agent.** `make test` in `packages/agent` starts real
-`RAGAgent` runners on the same NATS queue group (`agent_runner_RAGAgent`), so a local agent and the test runners take
-each other's events — six RAGAgent tests fail and live chats stall at two events.
+Before running group A or B: **kill every `app/rag_agent/main.py` process first.** The suite starts real `RAGAgent`
+runners on the NATS queue group `agent_runner_RAGAgent` and **leaks them — they outlive pytest**, so each run competes
+with the previous run's orphans and with any agent you started by hand. The symptom is four or five failures that are a
+*different* four or five each time, and live chats that stall at two events. Killed first, the suite is green: 646
+passed, 3 skipped. Any failure that survives a kill-then-rerun is real; one that does not is this.
 
 ## A · Unit — provisioning, retriever, wiring
 
@@ -50,14 +52,14 @@ each other's events — six RAGAgent tests fail and live chats stall at two even
 
 | # | Case | Asserts |
 | --- | --- | --- |
-| B.1 | `packages/core` suite | 1724 passed |
-| B.2 | `packages/agent` suite | 637 passed, 3 skipped |
+| B.1 | `packages/core` suite | 1881 passed; 9 failed + 16 errors are the Windows baseline (`time.tzset`, unseeded Keycloak, mem0 subprocess), identical before and after |
+| B.2 | `packages/agent` suite | 646 passed, 3 skipped, 0 failed — after killing leaked runners |
 | B.3 | Meta-question gate unchanged | `test_self_awareness_wiring.py` |
 | B.4 | User and organization memory unchanged | `test_do_retrieve_memory.py` |
 | B.5 | Non-RAG agents still import and keep their step count | LLMWrapping, FewShot, NamespaceSelection, Retrieval, Imap, EmailClassification |
 | B.6 | `expert_rag_agent` suite | 4 passed — second call site of `do_retrieve` |
-| B.8 | Every agent that condenses, after the prompt change | 124 passed, 3 skipped — RAGAgent, ExpertRAGAgent, FewShotAgent, self-awareness |
 | B.7 | `make pr-ready` clean on every modified scope | format, lint, compose generation, license check |
+| B.8 | Every agent that condenses, after the prompt change | 124 passed, 3 skipped — RAGAgent, ExpertRAGAgent, FewShotAgent, self-awareness |
 
 ## C · The five goals, end to end
 
