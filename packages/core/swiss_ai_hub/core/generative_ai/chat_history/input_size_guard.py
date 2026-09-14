@@ -1,3 +1,14 @@
+"""Measuring a prompt against a model's context window, for callers deciding whether to refuse one.
+
+Carries no safety factor, unlike `recursive_summary_parser` and the agent package's `imap/token_budget`. Those shrink
+a budget they then *fill*, where over-counting only wastes room; a budget used to refuse a user outright would instead
+reject prompts the model accepts. The tokenizer behind `LLMConfig.token_counter` is tiktoken, not the served model's,
+and the error runs both ways -- measured against gemma-4-31B-it, 121k tiktoken tokens of Vietnamese fit a declared
+100k window. So the only thing these numbers can settle is whether an input exceeds the window on a single reading,
+which no downstream step could rescue. Anything subtler belongs to the model, whose own 400 `ModelGatewayErrorHandler`
+rewrites into a sentence naming the limit.
+"""
+
 import logging
 from collections.abc import Callable
 
@@ -7,14 +18,6 @@ from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
 logger = logging.getLogger(__name__)
-
-# No safety factor here, unlike `recursive_summary_parser` and the agent package's `imap/token_budget`. Those shrink a
-# budget they then *fill*, where over-counting only wastes room. This one decides whether to refuse a user outright, so
-# shrinking it refuses prompts the model would have accepted. The tokenizer reached through `LLMConfig.token_counter`
-# is tiktoken, not the served model's, and the error runs both ways: measured against gemma-4-31B-it, 121k tiktoken
-# tokens of Vietnamese fit a declared 100k window. Only an input that exceeds the window on a single reading is
-# impossible for certain, and that is the only thing worth refusing over -- anything subtler is left to the model,
-# whose own 400 `ModelGatewayErrorHandler` now rewrites into a sentence naming the limit.
 
 # llama-index's own per-image estimate, taken as a constant. Asking `ImageBlock.aestimate_tokens` for it would make
 # the block resolve itself -- downloading the image -- to return this same number, and a guard that exists to avoid a
