@@ -129,10 +129,16 @@ the answer.
 
 ## E · Ordering across a long thread
 
-Open WebUI forwards **every** file of the conversation on every turn — `RAG_FILE_MAX_COUNT` guards one attach action,
-not the thread — so a long chat reaches the agent with far more attachments than the cap suggests. These ran on the dev
-stack against a real 11-file thread, driven through `/api/chat/completions` against a genuine persisted chat row, and
-measured from the `RetrieverEvent` in `aihub.agent_events`.
+Open WebUI forwards **every** file of the conversation on every turn, so the agent sees the whole thread's attachments
+on each question, not just the ones the user attached to it. `RAG_FILE_MAX_COUNT` bounds that total — the frontend
+refuses to send at all above it ("You can only chat with a maximum of 4 file(s) at a time"), it is not a per-attach
+limit — so at the default a thread reaches the agent with up to four, which is already enough to answer from the wrong
+one. A thread that accumulated more while an admin had the cap raised keeps them and can no longer be used from the UI
+at all.
+
+These ran on the dev stack against real persisted chats, driven through `/api/chat/completions`, and measured from the
+`RetrieverEvent` in `aihub.agent_events`. The eleven-file figures come from a thread that predates the cap being
+reverted to four.
 
 | # | Case | Result |
 | --- | --- | --- |
@@ -172,6 +178,10 @@ downstream can recover. It is now given the filenames of this message.
 | --- | --- | --- |
 | E.7 | The original failing question, verbatim, on the same thread | condenses to `Knowledge_Library.pdf`, guard accepts, and that file is now the **top-scoring** upload at 0.578 — it no longer needs the tie-break at all |
 | E.8 | Naming an earlier file while a different one is attached | condenser keeps the name the user wrote; `Spesenreglement` leads at 0.586, the attachment sits 7th on 0.376 |
+| E.9 | Both reference styles in one fresh three-file chat, within the cap | "in the Spesenreglement…" with nothing attached → that file leads at 0.552 and the condenser leaves the name alone; "this document" with `merkblatt_17_Elternzeit.md` attached → condenses to that filename and it leads at 0.600 |
+
+E.9 is the pair a user actually produces, run on a chat built the way the UI builds one. It matters that the two pull
+in opposite directions: the first must ignore the attachment, the second must prefer it.
 
 E.7 is the payoff of the whole chain: with the query bound to the right document, relevance finds it on its own —
 0.578 against the 0.415 the same file scored when the query was about another one.
