@@ -119,14 +119,23 @@ async def do_respond_with_llm(
     t: LocaleHandler,
     user: UserIdentity | None,
     as_stop_step: bool = True,
+    condensed_question: ChatMessage | None = None,
 ) -> LLMStopEvent | LLMEvent:
-    """Generate LLM response with proper message building and streaming."""
+    """Generate LLM response with proper message building and streaming.
+
+    A refusal is handed the condensed question as well as the reason. The history alone still carries the
+    user's words verbatim — "summarise this file" — and a model asked to explain itself from that resolves
+    the reference the only way it can, against earlier turns, and refuses about a document the user never
+    mentioned. The condenser already resolved it; the reject path just never received the result.
+    """
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
 
     if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
         context_insufficient_prompt_text = t.extract(context_insufficient_prompt)
         prompt_text = t("agent.prompt.guard.reject").format(
-            prompt=context_insufficient_prompt_text, reason=event.reason
+            prompt=context_insufficient_prompt_text,
+            reason=event.reason,
+            question=(condensed_question.content if condensed_question else "") or t("agent.prompt.guard.no_question"),
         )
         messages = [
             ChatMessage(

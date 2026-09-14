@@ -1,10 +1,14 @@
 ---
 guard:
+  no_question: the user did not phrase a question
   reject: |
     {prompt}
     <Reject reason>
     {reason}
     </Reject reason>
+    <Request, with references resolved>
+    {question}
+    </Request, with references resolved>
 expert_context: |-
   You have received the following conversation with an expert. Use this information to answer the user's question.
   <EXPERT_CONVERSATION>

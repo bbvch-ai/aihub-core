@@ -798,6 +798,7 @@ class ExpertRAGAgent(Agent):
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
+        user_query_event: StandaloneQuestionCondenserEvent,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -816,6 +817,7 @@ class ExpertRAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
+            condensed_question=user_query_event.condensed_chat_message,
         )
 
     @step(
