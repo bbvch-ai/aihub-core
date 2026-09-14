@@ -88,12 +88,23 @@ async def do_condense_standalone_question(
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity | None,
+    uploaded_files: list[UserUploadedFile] | None = None,
 ) -> StandaloneQuestionCondenserEvent:
-    """Condense chat history and user query into standalone question."""
+    """Condense chat history and user query into standalone question.
+
+    Only the files of *this* message are handed over, not the whole thread's: the chat client forwards
+    every attachment on every turn, and a list of eleven would tell the condenser no more about what "this
+    document" means than the history already does.
+    """
     await displayer.display_thought(t("agent.thought.condense_question"))
+    attached_filenames = [file.filename for file in uploaded_files or [] if file.attached_in_current_turn]
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         condensed = await condense_standalone_question(
-            chat_history=limited_history, message=last_user_message, t=t, llm=llm
+            chat_history=limited_history,
+            message=last_user_message,
+            t=t,
+            llm=llm,
+            attached_filenames=attached_filenames,
         )
         return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
 

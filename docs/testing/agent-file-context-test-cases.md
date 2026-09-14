@@ -41,6 +41,10 @@ each other's events — six RAGAgent tests fail and live chats stall at two even
 | A.19 | A turn that attaches nothing ranks purely on relevance | asking back about an earlier file must still reach it |
 | A.20 | A hit with no distance sinks instead of leading | an absent score must not sort as better than everything |
 | A.21 | `attached_in_current_turn` survives serialisation, defaults to false | `UserUploadedFile` |
+| A.22 | The condenser is given the filenames of this message | so "this document" resolves to them instead of a file from the history |
+| A.23 | Only this message's files are named, not the thread's | eleven carried names would say no more than the history already does |
+| A.24 | A turn that attached nothing names nothing | the reference does belong to the history then — pre-existing behaviour |
+| A.25 | All four locales render the condenser prompt, no `{` left | one template serves every condensing agent; a missing variable fails only at runtime, in that language |
 
 ## B · No side effects
 
@@ -52,6 +56,7 @@ each other's events — six RAGAgent tests fail and live chats stall at two even
 | B.4 | User and organization memory unchanged | `test_do_retrieve_memory.py` |
 | B.5 | Non-RAG agents still import and keep their step count | LLMWrapping, FewShot, NamespaceSelection, Retrieval, Imap, EmailClassification |
 | B.6 | `expert_rag_agent` suite | 4 passed — second call site of `do_retrieve` |
+| B.8 | Every agent that condenses, after the prompt change | 124 passed, 3 skipped — RAGAgent, ExpertRAGAgent, FewShotAgent, self-awareness |
 | B.7 | `make pr-ready` clean on every modified scope | format, lint, compose generation, license check |
 
 ## C · The five goals, end to end
@@ -154,13 +159,23 @@ Two traps when driving this by hand. The API must be restarted after a change to
 Pydantic model silently drops the new field and every file arrives `false`. And a synthetic assistant message may reach
 the pipe without a `parentId`, which is why the current-turn lookup falls back to the newest user message.
 
-### Known gap: the condenser binds the wrong file
+### The condenser resolves the reference
 
-`condense_standalone_question` resolves a demonstrative against the chat history, not against what was just attached.
-Asking "what is in this doc?" with a file attached condensed to a question naming a **different** file, both in the
-original report (`bbv_AI_Guidelines.pdf`) and in a re-run (`test_upload_file.pdf`). Retrieval then embeds a query about
-the wrong document, which no ordering downstream can recover. The current-turn filenames now reach the agent on the
-event, so the condenser can be given them — not done here.
+`condense_standalone_question` used to resolve a demonstrative against the chat history alone, so "what is in this
+doc?" condensed to a question naming a **different** file — `bbv_AI_Guidelines.pdf` in the original report and
+`test_upload_file.pdf` in a re-run. Retrieval then embedded a query about the wrong document, which no ordering
+downstream can recover. It is now given the filenames of this message.
+
+| # | Case | Result |
+| --- | --- | --- |
+| E.7 | The original failing question, verbatim, on the same thread | condenses to `Knowledge_Library.pdf`, guard accepts, and that file is now the **top-scoring** upload at 0.578 — it no longer needs the tie-break at all |
+| E.8 | Naming an earlier file while a different one is attached | condenser keeps the name the user wrote; `Spesenreglement` leads at 0.586, the attachment sits 7th on 0.376 |
+
+E.7 is the payoff of the whole chain: with the query bound to the right document, relevance finds it on its own —
+0.578 against the 0.415 the same file scored when the query was about another one.
+
+One template serves every agent that condenses, in four locales, and `PromptTemplate.format` fails only at runtime
+on a variable a locale forgot. A parametrised test renders all four and asserts no `{` survives.
 
 ## Before rollout
 

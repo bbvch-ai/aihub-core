@@ -420,7 +420,13 @@ class RAGAgent(Agent):
         user: UserIdentity | None = None,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
+            event.limited_history,
+            start_event.last_user_message,
+            agent_config.task_llm,
+            displayer,
+            t,
+            user,
+            uploaded_files=start_event.files,
         )
 
     @step(

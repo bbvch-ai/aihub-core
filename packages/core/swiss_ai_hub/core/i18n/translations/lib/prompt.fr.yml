@@ -1,5 +1,6 @@
 ---
 condenser:
+  no_attachments: aucun
   standalone_question: |
     <role_and_task>
     Vous êtes un expert en optimisation de requêtes de recherche.
@@ -8,12 +9,16 @@ condenser:
     <chat_history>
     {chat_history}
     </chat_history>
+    <files_attached_to_this_message>
+    {attached_files}
+    </files_attached_to_this_message>
     <instructions>
     Le message de l'utilisateur contient du texte et éventuellement une image.
     1. **Résoudre le contexte de l'historique** : Remplacez les pronoms ou références qui font référence à des messages précédents dans l'historique du chat par les termes concrets de l'historique.
-    2. **Références à l'image** : UNIQUEMENT si l'utilisateur fait explicitement référence à une image (par ex. "Qu'est-ce que **c'est** ?", "Que voyez-vous **ici** ?"), remplacez le pronom par une brève description de l'objet visible.
-    3. **Ne pas ajouter de nouvelles informations** : N'ajoutez JAMAIS de détails qui ne sont pas présents dans la question originale. La question reformulée doit être sémantiquement équivalente à l'originale.
-    4. **Sortie** : Ne donnez QUE la nouvelle phrase.
+    2. **Références à un document** : si le message fait référence à un document sans le nommer (« ce document », « ce fichier », « il », « la pièce jointe »), cette référence désigne les fichiers listés dans files_attached_to_this_message — nommez-les, et ne substituez jamais un document mentionné plus tôt dans l'historique. Si le message nomme lui-même un document, conservez ce nom.
+    3. **Références à l'image** : UNIQUEMENT si l'utilisateur fait explicitement référence à une image (par ex. "Qu'est-ce que **c'est** ?", "Que voyez-vous **ici** ?"), remplacez le pronom par une brève description de l'objet visible.
+    4. **Ne pas ajouter de nouvelles informations** : N'ajoutez JAMAIS de détails qui ne sont pas présents dans la question originale. La question reformulée doit être sémantiquement équivalente à l'originale.
+    5. **Sortie** : Ne donnez QUE la nouvelle phrase.
     </instructions>
 rag:
   context_prompt: |
