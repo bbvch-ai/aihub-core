@@ -16648,6 +16648,12 @@ export type UserUploadedFile = {
    * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
    */
   file_id: string;
+  /**
+   * Source File Id
+   *
+   * The chat client's own identifier for the same file. Present when the client indexed the file before forwarding it, so retrieval can read those vectors instead of parsing and embedding the document a second time.
+   */
+  source_file_id?: string | null;
 };
 
 /**

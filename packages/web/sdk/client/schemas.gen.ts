@@ -24492,6 +24492,21 @@ export const UserUploadedFileSchema = {
       description:
         "UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.",
     },
+    source_file_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern:
+            "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source File Id",
+      description:
+        "The chat client's own identifier for the same file. Present when the client indexed the file before forwarding it, so retrieval can read those vectors instead of parsing and embedding the document a second time.",
+    },
   },
   type: "object",
   required: ["filename", "file_type", "file_id"],
