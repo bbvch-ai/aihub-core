@@ -62,6 +62,9 @@ class Controller(abc.ABC):
     Unlike ``additionally_required_permission`` this is never consulted at request time. A controller whose
     management routes are admin-guarded per resource keeps serving its user-level routes to everyone holding
     them; those users simply are not offered the management app they could not use.
+
+    ``SuiteService`` is its only consumer; ``AccessCatalogService`` ignores it deliberately, since its
+    "what can I reach" catalog is not the app list.
     """
 
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
