@@ -68,10 +68,9 @@ class UploadedFileRetriever(BaseRetriever):
         client = MilvusClient(uri=settings.URL, token=settings.get_token())
 
         results = await asyncio.gather(*[self._search_file(client, file, embedding) for file in self.files])
-        return self._by_descending_score([node for file_nodes in results for node in file_nodes])
+        return self._ordered_for_the_prompt([node for file_nodes in results for node in file_nodes])
 
-    @staticmethod
-    def _by_descending_score(nodes: list[IngestedNode]) -> list[IngestedNode]:
+    def _ordered_for_the_prompt(self, nodes: list[IngestedNode]) -> list[IngestedNode]:
         """Order the attachments against each other, which the merge with the knowledge nodes cannot do.
 
         Every node here came from the same chat client, the same embedding model and the same COSINE index,
@@ -79,8 +78,20 @@ class UploadedFileRetriever(BaseRetriever):
         order the set is ordered by when the user attached each file, and the downstream combiner groups by
         document in first-appearance order — so the oldest attachment of the thread leads the prompt however
         little it has to do with the question.
+
+        What the user attached to *this* message leads regardless of score, because that is what "this
+        document" refers to and no similarity score can recover the reference. Files from earlier turns
+        keep their place below, so a question that reaches back still finds them.
         """
-        return sorted(nodes, key=lambda node: node.score if node.score is not None else float("-inf"), reverse=True)
+        current_turn = {file.source_file_id for file in self.files if file.attached_in_current_turn}
+        return sorted(
+            nodes,
+            key=lambda node: (
+                node.namespace in current_turn,
+                node.score if node.score is not None else float("-inf"),
+            ),
+            reverse=True,
+        )
 
     async def _embed_query(self, query: str, user: UserIdentity | None) -> list[float]:
         api_key = await LiteLLMService.api_key_for_user(user) if user else None

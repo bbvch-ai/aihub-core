@@ -35,6 +35,11 @@ each other's events — six RAGAgent tests fail and live chats stall at two even
 | A.14 | An attachment that yielded no node is named to the user | `agent.thought.attachments_unreadable` |
 | A.15 | A readable attachment produces no such message | no false alarms |
 | A.16 | Knowledge retrieval still runs when no file is attached | regression guard |
+| A.17 | Attachments are ordered against each other by score | one COSINE index, one model — unlike the knowledge merge these are comparable |
+| A.18 | The file attached to this message leads even on a weaker score | `attached_in_current_turn`; "this document" is a reference no score carries |
+| A.19 | A turn that attaches nothing ranks purely on relevance | asking back about an earlier file must still reach it |
+| A.20 | A hit with no distance sinks instead of leading | an absent score must not sort as better than everything |
+| A.21 | `attached_in_current_turn` survives serialisation, defaults to false | `UserUploadedFile` |
 
 ## B · No side effects
 
@@ -113,6 +118,33 @@ invalidates the check.
 A = `bbv_AI_Guidelines.pdf` (5 chunks), B = `Spesenreglement_bbv.pdf` (44 chunks), C = `merkblatt_17_Elternzeit.md`
 (1 chunk). Turn 3 is the strongest evidence: the newly attached file supplies 3% of the retrieved nodes and still owns
 the answer.
+
+## E · Ordering across a long thread
+
+Open WebUI forwards **every** file of the conversation on every turn — `RAG_FILE_MAX_COUNT` guards one attach action,
+not the thread — so a long chat reaches the agent with far more attachments than the cap suggests. These ran on the dev
+stack against a real 11-file thread, driven through `/api/chat/completions` against a genuine persisted chat row, and
+measured from the `RetrieverEvent` in `aihub.agent_events`.
+
+| # | Case | Result |
+| --- | --- | --- |
+| E.1 | The flag survives pipe → API → agent | `UserMessageEvent.files` carries `attached_in_current_turn: true` on exactly the one file of that message, `false` on the other ten |
+| E.2 | Nothing attached this turn, 11 carried files | uploads ordered purely by score, 0.519 → 0.368; knowledge nodes still follow them, unchanged |
+| E.3 | Same question, same scores, one file attached this turn | that file leads from 5th place on score (0.435 against 0.519), every other document keeps its relevance order |
+
+E.2 and E.3 are the same question one after the other, so the attachment is the only variable.
+
+Two traps when driving this by hand. The API must be restarted after a change to `UserUploadedFile`, or its own
+Pydantic model silently drops the new field and every file arrives `false`. And a synthetic assistant message may reach
+the pipe without a `parentId`, which is why the current-turn lookup falls back to the newest user message.
+
+### Known gap: the condenser binds the wrong file
+
+`condense_standalone_question` resolves a demonstrative against the chat history, not against what was just attached.
+Asking "what is in this doc?" with a file attached condensed to a question naming a **different** file, both in the
+original report (`bbv_AI_Guidelines.pdf`) and in a re-run (`test_upload_file.pdf`). Retrieval then embeds a query about
+the wrong document, which no ordering downstream can recover. The current-turn filenames now reach the agent on the
+event, so the condenser can be given them — not done here.
 
 ## Before rollout
 

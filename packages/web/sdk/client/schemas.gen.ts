@@ -24507,6 +24507,13 @@ export const UserUploadedFileSchema = {
       description:
         "The chat client's own identifier for the same file. Present when the client indexed the file before forwarding it, so retrieval can read those vectors instead of parsing and embedding the document a second time.",
     },
+    attached_in_current_turn: {
+      type: "boolean",
+      title: "Attached In Current Turn",
+      description:
+        "Whether the user attached this file to the message being answered, as opposed to earlier in the thread. Chat clients forward every file of the conversation on every turn, so this is what lets a question like 'what is in this document' mean the one just attached.",
+      default: false,
+    },
   },
   type: "object",
   required: ["filename", "file_type", "file_id"],

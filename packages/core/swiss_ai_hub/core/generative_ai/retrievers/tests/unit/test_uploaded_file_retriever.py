@@ -163,6 +163,60 @@ async def test_attachments_are_ordered_against_each_other_by_score():
 
 
 @pytest.mark.asyncio
+async def test_what_the_user_just_attached_leads_even_on_a_weaker_score():
+    """Asking what is in "this document" means the file of this message, which no score carries.
+
+    The corpus the thread already carries can easily out-score a freshly attached file — that is what put
+    the answer on a document from five turns earlier.
+    """
+    carried = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="carried.pdf")
+    just_attached = UserUploadedFile(
+        filename="just-attached.pdf",
+        file_type="application/pdf",
+        file_id=_FILE_ID,
+        source_file_id="bbbbbbbb-2222-4222-9222-222222222222",
+        attached_in_current_turn=True,
+    )
+
+    hits_by_collection = {
+        UploadedFileRetriever.collection_name_for(carried.source_file_id): [_hit("carried", distance=0.90)],
+        UploadedFileRetriever.collection_name_for(just_attached.source_file_id): [_hit("asked about", distance=0.31)],
+    }
+    client = MagicMock()
+    client.has_collection.return_value = True
+    client.search.side_effect = lambda **kwargs: [hits_by_collection[kwargs["collection_name"]]]
+
+    retriever = UploadedFileRetriever(_config(), [carried, just_attached])
+    milvus_patch, embed_patch = _patched(client)
+    with milvus_patch, embed_patch:
+        nodes = await retriever.retrieve("what is in this document?", LocaleHandler())
+
+    assert [node.source for node in nodes] == ["just-attached.pdf", "carried.pdf"]
+
+
+@pytest.mark.asyncio
+async def test_a_turn_that_attaches_nothing_ranks_purely_on_relevance():
+    """Asking back about an earlier file must still reach it, so carry-over alone grants no precedence."""
+    older = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="older.pdf")
+    newer = _file(source_file_id="bbbbbbbb-2222-4222-9222-222222222222", filename="newer.pdf")
+
+    hits_by_collection = {
+        UploadedFileRetriever.collection_name_for(older.source_file_id): [_hit("the match", distance=0.88)],
+        UploadedFileRetriever.collection_name_for(newer.source_file_id): [_hit("unrelated", distance=0.20)],
+    }
+    client = MagicMock()
+    client.has_collection.return_value = True
+    client.search.side_effect = lambda **kwargs: [hits_by_collection[kwargs["collection_name"]]]
+
+    retriever = UploadedFileRetriever(_config(), [older, newer])
+    milvus_patch, embed_patch = _patched(client)
+    with milvus_patch, embed_patch:
+        nodes = await retriever.retrieve("back to the first document", LocaleHandler())
+
+    assert [node.source for node in nodes] == ["older.pdf", "newer.pdf"]
+
+
+@pytest.mark.asyncio
 async def test_a_file_without_scores_sinks_instead_of_leading():
     """A hit carrying no distance must not sort ahead of a real match just because it compares as nothing."""
     scored = _file(source_file_id="aaaaaaaa-1111-4111-8111-111111111111", filename="scored.pdf")

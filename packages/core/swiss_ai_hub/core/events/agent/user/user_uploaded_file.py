@@ -40,6 +40,18 @@ class UserUploadedFile(BaseModel):
         ),
     ]
 
+    attached_in_current_turn: Annotated[
+        bool,
+        Field(
+            default=False,
+            description=(
+                "Whether the user attached this file to the message being answered, as opposed to earlier "
+                "in the thread. Chat clients forward every file of the conversation on every turn, so this "
+                "is what lets a question like 'what is in this document' mean the one just attached."
+            ),
+        ),
+    ] = False
+
     AGENT_FILES_BUCKET: ClassVar[str] = "agent-files"
 
     @staticmethod
