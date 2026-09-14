@@ -142,7 +142,10 @@ class TestMaskPaths:
         """A reloaded page must mint the same handle, or the mask it sends back would no longer resolve."""
         stored = service.encrypt_paths({"api_key": "sk-top"}, {"api_key"})
 
-        assert service.mask_paths(stored, {"api_key"}) == service.mask_paths(stored, {"api_key"})
+        first_response = service.mask_paths(stored, {"api_key"})
+        second_response = service.mask_paths(stored, {"api_key"})
+
+        assert first_response["api_key"] == second_response["api_key"]
 
     def test_a_non_string_secret_is_rejected(self, service: SecretEncryptionService):
         with pytest.raises(TypeError):
