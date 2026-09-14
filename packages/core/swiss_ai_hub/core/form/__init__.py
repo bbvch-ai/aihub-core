@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         normalize_empty_objects_to_none,
         transform_formkit_arrays,
     )
+    from swiss_ai_hub.core.form.secret_field_walker import SecretFieldWalker
     from swiss_ai_hub.core.form.template_data import TemplateData
 
 __all__ = [
@@ -51,6 +52,7 @@ __all__ = [
     "LocaleInput",
     "ModelSelect",
     "Repeater",
+    "SecretFieldWalker",
     "Select",
     "SelectButton",
     "Slider",
@@ -82,6 +84,7 @@ _LAZY_IMPORTS = {
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
+    "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

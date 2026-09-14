@@ -44,6 +44,10 @@ class AgentController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.agent.description")
     icon = "mage:robot"
 
+    # Generalises this controller's own admin guards below (`aihub.admin.agent.{agent_class}[.{agent_id}]`):
+    # the app is a management surface, while `aihub.user.service.agent` is held by everyone who merely chats.
+    suite_visibility_permission = f"{AccessChecker.ADMIN_PREFIX}agent.?>"
+
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this resource")
 
     _AGENT_INSTANCE_ROUTE = "/classes/{agent_class}/instances/{agent_id}"
