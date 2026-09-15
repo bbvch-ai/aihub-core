@@ -13,6 +13,7 @@ from mongoengine import (
     Q,
     StringField,
 )
+from mongoengine.connection import get_db
 from mongoengine.context_managers import switch_db
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -390,6 +391,24 @@ class RefDoc(Document):
                 return True
             except SwitchedRefDoc.DoesNotExist:
                 return False
+
+    @classmethod
+    @trace_fn
+    def delete_by_namespace(cls, db_alias: str, namespace: str) -> int:
+        """Delete every RefDoc of a namespace from the doc store in one server-side call; returns the count removed."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace).delete()
+
+    @classmethod
+    @trace_fn
+    def drop_database(cls, db_alias: str) -> None:
+        """Drop the entire doc-store Mongo database backing a knowledge database.
+
+        Used by database teardown, where every namespace is going away — cheaper and cleaner than
+        deleting RefDocs namespace-by-namespace. The alias must already be registered by the caller.
+        """
+        database = get_db(db_alias)
+        database.client.drop_database(database.name)
 
     @classmethod
     @trace_fn

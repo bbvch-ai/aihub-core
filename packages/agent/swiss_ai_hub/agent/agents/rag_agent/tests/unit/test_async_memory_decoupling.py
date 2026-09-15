@@ -32,23 +32,29 @@ def _config(storage_enabled: bool, async_enabled: bool) -> SimpleNamespace:
 
 
 def test_storage_disabled_never_gates():
-    assert check_ready_for_stop(_config(storage_enabled=False, async_enabled=False), None, None) is True
+    assert check_ready_for_stop(_config(storage_enabled=False, async_enabled=False), True, None, None) is True
 
 
 def test_inline_mode_gates_on_store_event():
     config = _config(storage_enabled=True, async_enabled=False)
-    assert check_ready_for_stop(config, None, None) is False
-    assert check_ready_for_stop(config, _STORE_EVENT, None) is True
+    assert check_ready_for_stop(config, True, None, None) is False
+    assert check_ready_for_stop(config, True, _STORE_EVENT, None) is True
     # In inline mode the async marker must NOT satisfy the gate.
-    assert check_ready_for_stop(config, None, _MARKER) is False
+    assert check_ready_for_stop(config, True, None, _MARKER) is False
+
+
+def test_an_identity_less_run_never_gates_on_a_write_it_will_not_perform():
+    """A delegated run with no user skips the storage step, so gating the stop on its event would hang the run."""
+    config = _config(storage_enabled=True, async_enabled=False)
+    assert check_ready_for_stop(config, False, None, None) is True
 
 
 def test_async_mode_gates_on_marker_not_store_event():
     config = _config(storage_enabled=True, async_enabled=True)
-    assert check_ready_for_stop(config, None, None) is False
-    assert check_ready_for_stop(config, None, _MARKER) is True
+    assert check_ready_for_stop(config, True, None, None) is False
+    assert check_ready_for_stop(config, True, None, _MARKER) is True
     # In async mode the run must finalize on the cheap marker, not wait for a StoreUserMemoryEvent.
-    assert check_ready_for_stop(config, _STORE_EVENT, None) is False
+    assert check_ready_for_stop(config, True, _STORE_EVENT, None) is False
 
 
 def test_build_memory_storage_request_targets_writer_and_carries_origin():

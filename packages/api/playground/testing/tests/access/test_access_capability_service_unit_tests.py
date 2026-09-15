@@ -8,7 +8,11 @@ from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
 from swiss_ai_hub.api.decorators.access_catalog import ACCESS_CATALOG_ENTRY_ATTRIBUTE, AccessCatalogEntryMeta
-from swiss_ai_hub.api.routes.access.access_capability_service import AccessCapabilityService
+from swiss_ai_hub.api.routes.access.access_capability_service import (
+    _CLASS_SUBTREE_POLICIES,
+    AccessCapabilityService,
+    _CapabilityCatalogBuilder,
+)
 from swiss_ai_hub.api.routes.access.access_preset_service import AccessPresetService
 
 _AGENT = "swiss_ai_hub.api.routes.agent.agent_service.AgentService"
@@ -70,8 +74,11 @@ _AGENT_ROUTES = [
 ]
 _ROLE_ROUTES = [("aihub.admin.service.role", None)]
 _OPENAI_ROUTES = [("aihub.user.?>", None)]
-# Guards mirror the real Process/Knowledge controllers: process "Create" is a class-level read-only guard
-# (`{process_class}.?>`), while knowledge has only namespace-level (two-parameter) guards — no class-level row.
+# Guards mirror the real Process/Knowledge controllers, which cannot be instantiated here — both open
+# infrastructure connections in ``__init__``. Process "Create" is a class-level read-only guard
+# (`{process_class}.?>`), so process has no grantable class row at all. Knowledge "Manage" is the
+# class-level guard over a whole database (`aihub.admin.knowledge.{database}`, knowledge_controller.py
+# :278/:285) and "Create" is resource-wide; knowledge has no annotated admin guard at namespace level.
 _PROCESS_ROUTES = [
     ("aihub.user.process.?>", f"{_OPS}.process.see"),
     ("aihub.admin.process.{process_class}.?>", f"{_OPS}.process.create"),
@@ -80,8 +87,9 @@ _PROCESS_ROUTES = [
 ]
 _KNOWLEDGE_ROUTES = [
     ("aihub.user.knowledge.?>", f"{_OPS}.knowledge.see"),
+    ("aihub.admin.knowledge", f"{_OPS}.knowledge.create"),
+    ("aihub.admin.knowledge.{database}", f"{_OPS}.knowledge.manage"),
     ("aihub.user.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.use"),
-    ("aihub.admin.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.manage"),
 ]
 
 
@@ -403,7 +411,7 @@ async def test_process_resolver_builds_class_and_instance_groups():
 @pytest.mark.asyncio
 async def test_knowledge_resolver_nests_namespaces_under_databases():
     # Exercises the `knowledge` resolver branch: databases are the class level, namespaces the instances,
-    # and knowledge has no class-level guard, so the database group carries no rows of its own.
+    # and the database group carries the class-level "Manage" row over the whole database.
     response = await _catalog(
         ["aihub.admin.knowledge.>"],
         [_controller("Knowledge", "KnowledgeController", _KNOWLEDGE_ROUTES)],
@@ -413,9 +421,185 @@ async def test_knowledge_resolver_nests_namespaces_under_databases():
     service = _group_by_key(response.groups, "service:knowledge")
     database = _group_by_key(service.groups, "knowledge:corp")
     assert database.label == "Corporate Wiki"
-    assert database.capabilities == []  # knowledge has no class-level guard → the database group carries no rows
+    manage = next(cap for cap in database.capabilities if cap.rule == "aihub.admin.knowledge.corp")
+    # The family wildcard covers both forms, so the row is granted and cannot be unticked from here.
+    assert manage.granted and manage.locked
 
     namespace = _group_by_key(database.groups, "knowledge:corp:hr")
     assert namespace.label == "HR Policies"
-    namespace_rules = {cap.rule for cap in namespace.capabilities}
-    assert {"aihub.user.knowledge.corp.hr", "aihub.admin.knowledge.corp.hr"} <= namespace_rules
+    assert {cap.rule for cap in namespace.capabilities} == {"aihub.user.knowledge.corp.hr"}
+
+
+@pytest.mark.asyncio
+async def test_a_class_level_row_offers_its_subtree_for_removal_only():
+    """The subtree rule rides along as something the checkbox *clears*, never something it writes.
+
+    Granting it would hand the tenant every instance of the class — other tenants' included, since
+    instances carry no tenant of their own — but a ceiling written before that was understood still holds
+    it, and unticking the blueprint has to take it with them.
+    """
+    caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)])
+
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.toggleable
+    assert blueprint.revoked_rules == ["aihub.admin.agent.WeatherAgent.>"]
+    assert blueprint.companion_rules == []
+
+
+@pytest.mark.asyncio
+async def test_the_bare_root_alone_grants_the_class():
+    """What a curated tenant holds. Reading it as not granted would render an unticked box beside a
+    blueprint the tenant can already build on, and ticking it would write a rule it already has."""
+    caps = await _capabilities(
+        ["aihub.admin.agent.WeatherAgent"], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)]
+    )
+
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.granted and not blueprint.locked
+
+
+@pytest.mark.asyncio
+async def test_a_legacy_ceiling_holding_both_forms_stays_untickable():
+    """A tenant seeded before the subtree was dropped. The row must stay unlocked so one untick clears
+    both rules — locking it would leave the wildcard reachable only by hand-editing the rule list."""
+    caps = await _capabilities(
+        ["aihub.admin.agent.WeatherAgent", "aihub.admin.agent.WeatherAgent.>"],
+        [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
+    )
+
+    blueprint = _by_rule(caps, "aihub.admin.agent.WeatherAgent")
+    assert blueprint.granted and not blueprint.locked
+    assert blueprint.revoked_rules == ["aihub.admin.agent.WeatherAgent.>"]
+
+
+@pytest.mark.asyncio
+async def test_an_instance_row_carries_no_subtree():
+    """Only class-level rows stand for a whole resource; an instance row is exactly its own endpoint, and
+    appending ``.>`` there would silently widen what the checkbox grants."""
+    caps = await _capabilities([], [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)])
+
+    instance = _by_rule(caps, "aihub.user.agent.WeatherAgent.inst1")
+    assert instance.companion_rules == []
+    assert instance.revoked_rules == []
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_capped_to_the_bare_root_still_shows_the_row():
+    """A curated tenant's ceiling is exactly this. The role editor must still offer the blueprint, or a
+    tenant admin could not grant one of its own roles the right to create assistants of a type it holds."""
+    caps = await _capabilities(
+        ["aihub.admin.>"],
+        [_controller("AI Assistants", "AgentController", _AGENT_ROUTES)],
+        tenant_rules=["aihub.admin.service.>", "aihub.admin.agent.WeatherAgent"],
+    )
+
+    assert _by_rule(caps, "aihub.admin.agent.WeatherAgent").granted
+    # The instances under it are a different matter: the ceiling names none of them, so they stay hidden.
+    assert not any(cap.rule == "aihub.admin.agent.WeatherAgent.inst1" for cap in caps.values())
+
+
+async def _knowledge_capabilities(rules: list[str], tenant_rules: list[str] | None = None):
+    response = await _catalog(
+        rules,
+        [_controller("Knowledge", "KnowledgeController", _KNOWLEDGE_ROUTES)],
+        tenant_rules=tenant_rules,
+        knowledge_service=_PopulatedKnowledgeService,
+    )
+    flat: dict[str, SimpleNamespace] = {}
+
+    def collect(group):
+        for cap in group.capabilities:
+            flat[cap.key] = cap
+        for sub in group.groups:
+            collect(sub)
+
+    for group in response.groups:
+        collect(group)
+    return flat
+
+
+@pytest.mark.asyncio
+async def test_a_knowledge_database_row_writes_its_subtree():
+    """The mirror of the blueprint row, and the distinction the per-family policy exists for: a database's
+    namespaces belong to the database, so its row means the whole database and writes both forms."""
+    caps = await _knowledge_capabilities([])
+
+    database = _by_rule(caps, "aihub.admin.knowledge.corp")
+    assert database.toggleable
+    assert database.companion_rules == ["aihub.admin.knowledge.corp.>"]
+    assert database.revoked_rules == []
+
+
+@pytest.mark.asyncio
+async def test_a_half_granted_knowledge_database_reads_as_not_granted():
+    """Holding only the root reaches no namespace of the database, so reporting it as granted would be a
+    lie — and would render a ticked box beside a database whose documents the subject cannot open."""
+    caps = await _knowledge_capabilities(["aihub.admin.knowledge.corp"])
+
+    assert not _by_rule(caps, "aihub.admin.knowledge.corp").granted
+
+
+@pytest.mark.asyncio
+async def test_both_knowledge_forms_together_grant_the_database():
+    caps = await _knowledge_capabilities(["aihub.admin.knowledge.corp", "aihub.admin.knowledge.corp.>"])
+
+    database = _by_rule(caps, "aihub.admin.knowledge.corp")
+    assert database.granted and not database.locked
+
+
+@pytest.mark.asyncio
+async def test_a_ceiling_that_cannot_grant_the_knowledge_subtree_hides_the_row():
+    """The ceiling check spans the row's rules too, so a tenant capped to the bare database root does not
+    get a checkbox promising the namespaces under it."""
+    caps = await _knowledge_capabilities(
+        ["aihub.admin.>"], tenant_rules=["aihub.admin.service.>", "aihub.admin.knowledge.corp"]
+    )
+
+    assert not any(cap.rule == "aihub.admin.knowledge.corp" for cap in caps.values())
+
+
+@pytest.mark.asyncio
+async def test_a_knowledge_namespace_row_carries_no_companions():
+    caps = await _knowledge_capabilities([])
+
+    namespace = _by_rule(caps, "aihub.user.knowledge.corp.hr")
+    assert namespace.companion_rules == []
+    assert namespace.revoked_rules == []
+
+
+@pytest.mark.asyncio
+async def test_the_two_families_disagree_about_their_subtree_in_one_catalog():
+    """The regression guard for the defect this policy fixes: the subtree rule is generic machinery shared
+    by every family, so a change meant for blueprints silently reshaped knowledge rows too. Both families
+    are built here in one catalog, because a single-controller test cannot see them disagree.
+    """
+    response = await _catalog(
+        [],
+        [
+            _controller("AI Assistants", "AgentController", _AGENT_ROUTES),
+            _controller("Knowledge", "KnowledgeController", _KNOWLEDGE_ROUTES),
+        ],
+        knowledge_service=_PopulatedKnowledgeService,
+    )
+    rows: list[SimpleNamespace] = []
+
+    def collect(group):
+        rows.extend(group.capabilities)
+        for sub in group.groups:
+            collect(sub)
+
+    for group in response.groups:
+        collect(group)
+
+    blueprint = next(row for row in rows if row.rule == "aihub.admin.agent.WeatherAgent")
+    database = next(row for row in rows if row.rule == "aihub.admin.knowledge.corp")
+
+    assert blueprint.revoked_rules == ["aihub.admin.agent.WeatherAgent.>"] and blueprint.companion_rules == []
+    assert database.companion_rules == ["aihub.admin.knowledge.corp.>"] and database.revoked_rules == []
+
+
+def test_every_subtree_policy_names_a_resolvable_family():
+    """A typo in either table would silently drop a family back to carrying no wildcard at all."""
+    builder = _CapabilityCatalogBuilder.__new__(_CapabilityCatalogBuilder)
+
+    assert set(_CLASS_SUBTREE_POLICIES) <= set(builder._resource_resolvers())

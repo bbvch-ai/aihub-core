@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from swiss_ai_hub.core.dependencies import use_nats
-from swiss_ai_hub.core.infrastructure import AIHubSettings, use_milvus, use_redis, use_s3
+from swiss_ai_hub.core.infrastructure import AIHubSettings, use_optional_milvus, use_redis, use_s3
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
@@ -51,7 +51,7 @@ def test_ready_endpoint_includes_version():
     # infrastructure: every check reports unhealthy, but the version must still be surfaced.
     runner._api_app.dependency_overrides[use_nats] = lambda: None
     runner._api_app.dependency_overrides[use_redis] = lambda: None
-    runner._api_app.dependency_overrides[use_milvus] = lambda: None
+    runner._api_app.dependency_overrides[use_optional_milvus] = lambda: None
     runner._api_app.dependency_overrides[use_s3] = lambda: None
 
     client = TestClient(runner.create_app())

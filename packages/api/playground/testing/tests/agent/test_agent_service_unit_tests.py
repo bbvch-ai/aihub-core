@@ -8,6 +8,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -468,8 +469,7 @@ class TestCreateAgentInstanceGrantWiring:
     def _mock_create_dependencies(stack: ExitStack):
         class_entity = Mock()
         class_entity.is_online = True
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         config_entity = Mock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
@@ -547,8 +547,7 @@ class TestUpdateAgentInstanceLocksAgentId:
     @staticmethod
     def _mock_update_dependencies(stack: ExitStack, config_entity: Mock) -> None:
         class_entity = Mock()
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         class_entity.form = []
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))

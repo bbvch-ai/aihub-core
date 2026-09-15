@@ -201,7 +201,9 @@ def seeded_corpus(event_loop):
     run OUTSIDE the @async_test asyncio.run to avoid a nested-loop RuntimeError)."""
     asyncio.set_event_loop(event_loop)
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
-    vector_store = MilvusVectorStoreConfig(uri="http://localhost", collection_name=COLLECTION, dimensions=1024)
+    vector_store = MilvusVectorStoreConfig(
+        uri="http://localhost", collection_name=COLLECTION, dimensions=1024, all_namespaces=True
+    )
     doc_store = create_mongo_document_store(document_store_name=COLLECTION)
     drop_collection(collection_name=COLLECTION)
     fill_collection(embedding_config, vector_store, doc_store, nodes=ALL_NODES)

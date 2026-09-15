@@ -34,7 +34,7 @@ class TestMarkdownStructuralNodeParserResource:
         with patch.object(
             EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": 4096}}
         ):
-            assert resource._resolve_max_embedding_tokens() == 4096
+            assert resource._resolve_max_embedding_tokens(resource.embedding_config) == 4096
 
     def test_null_max_input_tokens_falls_back_to_the_default(self) -> None:
         """LiteLLM reports null for any model it holds no metadata for."""
@@ -43,7 +43,7 @@ class TestMarkdownStructuralNodeParserResource:
         with patch.object(
             EmbeddingModelConfig, "get_model_info", return_value={"model_info": {"max_input_tokens": None}}
         ):
-            assert resource._resolve_max_embedding_tokens() == 8192
+            assert resource._resolve_max_embedding_tokens(resource.embedding_config) == 8192
 
     def test_parser_receives_the_resolved_ceiling(self) -> None:
         resource = build_resource()

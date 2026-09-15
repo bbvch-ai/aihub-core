@@ -101,7 +101,7 @@ async def test_degraded_events_still_satisfy_the_chat_history_precondition():
         event=_event(), org_memory=_org_config(), memory=_failing_memory()
     )
 
-    assert check_memory_ready_for_chat_history(config, user_event, org_event) is True
+    assert check_memory_ready_for_chat_history(config, True, user_event, org_event) is True
 
 
 @pytest.mark.asyncio

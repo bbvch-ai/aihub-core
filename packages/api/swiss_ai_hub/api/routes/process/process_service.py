@@ -5,7 +5,8 @@ from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs, ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
@@ -342,17 +343,8 @@ class ProcessService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
@@ -402,17 +394,8 @@ class ProcessService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 

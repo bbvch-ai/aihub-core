@@ -62,6 +62,9 @@ model_list:
       # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
       # which is how oversized chunks reached the model and failed the whole document.
       max_input_tokens: 8192
+      # The dimension of a knowledge database's Milvus collection is derived from this. It must be the
+      # model's real output width — a wrong value is not rejected, it silently truncates or pads vectors.
+      output_vector_size: 1024
       input_cost_per_token: 0
 
   # ===================================================================

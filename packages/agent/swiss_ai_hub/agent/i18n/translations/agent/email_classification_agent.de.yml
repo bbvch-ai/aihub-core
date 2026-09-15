@@ -15,3 +15,14 @@ steps:
     name: Antworten entwerfen
   finish:
     name: Abschliessen
+  request_grounded_drafts:
+    name: Wissensagent befragen
+  collect_and_draft:
+    name: Antworten entwerfen
+config:
+  rag_agent:
+    label: Wissensagent
+    help: RAG-Agent, der eine Nachricht aus der Sammlung ihrer Kategorie beantwortet.
+      Erforderlich, sobald eine Kategorie eine Sammlung nennt.
+    class_placeholder: Agententyp wählen
+    id_placeholder: Agent wählen

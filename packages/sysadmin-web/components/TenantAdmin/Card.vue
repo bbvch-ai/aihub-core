@@ -39,11 +39,18 @@
         </span>
         <div class="flex flex-wrap gap-2 text-sm">
           <Badge
-            v-for="access_rule in tenant.access_rules"
+            v-for="access_rule in visibleAccessRules"
             :key="access_rule"
             :value="access_rule"
             severity="secondary"
             class="border border-surface-200 dark:border-surface-700"
+          />
+          <Badge
+            v-if="hiddenAccessRules.length"
+            v-tooltip.top="{ value: hiddenAccessRules.join('\n') }"
+            :value="t('tenant_admin.card.more_rules', { count: hiddenAccessRules.length })"
+            severity="secondary"
+            class="cursor-help border border-dashed border-surface-300 dark:border-surface-600"
           />
         </div>
       </div>
@@ -97,6 +104,12 @@ const isActive = computed(() => {
 })
 
 const isOrphaned = computed(() => props.tenant.state === 'orphaned')
+
+// A wildcard ceiling is one rule; a curated one enumerates every permitted model and runs to a dozen or
+// more. Rendering them all turned the card into a wall of badges, so the tail moves into a tooltip.
+const MAX_VISIBLE_ACCESS_RULES = 4
+const visibleAccessRules = computed(() => (props.tenant.access_rules ?? []).slice(0, MAX_VISIBLE_ACCESS_RULES))
+const hiddenAccessRules = computed(() => (props.tenant.access_rules ?? []).slice(MAX_VISIBLE_ACCESS_RULES))
 
 const confirmDelete = () => {
   confirm.require({
