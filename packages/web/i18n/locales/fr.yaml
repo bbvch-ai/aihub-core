@@ -218,6 +218,8 @@ event:
         produit de réponse fondée.
       few_shot_rejected: La requête ne correspondait à aucun motif connu, la réponse
         a donc été produite sans récupération.
+      input_too_large: Le message ou le fichier joint dépassait la fenêtre de contexte
+        du modèle, cette exécution a donc été arrêtée avant l'appel au modèle.
   limitChatHistory:
     summary: Historique de chat limité à {count} messages
     assistant: Assistant

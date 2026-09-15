@@ -144,6 +144,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
+| `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
+| `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |
 | `RAG_IMAGE_INLINE_MAX_BYTES` |  | `litellm` |  |
 | `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `rclone` | RC API password for authentication. |

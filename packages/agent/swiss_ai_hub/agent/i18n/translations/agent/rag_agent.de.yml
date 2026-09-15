@@ -114,3 +114,11 @@ steps:
   stop:
     name: Stopp
     description: Beendet den Workflow nach Abschluss aller erforderlichen Schritte
+thoughts:
+  input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
+    %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
+    Modells wird abgelehnt.'
+messages:
+  input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
+    Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
+    zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.

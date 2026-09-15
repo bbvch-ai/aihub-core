@@ -1,6 +1,6 @@
 import httpx
 import pytest
-from openai import InternalServerError
+from openai import BadRequestError, InternalServerError
 
 from swiss_ai_hub.core.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
 
@@ -26,6 +26,12 @@ NO_SEGMENTS_FAILURE = (
     "Transcription failed: 0'}. Received Model Group=inference-whisper-large-v3\n"
     "Available Model Group Fallbacks=None LiteLLM Retried: 2 times, LiteLLM Max Retries: 2"
 )
+
+
+def _bad_request_error(message: str) -> BadRequestError:
+    body = {"error": {"message": message, "type": None, "param": None, "code": "400"}}
+    request = httpx.Request("POST", UPSTREAM_URL)
+    return BadRequestError("Error code: 400", response=httpx.Response(400, request=request, json=body), body=body)
 
 
 def _internal_server_error(message: str) -> InternalServerError:
@@ -58,6 +64,51 @@ class TestProviderInternalsAreRewrittenForTheCaller:
         message = "litellm.InternalServerError: OpenAIException - upstream exploded in a new way"
 
         assert ModelGatewayErrorHandler.cause_of(_internal_server_error(message)) == message
+
+
+class TestAnOverlongPromptNamesTheLimitInsteadOfTheGatewaysBookkeeping:
+    """Recorded verbatim from Swiss LLM Cloud on 2026-09-14 by asking a 297-page PDF a question
+    (aihub-core-private#241). The provider states the limit inside its own token arithmetic, and on the
+    stages that configure fallbacks LiteLLM appends its fallback bookkeeping after it -- neither of which
+    tells a chat user what to do."""
+
+    CONTEXT_EXCEEDED = (
+        "litellm.BadRequestError: OpenAIException - upstream 400 on google/gemma-4-31B-it: "
+        '{"error":{"message":"This model\'s maximum context length is 100016 tokens. However, you '
+        "requested 1 output tokens and your prompt contains at least 100016 input tokens, for a total "
+        "of at least 100017 tokens. Please reduce the length of the input prompt or the number of "
+        'requested output tokens. (parameter=input_tokens, value=100016)","type":"BadRequestError",'
+        '"param":"input_tokens","code":400}}. Received Model Group=text-generation/gemma-4-31B-it\n'
+        "Available Model Group Fallbacks=None"
+    )
+
+    def test_the_limit_is_kept_and_the_arithmetic_dropped(self):
+        cause = ModelGatewayErrorHandler.cause_of(_bad_request_error(self.CONTEXT_EXCEEDED))
+
+        assert "100016" in cause
+        assert "parameter=input_tokens" not in cause
+        assert "Received Model Group" not in cause
+        assert cause.startswith("This request is too long for the model")
+
+    def test_the_fallback_bookkeeping_is_dropped_too(self):
+        """The deployed stages configure `default_fallbacks`, so the real cause arrives with LiteLLM's
+        fallback search appended to it."""
+        with_fallback_noise = (
+            self.CONTEXT_EXCEEDED + "No fallback model group found for original "
+            "model_group=text-generation/gemma-4-31B-it. Fallbacks=[{'embedding/bge-m3': []}, "
+            "{'reranker/bge': []}]"
+        )
+
+        cause = ModelGatewayErrorHandler.cause_of(_bad_request_error(with_fallback_noise))
+
+        assert "No fallback model group found" not in cause
+        assert "embedding/bge-m3" not in cause
+        assert "100016" in cause
+
+    def test_an_unrelated_bad_request_keeps_the_gateway_wording(self):
+        message = "litellm.BadRequestError: OpenAIException - Invalid model name passed in model=nope"
+
+        assert ModelGatewayErrorHandler.cause_of(_bad_request_error(message)) == message
 
 
 class TestUnusableAudioIsToldFromAGatewayFault:
