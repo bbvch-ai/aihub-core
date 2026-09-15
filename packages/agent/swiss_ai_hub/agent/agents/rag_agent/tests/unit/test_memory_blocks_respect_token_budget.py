@@ -11,6 +11,8 @@ limiter ran afterwards. These tests pin that invariant back in place, including 
 result does not fit.
 """
 
+from unittest.mock import patch
+
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
@@ -82,18 +84,31 @@ def _turns(count: int) -> list[ChatMessage]:
     ]
 
 
-async def _run_step(agent_type, config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
-    return await agent_type().add_memory_to_chat_history_step(
-        chat_history_event=LimitChatHistoryEvent(limited_history=history),
-        start_event=UserMessageEvent(
-            messages=history,
-            user=fake_user(),
-        ),
-        user_memory_event=RetrieveUserMemoryEvent(memories=memories, relations=[]),
-        org_memory_event=None,
-        agent_config=config,
-        t=LocaleHandler(),
-    )
+async def _run_step(
+    agent_type,
+    config: RAGAgentConfig,
+    history: list[ChatMessage],
+    memories: list[Memory],
+    window: int | None = None,
+):
+    """Runs the step with the model's declared context window pinned.
+
+    `get_model_info` is a cached real HTTP GET, so the window is always patched here — an unpatched call
+    would make these unit tests depend on the gateway being reachable.
+    """
+    model_info = {"model_info": {} if window is None else {"max_input_tokens": window}}
+    with patch.object(LLMConfig, "get_model_info", return_value=model_info):
+        return await agent_type().add_memory_to_chat_history_step(
+            chat_history_event=LimitChatHistoryEvent(limited_history=history),
+            start_event=UserMessageEvent(
+                messages=history,
+                user=fake_user(),
+            ),
+            user_memory_event=RetrieveUserMemoryEvent(memories=memories, relations=[]),
+            org_memory_event=None,
+            agent_config=config,
+            t=LocaleHandler(),
+        )
 
 
 def _token_count(config: RAGAgentConfig, messages: list[ChatMessage]) -> int:
@@ -141,3 +156,43 @@ async def test_the_memory_block_is_what_gives_way_not_the_latest_turn(agent_type
 
     assert event.extended_history, "limiting must never empty the history"
     assert event.extended_history[-1].content == history[-1].content
+
+
+@pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
+@pytest.mark.asyncio
+async def test_the_model_window_wins_over_a_higher_cost_ceiling(agent_type):
+    """A cost ceiling above the model's window must not let the blocks push the prompt past the window.
+
+    Since #1880 `limit_chat_history_step` trims against the window, so `limited_history` already fits it.
+    Re-limiting to `number_of_input_tokens` alone would re-open exactly the gap that step closed — the
+    blocks would ride on top of a window-sized history and the provider would answer with a 400.
+    """
+    config = _config(number_of_input_tokens=128000)
+
+    event = await _run_step(
+        agent_type,
+        config,
+        _turns(12),
+        _memories(10, "The user prefers a very specific thing"),
+        window=600,
+    )
+
+    assert _token_count(config, event.extended_history) <= 600
+
+
+@pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
+@pytest.mark.asyncio
+async def test_an_undeclared_window_falls_back_to_the_configured_ceiling(agent_type):
+    """`usable_input_budget` fails open, so a model with no declared window must not empty the history."""
+    config = _config(number_of_input_tokens=600)
+
+    event = await _run_step(
+        agent_type,
+        config,
+        _turns(12),
+        _memories(10, "The user prefers a very specific thing"),
+        window=None,
+    )
+
+    assert event.extended_history
+    assert _token_count(config, event.extended_history) <= config.number_of_input_tokens

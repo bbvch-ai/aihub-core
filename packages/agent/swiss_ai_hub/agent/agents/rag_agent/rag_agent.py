@@ -79,6 +79,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_retrieve,
     do_retrieve_organization_memory,
     do_retrieve_user_memory,
+    effective_input_token_limit,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -372,12 +373,16 @@ class RAGAgent(Agent):
     ) -> AddMemoryToChatHistoryEvent:
         """Extend the limited chat history with memory context (user and/or organization).
 
-        Re-limited before it leaves this step, so `extended_history` carries the same "fits
-        `number_of_input_tokens`" guarantee `LimitChatHistoryEvent.limited_history` does. Every consumer reads
-        it unchecked — the context-sufficiency guard and the reject paths in `do_respond_with_llm` do no
-        limiting at all, and `limit_chat_history_with_context` *reserves* system messages rather than trimming
-        them, so an oversized block raises there instead of being cut. Limiting once here is what keeps that
-        invariant true for consumers added later, too.
+        Re-limited before it leaves this step, so `extended_history` carries the same "fits the budget"
+        guarantee `LimitChatHistoryEvent.limited_history` does. Every consumer reads it unchecked — the
+        context-sufficiency guard and the reject paths in `do_respond_with_llm` do no limiting at all, and
+        `limit_chat_history_with_context` *reserves* system messages rather than trimming them, so an
+        oversized block raises there instead of being cut. Limiting once here is what keeps that invariant
+        true for consumers added later, too.
+
+        The limit is `effective_input_token_limit`, not `number_of_input_tokens` alone: since #1880 the
+        entry limiter trims against the model's context window, which an admin's cost ceiling may exceed.
+        Re-limiting to the bare ceiling would let the blocks push a window-sized history past the window.
 
         The blocks are what gets dropped when the result does not fit: `ChatMemoryBuffer` keeps the most recent
         messages, and these sit at the front. That is deliberate and matches the pre-#1753 order, where memory
@@ -408,7 +413,10 @@ class RAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(
             extended_history=limit_chat_history(
                 chat_history=chat_history,
-                number_of_input_tokens=agent_config.number_of_input_tokens,
+                number_of_input_tokens=effective_input_token_limit(
+                    agent_config.number_of_input_tokens,
+                    [agent_config.llm, agent_config.task_llm],
+                ),
             )
         )
 
@@ -448,7 +456,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         displayer: EventDisplayer,
         user: UserIdentity | None = None,
-    ) -> StandaloneQuestionCondenserEvent:
+    ) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
         return await do_condense_standalone_question(
             event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
         )

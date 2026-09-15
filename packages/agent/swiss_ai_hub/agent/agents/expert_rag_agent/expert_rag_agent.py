@@ -89,6 +89,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_retrieve,
     do_retrieve_organization_memory,
     do_retrieve_user_memory,
+    effective_input_token_limit,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -400,10 +401,11 @@ class ExpertRAGAgent(Agent):
     ) -> AddMemoryToChatHistoryEvent:
         """Extend the limited chat history with memory context (user and/or organization).
 
-        Re-limited before it leaves this step, for the reasons spelled out on `RAGAgent`'s copy: every
-        consumer reads `extended_history` unchecked, and `limit_chat_history_with_context` reserves system
-        messages rather than trimming them. The memory blocks are what gets dropped when the result does not
-        fit, matching the pre-#1753 order.
+        Re-limited to `effective_input_token_limit` before it leaves this step, for the reasons spelled out
+        on `RAGAgent`'s copy: every consumer reads `extended_history` unchecked,
+        `limit_chat_history_with_context` reserves system messages rather than trimming them, and the model
+        window can sit below the configured cost ceiling. The memory blocks are what gets dropped when the
+        result does not fit, matching the pre-#1753 order.
         """
         # The extend helpers mutate in place; other steps read limited_history off the same event instance.
         chat_history = [*chat_history_event.limited_history]
@@ -429,7 +431,10 @@ class ExpertRAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(
             extended_history=limit_chat_history(
                 chat_history=chat_history,
-                number_of_input_tokens=agent_config.number_of_input_tokens,
+                number_of_input_tokens=effective_input_token_limit(
+                    agent_config.number_of_input_tokens,
+                    [agent_config.llm, agent_config.task_llm],
+                ),
             )
         )
 
@@ -469,7 +474,7 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
         displayer: EventDisplayer,
         user: UserIdentity,
-    ) -> StandaloneQuestionCondenserEvent:
+    ) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
         return await do_condense_standalone_question(
             event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
         )

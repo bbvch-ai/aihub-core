@@ -28,6 +28,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    EmptyCondensationError,
     IngestedNode,
     LLMConfig,
     OrgMemoryNamespaceResolver,
@@ -67,6 +68,20 @@ PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
 
 # Bounds a hung backend, not normal latency: well above the ~0.25s graph-free median from issue #1713.
 MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
+
+
+def effective_input_token_limit(
+    number_of_input_tokens: int,
+    llm_configs: list[LLMConfig | None],
+) -> int:
+    """The admin's cost ceiling capped by the narrowest model window that could receive the prompt.
+
+    `number_of_input_tokens` is a cost ceiling and may sit above the model's real context window, so
+    trimming to it alone does not bound what the provider will accept. Falls back to the ceiling when no
+    window can be established, matching `usable_input_budget`'s fail-open contract.
+    """
+    budget = usable_input_budget(llm_configs)
+    return number_of_input_tokens if budget is None else min(number_of_input_tokens, budget)
 
 
 async def do_limit_chat_history(
@@ -144,14 +159,39 @@ async def do_condense_standalone_question(
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity | None,
-) -> StandaloneQuestionCondenserEvent:
-    """Condense chat history and user query into standalone question."""
+) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
+    """Condense chat history and user query into standalone question.
+
+    A blank condensation refuses the turn rather than escaping as an `ExceptionEvent`. The raise in
+    `condense_standalone_question` is the right call at that layer — no caller can use an empty question —
+    but letting it reach the dispatcher renders its English message straight into the chat. This is the
+    same refusal shape `_refuse_oversized_input` uses for the other "we cannot serve this turn" case.
+    """
     await displayer.display_thought(t("agent.thought.condense_question"))
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        condensed = await condense_standalone_question(
-            chat_history=limited_history, message=last_user_message, t=t, llm=llm
-        )
+        try:
+            condensed = await condense_standalone_question(
+                chat_history=limited_history, message=last_user_message, t=t, llm=llm
+            )
+        except EmptyCondensationError:
+            return await _refuse_empty_condensation(llm_config.model_name, displayer, t)
         return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
+
+
+async def _refuse_empty_condensation(
+    model_name: str,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> RAGFailureStopEvent:
+    """Stop the run with a message the user can act on, keeping the mechanism to the thought.
+
+    Retrying is pointless (identical re-issue at `temperature=0.1` returns the same nothing) and there is
+    no fallback question to answer with, so asking the user to rephrase is the only useful move left.
+    """
+    await displayer.display_thought(t("agent.rag_agent.thoughts.condensation_empty"))
+    refusal = t("agent.rag_agent.messages.condensation_empty")
+    await displayer.display_chunk(refusal, model_name=model_name)
+    return RAGFailureStopEvent(reason=RAGFailureReason.CONDENSATION_EMPTY, answer=refusal)
 
 
 async def do_respond_with_llm(

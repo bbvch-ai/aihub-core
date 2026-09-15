@@ -2,11 +2,13 @@
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    LimitChatHistoryEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
+    StandaloneQuestionCondenserEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -53,8 +55,6 @@ def test_memory_steps_are_gated_transitively_through_the_condenser():
     detection is that they require events only reachable through the gated limit_chat_history_step.
     A refactor that re-anchors them on the start event alone must restore the explicit gate.
     """
-    from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
-
     condenser_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(StandaloneQuestionCondenserEvent)}
     assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= condenser_gated
 

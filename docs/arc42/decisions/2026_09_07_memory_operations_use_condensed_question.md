@@ -47,8 +47,10 @@ Reorder the workflow in both agents so every memory operation consumes the conde
   the budget plus the blocks. `context_sufficient_guard_step`, `limit_chat_history_with_context_step`, and
   `respond_with_llm_step` consume the extended history when a memory source is enabled
   (`check_memory_added_to_chat_history` precondition), falling back to the plain limited history otherwise.
-- `store_user_memory_step` persists `build_memory_conversation(...)` = the condensed question plus the answer, on both
-  the inline and the delegated (#1179) path. The final LLM input never reaches fact extraction again.
+- `store_user_memory_step` persists `build_memory_conversation(...)` = the condensed question plus the answer. The
+  final LLM input never reaches fact extraction again. The write is always the delegated one
+  (`2026_09_11_async_user_memory_storage_as_the_only_mode` retired the inline path); the payload contract toward
+  `MemoryWriterAgent` (#1179) is unchanged.
 - `forward_to_expert_asking_agent_step` (ExpertRAG) sends the condensed question as `question_to_expert`, so a
   document-inlined prompt is never posted to a Teams/Slack channel.
 
@@ -68,8 +70,11 @@ prompt reconciles duplicates — re-feeding history only multiplies embedding co
 - **(+)** Latency: memory search leaves the serial pre-condense path and overlaps document retrieval and the few-shot
   guard. Worst case (mem0 slower than retrieval + guard combined) equals the wait the old graph imposed up front.
 - Memory blocks are added *after* the entry-step limiting, so `add_memory_to_chat_history_step` re-limits before
-  emitting `AddMemoryToChatHistoryEvent` — `extended_history` carries the same "fits `number_of_input_tokens`" guarantee
-  `limited_history` does. Without that, three consumers would read an over-budget history unchecked:
+  emitting `AddMemoryToChatHistoryEvent` — `extended_history` carries the same "fits the budget" guarantee
+  `limited_history` does. The limit is `effective_input_token_limit`, the configured ceiling capped by the narrowest
+  model window: since #1880 the entry limiter trims against the window, and `number_of_input_tokens` is a cost ceiling
+  that may sit above it, so re-limiting to the ceiling alone would let the blocks push a window-sized history back over
+  the window. Without that, three consumers would read an over-budget history unchecked:
   `context_sufficient_guard` formats it straight into a prompt, `do_respond_with_llm`'s reject paths prepend a system
   message and send it, and `limit_chat_history_with_context` *reserves* system messages rather than trimming them, so an
   oversized block raises `ValueError` there instead of being cut. The blocks are ~450 (user) + ~375 (organization)
@@ -90,7 +95,11 @@ prompt reconciles duplicates — re-feeding history only multiplies embedding co
   check them. Blank condensations are real: 8 runs between 30 June and 14 July 2026, all `ExpertRAGAgent`. There is no
   retry (identical re-issue at `temperature=0.1` returns the same nothing) and no fallback to the raw last user message,
   which is the document-inlined prompt this decision removes. `StandaloneQuestionCondenserEvent` and
-  `FewShotStandaloneQuestionCondenserEvent` each need their own validator — different bases, no shared ancestor.
+  `FewShotStandaloneQuestionCondenserEvent` each need their own validator — different bases, no shared ancestor. In the
+  RAG agents the raise is caught one layer up, in `do_condense_standalone_question`, and turned into a localized
+  `RAGFailureStopEvent(reason=CONDENSATION_EMPTY)` — the same refusal shape `_refuse_oversized_input` uses for #1880.
+  Left uncaught it reaches the dispatcher as an `ExceptionEvent` (`stop_on_error` defaults to True), which renders the
+  error class's English sentence into the chat.
 - **(−)** `FewShotAgent` inherits that raise even though it never retrieves, stores or escalates. Accepted rather than
   exempted: it drops chat history and the original message from its final prompt, so a blank condensation leaves the
   model classifying nothing — the failure the raise prevents is worse there than in the RAG agents, not milder.
