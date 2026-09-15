@@ -52,13 +52,19 @@ access.**
   a subtree rule over a class is deployment-wide by construction (aihub-core-private#257). The bare root is what
   *creating* a profile is guarded on, and the profiles a tenant then creates are reached through
   `AgentService._grant_instance_access`, which grants each profile's own rule to the tenant that created it
-  (`2026_06_15_auto_grant_creator_access_to_agent_instances`). The knowledge family still carries both forms: a
-  database's namespaces genuinely belong to the database, where a blueprint's profiles belong to whoever built them.
+  (`2026_06_15_auto_grant_creator_access_to_agent_instances`). The knowledge family still carries both forms, via
+  `_CLASS_SUBTREE_POLICIES` below: a database's namespaces genuinely belong to the database, where a blueprint's
+  profiles belong to whoever built them.
 
-- **The blueprint checkbox grants the root and revokes the subtree.** `Capability.companion_rules` therefore means
-  "removed with this rule", never "written with it", and `granted` is the row's own rule rather than a conjunction over
-  both forms — a conjunction would read a curated ceiling as not granted and bounce the box back when ticked. Untick
-  still clears `<Class>.>` so a ceiling seeded under the old shape can be cleaned from the editor rather than by hand.
+- **The blueprint checkbox grants the root and revokes the subtree — for agents only.** The catalog's class-level rows
+  are generic machinery shared by every enumerable family, so this is expressed as a *per-family* policy
+  (`_CLASS_SUBTREE_POLICIES` in `access_capability_service.py`) rather than as behaviour of the row: whether the
+  wildcard under a class is the subject's to hold depends on whether the class owns what sits beneath it. A knowledge
+  database owns its namespaces, so its row keeps writing and probing both forms; an agent class does not own the
+  profiles built from it, so its `<Class>.>` moved to `Capability.revoked_rules` — written never, cleared always — and
+  its `granted` became the root alone. A conjunction there would read a curated ceiling as not granted and bounce the
+  box back when ticked. Untick still clears `<Class>.>` so a ceiling seeded under the old shape can be cleaned from the
+  editor rather than by hand.
 
 - **`GET /agents/classes` filters by `has_access_to_agent_class`,** which probes `aihub.user.agent.<Class>.?>`. The `?>`
   form matters: `?*` demands a rule strictly *below* the class, so it would hide every blueprint from a tenant holding
@@ -98,6 +104,10 @@ access.**
   the optional agents, which is a separate decision with a redeploy as its only way back.
 - **Two curation styles now live in one service** — an allow list for agents, exclusions for models. Justified above,
   but it is a thing a reader must be told rather than infer.
+- **The subtree policy is the one piece of catalog behaviour not derived from the route guard.** Two families disagree
+  about it and a third would have to choose deliberately; that is the price of a guard-derived catalog having nowhere to
+  express ownership. A family added to `_CLASS_SUBTREE_POLICIES` inherits its entry for every class-level guard it
+  gains, so a new guard in an existing family is not a neutral addition.
 - **Hiding is not authorization.** Enforcement remains in the per-class route guards and the ceiling; the list filter is
   a UX consequence of them, and must not become the only barrier.
 

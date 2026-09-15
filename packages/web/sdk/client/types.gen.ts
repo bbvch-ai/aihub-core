@@ -1970,13 +1970,19 @@ export type Capability = {
   /**
    * Companion Rules
    *
-   * Rules written and removed together with `rule`. A capability needs more than one when the rule grammar cannot express it in a single rule — a `.>` rule never matches its own root, so a row meaning 'this whole resource' has to carry both forms.
+   * Rules written *and* removed together with `rule`. A knowledge database's row carries `<rule>.>` here: its namespaces belong to it, and a `.>` rule never matches its own root, so the row needs both forms to mean 'this whole database'.
    */
   companion_rules?: Array<string>;
   /**
+   * Revoked Rules
+   *
+   * Rules removed with `rule`, never written with it. An agent class's row carries `<rule>.>` here: granting it would hand over every profile of the class in the deployment, other tenants' included, but a ceiling written before that was understood still holds it.
+   */
+  revoked_rules?: Array<string>;
+  /**
    * Granted
    *
-   * Whether the draft rules grant every rule of this capability.
+   * Whether the draft rules grant `rule` and every `companion_rules` entry.
    */
   granted: boolean;
   /**

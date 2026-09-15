@@ -711,6 +711,7 @@ role:
   capability_readonly: Aucune règle unique ne l'accorde — utilisez un modèle ou une
     règle plus large.
   capability_also_cleared: 'Décocher supprime également : {rules}'
+  capability_also_granted: 'Cocher accorde également : {rules}'
   pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
   pattern_help_all: Tous les agents
   pattern_help_wildcard: Toutes les instances de MyAgent

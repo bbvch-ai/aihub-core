@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, NamedTuple
 
 from fastapi.routing import APIRoute
@@ -39,6 +40,31 @@ _MODEL_USE_DESCRIPTION = ApiLocaleString.from_i18n_path("api.access.capabilities
 _MODEL_CONVERSATION_METADATA_DESCRIPTION = ApiLocaleString.from_i18n_path(
     "api.access.capabilities.ops.model.use.conversation_metadata_description"
 )
+
+
+class _SubtreePolicy(StrEnum):
+    """What a class-level row does with the ``<rule>.>`` wildcard beneath it.
+
+    Per family, not per row, because the answer turns on whether the class *owns* what sits under it. A
+    knowledge database owns its namespaces, so its row means the whole database and needs both forms. An
+    agent class does not own the profiles built from it: ``agent_configs`` carries no tenant column, so
+    ``<class>.>`` reaches every tenant's profiles (aihub-core-private#257) — its wildcard is only ever
+    cleared, never written.
+    """
+
+    NONE = "none"
+    REVOKED = "revoked"
+    GRANTED = "granted"
+
+
+# Keyed by service name, exactly like ``_resource_resolvers``, and deliberately a table rather than a branch:
+# a family absent here gets no wildcard companion at all, which is already true of every instance-level,
+# resource-wide and service-gate row. ``process`` is absent because its class guard is an existence query
+# with no grantable rule, so the policy would be inert for it anyway.
+_CLASS_SUBTREE_POLICIES: dict[str, _SubtreePolicy] = {
+    "agent": _SubtreePolicy.REVOKED,
+    "knowledge": _SubtreePolicy.GRANTED,
+}
 
 
 class _Guard(NamedTuple):
@@ -295,7 +321,7 @@ class _CapabilityCatalogBuilder:
     def _capabilities_for(
         self,
         guards: list[tuple[_GuardTemplate, AccessCatalogEntryMeta]],
-        revokes_subtree: bool = False,
+        subtree: _SubtreePolicy = _SubtreePolicy.NONE,
         **path_param_values: str,
     ) -> list[Capability]:
         """Substitutes ``path_param_values`` into each guard template and builds its capability row, dropping
@@ -303,7 +329,7 @@ class _CapabilityCatalogBuilder:
         capabilities: list[Capability] = []
         for template, meta in guards:
             capability = self._capability_for_guard(
-                meta.label, meta.description, template.substitute(**path_param_values), revokes_subtree=revokes_subtree
+                meta.label, meta.description, template.substitute(**path_param_values), subtree=subtree
             )
             if capability is not None:
                 capabilities.append(capability)
@@ -314,7 +340,7 @@ class _CapabilityCatalogBuilder:
         label_locale: LocaleString,
         description_locale: LocaleString,
         guard: _Guard,
-        revokes_subtree: bool = False,
+        subtree: _SubtreePolicy = _SubtreePolicy.NONE,
     ) -> Capability | None:
         """Builds one capability row. ``granted`` comes from ``subject.has_access`` — the same call the
         endpoint's guard makes — so the row matches enforcement (sysadmin short-circuit and ceiling included).
@@ -324,23 +350,25 @@ class _CapabilityCatalogBuilder:
         broader rule than the one this checkbox would add. Returns ``None`` when a ``ceiling`` is given that
         cannot grant the capability — it is then hidden, never merely disabled (no information leak).
 
-        ``revokes_subtree`` adds ``<rule>.>`` as a companion the checkbox *clears*, never one it writes.
-        Ticking grants only the row's own rule, because a subtree rule over a class covers every instance of
-        it in the deployment — including other tenants', since instances carry no tenant of their own. Untick
-        still clears it, so a ceiling that picked the wildcard up before this rule shape changed can be
-        cleaned out from the editor rather than by hand. ``granted`` is therefore the row's own rule alone: a
-        conjunction over both forms would read a ceiling holding just the root as not granted and bounce the
-        box straight back when ticked.
+        ``subtree`` splits the ``<rule>.>`` wildcard across two roles. Under ``GRANTED`` the row stands for
+        the whole resource: the wildcard is written with it and every verdict is the conjunction over both
+        forms, so a half-granted resource reads as not granted and ticking tops up whichever form is missing.
+        Under ``REVOKED`` it is only ever cleared, so ``granted`` is the root alone — a conjunction would read
+        a curated ceiling holding just the root as not granted and bounce the box back when ticked. ``.>`` is
+        a legal token in a rule but not in a permission template, so the subtree is *probed* as ``<rule>.?*``
+        and *written* as ``<rule>.>`` — hence two lists rather than one.
         """
         rule = str(guard)
-        wants_subtree = revokes_subtree and not guard.is_existence_query
-        revoked_with_rule = [f"{rule}.>"] if wants_subtree else []
-        if self._ceiling is not None and not self._ceiling.has_access(rule):
+        policy = _SubtreePolicy.NONE if guard.is_existence_query else subtree
+        written_with_rule = [f"{rule}.>"] if policy is _SubtreePolicy.GRANTED else []
+        revoked_with_rule = [f"{rule}.>"] if policy is _SubtreePolicy.REVOKED else []
+        probes = [rule, *([f"{rule}.?*"] if policy is _SubtreePolicy.GRANTED else [])]
+        if self._ceiling is not None and not all(self._ceiling.has_access(probe) for probe in probes):
             return None
 
         label = self._t.extract(label_locale)
         description = self._t.extract(description_locale)
-        granted = self._subject.has_access(rule)
+        granted = all(self._subject.has_access(probe) for probe in probes)
 
         if guard.is_existence_query:
             return Capability(
@@ -357,9 +385,10 @@ class _CapabilityCatalogBuilder:
             label=label,
             description=description,
             rule=rule,
-            companion_rules=revoked_with_rule,
+            companion_rules=written_with_rule,
+            revoked_rules=revoked_with_rule,
             granted=granted,
-            locked=granted and rule not in self._granted_rules,
+            locked=granted and not all(candidate in self._granted_rules for candidate in [rule, *written_with_rule]),
             toggleable=True,
         )
 
@@ -515,10 +544,12 @@ class _CapabilityCatalogBuilder:
         class_param: str,
         instance_param: str,
     ) -> CapabilityGroup:
-        # A class-level row means "this tenant/role may build on this blueprint", not "may call this one
-        # endpoint" — so unticking it also clears a subtree rule covering every instance of the class.
+        # Whether the wildcard under a class is the subject's to hold is a property of the family, not of the
+        # row: see ``_CLASS_SUBTREE_POLICIES``.
         class_capabilities = self._capabilities_for(
-            class_guards, revokes_subtree=True, **{class_param: class_node.value}
+            class_guards,
+            subtree=_CLASS_SUBTREE_POLICIES.get(service_name, _SubtreePolicy.NONE),
+            **{class_param: class_node.value},
         )
         instance_groups = [
             self._instance_group(service_name, class_node, instance_node, instance_guards, class_param, instance_param)
