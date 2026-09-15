@@ -1762,7 +1762,7 @@ export type BaseStoreMemoryEvent = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   /**
@@ -14682,7 +14682,7 @@ export type StoreOrganizationMemoryEvent = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   /**
@@ -14762,7 +14762,7 @@ export type StoreUserMemoryEvent = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   /**
@@ -18182,7 +18182,7 @@ export type BaseStoreMemoryEventWritable = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   [key: string]: unknown;
@@ -25155,7 +25155,7 @@ export type StoreOrganizationMemoryEventWritable = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   [key: string]: unknown;
@@ -25222,7 +25222,7 @@ export type StoreUserMemoryEventWritable = {
   /**
    * Llm Model Name
    *
-   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
    */
   llm_model_name?: string | null;
   [key: string]: unknown;

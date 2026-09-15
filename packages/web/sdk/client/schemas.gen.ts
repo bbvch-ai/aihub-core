@@ -2304,7 +2304,7 @@ export const BaseStoreMemoryEventSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
     _event_name: {
       type: "string",
@@ -21718,7 +21718,7 @@ export const StoreOrganizationMemoryEventSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
     _event_name: {
       type: "string",
@@ -21839,7 +21839,7 @@ export const StoreUserMemoryEventSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
     _event_name: {
       type: "string",
@@ -26650,7 +26650,7 @@ export const BaseStoreMemoryEventWritableSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
   },
   additionalProperties: true,
@@ -37667,7 +37667,7 @@ export const StoreOrganizationMemoryEventWritableSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
   },
   additionalProperties: true,
@@ -37769,7 +37769,7 @@ export const StoreUserMemoryEventWritableSchema = {
       ],
       title: "Llm Model Name",
       description:
-        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Recorded so a memory can be attributed to the model that produced it.",
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
   },
   additionalProperties: true,
