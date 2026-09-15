@@ -110,15 +110,14 @@ config:
   attachment_char_limit:
     label: Limite de caractères par pièce jointe
     help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.
-  category_knowledge_namespace:
-    label: Collection de connaissances
-    help: Collection sur laquelle les réponses de cette catégorie sont fondées. Si
-      elle est définie, la réponse provient uniquement des documents de cette collection.
-      Si elle est vide, la réponse est rédigée à partir du seul message, sans recherche.
-  knowledge_databases:
-    label: Bases de connaissances
-    help: Bases dans lesquelles les collections des catégories sont recherchées. Nécessaire
-      uniquement lorsqu'une catégorie nomme une collection.
+  category_knowledge_namespaces:
+    label: Collections de connaissances
+    help: Collections à partir desquelles les réponses de cette catégorie sont rédigées.
+      Sans sélection, la réponse provient de tout ce que l'agent de connaissances
+      consulte ; avec une sélection, la recherche est limitée aux collections choisies
+      ici et à aucune autre. Seules les collections pour lesquelles cet agent est
+      configuré sont proposées.
+    placeholder: Sélectionner des collections
   no_information_draft:
     label: Brouillon lorsque rien n'a été trouvé
     help: Texte du brouillon lorsque la recherche n'a rien trouvé qui réponde au message.

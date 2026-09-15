@@ -102,15 +102,13 @@ config:
   attachment_char_limit:
     label: Attachment Character Limit
     help: Characters kept from a single attachment's extracted text.
-  category_knowledge_namespace:
-    label: Knowledge Collection
-    help: Collection this category's replies are grounded in. Set it and the reply
-      is answered from the documents in that collection and no other. Leave it empty
-      and the reply is written from the message alone, without retrieval.
-  knowledge_databases:
-    label: Knowledge Databases
-    help: Databases the categories' collections are looked up in. Only needed when
-      a category names a collection.
+  category_knowledge_namespaces:
+    label: Knowledge Collections
+    help: Collections this category's replies are answered from. Leave it off and
+      the reply is answered from everything the knowledge agent retrieves from; turn
+      it on to narrow retrieval to the collections picked here and no others. Only
+      the collections that agent is configured for are offered.
+    placeholder: Select collections
   no_information_draft:
     label: Draft When Nothing Was Found
     help: Draft body used when retrieval found nothing that answers the message. Used

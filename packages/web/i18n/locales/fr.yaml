@@ -868,6 +868,14 @@ lib:
       placeholder: Sélectionner un fuseau horaire
       help: Les positions cron sont interprétées dans ce fuseau horaire, afin qu'une
         planification quotidienne conserve la même heure lors des changements d'heure.
+  knowledgeCollections:
+    placeholder: Sélectionner des collections
+    help: Seules les collections sélectionnées sont recherchées.
+    noAgent: Choisissez d'abord un agent de connaissances — ce sont ses collections
+      qui peuvent être sélectionnées ici.
+    noSource: Aucun agent de connaissances n'est associé à ce champ, aucune collection
+      ne peut donc être proposée.
+    empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher

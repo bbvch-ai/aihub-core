@@ -109,15 +109,14 @@ config:
     label: Zeichenlimit pro Anhang
     help: Anzahl der Zeichen, die aus dem extrahierten Text eines einzelnen Anhangs
       übernommen werden.
-  category_knowledge_namespace:
-    label: Wissenssammlung
-    help: Sammlung, auf der die Antworten dieser Kategorie basieren. Ist sie gesetzt,
-      wird die Antwort ausschliesslich aus den Dokumenten dieser Sammlung erstellt.
-      Bleibt sie leer, wird die Antwort allein aus der Nachricht verfasst, ohne Suche.
-  knowledge_databases:
-    label: Wissensdatenbanken
-    help: Datenbanken, in denen die Sammlungen der Kategorien gesucht werden. Nur
-      nötig, wenn eine Kategorie eine Sammlung nennt.
+  category_knowledge_namespaces:
+    label: Wissenssammlungen
+    help: Sammlungen, aus denen die Antworten dieser Kategorie erstellt werden. Bleibt
+      die Auswahl aus, wird aus allem geantwortet, worauf der Wissensagent zugreift;
+      ist sie aktiv, wird die Suche auf die hier gewählten Sammlungen und keine anderen
+      eingegrenzt. Angeboten werden nur Sammlungen, für die dieser Agent konfiguriert
+      ist.
+    placeholder: Sammlungen auswählen
   no_information_draft:
     label: Entwurf, wenn nichts gefunden wurde
     help: Entwurfstext, wenn die Suche nichts gefunden hat, das die Nachricht beantwortet.

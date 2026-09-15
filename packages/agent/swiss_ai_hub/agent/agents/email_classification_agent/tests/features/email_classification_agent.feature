@@ -160,11 +160,11 @@ Feature: Email Classification Agent
     And the draft body is the configured lookup-failed text
     And no ExceptionEvent is present
 
-  Scenario: Grounded and ungrounded categories converge on one drafting pass
-    Given an EmailClassificationAgent runner grounding support_request but not invoice
+  Scenario: A narrowed and an unnarrowed category converge on one drafting pass
+    Given an EmailClassificationAgent runner narrowing support_request but not invoice
     When the user triggers classification and the knowledge agent answers
     Then a MailBatchDraftedEvent with 2 drafts was emitted
-    And only the support_request draft came from the knowledge agent
+    And only the support_request delegation was scoped to a collection
     And no ExceptionEvent is present
 
   Scenario: A scheduled run delegates without an initiating user
@@ -174,7 +174,7 @@ Feature: Email Classification Agent
     And the delegated run carried no user
     And no ExceptionEvent is present
 
-  Scenario: A category grounded in a collection nothing holds fails before the batch is classified
+  Scenario: A category narrowed to a collection nothing holds fails before the batch is classified
     Given an EmailClassificationAgent runner grounding support_request in a collection that does not exist
     When the user triggers classification
     Then an ExceptionEvent is present

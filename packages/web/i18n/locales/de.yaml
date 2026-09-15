@@ -868,6 +868,13 @@ lib:
       placeholder: Zeitzone auswählen
       help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
         täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
+  knowledgeCollections:
+    placeholder: Sammlungen auswählen
+    help: Nur die ausgewählten Sammlungen werden durchsucht.
+    noAgent: Zuerst einen Wissensagenten wählen — auswählbar sind dessen Sammlungen.
+    noSource: Diesem Feld ist kein Wissensagent zugeordnet, daher können keine Sammlungen
+      angeboten werden.
+    empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen
