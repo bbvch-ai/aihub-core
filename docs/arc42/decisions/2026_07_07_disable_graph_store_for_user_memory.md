@@ -1,9 +1,13 @@
-# Disable the Graph Store for User Memory (Keep It for Organization Memory)
+# Disable the Graph Store for User Memory (Extended to Organization Memory)
 
 ## Status
 
-Accepted. Amends `2025_12_18_adopt_mem0_for_agent_memory` for the **user-memory** scope only; organization memory is
-unchanged.
+Accepted, amended 2026-08-26 by issue #1713. Amends `2025_12_18_adopt_mem0_for_agent_memory` — originally for the
+**user-memory** scope only, and since #1713 for organization memory as well.
+
+The "keep the graph for organization memory" half of the original decision is **superseded**. Everything from here to
+the Amendment section records the original 2026-07-07 reasoning and is kept for history; read it together with the
+Amendment, which corrects the cost model it rests on.
 
 ## Context
 
@@ -28,6 +32,9 @@ For user memory specifically, memories are flat personal preferences written on 
 low relational value. Organization memory is the opposite: rare, explicitly curated, entity-rich facts written only by
 `ExpertAskingAgent` — where the graph's cost is amortized and its relational value plausibly applies.
 
+> **Superseded by the Amendment below.** This paragraph is the load-bearing error: it reasons only about *write*
+> frequency. mem0 also runs the graph on reads, so the cost is paid per retrieval and amortizes against nothing.
+
 ## Decision Drivers
 
 - Cut the per-turn user-memory save latency (issue #1179), where the graph branch is the largest single cost.
@@ -42,7 +49,8 @@ Make the mem0 graph store **per-memory-type**:
   skips the entire graph branch (3 LLM calls + graph embeddings). The graph is not needed for user memory — cross-agent
   user facts are served from the vector store instead (see below). There is no runtime toggle: the graph was providing
   no value for flat per-turn user preferences, so it is removed rather than made configurable.
-- **Organization memory: graph ON**, always.
+- **Organization memory: graph ON**, always. *(Superseded — organization memory is graph OFF since #1713; see the
+  Amendment.)*
 
 Because mem0 has no per-call graph switch (`enable_graph` is fixed at `Memory` construction from whether a `graph_store`
 is configured) and `AgentMemory` previously shared one service for both scopes, the two scopes are now served by two
@@ -67,7 +75,7 @@ tracked separately (bounding memory count / decoupling the save from the run's c
 
 - ~73% faster user-memory saves; ~3 fewer LLM calls and ~100 fewer embedding round-trips per save; RAG-type agents stop
   connecting to Neo4j entirely.
-- Organization memory's graph capability is untouched.
+- Organization memory's graph capability is untouched. *(Superseded — see the Amendment.)*
 
 **Negative / risks**
 
@@ -79,15 +87,77 @@ tracked separately (bounding memory count / decoupling the save from the run's c
   rather than graph-linked.
 - Does **not** by itself meet issue #1179's ≤5s target — the residual vector reconciliation call remains (see above).
 - The graph branch still runs unconditionally in mem0 for `infer=False` writes; org memory is unaffected, but this is a
-  mem0-internals caveat to note if org write latency ever matters.
+  mem0-internals caveat to note if org write latency ever matters. *(Resolved by the Amendment: mem0 gates
+  `_add_to_graph` on `enable_graph`, so org writes now skip it too.)*
 
 **Follow-up (monitor after rollout):** production graph-usage stats — what fraction of users interact with 2+ agents,
 and how often the removed relations block mattered — to confirm the vector-based cross-agent replacement covers the
 need.
 
+## Amendment (2026-08-26, issue #1713)
+
+### What was wrong
+
+The decision above kept the graph for organization memory on the argument that its cost is **write-side** and amortized
+by rare, entity-rich writes. That cost model is incomplete: **mem0 runs the graph on reads, not just writes.** Every
+organization-memory retrieval therefore paid the graph cost on the chat critical path of every message, where nothing
+amortizes it — the opposite of the trade-off the original decision assumed it was making.
+
+Measured for organization-memory retrieval (figures from issue #1713):
+
+- **~1.9 s median** with the graph, against **~0.25 s** for the same search without it.
+- **67 s** observed on a cold call.
+- A failure anywhere in the graph path ended the run with an `ExceptionEvent` — a user-visible chat failure caused by an
+  optional context-enrichment step.
+
+The original investigation had already found that graph *relations* are unused: retrieval renders them as flat triples
+into the prompt and no traversal exists in application code. So the read-path cost bought nothing.
+
+### Decision
+
+- **Organization memory: graph OFF**, unconditionally. Both agent-facing scopes are now graph-free, so the two per-scope
+  services of the original decision collapse into a single `AgentMemory._memory_service` built with `enable_graph=False`
+  — keeping them apart would have meant two identical mem0 clients per agent.
+- **The admin CRUD paths keep the graph.** `UserMemory` and `OrganizationMemory` (the Admin-UI memory endpoints) still
+  build a graph-enabled service. This is deliberate and matches what user memory has done since 2026-07-07: mem0 only
+  purges Neo4j in `delete_all` when the service has the graph enabled, and those endpoints are the GDPR delete path.
+  Disabling the graph there would orphan existing personal relations in Neo4j permanently.
+- **The graph-relations block is removed from the organization-memory system prompt** (all four locales), and
+  `extend_chat_history_with_organization_memory` no longer takes a `relations` argument. The block could only ever
+  render empty.
+- **Memory retrieval failures degrade instead of ending the run.** `do_retrieve_user_memory` and
+  `do_retrieve_organization_memory` return an *empty* event on failure, timeout included — a hung backend blocks the
+  chat turn as surely as a raise ends it, so both take the same path. Note that `stop_on_error=False` alone would be
+  worse than the status quo: the dispatcher would suppress the `ExceptionEvent` but publish nothing, and
+  `check_memory_ready_for_chat_history` blocks until the retrieval event exists — so the run would hang rather than end.
+  Returning an empty event is what keeps that precondition satisfiable. Namespace-allow-list violations stay fatal: they
+  are caller errors, and answering from the wrong scope would hide them.
+
+### Consequences
+
+**Positive**
+
+- Organization-memory retrieval costs roughly what user-memory retrieval costs; no Neo4j connection is opened by the
+  retrieval step.
+- A memory-subsystem outage degrades the answer instead of failing the chat turn.
+- Organization-memory writes (`ExpertAskingAgent`) also skip the graph, closing the `infer=False` caveat the original
+  decision left open under Consequences.
+
+**Negative / risks**
+
+- **The organization-memory graph now decays.** Nothing writes org relations any more, so
+  `pages/[tenant]/service/organization-memories/graph.vue` shows only pre-#1713 data and will be empty on any deployment
+  provisioned after it. This is the state `user-memories/graph.vue` has been in since 2026-07-09; #1713 makes the two
+  consistent rather than introducing a new failure mode. Removing or reworking those pages belongs to #1715.
+- **Agent and admin surfaces disagree about relations.** Agent org retrieval returns none; the admin org endpoints still
+  return them from Neo4j. This follows directly from keeping the graph on the CRUD paths (above) and is expected, not a
+  bug.
+- Failures are now silent to the user — logged at `warning`, with no display event saying memory was unavailable.
+  Surfacing that is deliberately out of scope here.
+
 ## Related
 
-- Supersedes the user-memory graph portion of `2025_12_18_adopt_mem0_for_agent_memory` (organization memory portion
-  stands).
-- Neo4j data is retained (only user-memory writes stop populating it); a future graph-store replacement (Neo4j is
-  flagged as outdated) is out of scope for this decision.
+- Supersedes the graph portion of `2025_12_18_adopt_mem0_for_agent_memory` for both memory scopes — the user-memory
+  portion on 2026-07-07, the organization-memory portion in the Amendment above.
+- Neo4j data is retained; nothing writes to it from the agent path any more. Removing mem0 and Neo4j from the platform
+  is tracked in #1715 (decouple memory events and UI from mem0) and #1716 (distilled memory on the shared substrate).

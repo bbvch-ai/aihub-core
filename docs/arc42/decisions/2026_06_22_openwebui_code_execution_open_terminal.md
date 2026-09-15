@@ -27,6 +27,15 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 
 (the base already ships pandas, openpyxl, python-docx, weasyprint, matplotlib, xlsxwriter)
 
+> **Amendment 2026-08-28 — the baked-in inventory is larger than this decision recorded.** Verified against the running
+> `open-terminal-office:0.11.34` container, the base image also ships **`python-pptx`, `pypdf`, `Pillow`, `numpy`,
+> `scipy`, `lxml` and `PyYAML`, plus the `ffmpeg` and `pandoc` binaries**. This is not a change of decision — nothing
+> was added to the image — but the omission understated the capability: PPTX, video and audio generation were all
+> possible and undocumented. The user-facing format matrix in
+> `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` records the verified set, and the sandbox has **no**
+> diagram renderer (`cairosvg`, `mmdc`, `plantuml`, Graphviz, Inkscape are all absent) and no Visio library, so `.vsdx`
+> cannot be produced at all. Re-verify both when the base tag is bumped.
+
 - **Isolation** — `OPEN_TERMINAL_MULTI_USER=true` for per-user home directories; attached to a **dedicated
   `code-sandbox` network only**, whose sole residents are the sandbox and its callers (`open-webui`; AI-Hub agents as a
   follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what severs lateral reach
@@ -34,9 +43,10 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
   outbound internet); host port exposed only in `dev`/`local`/`build`.
 - **Wiring** — OpenWebUI connects via the Integrations env `TERMINAL_SERVER_CONNECTIONS` (bearer auth with
   `OPEN_TERMINAL_API_KEY`), replacing the Jupyter `CODE_EXECUTION_*` / `CODE_INTERPRETER_*` engine variables.
-- **Scope — plain LLM models only.** OpenWebUI orchestrates Open Terminal through native `execute_code` tool-calling;
-  the existing `/openai` proxy passes `tools`/`tool_calls` through transparently for plain models, and all LiteLLM
-  text-generation models declare `supports_function_calling: true`. Native function calling must be enabled per model.
+- **Scope — plain LLM models only.** OpenWebUI orchestrates Open Terminal through native `execute_code` tool-calling
+  (*corrected — see the amendment below*); the existing `/openai` proxy passes `tools`/`tool_calls` through
+  transparently for plain models, and all LiteLLM text-generation models declare `supports_function_calling: true`.
+  Native function calling must be enabled per model.
 - **AI-Hub agent chats are deferred.** Agent surfaces (the `aihub_pipeline.py` `Pipe` and the agent branch of the
   `/openai` proxy) own their own generation and do not expose OpenWebUI-orchestrated tool-calling, so Open Terminal does
   not engage for them. Supporting agents requires the OpenAI tool-calling handshake inside the agent framework and is
@@ -44,6 +54,16 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
   separately)".
 - **Jupyter is retained** for now (its full removal is a follow-up once any remaining consumers migrate), but OpenWebUI
   no longer uses it.
+
+> **Amendment 2026-08-28 — the sandbox is not reached through `execute_code`.** The *Scope* bullet above names the wrong
+> mechanism. Verified against the OpenWebUI 0.9.5 source in the running container: the built-in `execute_code` tool
+> (`tools/builtin.py`) handles only the `pyodide` and `jupyter` engines and errors on anything else, and
+> `CODE_INTERPRETER_ENGINE` defaults to `pyodide` and is set in no compose file. Open Terminal is reached through the
+> **terminal-server integration** instead, which resolves the sandbox's OpenAPI operations into model-callable tools
+> (`run_command`, `write_file`, `display_file`, …) via `get_terminal_tools` in `utils/tools.py`, gated on a terminal
+> being selected in the chat and on the model's terminal capability. The rest of the bullet stands: native function
+> calling must still be enabled per model, because only then are those tools passed as real function definitions rather
+> than through OpenWebUI's single prompt-based tool-selection pass.
 
 ## Consequences
 
@@ -79,3 +99,7 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 - **Licensing** — Open Terminal is **MIT** (standard, OSI-approved; no branding clause and no end-user threshold). This
   is distinct from `open-webui`, whose modified-BSD "Open WebUI License" carries the branding/≤50-user clause — that
   obligation comes from open-webui, not from adding this sandbox.
+
+> **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
+> service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
+> from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.

@@ -109,3 +109,27 @@ config:
     label: Zeichenlimit pro Anhang
     help: Anzahl der Zeichen, die aus dem extrahierten Text eines einzelnen Anhangs
       übernommen werden.
+  category_knowledge_namespace:
+    label: Wissenssammlung
+    help: Sammlung, auf der die Antworten dieser Kategorie basieren. Ist sie gesetzt,
+      wird die Antwort ausschliesslich aus den Dokumenten dieser Sammlung erstellt.
+      Bleibt sie leer, wird die Antwort allein aus der Nachricht verfasst, ohne Suche.
+  knowledge_databases:
+    label: Wissensdatenbanken
+    help: Datenbanken, in denen die Sammlungen der Kategorien gesucht werden. Nur
+      nötig, wenn eine Kategorie eine Sammlung nennt.
+  no_information_draft:
+    label: Entwurf, wenn nichts gefunden wurde
+    help: Entwurfstext, wenn die Suche nichts gefunden hat, das die Nachricht beantwortet.
+      Wird wörtlich verwendet, damit die Antwort nichts erfindet, wofür es keine Dokumente
+      gibt.
+  grounding_failed_draft:
+    label: Entwurf, wenn die Suche fehlschlug
+    help: Entwurfstext, wenn die Wissenssuche selbst fehlschlug oder nie antwortete.
+      Getrennt vom Text für fehlende Information, damit eine Lücke in der Dokumentation
+      von einer defekten Installation unterscheidbar ist.
+  grounding_timeout_seconds:
+    label: Zeitlimit der Wissenssuche (Sekunden)
+    help: Wie lange eine Wissenssuche dauern darf, bevor die Nachricht stattdessen
+      mit dem Fehlertext entworfen wird. Ohne Zeitlimit wartet der Lauf bei einem
+      nicht erreichbaren Wissensagenten endlos.

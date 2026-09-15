@@ -127,7 +127,7 @@ services:
       -mserver="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -1405,7 +1405,7 @@ services:
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
@@ -1456,33 +1456,9 @@ services:
   # ===================================================================
   # Utility & Code Execution Services
   # ===================================================================
-  # These services provide code execution runtimes (Jupyter) and
+  # These services provide code execution runtimes (Open Terminal) and
   # browser automation (Playwright) for various platform features.
   # ===================================================================
-
-  # License: BSD-3-Clause — third-party (see LICENSE_REPORT.md)
-  jupyter:
-    container_name: jupyter-lab
-    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
-    restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
-    environment:
-      JUPYTER_ENABLE_LAB: true
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
-    healthcheck:
-      test: [CMD, /etc/jupyter/docker_healthcheck.py]
-      interval: 15s
-      timeout: 3s
-      start_period: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
@@ -1574,7 +1550,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -1665,9 +1641,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    # This collector is dual-homed, so its container name is registered in Docker DNS on
+    # both networks — and the egress address is NOT reachable container-to-container,
+    # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
+    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # The alias below is registered on backend only and can therefore resolve to nothing
+    # but the reachable address; every OTLP client targets it instead of the name.
     networks:
-      - backend
-      - egress
+      backend:
+        aliases: [otel-collector-backend]
+      egress: {}
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1726,7 +1710,7 @@ services:
       # can turn them back on via its own env.
       ENABLE_OTEL: true
       ENABLE_OTEL_METRICS: ${ENABLE_OTEL_METRICS}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_INSECURE: true
       OTEL_SERVICE_NAME: open-webui
@@ -1812,6 +1796,7 @@ services:
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: aihub/
+      AIHUB_MERGE_MODEL: text-generation/gemma-4-31B-it
       AIHUB_REQUEST_TIMEOUT: 60
       OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
@@ -1834,8 +1819,12 @@ services:
       CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN};https://${DOMAIN}
 
       # --- Admin ---
-      ENABLE_ADMIN_EXPORT: true
+      # OpenWebUI admin is the AIHubSysAdmin realm role (OAUTH_ADMIN_ROLES below). Upstream lets that role
+      # read every user's files and export every user's chats across all tenants; both are scoped to the
+      # admin's own data by default here and can be opened up per deployment (issue #104).
+      ENABLE_ADMIN_EXPORT: ${OPENWEBUI_ENABLE_ADMIN_EXPORT}
       ENABLE_ADMIN_CHAT_ACCESS: false
+      BYPASS_ADMIN_ACCESS_CONTROL: ${OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL}
       SHOW_ADMIN_DETAILS: true
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
@@ -1858,7 +1847,8 @@ services:
       RAG_FULL_CONTEXT: true
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: true
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
@@ -2291,6 +2281,7 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+      AIHUB_SHOW_LEGACY_KNOWLEDGE: ${AIHUB_SHOW_LEGACY_KNOWLEDGE}
 
       # Startup tenant — read by StartupTenantSettings on first boot to seed
       # the initial tenant. ID also goes to keycloak for realm-import group naming.
@@ -2298,6 +2289,8 @@ services:
       AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
       AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
       AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
+      AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
+      AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES: ${AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
@@ -2321,6 +2314,7 @@ services:
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Langfuse
@@ -2354,6 +2348,8 @@ services:
       SCHEDULER_REDIS_KEY_PREFIX: ${SCHEDULER_REDIS_KEY_PREFIX}
       SCHEDULER_EVENT_RETENTION_DAYS: ${SCHEDULER_EVENT_RETENTION_DAYS}
       SCHEDULER_RETENTION_INTERVAL_SECONDS: ${SCHEDULER_RETENTION_INTERVAL_SECONDS}
+      SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH: ${SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH}
+      SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH: ${SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH}
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -2365,10 +2361,6 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
-
-      # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: http://jupyter:8888
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: http://mineru-api:8000
@@ -2388,7 +2380,7 @@ services:
       # them back on via its own env.
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_METRICS_ENABLED: ${OTEL_METRICS_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2565,7 +2557,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: sysadmin-api
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2710,7 +2702,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2789,7 +2781,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2864,7 +2856,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -2935,7 +2927,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3001,7 +2993,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: retrieval-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3056,7 +3048,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: few-shot-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3110,7 +3102,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3172,7 +3164,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: memory-writer-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3233,7 +3225,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: imap-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3308,7 +3300,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: email-classification-agent
       OTEL_RESOURCE_SERVICE_VERSION: nightly
@@ -3328,7 +3320,7 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3410,7 +3402,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -3475,6 +3467,94 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: https://dagster.${DOMAIN}
+      NOTIFICATION_TITLE_PREFIX: Swiss AI Hub Pipeline
+      NOTIFICATION_MIN_INTERVAL_SECONDS: 30
+    healthcheck:
+      test:
+        - CMD
+        - dagster
+        - api
+        - grpc-health-check
+        - --host
+        - localhost
+        - --port
+        - '4000'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  document_ingestion_pipeline:
+    container_name: document-ingestion-pipeline
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:nightly
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # NATS
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Generic Document Ingestion Pipeline processing recipe
+      DOCUMENT_INGESTION_EMBEDDING_MODEL: ${DOCUMENT_INGESTION_EMBEDDING_MODEL}
+      DOCUMENT_INGESTION_LLM_MODEL: ${DOCUMENT_INGESTION_LLM_MODEL}
+      DOCUMENT_INGESTION_VISION_MODEL: ${DOCUMENT_INGESTION_VISION_MODEL}
+      DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
+      DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
+      DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
+      DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}

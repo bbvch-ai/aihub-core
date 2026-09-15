@@ -173,12 +173,6 @@ memory:
     - {{ memory.memory }}
     {% endfor %}
     {% endif %}
-    {% if relations %}
-    **Wissensgraph-Beziehungen:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
-    {% endfor %}
-    {% endif %}
     </organizational_context>
   fact_extraction: |
     Du bist ein spezialisierter Assistent zur Gedächtnisextraktion für den %{agent_name}-Agenten.

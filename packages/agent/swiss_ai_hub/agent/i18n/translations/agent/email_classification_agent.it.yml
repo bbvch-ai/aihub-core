@@ -14,3 +14,14 @@ steps:
     name: Redigi le risposte
   finish:
     name: Completa
+  request_grounded_drafts:
+    name: Interroga l'agente di conoscenza
+  collect_and_draft:
+    name: Redigi le risposte
+config:
+  rag_agent:
+    label: Agente di conoscenza
+    help: Agente RAG che risponde a un messaggio dalla raccolta della sua categoria.
+      Necessario non appena una categoria indica una raccolta.
+    class_placeholder: Scegli un tipo di agente
+    id_placeholder: Scegli un agente

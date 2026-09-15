@@ -25,22 +25,24 @@ def build() -> RAGAgentConfig:
             fr="RAG Connaissances Partagées",
             it="RAG Conoscenza Condivisa",
         ),
+        # Deliberately self-contained: the Shared Knowledge Selector this once named is not part of the
+        # standard blueprint set, so most tenants never see it and pointing an admin at it would dead-end.
         description=LocaleString(
             en=(
-                "Answers questions by retrieving from the default and shared knowledge buckets. "
-                "Pairs with the Shared Knowledge Selector namespace routing agent."
+                "Answers questions from your knowledge bases, checks whether what it retrieved is enough "
+                "to answer, and cites the documents it used."
             ),
             de=(
-                "Beantwortet Fragen durch Abruf aus dem Standard- und geteilten Wissens-Bucket. "
-                "Ergänzt den Shared Knowledge Selector für die Namespace-Auswahl."
+                "Beantwortet Fragen aus Ihren Wissensdatenbanken, prüft, ob das Abgerufene zur Antwort "
+                "ausreicht, und nennt die verwendeten Dokumente."
             ),
             fr=(
-                "Répond aux questions en interrogeant les buckets de connaissances par défaut et partagés. "
-                "Complète l'agent Shared Knowledge Selector pour le routage de namespace."
+                "Répond aux questions à partir de vos bases de connaissances, vérifie si les informations "
+                "récupérées suffisent et cite les documents utilisés."
             ),
             it=(
-                "Risponde alle domande recuperando dai bucket di conoscenza predefinito e condiviso. "
-                "Si abbina all'agente Shared Knowledge Selector per il routing dei namespace."
+                "Risponde alle domande dalle vostre basi di conoscenza, verifica se quanto recuperato è "
+                "sufficiente e cita i documenti utilizzati."
             ),
         ),
         icon="mage:book-open",

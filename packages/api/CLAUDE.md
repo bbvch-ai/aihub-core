@@ -144,6 +144,25 @@ flooding the log pipeline.
 New upstream integrations that raise their own SDK exception types belong in the same place — do not wrap service calls
 in try/except to compensate.
 
+**The one deliberate exception** is `OpenaiService.stt`, because one failure there is not a failure at all. The
+transcription provider reports "I found no speech in this audio" as an HTTP 500 whose body reads
+`Transcription failed: 0` — the `0` is a segment count, not a status. Measured against the provider on 2026-09-04:
+silence, a 440 Hz tone and white noise all return it; 1.3 s of speech at -24 dBFS transcribes fine. So it is a verdict
+on the audio, and it is the same verdict `AudioChunkingService.contains_speech` reaches locally for silence — where this
+API already answers with an empty transcript, as OpenAI's own API does.
+
+`stt` therefore catches exactly that classified cause (`ModelGatewayErrorHandler.is_untranscribable_audio`, never a bare
+`APIStatusError`) and treats the chunk as holding no speech: it keeps the chunks that did transcribe, and returns an
+empty transcript when none did. Everything else re-raises untouched — a misconfigured model or an expired key is not a
+verdict on the audio, and answering it with an empty transcript would report "nobody spoke" for a deployment that
+transcribes nothing. Two things make the silence recoverable afterwards, since a transcript quietly missing a passage is
+worse than a failure: each such chunk logs the provider's verbatim message (it carries the upstream request id, the only
+handle for asking the provider about it), and a summary logs how many of the recording's milliseconds are not in the
+transcript.
+
+`contains_speech` stays as a pre-filter rather than the whole answer: it detects sound at -40 dB, where the provider
+detects speech, so tone and noise pass it and are rejected upstream.
+
 ## i18n System
 
 **Hierarchy**: `LocaleString`/`LocaleHandler` (packages/core) → `ApiLocaleString`/`ApiLocaleHandler` (packages/api
@@ -164,7 +183,9 @@ params, or path params (default: `"de"`, whitelist: `["de", "en", "fr", "it"]`).
 **Permission template**: `aihub.[user|admin].<resource>.{path_param}` — path parameters (`{agent_class}`, `{agent_id}`,
 `{thread_id}`) are interpolated from the URL at request time.
 
-**Wildcards**: `?>` matches single level, `>` matches multiple levels.
+**Wildcards**: in a *rule*, `*` matches one token and `>` one or more trailing tokens. In a *template*, `?*` asks "any
+rule with one more token here" and `?>` asks "any rule at or below this node" — a rule naming exactly that node
+(`aihub.user.knowledge.db_a` vs `aihub.user.knowledge.db_a.?>`) satisfies it.
 
 **Controller integration**: `Security(self.user_with_permission("aihub.user.agent.{agent_class}.?>"))` handles auth +
 permission validation + OpenTelemetry span enrichment (user ID, email, roles, resource context) automatically.
@@ -251,8 +272,14 @@ watermark, per-occurrence claims, retention window) is in Redis and nowhere else
 `SchedulerSettings` (`SCHEDULER_*`), including `SCHEDULER_EVENT_RETENTION_DAYS`, which is **0 (off)** by default —
 pruning a tenant's run history has to be switched on, never started by a deploy. Started *after*
 `initialize_startup_tenant()` so a first tick cannot outrun tenant and role setup. Its Mongo reads all go through one
-`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request. See ADR
-`2026_08_11_cron_scheduled_agent_runs`.
+`asyncio.to_thread` hop per tick, because this process also serves every HTTP and WebSocket request.
+
+A schedule's cost is checked when the profile is **saved**, not metered while it runs: `InstanceConfigHelper`
+`.validate_cron_field` calls `ScheduleAdmission`, which computes how many runs the expression declares and rejects it
+with a 400 if it passes `SCHEDULER_MAX_RUNS_PER_PROFILE_PER_MONTH` (default every-minute, so it refuses nothing
+expressible) or `SCHEDULER_MAX_TOTAL_RUNS_PER_MONTH` across all profiles (default off). This bounds how *often* an agent
+starts, not what it spends — that is #1766/#1767/#1452/#441. See ADR `2026_08_11_cron_scheduled_agent_runs` §9 for why
+runtime metering was implemented and withdrawn.
 
 ## Testing
 

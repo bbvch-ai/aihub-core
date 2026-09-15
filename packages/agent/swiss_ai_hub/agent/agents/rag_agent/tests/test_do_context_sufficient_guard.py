@@ -106,7 +106,6 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
             ChatMessage(role=MessageRole.USER, content="What is our vacation policy?"),
         ],
         memories=[_build_org_memory(memory_text)],
-        relations=None,
         t=locale_handler,
     )
 

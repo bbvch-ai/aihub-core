@@ -27,12 +27,10 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StoreUserMemoryEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
-    OrgMemoryNamespaceResolver,
     OrgMemoryReadConfig,
     RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
@@ -87,6 +85,8 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
+    do_retrieve_organization_memory,
+    do_retrieve_user_memory,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
@@ -156,13 +156,24 @@ async def user_memory_retrieval_enabled(
     clear: NotAMetaQuestionEvent | None = None,
 ) -> bool:
     """Precondition to check if user memory retrieval is enabled (gated by meta-question detection)."""
-    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(config)
+    return check_passed_meta_question_gate(start_event, clear) and check_user_memory_retrieval_enabled(
+        config, has_user=start_event.user is not None
+    )
 
 
 @precondition()
-async def user_memory_storage_enabled(config: ExpertRAGAgentConfig) -> bool:
-    """Precondition to check if user memory storage is enabled."""
-    return check_user_memory_storage_enabled(config)
+async def user_memory_storage_enabled(
+    config: ExpertRAGAgentConfig,
+    user: UserIdentity | None = None,
+) -> bool:
+    """Precondition to check if user memory storage is enabled and this run has an identity to attribute it to.
+
+    The identity comes from `RunContext` rather than from the start event, because a precondition can only be handed
+    events its *step* declares — `handle_event` builds the event map from the step's input events, not the
+    precondition's. Asking for a start event a step does not consume yields no kwarg at all and the precondition
+    raises `TypeError` before it can decide anything.
+    """
+    return check_user_memory_storage_enabled(config, has_user=user is not None)
 
 
 @precondition()
@@ -175,7 +186,7 @@ async def memory_ready_for_chat_history(
 ) -> bool:
     """Precondition to ensure all required memory events are present before extending chat history."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_ready_for_chat_history(
-        config, user_memory_event, org_memory_event
+        config, start_event.user is not None, user_memory_event, org_memory_event
     )
 
 
@@ -188,18 +199,26 @@ async def memory_added_to_chat_history(
 ) -> bool:
     """Precondition to ensure memory has been added to chat history when required (gated by meta detection)."""
     return check_passed_meta_question_gate(start_event, clear) and check_memory_added_to_chat_history(
-        config, memory_history_event
+        config, start_event.user is not None, memory_history_event
     )
 
 
 @precondition()
 async def ready_for_stop(
     config: ExpertRAGAgentConfig,
-    store_memory_event: StoreUserMemoryEvent | None = None,
     memory_storage_request: MemoryStorageRequestedEvent | None = None,
+    user: UserIdentity | None = None,
 ) -> bool:
-    """Precondition to ensure all required steps are complete before stopping."""
-    return check_ready_for_stop(config, store_memory_event, memory_storage_request)
+    """Precondition to ensure all required steps are complete before stopping.
+
+    Needs the identity because a run with none skips the memory write, and gating the stop on an event that will
+    never be emitted hangs the run at its terminal step, having already produced the answer.
+
+    Taken from `RunContext`, not from the start event: `stop_step` triggers on `LLMEvent` and declares no start
+    event, and a precondition is only handed events its step declares. Requiring one here raised `TypeError` on
+    every RAG run — the kwarg was simply never built.
+    """
+    return check_ready_for_stop(config, user is not None, memory_storage_request)
 
 
 class ExpertRAGAgent(Agent):
@@ -329,16 +348,11 @@ class ExpertRAGAgent(Agent):
         _clear: NotAMetaQuestionEvent | None = None,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
-        query = event.user_query
-        memory_result = await memory.search_user_memory(
-            query=query,
-            user_id=event.user.id,
-            limit=10,
-            threshold=0.5,
+        return await do_retrieve_user_memory(
+            event=event,
+            memory=memory,
             rerank=agent_config.user_memory.rerank_user_memory,
         )
-
-        return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
@@ -355,24 +369,11 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieveOrganizationMemoryEvent:
         """Retrieve organization memories for expert knowledge context."""
         assert agent_config.org_memory is not None  # precondition enforces this
-        org_memory = agent_config.org_memory
-        query = event.user_query
-        requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
-        tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-            requested=requested,
-            configured=org_memory.allowed_tenant_namespaces,
+        return await do_retrieve_organization_memory(
+            event=event,
+            org_memory=agent_config.org_memory,
+            memory=memory,
         )
-        memory_result = await memory.search_organization_memory(
-            query=query,
-            tenant_id=org_memory.tenant_id,
-            tenant_namespaces=tenant_namespaces,
-            user_id=None,
-            limit=10,
-            threshold=0.5,
-            rerank=org_memory.rerank_organization_memory,
-        )
-
-        return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
@@ -407,7 +408,6 @@ class ExpertRAGAgent(Agent):
             chat_history = extend_chat_history_with_organization_memory(
                 chat_history=chat_history,
                 memories=org_memory_event.memories,
-                relations=org_memory_event.relations,
                 t=t,
             )
 
@@ -424,11 +424,20 @@ class ExpertRAGAgent(Agent):
         user_event: UserMessageEvent | RAGStartEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> LimitChatHistoryEvent:
+    ) -> LimitChatHistoryEvent | RAGFailureStopEvent:
         # Use extended history if memory was added, otherwise use original messages
         messages = memory_history_event.extended_history if memory_history_event is not None else user_event.messages
-        return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
+        return await do_limit_chat_history(
+            messages,
+            agent_config.number_of_input_tokens,
+            user_event.last_user_message,
+            [agent_config.llm, agent_config.task_llm],
+            displayer,
+            t,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
@@ -851,33 +860,23 @@ class ExpertRAGAgent(Agent):
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
         llm_event: LLMEvent,
-        memory: AgentMemory,
         topic: AgentInstanceTopic,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
-    ) -> StoreUserMemoryEvent | MemoryStorageRequestedEvent:
+    ) -> MemoryStorageRequestedEvent:
         """
-        Store new user memories from the conversation.
+        Delegate the user-memory write to the `MemoryWriterAgent` on its own run (issue #1179).
 
-        Inline (default): write via mem0 and return the result event. Async (issue #1179): delegate the write
-        to the `MemoryWriterAgent` so the chat run finalizes as soon as the answer is ready.
+        The returned event is a delegation marker, so the chat run finalizes as soon as the answer is ready
+        instead of waiting on the ~5-call save.
         """
-        if agent_config.user_memory.enable_async_memory_storage:
-            return build_memory_storage_request(
-                user=user_message_event.user,
-                messages=llm_event.chat_messages,
-                topic=topic,
-                agent_config=agent_config,
-                locale=t.locale,
-            )
-        memory_added = await memory.add_user_memory(
+        return build_memory_storage_request(
+            user=user_message_event.user,
             messages=llm_event.chat_messages,
-            user_id=user_message_event.user.id,
-            thread_id=topic.thread_id,
-            display_id=topic.display_id,
-            run_id=topic.run_id,
+            topic=topic,
+            agent_config=agent_config,
+            locale=t.locale,
         )
-        return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
@@ -887,7 +886,6 @@ class ExpertRAGAgent(Agent):
     async def stop_step(
         self,
         llm_event: LLMEvent,
-        _store_memory_event: StoreUserMemoryEvent | None,
         _memory_storage_request: MemoryStorageRequestedEvent | None,
         expert_answer_context: ExpertAnswerContextEvent | None,
         few_shot_reject: FewShotRejectEvent | None,

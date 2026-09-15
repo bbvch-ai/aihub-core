@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+    from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
     from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import (
         PersistedAgentEventEntity,
@@ -37,6 +38,9 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
     from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor import Ingestor
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity import IngestorEntity
+    from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
     from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
     from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
@@ -95,6 +99,7 @@ __all__ = [
     "AgentInstanceRef",
     "BearerToken",
     "BucketEntity",
+    "ConfigSpecsEntity",
     "CREATED_AT",
     "DOCUMENT_ID",
     "DOCUMENT_STORE_NAME",
@@ -110,6 +115,9 @@ __all__ = [
     "HASH",
     "HumanInSpecsEntity",
     "INDEX",
+    "Ingestor",
+    "IngestorEntity",
+    "IngestorType",
     "INSERTED_AT",
     "IS_INGESTED",
     "LANGUAGE",
@@ -166,6 +174,7 @@ _LAZY_IMPORTS = {
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
     "BearerToken": "swiss_ai_hub.core.persistence.access.entities.bearer_token",
     "BucketEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity",
+    "ConfigSpecsEntity": "swiss_ai_hub.core.persistence.form.config_specs_entity",
     "CREATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_ID": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
@@ -181,6 +190,9 @@ _LAZY_IMPORTS = {
     "HASH": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "HumanInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "INDEX": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
+    "Ingestor": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor",
+    "IngestorEntity": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_entity",
+    "IngestorType": "swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type",
     "INSERTED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "IS_INGESTED": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "LANGUAGE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

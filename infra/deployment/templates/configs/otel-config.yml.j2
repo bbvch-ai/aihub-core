@@ -43,6 +43,11 @@ processors:
   # per-stage scaling (1000 on nightly, 2000 on latest) is gone: a cap the batch never reaches is
   # not a cap. The collector enforces send_batch_max_size >= send_batch_size, so raising throughput
   # again means raising both, and re-measuring. Only the timeout still varies by stage.
+  #
+  # Measured again on staging (2026-08): the real backend limit is 16 MiB, not 4, and 500 is
+  # still not low enough — requests of 500, 159 and 143 spans were all rejected with
+  # ResourceExhausted "larger than max 16777216", which puts the average span above 100 KB.
+  # Batch size is the wrong lever for a span that large; the cloud path bounds span size instead.
   batch:
     send_batch_size: 500
     send_batch_max_size: 500
@@ -97,6 +102,30 @@ processors:
     traces:
       span:
         - 'attributes["openinference.span.kind"] == nil'
+
+{%- if stage != 'dev' %}
+  # A rejected OTLP request is a PERMANENT error, so the exporter drops the whole batch
+  # without retrying — every span in it is lost, including the small ones that rode along.
+  # The size comes from OpenInference spans carrying payload verbatim: LLM prompts and
+  # completions, embedding vectors, and the retrieved chunk text on retriever and reranker
+  # spans — a reranker span flattens every input AND output document, each with its full
+  # content. Langfuse is the consumer that needs those verbatim and it has its own pipeline,
+  # so drop the payload keys on the cloud path and truncate whatever is left as a backstop
+  # against the next unbounded attribute.
+  #
+  # truncate_all bounds each attribute, not the span, so deleting the document keys is what
+  # actually caps a retriever: retrieve_k goes to 100 in the agent form, and 100 documents
+  # left at 2048 each rebuild a span far past the ~100 KB average that broke the batch.
+  #
+  # This also keeps prompts, completions and internal document text from leaving the
+  # deployment for a third-party backend at all.
+  transform/cloud_span_size:
+    error_mode: ignore
+    trace_statements:
+      - 'delete_matching_keys(span.attributes, "^(llm[.](input|output)_messages|llm[.]prompt_template|input[.]value|output[.]value|embedding[.]embeddings|retrieval[.]documents|reranker[.](input|output)_documents|reranker[.]query)")'
+      - truncate_all(span.attributes, 2048)
+      - truncate_all(resource.attributes, 2048)
+{%- endif %}
 
   # Backstop (issue 1496): drop unbounded, high-cardinality HTTP server metrics
   # (side-effect of FastAPI/ASGI auto-instrumentation) before they reach the paid
@@ -184,7 +213,7 @@ service:
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
-      processors: [filter/noise, resource/deployment, batch]
+      processors: [filter/noise, transform/cloud_span_size, resource/deployment, batch]
       exporters: [otlp/cloud]
 
     # Send metrics to cloud backend

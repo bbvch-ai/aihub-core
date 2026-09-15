@@ -1,11 +1,24 @@
+from datetime import datetime
+from enum import StrEnum
 from types import UnionType
-from typing import Union, get_args, get_origin
+from typing import Annotated, Union, get_args, get_origin
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, EventSpecs
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs
+from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
+from swiss_ai_hub.core.form import (
+    ChipsInput,
+    ConfigSpecs,
+    DatePicker,
+    Form,
+    InputNumber,
+    ModelSelect,
+    Select,
+    Slider,
+    Textarea,
+)
 from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
@@ -615,7 +628,7 @@ class TestSchemaValidation:
             stop_events=[],
             network_graph=WorkflowGraph(nodes=[], links=[]),
             form=agent_config.to_formkit_form(),
-            agent_config_specs=AgentConfigSpecs.from_agent_config(agent_config, agent_class="TestAgent"),
+            agent_config_specs=ConfigSpecs.from_form(agent_config, config_class="TestAgent"),
             hitl_request_events=[],
             hitl_response_events=[],
         )
@@ -749,3 +762,99 @@ class TestSchemaValidation:
         reserialized_data = final_event.model_dump()
         final_deserialized = BaseEvent.deserialize_event(reserialized_data)
         assert final_deserialized._parent_event_names == ["TestEvent"]
+
+
+class TestConfigRoundTrip:
+    """A validated configuration must dump back to what was submitted, for every announceable shape.
+
+    `KnowledgeService.create_database` stores the dump rather than the submission, so that a knob is
+    persisted in the type its pipeline declared. That is only safe while jambo reproduces each shape
+    faithfully — a gap here would silently rewrite an admin's choice, which is the very defect (#1850)
+    the storing-the-dump change was part of fixing. Pinned per element type so a jambo upgrade that
+    loses one says which.
+    """
+
+    class _Mode(StrEnum):
+        FAST = "fast"
+        DEEP = "deep"
+
+    class _Section(Form):
+        model: Annotated[str | ModelSelect, Field(description="Nested picker")]
+        depth: Annotated[int | InputNumber | None, Field(description="Nested number")] = None
+
+    class _Source(Form):
+        model: Annotated[str | ModelSelect, Field(description="Repeated picker")]
+
+    class _EveryShapeConfig(AgentConfig):
+        tags: Annotated[list[str] | ChipsInput, Field(description="Chips")] = []
+        since: Annotated[datetime | DatePicker | None, Field(description="Date")] = None
+        mode: Annotated["TestConfigRoundTrip._Mode | Select | None", Field(description="Enum")] = None
+        ratio: Annotated[float | Slider | None, Field(description="Slider")] = None
+        prompt: Annotated[LocaleString | Textarea | None, Field(description="Locale text")] = None
+        llm_model: Annotated[str | ModelSelect, Field(description="Picker")] = ""
+        section: Annotated["TestConfigRoundTrip._Section | None", Field(description="Group")] = None
+        sources: Annotated[list["TestConfigRoundTrip._Source"], Field(description="Repeater")] = []
+
+        @classmethod
+        def as_form(cls) -> "TestConfigRoundTrip._EveryShapeConfig":
+            base = AgentConfig.as_form()
+            label = LocaleString(en="x")
+            return cls(
+                **dict(base),
+                tags=ChipsInput(label=label),
+                since=DatePicker(label=label),
+                mode=Select(label=label, options=[]),
+                ratio=Slider(label=label),
+                prompt=Textarea(label=label),
+                llm_model=ModelSelect(label=label, mode="chat"),
+                section=TestConfigRoundTrip._Section(
+                    model=ModelSelect(label=label, mode="chat"), depth=InputNumber(label=label)
+                ),
+                sources=[TestConfigRoundTrip._Source(model=ModelSelect(label=label, mode="embedding"))],
+            )
+
+    SUBMISSION = {
+        "tags": ["a", "b"],
+        "since": "2026-01-15T00:00:00",
+        "mode": "deep",
+        "ratio": 0.75,
+        "prompt": {"en": "hi", "de": "hallo"},
+        "llm_model": "text-generation/pick",
+        "section": {"model": "text-generation/pick", "depth": 3},
+        "sources": [{"model": "embedding/pick"}, {"model": "embedding/other"}],
+    }
+
+    @pytest.fixture
+    def dumped(self) -> dict:
+        specs = ConfigSpecs.from_form(self._EveryShapeConfig.as_form(), "EveryShapeConfig")
+        model = ModelCreationService.create_config_model(specs)
+        submitted = {"agent_id": "a", "name": {"en": "n"}, "description": {"en": "d"}, **self.SUBMISSION}
+        return model.model_validate(submitted).model_dump(mode="json", exclude_unset=True)
+
+    @pytest.mark.parametrize("field", sorted(SUBMISSION))
+    def test_an_announced_value_survives_the_round_trip_unchanged(self, field, dumped):
+        assert dumped[field] == self.SUBMISSION[field]
+
+    def test_an_omitted_optional_stays_absent_so_it_cannot_shadow_a_default(self, dumped):
+        """Dumping it as `null` would store a choice the user never made, over the deployment's own default."""
+        specs = ConfigSpecs.from_form(self._EveryShapeConfig.as_form(), "EveryShapeConfig")
+        model = ModelCreationService.create_config_model(specs)
+        minimal = {"agent_id": "a", "name": {"en": "n"}, "description": {"en": "d"}}
+
+        dump = model.model_validate(minimal).model_dump(mode="json", exclude_unset=True)
+
+        assert set(dump) == set(minimal)
+
+    def test_an_omitted_optional_inside_a_group_stays_absent_too(self):
+        specs = ConfigSpecs.from_form(self._EveryShapeConfig.as_form(), "EveryShapeConfig")
+        model = ModelCreationService.create_config_model(specs)
+        submitted = {
+            "agent_id": "a",
+            "name": {"en": "n"},
+            "description": {"en": "d"},
+            "section": {"model": "text-generation/pick"},
+        }
+
+        dump = model.model_validate(submitted).model_dump(mode="json", exclude_unset=True)
+
+        assert dump["section"] == {"model": "text-generation/pick"}

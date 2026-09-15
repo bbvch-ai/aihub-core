@@ -67,7 +67,7 @@ class TestRetrieveNodesFilters:
             message="q",
             embed_model=_mock_embed_model(),
             retrieve_k=5,
-            index_namespaces=[],
+            index_namespaces=None,
             query_mode=VectorStoreQueryMode.DEFAULT,
             node_types=["content", "summary"],
             vector_store=store,
@@ -79,13 +79,27 @@ class TestRetrieveNodesFilters:
             assert group.condition == FilterCondition.AND
             assert _keys(group) == [TYPE, "snk"]
 
+    def test_an_empty_namespace_scope_searches_nothing(self):
+        store, captured = _capturing_vector_store()
+        nodes = retrieve_nodes(
+            message="q",
+            embed_model=_mock_embed_model(),
+            retrieve_k=5,
+            index_namespaces=[],
+            query_mode=VectorStoreQueryMode.DEFAULT,
+            node_types=["content"],
+            vector_store=store,
+        )
+        assert nodes == []
+        assert "filters" not in captured
+
     def test_no_namespace_no_extras_preserves_legacy_flat_or(self):
         store, captured = _capturing_vector_store()
         retrieve_nodes(
             message="q",
             embed_model=_mock_embed_model(),
             retrieve_k=5,
-            index_namespaces=[],
+            index_namespaces=None,
             query_mode=VectorStoreQueryMode.DEFAULT,
             node_types=["content", "summary"],
             vector_store=store,

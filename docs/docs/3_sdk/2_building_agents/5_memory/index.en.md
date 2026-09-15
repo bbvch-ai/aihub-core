@@ -14,11 +14,14 @@ Memory is automatically integrated into agent workflows through dependency injec
 
 User memory is private to individual users and automatically extracted from conversation messages by the LLM. It stores
 personal preferences, working styles, and individual context—things like "User prefers concise code examples in Python."
-Both vector (semantic search) and graph (relationships) storage enable retrieval.
+Retrieval is vector-based semantic search.
 
 Organization memory is shared across all users in a tenant or namespace. Unlike user memory, it requires explicit
 documentation rather than automatic inference. It stores company policies, project details, and team conventions—things
-like "We deploy to production on Fridays." The same vector and graph storage supports semantic and relational retrieval.
+like "We deploy to production on Fridays." Retrieval works the same way.
+
+Both scopes retrieve from the vector store only. `MemorySearchResult.relations` still exists on the model but is always
+empty.
 
 ## Memory workflow pattern
 
@@ -217,7 +220,7 @@ async def retrieve_memory_step(
 
 `search_user_memory()` performs semantic search against the user's private memory store. It takes the search query
 (typically the user's current message), the user ID, and an optional limit (default: 100). It returns a
-`MemorySearchResult` containing memories and relationships.
+`MemorySearchResult` containing the matching memories.
 
 #### Chat history extension
 
@@ -344,7 +347,6 @@ class OrganizationMemoryAgent(Agent):
         extended_chat_history = extend_chat_history_with_organization_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
-            relations=memory_event.relations,
             t=t,
         )
         return AddOrganizationMemoryToChatHistoryEvent(extended_history=extended_chat_history)
@@ -480,7 +482,6 @@ class HybridMemoryAgent(Agent):
         chat_history = extend_chat_history_with_organization_memory(
             chat_history=chat_history,  # Already has user memory
             memories=org_mem.memories,
-            relations=org_mem.relations,
             t=t
         )
         return CombinedMemoryEvent(extended_history=chat_history)
@@ -583,6 +584,39 @@ All memories store full Swiss AI Agent Protocol context: `agent_id` (which agent
 conversation thread), `display_id` (UI display context), `run_id` (workflow execution ID), and `user_id` (who the memory
 belongs to or who documented it). This enables complete auditability—you can trace back to which conversation taught the
 agent a particular preference.
+
+Storage events also carry `llm_model_name`, the model that extracted the memories, so a stored fact can be attributed to
+the model that produced it. It is empty for organization memory, which stores the text you pass verbatim and runs no
+model.
+
+## Choosing the extraction model
+
+Extraction and reconciliation are several model calls per stored conversation, and they are short, mechanical tasks — so
+they do not need the agent's answer model. `AgentMemory` takes an optional `llm_model_name`; unset, it uses the
+platform-wide default (`MEM0_LLM_NAME`). The dispatcher supplies it from the agent config when injecting `AgentMemory`,
+reading `AgentConfig.memory_llm_model_name`.
+
+That property is the platform's hook: it returns `None` on the base class, and a blueprint that offers a memory-model
+picker overrides it to point at its own field. `RAGAgentConfig` does exactly that, exposing `memory_llm` inside its
+`UserMemoryConfig` so administrators pick the model per profile.
+
+```python
+class MyAgentConfig(AgentConfig):
+    memory_llm: Annotated[str | ModelSelect | None, Field(description="Model that extracts memories.")] = None
+
+    @property
+    @override
+    def memory_llm_model_name(self) -> str | None:
+        # A form-mode element or a blank submission both mean "use the platform default".
+        return self.memory_llm if isinstance(self.memory_llm, str) and self.memory_llm else None
+```
+
+Only the extraction model is per-agent. Embedding and reranking stay deployment-wide, because memories written with one
+embedding model cannot be searched with another.
+
+The RAG blueprints do not write user memory themselves — they delegate it to the `MemoryWriterAgent` so the run
+finalizes as soon as the answer is ready. The chosen model travels there on the start event (`origin_memory_llm`), which
+is what keeps extraction on the profile's own model rather than the platform default.
 
 ## Best practices
 

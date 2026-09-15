@@ -8,3 +8,4 @@ class RAGFailureReason(StrEnum):
     EXPERT_DECLINED = "expert_declined"
     EXPERT_ERRORED = "expert_errored"
     FEW_SHOT_REJECTED = "few_shot_rejected"
+    INPUT_TOO_LARGE = "input_too_large"

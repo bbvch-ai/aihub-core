@@ -70,7 +70,7 @@
               variant="text"
               rounded
               size="small"
-              @click="remove(data.accessRule)"
+              @click="removeRules([data.accessRule])"
             />
           </template>
         </Column>
@@ -123,7 +123,7 @@
               type="button"
               class="flex flex-col items-start gap-1 rounded-md p-2 text-left hover:bg-surface-100 disabled:opacity-40 dark:hover:bg-surface-800"
               :disabled="rules.includes(preset.rule)"
-              @click="addPreset(preset.rule)"
+              @click="addRules([preset.rule])"
             >
               <span class="flex items-center gap-2 text-sm font-medium">
                 {{ preset.name }}
@@ -147,8 +147,8 @@
     <AccessCapabilities
       :rules="rules"
       :restrict-to-tenant="restrictToTenant"
-      @add="addPreset"
-      @remove="remove"
+      @add="addRules"
+      @remove="removeRules"
     />
   </div>
 </template>
@@ -197,17 +197,20 @@ const newRule = ref('')
 
 const isNew = (rule: string) => !props.initialRules.includes(rule)
 
+// Both write the model once per call, never once per rule: `rules` is a `defineModel`, so a second write in
+// the same tick would still read the value the first one replaced. Assignment rather than in-place mutation
+// for the same reason — a parent binding this through a computed never observes a mutated array.
+const addRules = (added: string[]) => {
+  rules.value = [...rules.value, ...added.filter(rule => !rules.value.includes(rule))]
+}
+
+const removeRules = (removed: string[]) => {
+  rules.value = rules.value.filter(rule => !removed.includes(rule))
+}
+
 const add = () => {
   if (!newRule.value) return
-  if (!rules.value.includes(newRule.value)) rules.value.push(newRule.value)
+  addRules([newRule.value])
   newRule.value = ''
-}
-
-const addPreset = (rule: string) => {
-  if (!rules.value.includes(rule)) rules.value.push(rule)
-}
-
-const remove = (rule: string) => {
-  rules.value = rules.value.filter(r => r !== rule)
 }
 </script>
