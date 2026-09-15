@@ -1,0 +1,35 @@
+---
+config:
+  name:
+    label: Name
+    placeholder: Meine Wissensdatenbank
+  description:
+    label: Beschreibung
+    placeholder: Beschreiben Sie, was diese Wissensdatenbank enthält und für wen sie
+      gedacht ist...
+document_ingestion:
+  display_name: Generische Dokumenten-Ingestion-Pipeline
+  description: Analysiert hochgeladene Dokumente, zerlegt sie in Abschnitte und bettet
+    sie für die semantische Suche ein.
+  config:
+    llm_model:
+      label: Textmodell
+      help: Schreibt Zusammenfassungen, verfeinert Tabellen und beschreibt Abbildungen.
+    embedding_model:
+      label: Embedding-Modell
+      help: Bettet die Abschnitte dieser Datenbank ein. Kann nach der Erstellung nicht
+        geändert werden.
+    vision_model:
+      label: Vision-Modell
+      help: Beschreibt Abbildungen und Bilder. Leer lassen, um das Textmodell zu verwenden.
+    with_summary_nodes:
+      label: Zusammenfassungen erzeugen
+      help: Hierarchische Zusammenfassungen verbessern die Suche in langen Dokumenten,
+        kosten aber zusätzliche Modellaufrufe.
+    with_table_refinement:
+      label: Tabellen verfeinern
+      help: Tabellenstruktur erkennen und zusammengefügte Tabellen mit dem Textmodell
+        aufteilen.
+    with_figure_descriptions:
+      label: Abbildungen beschreiben
+      help: Für jede Abbildung und jedes Bild eine Textbeschreibung erzeugen.

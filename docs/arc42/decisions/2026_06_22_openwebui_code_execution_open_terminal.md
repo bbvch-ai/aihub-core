@@ -99,3 +99,7 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 - **Licensing** — Open Terminal is **MIT** (standard, OSI-approved; no branding clause and no end-user threshold). This
   is distinct from `open-webui`, whose modified-BSD "Open WebUI License" carries the branding/≤50-user clause — that
   obligation comes from open-webui, not from adding this sandbox.
+
+> **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
+> service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
+> from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.

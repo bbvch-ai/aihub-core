@@ -36,6 +36,15 @@ class BaseStoreMemoryEvent(ControlAndDisplayEvent, ABC):
     added_relations: Annotated[list[MemoryRelation], Field(description="Newly added relations")]
     deleted_relations: Annotated[list[MemoryRelation], Field(description="Deleted relations")]
 
+    llm_model_name: Annotated[
+        str | None,
+        Field(
+            description="Model that extracted these memories (issue #1590), or None when the write stored "
+            "verbatim text. Carried on this event only, for observability — it is not stored in mem0's "
+            "metadata, so it cannot be recovered from the memory record itself once this event is gone."
+        ),
+    ] = None
+
     @classmethod
     def from_memory_added_object(cls, memory_added: MemoryAdded) -> Self:
         """Create event from mem0's MemoryAdded response object."""
@@ -45,4 +54,5 @@ class BaseStoreMemoryEvent(ControlAndDisplayEvent, ABC):
             deleted_memories=[m.memory for m in memory_added.results if m.event == MemoryEventType.DELETE],
             added_relations=memory_added.relations.added_entities,
             deleted_relations=memory_added.relations.deleted_entities,
+            llm_model_name=memory_added.llm_model_name,
         )

@@ -44,6 +44,10 @@ class AgentController(TenantScopedController):
     description = ApiLocaleString.from_i18n_path("api.controllers.agent.description")
     icon = "mage:robot"
 
+    # Generalises this controller's own admin guards below (`aihub.admin.agent.{agent_class}[.{agent_id}]`):
+    # the app is a management surface, while `aihub.user.service.agent` is held by everyone who merely chats.
+    suite_visibility_permission = f"{AccessChecker.ADMIN_PREFIX}agent.?>"
+
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this resource")
 
     _AGENT_INSTANCE_ROUTE = "/classes/{agent_class}/instances/{agent_id}"
@@ -59,15 +63,24 @@ class AgentController(TenantScopedController):
     def get_agent_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_classes(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
         ) -> list[AgentClassDTO]:
             """
-            Retrieve all available agent classes.
+            Retrieve the agent classes this caller may reach.
             Use `?online=true` for online classes only, `?online=false` for offline only.
             """
-            return await AgentService.get_agent_classes(t, online=online)
+            agent_classes = await AgentService.get_agent_classes(t, online=online)
+            # Filtered per class because the route guard is an existence query that any single agent rule
+            # satisfies, so without this a tenant curated down to a subset still sees every blueprint and
+            # learns of the block only on click-through.
+            access_checker = AccessChecker.from_user(user)
+            return [
+                agent_class
+                for agent_class in agent_classes
+                if access_checker.has_access_to_agent_class(agent_class.agent_class)
+            ]
 
         return self
 

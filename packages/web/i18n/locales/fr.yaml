@@ -218,6 +218,8 @@ event:
         produit de réponse fondée.
       few_shot_rejected: La requête ne correspondait à aucun motif connu, la réponse
         a donc été produite sans récupération.
+      input_too_large: Le message ou le fichier joint dépassait la fenêtre de contexte
+        du modèle, cette exécution a donc été arrêtée avant l'appel au modèle.
   limitChatHistory:
     summary: Historique de chat limité à {count} messages
     assistant: Assistant
@@ -548,6 +550,12 @@ knowledge:
     create_error: Échec de la création de la collection. Veuillez réessayer.
     create_database:
       title: Créer une base de connaissances
+      success: Base de connaissances créée
+      error: La base de connaissances n'a pas pu être créée
+      no_ingestors: Aucun pipeline d'ingestion disponible. Assurez-vous qu'au moins
+        un pipeline est en cours d'exécution.
+      steps:
+        basic_info: Informations de base
     edit:
       title: Modifier la collection
     database:
@@ -565,15 +573,6 @@ knowledge:
       label: Pipeline d'ingestion
       placeholder: Sélectionner un pipeline d'ingestion
       help: Le pipeline qui traite les documents téléversés dans cette base de données.
-    llm_model:
-      label: Modèle de texte
-      placeholder: Utiliser la valeur par défaut du déploiement
-      help: Génère les résumés, affine les tableaux et décrit les figures de cette
-        base.
-    embedding_model:
-      label: Modèle d'embedding
-      placeholder: Utiliser la valeur par défaut du déploiement
-      help: Indexe les documents de cette base. Non modifiable après la création.
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection
@@ -713,6 +712,8 @@ role:
     changer ceci.
   capability_readonly: Aucune règle unique ne l'accorde — utilisez un modèle ou une
     règle plus large.
+  capability_also_cleared: 'Décocher supprime également : {rules}'
+  capability_also_granted: 'Cocher accorde également : {rules}'
   pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
   pattern_help_all: Tous les agents
   pattern_help_wildcard: Toutes les instances de MyAgent

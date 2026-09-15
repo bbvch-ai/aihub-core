@@ -4,8 +4,13 @@ title: Web search capability
 
 # Web search capability
 
-Agents can access web information to answer questions requiring current data beyond their training or internal knowledge
-bases. Organizations control this through configuration.
+Chats with a plain language model can reach out to the web to answer questions requiring current data beyond the model's
+training. Organizations control this through configuration.
+
+::: warning
+Web search applies to plain model chats only. AI-Hub agents ground their answers in the knowledge bases they were
+configured with, so the "Web Search" button is not offered when an agent is selected in the model picker.
+:::
 
 Select "Web Search".
 
@@ -26,11 +31,9 @@ The websites it retrieved the information from are listed as references.
 
 ## Search configuration
 
-Web search can be enabled or disabled per agent. Different policies apply to different use cases or user groups.
-
-Each agent has independent web search configuration based on purpose and risk profile. Web search can be restricted to
-specific user roles through role-based access control. Search capabilities can be modified at runtime without system
-changes.
+Web search can be enabled or disabled platform-wide, and restricted to specific user roles through role-based access
+control, so different policies apply to different use cases or user groups. It can be modified at runtime without
+system changes.
 
 ## Search restrictions
 
@@ -46,7 +49,7 @@ Search restrictions can align with industry regulations, internal policies, or c
 
 ## Source attribution
 
-When agents use web search, the system provides traceable attribution of external sources.
+When a chat uses web search, the system provides traceable attribution of external sources.
 
 Users see clear distinctions between internal knowledge and external web sources. Web results appear as structured,
 clickable citations with URLs, titles, and content previews. Users receive information about why specific sources were
@@ -57,14 +60,13 @@ from query validation through result filtering to presentation - is traceable th
 
 ## Use cases
 
-Agents supplement internal knowledge with current market data, regulatory updates, industry news, or technical
+Users supplement the model's own knowledge with current market data, regulatory updates, industry news, or technical
 documentation from external sources.
 
-When internal knowledge bases have gaps, agents access external information while clearly attributing sources.
+Where a topic is too recent or too niche for the model to know, external information fills the gap while sources stay
+clearly attributed.
 
-Agents can validate internal data against authoritative external sources.
-
-Complex research tasks benefit from orchestration of both internal and external sources.
+Claims can be validated against authoritative external sources.
 
 ## Governance and security
 

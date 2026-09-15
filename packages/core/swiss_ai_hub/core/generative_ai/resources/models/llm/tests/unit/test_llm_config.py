@@ -96,3 +96,20 @@ class TestToLlamaIndex:
 
         assert "stream_options" not in llm.additional_kwargs
         assert "stream_options" not in llm._get_model_kwargs(stream=True)
+
+
+class TestTheDeclaredContextWindow:
+    """Callers that bound a prompt need the window before building one. `None` rather than a raise: a guard
+    must not turn a model with an incomplete LiteLLM entry into a failing run."""
+
+    def test_the_window_is_read_from_the_litellm_entry(self):
+        config = LLMConfig(model_name=MAIN_MODEL)
+
+        with patch.object(LLMConfig, "get_model_info", return_value=_FAKE_MODEL_INFO):
+            assert config.max_input_tokens == 8192
+
+    def test_a_model_declaring_no_window_yields_none(self):
+        config = LLMConfig(model_name=MAIN_MODEL)
+
+        with patch.object(LLMConfig, "get_model_info", return_value={"model_info": {"mode": "chat"}}):
+            assert config.max_input_tokens is None

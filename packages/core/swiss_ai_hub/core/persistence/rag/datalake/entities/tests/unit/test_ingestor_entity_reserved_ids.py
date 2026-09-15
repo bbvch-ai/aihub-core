@@ -16,18 +16,22 @@ def _ingestor(ingestor_id: str) -> Ingestor:
 
 
 class TestReservedIds:
-    @pytest.mark.parametrize("reserved", [ingestor_type.value for ingestor_type in IngestorType])
-    def test_every_platform_routing_token_is_reserved(self, reserved):
+    @pytest.mark.parametrize("reserved", [ingestor_type.value for ingestor_type in IngestorType.legacy()])
+    def test_every_inert_and_legacy_routing_token_is_reserved(self, reserved):
         """The legacy tokens stay reserved after their code is gone: those corpora are frozen, and a new
         pipeline adopting one would ingest on top of it."""
         assert reserved in IngestorEntity.reserved_ids()
+
+    def test_the_shipped_pipeline_id_is_registrable(self):
+        """The document-ingestion pipeline announces itself through the same record as a custom one."""
+        assert IngestorType.DOCUMENT_INGESTION.value not in IngestorEntity.reserved_ids()
 
     def test_the_legacy_subject_source_type_is_reserved(self):
         """A stream filtered on ``pipeline.datalake.>`` would overlap the legacy per-instance streams."""
         assert "datalake" in IngestorEntity.reserved_ids()
 
     def test_upsert_rejects_a_reserved_id_before_touching_the_database(self):
-        reserved_ingestor = _ingestor(IngestorType.DOCUMENT_INGESTION.value)
+        reserved_ingestor = _ingestor(IngestorType.DEFAULT_RAG.value)
 
         with pytest.raises(ValidationError, match="reserved"):
             IngestorEntity.upsert(reserved_ingestor)

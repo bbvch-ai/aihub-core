@@ -43,6 +43,7 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection
 
+from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
@@ -273,6 +274,8 @@ def _(self_hosted_agent_config):
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
+        await agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
+
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -387,6 +390,8 @@ def _(agent_runner: AgentTestRunner, datatable):
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
+        await agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
+
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(

@@ -175,6 +175,16 @@ class AgentConfig(Form):
         config = cls(**data)
         return config
 
+    @property
+    def memory_llm_model_name(self) -> str | None:
+        """The model this profile's memory extraction runs on; None means the platform default (issue #1590).
+
+        Platform-owned like `cron`: the dispatcher injects `AgentMemory` for any blueprint and cannot import a
+        specific agent's config to find where that agent keeps the choice. A blueprint that offers a memory
+        model overrides this to point at its own field.
+        """
+        return None
+
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """
         Scans all fields in this AgentConfig and collects any that are `StepConfig` instances.

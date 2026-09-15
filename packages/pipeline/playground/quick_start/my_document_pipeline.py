@@ -28,19 +28,13 @@ from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import LoaderType
 from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 
-settings = DocumentIngestionPipelineSettings()
-
 defs = document_ingestion_pipeline_definitions(
     # Every deployment-global name — asset keys, the dynamic-partition registry, job names — is derived
     # from the ingestor, which is what lets a second pipeline type run alongside this one. It is also the
     # routing guard: this pipeline ingests exactly the databases whose BucketEntity names it.
     ingestor="document_ingestion",
-    embedding_model_name=settings.EMBEDDING_MODEL,
-    llm_model_name=settings.LLM_MODEL,
-    with_summary_nodes=True,
-    with_table_refinement=True,
-    with_figure_descriptions=True,
+    # The models, enrichment steps and observation schedule this deployment defaults to; every database
+    # can override them through the form the pipeline announces from them.
+    settings=DocumentIngestionPipelineSettings(),
     document_parser_loader_type=LoaderType.MINERU,
-    observe_job_hour=0,
-    observe_job_minute=0,
 )
