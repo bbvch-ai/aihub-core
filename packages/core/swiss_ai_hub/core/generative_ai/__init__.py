@@ -70,6 +70,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
     from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
     from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
+    from swiss_ai_hub.core.generative_ai.retrievers.uploaded_file_retriever import UploadedFileRetriever
+    from swiss_ai_hub.core.generative_ai.retrievers.uploaded_file_retriever_config import UploadedFileRetrieverConfig
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
     from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
     from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers import (
@@ -108,6 +110,8 @@ __all__ = [
     "MemorySettings",
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
+    "UploadedFileRetriever",
+    "UploadedFileRetrieverConfig",
     "MineruLoader",
     "UnsupportedDocumentTypeError",
     "ModeOptions",
@@ -174,6 +178,8 @@ _LAZY_IMPORTS = {
     "MemorySettings": "swiss_ai_hub.core.generative_ai.memory.memory_settings",
     "MetadataFilterPair": "swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair",
     "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",
+    "UploadedFileRetriever": "swiss_ai_hub.core.generative_ai.retrievers.uploaded_file_retriever",
+    "UploadedFileRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.uploaded_file_retriever_config",
     "MineruLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader",
     "ModeOptions": "swiss_ai_hub.core.generative_ai.processors.vector_prev_next_post_processor",
     "OrgMemoryNamespaceResolver": "swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver",

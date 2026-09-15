@@ -25,6 +25,7 @@ async def condense_standalone_question(
     chat_history: list[ChatMessage],
     t: LocaleHandler,
     llm: LLM,
+    attached_filenames: list[str] | None = None,
 ) -> ChatMessage:
     """
     Condenses a follow-up user question into a standalone question using chat history and a language model.
@@ -34,6 +35,12 @@ async def condense_standalone_question(
     history. The chat history provides context for resolving references and pronouns in the user's message.
     System messages are filtered out from the chat history before processing.
 
+    ``attached_filenames`` are the documents the user attached to *this* message. Without them "what is in
+    this document" has only the history to resolve against, and the model reliably picks a file discussed
+    earlier — measured twice on one thread, naming a different wrong document each time. Resolving it from
+    history is right for every other kind of reference, which is why the attachments have to be named
+    rather than the instruction relaxed.
+
     Uses ``achat`` (not ``chat``): a synchronous LLM call inside the agent's async event loop blocks every
     other coroutine for the whole request — on a reasoning model that is ~25s during which no other step,
     fan-out, or concurrent run can make progress.
@@ -42,7 +49,10 @@ async def condense_standalone_question(
     chat_history_str = _messages_to_history_str(chat_history_without_system_messages)
 
     prompt_template = PromptTemplate(t("lib.prompt.condenser.standalone_question"))
-    instruction_content = prompt_template.format(chat_history=chat_history_str)
+    instruction_content = prompt_template.format(
+        chat_history=chat_history_str,
+        attached_files=", ".join(attached_filenames or []) or t("lib.prompt.condenser.no_attachments"),
+    )
     messages = [ChatMessage(role=MessageRole.SYSTEM, content=instruction_content), message]
     response = await llm.achat(messages=messages)
 

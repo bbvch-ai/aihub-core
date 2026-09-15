@@ -164,3 +164,65 @@ async def test_condense_returns_user_role_message(locale_handler, mock_llm):
     # Result should always be USER role
     assert result.role == MessageRole.USER
     assert result.content == "What are the characteristics of cats?"
+
+
+@pytest.mark.asyncio
+async def test_the_files_of_this_message_reach_the_prompt(locale_handler, mock_llm):
+    """Without them "this document" has only the history to resolve against, and it picks the wrong file."""
+    mock_llm.achat.return_value = ChatResponse(
+        message=ChatMessage(role=MessageRole.ASSISTANT, content="What is in Knowledge_Library.pdf?")
+    )
+
+    await condense_standalone_question(
+        message=ChatMessage(role=MessageRole.USER, content="What is in this document?"),
+        chat_history=[ChatMessage(role=MessageRole.USER, content="Summarise expenses.pdf")],
+        t=locale_handler,
+        llm=mock_llm,
+        attached_filenames=["Knowledge_Library.pdf"],
+    )
+
+    instruction = mock_llm.achat.call_args.kwargs["messages"][0].content
+    assert "Knowledge_Library.pdf" in instruction
+    assert "files_attached_to_this_message" in instruction
+
+
+@pytest.mark.asyncio
+async def test_a_turn_without_attachments_still_renders(locale_handler, mock_llm):
+    """The template variable is unconditional, so a turn that attached nothing must not blow up on it."""
+    mock_llm.achat.return_value = ChatResponse(
+        message=ChatMessage(role=MessageRole.ASSISTANT, content="What is Python?")
+    )
+
+    await condense_standalone_question(
+        message=ChatMessage(role=MessageRole.USER, content="What is this?"),
+        chat_history=[ChatMessage(role=MessageRole.USER, content="Tell me about Python")],
+        t=locale_handler,
+        llm=mock_llm,
+    )
+
+    instruction = mock_llm.achat.call_args.kwargs["messages"][0].content
+    assert "none" in instruction
+
+
+@pytest.mark.parametrize("locale", ["de", "en", "fr", "it"])
+@pytest.mark.asyncio
+async def test_every_locale_still_renders_the_prompt(locale, mock_llm):
+    """One template serves every agent that condenses, so a locale missing the new variable breaks them all.
+
+    ``PromptTemplate.format`` raises on a variable the template does not declare and leaves an undeclared
+    one in the text, and neither surfaces until an agent runs in that language.
+    """
+    mock_llm.achat.return_value = ChatResponse(message=ChatMessage(role=MessageRole.ASSISTANT, content="q"))
+
+    await condense_standalone_question(
+        message=ChatMessage(role=MessageRole.USER, content="what is in this document?"),
+        chat_history=[ChatMessage(role=MessageRole.USER, content="Summarise expenses.pdf")],
+        t=LocaleHandler(locale=locale),
+        llm=mock_llm,
+        attached_filenames=["Knowledge_Library.pdf"],
+    )
+
+    instruction = mock_llm.achat.call_args.kwargs["messages"][0].content
+    assert "Knowledge_Library.pdf" in instruction
+    assert "Summarise expenses.pdf" in instruction
+    assert "{" not in instruction, "an unsubstituted template variable is left in the prompt"

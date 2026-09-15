@@ -137,6 +137,7 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
         await RAGAgent().respond_with_llm_step(
             event=_event(),
             limited_history_without_context=_event(limited_history=[]),
+            user_query_event=_event(),
             agent_config=config_with_task_llm,
             guard_config=MagicMock(),
             displayer=MagicMock(),

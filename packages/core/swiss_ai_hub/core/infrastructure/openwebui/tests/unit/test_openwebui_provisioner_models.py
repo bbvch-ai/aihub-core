@@ -36,7 +36,7 @@ class TestResolveDisplayName:
 
 
 _RAG_MODEL_ID = f"{AIHUB_AGENT_PREFIX}rag-default"
-_PROVISIONED_META = {"capabilities": {"web_search": False}}
+_PROVISIONED_META = {"capabilities": {"web_search": False, "file_context": False}}
 _WORKSPACE_OWNED = {
     "id": _RAG_MODEL_ID,
     "name": "RAG Agent",
@@ -54,10 +54,14 @@ class TestAgentCapabilities:
         """OpenWebUI drops web-search hits before they reach the pipe, so the toggle must not render."""
         assert OpenWebuiProvisioner._agent_capabilities()["web_search"] is False
 
+    def test_file_context_is_off_for_agents(self) -> None:
+        """Inlining every attachment into every prompt is what makes an agent answer from a stale file."""
+        assert OpenWebuiProvisioner._agent_capabilities()["file_context"] is False
+
     def test_agent_model_carries_the_capabilities(self, provisioner: OpenWebuiProvisioner) -> None:
         model_data = provisioner._build_model_data(_RAG_AGENT)
 
-        assert model_data["meta"]["capabilities"] == {"web_search": False}
+        assert model_data["meta"]["capabilities"] == {"web_search": False, "file_context": False}
 
     def test_llm_model_keeps_web_search(self, provisioner: OpenWebuiProvisioner) -> None:
         """Plain LLM models bypass the pipe, so OpenWebUI's own web search works for them."""
@@ -142,7 +146,7 @@ class TestComputeModelDiff:
             _RAG_MODEL_ID: {
                 "id": _RAG_MODEL_ID,
                 "name": "RAG Agent",
-                "meta": {"capabilities": {"web_search": False, "vision": True}},
+                "meta": {"capabilities": {"web_search": False, "file_context": False, "vision": True}},
             }
         }
 
@@ -169,7 +173,7 @@ class TestSyncWorkspaceModels:
             assert create_data["id"] == "aihub-agent-rag-default"
             assert create_data["base_model_id"] == "aihub-pipeline.rag.default"
             assert create_data["name"] == "RAG Agent"
-            assert create_data["meta"]["capabilities"] == {"web_search": False}
+            assert create_data["meta"]["capabilities"] == {"web_search": False, "file_context": False}
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
@@ -259,7 +263,7 @@ class TestSyncWorkspaceModels:
             await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
 
             mock_update.assert_called_once()
-            assert mock_update.call_args[0][1]["meta"]["capabilities"] == {"web_search": False}
+            assert mock_update.call_args[0][1]["meta"]["capabilities"] == {"web_search": False, "file_context": False}
 
     @pytest.mark.asyncio
     async def test_sync_keeps_what_the_workspace_owns(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -276,7 +280,11 @@ class TestSyncWorkspaceModels:
             update_data = mock_update.call_args[0][1]
             assert update_data["meta"]["profile_image_url"] == "/cache/image/rag.png"
             assert update_data["params"] == {"temperature": 0.2}
-            assert update_data["meta"]["capabilities"] == {"web_search": False, "vision": True}
+            assert update_data["meta"]["capabilities"] == {
+                "web_search": False,
+                "file_context": False,
+                "vision": True,
+            }
 
     @pytest.mark.asyncio
     async def test_sync_does_not_update_when_name_unchanged(self, provisioner: OpenWebuiProvisioner) -> None:

@@ -30,9 +30,41 @@ class TestUserUploadedFile:
     def test_serialization_roundtrip(self):
         f = UserUploadedFile(filename="image.png", file_type="image/png", file_id=VALID_UUID4)
         data = f.model_dump()
-        assert data == {"filename": "image.png", "file_type": "image/png", "file_id": VALID_UUID4}
+        assert data == {
+            "filename": "image.png",
+            "file_type": "image/png",
+            "file_id": VALID_UUID4,
+            "source_file_id": None,
+            "attached_in_current_turn": False,
+        }
         restored = UserUploadedFile.model_validate(data)
         assert restored == f
+
+    def test_source_file_id_survives_the_roundtrip(self):
+        """Retrieval reads the client's own collection, so its file id has to reach the agent intact."""
+        f = UserUploadedFile(
+            filename="image.png",
+            file_type="image/png",
+            file_id=VALID_UUID4,
+            source_file_id=VALID_UUID4,
+        )
+
+        restored = UserUploadedFile.model_validate(f.model_dump())
+
+        assert restored.source_file_id == VALID_UUID4
+
+    def test_attached_in_current_turn_survives_the_roundtrip(self):
+        """Retrieval ranks on it, so the flag has to cross the event boundary rather than default away."""
+        f = UserUploadedFile(
+            filename="image.png",
+            file_type="image/png",
+            file_id=VALID_UUID4,
+            attached_in_current_turn=True,
+        )
+
+        restored = UserUploadedFile.model_validate(f.model_dump())
+
+        assert restored.attached_in_current_turn is True
 
     def test_rejects_filename_with_forward_slash(self):
         with pytest.raises(ValidationError):

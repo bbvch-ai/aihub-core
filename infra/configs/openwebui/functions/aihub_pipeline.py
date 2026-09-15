@@ -1573,22 +1573,56 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
-    ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
+        current_turn_file_ids: Annotated[Optional[set[str]], "Ids attached to the message being answered"] = None,
+    ) -> Annotated[list[dict[str, Any]], "Prepared files for AI-Hub"]:
         """Upload Open WebUI files to the agent's bucket and return file references."""
         if not files:
             return []
 
-        prepared_files: list[dict[str, str]] = []
+        prepared_files: list[dict[str, Any]] = []
 
         for file in files:
             try:
                 prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
                 if prepared_file:
+                    prepared_file["attached_in_current_turn"] = file.get("id", "") in (current_turn_file_ids or set())
                     prepared_files.append(prepared_file)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
 
         return prepared_files
+
+    @staticmethod
+    async def current_turn_file_ids(
+        chat_id: Annotated[Optional[str], "OpenWebUI chat id"],
+        message_id: Annotated[Optional[str], "Id of the assistant message being generated"],
+    ) -> Annotated[set[str], "Open WebUI file ids attached to the message being answered"]:
+        """Find the files the user attached to this message, which ``__files__`` alone cannot tell apart.
+
+        Open WebUI hands the pipe every file of the conversation on every turn, in attach order and with no
+        marker of when each arrived. Only the chat row keeps the per-message list, and the message being
+        answered is the parent of the assistant message this call is generating.
+
+        The parent link is the precise answer and the only one that stays right when the user edits or
+        regenerates a turn, but not every client writes it, so the newest user message stands in when it is
+        missing. Returns an empty set whenever neither can be established — a chat that is not persisted, or
+        a caller driving the endpoint directly — which leaves every attachment ranked purely on relevance.
+        """
+        if not chat_id or chat_id.startswith(("local:", "channel:")):
+            return set()
+
+        chat = await Chats.get_chat_by_id(chat_id)
+        messages = ((getattr(chat, "chat", None) or {}).get("history") or {}).get("messages") or {}
+        if not messages:
+            return set()
+
+        parent_id = (messages.get(message_id) or {}).get("parentId") if message_id else None
+        answered_message = messages.get(parent_id) if parent_id else None
+        if answered_message is None:
+            user_messages = [message for message in messages.values() if message.get("role") == "user"]
+            answered_message = max(user_messages, key=lambda m: m.get("timestamp") or 0, default={})
+
+        return {file.get("id") for file in answered_message.get("files") or [] if file.get("id")}
 
     async def _process_single_file(
         self,
@@ -1601,7 +1635,10 @@ class FileProcessingService:
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
         owui_file_id = file.get("id", "")
-        file_obj = Files.get_file_by_id(owui_file_id)
+        # Awaited: Open WebUI made this coroutine-returning, and the un-awaited call raised
+        # ``'coroutine' object has no attribute 'meta'`` inside the per-file try, so every upload was
+        # dropped and the agent received an empty file list no matter what the user attached.
+        file_obj = await Files.get_file_by_id(owui_file_id)
 
         if not file_obj:
             logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
@@ -1656,6 +1693,10 @@ class FileProcessingService:
             "filename": filename,
             "file_type": content_type,
             "file_id": agent_file_id,
+            # Open WebUI already parsed, chunked and embedded this file into its own vector collection
+            # when the user uploaded it. Forwarding its id lets the agent read those vectors instead of
+            # doing the same work again — parsing alone costs seconds per file.
+            "source_file_id": owui_file_id,
         }
 
     def _read_file_content(self, file_obj: Any) -> bytes:
@@ -2121,6 +2162,34 @@ class Pipe:
             logger.warning(f"Failed to check open chat HITL: {e}")
         return None
 
+    @staticmethod
+    async def _warn_about_attached_collections(
+        files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"],
+        event_emitter: Annotated[Any, "Event emitter function"],
+    ) -> None:
+        """Say so when a knowledge collection is attached, because the agent will not read it.
+
+        An agent answers from the knowledge bases configured on its own profile; a collection attached in
+        the chat carries no file id to forward, so it reaches ``_process_single_file`` as a lookup that
+        finds nothing. Without this the user gets an answer that quietly ignores what they attached.
+        """
+        collections = [file.get("name") or file.get("id", "") for file in files or [] if file.get("type") == "collection"]
+        if not collections:
+            return
+
+        await event_emitter(
+            {
+                "type": "notification",
+                "data": {
+                    "type": "warning",
+                    "content": (
+                        "This agent answers from its own configured knowledge bases. "
+                        f"Attached collections are not read: {', '.join(collections)}"
+                    ),
+                },
+            }
+        )
+
     async def pipe(
         self,
         body: Annotated[dict[str, Any], "Request body"],
@@ -2181,7 +2250,13 @@ class Pipe:
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
                 # Process files — upload to agent's dedicated bucket
-                files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
+                current_turn_file_ids = await self._file_service.current_turn_file_ids(
+                    __metadata__.get("chat_id"), __metadata__.get("message_id")
+                )
+                files = await self._file_service.prepare_files_for_event(
+                    __files__, agent_class, agent_id, headers, current_turn_file_ids
+                )
+                await self._warn_about_attached_collections(__files__, __event_emitter__)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)

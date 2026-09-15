@@ -1,5 +1,6 @@
 ---
 condenser:
+  no_attachments: none
   standalone_question: |
     <role_and_task>
     You are an expert in search query optimization.
@@ -8,12 +9,16 @@ condenser:
     <chat_history>
     {chat_history}
     </chat_history>
+    <files_attached_to_this_message>
+    {attached_files}
+    </files_attached_to_this_message>
     <instructions>
     The user's message contains text and potentially an image.
     1. **Resolve context from history**: Replace pronouns or references that refer to previous messages in the chat history with the concrete terms from the history.
-    2. **Image references**: ONLY if the user explicitly refers to an image (e.g., "What is **this**?", "What do you see **here**?"), replace the pronoun with a brief description of the visible object.
-    3. **Do not add new information**: NEVER add details that are not present in the original question. The reformulated question must be semantically equivalent to the original.
-    4. **Output**: Output ONLY the new sentence.
+    2. **References to a document**: if the message refers to a document without naming one ("this document", "this file", "it", "the attachment"), that reference is to the files listed in files_attached_to_this_message — name them, and never substitute a document mentioned earlier in the history. If the message names a document itself, keep that name and change nothing.
+    3. **Image references**: ONLY if the user explicitly refers to an image (e.g., "What is **this**?", "What do you see **here**?"), replace the pronoun with a brief description of the visible object.
+    4. **Do not add new information**: NEVER add details that are not present in the original question. The reformulated question must be semantically equivalent to the original.
+    5. **Output**: Output ONLY the new sentence.
     </instructions>
 rag:
   context_prompt: |

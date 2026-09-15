@@ -14,3 +14,5 @@ reranking_results: Reclassement des résultats récupérés pour une meilleure p
 context_sufficient: Informations suffisantes trouvées pour répondre à la question
 trying_another_retrieval_hop: Plus d'informations nécessaires, nouvelle recherche
   en cours
+attachments_unreadable: "Ces pièces jointes n'ont pas encore pu être lues, réponse\
+  \ sans elles : %{filenames}"

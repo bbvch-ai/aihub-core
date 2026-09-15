@@ -420,7 +420,13 @@ class RAGAgent(Agent):
         user: UserIdentity | None = None,
     ) -> StandaloneQuestionCondenserEvent:
         return await do_condense_standalone_question(
-            event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
+            event.limited_history,
+            start_event.last_user_message,
+            agent_config.task_llm,
+            displayer,
+            t,
+            user,
+            uploaded_files=start_event.files,
         )
 
     @step(
@@ -456,6 +462,7 @@ class RAGAgent(Agent):
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> RetrieverEvent:
@@ -468,7 +475,7 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
-        return await do_retrieve(event, runtime_configs, t, user)
+        return await do_retrieve(event, runtime_configs, t, user, uploaded_files=start_event.files, displayer=displayer)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
@@ -595,6 +602,7 @@ class RAGAgent(Agent):
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
+        user_query_event: StandaloneQuestionCondenserEvent,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -613,6 +621,7 @@ class RAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
+            condensed_question=user_query_event.condensed_chat_message,
         )
 
     @step(
