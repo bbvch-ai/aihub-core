@@ -698,6 +698,8 @@ role:
   capability_locked: Granted by a broader rule — remove that rule to change this.
   capability_readonly: No single rule grants this on its own — use a preset or a broader
     rule.
+  capability_also_cleared: 'Unticking also clears: {rules}'
+  capability_also_granted: 'Ticking also grants: {rules}'
   pattern_help_intro: 'Patterns use wildcards to match agents:'
   pattern_help_all: All agents
   pattern_help_wildcard: All instances of MyAgent
