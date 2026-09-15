@@ -317,7 +317,7 @@ async def carry_over_bucket_model_columns() -> None:
 _RETIRED_CONFIG_KEYS = ["user_memory__enable_async_memory_storage"]
 
 
-async def strip_retired_agent_config_keys() -> None:
+def strip_retired_agent_config_keys() -> None:
     """Removes config keys that no blueprint declares any more from the profiles still carrying them."""
     for config_key in _RETIRED_CONFIG_KEYS:
         stripped = AgentConfigEntityDocument.unset_config_key(config_key)

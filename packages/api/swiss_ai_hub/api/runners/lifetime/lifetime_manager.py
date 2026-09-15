@@ -262,7 +262,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await finalize_role_setup()
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
-        await strip_retired_agent_config_keys()
+        strip_retired_agent_config_keys()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
