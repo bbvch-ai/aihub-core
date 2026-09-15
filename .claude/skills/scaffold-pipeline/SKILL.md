@@ -66,8 +66,6 @@ from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import docum
 
 enable_logging()
 
-settings = DocumentIngestionPipelineSettings()
-
 defs = document_ingestion_pipeline_definitions(
     # Routing key: this pipeline serves every knowledge database whose BucketEntity names it, and
     # namespaces every deployment-global Dagster name. Labels are required for a custom ingestor —
@@ -75,12 +73,9 @@ defs = document_ingestion_pipeline_definitions(
     ingestor="<ingestor_id>",
     display_name=LocaleString(en="<Display name>"),
     description=LocaleString(en="<What it does>"),
-    embedding_model_name=settings.EMBEDDING_MODEL,
-    llm_model_name=settings.LLM_MODEL,
-    with_summary_nodes=settings.WITH_SUMMARY_NODES,
-    with_table_refinement=settings.WITH_TABLE_REFINEMENT,
-    observe_job_hour=settings.OBSERVE_JOB_HOUR,
-    observe_job_minute=settings.OBSERVE_JOB_MINUTE,
+    # Models, enrichment switches and observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every knowledge database overrides them in the announced form.
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 

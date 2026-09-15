@@ -18,7 +18,10 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, StartupTenantSetting
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
+
+from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 
 logger = logging.getLogger(__name__)
 
@@ -110,11 +113,17 @@ async def initialize_startup_tenant() -> TenantMetadataEntity | None:
         await initialize_default_roles_for_tenant(str(existing_tenant.id))
         return existing_tenant
 
+    # An unset ACCESS_RULES means "whatever this instance considers standard", which can only be answered by
+    # reading the live model roster. Only reachable on the very first boot of a new instance — the early
+    # return above covers every later start — so an unreachable gateway costs a container restart, not an
+    # outage, and naming the rules explicitly opts out of the lookup altogether.
+    access_rules = settings.access_rules_list or await DefaultTenantAccessRulesService.derive()
+
     tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
-        access_rules=settings.access_rules_list,
+        access_rules=access_rules,
     )
     logger.info(f"Successfully created startup tenant '{tenant.name}' (id={tenant.id})")
 
@@ -290,6 +299,30 @@ async def initialize_knowledge_buckets() -> None:
         await _ensure_namespace_exists(bucket, config["namespace"])
 
     logger.info("Knowledge bucket initialization completed successfully")
+
+
+@no_trace
+async def carry_over_bucket_model_columns() -> None:
+    """Reconciles knowledge databases created before ingestors announced their form; see ``BucketEntity``."""
+    carried = BucketEntity.carry_over_retired_model_columns()
+    if carried:
+        logger.info(f"Carried the retired model columns of {carried} knowledge database(s) into their configuration")
+
+
+# Transitional: asynchronous user-memory storage became the only mode (ADR
+# 2026_09_11_async_user_memory_storage_as_the_only_mode), so this flag no longer exists on any blueprint.
+# Profiles saved before that keep working without this — a config model ignores keys it does not declare —
+# so this only stops the retired key from being stored and echoed back by the edit form. Delete it, and the
+# entity method it calls, once deployments have upgraded past it.
+_RETIRED_CONFIG_KEYS = ["user_memory__enable_async_memory_storage"]
+
+
+def strip_retired_agent_config_keys() -> None:
+    """Removes config keys that no blueprint declares any more from the profiles still carrying them."""
+    for config_key in _RETIRED_CONFIG_KEYS:
+        stripped = AgentConfigEntityDocument.unset_config_key(config_key)
+        if stripped:
+            logger.info(f"Stripped the retired '{config_key}' config key from {stripped} agent profile(s)")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

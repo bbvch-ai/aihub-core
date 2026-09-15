@@ -49,6 +49,11 @@ config:
   enable_user_memory_storage:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.
+  memory_llm:
+    label: Memory model
+    help: Model that extracts and reconciles user memories. Extraction is short and
+      mechanical, so a smaller model is usually enough. Leave it disabled to use the
+      platform default; enabling starts from that same model.
 steps:
   retrieve_user_memory:
     name: Retrieve User Memory
@@ -102,3 +107,10 @@ steps:
   stop:
     name: Stop
     description: Completes the workflow after all required steps are done
+thoughts:
+  input_too_large: 'The input does not fit the model context window: about %{tokens}
+    tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
+messages:
+  input_too_large: This file is too large for me to read in one go. Please upload
+    a smaller file, split it into parts, or switch to an assistant that uses a model
+    with a larger context window.

@@ -138,6 +138,9 @@ import { AgentConfigImportError } from '@core/composables/agent/useImportAgentIn
 
 import type { FullAgentInstanceDto, WorkflowGraph } from '@core/sdk/client'
 
+// Nuxt collects middleware from every matched record, so this guards the whole /service/agents subtree.
+definePageMeta({ middleware: 'agent-admin' })
+
 type AgentGroup = {
   agentClass: string
   name: string

@@ -218,6 +218,9 @@ event:
         non ha prodotto una risposta fondata.
       few_shot_rejected: La richiesta non corrispondeva a nessun pattern noto, quindi
         la risposta è stata prodotta senza recupero.
+      input_too_large: Il messaggio o il file allegato superava la finestra di contesto
+        del modello, quindi questa esecuzione è stata interrotta prima di chiamare
+        il modello.
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente
@@ -548,6 +551,12 @@ knowledge:
     create_error: Creazione della collezione non riuscita. Riprova.
     create_database:
       title: Crea database di conoscenza
+      success: Base di conoscenza creata
+      error: Impossibile creare la base di conoscenza
+      no_ingestors: Nessuna pipeline di ingestione disponibile. Assicurati che almeno
+        una pipeline sia in esecuzione.
+      steps:
+        basic_info: Informazioni di base
     edit:
       title: Modifica collezione
     database:
@@ -556,21 +565,14 @@ knowledge:
     database_name:
       label: Nome del database
       placeholder: ilmiodatabase
-      help: Sono consentiti solo caratteri alfanumerici. Il nome non può essere modificato
-        in seguito.
-      validation_error: Il nome del database può contenere solo caratteri alfanumerici
+      help: Sono consentite solo lettere minuscole e cifre, iniziando con una lettera,
+        da 3 a 63 caratteri. Il nome non può essere modificato in seguito.
+      validation_error: Il nome del database deve iniziare con una lettera minuscola
+        e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
     ingestor:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione
       help: La pipeline che elabora i documenti caricati in questo database.
-    llm_model:
-      label: Modello di testo
-      placeholder: Usa il valore predefinito dell'installazione
-      help: Genera riassunti, affina le tabelle e descrive le figure di questo database.
-    embedding_model:
-      label: Modello di embedding
-      placeholder: Usa il valore predefinito dell'installazione
-      help: Indicizza i documenti di questo database. Non modificabile dopo la creazione.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
@@ -709,6 +711,8 @@ role:
     cambiare questo.
   capability_readonly: Nessuna singola regola lo concede — usa un modello o una regola
     più ampia.
+  capability_also_cleared: 'Deselezionando si rimuove anche: {rules}'
+  capability_also_granted: 'Selezionando si concede anche: {rules}'
   pattern_help_intro: 'I modelli usano caratteri jolly per gli agenti:'
   pattern_help_all: Tutti gli agenti
   pattern_help_wildcard: Tutte le istanze di MyAgent

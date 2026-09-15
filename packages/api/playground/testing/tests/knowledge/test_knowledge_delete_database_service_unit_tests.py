@@ -122,7 +122,8 @@ class TestDeleteNamespace:
 
     @pytest.mark.parametrize("legacy_ingestor", [IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value])
     def test_allows_namespace_deletion_inside_a_legacy_database(self, legacy_ingestor):
-        """The legacy default_rag/shared_rag databases must stay, but their namespaces remain deletable."""
+        """The whole legacy database is undeletable, but its namespaces are not: the frozen images carry the
+        teardown sensor from v0.320.1, so the flag this sets is a queue something actually reads."""
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
@@ -135,6 +136,7 @@ class TestDeleteNamespace:
             KnowledgeService.delete_namespace(database=DATABASE, namespace=NAMESPACE)
 
         namespace_cls.mark_deleting.assert_called_once_with(NAMESPACE_ID)
+        bucket_cls.mark_deleting.assert_not_called()
 
 
 class TestDeleteRevokesAccess:

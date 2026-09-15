@@ -6,12 +6,13 @@ from typing import Annotated, Any
 
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
-from mongoengine import DoesNotExist, NotUniqueError
+from mongoengine import DoesNotExist, NotUniqueError, ValidationError
 from nats.aio.client import Client as NATS
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
+from swiss_ai_hub.core.form import FormkitElement, Group, ModelSelect, Repeater
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -68,10 +69,15 @@ from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDT
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
 from swiss_ai_hub.api.routes.model.model_service import ModelService
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
+from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
+
+_SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
 
 class KnowledgeService:
@@ -339,58 +345,78 @@ class KnowledgeService:
 
     @staticmethod
     async def _validated_model(
-        model_name: Annotated[str | None, "Model the caller asked for, or None to take the deployment default"],
-        expected_mode: Annotated[str, "LiteLLM mode the slot requires, e.g. 'chat' or 'embedding'"],
+        field_path: Annotated[str, "Where on the form the model was chosen, named in any rejection"],
+        model_name: str,
+        expected_mode: Annotated[str, "LiteLLM mode the picker requires, e.g. 'chat' or 'embedding'"],
         user: UserIdentity,
-    ) -> str | None:
+    ) -> None:
         """Rejects a model this deployment does not serve, the caller cannot use, or that cannot do the job.
 
         Goes through ``ModelService`` rather than LiteLLM directly so the tenant's own model access rules
         apply: a database must not be bound to a model its creator is not allowed to use.
         """
-        if model_name is None:
-            return None
-
         model = await ModelService.get_model_by_name(user, model_name)
         if model.model_info.mode != expected_mode:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Model '{model_name}' is a '{model.model_info.mode}' model and cannot be used as the "
-                    f"'{expected_mode}' model of a knowledge database."
+                    f"Configuration validation failed: {field_path}: '{model_name}' is a "
+                    f"'{model.model_info.mode}' model and cannot be used where a '{expected_mode}' model is required."
                 ),
             )
-        return model_name
-
-    @staticmethod
-    async def _validated_embedding_model(model_name: str | None, user: UserIdentity) -> str | None:
-        """Additionally requires a declared output width, which the collection's dimension is derived from."""
-        validated = await KnowledgeService._validated_model(model_name, "embedding", user)
-        if validated is None:
-            return None
-
-        model = await ModelService.get_model_by_name(user, validated)
-        if model.model_info.output_vector_size is None:
+        if expected_mode == "embedding" and model.model_info.output_vector_size is None:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Embedding model '{validated}' declares no output_vector_size, so the vector "
-                    f"collection's dimension cannot be derived from it. Add it to the LiteLLM model config."
+                    f"Configuration validation failed: {field_path}: embedding model '{model_name}' declares no "
+                    "output_vector_size, so the vector collection's dimension cannot be derived from it. "
+                    "Add it to the LiteLLM model config."
                 ),
             )
-        return validated
+
+    @staticmethod
+    async def _validate_model_selections(
+        elements: list[FormkitElement], config: dict[str, Any], user: UserIdentity, prefix: str = ""
+    ) -> None:
+        """Every ``ModelSelect`` the ingestor announced is checked against LiteLLM, wherever it sits on the form.
+
+        The API knows nothing about a pipeline's field names; it knows which elements are model pickers and what
+        mode each requires, which is all the check needs.
+        """
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                await KnowledgeService._validate_element(element, f"{prefix}{name}", config.get(name), user)
+
+    @staticmethod
+    async def _validate_element(element: FormkitElement, field_path: str, value: Any, user: UserIdentity) -> None:
+        """One element of an announced form: a container to walk into, a model picker to check, or nothing."""
+        if isinstance(element, Group) and isinstance(value, dict):
+            await KnowledgeService._validate_model_selections(element.children, value, user, f"{field_path}.")
+        elif isinstance(element, Repeater) and isinstance(value, list):
+            await KnowledgeService._validate_repeated_entries(element, field_path, value, user)
+        elif isinstance(element, ModelSelect) and value is not None:
+            await KnowledgeService._validated_model(field_path, value, element.mode, user)
+
+    @staticmethod
+    async def _validate_repeated_entries(
+        element: Repeater, field_path: str, entries: list[Any], user: UserIdentity
+    ) -> None:
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                await KnowledgeService._validate_model_selections(
+                    element.children, entry, user, f"{field_path}.{index}."
+                )
 
     @staticmethod
     @trace_fn
     def get_ingestors(t: LocaleHandler) -> list[IngestorDTO]:
-        """Returns the ingestion pipelines a user may pick when creating a knowledge database.
+        """The ingestion pipelines a user may pick when creating a knowledge database, with their forms.
 
-        The platform's own pipelines come from ``IngestorType.selectable()``; any custom pipelines a
-        deployment registered from its own pipeline container are appended, so they are offered in the UI too.
+        Every deployed pipeline — the platform's own included — registers itself from its own container, so what
+        is offered is exactly what is running, localized from the labels and form it announced.
         """
-        platform = [IngestorDTO.from_ingestor_type(ingestor, t) for ingestor in IngestorType.selectable()]
-        custom = [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.custom()]
-        return platform + custom
+        return [IngestorDTO.from_ingestor(ingestor, t) for ingestor in IngestorEntity.all()]
 
     @staticmethod
     async def create_database(
@@ -399,22 +425,32 @@ class KnowledgeService:
         t: LocaleHandler,
         s3_service: S3AnonymousFileAccessService,
         user: UserIdentity,
-        llm_config: LLMConfig | None = None,
     ) -> DatabaseResponse:
         """
         Creates a new self-service knowledge database (bucket).
 
         The database name doubles as the S3 bucket, Mongo store, and Milvus collection name. The bucket
         records the ingestor that owns it, so the matching deployed pipeline picks it up without any
-        redeployment.
+        redeployment, and the configuration that ingestor's announced form produced — validated here against
+        the schema it announced, the way an agent instance is validated against its class.
 
         The S3 bucket is provisioned (with browser-upload CORS) up front so documents can be uploaded
         immediately, before the pipeline's first lazy ingest.
         """
-        if not IngestorEntity.is_selectable(request.ingestor):
+        # First, so a rejected name costs neither a translation call nor a storage probe.
+        try:
+            BucketEntity.validate_new_database_name(database)
+        except ValidationError as invalid_name:
+            raise HTTPException(status_code=400, detail=str(invalid_name)) from None
+
+        ingestor = IngestorEntity.find(request.ingestor)
+        if ingestor is None or ingestor.config_specs is None or not ingestor.form:
             raise HTTPException(
                 status_code=400,
-                detail=f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database.",
+                detail=(
+                    f"Ingestor '{request.ingestor}' cannot be assigned to a self-service database: no running "
+                    "pipeline has announced it with a configuration form."
+                ),
             )
 
         try:
@@ -432,29 +468,42 @@ class KnowledgeService:
                 ),
             )
 
-        display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
-            text=request.display_name, t=t, llm_config=llm_config, user=user
+        form_elements = ingestor.form_elements
+        config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
+        config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
+        # Before the model validation, so a misspelled key is named as itself. The generated model drops an
+        # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
+        # rather than the mistake and says nothing about the value the user actually typed.
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        await ConfigAuthorizationService.validate_for_user_or_raise(
+            form_elements=ingestor.form, config=config, user=user, t=t
         )
-        description_entity = await KnowledgeService._create_and_translate_locale_entity(
-            request.description, t, llm_config, user
-        )
+        await KnowledgeService._validate_model_selections(form_elements, config, user)
+
+        metadata = InstanceConfigHelper.extract_config_metadata(config_instance, fallback_icon="")
+        locale = InstanceConfigHelper.build_locale_entities(metadata.name, metadata.description, database, "")
+        # Dumped from the validated instance rather than copied from the submission, so a knob is stored in the
+        # type its pipeline declared. `exclude_unset` keeps that to the keys the user actually sent: an omitted
+        # optional must stay absent, or it would override the deployment default the pipeline falls back to.
+        configuration = {
+            key: value
+            for key, value in config_instance.model_dump(mode="json", exclude_unset=True).items()
+            if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+        }
 
         # Persist the entity before provisioning storage: the unique bucket_name index serialises
         # concurrent admin calls (the loser gets NotUniqueError, not a second bucket), so any failure
         # before this point leaves no orphan. If provisioning fails, roll back both the container and
         # the row so a retry starts clean.
-        llm_model = await KnowledgeService._validated_model(request.llm_model, "chat", user)
-        embedding_model = await KnowledgeService._validated_embedding_model(request.embedding_model, user)
-
         try:
             bucket = BucketEntity.create_bucket(
                 bucket_name=database,
                 db_name=database,
-                name=display_name_entity,
-                description=description_entity,
+                name=locale.name,
+                description=locale.description,
                 ingestor=request.ingestor,
-                llm_model=llm_model,
-                embedding_model=embedding_model,
+                configuration=configuration,
             )
         except NotUniqueError:
             raise HTTPException(status_code=409, detail=f"Database '{database}' already exists.") from None
@@ -483,8 +532,7 @@ class KnowledgeService:
             name=bucket.db_name,
             bucket_name=bucket.bucket_name,
             ingestor=bucket.ingestor,
-            llm_model=bucket.llm_model,
-            embedding_model=bucket.embedding_model,
+            configuration=bucket.configuration,
             display_name=KnowledgeService._safe_extract_locale_string(bucket.name, t),
             description=KnowledgeService._safe_extract_locale_string(bucket.description, t),
         )
@@ -849,12 +897,47 @@ class KnowledgeService:
         return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
 
     @staticmethod
-    def _is_database_deletable(bucket: BucketEntity) -> bool:
-        """Whether the whole database may be torn down.
+    def reserved_database_names() -> frozenset[str]:
+        """Names a new knowledge database may never be created on.
 
-        Auto-synced databases are refilled by their source, and the legacy ``default_rag`` / ``shared_rag``
-        buckets are bound to a deploy-time pipeline that expects the bucket to keep existing — so neither
-        database itself is deletable. Namespaces inside them remain individually deletable.
+        A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
+        and the application's main database would collide, and the two legacy names would put a new database
+        on top of a frozen corpus that has no migration path. Spelled out rather than derived from
+        ``non_browsable_database_names``, so that widening one policy cannot silently widen the other.
+        """
+        aihub_settings = AIHubSettings()
+        return _SYSTEM_DATABASE_NAMES | {
+            aihub_settings.MONGO_MAIN_DB_NAME,
+            aihub_settings.DEFAULT_BUCKET_NAME,
+            aihub_settings.SHARED_BUCKET_NAME,
+        }
+
+    @staticmethod
+    def non_browsable_database_names() -> frozenset[str]:
+        """Names no caller may read from or delete in, whatever access rules they hold.
+
+        Reserving a name for creation is not a reason to refuse reads of the database already on it, so the
+        legacy names appear here only when the deployment hides legacy knowledge, making hidden mean
+        unreadable rather than merely unlisted. Uploads and namespace creation stay open either way.
+        """
+        # Keyed on the two configured names, while get_databases hides by the bucket's ingestor. The two
+        # agree unless a deployment renamed its buckets after seeding, which would leave such a bucket
+        # unlisted yet readable by name; closing that would cost a bucket lookup on every guarded read.
+        aihub_settings = AIHubSettings()
+        system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
+        if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
+            return frozenset(system_names)
+        return frozenset(system_names | {aihub_settings.DEFAULT_BUCKET_NAME, aihub_settings.SHARED_BUCKET_NAME})
+
+    @staticmethod
+    def _is_database_deletable(bucket: BucketEntity) -> bool:
+        """Whether the database *itself* may be torn down.
+
+        Auto-synced databases are refilled by their source. A legacy ``default_rag`` / ``shared_rag`` bucket is
+        re-provisioned by three separate paths — the API's bucket seeder, the S3 init script, and its own
+        pipeline's definitions build — so removing it needs the code location retired afterwards, which the
+        platform cannot do for the operator. Its namespaces and its documents are deletable; only the
+        database as a whole is not.
         """
         return not bucket.auto_sync and not KnowledgeService._is_legacy_bucket(bucket)
 
@@ -871,9 +954,7 @@ class KnowledgeService:
     def _reject_undeletable_database(bucket: BucketEntity) -> None:
         """Whole-database deletion guard: auto-synced and legacy databases are protected.
 
-        Only the database itself is protected for legacy buckets — their namespaces stay deletable — because
-        the legacy per-bucket pipeline expects the bucket to exist. Mongo-internal / main-db names are rejected
-        earlier, at the controller, via the reserved-name guard.
+        Mongo-internal / main-db names are rejected earlier, at the controller, via the hidden-name guard.
         """
         KnowledgeService._reject_if_auto_synced(bucket)
         if KnowledgeService._is_legacy_bucket(bucket):
@@ -939,6 +1020,8 @@ class KnowledgeService:
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
 
+        # Only auto-sync is refused. A legacy database's namespaces are deletable: its frozen images carry the
+        # teardown sensor from v0.320.1, so the flag this sets is a queue something actually reads.
         KnowledgeService._reject_if_auto_synced(bucket)
 
         try:

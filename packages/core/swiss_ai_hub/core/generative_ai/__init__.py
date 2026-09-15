@@ -9,6 +9,10 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.generative_ai.chat_history.format_chat_history import format_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation import format_expert_conversation
+    from swiss_ai_hub.core.generative_ai.chat_history.input_size_guard import (
+        estimate_prompt_tokens,
+        usable_input_budget,
+    )
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
         limit_chat_history_with_context,
@@ -16,8 +20,15 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
+    from swiss_ai_hub.core.generative_ai.document.extraction.document_extractor import DocumentExtractor
+    from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
+    from swiss_ai_hub.core.generative_ai.document.extraction.extracted_document import ExtractedDocument
+    from swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error import (
+        UnsupportedDocumentTypeError,
+    )
     from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import DocumentIntelligenceLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector import DocumentLoaderSelector
+    from swiss_ai_hub.core.generative_ai.document.loaders.eml_loader import EmlLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
@@ -81,7 +92,11 @@ __all__ = [
     "BucketMetadataFilters",
     "BucketNamespacePair",
     "DocumentIntelligenceLoader",
+    "DocumentExtractor",
     "DocumentLoaderSelector",
+    "DocumentTitleDeriver",
+    "EmlLoader",
+    "ExtractedDocument",
     "EmbeddingModelConfig",
     "FIGURES_DIRECTORY_NAME",
     "FewShotExample",
@@ -99,6 +114,7 @@ __all__ = [
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
     "MineruLoader",
+    "UnsupportedDocumentTypeError",
     "ModeOptions",
     "OrgMemoryNamespaceResolver",
     "OrgMemoryReadConfig",
@@ -123,6 +139,8 @@ __all__ = [
     "extend_chat_history_with_user_memory",
     "few_shot_guard",
     "narrow_retrievers",
+    "estimate_prompt_tokens",
+    "usable_input_budget",
     "format_chat_history",
     "format_expert_conversation",
     "limit_chat_history",
@@ -142,7 +160,12 @@ _LAZY_IMPORTS = {
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
+    "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
+    "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",
+    "EmlLoader": "swiss_ai_hub.core.generative_ai.document.loaders.eml_loader",
+    "ExtractedDocument": "swiss_ai_hub.core.generative_ai.document.extraction.extracted_document",
+    "UnsupportedDocumentTypeError": "swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
     "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
@@ -191,6 +214,8 @@ _LAZY_IMPORTS = {
     "merge_consecutive_messages": "swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor",
     "refine_document_tables_with_metadata": "swiss_ai_hub.core.generative_ai.document.refinement",
     "replace_s3_paths_with_signed_urls": "swiss_ai_hub.core.generative_ai.utils.image_processor",
+    "estimate_prompt_tokens": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
+    "usable_input_budget": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
     "rerank_nodes": "swiss_ai_hub.core.generative_ai.rerank.rerank_nodes",
     "retrieve_from_all_sources": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources",
     "retrieve_nodes": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes",

@@ -9,7 +9,6 @@ from swiss_ai_hub.core.events.process import (
     HumanInSpecs,
     HumanWorkEvent,
     ProcessClassDiscoveryResponseEvent,
-    ProcessConfigSpecs,
     ProcessEvent,
     ProcessStartEvent,
     ProgramInSpecs,
@@ -17,7 +16,7 @@ from swiss_ai_hub.core.events.process import (
     WorkEvent,
     WorkRequestEvent,
 )
-from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.form import ConfigSpecs, InputText
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.processes import ProcessConfig
@@ -134,7 +133,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
-            process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+            process_config_specs=ConfigSpecs.from_form_class(ProcessConfig),
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -251,7 +250,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 description=LocaleString(en=""),
                 icon="mage:broadcast",
                 form=[],
-                process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+                process_config_specs=ConfigSpecs.from_form_class(ProcessConfig),
                 human_inputs=self.human_inputs,
                 program_inputs=self.program_inputs,
                 agent_inputs=self.agent_inputs,

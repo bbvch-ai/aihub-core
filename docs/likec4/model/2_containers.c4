@@ -281,14 +281,6 @@ model {
       description "Code execution sandbox for OpenWebUI (plain LLM models). Per-user isolation; generated files surfaced to users via OpenWebUI's Files panel. Lives alone in the dedicated code-sandbox network (callers only) — no path to backend/data/NATS."
     }
 
-    jupyter = container "Jupyter" {
-      #tier-utility
-      technology "Jupyter Lab"
-      icon tech:jupyter
-      style { color gray }
-      description "Code execution sandbox — retained in the stack but no longer used by OpenWebUI for code execution."
-    }
-
     playwright = container "Playwright" {
       #tier-utility
       technology "Playwright (Chromium)"

@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
     from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
+    from swiss_ai_hub.core.form.config_specs import ConfigSpecs
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
     from swiss_ai_hub.core.form.elements.checkbox import Checkbox
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
         normalize_empty_objects_to_none,
         transform_formkit_arrays,
     )
+    from swiss_ai_hub.core.form.secret_field_walker import SecretFieldWalker
     from swiss_ai_hub.core.form.template_data import TemplateData
 
 __all__ = [
@@ -39,6 +41,7 @@ __all__ = [
     "CronInput",
     "ChipsInput",
     "ConfigAuthorizationViolation",
+    "ConfigSpecs",
     "DatePicker",
     "Form",
     "FormkitElement",
@@ -49,6 +52,7 @@ __all__ = [
     "LocaleInput",
     "ModelSelect",
     "Repeater",
+    "SecretFieldWalker",
     "Select",
     "SelectButton",
     "Slider",
@@ -69,6 +73,7 @@ _LAZY_IMPORTS = {
     "CronInput": "swiss_ai_hub.core.form.elements.cron_input",
     "ChipsInput": "swiss_ai_hub.core.form.elements.chips_input",
     "ConfigAuthorizationViolation": "swiss_ai_hub.core.form.base.config_authorization_violation",
+    "ConfigSpecs": "swiss_ai_hub.core.form.config_specs",
     "DatePicker": "swiss_ai_hub.core.form.elements.date_picker",
     "Form": "swiss_ai_hub.core.form.form",
     "FormkitElement": "swiss_ai_hub.core.form.base.formkit_element",
@@ -79,6 +84,7 @@ _LAZY_IMPORTS = {
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
+    "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

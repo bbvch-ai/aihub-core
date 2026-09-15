@@ -12,11 +12,9 @@ from typing import Any
 from imapclient import IMAPClient
 from imapclient.exceptions import IMAPClientError
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
-from swiss_ai_hub.core.imap import ImapClientConfig
+from swiss_ai_hub.core.imap import ImapClientConfig, MailParser, ParsedMessage
 
-from swiss_ai_hub.agent.imap.mail_parser import MailParser
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
 
 logger = logging.getLogger(__name__)
 

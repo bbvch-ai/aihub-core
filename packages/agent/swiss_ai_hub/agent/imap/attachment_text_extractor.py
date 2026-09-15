@@ -2,7 +2,7 @@ import logging
 import re
 
 from swiss_ai_hub.core.events.agent import MailAttachmentRef
-from swiss_ai_hub.core.generative_ai import DocumentLoaderSelector
+from swiss_ai_hub.core.generative_ai import DocumentExtractor
 from swiss_ai_hub.core.imap import DraftEmailSettings
 
 from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, ExtractedAttachment
@@ -83,8 +83,8 @@ class AttachmentTextExtractor:
         agent_id: str,
     ) -> ExtractedAttachment:
         """Read one attachment, mapping every failure mode onto an outcome rather than an exception."""
-        loader = DocumentLoaderSelector.for_file(ref.filename, ref.content_type)
-        if loader is None:
+        # Before the fetch, not after: an unreadable type must not cost an S3 round trip.
+        if not DocumentExtractor.can_extract(ref.filename, ref.content_type):
             logger.info("[attachments] no loader handles %r (%s)", ref.filename, ref.content_type)
             return AttachmentTextExtractor._unreadable(ref, "this file type cannot be read")
 
@@ -92,16 +92,17 @@ class AttachmentTextExtractor:
             content = await MailStore.load_attachment(ref, agent_class=agent_class, agent_id=agent_id)
             # include_images=False keeps this to text: the loaders demand an fsspec filesystem to write extracted
             # images to, and a reply prompt has no use for them.
-            documents = await loader.aload_data_from_bytes(
+            extracted = await DocumentExtractor.extract_from_bytes(
                 content=content,
                 filename=ref.filename,
+                content_type=ref.content_type,
                 include_images=False,
             )
         except Exception:
             logger.warning("[attachments] could not read %r — drafting without it", ref.filename, exc_info=True)
             return AttachmentTextExtractor._unreadable(ref, "this attachment could not be read")
 
-        text = AttachmentTextExtractor._meaningful_text("\n\n".join(document.text for document in documents))
+        text = AttachmentTextExtractor._meaningful_text(extracted.content)
         if not text:
             logger.info("[attachments] %r holds no readable text", ref.filename)
             return ExtractedAttachment(
