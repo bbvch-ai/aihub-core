@@ -210,6 +210,8 @@ event:
     no_filters: No additional filters
   rag_stop:
     failure_reason:
+      condensation_empty: The question could not be condensed into something searchable
+        — this run was stopped before retrieval.
       context_insufficient: Retrieved context was insufficient — the answer is a fallback,
         not grounded in your knowledge sources.
       expert_declined: The human expert could not provide an answer — this run did

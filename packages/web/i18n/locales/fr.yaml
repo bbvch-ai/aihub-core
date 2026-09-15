@@ -210,6 +210,8 @@ event:
     no_filters: Aucun filtre supplémentaire
   rag_stop:
     failure_reason:
+      condensation_empty: La question n'a pas pu être condensée en une formulation
+        exploitable — cette exécution a été arrêtée avant la récupération.
       context_insufficient: Le contexte récupéré était insuffisant — la réponse est
         une solution de repli et n'est pas ancrée dans vos sources de connaissances.
       expert_declined: L'expert humain n'a pas pu fournir de réponse — cette exécution
