@@ -18579,6 +18579,7 @@ export const PromptTokensDetailsSchema = {
 export const RAGFailureReasonSchema = {
   type: "string",
   enum: [
+    "condensation_empty",
     "context_insufficient",
     "expert_declined",
     "expert_errored",

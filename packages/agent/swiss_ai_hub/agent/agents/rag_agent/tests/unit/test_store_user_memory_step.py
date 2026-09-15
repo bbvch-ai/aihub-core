@@ -14,6 +14,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     MemoryStorageRequestedEvent,
     Message,
+    StandaloneQuestionCondenserEvent,
     StoreUserMemoryEvent,
     UserMessageEvent,
 )
@@ -65,6 +66,9 @@ async def test_the_step_delegates_to_the_memory_writer():
             user=fake_user(), messages=[ChatMessage(role=MessageRole.USER, content="hi")]
         ),
         llm_event=LLMEvent(output_messages=[Message(role="assistant", content="hello")]),
+        condense_event=StandaloneQuestionCondenserEvent(
+            condensed_chat_message=ChatMessage(role=MessageRole.USER, content="what is the vacation policy?")
+        ),
         topic=_topic(),
         agent_config=_config(),
         t=locale_handler,
