@@ -1760,6 +1760,12 @@ export type BaseStoreMemoryEvent = {
    */
   deleted_relations: Array<MemoryRelation>;
   /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -12577,6 +12583,7 @@ export const RagFailureReason = {
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",
   FEW_SHOT_REJECTED: "few_shot_rejected",
+  INPUT_TOO_LARGE: "input_too_large",
 } as const;
 
 /**
@@ -14680,6 +14687,12 @@ export type StoreOrganizationMemoryEvent = {
    */
   deleted_relations: Array<MemoryRelation>;
   /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -14753,6 +14766,12 @@ export type StoreUserMemoryEvent = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
   /**
    * Event Name
    *
@@ -18167,6 +18186,12 @@ export type BaseStoreMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 
@@ -25134,6 +25159,12 @@ export type StoreOrganizationMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 
@@ -25195,6 +25226,12 @@ export type StoreUserMemoryEventWritable = {
    * Deleted relations
    */
   deleted_relations: Array<MemoryRelation>;
+  /**
+   * Llm Model Name
+   *
+   * Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.
+   */
+  llm_model_name?: string | null;
   [key: string]: unknown;
 };
 

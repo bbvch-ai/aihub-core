@@ -220,6 +220,8 @@ event:
         – dieser Lauf hat keine fundierte Antwort produziert.
       few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
         die Antwort ohne Retrieval erzeugt.
+      input_too_large: Die Nachricht oder die angehängte Datei überschritt das Kontextfenster
+        des Modells, daher wurde dieser Lauf vor dem Modellaufruf gestoppt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent

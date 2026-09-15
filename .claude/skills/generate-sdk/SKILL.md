@@ -21,6 +21,21 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/active/docs
   > - `make run-dev` in `packages/api/`, OR
   > - `docker compose -f infra/docker-compose.dev.yml up aihub-api -d`
 
+### Stop every agent runner first
+
+The API registers an endpoint pair per **discovered** agent class, so the spec depends on which runners happen to be
+attached. Regenerating with a local agent running bakes that agent into the shared client — a RAG agent alone adds four
+`…ToRAGAgent…` endpoints plus the `ChatMessage_Input/Output` and `*Block_Input/Output` schemas they pull in, roughly
+2,900 lines of diff that belong to nobody's change. The committed SDK carries **no** agent-specific endpoints, which is
+the baseline to reproduce.
+
+```bash
+pkill -f "app/.*_agent/main.py"
+curl -s -H "Authorization: Bearer $SUPERUSER_TOKEN" http://localhost:8000/api/v1/openapi.json | grep -c "RagAgent"
+```
+
+Expect `0` before generating. Restart the runners afterwards.
+
 ## Step 2: Generate the SDK
 
 Run from `packages/web/`:

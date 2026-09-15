@@ -227,10 +227,10 @@ defs = document_ingestion_pipeline_definitions(
 ```
 
 `settings` carries the text, embedding and vision models, the three enrichment switches and the observation schedule.
-Those are deployment defaults, not fixed behaviour. The pipeline announces a
-configuration form pre-filled with them, each knowledge database created for this ingestor chooses its own values in the
-create dialog, and the pipeline reads those values per run. See
-[Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
+Those are deployment defaults, not fixed behaviour. The pipeline announces a configuration form pre-filled with them,
+each knowledge database created for this ingestor chooses its own values in the create dialog, and the pipeline reads
+those values per run. See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add
+a setting of your own.
 
 ## Default Data Mapping
 

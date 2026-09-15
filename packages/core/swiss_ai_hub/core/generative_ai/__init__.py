@@ -9,6 +9,10 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.generative_ai.chat_history.format_chat_history import format_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation import format_expert_conversation
+    from swiss_ai_hub.core.generative_ai.chat_history.input_size_guard import (
+        estimate_prompt_tokens,
+        usable_input_budget,
+    )
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
         limit_chat_history_with_context,
@@ -133,6 +137,8 @@ __all__ = [
     "extend_chat_history_with_user_memory",
     "few_shot_guard",
     "narrow_retrievers",
+    "estimate_prompt_tokens",
+    "usable_input_budget",
     "format_chat_history",
     "format_expert_conversation",
     "limit_chat_history",
@@ -205,6 +211,8 @@ _LAZY_IMPORTS = {
     "merge_consecutive_messages": "swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor",
     "refine_document_tables_with_metadata": "swiss_ai_hub.core.generative_ai.document.refinement",
     "replace_s3_paths_with_signed_urls": "swiss_ai_hub.core.generative_ai.utils.image_processor",
+    "estimate_prompt_tokens": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
+    "usable_input_budget": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
     "rerank_nodes": "swiss_ai_hub.core.generative_ai.rerank.rerank_nodes",
     "retrieve_from_all_sources": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources",
     "retrieve_nodes": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes",
