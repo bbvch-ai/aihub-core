@@ -41,7 +41,7 @@ jobs:
             app_module: swiss_ai_hub.sysadmin_api.main
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           fetch-depth: 0
       - name: Detect relevant changes
@@ -63,12 +63,12 @@ jobs:
           fi
       - name: Set up Python
         if: steps.changes.outputs.changed == 'true'
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: '3.13'
       - name: Install uv
         if: steps.changes.outputs.changed == 'true'
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6.8.0
         with:
           enable-cache: true
       - name: Install Python dependencies
@@ -126,7 +126,7 @@ jobs:
           echo "::error::spec file was not served at $URL"; cat /tmp/spec-server.log; exit 1
       - name: Setup Node.js
         if: steps.changes.outputs.changed == 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6.5.0
         with:
           node-version: 25.x
       - name: Install pnpm via corepack
