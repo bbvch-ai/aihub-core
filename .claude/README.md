@@ -75,7 +75,6 @@ This directory contains all Claude Code configuration for the swiss-ai-hub monor
     ├── mcp-nats.sh        # NATS messaging (subjects, streams, monitoring)
     ├── mcp-dagster.sh     # Dagster pipelines (runs, assets, run logs, failure summaries)
     ├── mcp-sonarqube.sh   # SonarCloud issues and quality gates (needs SONARQUBE_TOKEN)
-    ├── mcp-github.sh      # GitHub issues, PRs, code search (disabled; the skills use `gh`)
     ├── mcp-playwright.sh  # Browser automation and UI debugging
     ├── mcp-context7.sh    # Up-to-date library documentation lookup
     ├── mcp-primevue.sh    # PrimeVue component library (props, events, slots, theming)
@@ -86,6 +85,12 @@ This directory contains all Claude Code configuration for the swiss-ai-hub monor
 `langfuse`, `nuxt` and `swiss_ai_hub_api` are configured directly as `"type": "http"` servers
 rather than launcher scripts. The two that need credentials use `headersHelper`, because
 `.mcp.json` expands `${VAR}` against the shell environment and so cannot read `.env`.
+
+There is deliberately no GitHub MCP server: the `gh` CLI already reaches every endpoint it
+wraps (including code scanning, Dependabot, sub-issues and rulesets, which have no dedicated
+`gh` subcommand but work through `gh api`), infers the repo from the git remote, and reuses
+the token `gh auth login` already stored — so the MCP would only add a second long-lived PAT
+on disk. The skills use `gh` throughout.
 ```
 
 ## Quick Reference

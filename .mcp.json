@@ -19,10 +19,6 @@
     "playwright": {
       "command": "./.claude/mcp/mcp-playwright.sh"
     },
-    "github": {
-      "command": "./.claude/mcp/mcp-github.sh",
-      "disabled": true
-    },
     "postgres": {
       "command": "./.claude/mcp/mcp-postgres.sh"
     },
