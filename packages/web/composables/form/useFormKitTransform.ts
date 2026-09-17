@@ -339,15 +339,25 @@ function nullableToggleId(element: FormElement): string {
 
 /**
  * Combines a synthetic toggle condition with any existing condition_if.
+ *
+ * The `$` on every `$get(...)` must survive. `$:` marks the string as an expression; it does not put the
+ * references inside it into scope. Stripping their `$` made FormKit's compiler see a bare `get`, which it
+ * treats as a literal rather than a provided function — the expression then evaluated to the truthy string
+ * `"0{[nativecode]}.value"`, so a gated field rendered unconditionally and neither checkbox could hide it.
  */
 function combineConditions(toggleCondition: string, existing: string | undefined): string {
   if (!existing) return toggleCondition
-  if (existing.startsWith('$:')) {
-    return `$: ${toggleCondition.slice(1)} && (${existing.slice(2).trim()})`
-  }
-  return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
+  const existingExpression = existing.startsWith('$:') ? existing.slice(2).trim() : existing
+  return `$: ${toggleCondition} && (${existingExpression})`
 }
 
+/**
+ * The toggle inherits the element's own `condition_if` so it disappears with the section it belongs to.
+ * Without this, a nullable field gated on a sibling checkbox (e.g. the memory model, which only applies
+ * while memory storage is on) would hide its input but leave a stray "Enable X" checkbox behind.
+ * The element's nullable-toggle condition is deliberately NOT inherited — that is the condition this very
+ * node controls.
+ */
 function buildNullableToggleNode(
   element: FormElement,
   label: string | undefined,
@@ -355,13 +365,19 @@ function buildNullableToggleNode(
 ): Record<string, unknown> {
   const fieldName = element.name as string
   const toggleId = nullableToggleId(element)
+  const gatingCondition = element.if as string | undefined
   return {
     $formkit: 'primeCheckbox',
+    // `preserve: true` for the same reason the gated input itself carries it: when this toggle's own
+    // condition unmounts it, FormKit would otherwise drop `__<field>__enabled` from the group data, and the
+    // state seeded from the saved value is lost — an already-configured field then remounts reading "off".
+    preserve: true,
     name: nullableToggleName(fieldName),
     id: toggleId,
     key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
     ...(help ? { help } : {}),
+    ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
   }
 }
@@ -682,17 +698,18 @@ export function coerceNullableToggles(
 }
 
 /**
- * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
- * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
- * the v-model on registration), so defaults must be merged into the form data instead.
- * Existing values — including falsy ones like `false` or `""` — are preserved.
- *
- * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
- * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
- * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
- * `element.value` looks like; behaviour here is exercised end-to-end on agent and
- * process edit forms.
+ * A nullable leaf stored as `null` is seeded with its default too, mirroring how `seedGroupDefault`
+ * materialises a null nullable group: `null` means "the toggle is off", not "the input holds nothing",
+ * so the field behind the toggle should still offer the default the backend ships (e.g. the memory
+ * model starting on the platform-wide one). Safe in both directions — `seedNullableToggles` has
+ * already decided the toggle from the raw null-ness, so this cannot switch one on, and
+ * `coerceNullableToggles` re-nullifies a disabled field at submit time, so the seeded value is never
+ * persisted while the toggle is off.
  */
+function isDisabledNullableLeaf(element: FormElement, value: unknown): boolean {
+  return element.nullable === true && value === null
+}
+
 /**
  * Seed a group field's value: always materialise its children's defaults (starting from
  * the existing object when present, `{}` otherwise — including for a saved `null`). A null
@@ -726,6 +743,18 @@ function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
   return value === undefined ? [] : value
 }
 
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
+ */
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
@@ -744,7 +773,7 @@ export function seedFormDefaults(
     else if (formkitType === 'repeater') {
       result[name] = seedRepeaterDefault(value, children)
     }
-    else if (!(name in result) && element.value !== undefined) {
+    else if (element.value !== undefined && (!(name in result) || isDisabledNullableLeaf(element, value))) {
       result[name] = element.value
     }
   }

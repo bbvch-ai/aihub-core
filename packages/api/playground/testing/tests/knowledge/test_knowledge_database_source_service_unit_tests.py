@@ -11,7 +11,7 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import ConfigSpecsEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import Ingestor, IngestorType, SourcePipeline
-from swiss_ai_hub.core.secrets import SecretEncryptionService, SecretMasker
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 from swiss_ai_hub.api.routes.knowledge.dto.create_database_request import CreateDatabaseRequest
@@ -149,7 +149,9 @@ class TestCreateWithSource:
         assert encryption.is_encrypted(stored["sftp"]["password"])
         assert encryption.decrypt(stored["sftp"]["password"]) == "pw"
         assert response.source == "rclone"
-        assert response.source_configuration["sftp"] == {"host": "files.acme", "password": SecretMasker.MASK}
+        assert response.source_configuration["sftp"]["host"] == "files.acme"
+        assert encryption.is_masked(response.source_configuration["sftp"]["password"])
+        assert "pw" not in response.source_configuration["sftp"]["password"]
 
     @pytest.mark.asyncio
     async def test_an_unregistered_source_is_refused_before_anything_is_created(self, locale_handler):
@@ -176,9 +178,10 @@ class TestUpdateSource:
         self, locale_handler, encryption
     ):
         stored = _sftp_configuration(encryption.encrypt("old-pw"))
+        mask = encryption.mask_paths(stored, {"sftp.password"})["sftp"]["password"]
         request = UpdateDatabaseSourceRequest(
             source=RCLONE.id,
-            source_configuration={**_sftp_configuration(SecretMasker.MASK), "include_patterns": ["*.docx"]},
+            source_configuration={**_sftp_configuration(mask), "include_patterns": ["*.docx"]},
         )
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
@@ -190,7 +193,7 @@ class TestUpdateSource:
         written = bucket_cls.update_source.call_args.args[2]
         assert written["include_patterns"] == ["*.docx"]
         assert encryption.decrypt(written["sftp"]["password"]) == "old-pw"
-        assert response.source_configuration["sftp"]["password"] == SecretMasker.MASK
+        assert encryption.is_masked(response.source_configuration["sftp"]["password"])
 
     @pytest.mark.asyncio
     async def test_a_new_secret_replaces_the_stored_one(self, locale_handler, encryption):
@@ -221,7 +224,7 @@ class TestUpdateSource:
     @pytest.mark.asyncio
     async def test_a_mask_with_nothing_stored_is_a_client_error(self, locale_handler):
         request = UpdateDatabaseSourceRequest(
-            source=RCLONE.id, source_configuration=_sftp_configuration(SecretMasker.MASK)
+            source=RCLONE.id, source_configuration=_sftp_configuration(f"{SecretEncryptionService.MASK}:0123456789abcdef")
         )
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration={})

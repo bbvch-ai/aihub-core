@@ -68,6 +68,18 @@ class TestIngestorConfigForBucket:
         assert config.embedding_model == "embedding/default"
         assert config.name.en == "orphan"
 
+    def test_a_row_carrying_a_key_the_class_never_declared_still_resolves(self, deployment_defaults):
+        """Rows written before the API rejected undeclared keys (#1850) must keep ingesting untouched.
+
+        This is what `IngestorConfig`'s `extra="allow"` buys, and the only place that says so: tightening it
+        to `extra="forbid"` looks like finishing that fix and would instead break every such database.
+        """
+        with patch(f"{_MODULE}._bucket_entity", return_value=_bucket({"with_table_refinemnt": False})):
+            config = model_builders.ingestor_config_for_bucket("contracts")
+
+        assert config.model_extra["with_table_refinemnt"] is False
+        assert config.with_table_refinement is True
+
     def test_a_custom_pipeline_reads_its_own_knobs_typed(self, deployment_defaults):
         class CrawlConfig(DocumentIngestionConfig):
             crawl_depth: Annotated[int | None, Field(description="How deep to crawl")] = None

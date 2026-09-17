@@ -17,6 +17,9 @@ from swiss_ai_hub.api.routes.access.model_roster_unavailable_error import ModelR
 
 _EXCLUDED = "text-generation/Apertus-70B-Instruct-2509"
 
+_STANDARD_CLASS = "RAGAgent"
+_NON_STANDARD_CLASS = "ExpertRAGAgent"
+
 _CPU_ROSTER = {
     "text-generation": [
         "Apertus-70B-Instruct-2509",
@@ -109,7 +112,10 @@ async def test_non_model_families_stay_reachable(monkeypatch: pytest.MonkeyPatch
 
     checker = _checker(await DefaultTenantAccessRulesService.derive())
 
-    assert checker.has_access_to_agent("RAGAgent", "shared-knowledge-rag")
+    # A standard blueprint: the agent family is curated rather than wildcarded, so only these reach it —
+    # and only as far as the blueprint. Its existing profiles are deliberately not reachable; see
+    # test_a_standard_blueprint_does_not_carry_its_existing_profiles.
+    assert checker.has_access_to_agent_class(_STANDARD_CLASS)
     assert checker.has_access_to_process("SomeProcess", "some-id")
     assert checker.has_access_to_service("model")
     # The knowledge root, not the subtree: creating a database is guarded on the bare rule, which
@@ -156,9 +162,17 @@ async def test_empty_roster_raises_rather_than_seeding_a_model_less_tenant(monke
 
 class _DummyPathParams(dict):
     """Fills a guard template's ``{path_params}`` with any concrete value — which segment a rule names
-    is irrelevant here, only how many segments deep the guard sits."""
+    is irrelevant here, only how many segments deep the guard sits.
+
+    ``agent_class`` is the one exception. Agents are curated, so the ceiling names the standard classes
+    instead of wildcarding the family, and probing with an arbitrary class would assert the opposite of
+    what curation is for. Substituting a granted class keeps this test measuring depth, which is its job;
+    that a non-standard class is denied at the same guards is asserted separately below.
+    """
 
     def __missing__(self, key: str) -> str:
+        if key == "agent_class":
+            return _STANDARD_CLASS
         return "probe"
 
 
@@ -176,13 +190,103 @@ async def test_the_derived_ceiling_permits_every_route_guard(monkeypatch: pytest
     _stub_roster(monkeypatch, _CPU_ROSTER)
     checker = _checker(await DefaultTenantAccessRulesService.derive())
 
-    guards = {
-        template.format_map(_DummyPathParams())
+    templates = {
+        template
         for controller in runner.controllers
         for route in controller.router.routes
         if isinstance(route, APIRoute) and (template := AccessCapabilityService._route_template(route)) is not None
     }
+    # Per-profile agent guards are the one depth the ceiling deliberately does not reach. A profile that
+    # does not exist yet cannot be named by a rule, and naming the whole subtree would hand the tenant every
+    # profile of the class in the deployment. ``AgentService._grant_instance_access`` grants each profile's
+    # rule to the tenant that creates it, which is what covers this depth afterwards.
+    guards = {template.format_map(_DummyPathParams()) for template in templates if "{agent_id}" not in template}
 
     assert guards, "no route guards discovered — the closure walk broke, not the ceiling"
     for guard in sorted(guards):
         assert checker.has_access(guard), guard
+
+
+@pytest.mark.asyncio
+async def test_only_the_standard_blueprints_reach_a_new_tenant(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enumerating the standard classes is what hides the rest — and what makes each an unticked,
+    grantable row in the sysadmin's tenant-ceiling editor rather than a locked one."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    checker = _checker(await DefaultTenantAccessRulesService.derive())
+
+    for standard in ("LLMWrappingAgent", "FewShotAgent", "RAGAgent"):
+        assert checker.has_access_to_agent_class(standard), standard
+    for withheld in (_NON_STANDARD_CLASS, "EmailClassificationAgent", "ConditionalAgent"):
+        assert not checker.has_access_to_agent_class(withheld), withheld
+
+
+@pytest.mark.asyncio
+async def test_a_standard_blueprint_does_not_carry_its_existing_profiles(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The regression guard for aihub-core-private#257.
+
+    Profiles live in one global collection with no tenant column, so ``aihub.admin.agent.<Class>.>`` would
+    not mean "this tenant's profiles of this blueprint" — it would mean every profile of it in the
+    deployment. A new tenant was therefore created already holding assistants other tenants had built.
+    """
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    checker = _checker(rules)
+
+    assert f"aihub.admin.agent.{_STANDARD_CLASS}.>" not in rules
+    assert not checker.has_access_to_agent(_STANDARD_CLASS, "shared-knowledge-rag")
+    # Creating one is still permitted — that is the whole point of keeping the bare root.
+    assert checker.has_access(f"aihub.admin.agent.{_STANDARD_CLASS}")
+
+
+@pytest.mark.asyncio
+async def test_a_profile_the_tenant_creates_becomes_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The other half of the contract: the depth the ceiling no longer covers is covered per profile by
+    ``AgentService._grant_instance_access``, so a tenant reaches what it built and nothing else."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    rules.append(AccessChecker.agent_instance_admin_rule(_STANDARD_CLASS, "our-own-profile"))
+    checker = _checker(rules)
+
+    assert checker.has_access_to_agent(_STANDARD_CLASS, "our-own-profile")
+    assert not checker.has_access_to_agent(_STANDARD_CLASS, "someone-elses-profile")
+
+
+@pytest.mark.asyncio
+async def test_a_withheld_blueprint_cannot_be_instantiated(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The companion to test_the_derived_ceiling_permits_every_route_guard: that one substitutes a
+    granted class into every guard, so without this the denial side would go unasserted."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    checker = _checker(await DefaultTenantAccessRulesService.derive())
+
+    assert not checker.has_access(f"aihub.admin.agent.{_NON_STANDARD_CLASS}")
+    assert checker.has_access(f"aihub.admin.agent.{_STANDARD_CLASS}")
+
+
+@pytest.mark.asyncio
+async def test_the_standard_blueprint_list_is_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A deployment that ships a different standard set says so here rather than in code."""
+    monkeypatch.setenv("AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES", f"{_NON_STANDARD_CLASS},RAGAgent")
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    checker = _checker(await DefaultTenantAccessRulesService.derive())
+
+    assert checker.has_access_to_agent_class(_NON_STANDARD_CLASS)
+    assert not checker.has_access_to_agent_class("LLMWrappingAgent")
+
+
+@pytest.mark.asyncio
+async def test_agent_rules_do_not_depend_on_the_class_roster(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The reason this is an allow list and not an exclusion: the startup tenant is seeded at API boot,
+    before any agent has answered discovery, so nothing can be derived from what is running."""
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.persistence.agents.AgentClassEntity.get_all", staticmethod(lambda: []), raising=False
+    )
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    checker = _checker(await DefaultTenantAccessRulesService.derive())
+
+    assert checker.has_access_to_agent_class(_STANDARD_CLASS)

@@ -30,3 +30,6 @@ steps:
     name: Arrêter
     description: Arrête l'agent lorsque la demande est rejetée par la vérification
       d'adéquation.
+messages:
+  unsuitable_request: Je ne suis pas le bon assistant pour cette demande, je ne peux
+    donc pas y répondre. %{reason}

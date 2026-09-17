@@ -41,7 +41,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     NodeTypeValue,
 )
 from swiss_ai_hub.core.publishers import SourceUpdatedPublisher
-from swiss_ai_hub.core.secrets import SecretEncryptionService, SecretMasker
+from swiss_ai_hub.core.secrets import SecretEncryptionService
 
 from swiss_ai_hub.api.routes.knowledge.dto.batch_delete_documents_response import (
     BatchDeleteDocumentsResponse,
@@ -72,6 +72,8 @@ from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
+
+_DOCUMENT_NOT_FOUND_DETAIL = "Document not found"
 
 _SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
@@ -130,10 +132,17 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
-        """Retrieves a single document by its ID from the knowledge database."""
+    def get_document_by_id(db: str, namespace: str, document_id: str) -> DocumentDTO:
+        """Retrieves a single document by its ID from the knowledge database.
+
+        Scoped by namespace like every other document read: the route is only authorised for the namespace
+        named in its path, so a lookup by id alone would hand out documents from any namespace of the database.
+        """
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
@@ -441,7 +450,7 @@ class KnowledgeService:
             raise HTTPException(status_code=400, detail=str(invalid_name)) from None
 
         ingestor = IngestorEntity.find(request.ingestor)
-        if ingestor is None or ingestor.config_specs is None:
+        if ingestor is None or ingestor.config_specs is None or not ingestor.form:
             raise HTTPException(
                 status_code=400,
                 detail=(
@@ -465,13 +474,18 @@ class KnowledgeService:
                 ),
             )
 
+        form_elements = ingestor.form_elements
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
         config_model = ModelCreationService.create_config_model(ingestor.config_specs.to_specs())
+        # Before the model validation, so a misspelled key is named as itself. The generated model drops an
+        # unrecognised key and then reports the correctly-spelled one as missing, which names the consequence
+        # rather than the mistake and says nothing about the value the user actually typed.
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=ingestor.form, config=config, user=user, t=t
         )
-        await KnowledgeService._validate_model_selections(ingestor.form_elements, config, user)
+        await KnowledgeService._validate_model_selections(form_elements, config, user)
         source_configuration = (
             await KnowledgeService._validated_source_configuration(
                 request.source, request.source_configuration, stored=None, user=user, t=t
@@ -482,8 +496,13 @@ class KnowledgeService:
 
         metadata = InstanceConfigHelper.extract_config_metadata(config_instance, fallback_icon="")
         locale = InstanceConfigHelper.build_locale_entities(metadata.name, metadata.description, database, "")
+        # Dumped from the validated instance rather than copied from the submission, so a knob is stored in the
+        # type its pipeline declared. `exclude_unset` keeps that to the keys the user actually sent: an omitted
+        # optional must stay absent, or it would override the deployment default the pipeline falls back to.
         configuration = {
-            key: value for key, value in config.items() if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
+            key: value
+            for key, value in config_instance.model_dump(mode="json", exclude_unset=True).items()
+            if key not in InstanceConfigHelper.IDENTITY_LOCALE_FIELDS
         }
 
         # Persist the entity before provisioning storage: the unique bucket_name index serialises
@@ -586,19 +605,22 @@ class KnowledgeService:
                     "announced it with a configuration form."
                 ),
             )
-        secret_paths = SecretFieldWalker.secret_paths(source_pipeline.form_elements)
+        form_elements = source_pipeline.form_elements
+        secret_paths = SecretFieldWalker.secret_paths(form_elements)
+        encryption = SecretEncryptionService.from_settings()
         config = InstanceConfigHelper.normalize_form_configuration(submitted)
         if stored is not None:
             try:
-                config = SecretMasker.restore_masked_paths(config, stored, secret_paths)
+                config = encryption.restore_masked_paths(config, stored, secret_paths)
             except ValueError as no_stored_secret:
                 raise HTTPException(status_code=400, detail=str(no_stored_secret)) from None
+        InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_model = ModelCreationService.create_config_model(source_pipeline.config_specs.to_specs())
         InstanceConfigHelper.validate_config_for_create(config, config_model)
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=source_pipeline.form, config=config, user=user, t=t
         )
-        return SecretEncryptionService.from_settings().encrypt_paths(config, secret_paths)
+        return encryption.encrypt_paths(config, secret_paths)
 
     @staticmethod
     def _database_response(bucket: BucketEntity, t: LocaleHandler) -> DatabaseResponse:
@@ -623,7 +645,7 @@ class KnowledgeService:
         if source_pipeline is None:
             return {}
         secret_paths = SecretFieldWalker.secret_paths(source_pipeline.form_elements)
-        return SecretMasker.mask_paths(bucket.source_configuration, secret_paths)
+        return SecretEncryptionService.from_settings().mask_paths(bucket.source_configuration, secret_paths)
 
     @staticmethod
     async def create_namespace(
@@ -840,7 +862,7 @@ class KnowledgeService:
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         source = ref_doc.data.metadata.source
         source = source.removeprefix(_S3_URI_SCHEME)
         parts = source.split("/", 1)
@@ -878,7 +900,7 @@ class KnowledgeService:
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
 
         source = ref_doc.data.metadata.source
         _, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)

@@ -289,6 +289,11 @@ defs = document_ingestion_pipeline_definitions(
 per run with `ingestor_config_for_bucket(bucket, AcmeConfig).crawl_depth`, the same call that resolves the models and
 enrichment switches, so there is one place to look for every per-database setting.
 
+The `as_form()` line is what announces the knob, not the field declaration. A field left at a plain default is absent
+from both the form and the schema, and a configuration carrying it is refused with a 400 naming it. For key/value
+settings, declare a `Repeater` over a two-field `Form` rather than a raw `dict` field — a `dict` has no form element, so
+it can never be announced.
+
 The ingestor id must not collide with an inert or frozen platform routing token (`unassigned`, `default_rag`,
 `shared_rag`) or with the `datalake` subject token. The factory rejects those when the definitions are built.
 

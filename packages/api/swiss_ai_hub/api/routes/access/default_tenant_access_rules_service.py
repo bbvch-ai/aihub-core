@@ -9,10 +9,10 @@ from swiss_ai_hub.api.routes.access.model_roster_unavailable_error import ModelR
 
 logger = logging.getLogger(__name__)
 
-# Everything a tenant needs to be usable apart from models. The ceiling caps every rule family, so a
-# model-only ceiling would leave the tenant unable to reach agents, knowledge, processes or the admin UI.
-_NON_MODEL_RULES: tuple[str, ...] = (
-    "aihub.admin.agent.>",
+# Everything a tenant needs to be usable apart from the two curated families, models and agents. The
+# ceiling caps every rule family, so omitting one here leaves the tenant unable to reach knowledge,
+# processes or the admin UI.
+_UNCURATED_FAMILY_RULES: tuple[str, ...] = (
     # Both forms are needed: ``knowledge.>`` covers every existing database, while the bare root is what
     # *creating* one is guarded on — a database that does not exist yet cannot be named by a rule, and a
     # ``.>`` rule never matches its own root. Mirrors the ``AIHubKnowledgeAdmin`` seed in
@@ -28,8 +28,11 @@ _NON_MODEL_RULES: tuple[str, ...] = (
 class DefaultTenantAccessRulesService:
     """Derives the access ceiling a newly created tenant starts with.
 
-    Derived from the live LiteLLM roster rather than a hardcoded list because CPU and GPU deployments
-    serve entirely different models — a fixed list would leave a GPU tenant with no chat model at all.
+    Models are derived from the live LiteLLM roster rather than a hardcoded list because CPU and GPU
+    deployments serve entirely different models — a fixed list would leave a GPU tenant with no chat
+    model at all. Agents are the mirror image: their classes are fixed at build time, and the
+    discovered-class roster is still empty when the startup tenant is seeded, so they come from a
+    configured allow list instead.
     """
 
     @staticmethod
@@ -54,7 +57,8 @@ class DefaultTenantAccessRulesService:
 
         DefaultTenantAccessRulesService._warn_about_unmatched_exclusions(excluded, models_by_capability)
 
-        rules = list(_NON_MODEL_RULES)
+        rules = list(_UNCURATED_FAMILY_RULES)
+        rules.extend(DefaultTenantAccessRulesService._agent_rules(settings.agent_classes_list))
         for capability in sorted(models_by_capability):
             rules.extend(
                 DefaultTenantAccessRulesService._rules_for_capability(
@@ -62,6 +66,30 @@ class DefaultTenantAccessRulesService:
                 )
             )
         return rules
+
+    @staticmethod
+    def _agent_rules(agent_classes: list[str]) -> list[str]:
+        """One concrete rule per standard blueprint, which is what makes each an individually toggleable
+        row in the sysadmin's tenant-ceiling editor — under a single ``agent.>`` wildcard every blueprint
+        renders locked and none can be unticked.
+
+        Unlike the model exclusions, this is an allow list. The class roster lives in ``agent_classes``,
+        populated only once a running agent answers discovery, which has not happened when the startup
+        tenant is seeded at API boot; an exclusion would have nothing to subtract from and would grant
+        that tenant no agents at all. Nor does it need to vary by hardware, as the model roster does.
+
+        Consequently the names are not validated against the roster here: a class that has never been
+        discovered is the normal case at boot, not an error.
+
+        Only the bare root is emitted, never ``<class>.>``. Profiles live in one global collection with no
+        tenant column, so the subtree form does not mean "this tenant may have its own profiles of this
+        blueprint" — it means every profile of it in the deployment, whoever built it, which seeded each new
+        tenant with other tenants' assistants. The root alone is what *creating* a profile is guarded on,
+        and reachability for the profiles a tenant then creates arrives per instance from
+        ``AgentService._grant_instance_access``, which grants ``<class>.<id>`` to the creating tenant.
+        """
+        logger.info("Tenant default ceiling: granting %d agent classes: %s", len(agent_classes), agent_classes)
+        return [f"{AccessChecker.ADMIN_PREFIX}agent.{agent_class}" for agent_class in agent_classes]
 
     @staticmethod
     def _rules_for_capability(capability: str, names: list[str], excluded: set[str]) -> list[str]:

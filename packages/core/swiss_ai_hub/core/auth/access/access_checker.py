@@ -394,8 +394,13 @@ class AccessChecker:
         return self.access_level_for_agent(agent_class, agent_id) != AccessLevel.ACCESS_DENIED
 
     def has_access_to_agent_class(self, agent_class: str) -> bool:
-        """Convenience method to check access level for a specific agent."""
-        return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?*") != AccessLevel.ACCESS_DENIED
+        """Whether the subject may reach this blueprint at all.
+
+        Probes ``?>`` rather than ``?*`` because a tenant curated to the standard set holds the bare class
+        root and nothing under it: ``?*`` demands a rule *below* the node, so it would answer no for a tenant
+        that may create profiles of the class but has not created one yet.
+        """
+        return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?>") != AccessLevel.ACCESS_DENIED
 
     def has_access_to_knowledge_namespace(self, database: str, namespace: str) -> bool:
         return self.has_access(self.knowledge_namespace_user_rule(database, namespace))

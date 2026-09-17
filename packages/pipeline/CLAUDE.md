@@ -229,9 +229,11 @@ the whole code location down at load; this way it re-registers on the next tick 
 **What the API does with it.** `GET /knowledge/ingestors` returns every announced row with labels and form localized.
 `create_database` looks the ingestor up, builds a validator from its announced schema, rejects a mismatch with a 400
 naming the offending field, walks the announced elements for authorization, and checks every announced model picker
-against LiteLLM (mode, tenant access, and a declared `output_vector_size` for embedding pickers). The identity fields
-land on the bucket row and everything else in `BucketEntity.configuration`. The `ingestor` field is a plain `str` across
-the API boundary, not the `IngestorType` enum, so a deployment-defined value is representable on the wire.
+against LiteLLM (mode, tenant access, and a declared `output_vector_size` for embedding pickers). A field the form never
+announced is refused the same way, so a mistyped knob cannot be stored and then silently ignored per run. The identity
+fields land on the bucket row and everything the form announced in `BucketEntity.configuration`, dumped from the
+validated configuration so each knob is stored in the type its pipeline declared. The `ingestor` field is a plain `str`
+across the API boundary, not the `IngestorType` enum, so a deployment-defined value is representable on the wire.
 
 **The shipped pipeline is not special.** `document_ingestion` registers through the same sensor, with labels from
 `lib.ingestors.document_ingestion.*`. The API has no built-in ingestor and offers nothing until a pipeline is running. A

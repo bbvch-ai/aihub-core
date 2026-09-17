@@ -2293,6 +2293,19 @@ export const BaseStoreMemoryEventSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -2582,10 +2595,31 @@ export const CapabilitySchema = {
       description:
         "Exact access rule that grants this capability, or null for read-only capabilities.",
     },
+    companion_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Companion Rules",
+      description:
+        "Rules written *and* removed together with `rule`. A knowledge database's row carries `<rule>.>` here: its namespaces belong to it, and a `.>` rule never matches its own root, so the row needs both forms to mean 'this whole database'.",
+      default: [],
+    },
+    revoked_rules: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Revoked Rules",
+      description:
+        "Rules removed with `rule`, never written with it. An agent class's row carries `<rule>.>` here: granting it would hand over every profile of the class in the deployment, other tenants' included, but a ceiling written before that was understood still holds it.",
+      default: [],
+    },
     granted: {
       type: "boolean",
       title: "Granted",
-      description: "Whether the draft rules grant this capability.",
+      description:
+        "Whether the draft rules grant `rule` and every `companion_rules` entry.",
     },
     locked: {
       type: "boolean",
@@ -18602,10 +18636,12 @@ export const PromptTokensDetailsSchema = {
 export const RAGFailureReasonSchema = {
   type: "string",
   enum: [
+    "condensation_empty",
     "context_insufficient",
     "expert_declined",
     "expert_errored",
     "few_shot_rejected",
+    "input_too_large",
   ],
   title: "RAGFailureReason",
   description: "Why a RAG run failed to produce a useful answer.",
@@ -21885,6 +21921,19 @@ export const StoreOrganizationMemoryEventSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -21992,6 +22041,19 @@ export const StoreUserMemoryEventSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
     _event_name: {
       type: "string",
@@ -26818,6 +26880,19 @@ export const BaseStoreMemoryEventWritableSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
   },
   additionalProperties: true,
@@ -37968,6 +38043,19 @@ export const StoreOrganizationMemoryEventWritableSchema = {
       title: "Deleted Relations",
       description: "Deleted relations",
     },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -38056,6 +38144,19 @@ export const StoreUserMemoryEventWritableSchema = {
       type: "array",
       title: "Deleted Relations",
       description: "Deleted relations",
+    },
+    llm_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Llm Model Name",
+      description:
+        "Model that extracted these memories (issue #1590), or None when the write stored verbatim text. Carried on this event only, for observability — it is not stored in mem0's metadata, so it cannot be recovered from the memory record itself once this event is gone.",
     },
   },
   additionalProperties: true,

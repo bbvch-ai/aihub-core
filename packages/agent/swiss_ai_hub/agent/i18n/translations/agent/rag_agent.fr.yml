@@ -52,6 +52,12 @@ config:
   enable_user_memory_storage:
     label: Activer le stockage de mémoire utilisateur
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
+  memory_llm:
+    label: Modèle de mémoire
+    help: Modèle qui extrait et réconcilie les mémoires utilisateur. L'extraction
+      est courte et mécanique, un modèle plus petit suffit généralement. Laisser désactivé
+      pour utiliser le modèle par défaut de la plateforme ; l'activer part de ce même
+      modèle.
 steps:
   retrieve_user_memory:
     name: Récupérer la mémoire utilisateur
@@ -107,3 +113,13 @@ steps:
   stop:
     name: Arrêt
     description: Termine le workflow après l'achèvement de toutes les étapes requises
+thoughts:
+  condensation_empty: "Le condenseur n'a produit aucune question autonome ; ce tour n'a donc pas de requête exploitable. L'appel est refusé plutôt que d'utiliser le message brut."
+  input_too_large: "L'entrée ne tient pas dans la fenêtre de contexte du modèle :\
+    \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
+    \ modèle est refusé."
+messages:
+  condensation_empty: "Je n'ai pas réussi à déterminer ce qu'il fallait rechercher à partir de ce message. Veuillez reformuler votre question et réessayer."
+  input_too_large: Ce fichier est trop volumineux pour que je le lise en une seule
+    fois. Veuillez téléverser un fichier plus petit, le diviser en parties, ou utiliser
+    un assistant dont le modèle dispose d'une fenêtre de contexte plus grande.

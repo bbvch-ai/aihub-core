@@ -60,7 +60,6 @@
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
-{%- set JUPYTER_URL = "http://jupyter:8888" %}
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
@@ -207,12 +206,15 @@ services:
       - "8080"
       - "18080"
     {%- endif %}
+    {#- -max caps volume slots, not disk: the master runs without preallocation, so an empty volume
+        costs nothing. Each collection (one per knowledge database, plus one per infrastructure
+        service) claims a batch of 7 slots on its first write, so 100 ran out at ~8 databases. #}
     command: >
       volume
       -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -1885,37 +1887,9 @@ services:
   # ===================================================================
   # Utility & Code Execution Services
   # ===================================================================
-  # These services provide code execution runtimes (Jupyter) and
+  # These services provide code execution runtimes (Open Terminal) and
   # browser automation (Playwright) for various platform features.
   # ===================================================================
-
-  {{ service_license('jupyter') }}
-  jupyter:
-    container_name: jupyter-lab
-    image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
-    restart: always
-    {%- if stage in ['dev', 'local', 'build'] %}
-    ports:
-      - "8888:8888"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
-    environment:
-      JUPYTER_ENABLE_LAB: true
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
-    healthcheck:
-      test: ["CMD", "/etc/jupyter/docker_healthcheck.py"]
-      interval: 15s
-      timeout: 3s
-      start_period: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
 
   {{ service_license('open-terminal') }}
   open-terminal:
@@ -2331,6 +2305,14 @@ services:
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
+      {#- Model that synthesizes OpenWebUI's "Merge Responses" output. Raw LiteLLM name, exactly like
+          OPENWEBUI_CONVERSATION_METADATA_MODEL below: the agent pipeline sends the merge straight to the
+          AI-Hub model gateway rather than through OpenWebUI's own registry, so this must NOT be the
+          `aihub-model-…` workspace id used for TASK_MODEL. Derived from `default_model` and never from
+          `task_model`, whose `/`→`-` substitution is not reversible. Same silent-failure class as
+          TASK_MODEL (see the note above it): a role without `aihub.user.model.<capability>.<name>` for
+          this model gets a visible warning in place of a merged answer. #}
+      AIHUB_MERGE_MODEL: {{ default_model }}
       AIHUB_REQUEST_TIMEOUT: 60
       OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
@@ -2385,7 +2367,8 @@ services:
       RAG_FULL_CONTEXT: True
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: True
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
@@ -2893,6 +2876,10 @@ services:
           default (startup tenant on first boot, and the sysadmin plane's create-tenant call, which proxies
           here because only this service is wired to the model gateway). Existing tenants are untouched. #}
       AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
+      {#- Agent classes a newly created tenant's default ceiling grants. Same read-once lifecycle as the
+          exclusions above, but an allow list: no agent has answered discovery yet at first boot, so there
+          would be nothing for an exclusion to subtract from. #}
+      AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES: ${AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
@@ -2966,10 +2953,6 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
-
-      # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: {{ JUPYTER_URL }}
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}

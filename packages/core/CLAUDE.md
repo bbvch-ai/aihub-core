@@ -62,11 +62,12 @@ packages/core/swiss_ai_hub/core/
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
 │   └── elements/                    # 29 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
-│   ├── chat_history/                # Chat history management + memory extension
-│   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
+│   ├── chat_history/                # Chat history management + memory extension + input-size guard
+│   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
+│   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
-│   ├── memory/                      # AgentMemory (user + org scoped via mem0)
+│   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
 │   ├── rerank/                      # Reranking via LiteLLM (provider-agnostic)
@@ -80,14 +81,14 @@ packages/core/swiss_ai_hub/core/
 ├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
 │   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from Password elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
-├── secrets/                         # Secret configuration fields at rest
-│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, plaintext passes through, fail-closed
-│   ├── secret_masker.py              # SecretMasker: MASK in responses, restore-on-resubmit
+├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
+├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
 ├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
@@ -521,19 +522,27 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                                                                                   |
-| --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                            |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                               |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                              |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                     |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                              |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                            |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                        |
-| `document/`     | Document loading and parsing          | `MineruLoader`, `MarkdownStructuralNodeParser`                                                                     |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                               |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()` |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                       |
+| Module          | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                |
+| --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                         |
+| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                            |
+| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                           |
+| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                  |
+| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                           |
+| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                         |
+| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                     |
+| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                               |
+| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                            |
+| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
+| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                    |
+
+`AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
+(issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
+on the config: an unconfigured profile reports `None` and `Mem0Settings.get_config(llm_name=...)` supplies the default.
+`AgentConfig.memory_llm_model_name` is the platform-owned hook the dispatcher reads — it returns `None` on the base and
+a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
+model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
+events report `None` for organization memory, which stores its text verbatim.
 
 ## FastAPI Controllers
 
