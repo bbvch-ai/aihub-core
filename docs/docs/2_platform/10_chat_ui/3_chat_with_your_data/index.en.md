@@ -18,6 +18,12 @@ The model will use the files to answer the question.
 
 ![Answer Using Files](../../../../media/open_webui/answer_using_files.jpeg)
 
+::: tip Several files in one conversation
+When chatting with an AI agent, a message that attaches files is answered from those files only — documents attached in
+earlier messages are set aside for that turn. A message without an attachment still has every file of the conversation
+available, so you can keep asking about earlier documents.
+:::
+
 Click on a reference to view which parts where used to answer the question.
 
 ![Click Reference Citation](../../../../media/open_webui/click_reference_citation.jpeg)
