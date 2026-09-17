@@ -114,8 +114,25 @@ the group `/tenants/finance`.
 
 ![Creating the tenant group under /tenants/ in the Keycloak admin console](../../../../media/platform/creating_tenants/01_keycloak_create_group.png)
 
-The group ID becomes the tenant's immutable identifier. Use a short, lowercase, URL-safe slug (`finance`, `acme-corp`,
-`production`); the human-readable display name is set later as metadata.
+::: warning The tenant ID is permanent — use a slug
+The Keycloak group name becomes the tenant's identifier, and it cannot be changed afterwards. The platform stores it as
+a primary key, and every tenant-scoped API route, permission check and provisioning job is keyed on it. Renaming the
+group later does not rename the tenant: it orphans the tenant's metadata and leaves the renamed group Unconfigured. If
+you choose badly, the only way back is to create a second group and migrate the users across.
+
+Use a short, lowercase, URL-safe slug — `finance`, `acme-corp`, `production`:
+
+- **No spaces or other whitespace.** A tenant ID containing a space breaks the Open WebUI provisioning sync. Everyone in
+  that tenant is dropped from their chat groups and their model picker comes up empty — with no error message, and with
+  the Admin UI still showing every permission correctly granted. It is a difficult failure to trace back to its cause.
+- **Lowercase letters, digits and hyphens only.** The ID appears verbatim in URLs, both in the API
+  (`/api/v1/<tenant-id>/...`) and in the web app.
+- **Never `active`.** The word is reserved: tenant-scoped routes read `active` as "whichever tenant the caller currently
+  has selected", so a tenant with that ID would be unreachable.
+
+Spaces, capitals and punctuation belong in the **Tenant Name** you set in Step 3. That field is free-form and can be
+changed at any time.
+:::
 
 > Tenant groups are also created automatically by IDP-to-tenant mappings (see _IDP-based tenant assignment_). Those
 > groups arrive **Unconfigured** and show up in exactly the same configure flow described below.
