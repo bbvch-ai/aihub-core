@@ -134,10 +134,17 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
-        """Retrieves a single document by its ID from the knowledge database."""
+    def get_document_by_id(db: str, namespace: str, document_id: str) -> DocumentDTO:
+        """Retrieves a single document by its ID from the knowledge database.
+
+        Scoped by namespace like every other document read: the route is only authorised for the namespace
+        named in its path, so a lookup by id alone would hand out documents from any namespace of the database.
+        """
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
         return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
