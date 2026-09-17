@@ -5,12 +5,12 @@
     },
     "swiss_ai_hub_api": {
       "type": "http",
-      "url": "${AIHUB_API_URL:-http://localhost:8000}/mcp/",
+      "url": "http://localhost:8000/mcp/",
       "headersHelper": "./.claude/mcp/mcp-swiss-ai-hub-api-headers.sh"
     },
     "langfuse": {
       "type": "http",
-      "url": "${LANGFUSE_BASE_URL:-http://localhost:6006}/api/public/mcp",
+      "url": "http://localhost:6006/api/public/mcp",
       "headersHelper": "./.claude/mcp/mcp-langfuse-headers.sh"
     },
     "context7": {
