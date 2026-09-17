@@ -1,7 +1,7 @@
 from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -10,6 +10,14 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 class StandaloneQuestionCondenserEvent(ControlAndDisplayEvent):
     """
     Event to condense chat messages into a single standalone question as a chat message.
+
+    A blank condensation is refused by `condense_standalone_question`, before an event of this type can be
+    built. The invariant is deliberately *not* also a `field_validator` here: a validator on an event is not
+    only a publish-time contract, it runs on every `model_validate`, which is how the immutable log is read
+    back — JetStream replays the whole stream on each agent start, and the API rebuilds a thread's timeline
+    from the persisted display copy. Blank condensations did occur before the producer-side raise existed, so
+    validating on read makes that history undeserializable: replay drops the event and
+    `EventService.get_events_in_thread` fails the whole thread.
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path(
@@ -22,23 +30,7 @@ class StandaloneQuestionCondenserEvent(ControlAndDisplayEvent):
         ChatMessage, Field(description="Single chat message containing the condensed user question.")
     ]
 
-    @field_validator("condensed_chat_message")
-    @classmethod
-    def _reject_blank_question(cls, message: ChatMessage) -> ChatMessage:
-        """Every consumer treats this as the turn's only question, so an empty one must not exist.
-
-        Enforced on the event rather than only at the condenser because events are deserialized on
-        JetStream replay and redelivery, where no step body runs. A length constraint cannot express this —
-        the field is a llama-index `ChatMessage`, so the check has to reach `.content`.
-        """
-        if not (message.content or "").strip():
-            raise ValueError(
-                "condensed_chat_message must carry a non-blank question — it is what retrieval and memory "
-                "search embed, and what an expert escalation asks a human"
-            )
-        return message
-
     @property
     def condensed_question(self) -> str:
-        """The condensed question, guaranteed non-blank by the validator above."""
+        """Non-blank for anything this deployment publishes; historical events may still be empty."""
         return (self.condensed_chat_message.content or "").strip()
