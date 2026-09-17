@@ -574,6 +574,8 @@ class KnowledgeService:
             updated = BucketEntity.update_source(bucket.bucket_name, None, None)
             return KnowledgeService._database_response(updated, t)
 
+        if bucket.source is None and not request.replace_existing_documents:
+            KnowledgeService._reject_if_documents_would_be_replaced(bucket)
         stored = bucket.source_configuration if bucket.source == request.source else None
         source_configuration = await KnowledgeService._validated_source_configuration(
             request.source, request.source_configuration, stored=stored, user=user, t=t
@@ -621,6 +623,26 @@ class KnowledgeService:
             form_elements=source_pipeline.form, config=config, user=user, t=t
         )
         return encryption.encrypt_paths(config, secret_paths)
+
+    @staticmethod
+    def _reject_if_documents_would_be_replaced(bucket: BucketEntity) -> None:
+        """A source owns the content of its database: on the next sync it removes every file it does not have. A
+        database that was filled by hand must therefore not be handed over without the caller saying so."""
+        KnowledgeService._ensure_db_exists(bucket.db_name)
+        documents = sum(
+            RefDoc.count_by_namespace(db_alias=bucket.db_name, namespace=namespace.namespace_name)
+            for namespace in NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+            if not namespace.deleting
+        )
+        if documents:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Database '{bucket.db_name}' holds {documents} manually uploaded document(s) that the source "
+                    "would remove on its next sync. Resubmit with replace_existing_documents=true to hand the "
+                    "content over to the source."
+                ),
+            )
 
     @staticmethod
     def _database_response(bucket: BucketEntity, t: LocaleHandler) -> DatabaseResponse:

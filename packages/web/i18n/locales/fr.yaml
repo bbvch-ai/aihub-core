@@ -564,6 +564,10 @@ knowledge:
       success: 'Source mise à jour'
       error: 'Échec de la mise à jour de la source'
       switch_to_manual: 'Passer au téléversement manuel'
+      replace_documents:
+        header: 'Confier le contenu à la source ?'
+        message: '{name} contient déjà {count} document(s) téléversé(s) manuellement. Dès qu''une source alimente cette base, chaque fichier absent de la source est supprimé lors de la prochaine synchronisation.'
+        accept: 'Remplacer les documents existants'
     edit:
       title: Modifier la collection
     database:

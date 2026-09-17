@@ -16313,6 +16313,12 @@ export type UpdateDatabaseSourceRequest = {
   source_configuration?: {
     [key: string]: unknown;
   };
+  /**
+   * Replace Existing Documents
+   *
+   * Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.
+   */
+  replace_existing_documents?: boolean;
 };
 
 /**

@@ -565,6 +565,10 @@ knowledge:
       success: 'Sorgente aggiornata'
       error: 'Impossibile aggiornare la sorgente'
       switch_to_manual: 'Passa al caricamento manuale'
+      replace_documents:
+        header: 'Affidare il contenuto alla sorgente?'
+        message: '{name} contiene già {count} documento/i caricato/i manualmente. Quando una sorgente alimenta questo database, alla prossima sincronizzazione viene rimosso ogni file che la sorgente non possiede.'
+        accept: 'Sostituisci i documenti esistenti'
     edit:
       title: Modifica collezione
     database:

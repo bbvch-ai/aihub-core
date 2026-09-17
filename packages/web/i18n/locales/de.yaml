@@ -565,6 +565,10 @@ knowledge:
       success: 'Quelle aktualisiert'
       error: 'Quelle konnte nicht aktualisiert werden'
       switch_to_manual: 'Auf manuellen Upload umstellen'
+      replace_documents:
+        header: 'Inhalt an die Quelle übergeben?'
+        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e). Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation jede Datei entfernt, die die Quelle nicht hat.'
+        accept: 'Bestehende Dokumente ersetzen'
     edit:
       title: Sammlung bearbeiten
     database:

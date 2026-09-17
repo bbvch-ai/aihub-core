@@ -112,10 +112,20 @@ class RcloneClient:
         with httpx.Client(timeout=self.timeout, auth=self._httpx_auth) as client:
             response = client.post(f"{self.base_url}/{endpoint}", json=params)
             if response.is_error:
-                # httpx's own message would echo the request; the body is what rclone has to say and never
-                # contains the credentials that were sent.
-                raise RuntimeError(f"rclone {endpoint} failed with HTTP {response.status_code}: {response.text}")
+                raise RuntimeError(
+                    f"rclone {endpoint} failed with HTTP {response.status_code}: {self._daemon_message(response)}"
+                )
             return response.json() if response.content else {}
+
+    @staticmethod
+    def _daemon_message(response: httpx.Response) -> str:
+        """Only rclone's ``error`` field: the error body echoes the whole request under ``input``, and for
+        ``config/create`` that is the credential just sent, which must not reach a run log or a notification."""
+        try:
+            body = response.json()
+        except ValueError:
+            return response.reason_phrase
+        return str(body.get("error") or response.reason_phrase) if isinstance(body, dict) else response.reason_phrase
 
     async def _async_post(self, endpoint: str, params: dict[str, Any]) -> dict[str, Any]:
         timeout_config = aiohttp.ClientTimeout(total=None, sock_read=600, sock_connect=30)

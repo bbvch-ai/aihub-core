@@ -35,7 +35,7 @@
         :key="selectedSourceData.name"
         :form="selectedSourceData.form"
         :initial-data="initialConfiguration"
-        @submit="submitSource"
+        @submit="confirmHandoverThenSubmit"
       />
       <Button
         v-else
@@ -65,6 +65,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const confirm = useConfirm()
 const { tenantId } = useTenant()
 const { sourcePipelines } = useSourcePipelines()
 const { mutateAsync: updateDatabaseSource } = useUpdateDatabaseSource()
@@ -101,7 +102,36 @@ watch(visible, (isVisible) => {
   selectedSource.value = props.database?.source ?? MANUAL_UPLOAD
 })
 
-async function submitSource(configuration: Record<string, unknown> | null) {
+// A source owns its database's content: on the next sync it removes every file it does not have. Handing a
+// manually filled database over is therefore confirmed first, and the API refuses it without the acknowledgement.
+const existingDocuments = computed(() =>
+  (props.database?.namespaces ?? []).reduce((total, namespace) => total + namespace.number_of_documents, 0),
+)
+const isHandoverFromManualUpload = computed(() => props.database?.source === null && existingDocuments.value > 0)
+
+function confirmHandoverThenSubmit(configuration: Record<string, unknown>) {
+  if (!isHandoverFromManualUpload.value) {
+    submitSource(configuration)
+    return
+  }
+  confirm.require({
+    header: t('knowledge.form.edit_source.replace_documents.header'),
+    message: t('knowledge.form.edit_source.replace_documents.message', {
+      name: props.database?.display_name || props.database?.name,
+      count: existingDocuments.value,
+    }),
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: t('common.actions.cancel'),
+    acceptLabel: t('knowledge.form.edit_source.replace_documents.accept'),
+    acceptClass: 'p-button-danger',
+    accept: () => submitSource(configuration, { replaceExistingDocuments: true }),
+  })
+}
+
+async function submitSource(
+  configuration: Record<string, unknown> | null,
+  options: { replaceExistingDocuments?: boolean } = {},
+) {
   if (!props.database) return
   isSubmitting.value = true
   try {
@@ -110,7 +140,11 @@ async function submitSource(configuration: Record<string, unknown> | null) {
       tenantId: tenantId.value!,
       request: configuration === null
         ? { source: null, source_configuration: {} }
-        : { source: selectedSourceData.value?.name ?? null, source_configuration: configuration },
+        : {
+            source: selectedSourceData.value?.name ?? null,
+            source_configuration: configuration,
+            replace_existing_documents: options.replaceExistingDocuments ?? false,
+          },
     })
     toast.add({ severity: 'success', summary: t('knowledge.form.edit_source.success'), life: 3000 })
     visible.value = false

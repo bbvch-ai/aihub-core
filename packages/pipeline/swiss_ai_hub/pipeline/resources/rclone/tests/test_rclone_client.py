@@ -54,16 +54,34 @@ class TestUpsertRemote:
                 client.upsert_remote(RcloneSourceConfig(name="r", backend_type=RcloneBackendType.ONEDRIVE, options={}))
 
     def test_an_rclone_error_surfaces_the_daemons_message_not_the_request(self):
+        """rclone echoes the request under ``input`` in every error body, credentials included."""
+
         def handler(request: httpx.Request) -> httpx.Response:
-            return httpx.Response(500, json={"error": "didn't find backend"})
+            return httpx.Response(
+                500,
+                json={
+                    "error": "didn't find backend",
+                    "input": {"name": "r", "parameters": {"secret_access_key": "TOPSECRET"}},
+                    "status": 500,
+                },
+            )
 
         for client in _client(handler):
-            with pytest.raises(RuntimeError, match="didn't find backend"):
+            with pytest.raises(RuntimeError, match="didn't find backend") as exc_info:
                 client.upsert_remote(
                     RcloneSourceConfig(
                         name="r", backend_type=RcloneBackendType.S3, options={"secret_access_key": "TOPSECRET"}
                     )
                 )
+        assert "TOPSECRET" not in str(exc_info.value)
+
+    def test_a_non_json_error_body_falls_back_to_the_status_phrase(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(502, text="<html>Bad Gateway</html>")
+
+        for client in _client(handler):
+            with pytest.raises(RuntimeError, match="HTTP 502: Bad Gateway"):
+                client.delete_remote("r")
 
 
 class TestGetAndDeleteRemote:

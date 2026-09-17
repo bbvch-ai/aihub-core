@@ -209,6 +209,52 @@ class TestUpdateSource:
         assert encryption.decrypt(bucket_cls.update_source.call_args.args[2]["sftp"]["password"]) == "new-pw"
 
     @pytest.mark.asyncio
+    async def test_giving_a_manually_filled_database_a_source_needs_an_acknowledgement(self, locale_handler):
+        request = UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=_sftp_configuration("pw"))
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+            patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
+            patch(f"{_SERVICE_MODULE}.MongoConnectionRegistry"),
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source=None)
+            namespace_cls.get_namespaces_by_bucket.return_value = [MagicMock(namespace_name="policies", deleting=False)]
+            ref_doc_cls.count_by_namespace.return_value = 3
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        assert exc_info.value.status_code == 409
+        assert "3 manually uploaded document(s)" in exc_info.value.detail
+        bucket_cls.update_source.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_an_acknowledged_handover_and_an_empty_database_are_sourced_without_a_question(
+        self, locale_handler
+    ):
+        for request, documents in (
+            (UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=_sftp_configuration("pw")), 0),
+            (
+                UpdateDatabaseSourceRequest(
+                    source=RCLONE.id, source_configuration=_sftp_configuration("pw"), replace_existing_documents=True
+                ),
+                3,
+            ),
+        ):
+            with (
+                patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+                patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+                patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
+                patch(f"{_SERVICE_MODULE}.MongoConnectionRegistry"),
+            ):
+                bucket_cls.get_bucket_by_db_name.return_value = _bucket(source=None)
+                namespace_cls.get_namespaces_by_bucket.return_value = [MagicMock(namespace_name="p", deleting=False)]
+                ref_doc_cls.count_by_namespace.return_value = documents
+                bucket_cls.update_source.return_value = _bucket(source="rclone")
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+            bucket_cls.update_source.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_clearing_the_source_returns_the_database_to_manual_upload(self, locale_handler):
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration={"a": 1})

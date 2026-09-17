@@ -24173,6 +24173,13 @@ export const UpdateDatabaseSourceRequestSchema = {
         "The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.",
       default: {},
     },
+    replace_existing_documents: {
+      type: "boolean",
+      title: "Replace Existing Documents",
+      description:
+        "Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.",
+      default: false,
+    },
   },
   type: "object",
   title: "UpdateDatabaseSourceRequest",
