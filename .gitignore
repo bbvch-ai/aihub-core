@@ -39,6 +39,9 @@ CLAUDE.local.md
 .claude/worktrees/*
 .claude/*.lock
 
+# Page snapshots the Playwright MCP server writes into the repo root on every run
+.playwright-mcp/
+
 # E2E (Playwright)
 /e2e/node_modules
 /e2e/test-results
