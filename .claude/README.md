@@ -67,19 +67,25 @@ This directory contains all Claude Code configuration for the swiss-ai-hub monor
 │   ├── scope-boundary-check.sh  # PreToolUse: Warn cross-scope imports
 │   ├── stop-hook-git-check.sh   # Stop: Check uncommitted changes
 │   └── session-start.sh         # SessionStart: Install deps, check env
-└── mcp/                   # Model Context Protocol server scripts (12 total)
+└── mcp/                   # Launcher scripts for the stdio MCP servers in .mcp.json
     ├── mcp-mongodb.sh     # Read-only database access (FerretDB/MongoDB)
-    ├── mcp-swiss-ai-hub-api.sh   # API endpoint testing
-    ├── mcp-langfuse.sh    # LLM observability (prompts, tracing, evaluations)
-    ├── mcp-context7.sh    # Up-to-date library documentation lookup
-    ├── mcp-playwright.sh  # Browser automation and UI debugging
-    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT)
-    ├── mcp-postgres.sh    # Read-only PostgreSQL access (infrastructure DBs)
-    ├── mcp-primevue.sh    # PrimeVue component library (props, events, slots, theming)
-    ├── mcp-nuxt.sh        # Nuxt framework docs and guides (official remote)
+    ├── mcp-postgres.sh    # Read-only PostgreSQL (one database at a time, POSTGRES_MCP_DB)
+    ├── mcp-redis.sh       # Valkey: RunContext/ThreadContext agent state
     ├── mcp-milvus.sh      # Milvus vector DB (collections, search, indexes)
     ├── mcp-nats.sh        # NATS messaging (subjects, streams, monitoring)
-    └── mcp-dagster.sh     # Dagster pipelines (runs, assets, jobs)
+    ├── mcp-dagster.sh     # Dagster pipelines (runs, assets, run logs, failure summaries)
+    ├── mcp-sonarqube.sh   # SonarCloud issues and quality gates (needs SONARQUBE_TOKEN)
+    ├── mcp-github.sh      # GitHub issues, PRs, code search (disabled; the skills use `gh`)
+    ├── mcp-playwright.sh  # Browser automation and UI debugging
+    ├── mcp-context7.sh    # Up-to-date library documentation lookup
+    ├── mcp-primevue.sh    # PrimeVue component library (props, events, slots, theming)
+    ├── mcp-likec4.sh      # LikeC4 architecture model (docs/likec4 workspace)
+    ├── mcp-langfuse-headers.sh          # Basic-auth header for the langfuse HTTP server
+    └── mcp-swiss-ai-hub-api-headers.sh  # Bearer header for the platform API HTTP server
+
+`langfuse`, `nuxt` and `swiss_ai_hub_api` are configured directly as `"type": "http"` servers
+rather than launcher scripts. The two that need credentials use `headersHelper`, because
+`.mcp.json` expands `${VAR}` against the shell environment and so cannot read `.env`.
 ```
 
 ## Quick Reference
