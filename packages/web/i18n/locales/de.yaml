@@ -968,9 +968,8 @@ tenant:
   administration_description: Tenants plattformweit verwalten
 support:
   report_bug: Fehler melden
-  consent_title: Meldeformular öffnen
-  consent_message: Das Meldeformular wird ausserhalb des AI Hub gehostet. Mandant,
-    Version, aktuelle Seite, Browser und Konversations-ID werden für Sie eingetragen.
-    Fügen Sie keine vertraulichen Inhalte ein.
-  consent_accept: Formular öffnen
-  consent_cancel: Abbrechen
+  dialog_title: Fehler melden
+  dialog_message: Das Formular öffnet sich in einem neuen Tab — Mandant, Version,
+    Seite und Konversations-ID sind bereits ausgefüllt.
+  open_form: Formular öffnen
+  cancel: Abbrechen

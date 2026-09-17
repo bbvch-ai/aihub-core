@@ -22,8 +22,8 @@ tooling they already have.
 2. **Whoever answers reports should own the form.** Adding a question must not require a platform release.
 3. **A deployment that has no support desk must be unaffected.** This is a self-hosted product; the affordance cannot
    assume a form exists.
-4. **Leaving the platform's trust boundary must be visible.** Data sovereignty is the product's premise, so sending
-   incident data to a third party is a decision the deployment makes and the reporter sees — not a side effect.
+4. **Whether reports leave the platform is the deployment's decision.** Data sovereignty is the product's premise, so
+   nothing is sent anywhere unless an operator configures a form.
 5. **The platform must not become a ticketing system.** That path ends in assignment, status, notification and
    escalation, none of which the product is for.
 
@@ -33,8 +33,10 @@ The platform contributes an affordance and a context; it does not collect, store
 
 A deployment sets `INCIDENT_FORM_URL_TEMPLATE` to the URL of an externally hosted form, carrying `{placeholders}` for
 the facts the UI knows: tenant, version, page URL, reporter name and email, browser, date and time, and the conversation
-and model the report is about. The UI substitutes them, shows the reporter what is about to travel with the report, and
-opens the form. Unset — the default — there is no button and the UI is exactly as it was.
+and model the report is about. The UI substitutes them and opens the form in a new tab, saying so first — a statement
+that the details are prefilled, not a data-transfer warning: the form belongs to the same organisation that runs the
+deployment, and dressing a support link as a privacy decision would only teach reporters to dismiss it. Unset — the
+default — there is no button and the UI is exactly as it was.
 
 The form itself is Microsoft Forms for the first deployment, but nothing in the platform knows that. The template is an
 opaque URL, so the same mechanism serves any provider that accepts prefill by query string.
@@ -74,8 +76,8 @@ the form re-generates the pre-filled link and hands the operator a new template;
 part of owning it.
 
 **Incident data leaves the sovereign boundary.** For the deployments this is enabled on, that is the operator's
-decision, taken per deployment, with the reporter told before each report. Deployments that will not accept it leave the
-variable empty and lose only the button.
+decision, taken once per deployment. Deployments that will not accept it leave the variable empty and lose only the
+button.
 
 **There is no status for the reporter.** A report is a one-way message; whoever answers it does so out of band. If that
 becomes unacceptable, it is the signal that alternative 1 was the right answer after all.

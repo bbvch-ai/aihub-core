@@ -962,9 +962,8 @@ tenant:
   administration_description: Gestisci i tenant nell'intera piattaforma
 support:
   report_bug: Segnala un problema
-  consent_title: Apri il modulo di segnalazione
-  consent_message: Il modulo di segnalazione è ospitato al di fuori di AI Hub. Tenant,
-    versione, pagina corrente, browser e id della conversazione vengono compilati
-    automaticamente. Non incollarvi contenuti riservati.
-  consent_accept: Apri il modulo
-  consent_cancel: Annulla
+  dialog_title: Segnala un problema
+  dialog_message: Il modulo si apre in una nuova scheda, con tenant, versione, pagina
+    e id della conversazione già compilati.
+  open_form: Apri il modulo
+  cancel: Annulla

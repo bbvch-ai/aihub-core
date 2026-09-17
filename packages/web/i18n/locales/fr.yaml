@@ -966,9 +966,8 @@ tenant:
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
 support:
   report_bug: Signaler un problème
-  consent_title: Ouvrir le formulaire de signalement
-  consent_message: Le formulaire de signalement est hébergé en dehors d'AI Hub. Votre
-    locataire, la version, la page actuelle, le navigateur et l'identifiant de conversation
-    sont préremplis. N'y collez aucun contenu confidentiel.
-  consent_accept: Ouvrir le formulaire
-  consent_cancel: Annuler
+  dialog_title: Signaler un problème
+  dialog_message: Le formulaire s'ouvre dans un nouvel onglet, avec votre locataire,
+    la version, la page et l'identifiant de conversation déjà remplis.
+  open_form: Ouvrir le formulaire
+  cancel: Annuler

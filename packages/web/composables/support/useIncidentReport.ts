@@ -53,16 +53,17 @@ export const useIncidentReport = () => {
     )
   }
 
-  // The report leaves the platform for a third-party form, so the reporter is told
-  // what travels with it before it does — not after.
+  // The form opens in a new tab, so say so before it happens rather than letting
+  // one appear unannounced. Uses its own confirm group — see Support/IncidentConfirm.vue.
   function requestReport(): void {
     if (!isAvailable.value) return
     confirm.require({
-      header: t('support.consent_title'),
-      message: t('support.consent_message'),
-      icon: 'pi pi-external-link',
-      rejectLabel: t('support.consent_cancel'),
-      acceptLabel: t('support.consent_accept'),
+      group: 'incident',
+      header: t('support.dialog_title'),
+      message: t('support.dialog_message'),
+      icon: 'pi pi-exclamation-circle',
+      rejectLabel: t('support.cancel'),
+      acceptLabel: t('support.open_form'),
       accept: openForm,
     })
   }

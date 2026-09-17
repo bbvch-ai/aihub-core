@@ -951,9 +951,8 @@ tenant:
   administration_description: Manage tenants across the platform
 support:
   report_bug: Report a bug
-  consent_title: Open the report form
-  consent_message: The report form is hosted outside AI Hub. Your tenant, version,
-    current page, browser and conversation id are filled in for you. Do not paste
-    confidential content into it.
-  consent_accept: Open form
-  consent_cancel: Cancel
+  dialog_title: Report a bug
+  dialog_message: The form opens in a new tab, with your tenant, version, page and
+    conversation id already filled in.
+  open_form: Open form
+  cancel: Cancel
