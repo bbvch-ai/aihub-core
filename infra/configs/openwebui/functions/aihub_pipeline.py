@@ -2211,6 +2211,10 @@ class Pipe:
                     if files:
                         event_payload["files"] = files
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                    capability_toggles = __metadata__.get("capability_toggles")
+                    if capability_toggles:
+                        event_payload["capability_toggles"] = capability_toggles
+                        logger.debug(f"Attached capability toggles to UserMessageEvent: {capability_toggles}")
 
                 # Emit initial status
                 await __event_emitter__(
