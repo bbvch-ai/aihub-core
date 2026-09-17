@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 AIHUB_CONNECTION_NAME = "AI-Hub Agents"
 LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
 
+OCR_MODEL_NAME_PREFIXES: tuple[str, ...] = ("mineru", "olmocr", "lightonocr")
+
 
 class LangfuseProvisioner:
     def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
@@ -64,7 +66,7 @@ class LangfuseProvisioner:
         try:
             return await coro
         except Exception as e:
-            logger.warning(f"Langfuse provisioning: '{name}' failed — {e}")
+            logger.error(f"Langfuse provisioning: '{name}' failed — {e}")
             return None
 
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
@@ -74,34 +76,43 @@ class LangfuseProvisioner:
     async def _register_litellm_connection(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (not configured)")
-            return
+        litellm_settings = LiteLLMProxySettings()
 
         if not litellm_settings.API_KEY:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no API key)")
-            return
+            raise ValueError("LITE_LLM_PROXY_API_KEY is required to register the Langfuse evaluator connection")
 
-        chat_models = [
-            entry["model_name"]
-            for entry in litellm_models
-            if "model_name" in entry and entry.get("model_info", {}).get("mode") == "chat"
-        ]
+        if not litellm_settings.PUBLIC_URL:
+            raise ValueError(
+                "LITE_LLM_PROXY_PUBLIC_URL is unset — Langfuse calls this connection from its own container and "
+                "rejects private addresses, so the in-cluster BASE_URL cannot be used. Managed evaluators are "
+                "unavailable on stages without a public domain."
+            )
+
+        chat_models = self._judge_models(litellm_models)
 
         connection_data = {
             "provider": "ai-hub-litellm",
             "adapter": "openai",
             "secretKey": litellm_settings.API_KEY.get_secret_value(),
-            "baseURL": litellm_settings.BASE_URL,
+            "baseURL": litellm_settings.PUBLIC_URL,
             "customModels": chat_models,
             "withDefaultModels": False,
             "extraHeaders": {},
         }
 
         await self._upsert_llm_connection(client, connection_data, LITELLM_CONNECTION_NAME)
-        logger.info(f"Langfuse provisioning: Discovered {len(chat_models)} chat models from LiteLLM: {chat_models}")
+        logger.info(f"Langfuse provisioning: Registered {len(chat_models)} judge models from LiteLLM: {chat_models}")
+
+    @staticmethod
+    def _judge_models(litellm_models: list[dict[str, Any]]) -> list[str]:
+        """OCR/VLM models are served as ``mode: chat`` but cannot grade text, so they must not reach the judge list."""
+        return [
+            entry["model_name"]
+            for entry in litellm_models
+            if "model_name" in entry
+            and entry.get("model_info", {}).get("mode") == "chat"
+            and not entry["model_name"].rsplit("/", maxsplit=1)[-1].lower().startswith(OCR_MODEL_NAME_PREFIXES)
+        ]
 
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
@@ -142,22 +153,15 @@ class LangfuseProvisioner:
 
     @staticmethod
     async def _fetch_litellm_models(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: LiteLLM not configured, skipping model discovery")
-            return []
+        """Discovery stays on the in-cluster URL; only the connection Langfuse dials needs the public one."""
+        litellm_settings = LiteLLMProxySettings()
 
         url = f"{litellm_settings.BASE_URL}/v1/model/info"
         api_key = litellm_settings.API_KEY.get_secret_value() if litellm_settings.API_KEY else ""
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        try:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-        except httpx.HTTPError:
-            logger.warning("Langfuse provisioning: Failed to fetch models from LiteLLM")
-            return []
+        response = await client.get(url, headers=headers)
+        response.raise_for_status()
 
         return response.json().get("data", [])
 

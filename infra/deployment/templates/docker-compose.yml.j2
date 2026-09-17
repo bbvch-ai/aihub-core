@@ -60,6 +60,9 @@
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
+{#- Only the Langfuse evaluator LLM connection reads this: Langfuse dials the connection from its own
+    container and rejects private addresses. All other LiteLLM traffic stays on LITE_LLM_PROXY_BASE_URL. #}
+{%- set LITE_LLM_PROXY_PUBLIC_URL = "http://localhost:4000" if stage == 'dev' else "https://litellm.${DOMAIN}" %}
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
@@ -2886,6 +2889,7 @@ services:
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_PUBLIC_URL: {{ LITE_LLM_PROXY_PUBLIC_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB

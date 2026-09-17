@@ -24,6 +24,15 @@ class LiteLLMProxySettings(EnvironmentSettings):
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
 
+    PUBLIC_URL: Annotated[
+        str | None,
+        Field(
+            description="Internet-reachable LiteLLM URL. Only consumed when registering the Langfuse evaluator "
+            "LLM connection: Langfuse resolves the baseURL from its own container and refuses private addresses. "
+            "All in-cluster traffic uses BASE_URL."
+        ),
+    ] = None
+
     USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
     USER_SOFT_BUDGET: Annotated[
         float | None, Field(description="Get alerts when user crosses given budget, doesn't block requests.")

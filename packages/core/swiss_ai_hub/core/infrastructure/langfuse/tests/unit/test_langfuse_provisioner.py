@@ -1,5 +1,6 @@
 """Tests for LangfuseProvisioner — Langfuse auto-provisioning on API startup."""
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -8,6 +9,29 @@ import pytest
 from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import (
     LangfuseProvisioner,
 )
+
+PROVISIONER_MODULE = "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner"
+
+LITELLM_MODELS = [
+    {"model_name": "text-generation/gemma-4-31B-it", "model_info": {"mode": "chat"}},
+    {"model_name": "text-generation/MinerU2.5-2509-1.2B", "model_info": {"mode": "chat"}},
+    {"model_name": "text-generation/olmOCR-7B-0725", "model_info": {"mode": "chat"}},
+    {"model_name": "text-generation/LightOnOCR-1B", "model_info": {"mode": "chat"}},
+    {"model_name": "embedding/bge-m3", "model_info": {"mode": "embedding"}},
+    {"model_info": {"mode": "chat"}},
+]
+
+
+def _litellm_settings(public_url: str | None = "https://litellm.example.com", api_key: str | None = "sk-litellm"):
+    settings = MagicMock()
+    settings.BASE_URL = "http://litellm:4000"
+    settings.PUBLIC_URL = public_url
+    if api_key is None:
+        settings.API_KEY = None
+    else:
+        settings.API_KEY = MagicMock()
+        settings.API_KEY.get_secret_value.return_value = api_key
+    return settings
 
 
 @pytest.fixture
@@ -203,3 +227,97 @@ class TestCreatePrompt:
         await provisioner._create_prompt(
             mock_client, name="test-prompt", messages=[{"role": "user", "content": "hi"}], labels=[], tags=[]
         )
+
+
+class TestJudgeModels:
+    """LiteLLM reports OCR/VLM models as `mode: chat`, but they cannot grade text."""
+
+    def test_excludes_ocr_models(self) -> None:
+        assert LangfuseProvisioner._judge_models(LITELLM_MODELS) == ["text-generation/gemma-4-31B-it"]
+
+    def test_excludes_non_chat_modes(self) -> None:
+        models = [{"model_name": "embedding/bge-m3", "model_info": {"mode": "embedding"}}]
+        assert LangfuseProvisioner._judge_models(models) == []
+
+    def test_ignores_entries_without_a_model_name(self) -> None:
+        assert LangfuseProvisioner._judge_models([{"model_info": {"mode": "chat"}}]) == []
+
+    def test_ocr_match_is_case_insensitive(self) -> None:
+        models = [{"model_name": "text-generation/mineru2.5-2509-1.2b", "model_info": {"mode": "chat"}}]
+        assert LangfuseProvisioner._judge_models(models) == []
+
+    def test_keeps_a_model_that_merely_contains_an_ocr_name(self) -> None:
+        """The rule is a prefix on the bare name, not a substring anywhere."""
+        models = [{"model_name": "text-generation/reviewer-olmocr-8B", "model_info": {"mode": "chat"}}]
+        assert LangfuseProvisioner._judge_models(models) == ["text-generation/reviewer-olmocr-8B"]
+
+
+class TestRegisterLiteLLMConnection:
+    """Langfuse dials this connection from its own container, so it must carry the public URL."""
+
+    @pytest.mark.asyncio
+    async def test_registers_the_public_url_never_the_cluster_url(self, provisioner: LangfuseProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings()),
+            patch.object(provisioner, "_upsert_llm_connection") as mock_upsert,
+        ):
+            await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
+
+        connection_data = mock_upsert.call_args[0][1]
+        assert connection_data["baseURL"] == "https://litellm.example.com"
+        assert "http://litellm:4000" not in str(connection_data)
+
+    @pytest.mark.asyncio
+    async def test_custom_models_exclude_ocr_entries(self, provisioner: LangfuseProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings()),
+            patch.object(provisioner, "_upsert_llm_connection") as mock_upsert,
+        ):
+            await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
+
+        assert mock_upsert.call_args[0][1]["customModels"] == ["text-generation/gemma-4-31B-it"]
+
+    @pytest.mark.asyncio
+    async def test_raises_when_public_url_is_unset(self, provisioner: LangfuseProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings(public_url=None)),
+            patch.object(provisioner, "_upsert_llm_connection") as mock_upsert,
+            pytest.raises(ValueError, match="LITE_LLM_PROXY_PUBLIC_URL"),
+        ):
+            await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
+
+        mock_upsert.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_raises_when_api_key_is_unset(self, provisioner: LangfuseProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings(api_key=None)),
+            patch.object(provisioner, "_upsert_llm_connection") as mock_upsert,
+            pytest.raises(ValueError, match="LITE_LLM_PROXY_API_KEY"),
+        ):
+            await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
+
+        mock_upsert.assert_not_called()
+
+
+class TestRunStep:
+    """A silently dead feature cost a full debugging cycle downstream — failures must be loud."""
+
+    @pytest.mark.asyncio
+    async def test_failure_is_logged_at_error(self, caplog: pytest.LogCaptureFixture) -> None:
+        async def boom() -> None:
+            raise RuntimeError("upstream rejected the connection")
+
+        with caplog.at_level(logging.ERROR):
+            result = await LangfuseProvisioner._run_step("LiteLLM connection", boom())
+
+        assert result is None
+        assert any(record.levelno == logging.ERROR for record in caplog.records)
