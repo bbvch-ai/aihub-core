@@ -98,7 +98,7 @@ const config: DefaultConfigOptions = {
   inputs: {
     ...primeInputs,
     agentSelector: createInput(AgentSelector, {
-      props: ['startEvent', 'classPlaceholder', 'idPlaceholder', 'filter'],
+      props: ['startEvent', 'agentClass', 'classPlaceholder', 'idPlaceholder', 'filter'],
     }),
     chipsInput: createInput(ChipsInput, {
       props: ['placeholder'],
