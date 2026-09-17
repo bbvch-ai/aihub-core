@@ -25,7 +25,8 @@
           </Button>
         </NuxtLink>
       </div>
-      <div>
+      <div class="flex flex-col items-center">
+        <SupportIncidentButton />
         <UserSettings />
       </div>
     </div>

@@ -949,3 +949,11 @@ tenant:
   mismatch_switch_action: Switch Tenant
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
+support:
+  report_bug: Report a bug
+  consent_title: Open the report form
+  consent_message: The report form is hosted outside AI Hub. Your tenant, version,
+    current page, browser and conversation id are filled in for you. Do not paste
+    confidential content into it.
+  consent_accept: Open form
+  consent_cancel: Cancel
