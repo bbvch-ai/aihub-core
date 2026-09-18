@@ -16,6 +16,7 @@ from swiss_ai_hub.api.routes import (
     EventController,
     FileController,
     I18nController,
+    IncidentController,
     KnowledgeController,
     ModelController,
     MyAccountController,
@@ -129,6 +130,7 @@ runner.mount(
     .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    IncidentController(auth=auth).get_incident_form().create_incident(),
     UserMemoryController(auth=auth)
     .get_user_memories()
     .search_user_memories()

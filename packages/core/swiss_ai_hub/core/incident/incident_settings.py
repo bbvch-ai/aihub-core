@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
@@ -54,6 +54,19 @@ class IncidentSettings(EnvironmentSettings):
         int,
         Field(default=DEFAULT_MAX_ATTACHMENT_BYTES, description="Largest single attachment accepted, in bytes."),
     ]
+
+    @field_validator("GITHUB_PRIVATE_KEY")
+    @classmethod
+    def accept_an_escaped_pem(cls, value: str | None) -> str | None:
+        """A PEM has newlines and an env file has one line, so `\\n` gets escaped on the way in.
+
+        A Docker secret keeps its real newlines and arrives here already correct. Normalising both
+        shapes is what stops a dev-only `.env` key from failing later as an opaque
+        "Could not deserialize key data", several layers away from the value that caused it.
+        """
+        if value and "\\n" in value:
+            return value.replace("\\n", "\n")
+        return value
 
     @property
     def enabled(self) -> bool:
