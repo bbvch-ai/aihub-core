@@ -25,14 +25,20 @@ def _make_service(*, redis: AsyncMock) -> AgentEndpointsDiscoveryService:
     service._redis = redis
     service.locale_handler = AsyncMock()
     service._openwebui_provisioner = SimpleNamespace(model_name_locale="en")
+    service._synced_targets = set()
     return service
 
 
 def _make_redis(stored: dict[SyncTarget, str] | None = None) -> AsyncMock:
-    """Each target owns a key, so the mock must answer per key rather than returning one value."""
+    """Each target owns a key, and writes must be visible to later reads so multi-cycle behaviour is observable."""
     values = {AgentEndpointsDiscoveryService._agents_hash_key(t): v.encode() for t, v in (stored or {}).items()}
     redis = AsyncMock()
     redis.get.side_effect = lambda key: values.get(key)
+
+    def _set(key: str, value: str, **_: object) -> None:
+        values[key] = value.encode() if isinstance(value, str) else value
+
+    redis.set.side_effect = _set
     return redis
 
 
@@ -52,20 +58,49 @@ _INSTANCES_HASH = AgentEndpointsDiscoveryService._compute_agents_hash(
 
 class TestSyncAgentInstancesToProvisioners:
     @pytest.mark.asyncio
-    async def test_skips_sync_when_hash_unchanged(self) -> None:
+    async def test_skips_sync_when_hash_unchanged_after_the_first_cycle(self) -> None:
         redis = _make_redis({SyncTarget.LANGFUSE: _INSTANCES_HASH, SyncTarget.OPENWEBUI: _INSTANCES_HASH})
         service = _make_service(redis=redis)
 
         with (
-            patch.object(AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse") as mock_langfuse,
-            patch.object(AgentEndpointsDiscoveryService, "_sync_agent_instances_to_openwebui") as mock_openwebui,
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse", return_value=True
+            ) as mock_langfuse,
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_openwebui", return_value=True
+            ) as mock_openwebui,
+            patch("swiss_ai_hub.api.services.agent_endpoints_discovery_service.AgentService") as mock_agent_svc,
+        ):
+            mock_agent_svc.get_all_agent_instances = AsyncMock(return_value=_INSTANCES)
+            await service._sync_agent_instances_to_provisioners()
+            mock_langfuse.reset_mock()
+            mock_openwebui.reset_mock()
+
+            await service._sync_agent_instances_to_provisioners()
+
+            mock_langfuse.assert_not_called()
+            mock_openwebui.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_first_cycle_syncs_even_when_the_stored_hash_matches(self) -> None:
+        """Startup provisioning blanks both connections, so a hash left by the previous process is already stale."""
+        redis = _make_redis({SyncTarget.LANGFUSE: _INSTANCES_HASH, SyncTarget.OPENWEBUI: _INSTANCES_HASH})
+        service = _make_service(redis=redis)
+
+        with (
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse", return_value=True
+            ) as mock_langfuse,
+            patch.object(
+                AgentEndpointsDiscoveryService, "_sync_agent_instances_to_openwebui", return_value=True
+            ) as mock_openwebui,
             patch("swiss_ai_hub.api.services.agent_endpoints_discovery_service.AgentService") as mock_agent_svc,
         ):
             mock_agent_svc.get_all_agent_instances = AsyncMock(return_value=_INSTANCES)
             await service._sync_agent_instances_to_provisioners()
 
-            mock_langfuse.assert_not_called()
-            mock_openwebui.assert_not_called()
+            mock_langfuse.assert_awaited_once()
+            mock_openwebui.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_resyncs_when_only_name_changed(self) -> None:
@@ -159,13 +194,16 @@ class TestSyncAgentInstancesToProvisioners:
         ):
             mock_agent_svc.get_all_agent_instances = AsyncMock(return_value=_INSTANCES)
             await service._sync_agent_instances_to_provisioners()
+            mock_langfuse.reset_mock()
+            mock_openwebui.reset_mock()
+
+            await service._sync_agent_instances_to_provisioners()
 
             mock_langfuse.assert_awaited_once()
             mock_openwebui.assert_not_awaited()
-            redis.set.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_langfuse_recovers_without_redriving_openwebui(self) -> None:
+    async def test_neither_target_is_redriven_once_both_have_synced(self) -> None:
         redis = _make_redis({SyncTarget.OPENWEBUI: _INSTANCES_HASH, SyncTarget.LANGFUSE: "stale"})
         service = _make_service(redis=redis)
 
@@ -176,6 +214,10 @@ class TestSyncAgentInstancesToProvisioners:
         ):
             mock_agent_svc.get_all_agent_instances = AsyncMock(return_value=_INSTANCES)
             await service._sync_agent_instances_to_provisioners()
+            mock_openwebui.reset_mock()
+            redis.set.reset_mock()
+
+            await service._sync_agent_instances_to_provisioners()
 
             mock_openwebui.assert_not_awaited()
-            assert _stored_keys(redis) == {_key(SyncTarget.LANGFUSE)}
+            assert _stored_keys(redis) == set()

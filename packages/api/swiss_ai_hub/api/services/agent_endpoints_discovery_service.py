@@ -92,6 +92,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self._redis = redis
         self._langfuse_provisioner = LangfuseProvisioner()
         self._openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
+        self._synced_targets: set[SyncTarget] = set()
 
     @override
     async def _discover_and_register(self):
@@ -197,10 +198,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         instances: list[FullAgentInstanceDTO],
         current_hash: str,
     ) -> None:
-        if await self._agents_hash_unchanged(target, current_hash):
+        """Startup provisioning re-registers the connections with an empty model list, so a hash left behind by a
+        previous process describes state this one has already discarded — each target syncs once before trusting it."""
+        if target in self._synced_targets and await self._agents_hash_unchanged(target, current_hash):
             return
 
         if await sync(instances):
+            self._synced_targets.add(target)
             await self._store_agents_hash(target, current_hash)
 
     @staticmethod

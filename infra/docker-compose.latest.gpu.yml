@@ -2530,7 +2530,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: https://langfuse.${DOMAIN}
       LANGFUSE_PROJECT_ID: aihub-project
-      AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
+      AIHUB_OPENAI_API_BASE_URL: https://${DOMAIN}/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://open-webui:8080

@@ -2915,7 +2915,10 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: {{ 'http://localhost:6006' if stage == 'dev' else 'https://langfuse.${DOMAIN}' }}
       LANGFUSE_PROJECT_ID: "aihub-project"
-      AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
+      {#- Langfuse dials this from its own container to run agent experiments, and refuses private addresses,
+          so it must be the public ingress rather than the in-cluster service name. Server-to-server traffic
+          uses AIHUB_INTERNAL_API_BASE_URL instead. #}
+      AIHUB_OPENAI_API_BASE_URL: https://${DOMAIN}/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'open-webui' }}:8080

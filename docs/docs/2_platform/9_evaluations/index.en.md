@@ -38,11 +38,18 @@ Set it once, after deployment:
 This is a one-time action per deployment — Langfuse runs a single project for the whole platform, so it does not need
 repeating per tenant.
 
-::: warning Managed evaluators do not work in local development
-The evaluator connection points at LiteLLM's public URL, because Langfuse issues judge calls from its own container and
-refuses any private address. Development, `local` and `build` stages have no public domain, so the connection cannot be
-registered there — API startup logs an error naming `LITE_LLM_PROXY_PUBLIC_URL` and `AI-Hub LLM (Evaluators)` stays
-absent. Use a deployed stage to run experiments with managed evaluators.
+::: warning Experiments do not work out of the box in local development
+Langfuse issues both the agent call and the judge call **from its own container**, and refuses any private address, so
+both connections are registered with public URLs. Development, `local` and `build` have no public domain, so:
+
+- The evaluator connection cannot be registered at all — API startup logs an error naming `LITE_LLM_PROXY_PUBLIC_URL`
+  and `AI-Hub LLM (Evaluators)` stays absent.
+- Agent experiments fail with `Connection error`, because the dev compose file has no `api` service (the API runs on
+  your host), so `api` does not resolve inside the Langfuse container.
+
+To exercise them locally, point both settings at addresses the Langfuse container can reach — for example
+`LITE_LLM_PROXY_PUBLIC_URL='http://litellm:4000'` and
+`AIHUB_OPENAI_API_BASE_URL='http://host.docker.internal:8000/api/v1/active/openai'`. Otherwise use a deployed stage.
 :::
 
 ## 1. Create a dataset

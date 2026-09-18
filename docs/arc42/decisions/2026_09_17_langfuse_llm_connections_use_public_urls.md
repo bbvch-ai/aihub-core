@@ -1,4 +1,4 @@
-# Langfuse Evaluators Reach LiteLLM Over the Public URL
+# Langfuse LLM Connections Use Public URLs
 
 ## Context
 
@@ -35,10 +35,18 @@ public value would send every production completion out to the internet and back
 
 ## Decision
 
-Register the evaluator connection against **LiteLLM's public URL**, via a dedicated setting
-`LiteLLMProxySettings.PUBLIC_URL` (`LITE_LLM_PROXY_PUBLIC_URL`) that **no other code path reads**. It is injected only
-into the `api` service, which is the only process that provisions Langfuse. Judge calls therefore continue to hit
-LiteLLM directly, exactly as before, authenticated by the LiteLLM master key.
+Both LLM connections Langfuse dials must carry an internet-reachable address, for the same reason: Langfuse resolves
+every connection's `baseURL` from its own container and refuses private ones.
+
+**Agents connection** (`ai-hub-agents`, the agent under test) — `AIHUB_OPENAI_API_BASE_URL` becomes
+`https://${DOMAIN}/api/v1/active/openai` on every deployed stage, replacing the in-cluster `http://api:8000/...`. That
+setting is documented as single-purpose and is read only when registering this connection; internal server-to-server
+traffic uses `AIHUB_INTERNAL_API_BASE_URL`, so nothing else moves.
+
+**Evaluators connection** (`ai-hub-litellm`, the judge) — register it against **LiteLLM's public URL**, via a dedicated
+setting `LiteLLMProxySettings.PUBLIC_URL` (`LITE_LLM_PROXY_PUBLIC_URL`) that **no other code path reads**. It is
+injected only into the `api` service, which is the only process that provisions Langfuse. Judge calls therefore continue
+to hit LiteLLM directly, exactly as before, authenticated by the LiteLLM master key.
 
 **Rejected: routing judge traffic through AI Hub's own OpenAI-compatible endpoint** (`AIHubSettings.OPENAI_API_BASE_URL`
 with the superuser token). It would work at the network level, but `OpenaiService._apply_model_identity` prepends a
@@ -60,6 +68,11 @@ resolves to `de`), move all judge cost onto the superuser identity, and bypass u
   `mode: chat`, but they cannot grade text.
 - Pinning the Langfuse image to an exact tag instead of the floating `:3` is a worthwhile follow-up — this class of
   breakage arrives silently on image drift.
+- Agent experiments do not work in local development either: the `api` service does not exist in the dev compose file
+  (the API runs on the host), so `api` is `NXDOMAIN` inside the Langfuse container. Point `AIHUB_OPENAI_API_BASE_URL` at
+  `http://host.docker.internal:8000/api/v1/active/openai` to exercise them locally.
+- On `local` and `build` the public URL is served with a self-signed certificate, so Langfuse may reject the TLS
+  handshake when calling either connection. Those stages are for wiring checks, not for running experiments.
 - A **project-level default evaluation model** is still required for managed evaluators to become selectable, and
   Langfuse exposes no public API for it (only `/api/public/llm-connections`, `/api/public/models`,
   `/api/public/models/{id}` exist). It is set once per deployment by a sysadmin in Langfuse's own UI and is documented
