@@ -8,6 +8,7 @@ from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_AGENT_PREFIX,
     AIHUB_LLM_MODEL_PREFIX,
+    AIHUB_MANAGED_META_KEY,
     OpenWebuiProvisioner,
 )
 
@@ -16,6 +17,10 @@ def _group(display_name: str, group_id: str) -> Group:
     g = Group(display_name=display_name)
     g.id = group_id
     return g
+
+
+def _managed_row(model_id: str, name: str) -> dict:
+    return {"id": model_id, "name": name, "meta": {AIHUB_MANAGED_META_KEY: True}}
 
 
 class TestComputeAccessForModel:
@@ -97,20 +102,95 @@ class TestComputeAccessForModel:
 
 
 class TestParseAgentFromModel:
-    def test_parses_from_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
+    def test_parses_from_id(self) -> None:
+        model = {"id": "aihub-pipeline.cls.id"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
-    def test_returns_none_without_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": ""}
+    def test_returns_none_without_pipe_prefix(self) -> None:
+        model = {"id": "text-generation/Kimi-K2.6"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
-    def test_returns_none_for_malformed_base_model_id(self) -> None:
-        model = {"id": f"{AIHUB_AGENT_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
+    def test_returns_none_for_malformed_id(self) -> None:
+        model = {"id": "aihub-pipeline.nodot"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
+
+
+class TestDeleteLegacyPresetModels:
+    """One-time migration off the pre-0.11.3 aihub-agent-*/aihub-model-* preset rows — see the
+    comment on AIHUB_AGENT_PREFIX/AIHUB_LLM_MODEL_PREFIX for why they'd otherwise linger forever."""
+
+    @pytest.mark.asyncio
+    async def test_deletes_legacy_agent_preset(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}rag-default"}],
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._delete_legacy_preset_models(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, f"{AIHUB_AGENT_PREFIX}rag-default")
+
+    @pytest.mark.asyncio
+    async def test_deletes_legacy_llm_preset(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": f"{AIHUB_LLM_MODEL_PREFIX}text-generation-Kimi"}],
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._delete_legacy_preset_models(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, f"{AIHUB_LLM_MODEL_PREFIX}text-generation-Kimi")
+
+    @pytest.mark.asyncio
+    async def test_leaves_non_legacy_models_alone(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": "someones-custom-model"}],
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+        ):
+            await provisioner._delete_legacy_preset_models(mock_client)
+
+            mock_delete.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_sync_access_grants_runs_the_migration(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The migration runs on every _sync_access_grants call, not just once, since every entry
+        point (provision/sync_agents/sync_access) funnels through it."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}stale-default"}],
+            ),
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+        ):
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_delete.assert_called_once_with(mock_client, f"{AIHUB_AGENT_PREFIX}stale-default")
+            # No managed base rows in this scenario (empty list_base_models default), so grant
+            # computation short-circuits before ever listing groups.
+            mock_list_groups.assert_not_called()
 
 
 class TestSyncAccessGrants:
@@ -121,10 +201,8 @@ class TestSyncAccessGrants:
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[
-                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
-                ],
+                "list_base_models",
+                return_value=[_managed_row("aihub-pipeline.rag.default", "RAG Agent")],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -153,22 +231,21 @@ class TestSyncAccessGrants:
 
             mock_update.assert_called_once()
             call_args = mock_update.call_args
-            assert call_args[0][1] == f"{AIHUB_AGENT_PREFIX}rag-default"
+            assert call_args[0][1] == "aihub-pipeline.rag.default"
             grants = call_args[0][2]
             assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
 
     @pytest.mark.asyncio
-    async def test_sync_parses_agent_from_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
-        """base_model_id is the preferred source for agent_class/agent_id parsing."""
+    async def test_sync_wires_a_differently_named_agent_end_to_end(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Exercises the full chain (id -> _parse_agent_from_model -> _compute_access_for_model) for
+        an agent class/id pair distinct from the primary happy-path test above."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[
-                    {"id": f"{AIHUB_AGENT_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
-                ],
+                "list_base_models",
+                return_value=[_managed_row("aihub-pipeline.my-rag.default", "My RAG Agent")],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -200,53 +277,15 @@ class TestSyncAccessGrants:
             assert len(grants) == 1
 
     @pytest.mark.asyncio
-    async def test_sync_skips_model_without_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
-        """Models without a valid base_model_id are skipped during access sync."""
+    async def test_sync_skips_managed_row_with_malformed_agent_id(self, provisioner: OpenWebuiProvisioner) -> None:
+        """An agent-pipe-shaped id without a dot separator after the prefix is unparseable — skipped."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}rag-default"}],
-            ),
-            patch.object(
-                provisioner._openwebui,
-                "list_groups",
-                return_value=[_group("aihub:T1:R1", "grp-1")],
-            ),
-            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch(
-                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
-            ) as mock_tenant,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
-        ):
-            tenant = MagicMock()
-            tenant.name = "T1"
-            tenant.id = "T1"
-            tenant.access_rules = ["aihub.user.agent.rag.*"]
-            mock_tenant.objects.return_value = [tenant]
-
-            role = MagicMock()
-            role.name = "R1"
-            role.tenant_id = "T1"
-            role.access_rules = ["aihub.user.agent.rag.*"]
-            mock_role.objects.return_value = [role]
-
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_update.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_sync_skips_model_with_malformed_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
-        """A base_model_id without a dot separator after the prefix is unparseable — model is skipped."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
-        with (
-            patch.object(
-                provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": f"{AIHUB_AGENT_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
+                "list_base_models",
+                return_value=[_managed_row("aihub-pipeline.nodot", "Broken")],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -276,16 +315,37 @@ class TestSyncAccessGrants:
             mock_update.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_sync_leaves_non_managed_base_row_grants_untouched(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A base row a human created directly in the workspace (no aihub_managed marker) must not
+        have its grants recomputed and overwritten by this sync."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[{"id": "aihub-pipeline.rag.default", "name": "RAG Agent"}],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1")],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+        ):
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_update.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_model_accessible_by_multiple_groups(self, provisioner: OpenWebuiProvisioner) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
             patch.object(
                 provisioner._openwebui,
-                "list_models",
-                return_value=[
-                    {"id": f"{AIHUB_AGENT_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
-                ],
+                "list_base_models",
+                return_value=[_managed_row("aihub-pipeline.rag.default", "RAG Agent")],
             ),
             patch.object(
                 provisioner._openwebui,
@@ -329,7 +389,7 @@ class TestSyncAccessGrants:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._openwebui, "list_models", return_value=[]),
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[]),
             patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
         ):
             await provisioner._sync_access_grants(mock_client)
@@ -394,75 +454,6 @@ class TestBuildRoleRules:
             mock_role.objects.return_value = [orphan]
 
             assert OpenWebuiProvisioner._build_role_rules() == {}
-
-
-class TestDeleteShadowingBaseModels:
-    """A registry entry at a workspace model's ``base_model_id`` makes OpenWebUI's
-    ``has_base_model_access`` deny every non-admin without a grant on it, so the model stays in the
-    picker but chat fails with "Model not found". ``POST /models/sync`` — which the OpenWebUI workspace
-    issues when an admin saves the model list — writes such an entry for every model it renders.
-    Only ``list_base_models`` can see them: OpenWebUI's model search filters on
-    ``base_model_id != None``, so ``list_models`` never returns them."""
-
-    @staticmethod
-    def _sync_with(provisioner: OpenWebuiProvisioner, workspace_models, base_models):
-        return (
-            patch.object(provisioner._openwebui, "list_models", return_value=workspace_models),
-            patch.object(provisioner._openwebui, "list_base_models", return_value=base_models),
-            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
-        )
-
-    @pytest.mark.asyncio
-    async def test_deletes_entry_shadowing_an_llm_base(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-        workspace = [{"id": f"{AIHUB_LLM_MODEL_PREFIX}text-generation-Kimi", "base_model_id": "text-generation/Kimi"}]
-        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [{"id": "text-generation/Kimi"}])
-
-        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_delete.assert_called_once_with(mock_client, "text-generation/Kimi")
-
-    @pytest.mark.asyncio
-    async def test_deletes_entry_shadowing_an_agent_pipe(self, provisioner: OpenWebuiProvisioner) -> None:
-        """The half #1595 never covered: agent presets point at ``aihub-pipeline.*`` bases, which
-        shadow identically once the workspace materialises a row for them."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
-        list_models, list_base, list_groups = self._sync_with(
-            provisioner, workspace, [{"id": "aihub-pipeline.RAGAgent.doc"}]
-        )
-
-        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_delete.assert_called_once_with(mock_client, "aihub-pipeline.RAGAgent.doc")
-
-    @pytest.mark.asyncio
-    async def test_leaves_unregistered_base_alone(self, provisioner: OpenWebuiProvisioner) -> None:
-        """The healthy state: the raw model has no registry entry, so there is nothing to repair."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
-        list_models, list_base, list_groups = self._sync_with(provisioner, workspace, [])
-
-        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_delete.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_does_not_delete_foreign_base_models(self, provisioner: OpenWebuiProvisioner) -> None:
-        """Only bases of models we provision are repaired; entries owned by anyone else stay put."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-        workspace = [{"id": f"{AIHUB_AGENT_PREFIX}RAGAgent-doc", "base_model_id": "aihub-pipeline.RAGAgent.doc"}]
-        list_models, list_base, list_groups = self._sync_with(
-            provisioner, workspace, [{"id": "text-generation/somebody-elses-model"}]
-        )
-
-        with list_models, list_base, list_groups, patch.object(provisioner._openwebui, "delete_model") as mock_delete:
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_delete.assert_not_called()
 
 
 class TestCrossTenantIsolation:
