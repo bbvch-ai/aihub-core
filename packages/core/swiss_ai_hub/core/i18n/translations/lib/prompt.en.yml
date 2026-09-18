@@ -13,7 +13,8 @@ condenser:
     1. **Resolve context from history**: Replace pronouns or references that refer to previous messages in the chat history with the concrete terms from the history.
     2. **Image references**: ONLY if the user explicitly refers to an image (e.g., "What is **this**?", "What do you see **here**?"), replace the pronoun with a brief description of the visible object.
     3. **Do not add new information**: NEVER add details that are not present in the original question. The reformulated question must be semantically equivalent to the original.
-    4. **Output**: Output ONLY the new sentence.
+    4. **Preserve self-stated facts**: If the user's message states a fact about themselves (e.g., "I'm vegetarian — what's on the menu?"), keep that fact in the standalone question (e.g., "As a vegetarian, what is on the menu?"). This applies only to short personal statements — never carry bulk content such as pasted documents, logs, or code into the question.
+    5. **Output**: Output ONLY the new sentence.
     </instructions>
 rag:
   context_prompt: |

@@ -12,11 +12,13 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings import (
         DocumentIngestionPipelineSettings,
     )
+    from swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings import ConfigEncryptionSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+    from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
@@ -71,6 +73,7 @@ __all__ = [
     "OpenTelemetrySettings",
     "MemoryRelation",
     "Memory",
+    "Mem0Settings",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
     "AccessGrant",
@@ -95,6 +98,7 @@ __all__ = [
     "OpenWebuiTokenService",
     "ParsingSettings",
     "RedisSettings",
+    "ConfigEncryptionSettings",
     "DocumentIngestionPipelineSettings",
     "S3BucketProvisioner",
     "S3StorageSettings",
@@ -124,6 +128,7 @@ _LAZY_IMPORTS = {
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
+    "Mem0Settings": "swiss_ai_hub.core.infrastructure.mem0.mem0_settings",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
@@ -148,6 +153,7 @@ _LAZY_IMPORTS = {
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
+    "ConfigEncryptionSettings": "swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings",
     "DocumentIngestionPipelineSettings": "swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings",
     "S3BucketProvisioner": "swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",

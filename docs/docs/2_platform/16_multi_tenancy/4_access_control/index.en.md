@@ -178,8 +178,14 @@ exclusion enumerates its survivors instead.
 
 **Agents** are named from a configured list — the standard blueprint set. Every other blueprint stays hidden from that
 tenant: it is absent from Admin → Agents rather than shown and refused, because the blueprint list is filtered by the
-same per-class rules. Two rules are granted per class, `aihub.admin.agent.<Class>` and `aihub.admin.agent.<Class>.>`,
-since creating an instance is guarded on the bare root (see [Validation rules](#validation-rules)).
+same per-class rules. One rule is granted per class, the bare `aihub.admin.agent.<Class>`, which is what creating an
+assistant is guarded on.
+
+What the tenant gets is the blueprint, not the assistants already built from it. Assistants are stored in one collection
+shared by the whole deployment, so `aihub.admin.agent.<Class>.>` would mean every assistant of that type anywhere —
+including other tenants'. A new tenant therefore starts with its three blueprints and an empty assistant list, and each
+assistant it creates is added to its own ceiling as it is created. Granting a tenant one specific assistant that already
+exists stays a deliberate act: tick that assistant's own row in the tenant editor.
 
 Agents use an allow list where models use exclusions because the two rosters differ in kind. Model names vary between
 CPU and GPU deployments, so a fixed list would leave a GPU tenant with no chat model. Agent class names are fixed at

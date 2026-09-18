@@ -66,11 +66,13 @@ build_meta_json() {
     description="$1"
     icon_url="$2"
 
-    # Escape for JSON
-    desc_escaped=$(echo "$description" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+    # Escape for JSON, then double single quotes for the SQL string literal the JSON is embedded in —
+    # an apostrophe in a description ("OpenWebUI's ...") otherwise terminates the literal and the INSERT fails
+    # while the script still logs success (psql exits 0 without ON_ERROR_STOP).
+    desc_escaped=$(echo "$description" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed "s/'/''/g")
 
     if [ -n "$icon_url" ]; then
-        icon_escaped=$(echo "$icon_url" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
+        icon_escaped=$(echo "$icon_url" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed "s/'/''/g")
         echo "{\"description\": \"${desc_escaped}\", \"manifest\": {\"icon_url\": \"${icon_escaped}\"}}"
     else
         echo "{\"description\": \"${desc_escaped}\"}"

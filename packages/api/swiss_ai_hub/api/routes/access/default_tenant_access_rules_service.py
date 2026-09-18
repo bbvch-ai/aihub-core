@@ -81,20 +81,15 @@ class DefaultTenantAccessRulesService:
         Consequently the names are not validated against the roster here: a class that has never been
         discovered is the normal case at boot, not an error.
 
-        Both rule forms are emitted per class, for the same reason the knowledge family carries both: a
-        ``.>`` rule never matches its own root, and the bare root is what *creating* an instance is guarded
-        on. With only the subtree form a tenant would see its standard blueprints and be unable to create a
-        single profile from them.
+        Only the bare root is emitted, never ``<class>.>``. Profiles live in one global collection with no
+        tenant column, so the subtree form does not mean "this tenant may have its own profiles of this
+        blueprint" — it means every profile of it in the deployment, whoever built it, which seeded each new
+        tenant with other tenants' assistants. The root alone is what *creating* a profile is guarded on,
+        and reachability for the profiles a tenant then creates arrives per instance from
+        ``AgentService._grant_instance_access``, which grants ``<class>.<id>`` to the creating tenant.
         """
         logger.info("Tenant default ceiling: granting %d agent classes: %s", len(agent_classes), agent_classes)
-        return [
-            rule
-            for agent_class in agent_classes
-            for rule in (
-                f"{AccessChecker.ADMIN_PREFIX}agent.{agent_class}",
-                f"{AccessChecker.ADMIN_PREFIX}agent.{agent_class}.>",
-            )
-        ]
+        return [f"{AccessChecker.ADMIN_PREFIX}agent.{agent_class}" for agent_class in agent_classes]
 
     @staticmethod
     def _rules_for_capability(capability: str, names: list[str], excluded: set[str]) -> list[str]:
