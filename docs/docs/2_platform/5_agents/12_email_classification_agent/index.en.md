@@ -1,13 +1,13 @@
 ---
-title: Email Classification Agent
+title: Email Processing Agent
 description: A mailbox agent that reads every unread message, decides which category it belongs to, and files it into that category's folder — with a fallback folder for anything it is unsure about.
 ---
 
-# Email Classification Agent
+# Email Processing Agent
 
-The **Email Classification Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every
-unread message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder.
-Anything no category fits goes to a fallback folder rather than being guessed into a bucket.
+The **Email Processing Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every unread
+message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder. Anything
+no category fits goes to a fallback folder rather than being guessed into a bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
 trigger it programmatically — by another workflow, or via the API.
@@ -70,7 +70,7 @@ sees genuinely unread mail waiting for them — the agent sorted it, it did not 
 
 ## Configuration
 
-Create a profile from the **Email Classification Agent** blueprint in the Admin UI.
+Create a profile from the **Email Processing Agent** blueprint in the Admin UI.
 
 ### Mailbox connection
 
