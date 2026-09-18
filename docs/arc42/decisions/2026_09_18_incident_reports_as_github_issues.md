@@ -45,7 +45,7 @@ because here the form is data a non-programmer edits rather than a model a progr
 Editing a question is editing that YAML file, reviewed as a pull request. Question `id`s double as the prefill keys:
 every field of `IncidentContext` names one, and a test fails if that correspondence breaks.
 
-Attachments are **committed into the repository** and referenced from the issue body, which renders images inline.
+Attachments are **committed into the repository** and linked from the issue body.
 
 Unset — the default — `IncidentSettings.enabled` is false, no client is constructed, and the endpoints answer 404.
 
@@ -62,7 +62,9 @@ Unset — the default — `IncidentSettings.enabled` is false, no client is cons
    anyone who has filed one, so it was the first thing tried. The endpoint behind it
    (`uploads.github.com/user-attachments/assets`) is undocumented and **rejects App installation tokens outright**; only
    an OAuth user token works. Using it would mean holding a machine user's personal token for an unsupported API.
-   Committing the file and embedding it reaches the same visible result through a documented one.
+   Committing the file instead reaches the audience through a documented one — at the cost of a click, see the
+   attachment consequence below. It remains the only route to a screenshot that renders inline, so a deployment that
+   wants that badly enough has to accept the machine-user token.
 
 4. **Store reports in the platform and deliver them by Apprise or Microsoft Graph.** The only option that makes tenant
    and reporter authoritative *and* accepts attachments. Rejected on drivers 2 and 6: the questions would live in
@@ -79,9 +81,14 @@ Unset — the default — `IncidentSettings.enabled` is false, no client is cons
 unsupported question type, a missing `id` or `label`, an optionless dropdown and a duplicate `id`; the form is parsed at
 **import** time, so a broken definition breaks CI rather than a user's click.
 
-**Attachments live in git history and cannot meaningfully be removed.** That is the cost of having them render inline.
-Limits are therefore deliberately small (five files, 5 MB each) and the form says so. A reporter's filename becomes a
-repository path, so it is reduced to a basename over a known character set — five traversal shapes are covered by tests.
+**Attachments are links, not inline images, and they live in git history permanently.** Embedding needs a URL that
+serves the bytes, and a private repository has none that lasts: `raw.githubusercontent.com` refuses anonymous requests
+outright, and the `download_url` the contents API returns carries a short-lived `?token=` — measured end-to-end, an
+embed built from it works the day the report is filed and breaks afterwards, which is worse than a link. So every
+attachment, screenshots included, is linked to its page in the repository, which resolves for exactly the people who can
+read the repository. Permanence is the other half of the cost: limits are therefore deliberately small (five files, 5 MB
+each) and the form says so. A reporter's filename becomes a repository path, so it is reduced to a basename over a known
+character set — five traversal shapes are covered by tests.
 
 **Almost nothing in a submission is authoritative.** The reporter can see and correct every prefilled value, which is
 what the platform owner asked for, and means an answer read back out of an issue is a claim rather than a fact. Two

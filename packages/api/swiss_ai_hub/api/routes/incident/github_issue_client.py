@@ -116,8 +116,13 @@ class GitHubIssueClient:
         path: Annotated[str, "Path inside the repository"],
         content: Annotated[bytes, "File bytes"],
         message: Annotated[str, "Commit message"],
-    ) -> Annotated[str, "Raw URL the issue body can embed"]:
-        """Commits one file and returns the URL that renders it inside the issue.
+    ) -> Annotated[str, "Permanent URL of the committed file"]:
+        """Commits one file and returns a URL that still resolves next month.
+
+        Returns `html_url` — the file's page in the repository — and deliberately not
+        `download_url`: on a private repository that one carries a short-lived `?token=`, so an
+        issue body built from it shows working attachments the day it is filed and broken ones
+        afterwards, which is worse than a link.
 
         Uses the contents API, which takes base64 in a single call. It is documented for files up
         to 100 MB, well past the cap a report is allowed anyway, so the blob-and-tree dance buys
@@ -131,4 +136,4 @@ class GitHubIssueClient:
                 json={"message": message, "content": base64.b64encode(content).decode()},
             )
             response.raise_for_status()
-            return response.json()["content"]["download_url"]
+            return response.json()["content"]["html_url"]

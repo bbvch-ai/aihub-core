@@ -69,14 +69,18 @@ def test_should_join_a_multi_value_answer() -> None:
     assert "### Impact\n\nHigh, Low" in body
 
 
-def test_should_embed_an_image_attachment_and_link_everything_else() -> None:
-    attachments = {"shot.png": "https://example.test/shot.png", "log.txt": "https://example.test/log.txt"}
+def test_should_link_every_attachment_including_screenshots() -> None:
+    """A private repository has no lasting URL that serves the bytes, so nothing is embedded."""
+    attachments = {
+        "shot.png": "https://github.com/o/r/blob/main/attachments/INC-1/shot.png",
+        "log.txt": "https://github.com/o/r/blob/main/attachments/INC-1/log.txt",
+    }
 
     body = IncidentBodyFormatter.body(FORM, {"what_went_wrong": "x"}, _user(), attachments)
 
-    assert "![shot.png](https://example.test/shot.png)" in body
-    assert "[log.txt](https://example.test/log.txt)" in body
-    assert "![log.txt]" not in body
+    assert "[shot.png](https://github.com/o/r/blob/main/attachments/INC-1/shot.png)" in body
+    assert "[log.txt](https://github.com/o/r/blob/main/attachments/INC-1/log.txt)" in body
+    assert "![" not in body, "an embed would break once its token expires"
 
 
 def test_should_omit_the_attachment_section_when_there_are_none() -> None:

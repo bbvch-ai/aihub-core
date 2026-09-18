@@ -152,7 +152,7 @@ async def test_should_accept_a_private_repository_and_only_check_once(transport_
 
 
 @pytest.mark.asyncio
-async def test_should_commit_an_attachment_base64_encoded_and_return_its_url(transport_factory) -> None:
+async def test_should_commit_an_attachment_and_return_a_url_that_does_not_expire(transport_factory) -> None:
     captured: dict = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -160,14 +160,24 @@ async def test_should_commit_an_attachment_base64_encoded_and_return_its_url(tra
             return _token_response(request)
         captured["path"] = request.url.path
         captured["body"] = request.read()
-        return httpx.Response(201, json={"content": {"download_url": "https://example.test/shot.png"}})
+        return httpx.Response(
+            201,
+            json={
+                "content": {
+                    "html_url": "https://github.com/o/r/blob/main/attachments/INC-1/shot.png",
+                    # Present and deliberately ignored: this one carries a short-lived token.
+                    "download_url": "https://raw.githubusercontent.com/o/r/main/shot.png?token=EXPIRES",
+                }
+            },
+        )
 
     transport_factory(handler)
     url = await GitHubIssueClient(_settings()).commit_attachment(
         path="attachments/INC-1/shot.png", content=b"\x89PNG bytes", message="Attach"
     )
 
-    assert url == "https://example.test/shot.png"
+    assert url == "https://github.com/o/r/blob/main/attachments/INC-1/shot.png"
+    assert "token=" not in url
     assert captured["path"] == "/repos/bbvch-ai/aihub-incidents/contents/attachments/INC-1/shot.png"
     assert base64.b64encode(b"\x89PNG bytes").decode() in captured["body"].decode()
 

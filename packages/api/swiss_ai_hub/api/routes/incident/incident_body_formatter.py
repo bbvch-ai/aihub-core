@@ -5,7 +5,6 @@ from swiss_ai_hub.core.incident import IssueForm
 
 NO_ANSWER = "_No response_"
 TITLE_LENGTH = 60
-IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg")
 
 
 class IncidentBodyFormatter:
@@ -61,11 +60,14 @@ class IncidentBodyFormatter:
 
     @staticmethod
     def _attachments(attachment_urls: dict[str, str]) -> str:
-        """Images embedded, everything else linked — an inline PDF would render as nothing."""
-        return "\n".join(
-            f"![{name}]({url})" if name.lower().endswith(IMAGE_SUFFIXES) else f"[{name}]({url})"
-            for name, url in attachment_urls.items()
-        )
+        """Linked, never embedded — including screenshots.
+
+        Embedding needs a URL that serves the bytes, and a private repository has no such URL
+        that lasts: `raw.githubusercontent.com` refuses anonymous requests (404) and the tokened
+        form the contents API hands back expires. A link to the file's page in the repository
+        always resolves for whoever can read the repository, which is exactly the audience.
+        """
+        return "\n".join(f"[{name}]({url})" for name, url in attachment_urls.items())
 
     @staticmethod
     def _verified(user: UserIdentity) -> str:
