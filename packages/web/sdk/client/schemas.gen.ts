@@ -2377,7 +2377,7 @@ export const BatchDeleteDocumentsResponseSchema = {
   description: "Per-document results of a best-effort batch deletion.",
 } as const;
 
-export const Body_create_incident__tenant_id__incidents_postSchema = {
+export const Body_create_incident_incidents_postSchema = {
   properties: {
     submission: {
       type: "string",
@@ -2397,7 +2397,7 @@ export const Body_create_incident__tenant_id__incidents_postSchema = {
   },
   type: "object",
   required: ["submission"],
-  title: "Body_create_incident__tenant_id__incidents_post",
+  title: "Body_create_incident_incidents_post",
 } as const;
 
 export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =

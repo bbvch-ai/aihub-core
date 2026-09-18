@@ -1810,9 +1810,9 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
- * Body_create_incident__tenant_id__incidents_post
+ * Body_create_incident_incidents_post
  */
-export type BodyCreateIncidentTenantIdIncidentsPost = {
+export type BodyCreateIncidentIncidentsPost = {
   /**
    * Submission
    *
@@ -30317,16 +30317,9 @@ export type UpdateNotificationResponse =
 
 export type GetIncidentFormData = {
   body?: never;
-  path: {
-    /**
-     * Tenant Id
-     *
-     * Tenant identifier: a name, ObjectId, or 'active'
-     */
-    tenant_id: string;
-  };
+  path?: never;
   query?: never;
-  url: "/{tenant_id}/incidents/form";
+  url: "/incidents/form";
 };
 
 export type GetIncidentFormResponses = {
@@ -30340,17 +30333,10 @@ export type GetIncidentFormResponse =
   GetIncidentFormResponses[keyof GetIncidentFormResponses];
 
 export type CreateIncidentData = {
-  body: BodyCreateIncidentTenantIdIncidentsPost;
-  path: {
-    /**
-     * Tenant Id
-     *
-     * Tenant identifier: a name, ObjectId, or 'active'
-     */
-    tenant_id: string;
-  };
+  body: BodyCreateIncidentIncidentsPost;
+  path?: never;
   query?: never;
-  url: "/{tenant_id}/incidents";
+  url: "/incidents";
 };
 
 export type CreateIncidentErrors = {

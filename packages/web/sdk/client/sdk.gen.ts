@@ -3482,7 +3482,7 @@ export const getIncidentForm = <
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/{tenant_id}/incidents/form",
+    url: "/incidents/form",
     ...options,
   });
 
@@ -3516,7 +3516,7 @@ export const createIncident = <
       { scheme: "bearer", type: "http" },
       { scheme: "bearer", type: "http" },
     ],
-    url: "/{tenant_id}/incidents",
+    url: "/incidents",
     ...options,
     headers: {
       "Content-Type": null,

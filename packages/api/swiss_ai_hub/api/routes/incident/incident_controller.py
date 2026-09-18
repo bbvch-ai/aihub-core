@@ -4,7 +4,7 @@ from fastapi import Depends, File, Form, Security, UploadFile
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.incident import IncidentContext, IncidentSettings
-from swiss_ai_hub.core.routes import TenantScopedController
+from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.incident.dependencies.use_incident_client import use_incident_client
@@ -14,7 +14,7 @@ from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClie
 from swiss_ai_hub.api.routes.incident.incident_service import IncidentService
 
 
-class IncidentController(TenantScopedController):
+class IncidentController(Controller):
     """Reporting a problem with the platform.
 
     Both endpoints authenticate only, deliberately: every other controller gates on
@@ -23,8 +23,9 @@ class IncidentController(TenantScopedController):
     alternative, and there is nothing to protect here — the endpoints read a static form and write
     into a repository nobody else can reach.
 
-    The ``{tenant_id}`` segment is structural, as it is for ``my-account/identity``: the reporter's
-    tenant comes from their token, so any value in the path resolves.
+    Global rather than tenant-scoped, for two reasons: the reporter's tenant comes from their token
+    rather than the path, and ``SuiteService`` turns every tenant-scoped controller into an app tile in
+    the navigation rail — which reporting a bug is not.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.incident.name")

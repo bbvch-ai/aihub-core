@@ -199,7 +199,7 @@ export {
   type BatchDeleteDocumentsResponse,
   type BatchDeleteDocumentsResponse2,
   type BatchDeleteDocumentsResponses,
-  type BodyCreateIncidentTenantIdIncidentsPost,
+  type BodyCreateIncidentIncidentsPost,
   type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost,
   type BucketMetadataFilters,
   type BucketNamespacePair,

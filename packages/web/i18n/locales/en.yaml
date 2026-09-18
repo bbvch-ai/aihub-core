@@ -955,3 +955,17 @@ tenant:
   mismatch_switch_action: Switch Tenant
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
+support:
+  report_bug: Report a bug
+  dialog_title: Report a problem
+  attachments: Screenshots or files
+  attachments_help: Optional. They are filed with the report and stay in the support repository
+    permanently, so do not attach confidential material.
+  choose_files: Choose files
+  submit: Send report
+  submitting: Sending…
+  sent: Report sent
+  sent_detail: 'Reference {reference}, report #{number}. Support will get back to you by email.'
+  send_failed: Report not sent
+  send_failed_detail: Your answers are still here — try sending again.
+  unavailable: Reporting is not configured on this deployment. Please contact your administrator.

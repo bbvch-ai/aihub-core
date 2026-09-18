@@ -42,6 +42,8 @@ const tenantPath = useTenantPath()
 const localePath = useLocalePath()
 const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant, tenantId } = useTenant()
+const { setOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
+const { open: openIncidentReport } = useIncidentReport()
 
 async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
@@ -71,6 +73,8 @@ const VIEW_BY_ACTION: Record<string, string> = {
   'show-memories': 'memories',
 }
 
+const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-context', 'report-issue']
+
 const openPanelView = (): string | null => {
   if (route.path.endsWith('/tracing')) return 'tracing'
   if (route.path.endsWith('/sources')) return 'sources'
@@ -78,12 +82,29 @@ const openPanelView = (): string | null => {
   return null
 }
 
+// The action inside the iframe knows only the display, so the owning thread — the correct
+// per-agent, salted one the pipe persisted events under — comes from the backend. Empty when no
+// AI-Hub thread owns the display, which a plain-LLM message never does.
+const resolveThreadId = async (displayId: string): Promise<string> => {
+  try {
+    const { thread_id } = await resolveThreadForDisplay({
+      composable: '$fetch',
+      path: { tenant_id: tenantId.value!, display_id: displayId },
+    })
+    return thread_id
+  }
+  catch (error) {
+    console.warn('No AI-Hub thread found for display', displayId, error)
+    return ''
+  }
+}
+
 const handleMessage = async (event: MessageEvent) => {
   console.log('received post event', event)
   if (event.origin !== runtimeConfig.public.webui.url) return
 
   const data = event.data
-  if (!['show-traces', 'show-sources', 'show-memories', 'set-context'].includes(data.type)) {
+  if (!HANDLED_MESSAGE_TYPES.includes(data.type)) {
     console.log('Unknown message type:', data.type)
     return
   }
@@ -91,31 +112,41 @@ const handleMessage = async (event: MessageEvent) => {
   const display_id = data.display_id as string
   if (!display_id) return
 
-  // Explicit action-button click: the action knows only the display, so resolve its owning thread from the backend
-  // (the correct per-agent, salted thread the pipe persisted events under).
+  // Explicit action-button click: open the requested side panel on the owning thread.
   const requestedView = VIEW_BY_ACTION[data.type]
   if (requestedView) {
-    try {
-      const { thread_id } = await resolveThreadForDisplay({
-        composable: '$fetch',
-        path: { tenant_id: tenantId.value!, display_id },
-      })
+    const thread_id = await resolveThreadId(display_id)
+    // Leave the panel as-is rather than erroring when nothing owns the display.
+    if (thread_id) {
       router.push(tenantPath(`/service/openai/${thread_id}/${display_id}/${requestedView}`))
-    }
-    catch (error) {
-      // No AI-Hub thread owns this display (e.g. a plain-LLM message) — leave the panel as-is instead of erroring.
-      console.warn('No AI-Hub thread found for display', display_id, error)
     }
     return
   }
 
-  // set-context: the pipe pushes the correct thread_id as each message streams; keep an already-open panel synced.
+  // "Report a bug" on one message: carry that message's model and thread into the report. A
+  // plain-LLM message has no AI-Hub thread and is still worth reporting, so an empty thread does
+  // not stop the dialog from opening.
+  if (data.type === 'report-issue') {
+    setOpenWebUIContext({
+      threadId: await resolveThreadId(display_id),
+      displayId: display_id,
+      model: (data.model as string) ?? '',
+    })
+    openIncidentReport()
+    return
+  }
+
+  // set-context: the pipe pushes the correct thread_id as each message streams.
+  const thread_id = data.thread_id as string
+  if (!thread_id) return
+
+  // Remember it, so a report raised from the app rail still names the conversation.
+  setOpenWebUIContext({ threadId: thread_id, displayId: display_id })
+
+  // Keep an already-open panel synced.
   const view = openPanelView()
   if (view) {
-    const thread_id = data.thread_id as string
-    if (thread_id) {
-      router.push(tenantPath(`/service/openai/${thread_id}/${display_id}/${view}`))
-    }
+    router.push(tenantPath(`/service/openai/${thread_id}/${display_id}/${view}`))
   }
 }
 
@@ -127,5 +158,7 @@ onMounted(() => {
 // Clean up event listener when component is unmounted
 onBeforeUnmount(() => {
   window.removeEventListener('message', handleMessage)
+  // The conversation is no longer on screen, so a report raised elsewhere must not claim it.
+  clearOpenWebUIContext()
 })
 </script>
