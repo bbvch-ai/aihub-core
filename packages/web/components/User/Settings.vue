@@ -25,6 +25,7 @@
           class="w-full"
         />
       </div>
+      <SupportIncidentButton labelled />
       <Button
         class="w-full"
         :label="t('user.logout')"

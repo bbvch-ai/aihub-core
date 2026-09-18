@@ -46,6 +46,9 @@ import type {
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
+  CreateIncidentData,
+  CreateIncidentError,
+  CreateIncidentResponse,
   CreateNamespaceData,
   CreateNamespaceError,
   CreateNamespaceResponse,
@@ -158,6 +161,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIncidentFormData,
+  GetIncidentFormResponse,
   GetIngestorsData,
   GetIngestorsResponse,
   GetLitellmModelData,
@@ -3447,6 +3452,74 @@ export const updateNotification = <
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get Incident Form
+ *
+ * Returns the report form with everything the platform already knows filled in.
+ */
+export const getIncidentForm = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentFormResponse = GetIncidentFormResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentFormData,
+    GetIncidentFormResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentFormResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/form",
+    ...options,
+  });
+
+/**
+ * Create Incident
+ *
+ * Files the report as an issue, with any attachments committed alongside it.
+ *
+ * Multipart rather than the presigned-PUT flow the other uploads use: those hand the
+ * browser an S3 URL, and the destination here is GitHub, which issues no such URL.
+ */
+export const createIncident = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateIncidentResponse = CreateIncidentResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateIncidentData,
+    CreateIncidentResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateIncidentResponse | DefaultT,
+    CreateIncidentError,
+    DefaultT
+  >({
+    ...formDataBodySerializer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents",
+    ...options,
+    headers: {
+      "Content-Type": null,
       ...options.headers,
     },
   });

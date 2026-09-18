@@ -1810,6 +1810,24 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
+ * Body_create_incident_incidents_post
+ */
+export type BodyCreateIncidentIncidentsPost = {
+  /**
+   * Submission
+   *
+   * Answers to the form, as a JSON object
+   */
+  submission: string;
+  /**
+   * Attachments
+   *
+   * Files to file with the report
+   */
+  attachments?: Array<Blob | File>;
+};
+
+/**
  * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
@@ -4206,6 +4224,36 @@ export type CreateTokenResponse = {
    * The generated API token, only returned at creation
    */
   token: string;
+};
+
+/**
+ * CreatedIncidentDTO
+ *
+ * What the reporter is shown after submitting.
+ *
+ * Carries the issue number so support and reporter can name the same report, but no issue
+ * URL: the reporter has no GitHub account and a link they cannot open reads as a broken
+ * promise rather than a receipt.
+ */
+export type CreatedIncidentDto = {
+  /**
+   * Number
+   *
+   * Issue number in the incident repository
+   */
+  number: number;
+  /**
+   * Reference
+   *
+   * Reference shown to the reporter and used in attachment paths
+   */
+  reference: string;
+  /**
+   * Attachments
+   *
+   * How many files were filed with the report
+   */
+  attachments?: number;
 };
 
 /**
@@ -7678,6 +7726,61 @@ export type ImagesResponse = {
   size?: "1024x1024" | "1024x1536" | "1536x1024" | null;
   usage?: OpenaiTypesImagesResponseUsage | null;
   [key: string]: unknown;
+};
+
+/**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDto = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -20786,6 +20889,61 @@ export type IconSelectorWritable = {
 };
 
 /**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDtoWritable = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+};
+
+/**
  * IngestorDTO
  */
 export type IngestorDtoWritable = {
@@ -30156,6 +30314,50 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse =
   UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type GetIncidentFormData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/form";
+};
+
+export type GetIncidentFormResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentFormDto;
+};
+
+export type GetIncidentFormResponse =
+  GetIncidentFormResponses[keyof GetIncidentFormResponses];
+
+export type CreateIncidentData = {
+  body: BodyCreateIncidentIncidentsPost;
+  path?: never;
+  query?: never;
+  url: "/incidents";
+};
+
+export type CreateIncidentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateIncidentError =
+  CreateIncidentErrors[keyof CreateIncidentErrors];
+
+export type CreateIncidentResponses = {
+  /**
+   * Successful Response
+   */
+  201: CreatedIncidentDto;
+};
+
+export type CreateIncidentResponse =
+  CreateIncidentResponses[keyof CreateIncidentResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;
