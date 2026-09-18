@@ -955,3 +955,10 @@ tenant:
   mismatch_switch_action: Switch Tenant
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
+support:
+  report_bug: Report a bug
+  dialog_title: Report a bug
+  dialog_message: The form opens in a new tab, with your tenant, version, page and
+    conversation id already filled in.
+  open_form: Open form
+  cancel: Cancel

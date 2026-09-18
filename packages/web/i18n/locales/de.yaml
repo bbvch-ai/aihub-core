@@ -972,3 +972,10 @@ tenant:
   mismatch_switch_action: Mandant wechseln
   administration_title: Tenant-Verwaltung
   administration_description: Tenants plattformweit verwalten
+support:
+  report_bug: Fehler melden
+  dialog_title: Fehler melden
+  dialog_message: Das Formular öffnet sich in einem neuen Tab — Mandant, Version,
+    Seite und Konversations-ID sind bereits ausgefüllt.
+  open_form: Formular öffnen
+  cancel: Abbrechen

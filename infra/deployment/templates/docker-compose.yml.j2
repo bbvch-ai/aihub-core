@@ -3031,6 +3031,7 @@ services:
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
       SYSADMIN_URL: https://sysadmin.${DOMAIN}
+      INCIDENT_FORM_URL_TEMPLATE: ${INCIDENT_FORM_URL_TEMPLATE}
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/"]
       interval: 30s

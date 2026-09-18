@@ -970,3 +970,10 @@ tenant:
   mismatch_switch_action: Changer de locataire
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
+support:
+  report_bug: Signaler un problème
+  dialog_title: Signaler un problème
+  dialog_message: Le formulaire s'ouvre dans un nouvel onglet, avec votre locataire,
+    la version, la page et l'identifiant de conversation déjà remplis.
+  open_form: Ouvrir le formulaire
+  cancel: Annuler

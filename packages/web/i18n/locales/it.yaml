@@ -967,3 +967,10 @@ tenant:
   mismatch_switch_action: Cambia tenant
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
+support:
+  report_bug: Segnala un problema
+  dialog_title: Segnala un problema
+  dialog_message: Il modulo si apre in una nuova scheda, con tenant, versione, pagina
+    e id della conversazione già compilati.
+  open_form: Apri il modulo
+  cancel: Annulla

@@ -37,6 +37,13 @@ export default defineNuxtConfig({
       sysadmin: {
         url: process.env.ENV == 'dev' ? (process.env.SYSADMIN_URL ?? 'http://localhost:3334') : '',
       },
+      // Externally hosted incident report form (e.g. a Microsoft Forms pre-filled
+      // link). Carries {placeholders} that composables/support/useIncidentReport.ts
+      // substitutes per report. Empty — the default — hides the affordance, so a
+      // deployment without a form looks exactly as it did before.
+      incidentForm: {
+        urlTemplate: process.env.ENV == 'dev' ? (process.env.INCIDENT_FORM_URL_TEMPLATE ?? '') : '',
+      },
     },
   },
   compatibilityDate: '2024-12-03',
