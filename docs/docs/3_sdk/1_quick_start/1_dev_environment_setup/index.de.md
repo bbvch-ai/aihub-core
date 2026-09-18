@@ -1,32 +1,19 @@
 ---
 title: Einrichtung der Entwicklungsumgebung
-source_sha: b42b6b969a44c327a94ec8565e63967baa7ad57f81744c3c49991221fb91f962
+source_sha: a57cf91b6ba451c742f41f48d975fcc0118e6c7afadc97af1edf2564f43fde0d
 ---
 
 # Einrichtung der Entwicklungsumgebung
 
-Diese Seite führt Sie von einer frischen Windows-Maschine zu einem laufenden Swiss AI Hub Development Stack:
-Infrastruktur in Docker, dazu die API, das Admin UI, eine Dagster-Pipeline und ein RAG-Agent, die alle aus dem Quellcode
-laufen, mit dem Admin UI erreichbar unter `http://localhost:3333`.
+Diese Seite führt Sie von einer frischen Windows-Maschine zu einem laufenden Swiss AI Hub Development Stack. Die
+Infrastruktur (Datenbanken, NATS, Keycloak, LiteLLM, Milvus, SeaweedFS, Langfuse und Verwandte) läuft in Docker; der
+Code, an dem Sie tatsächlich arbeiten, läuft mit Hot Reload aus Ihrem Checkout auf dem Host. Sie ändern eine
+Python-Datei und die API startet neu, Sie ändern eine Vue-Komponente und der Browser aktualisiert sich, und nichts wird
+dafür in ein Image gebaut.
 
 Die Referenzumgebung ist Ubuntu unter WSL2 mit Docker Desktop, weil das Team überwiegend darauf entwickelt. Alles ab
 [Toolchain installieren](#schritt-3-toolchain-installieren) ist reines Linux und funktioniert auf einem nativen
 Ubuntu-Rechner oder unter macOS identisch.
-
-## Worin sich der Development-Modus unterscheidet
-
-Die Plattform kennt drei Deployment-Modi. Production betreibt das Release-Bundle hinter Traefik mit Let's Encrypt. Local
-(`infra/docker-compose.local.yml`) betreibt den gesamten Stack in Containern hinter selbstsignierten Zertifikaten, was
-sich zur Evaluation des Produkts anbietet. Development funktioniert anders: `infra/docker-compose.dev.yml` startet
-ausschliesslich die Infrastruktur (Datenbanken, NATS, Keycloak, LiteLLM, Milvus, SeaweedFS, Langfuse und Verwandte) und
-veröffentlicht deren Ports auf localhost. Der Code, an dem Sie tatsächlich arbeiten, also API, Admin UI, Pipelines und
-Agents, läuft mit Hot Reload aus Ihrem Checkout auf dem Host.
-
-Genau diese Trennung ist der Zweck. Sie ändern eine Python-Datei und die API startet neu; Sie ändern eine Vue-Komponente
-und der Browser aktualisiert sich. Nichts wird dafür in ein Image gebaut.
-
-Die Authentifizierung läuft in der Entwicklung über das mitgelieferte Keycloak und nicht über Azure Entra ID. Sie
-benötigen für den Einstieg also weder einen Azure Tenant noch OAuth-Zugangsdaten.
 
 ## Schritt 1: Ubuntu unter WSL2 installieren
 
@@ -106,8 +93,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc
 ```
 
-Installieren Sie Node.js 22 oder neuer und aktivieren Sie pnpm über corepack. Nur das Admin UI benötigt das, sonst
-nichts.
+Installieren Sie Node.js 22 oder neuer und aktivieren Sie pnpm über corepack. Die Frontends und die Dokumentations-Site
+benötigen das, die Python-Pakete nicht.
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
@@ -188,40 +175,51 @@ Sobald alles läuft, sind diese Dienste auf localhost veröffentlicht:
 
 Mit `make down-dev` stoppen Sie den Stack wieder, wenn Sie für den Tag fertig sind.
 
-## Schritt 6: Die Plattform aus dem Quellcode betreiben
+## Schritt 6: Nur die benötigten Prozesse starten
 
-Die vier folgenden Prozesse benötigen jeweils ein eigenes Terminal innerhalb von Ubuntu und werden alle aus dem
-Repository-Root gestartet. Starten Sie die API zuerst; sowohl das Admin UI als auch der Agent kommunizieren mit ihr.
+Die Container oben decken die Infrastruktur ab. Welche Anwendungsprozesse Sie darüber hinaus starten, hängt davon ab,
+woran Sie arbeiten, und alle gleichzeitig laufen zu lassen ist selten sinnvoll. Jeder Prozess benötigt ein eigenes
+Terminal, und alle folgenden Befehle werden aus dem Repository-Root ausgeführt.
 
-**Terminal 1 — API und WebSocket Gateway**
+| Arbeit an                  | Starten                                  | Erreichbar unter              |
+| -------------------------- | ---------------------------------------- | ----------------------------- |
+| Admin UI oder REST API     | API + Admin UI                           | `:8000`, `:3333`              |
+| Mandantenverwaltung        | Sysadmin API + Sysadmin UI               | `:8001`, `:3334`              |
+| Einem Agent                | API + der Agent + ein UI zur Interaktion | `:8000`, `:3333` oder `:8080` |
+| Document Ingestion         | Pipeline                                 | `:3000`                       |
+| Dieser Dokumentations-Site | Docs Dev Server, sonst nichts            | `:5173`                       |
+
+### Admin UI und REST API
 
 ```bash
 cd packages/api && make run-dev
 ```
 
-Uvicorn mit `--reload` auf Port 8000. Die OpenAPI-Dokumentation finden Sie unter
-[http://localhost:8000/docs](http://localhost:8000/docs).
-
-**Terminal 2 — Admin UI**
-
 ```bash
 cd packages/web && pnpm dev
 ```
 
-Nuxt auf Port 3333. Der Port und der Pfad zur `.env` im Repository-Root sind im `dev`-Skript bereits hinterlegt, weitere
-Flags sind nicht nötig.
+Uvicorn mit `--reload` auf Port 8000 (OpenAPI-Dokumentation unter
+[http://localhost:8000/docs](http://localhost:8000/docs)) und Nuxt auf Port 3333. Der Nuxt Dev Server leitet `/api/v1`
+per Proxy an `localhost:8000` weiter, die API muss also laufen, sonst schlägt jeder Request aus dem UI fehl. Der Port
+und der Pfad zur `.env` im Repository-Root sind im `dev`-Skript bereits hinterlegt, weitere Flags sind nicht nötig.
 
-**Terminal 3 — Document Ingestion Pipeline**
+### Sysadmin UI und API
 
 ```bash
-make -C packages/pipeline document-ingestion-pipeline
+cd packages/sysadmin-api && make run-dev
 ```
 
-Dagster auf Port 3000. Das Target lädt `.env`, richtet `DAGSTER_HOME` auf `~/.dagster_home` aus und installiert beim
-ersten Lauf `dagster.local.yaml` dorthin, damit Ihre Run-Historie Neustarts übersteht. `make playground` und
-`make -C packages/pipeline quickstart` starten stattdessen die SDK-Beispiel-Pipelines, falls Sie das suchen.
+```bash
+cd packages/sysadmin-web && pnpm dev
+```
 
-**Terminal 4 — RAG-Agent**
+Die Sysadmin-Ebene ist ein eigenes Deploy-Artefakt und läuft auf eigenen Ports: die API auf 8001 und das UI auf 3334.
+`packages/sysadmin-web` ist ein Nuxt Layer über `packages/web`, leitet `/api/v1` aber an `localhost:8001` weiter und
+benötigt damit die Sysadmin API und nicht die Haupt-API. Für die Arbeit an Mandanten, Rollen und Benutzern müssen weder
+die Haupt-API noch das Admin UI laufen.
+
+### Agents
 
 ```bash
 cd packages/agent && make run-rag-agent
@@ -231,26 +229,63 @@ Der Agent abonniert NATS und registriert sich bei der Plattform. `packages/agent
 `packages/agent/app/` ein eigenes `run-*`-Target, Sie können also nach Bedarf auf `run-retrieval-agent` oder
 `run-llm-wrapping-agent` wechseln.
 
+Der Agent selbst benötigt nur die Docker-Infrastruktur. Um ihm tatsächlich eine Nachricht zu schicken, brauchen Sie
+zusätzlich die API sowie entweder das Admin UI auf 3333 oder OpenWebUI auf 8080.
+
+### Document Ingestion Pipelines
+
+```bash
+make -C packages/pipeline document-ingestion-pipeline
+```
+
+Dagster auf Port 3000. Das Target lädt `.env`, richtet `DAGSTER_HOME` auf `~/.dagster_home` aus und installiert beim
+ersten Lauf `dagster.local.yaml` dorthin, damit Ihre Run-Historie Neustarts übersteht. `make playground` und
+`make -C packages/pipeline quickstart` starten stattdessen die SDK-Beispiel-Pipelines, falls Sie das suchen.
+
+Kombinieren Sie das mit einem RAG-Agent, wenn Sie den vollständigen Retrieval-Loop benötigen: Dokumente über Dagster
+aufnehmen und sie anschliessend über den Agent abfragen.
+
+### Dokumentations-Site
+
+```bash
+cd docs && pnpm install
+```
+
+```bash
+cd docs && pnpm run docs:dev
+```
+
+VitePress auf Port 5173, die deutschen Seiten liegen unter `/de/`. Das ist der einzige Punkt auf dieser Seite, der weder
+den Docker Stack noch `make setup` benötigt: `docs/` ist kein pnpm Workspace Member, bringt eine eigene `pnpm-lock.yaml`
+mit und wird aus dem Verzeichnis heraus installiert statt per Filter aus dem Root.
+
+::: tip Die erste Installation ist absichtlich langsam
+Der Workspace setzt `minimumReleaseAge`, pnpm verweigert also jedes Paket, das in den letzten sieben Tagen
+veröffentlicht wurde. Das ist Supply-Chain-Härtung und keine defekte Lockfile.
+:::
+
 ## Schritt 7: Anmelden
 
-Öffnen Sie [http://localhost:3333](http://localhost:3333). Sie werden zu Keycloak auf Port 8180 weitergeleitet. Melden
-Sie sich mit dem Superuser aus `.env` an:
+Öffnen Sie [http://localhost:3333](http://localhost:3333) (oder [http://localhost:3334](http://localhost:3334) für das
+Sysadmin UI). Sie werden zu Keycloak auf Port 8180 weitergeleitet. Melden Sie sich mit dem Superuser aus `.env` an:
 
 - Benutzername: `admin`
 - Passwort: `admin`
 
-Diese Werte stammen aus `SUPERUSER_USERNAME` und `SUPERUSER_PASSWORD` in `.env.dev`, und das Konto trägt die Rollen
-`AIHubAccess` und `AIHubSysAdmin`, die das Admin UI und die Sysadmin-Endpoints prüfen. Dieselben Zugangsdaten
-funktionieren für OpenWebUI auf Port 8080.
+Die Authentifizierung läuft in der Entwicklung über das mitgelieferte Keycloak statt über Azure Entra ID, Sie benötigen
+also weder einen Azure Tenant noch OAuth-Zugangsdaten. Die Zugangsdaten stammen aus `SUPERUSER_USERNAME` und
+`SUPERUSER_PASSWORD` in `.env.dev`, und das Konto trägt die Rollen `AIHubAccess` und `AIHubSysAdmin`, die das Admin UI,
+die Sysadmin-Endpoints und OpenWebUI prüfen. Dieselben Zugangsdaten funktionieren überall.
 
 ## Setup überprüfen
 
-Sie sind fertig, wenn alle folgenden Punkte zutreffen:
+Prüfen Sie zuerst die Infrastruktur und danach die Prozesse, die Sie gestartet haben:
 
 - `docker compose -f infra/docker-compose.dev.yml ps` zeigt keinen Container im Zustand `exited` oder `unhealthy`.
 - [http://localhost:8000/docs](http://localhost:8000/docs) rendert die API-Referenz.
 - [http://localhost:3333](http://localhost:3333) meldet Sie an und zeigt das Admin UI.
-- Die Agent-Liste im Admin UI enthält den RAG-Agent und kennzeichnet ihn als `online`.
+- [http://localhost:3334](http://localhost:3334) zeigt die Mandantenliste, falls Sie das Sysadmin-Paar gestartet haben.
+- Die Agent-Liste im Admin UI enthält den gestarteten Agent und kennzeichnet ihn als `online`.
 - Eine Nachricht an diesen Agent aus [http://localhost:8080](http://localhost:8080) erzeugt eine Antwort.
 - [http://localhost:6006](http://localhost:6006) zeigt einen Langfuse-Trace für diesen Austausch.
 
@@ -258,8 +293,8 @@ Sie sind fertig, wenn alle folgenden Punkte zutreffen:
 
 **Ein Port funktioniert unter Ubuntu, aber nicht im Windows-Browser.** WSL2 leitet localhost automatisch weiter, das
 Relay setzt aber gelegentlich aus, nachdem der Host im Standby war. `wsl --shutdown` aus PowerShell behebt das. Bleibt
-ein bestimmter Dev-Server unerreichbar, binden Sie ihn stattdessen an alle Interfaces: `pnpm dev --host 0.0.0.0` für das
-Admin UI oder passen Sie das `--host`-Flag im betreffenden Make-Target an.
+ein bestimmter Dev-Server unerreichbar, binden Sie ihn stattdessen an alle Interfaces: `pnpm dev --host 0.0.0.0` für
+eines der beiden Frontends oder passen Sie das `--host`-Flag im betreffenden Make-Target an.
 
 **OpenWebUI auf 8080 kommt nie hoch, während alles andere gesund ist.** Host Networking ist in Docker Desktop
 deaktiviert. Siehe [Schritt 2](#schritt-2-wsl-backend-in-docker-desktop-aktivieren).

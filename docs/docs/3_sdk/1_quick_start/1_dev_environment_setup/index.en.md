@@ -4,28 +4,14 @@ title: Development Environment Setup
 
 # Development environment setup
 
-This page takes you from a clean Windows machine to a running Swiss AI Hub development stack: infrastructure in Docker,
-the API, the admin UI, a Dagster pipeline and a RAG agent all running from source, with the admin UI reachable at
-`http://localhost:3333`.
+This page takes you from a clean Windows machine to a running Swiss AI Hub development stack. The infrastructure
+(databases, NATS, Keycloak, LiteLLM, Milvus, SeaweedFS, Langfuse and friends) runs in Docker; the code you actually work
+on runs from your checkout on the host with hot reload. You edit a Python file and the API restarts, you edit a Vue
+component and the browser updates, and nothing gets rebuilt into an image.
 
 The reference environment is Ubuntu on WSL2 with Docker Desktop, because that is what most of the team develops on.
 Everything from [Install the toolchain](#step-3-install-the-toolchain) onwards is plain Linux and works identically on a
 native Ubuntu box or on macOS.
-
-## How development mode differs
-
-The platform ships three deployment modes. Production runs the release bundle behind Traefik with Let's Encrypt. Local
-(`infra/docker-compose.local.yml`) runs the full stack in containers behind self-signed certificates, which is what you
-want to evaluate the product. Development is different: `infra/docker-compose.dev.yml` starts only the infrastructure
-(databases, NATS, Keycloak, LiteLLM, Milvus, SeaweedFS, Langfuse and friends) and publishes their ports on localhost.
-The code you actually work on, the API, the admin UI, pipelines and agents, runs from your checkout on the host with hot
-reload.
-
-That split is the whole point. You edit a Python file and the API restarts; you edit a Vue component and the browser
-updates. Nothing gets rebuilt into an image.
-
-Authentication in development goes through the bundled Keycloak, not Azure Entra ID, so you do not need an Azure tenant
-or any OAuth credentials to get started.
 
 ## Step 1: Install Ubuntu on WSL2
 
@@ -103,7 +89,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc
 ```
 
-Install Node.js 22 or newer and enable pnpm through corepack. The admin UI needs it; nothing else does.
+Install Node.js 22 or newer and enable pnpm through corepack. The frontends and the documentation site need it; the
+Python packages do not.
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
@@ -183,29 +170,63 @@ Once everything is up, these are published on localhost:
 
 Stop it again with `make down-dev` when you are done for the day.
 
-## Step 6: Run the platform from source
+## Step 6: Run only the processes you need
 
-The four processes below each need their own terminal inside Ubuntu, all started from the repository root. Start the API
-first; the admin UI and the agent both talk to it.
+The containers above cover the infrastructure. Which application processes you start on top depends on what you are
+working on, and running all of them at once is rarely what you want. Each process needs its own terminal, and every
+command below is run from the repository root.
 
-**Terminal 1 — API and WebSocket gateway**
+| Working on               | Start                                | Reachable at                |
+| ------------------------ | ------------------------------------ | --------------------------- |
+| Admin UI or the REST API | API + admin UI                       | `:8000`, `:3333`            |
+| Tenant administration    | sysadmin API + sysadmin UI           | `:8001`, `:3334`            |
+| An agent                 | API + the agent + a UI to talk to it | `:8000`, `:3333` or `:8080` |
+| Document ingestion       | pipeline                             | `:3000`                     |
+| This documentation site  | docs dev server, nothing else        | `:5173`                     |
+
+### Admin UI and REST API
 
 ```bash
 cd packages/api && make run-dev
 ```
 
-Uvicorn with `--reload` on port 8000. OpenAPI docs land at [http://localhost:8000/docs](http://localhost:8000/docs).
-
-**Terminal 2 — admin UI**
-
 ```bash
 cd packages/web && pnpm dev
 ```
 
-Nuxt on port 3333. The port and the path to the repository-root `.env` are already baked into the `dev` script, so no
+Uvicorn with `--reload` on port 8000 (OpenAPI docs at [http://localhost:8000/docs](http://localhost:8000/docs)) and Nuxt
+on port 3333. The Nuxt dev server proxies `/api/v1` to `localhost:8000`, so the API has to be running or every request
+from the UI fails. The port and the path to the repository-root `.env` are already baked into the `dev` script, so no
 flags are needed.
 
-**Terminal 3 — document ingestion pipeline**
+### System administration UI and API
+
+```bash
+cd packages/sysadmin-api && make run-dev
+```
+
+```bash
+cd packages/sysadmin-web && pnpm dev
+```
+
+The sysadmin plane is a separate deploy artifact and runs on its own ports: the API on 8001 and the UI on 3334.
+`packages/sysadmin-web` is a Nuxt layer over `packages/web`, but it proxies `/api/v1` to `localhost:8001`, so it needs
+the sysadmin API and not the main one. You do not need the main API or admin UI running to work on tenants, roles and
+users.
+
+### Agents
+
+```bash
+cd packages/agent && make run-rag-agent
+```
+
+The agent subscribes to NATS and registers itself with the platform. `packages/agent/Makefile` has a `run-*` target for
+each agent in `packages/agent/app/`, so swap in `run-retrieval-agent` or `run-llm-wrapping-agent` as needed.
+
+The agent itself only needs the Docker infrastructure. To actually send it a message you also need the API, plus either
+the admin UI on 3333 or OpenWebUI on 8080.
+
+### Document ingestion pipelines
 
 ```bash
 make -C packages/pipeline document-ingestion-pipeline
@@ -215,35 +236,50 @@ Dagster on port 3000. The target loads `.env`, points `DAGSTER_HOME` at `~/.dags
 `dagster.local.yaml` there on first run, so your run history survives restarts. `make playground` and
 `make -C packages/pipeline quickstart` run the SDK example pipelines instead, if that is what you are after.
 
-**Terminal 4 — RAG agent**
+Pair this with a RAG agent when you want the full retrieval loop: ingest documents through Dagster, then query them
+through the agent.
+
+### Documentation site
 
 ```bash
-cd packages/agent && make run-rag-agent
+cd docs && pnpm install
 ```
 
-The agent subscribes to NATS and registers itself with the platform. `packages/agent/Makefile` has a `run-*` target for
-each agent in `packages/agent/app/`, so swap in `run-retrieval-agent` or `run-llm-wrapping-agent` as needed.
+```bash
+cd docs && pnpm run docs:dev
+```
+
+VitePress on port 5173, with the German pages under `/de/`. This is the one thing on this page that needs neither the
+Docker stack nor `make setup`: `docs/` is not a pnpm workspace member, it carries its own `pnpm-lock.yaml`, and you
+install it from inside the directory rather than with a filter from the root.
+
+::: tip First install is slow on purpose
+The workspace sets `minimumReleaseAge`, so pnpm refuses any package published within the last seven days. That is
+supply-chain hardening, not a broken lockfile.
+:::
 
 ## Step 7: Sign in
 
-Open [http://localhost:3333](http://localhost:3333). You are redirected to Keycloak on port 8180. Sign in with the
-superuser from `.env`:
+Open [http://localhost:3333](http://localhost:3333) (or [http://localhost:3334](http://localhost:3334) for the sysadmin
+UI). You are redirected to Keycloak on port 8180. Sign in with the superuser from `.env`:
 
 - Username: `admin`
 - Password: `admin`
 
-These come from `SUPERUSER_USERNAME` and `SUPERUSER_PASSWORD` in `.env.dev`, and the account carries the `AIHubAccess`
-and `AIHubSysAdmin` roles, which is what the admin UI and the sysadmin endpoints check for. The same login works for
-OpenWebUI on port 8080.
+Authentication in development goes through the bundled Keycloak rather than Azure Entra ID, so you need neither an Azure
+tenant nor OAuth credentials. The credentials come from `SUPERUSER_USERNAME` and `SUPERUSER_PASSWORD` in `.env.dev`, and
+the account carries the `AIHubAccess` and `AIHubSysAdmin` roles, which is what the admin UI, the sysadmin endpoints and
+OpenWebUI check for. The same login works everywhere.
 
 ## Verify the setup
 
-You are done when all of these hold:
+Check the infrastructure first, then whichever processes you started:
 
 - `docker compose -f infra/docker-compose.dev.yml ps` shows no container in `exited` or `unhealthy`.
 - [http://localhost:8000/docs](http://localhost:8000/docs) renders the API reference.
 - [http://localhost:3333](http://localhost:3333) signs you in and shows the admin UI.
-- The agents list in the admin UI contains the RAG agent and marks it `online`.
+- [http://localhost:3334](http://localhost:3334) shows the tenant list, if you started the sysadmin pair.
+- The agents list in the admin UI contains the agent you started and marks it `online`.
 - Sending a message to that agent from [http://localhost:8080](http://localhost:8080) produces a reply.
 - [http://localhost:6006](http://localhost:6006) shows a Langfuse trace for that exchange.
 
@@ -251,8 +287,8 @@ You are done when all of these hold:
 
 **A port works in Ubuntu but not in the Windows browser.** WSL2 forwards localhost automatically, but the relay
 occasionally stops after the host sleeps. `wsl --shutdown` from PowerShell fixes it. If a specific dev server stays
-unreachable, bind it to all interfaces instead: `pnpm dev --host 0.0.0.0` for the admin UI, or edit the `--host` flag in
-the relevant make target.
+unreachable, bind it to all interfaces instead: `pnpm dev --host 0.0.0.0` for either frontend, or edit the `--host` flag
+in the relevant make target.
 
 **OpenWebUI on 8080 never comes up while everything else is healthy.** Host networking is off in Docker Desktop. See
 [Step 2](#step-2-enable-the-wsl-backend-in-docker-desktop).
