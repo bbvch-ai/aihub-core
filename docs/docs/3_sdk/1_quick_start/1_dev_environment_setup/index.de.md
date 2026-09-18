@@ -1,6 +1,6 @@
 ---
 title: Einrichtung der Entwicklungsumgebung
-source_sha: a57cf91b6ba451c742f41f48d975fcc0118e6c7afadc97af1edf2564f43fde0d
+source_sha: fa75c93382046390f7b813336ded32ec79fc2f521e8231c3014ba979d4fb8d98
 ---
 
 # Einrichtung der Entwicklungsumgebung
@@ -155,23 +155,24 @@ docker compose -f infra/docker-compose.dev.yml ps
 docker compose -f infra/docker-compose.dev.yml logs -f keycloak
 ```
 
-Sobald alles läuft, sind diese Dienste auf localhost veröffentlicht:
+Sobald alles läuft, sind diese Dienste auf localhost veröffentlicht. Einträge mit dem Präfix `http://` öffnen sich im
+Browser, die übrigen sind Service-Endpoints für Clients und Tooling.
 
-| Service    | URL / Port                                     | Was es ist                      |
-| ---------- | ---------------------------------------------- | ------------------------------- |
-| OpenWebUI  | [http://localhost:8080](http://localhost:8080) | Chat-Oberfläche                 |
-| Keycloak   | [http://localhost:8180](http://localhost:8180) | Identity Provider (Realm aihub) |
-| Langfuse   | [http://localhost:6006](http://localhost:6006) | LLM-Tracing und Kostenerfassung |
-| Attu       | [http://localhost:3003](http://localhost:3003) | Milvus Admin UI                 |
-| SeaweedFS  | [http://localhost:8889](http://localhost:8889) | Filer UI (S3 Gateway auf 9000)  |
-| LiteLLM    | `localhost:4000`                               | LLM Gateway                     |
-| NATS       | `localhost:4222`                               | Event-Backbone                  |
-| Milvus     | `localhost:19530`                              | Vektordatenbank                 |
-| FerretDB   | `localhost:27017`                              | Dokumentenspeicher              |
-| PostgreSQL | `localhost:5432`                               | Relationaler Speicher           |
-| Valkey     | `localhost:6379`                               | Agent-State                     |
-| Neo4j      | [http://localhost:7474](http://localhost:7474) | Graph-basiertes Memory          |
-| MinerU     | `localhost:8002`                               | Dokumenten-Parsing              |
+| Service    | URL / Port              | Was es ist                      |
+| ---------- | ----------------------- | ------------------------------- |
+| OpenWebUI  | `http://localhost:8080` | Chat-Oberfläche                 |
+| Keycloak   | `http://localhost:8180` | Identity Provider (Realm aihub) |
+| Langfuse   | `http://localhost:6006` | LLM-Tracing und Kostenerfassung |
+| Attu       | `http://localhost:3003` | Milvus Admin UI                 |
+| SeaweedFS  | `http://localhost:8889` | Filer UI (S3 Gateway auf 9000)  |
+| LiteLLM    | `localhost:4000`        | LLM Gateway                     |
+| NATS       | `localhost:4222`        | Event-Backbone                  |
+| Milvus     | `localhost:19530`       | Vektordatenbank                 |
+| FerretDB   | `localhost:27017`       | Dokumentenspeicher              |
+| PostgreSQL | `localhost:5432`        | Relationaler Speicher           |
+| Valkey     | `localhost:6379`        | Agent-State                     |
+| Neo4j      | `http://localhost:7474` | Graph-basiertes Memory          |
+| MinerU     | `localhost:8002`        | Dokumenten-Parsing              |
 
 Mit `make down-dev` stoppen Sie den Stack wieder, wenn Sie für den Tag fertig sind.
 
@@ -199,10 +200,10 @@ cd packages/api && make run-dev
 cd packages/web && pnpm dev
 ```
 
-Uvicorn mit `--reload` auf Port 8000 (OpenAPI-Dokumentation unter
-[http://localhost:8000/docs](http://localhost:8000/docs)) und Nuxt auf Port 3333. Der Nuxt Dev Server leitet `/api/v1`
-per Proxy an `localhost:8000` weiter, die API muss also laufen, sonst schlägt jeder Request aus dem UI fehl. Der Port
-und der Pfad zur `.env` im Repository-Root sind im `dev`-Skript bereits hinterlegt, weitere Flags sind nicht nötig.
+Uvicorn mit `--reload` auf Port 8000 (OpenAPI-Dokumentation unter `http://localhost:8000/docs`) und Nuxt auf Port 3333.
+Der Nuxt Dev Server leitet `/api/v1` per Proxy an `localhost:8000` weiter, die API muss also laufen, sonst schlägt jeder
+Request aus dem UI fehl. Der Port und der Pfad zur `.env` im Repository-Root sind im `dev`-Skript bereits hinterlegt,
+weitere Flags sind nicht nötig.
 
 ### Sysadmin UI und API
 
@@ -266,8 +267,8 @@ veröffentlicht wurde. Das ist Supply-Chain-Härtung und keine defekte Lockfile.
 
 ## Schritt 7: Anmelden
 
-Öffnen Sie [http://localhost:3333](http://localhost:3333) (oder [http://localhost:3334](http://localhost:3334) für das
-Sysadmin UI). Sie werden zu Keycloak auf Port 8180 weitergeleitet. Melden Sie sich mit dem Superuser aus `.env` an:
+Öffnen Sie `http://localhost:3333` (oder `http://localhost:3334` für das Sysadmin UI). Sie werden zu Keycloak auf Port
+8180 weitergeleitet. Melden Sie sich mit dem Superuser aus `.env` an:
 
 - Benutzername: `admin`
 - Passwort: `admin`
@@ -282,12 +283,12 @@ die Sysadmin-Endpoints und OpenWebUI prüfen. Dieselben Zugangsdaten funktionier
 Prüfen Sie zuerst die Infrastruktur und danach die Prozesse, die Sie gestartet haben:
 
 - `docker compose -f infra/docker-compose.dev.yml ps` zeigt keinen Container im Zustand `exited` oder `unhealthy`.
-- [http://localhost:8000/docs](http://localhost:8000/docs) rendert die API-Referenz.
-- [http://localhost:3333](http://localhost:3333) meldet Sie an und zeigt das Admin UI.
-- [http://localhost:3334](http://localhost:3334) zeigt die Mandantenliste, falls Sie das Sysadmin-Paar gestartet haben.
+- `http://localhost:8000/docs` rendert die API-Referenz.
+- `http://localhost:3333` meldet Sie an und zeigt das Admin UI.
+- `http://localhost:3334` zeigt die Mandantenliste, falls Sie das Sysadmin-Paar gestartet haben.
 - Die Agent-Liste im Admin UI enthält den gestarteten Agent und kennzeichnet ihn als `online`.
-- Eine Nachricht an diesen Agent aus [http://localhost:8080](http://localhost:8080) erzeugt eine Antwort.
-- [http://localhost:6006](http://localhost:6006) zeigt einen Langfuse-Trace für diesen Austausch.
+- Eine Nachricht an diesen Agent aus `http://localhost:8080` erzeugt eine Antwort.
+- `http://localhost:6006` zeigt einen Langfuse-Trace für diesen Austausch.
 
 ## WSL-Troubleshooting
 

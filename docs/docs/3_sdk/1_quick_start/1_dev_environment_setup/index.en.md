@@ -150,23 +150,24 @@ docker compose -f infra/docker-compose.dev.yml ps
 docker compose -f infra/docker-compose.dev.yml logs -f keycloak
 ```
 
-Once everything is up, these are published on localhost:
+Once everything is up, these are published on localhost. Entries with an `http://` prefix open in a browser; the rest
+are service endpoints for clients and tooling.
 
-| Service    | URL / port                                     | What it is                      |
-| ---------- | ---------------------------------------------- | ------------------------------- |
-| OpenWebUI  | [http://localhost:8080](http://localhost:8080) | Chat interface                  |
-| Keycloak   | [http://localhost:8180](http://localhost:8180) | Identity provider (realm aihub) |
-| Langfuse   | [http://localhost:6006](http://localhost:6006) | LLM tracing and cost tracking   |
-| Attu       | [http://localhost:3003](http://localhost:3003) | Milvus admin UI                 |
-| SeaweedFS  | [http://localhost:8889](http://localhost:8889) | Filer UI (S3 gateway on 9000)   |
-| LiteLLM    | `localhost:4000`                               | LLM gateway                     |
-| NATS       | `localhost:4222`                               | Event backbone                  |
-| Milvus     | `localhost:19530`                              | Vector database                 |
-| FerretDB   | `localhost:27017`                              | Document storage                |
-| PostgreSQL | `localhost:5432`                               | Relational storage              |
-| Valkey     | `localhost:6379`                               | Agent state                     |
-| Neo4j      | [http://localhost:7474](http://localhost:7474) | Graph memory                    |
-| MinerU     | `localhost:8002`                               | Document parsing                |
+| Service    | URL / port              | What it is                      |
+| ---------- | ----------------------- | ------------------------------- |
+| OpenWebUI  | `http://localhost:8080` | Chat interface                  |
+| Keycloak   | `http://localhost:8180` | Identity provider (realm aihub) |
+| Langfuse   | `http://localhost:6006` | LLM tracing and cost tracking   |
+| Attu       | `http://localhost:3003` | Milvus admin UI                 |
+| SeaweedFS  | `http://localhost:8889` | Filer UI (S3 gateway on 9000)   |
+| LiteLLM    | `localhost:4000`        | LLM gateway                     |
+| NATS       | `localhost:4222`        | Event backbone                  |
+| Milvus     | `localhost:19530`       | Vector database                 |
+| FerretDB   | `localhost:27017`       | Document storage                |
+| PostgreSQL | `localhost:5432`        | Relational storage              |
+| Valkey     | `localhost:6379`        | Agent state                     |
+| Neo4j      | `http://localhost:7474` | Graph memory                    |
+| MinerU     | `localhost:8002`        | Document parsing                |
 
 Stop it again with `make down-dev` when you are done for the day.
 
@@ -194,10 +195,9 @@ cd packages/api && make run-dev
 cd packages/web && pnpm dev
 ```
 
-Uvicorn with `--reload` on port 8000 (OpenAPI docs at [http://localhost:8000/docs](http://localhost:8000/docs)) and Nuxt
-on port 3333. The Nuxt dev server proxies `/api/v1` to `localhost:8000`, so the API has to be running or every request
-from the UI fails. The port and the path to the repository-root `.env` are already baked into the `dev` script, so no
-flags are needed.
+Uvicorn with `--reload` on port 8000 (OpenAPI docs at `http://localhost:8000/docs`) and Nuxt on port 3333. The Nuxt dev
+server proxies `/api/v1` to `localhost:8000`, so the API has to be running or every request from the UI fails. The port
+and the path to the repository-root `.env` are already baked into the `dev` script, so no flags are needed.
 
 ### System administration UI and API
 
@@ -260,8 +260,8 @@ supply-chain hardening, not a broken lockfile.
 
 ## Step 7: Sign in
 
-Open [http://localhost:3333](http://localhost:3333) (or [http://localhost:3334](http://localhost:3334) for the sysadmin
-UI). You are redirected to Keycloak on port 8180. Sign in with the superuser from `.env`:
+Open `http://localhost:3333` (or `http://localhost:3334` for the sysadmin UI). You are redirected to Keycloak on port
+8180\. Sign in with the superuser from `.env`:
 
 - Username: `admin`
 - Password: `admin`
@@ -276,12 +276,12 @@ OpenWebUI check for. The same login works everywhere.
 Check the infrastructure first, then whichever processes you started:
 
 - `docker compose -f infra/docker-compose.dev.yml ps` shows no container in `exited` or `unhealthy`.
-- [http://localhost:8000/docs](http://localhost:8000/docs) renders the API reference.
-- [http://localhost:3333](http://localhost:3333) signs you in and shows the admin UI.
-- [http://localhost:3334](http://localhost:3334) shows the tenant list, if you started the sysadmin pair.
+- `http://localhost:8000/docs` renders the API reference.
+- `http://localhost:3333` signs you in and shows the admin UI.
+- `http://localhost:3334` shows the tenant list, if you started the sysadmin pair.
 - The agents list in the admin UI contains the agent you started and marks it `online`.
-- Sending a message to that agent from [http://localhost:8080](http://localhost:8080) produces a reply.
-- [http://localhost:6006](http://localhost:6006) shows a Langfuse trace for that exchange.
+- Sending a message to that agent from `http://localhost:8080` produces a reply.
+- `http://localhost:6006` shows a Langfuse trace for that exchange.
 
 ## WSL troubleshooting
 
