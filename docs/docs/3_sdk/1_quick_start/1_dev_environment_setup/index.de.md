@@ -1,193 +1,284 @@
 ---
 title: Einrichtung der Entwicklungsumgebung
-source_sha: 8d36d7aeab4d3bcc6d16bd8738c61c79e2ef7c121277841d25f1730b0248d2d4
+source_sha: b42b6b969a44c327a94ec8565e63967baa7ad57f81744c3c49991221fb91f962
 ---
 
-[@mhoegger](https://github.com/mhoegger)
+# Einrichtung der Entwicklungsumgebung
 
-# Einrichtung der Entwicklungsumgebung: Ihre ersten 15 Minuten mit dem SDK
+Diese Seite führt Sie von einer frischen Windows-Maschine zu einem laufenden Swiss AI Hub Development Stack:
+Infrastruktur in Docker, dazu die API, das Admin UI, eine Dagster-Pipeline und ein RAG-Agent, die alle aus dem Quellcode
+laufen, mit dem Admin UI erreichbar unter `http://localhost:3333`.
 
-Der Einstieg in das Swiss AI Hub SDK ist unkompliziert. Innerhalb von 15 Minuten verfügen Sie über eine vollständige
-Entwicklungsumgebung, in der Ihr erster benutzerdefinierter Agent echte Anfragen verarbeitet.
+Die Referenzumgebung ist Ubuntu unter WSL2 mit Docker Desktop, weil das Team überwiegend darauf entwickelt. Alles ab
+[Toolchain installieren](#schritt-3-toolchain-installieren) ist reines Linux und funktioniert auf einem nativen
+Ubuntu-Rechner oder unter macOS identisch.
 
-## Voraussetzungsprüfung
+## Worin sich der Development-Modus unterscheidet
 
-Bevor wir beginnen, stellen Sie sicher, dass Sie diese Tools installiert haben:
+Die Plattform kennt drei Deployment-Modi. Production betreibt das Release-Bundle hinter Traefik mit Let's Encrypt. Local
+(`infra/docker-compose.local.yml`) betreibt den gesamten Stack in Containern hinter selbstsignierten Zertifikaten, was
+sich zur Evaluation des Produkts anbietet. Development funktioniert anders: `infra/docker-compose.dev.yml` startet
+ausschliesslich die Infrastruktur (Datenbanken, NATS, Keycloak, LiteLLM, Milvus, SeaweedFS, Langfuse und Verwandte) und
+veröffentlicht deren Ports auf localhost. Der Code, an dem Sie tatsächlich arbeiten, also API, Admin UI, Pipelines und
+Agents, läuft mit Hot Reload aus Ihrem Checkout auf dem Host.
 
-**Erforderliche Tools:**
+Genau diese Trennung ist der Zweck. Sie ändern eine Python-Datei und die API startet neu; Sie ändern eine Vue-Komponente
+und der Browser aktualisiert sich. Nichts wird dafür in ein Image gebaut.
 
-- **Python 3.13** – Das SDK benötigt Python 3.13 für alle Komponenten
-- **uv** – Für Abhängigkeitsmanagement und virtuelle Umgebungen
-- **Docker & Docker Compose** – Zum Betrieb der Plattforminfrastruktur
-- **make** – Zum Ausführen gängiger Entwicklungsbefehle
+Die Authentifizierung läuft in der Entwicklung über das mitgelieferte Keycloak und nicht über Azure Entra ID. Sie
+benötigen für den Einstieg also weder einen Azure Tenant noch OAuth-Zugangsdaten.
 
-**Optional, aber hilfreich:**
+## Schritt 1: Ubuntu unter WSL2 installieren
 
-- **Node.js LTS + pnpm** – Nur für die Anpassung des Frontends erforderlich
-- **Postman** – Für API-Tests und -Erkundung
-- **MongoDB Compass** – Für die Datenbankinspektion während der Entwicklung
+Öffnen Sie PowerShell als Administrator und installieren Sie eine Distribution:
 
-::: tip Schnelle Installationsprüfung
-Überprüfen Sie Ihr Setup mit diesen Befehlen:
-
-```bash
-python --version    # Should show 3.13.x
-uv --version        # Any recent version
-docker --version    # Any recent version
-make --version      # Any version
+```powershell
+wsl --install -d Ubuntu-24.04
 ```
+
+Starten Sie bei Aufforderung neu und legen Sie anschliessend Ihren Linux-Benutzernamen und Ihr Passwort fest, sobald
+sich die Ubuntu-Konsole öffnet. Prüfen Sie, dass Sie WSL Version 2 verwenden:
+
+```powershell
+wsl --list --verbose
+```
+
+Die Spalte `VERSION` muss `2` anzeigen. WSL 1 kann die Engine-Integration von Docker Desktop nicht ausführen.
+
+::: warning Das Repository im Linux-Dateisystem halten
+Klonen Sie in Ihr Linux-Home-Verzeichnis (`~/projects/aihub-core`), niemals in einen Windows-Pfad unterhalb von
+`/mnt/c`. Dateisystemübergreifende I/O über `/mnt` ist rund eine Grössenordnung langsamer, und inotify-Events werden
+nicht weitergereicht. Dadurch kriecht `uv sync` und Hot Reload funktioniert sowohl für die API als auch für das Admin UI
+stillschweigend nicht mehr.
 :::
 
-## Projekteinrichtung: 3 Minuten
+WSL beansprucht standardmässig die Hälfte Ihres Host-RAM, was für einen Stack mit einem Bedarf von 32 GB nicht
+ausreicht. Legen Sie auf der Windows-Seite `C:\Users\<you>\.wslconfig` an:
 
-### Schritt 1: Erstellen Sie Ihre Projektstruktur
-
-Erstellen Sie ein neues Python-Projekt und öffnen Sie ein Terminal im Stammverzeichnis dieses Projekts.
-
-Initialisieren Sie ein neues uv-Projekt:
-
-```bash
-uv init
+```ini
+[wsl2]
+memory=32GB
+processors=8
+swap=16GB
 ```
 
-### Schritt 2: Installieren Sie die Swiss AI Hub CLI
+Übernehmen Sie die Änderung mit `wsl --shutdown` in PowerShell und öffnen Sie Ubuntu danach erneut.
 
-Das CLI-Tool automatisiert die meisten Einrichtungsschritte:
+## Schritt 2: WSL-Backend in Docker Desktop aktivieren
 
-```bash
-uv add --dev swiss-ai-hub-cli
-```
+Installieren Sie [Docker Desktop für Windows](https://docs.docker.com/desktop/install/windows-install/) und öffnen Sie
+dann dessen Einstellungen:
 
-### Schritt 3: Generieren Sie die Plattforminfrastruktur
+1. **General** — aktivieren Sie *Use the WSL 2 based engine*.
+2. **Resources → WSL integration** — aktivieren Sie *Enable integration with my default WSL distro* oder wählen Sie Ihre
+   Ubuntu-Distribution in der Liste darunter explizit aus.
+3. **Resources → Network** — aktivieren Sie *Enable host networking*.
 
-Erstellen Sie den Entwicklungsinfrastruktur-Stack:
+Der dritte Punkt ist nicht optional. Der Container `open-webui` läuft mit `network_mode: host`, damit er die API und den
+OTEL Collector auf localhost erreicht. Ohne aktiviertes Host Networking kann dieser Container nicht binden und das Chat
+UI auf Port 8080 kommt nie hoch, während alle anderen Services gesund aussehen.
 
-```bash
-uv run swiss-ai-hub generate-compose
-```
-
-Dies erstellt `docker-compose.platform.dev.yml` mit allen Services, die Sie benötigen: NATS-Messaging, MongoDB, Redis,
-Vektordatenbanken und die Swiss AI Hub Plattformkomponenten.
-
-### Schritt 4: Umgebung konfigurieren
-
-Generieren Sie die Umgebungskonfiguration:
+Prüfen Sie das aus der Ubuntu-Shell heraus, nicht aus PowerShell:
 
 ```bash
-uv run swiss-ai-hub generate-env
+docker --version
+docker compose version
+docker run --rm hello-world
 ```
 
-Dies erstellt `.env` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die OAuth2-Konfiguration – wir
-verwenden vorerst den Entwicklungsmodus, daher können Sie diese für erste Tests unverändert lassen.
+Wird `docker` unter Ubuntu nicht gefunden, hat der Schalter für die WSL-Integration nicht gegriffen; starten Sie Docker
+Desktop neu und prüfen Sie, ob die Distribution aufgeführt ist.
 
-## Plattform starten: 5 Minuten
+## Schritt 3: Toolchain installieren
 
-Starten Sie die vollständige Swiss AI Hub Plattform:
+Alles Folgende läuft innerhalb von Ubuntu.
 
 ```bash
-docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
+sudo apt update
+sudo apt install -y build-essential git curl make
 ```
 
-Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docker compose logs -f`, wenn Sie den
-Startvorgang sehen möchten).
+Installieren Sie [uv](https://docs.astral.sh/uv/). Das Tool verwaltet sowohl die virtuelle Umgebung als auch den
+Python-3.13-Interpreter, auf den der Workspace gepinnt ist:
 
-**Überprüfen Sie, ob die Plattform läuft:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+```
 
-- Öffnen Sie `http://localhost:8080` – Sie sollten die Swiss AI Hub Weboberfläche sehen
-- Sie werden feststellen, dass noch keine Agents verfügbar sind – das ist zu erwarten!
+Installieren Sie Node.js 22 oder neuer und aktivieren Sie pnpm über corepack. Nur das Admin UI benötigt das, sonst
+nichts.
 
-::: warning Häufiges Startproblem
-Sollten Services nicht starten, überprüfen Sie, ob die Ports 8080, 27017, 6379 und 4222 nicht bereits auf Ihrem System
-verwendet werden.
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+source ~/.bashrc
+nvm install 22
+corepack enable
+```
+
+Prüfen Sie das Ergebnis:
+
+```bash
+uv --version
+node --version     # v22.x or newer
+pnpm --version     # 10.x
+make --version
+docker compose version
+```
+
+Python müssen Sie nicht selbst installieren. `uv sync` lädt den Interpreter herunter, den
+`requires-python = ">=3.13, <3.14"` verlangt.
+
+## Schritt 4: Klonen und Bootstrap
+
+```bash
+git clone https://github.com/bbvch-ai/aihub-core.git ~/projects/aihub-core
+cd ~/projects/aihub-core
+make setup-all
+```
+
+`make setup-all` erledigt zweierlei: `make setup` löst alle Workspace-Pakete mit `uv sync --all-packages` auf und
+kopiert `.env.dev` nach `.env`, sofern noch keine `.env` existiert, und `make setup-frontend` installiert die
+Frontend-Abhängigkeiten mit pnpm. Führen Sie die beiden einzeln aus, wenn Sie nur eine Hälfte benötigen.
+
+Die erzeugte `.env` ist eine vollständige, funktionierende Entwicklungskonfiguration. Jedes Secret darin ist ein
+bekannter Dev-Wert, und die Swiss LLM Cloud Endpoints sind die einzigen Einträge, die Sie für echten Modellzugriff
+ergänzen sollten.
+
+::: danger Ausschliesslich Entwicklungs-Zugangsdaten
+`.env.dev` enthält fest hinterlegte Passwörter, Signing Keys und API-Tokens, die im Repository öffentlich sind, darunter
+`SUPERUSER_PASSWORD='admin'`. Auf Ihrer Maschine ist das in Ordnung und anderswo unbrauchbar. Kopieren Sie die Datei
+niemals auf einen geteilten oder aus dem Internet erreichbaren Host.
 :::
 
-## Erstellen Sie Ihren ersten Agent: 5 Minuten
-
-### Schritt 1: Generieren Sie das Agent-Gerüst
-
-Erstellen Sie Ihren ersten benutzerdefinierten Agenten:
+## Schritt 5: Infrastruktur starten
 
 ```bash
-uv run swiss-ai-hub new-agent my_custom_agent
+make up-dev
 ```
 
-Dies erstellt eine vollständige Agent-Struktur:
+Das entspricht `docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build` und startet rund 30
+Container. Der erste Durchlauf lädt mehrere Gigabyte an Images und dauert entsprechend; Milvus, Keycloak und Langfuse
+benötigen danach noch ein bis zwei Minuten, bis sie gesund melden.
 
-```
-agents/
-├── pyproject.toml              # Shared dependencies
-└── my_custom_agent/            # Your agent
-    ├── Dockerfile              # Container definition
-    ├── main.py                 # Entry point
-    └── MyCustomAgent/          # Implementation
-        ├── MyCustomAgent.py
-        ├── MyCustomAgentConfig.py
-        └── events/             # Custom events
-```
-
-### Schritt 2: Untersuchen Sie den generierten Agenten
-
-Sehen Sie sich den generierten Agent-Code in `agents/my_custom_agent/MyCustomAgent/MyCustomAgent.py` an:
-
-```python
-# TODO: tbd
-```
-
-Dieser Agent demonstriert die Kernmuster des SDK:
-
-- **Ereignisgesteuerte Schritte** mit streng typisierten Eingaben und Ausgaben
-- **Automatische Plattformintegration** für Authentifizierung, Tracing und Monitoring
-- **Einfache Geschäftslogik**, die Sie an Ihre Bedürfnisse anpassen können
-
-### Schritt 3: Starten Sie Ihren Agenten
-
-Generieren Sie eine Docker-Compose-Datei, die Ihren Agenten enthält:
+Beobachten Sie, wie sich der Stack einpendelt:
 
 ```bash
-uv run swiss-ai-hub generate-agent-compose --with-agent my_custom_agent
+docker compose -f infra/docker-compose.dev.yml ps
+docker compose -f infra/docker-compose.dev.yml logs -f keycloak
 ```
 
-Dies erstellt `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot Reload
-inbegriffen).
+Sobald alles läuft, sind diese Dienste auf localhost veröffentlicht:
 
-Erstellen Sie eine grundlegende `.env`-Datei für die Agent-Konfiguration:
+| Service    | URL / Port                                     | Was es ist                      |
+| ---------- | ---------------------------------------------- | ------------------------------- |
+| OpenWebUI  | [http://localhost:8080](http://localhost:8080) | Chat-Oberfläche                 |
+| Keycloak   | [http://localhost:8180](http://localhost:8180) | Identity Provider (Realm aihub) |
+| Langfuse   | [http://localhost:6006](http://localhost:6006) | LLM-Tracing und Kostenerfassung |
+| Attu       | [http://localhost:3003](http://localhost:3003) | Milvus Admin UI                 |
+| SeaweedFS  | [http://localhost:8889](http://localhost:8889) | Filer UI (S3 Gateway auf 9000)  |
+| LiteLLM    | `localhost:4000`                               | LLM Gateway                     |
+| NATS       | `localhost:4222`                               | Event-Backbone                  |
+| Milvus     | `localhost:19530`                              | Vektordatenbank                 |
+| FerretDB   | `localhost:27017`                              | Dokumentenspeicher              |
+| PostgreSQL | `localhost:5432`                               | Relationaler Speicher           |
+| Valkey     | `localhost:6379`                               | Agent-State                     |
+| Neo4j      | [http://localhost:7474](http://localhost:7474) | Graph-basiertes Memory          |
+| MinerU     | `localhost:8002`                               | Dokumenten-Parsing              |
 
-Starten Sie alles zusammen:
+Mit `make down-dev` stoppen Sie den Stack wieder, wenn Sie für den Tag fertig sind.
+
+## Schritt 6: Die Plattform aus dem Quellcode betreiben
+
+Die vier folgenden Prozesse benötigen jeweils ein eigenes Terminal innerhalb von Ubuntu und werden alle aus dem
+Repository-Root gestartet. Starten Sie die API zuerst; sowohl das Admin UI als auch der Agent kommunizieren mit ihr.
+
+**Terminal 1 — API und WebSocket Gateway**
 
 ```bash
-docker compose \
-  -f infra/docker-compose.dev.yml \
-  -f docker-compose-agents.dev.yml \
-  --env-file .env \
-  up -d
+cd packages/api && make run-dev
 ```
 
-## Testen Sie Ihren Erfolg: 2 Minuten
+Uvicorn mit `--reload` auf Port 8000. Die OpenAPI-Dokumentation finden Sie unter
+[http://localhost:8000/docs](http://localhost:8000/docs).
 
-### Schritt 1: Überprüfen Sie die Agent-Registrierung
+**Terminal 2 — Admin UI**
 
-Überprüfen Sie die Weboberfläche unter `http://localhost:8080`. Sie sollten nun Ihren `my_custom_agent` Agenten in den
-Agents aufgeführt sehen, und er wird als `online` angezeigt.
+```bash
+cd packages/web && pnpm dev
+```
 
-### Schritt 2: Testen Sie die Agent-Interaktion
+Nuxt auf Port 3333. Der Port und der Pfad zur `.env` im Repository-Root sind im `dev`-Skript bereits hinterlegt, weitere
+Flags sind nicht nötig.
 
-Klicken Sie auf Ihren Agenten und senden Sie eine Testnachricht. Sie sollten eine Antwort erhalten, die zeigt, dass Ihr
-Agent die Anfrage verarbeitet hat.
+**Terminal 3 — Document Ingestion Pipeline**
 
-### Schritt 3: Beobachten Sie das Agent-Verhalten
+```bash
+make -C packages/pipeline document-ingestion-pipeline
+```
 
-Besuchen Sie `http://localhost:6006`, um das Langfuse-Tracing zu sehen. Sie sehen detaillierte Traces der Ausführung
-Ihres Agenten, die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
+Dagster auf Port 3000. Das Target lädt `.env`, richtet `DAGSTER_HOME` auf `~/.dagster_home` aus und installiert beim
+ersten Lauf `dagster.local.yaml` dorthin, damit Ihre Run-Historie Neustarts übersteht. `make playground` und
+`make -C packages/pipeline quickstart` starten stattdessen die SDK-Beispiel-Pipelines, falls Sie das suchen.
 
-## Was ist gerade passiert?
+**Terminal 4 — RAG-Agent**
 
-In 15 Minuten haben Sie etwas Bemerkenswertes erreicht:
+```bash
+cd packages/agent && make run-rag-agent
+```
 
-**Komplette KI-Plattform:** Sie betreiben eine vollständige Enterprise-KI-Plattform mit Authentifizierung, Monitoring,
-Kostenverfolgung und Observability.
+Der Agent abonniert NATS und registriert sich bei der Plattform. `packages/agent/Makefile` enthält für jeden Agent in
+`packages/agent/app/` ein eigenes `run-*`-Target, Sie können also nach Bedarf auf `run-retrieval-agent` oder
+`run-llm-wrapping-agent` wechseln.
 
-**Benutzerdefinierte Agent-Integration:** Ihr benutzerdefinierter Agent erbt automatisch alle Plattformfunktionen – er
-erscheint in der Web-UI, verarbeitet Anfragen und verfolgt seine Ausführung ohne zusätzliche Konfiguration.
+## Schritt 7: Anmelden
 
-**Entwicklungsbereite Umgebung:** Das Hot-Reload-Setup bedeutet, dass Sie Ihren Agent-Code ändern und Änderungen sofort
-sehen können, ohne Container neu erstellen zu müssen.
+Öffnen Sie [http://localhost:3333](http://localhost:3333). Sie werden zu Keycloak auf Port 8180 weitergeleitet. Melden
+Sie sich mit dem Superuser aus `.env` an:
+
+- Benutzername: `admin`
+- Passwort: `admin`
+
+Diese Werte stammen aus `SUPERUSER_USERNAME` und `SUPERUSER_PASSWORD` in `.env.dev`, und das Konto trägt die Rollen
+`AIHubAccess` und `AIHubSysAdmin`, die das Admin UI und die Sysadmin-Endpoints prüfen. Dieselben Zugangsdaten
+funktionieren für OpenWebUI auf Port 8080.
+
+## Setup überprüfen
+
+Sie sind fertig, wenn alle folgenden Punkte zutreffen:
+
+- `docker compose -f infra/docker-compose.dev.yml ps` zeigt keinen Container im Zustand `exited` oder `unhealthy`.
+- [http://localhost:8000/docs](http://localhost:8000/docs) rendert die API-Referenz.
+- [http://localhost:3333](http://localhost:3333) meldet Sie an und zeigt das Admin UI.
+- Die Agent-Liste im Admin UI enthält den RAG-Agent und kennzeichnet ihn als `online`.
+- Eine Nachricht an diesen Agent aus [http://localhost:8080](http://localhost:8080) erzeugt eine Antwort.
+- [http://localhost:6006](http://localhost:6006) zeigt einen Langfuse-Trace für diesen Austausch.
+
+## WSL-Troubleshooting
+
+**Ein Port funktioniert unter Ubuntu, aber nicht im Windows-Browser.** WSL2 leitet localhost automatisch weiter, das
+Relay setzt aber gelegentlich aus, nachdem der Host im Standby war. `wsl --shutdown` aus PowerShell behebt das. Bleibt
+ein bestimmter Dev-Server unerreichbar, binden Sie ihn stattdessen an alle Interfaces: `pnpm dev --host 0.0.0.0` für das
+Admin UI oder passen Sie das `--host`-Flag im betreffenden Make-Target an.
+
+**OpenWebUI auf 8080 kommt nie hoch, während alles andere gesund ist.** Host Networking ist in Docker Desktop
+deaktiviert. Siehe [Schritt 2](#schritt-2-wsl-backend-in-docker-desktop-aktivieren).
+
+**`uv sync` ist langsam und Hot Reload greift nie.** Das Repository liegt auf `/mnt/c`. Verschieben Sie den Klon in das
+Linux-Dateisystem; es gibt keine Konfiguration, die den gemounteten Pfad schnell macht.
+
+**Container werden per OOM beendet oder die Maschine friert ein.** WSL ist unterhalb dessen gedeckelt, was der Stack
+braucht. Erhöhen Sie `memory` in `.wslconfig` und führen Sie `wsl --shutdown` aus.
+
+**Zertifikats- oder Token-Fehler, nachdem das Notebook aus dem Standby kommt.** Die Uhr von WSL läuft gegenüber dem Host
+aus dem Tritt und Keycloak weist die abweichenden Zeitstempel zurück. Führen Sie `sudo hwclock -s` innerhalb von Ubuntu
+aus oder starten Sie mit `wsl --shutdown` neu.
+
+**Port-Konflikte beim Start.** Auf der Windows-Seite belegt bereits etwas 8080, 5432, 6379 oder 4222. Finden Sie den
+Verursacher mit `netstat -ano | findstr :8080` in PowerShell und stoppen Sie ihn, oder ändern Sie das host-seitige
+Port-Mapping in `infra/docker-compose.dev.yml`.
+
+## Nächste Schritte
+
+Wenn der Stack läuft, führt Sie [Ihr erster Agent](../3_your_first_agent/) durch den Bau eines Agents mit dem SDK, und
+[Ihre erste Pipeline](../4_your_first_pipeline/) macht dasselbe für die Datenaufnahme.
