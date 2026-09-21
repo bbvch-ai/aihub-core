@@ -78,12 +78,6 @@ distinction that no longer distinguishes anything.
   > unreadable and not merely unlisted. Deleting a legacy database *as a whole* stays refused, in the service, with a
   > message naming the cause.
 
-> **Amended 2026-09-21.** The decision named `v0.320.1` as the pinned image version but no git tag of that name existed,
-> and the branch it was built from was named nowhere — leaving a production image whose source could only be found by
-> guessing. Worse, the escape hatch said to branch from `v0.320.0`, which reproduces the image *without* the teardown
-> sensor. The branch is now named above, the `v0.320.1` tag has been created on its tip, and the escape hatch corrected.
-> No behaviour changes: the tag is an anchor, and no workflow triggers on tag pushes.
-
 ## Consequences
 
 ### Positive
@@ -96,16 +90,17 @@ distinction that no longer distinguishes anything.
 ### Trade-offs
 
 - **Legacy bugs can no longer be fixed.** A published image cannot receive a patch, and `main` no longer contains the
-  code to build one. Shipping a legacy fix means branching from the `v0.320.1` tag — *not* `v0.320.0`, which predates
-  the teardown sensor and would rebuild the wrong image — and dispatching `build-pipelines.yml` against that branch,
-  where `compose-config.yml` still carries `build: localbuild` for both images. That is exactly how `v0.320.1` was
-  produced, and the one time it is intended to be done. The escape hatch stays open by accident of git history rather
-  than by policy: nothing keeps the old branch buildable as its dependencies age, and the rebuilt image is not
-  digest-identical to the original (`python:3.13-slim` floats and the apt layer is unpinned).
-- **A hotfix on `release/0.320` must not reuse the `v0.320.1` version.** That branch still carries `build: localbuild`
-  and the legacy source, but never received the teardown sensor, so a build from it would overwrite the frozen images
-  with a regression. `promote.yml` derives the next patch from the highest `v0.320.*` tag, so the `v0.320.1` tag is what
-  keeps a hotfix on that line landing on `v0.320.2` instead.
+  code to build one. Shipping a legacy fix means branching from the `v0.320.1` tag and dispatching `build-pipelines.yml`
+  against that branch, where `compose-config.yml` still carries `build: localbuild` for both images. Branch from
+  `v0.320.1`, never from the older `v0.320.0` release: `v0.320.1` is what gave the legacy pipelines a teardown sensor,
+  matching the behaviour the new ingestion pipeline already had, so building from `v0.320.0` would reinstate a corpus
+  that can be added to but never pruned. The escape hatch stays open by accident of git history rather than by policy:
+  nothing keeps the old branch buildable as its dependencies age, and the rebuilt image is not digest-identical to the
+  original (`python:3.13-slim` floats and the apt layer is unpinned).
+- **A hotfix on `release/0.320` must not reuse the `v0.320.1` version.** That branch still builds the legacy images but
+  never received the teardown sensor, so a build from it would overwrite the frozen images with that same regression.
+  `promote.yml` derives the next patch from the highest `v0.320.*` tag, so the `v0.320.1` tag keeps a hotfix on that
+  line landing on `v0.320.2`.
 - **Nothing removes a torn-down legacy namespace permanently while the seeder runs.** `AIHUB_CREATE_DEFAULT_BUCKETS`
   (default true) re-creates the two configured bucket and namespace rows on every API start, and `init-buckets.sh`
   re-creates the S3 buckets from the same variable. Deleting `defaultnamespace` itself therefore purges its contents but
