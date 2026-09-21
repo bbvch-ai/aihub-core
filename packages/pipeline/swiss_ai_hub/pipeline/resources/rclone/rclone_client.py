@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 # `obscure`: rclone stores password-typed options obscured and refuses plain ones for them (SFTP `pass`).
 # `nonInteractive`: an OAuth backend without a token returns a question instead of blocking the daemon.
 _CREATE_OPTIONS = {"obscure": True, "nonInteractive": True}
+# Questions rclone asks even in non-interactive mode and whose answer is fixed here: Google Drive always offers to
+# switch the remote to a Shared Drive after the credentials are in; the drive to sync is named up front, so the answer
+# is no. Any other question means a credential is missing and stays an error.
+_ANSWERED_QUESTIONS = {"config_change_team_drive": "false"}
 
 
 class RcloneClient:
@@ -47,11 +51,17 @@ class RcloneClient:
         payload = {**config.to_rclone_params(), "opt": _CREATE_OPTIONS}
         logger.info(f"Configuring rclone remote '{config.name}' ({config.backend_type.value})")
         response = self._sync_post("config/create", payload)
-        if response.get("State") or response.get("Option"):
-            raise ValueError(
-                f"rclone remote '{config.name}' needs an interactive step ({response.get('Option', {}).get('Name')}); "
-                "supply a pre-obtained token instead."
-            )
+        answered: set[str] = set()
+        while response.get("State") or response.get("Option"):
+            question = response.get("Option", {}).get("Name")
+            if question not in _ANSWERED_QUESTIONS or response.get("State") in answered:
+                raise ValueError(
+                    f"rclone remote '{config.name}' needs an interactive step ({question}); "
+                    "supply a pre-obtained token instead."
+                )
+            answered.add(response["State"])
+            continuation = {"continue": True, "state": response["State"], "result": _ANSWERED_QUESTIONS[question]}
+            response = self._sync_post("config/create", {**payload, "opt": {**_CREATE_OPTIONS, **continuation}})
 
     def get_remote(self, name: str) -> dict[str, Any] | None:
         response = self._sync_post("config/get", {"name": name})

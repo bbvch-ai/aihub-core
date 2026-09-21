@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator
@@ -79,6 +80,18 @@ class GoogleDriveOptions(Form):
     ] = ""
     root_folder_id: Annotated[str | InputText, Field(description="Folder id to treat as the root.")] = ""
 
+    @field_validator("token", "service_account_credentials", mode="after")
+    @classmethod
+    def _single_line_json(cls, value: str | Password) -> str | Password:
+        """rclone's config store refuses values with line breaks, and Google hands out pretty-printed key files:
+        re-serialize the blob on one line so what the user pasted is what rclone accepts."""
+        if not isinstance(value, str) or not value.strip():
+            return value
+        try:
+            return json.dumps(json.loads(value), separators=(",", ":"))
+        except ValueError as error:
+            raise ValueError("Google Drive credentials must be the JSON blob from the downloaded key file.") from error
+
     @classmethod
     def as_form(cls) -> Self:
         backend = RcloneBackendType.DRIVE
@@ -133,6 +146,14 @@ class SftpOptions(Form):
     user: Annotated[str | InputText, Field(description="User name.")] = ""
     password: Annotated[str | Password, Field(description="Password, instead of a key.")] = ""
     key_pem: Annotated[str | Password, Field(description="PEM-encoded private key, instead of a password.")] = ""
+
+    @field_validator("key_pem", mode="after")
+    @classmethod
+    def _escape_line_breaks(cls, value: str | Password) -> str | Password:
+        """rclone wants a PEM key on one line with literal ``\\n`` between the lines; a pasted key has real ones."""
+        if not isinstance(value, str):
+            return value
+        return value.strip().replace("\r\n", "\n").replace("\n", "\\n")
 
     @classmethod
     def as_form(cls) -> Self:

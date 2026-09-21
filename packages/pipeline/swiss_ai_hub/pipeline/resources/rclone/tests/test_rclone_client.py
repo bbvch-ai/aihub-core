@@ -105,3 +105,33 @@ class TestGetAndDeleteRemote:
 
         assert seen["url"].endswith("/config/delete")
         assert json.loads(seen["body"]) == {"name": "rclone_hrdocs"}
+
+    def test_the_shared_drive_question_is_answered_with_no_and_the_remote_completes(self):
+        requests: list[dict] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = json.loads(request.read())
+            requests.append(body)
+            if body["opt"].get("continue"):
+                return httpx.Response(200, json={})
+            return httpx.Response(200, json={"State": "teamdrive_ok", "Option": {"Name": "config_change_team_drive"}})
+
+        for client in _client(handler):
+            client.upsert_remote(
+                RcloneSourceConfig(
+                    name="r", backend_type=RcloneBackendType.DRIVE, options={"service_account_credentials": "{}"}
+                )
+            )
+
+        assert [r["opt"].get("continue") for r in requests] == [None, True]
+        assert requests[1]["opt"]["state"] == "teamdrive_ok"
+        assert requests[1]["opt"]["result"] == "false"
+        assert requests[1]["parameters"] == {"service_account_credentials": "{}"}
+
+    def test_a_question_that_repeats_after_its_answer_is_reported_not_looped(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"State": "teamdrive_ok", "Option": {"Name": "config_change_team_drive"}})
+
+        for client in _client(handler):
+            with pytest.raises(ValueError, match="config_change_team_drive"):
+                client.upsert_remote(RcloneSourceConfig(name="r", backend_type=RcloneBackendType.DRIVE, options={}))

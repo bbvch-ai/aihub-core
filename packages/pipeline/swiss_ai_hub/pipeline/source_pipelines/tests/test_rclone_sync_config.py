@@ -94,3 +94,36 @@ class TestToRcloneSourceConfig:
         assert cloud.remote_fs("r") == "r:bucket/docs"
         assert local.remote_fs("r") == "r:/data/shared"
         assert local.to_rclone_source_config("r").options == {}
+
+
+class TestMultiLineSecrets:
+    def test_a_pretty_printed_service_account_file_is_sent_to_rclone_on_one_line(self):
+        pretty = '{\n  "type": "service_account",\n  "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"\n}\n'
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "drive", "drive": {"service_account_credentials": pretty}}
+        )
+
+        sent = config.to_rclone_source_config("r").options["service_account_credentials"]
+
+        assert "\n" not in sent
+        assert (
+            sent
+            == '{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"}'
+        )
+
+    def test_credentials_that_are_not_json_are_rejected_with_the_field_named(self):
+        with pytest.raises(ValueError, match="Google Drive credentials"):
+            RcloneSyncConfig.model_validate({"backend_type": "drive", "drive": {"token": "not json"}})
+
+    def test_a_pasted_pem_key_reaches_rclone_with_escaped_line_breaks(self):
+        pasted = "-----BEGIN OPENSSH PRIVATE KEY-----\r\nabc\r\ndef\r\n-----END OPENSSH PRIVATE KEY-----\r\n"
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "sftp", "sftp": {"host": "h", "user": "u", "key_pem": pasted}}
+        )
+
+        sent = config.to_rclone_source_config("r").options["key_pem"]
+
+        assert sent == "-----BEGIN OPENSSH PRIVATE KEY-----\\nabc\\ndef\\n-----END OPENSSH PRIVATE KEY-----"
+
+    def test_the_announced_form_still_builds_with_the_validators_in_place(self):
+        assert RcloneSyncConfig.as_form() is not None
