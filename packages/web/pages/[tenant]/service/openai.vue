@@ -42,7 +42,7 @@ const tenantPath = useTenantPath()
 const localePath = useLocalePath()
 const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant, tenantId } = useTenant()
-const { setOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
+const { setOpenWebUIContext, updateOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
 
 async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
@@ -72,7 +72,7 @@ const VIEW_BY_ACTION: Record<string, string> = {
   'show-memories': 'memories',
 }
 
-const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-context']
+const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-model-context', 'set-context']
 
 const openPanelView = (): string | null => {
   if (route.path.endsWith('/tracing')) return 'tracing'
@@ -122,19 +122,24 @@ const handleMessage = async (event: MessageEvent) => {
     return
   }
 
-  // set-context: the pipe pushes the thread and the model as each message streams.
-  const thread_id = (data.thread_id as string) ?? ''
+  // set-model-context: the inlet filter, which runs on every turn whatever routes it — including
+  // a plain model, which reaches the API through OpenWebUI's own connection and no pipe at all.
+  // It describes the turn from scratch, thread included, because a value it does not set is a
+  // value the previous turn would otherwise lend to a report about this one.
+  if (data.type === 'set-model-context') {
+    setOpenWebUIContext({
+      threadId: '',
+      displayId: display_id,
+      agentClass: (data.agent_class as string) ?? '',
+      agentName: (data.agent_name as string) ?? '',
+      model: (data.model as string) ?? '',
+    })
+    return
+  }
 
-  // Remembered before the thread is checked, and including the model: a report raised from the
-  // app rail has no other way to learn either, and a turn whose thread did not resolve is still
-  // worth reporting against the model that produced it.
-  setOpenWebUIContext({
-    threadId: thread_id,
-    displayId: display_id,
-    agentClass: (data.agent_class as string) ?? '',
-    agentName: (data.agent_name as string) ?? '',
-    model: (data.model as string) ?? '',
-  })
+  // set-context: the agent pipe, which alone knows the thread its events are persisted under.
+  const thread_id = (data.thread_id as string) ?? ''
+  updateOpenWebUIContext({ threadId: thread_id, displayId: display_id })
 
   // Keep an already-open panel synced. Only a resolved thread has a panel to sync to.
   if (!thread_id) return

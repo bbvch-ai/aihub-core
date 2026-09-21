@@ -16,13 +16,22 @@ export interface OpenWebUIContext {
 export const useOpenWebUIContext = () => {
   const context = useState<OpenWebUIContext | null>('openwebui-context', () => null)
 
+  // Replaces, deliberately: the inlet filter sends every field on every turn, and a field it
+  // leaves empty has to clear the previous turn's value rather than survive into a report about
+  // this one.
   const setOpenWebUIContext = (next: OpenWebUIContext): void => {
     context.value = next
+  }
+
+  // Merges, for the one producer that knows a single field: the agent pipe learns the thread
+  // after the filter has already described the turn.
+  const updateOpenWebUIContext = (partial: Partial<OpenWebUIContext>): void => {
+    context.value = { threadId: '', displayId: '', ...(context.value ?? {}), ...partial }
   }
 
   const clearOpenWebUIContext = (): void => {
     context.value = null
   }
 
-  return { context, setOpenWebUIContext, clearOpenWebUIContext }
+  return { context, setOpenWebUIContext, updateOpenWebUIContext, clearOpenWebUIContext }
 }
