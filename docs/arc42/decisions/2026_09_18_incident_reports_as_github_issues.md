@@ -120,6 +120,15 @@ that becomes unacceptable, it is the signal that alternative 4 was right after a
 **There is no status for the reporter.** They have no GitHub account, so they are given a reference and an issue number,
 not a link they cannot open. Whoever answers does so out of band, by the contact address in the report.
 
+**One way in, and it carries the last turn rather than a chosen message.** An OpenWebUI action under each answer would
+bind the report to that exact message, and an earlier draft had one. It was dropped: two affordances a click apart, both
+called "Report a bug", is a worse cost than the two cases the remaining one gets wrong. The chat runs in a cross-origin
+iframe, so the shell learns the conversation only when the pipeline publishes it — which means a reporter who switches
+chats without sending anything carries the previous conversation's id, and a turn that fails before the pipeline runs
+carries nothing. Both are visible: those fields are shown to the reporter and editable, which is the same reason nothing
+in a submission is treated as authoritative. If misattributed conversations show up in practice, the per-message action
+is an independent addition, not a redesign.
+
 **Multipart upload arrives at the API.** Every other upload in the platform hands the browser a presigned S3 URL; the
 destination here is GitHub, which issues no such URL, so these bytes pass through the API. It is the one deliberate
 deviation from that pattern.

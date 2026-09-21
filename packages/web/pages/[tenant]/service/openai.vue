@@ -43,7 +43,6 @@ const localePath = useLocalePath()
 const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant, tenantId } = useTenant()
 const { setOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
-const { open: openIncidentReport } = useIncidentReport()
 
 async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
@@ -73,7 +72,7 @@ const VIEW_BY_ACTION: Record<string, string> = {
   'show-memories': 'memories',
 }
 
-const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-context', 'report-issue']
+const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-context']
 
 const openPanelView = (): string | null => {
   if (route.path.endsWith('/tracing')) return 'tracing'
@@ -120,19 +119,6 @@ const handleMessage = async (event: MessageEvent) => {
     if (thread_id) {
       router.push(tenantPath(`/service/openai/${thread_id}/${display_id}/${requestedView}`))
     }
-    return
-  }
-
-  // "Report a bug" on one message: carry that message's model and thread into the report. A
-  // plain-LLM message has no AI-Hub thread and is still worth reporting, so an empty thread does
-  // not stop the dialog from opening.
-  if (data.type === 'report-issue') {
-    setOpenWebUIContext({
-      threadId: await resolveThreadId(display_id),
-      displayId: display_id,
-      model: (data.model as string) ?? '',
-    })
-    openIncidentReport()
     return
   }
 
