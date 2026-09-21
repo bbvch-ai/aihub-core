@@ -14,17 +14,12 @@ The platform had no incident domain at all: no entity, no endpoint, no notificat
 but nothing writes one — and no outbound mail. So the question was never how to render a form; it was where a submitted
 report should end up, and who gets to change the questions.
 
-A first attempt (PR #1908, kept as a reference and not merged) linked out to a Microsoft Form with the context prefilled
-into the URL. It works, and it exposed the two limits that decided this design: Microsoft Forms offers its file-upload
-question only to respondents signed in to the form owner's organisation — which AI Hub users are not — and everything in
-a prefilled URL is editable by the respondent, so nothing in the resulting response can be trusted as identity.
-
 ## Decision Drivers
 
 1. **The reporter should only describe what went wrong.** Every field the platform can know, the platform fills in.
 2. **Whoever answers reports should own the questions.** Adding one must not require a frontend change.
-3. **Attachments must work for every user**, not only for those who happen to share an identity provider with whoever
-   owns the form.
+3. **Attachments must work for every user.** A screenshot is frequently the whole report, and the reporter holds an
+   account in AI Hub and nowhere else.
 4. **A deployment with no support desk must be unaffected.** This is self-hosted software; the affordance cannot assume
    a destination exists.
 5. **A report must never become public.** It carries a customer's prompts and screenshots, and publishing those cannot
@@ -52,14 +47,11 @@ Unset — the default — `IncidentSettings.enabled` is false, no client is cons
 
 ## Alternatives Considered
 
-1. **Keep the Microsoft Forms link (PR #1908).** Cheapest by far: no backend at all. Rejected on drivers 3 and 5 —
-   attachments are unavailable to the users who need them, and nothing about the response is verifiable.
-
-2. **Link to GitHub's own issue form.** The definition would live in the repository and the result would be a real
+1. **Link to GitHub's own issue form.** The definition would live in the repository and the result would be a real
    ticket, satisfying drivers 2 and 6 outright. Rejected because AI Hub users have accounts in AI Hub only: GitHub
    renders an issue form solely for signed-in users with access to the repository.
 
-3. **Attach files to the issue the way a person does in the browser.** This is what "attachments in the issue" means to
+2. **Attach files to the issue the way a person does in the browser.** This is what "attachments in the issue" means to
    anyone who has filed one, so it was the first thing tried. The endpoint behind it
    (`uploads.github.com/user-attachments/assets`) is undocumented and **rejects App installation tokens outright**; only
    an OAuth user token works. Using it would mean holding a machine user's personal token for an unsupported API.
@@ -73,12 +65,12 @@ Unset — the default — `IncidentSettings.enabled` is false, no client is cons
    declaration, which is why the attachment field now lives in the definition beside the questions rather than in the
    frontend.
 
-4. **Store reports in the platform and deliver them by Apprise or Microsoft Graph.** The only option that makes tenant
+3. **Store reports in the platform and deliver them by Apprise or Microsoft Graph.** The only option that makes tenant
    and reporter authoritative *and* accepts attachments. Rejected on drivers 2 and 6: the questions would live in
    Python, so QC could not change one without a release, and having stored a report the platform would immediately owe
    its reader a way to list, assign and close it.
 
-5. **A self-hosted form tool (n8n, Formbricks) as the intake.** Satisfies every driver, and n8n is already named in the
+4. **A self-hosted form tool (n8n, Formbricks) as the intake.** Satisfies every driver, and n8n is already named in the
    platform's context as an integration target. Rejected as a second piece of infrastructure to run for one button — but
    it remains the exit if GitHub proves the wrong home.
 
@@ -114,8 +106,8 @@ once by configuring a repository. A misconfiguration that would publish them is 
 filing into it.
 
 **A GitHub outage loses the report the reporter just typed.** Nothing is stored locally first, deliberately — storing it
-would create the obligation alternative 4 was rejected for. The dialog keeps its contents so the reporter can retry. If
-that becomes unacceptable, it is the signal that alternative 4 was right after all.
+would create the obligation alternative 3 was rejected for. The dialog keeps its contents so the reporter can retry. If
+that becomes unacceptable, it is the signal that alternative 3 was right after all.
 
 **There is no status for the reporter.** They have no GitHub account, so they are given a reference and an issue number,
 not a link they cannot open. Whoever answers does so out of band, by the contact address in the report.
