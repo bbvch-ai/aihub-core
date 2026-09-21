@@ -131,6 +131,8 @@ const handleMessage = async (event: MessageEvent) => {
   setOpenWebUIContext({
     threadId: thread_id,
     displayId: display_id,
+    agentClass: (data.agent_class as string) ?? '',
+    agentName: (data.agent_name as string) ?? '',
     model: (data.model as string) ?? '',
   })
 

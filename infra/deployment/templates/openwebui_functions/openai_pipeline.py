@@ -208,6 +208,8 @@ class Pipe:
             type: 'set-context',
             thread_id: {json.dumps(thread_id)},
             display_id: {json.dumps(display_id)},
+            agent_class: '',
+            agent_name: '',
             model: {json.dumps(model)},
         }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
         """

@@ -1,6 +1,10 @@
 export interface OpenWebUIContext {
   threadId: string
   displayId: string
+  // Split rather than one "model or agent" string: an investigation starts from a different
+  // place depending on which it was, and the acceptance criteria ask for all three.
+  agentClass?: string
+  agentName?: string
   model?: string
 }
 

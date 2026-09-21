@@ -28,6 +28,8 @@ const describeBrowser = (): string => {
 // Every key here is a question `id` in packages/core/.../incident/incident_form.yml. That naming
 // is the whole contract: a key with no matching question is silently dropped.
 export const useIncidentContext = () => {
+  const { locale } = useI18n()
+  const runtimeConfig = useRuntimeConfig()
   const { versionDisplay } = useAppVersion()
   const { context: openWebUIContext } = useOpenWebUIContext()
 
@@ -36,12 +38,18 @@ export const useIncidentContext = () => {
   // the page last rendered — hours earlier on a tab left open, which is exactly the kind of tab a
   // bug gets reported from.
   const buildIncidentContext = (): Record<string, string> => ({
-    occurred_at: format(new Date(), 'yyyy-MM-dd HH:mm'),
-    version: versionDisplay.value ?? '',
+    // With the offset, because this field exists to find the request in logs that are in UTC
+    // while the reporter and whoever reads it are rarely in the same zone.
+    occurred_at: format(new Date(), 'yyyy-MM-dd HH:mm XXX'),
     page_url: globalThis.location?.href ?? '',
-    browser: describeBrowser(),
-    conversation_id: openWebUIContext.value?.threadId ?? '',
+    version: versionDisplay.value ?? '',
+    environment: (runtimeConfig.public.env as string) ?? '',
+    agent_class: openWebUIContext.value?.agentClass ?? '',
+    agent_name: openWebUIContext.value?.agentName ?? '',
     model: openWebUIContext.value?.model ?? '',
+    conversation_id: openWebUIContext.value?.threadId ?? '',
+    browser: describeBrowser(),
+    locale: locale.value,
   })
 
   return { buildIncidentContext }

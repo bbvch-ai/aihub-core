@@ -2079,7 +2079,8 @@ class Pipe:
         self,
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
-        model: Annotated[str, "Agent behind this answer, so a bug report can name it"],
+        agent_class: Annotated[str, "Agent type behind this answer"],
+        agent_id: Annotated[str, "Agent instance behind this answer"],
         event_emitter: Annotated[EventEmitter, "Event emitter function (one-way; do NOT use event_caller)"],
     ) -> None:
         """Post a `set-context` message to the parent window so its tracing/sources/memories side
@@ -2099,7 +2100,8 @@ class Pipe:
             type: 'set-context',
             thread_id: {json.dumps(thread_id)},
             display_id: {json.dumps(display_id)},
-            model: {json.dumps(model)},
+            agent_class: {json.dumps(agent_class)},
+            agent_name: {json.dumps(agent_id)},
         }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
         """
 
@@ -2245,7 +2247,7 @@ class Pipe:
 
                 async def stream_start_callback():
                     await self._set_ui_context(
-                        thread_id, hitl_display_id, f"{agent_class}.{agent_id}", __event_emitter__
+                        thread_id, hitl_display_id, agent_class, agent_id, __event_emitter__
                     )
 
                 # Stream the conversation

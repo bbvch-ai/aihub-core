@@ -42,11 +42,12 @@ body:
   - type: upload
     attributes:
       label: Screenshots or files
-      description: Optional. They are filed with the report and stay in the support
-        repository permanently, so do not attach confidential material.
+      description: A screenshot showing the problem, or the document we failed to
+        process. They are filed with the report and stay in the support repository
+        permanently, so do not attach confidential material.
     validations:
       required: false
-      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.log,.csv,.json,.zip
+      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.pptx,.txt,.log,.csv,.json,.eml,.msg,.zip
 
   - type: dropdown
     id: problem_type
@@ -114,9 +115,14 @@ body:
     id: occurred_at
     attributes:
       label: When did it happen?
-      description: Used to find the request in the logs.
+      description: Carries your UTC offset, because the logs are in UTC.
     validations:
       required: true
+
+  - type: input
+    id: page_url
+    attributes:
+      label: Page you were on
 
   - type: input
     id: tenant
@@ -133,14 +139,27 @@ body:
       required: true
 
   - type: input
-    id: page_url
+    id: environment
     attributes:
-      label: Page you were on
+      label: Environment
+      description: Which deployment this is — the version alone does not say where.
+
+  - type: input
+    id: agent_class
+    attributes:
+      label: Agent type
+      description: Empty when you were talking to a model rather than an agent.
+
+  - type: input
+    id: agent_name
+    attributes:
+      label: Agent name
 
   - type: input
     id: model
     attributes:
-      label: Model or agent
+      label: LLM model
+      description: The model behind the answer, where the platform knows it.
 
   - type: input
     id: conversation_id
@@ -151,7 +170,17 @@ body:
   - type: input
     id: browser
     attributes:
-      label: Browser
+      label: Browser and version
+
+  - type: input
+    id: locale
+    attributes:
+      label: Interface language
+      description: Some problems only appear in one language.
+
+  - type: markdown
+    attributes:
+      value: How to reach you, and one permission we need before reading anything.
 
   - type: input
     id: reporter_name
@@ -170,3 +199,10 @@ body:
     attributes:
       label: Phone
       description: Optional, if you would rather be called back.
+
+  - type: checkboxes
+    id: conversation_consent
+    attributes:
+      label: Support may open the conversation above to investigate
+      description: Without this we work from your description alone. Leave it
+        unticked if the conversation contains anything you would rather not share.
