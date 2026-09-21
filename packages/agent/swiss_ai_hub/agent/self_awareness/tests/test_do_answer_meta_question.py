@@ -6,6 +6,7 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from openai import BadRequestError
 from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import do_answer_meta_question
@@ -27,7 +28,7 @@ def llm_config(llm) -> MagicMock:
     config = MagicMock()
 
     @asynccontextmanager
-    async def ctx(_displayer):
+    async def ctx(_displayer, user=None):  # noqa: ARG001
         yield llm
 
     config.cost_reporting_llm = ctx
@@ -57,6 +58,7 @@ async def test_answer_prompt_is_grounded_in_agent_identity_and_workflow(llm_conf
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, LLMStopEvent)
@@ -90,6 +92,7 @@ async def test_answer_drops_empty_history_turns(llm_config, displayer, locale_ha
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     sent_messages = displayer.display_llm_stream.call_args.args[2]
@@ -111,6 +114,7 @@ async def test_answer_disables_reasoning_on_the_streamed_response(llm, llm_confi
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert llm.additional_kwargs["extra_body"]["chat_template_kwargs"] == {"thinking": False, "enable_thinking": False}
@@ -139,6 +143,7 @@ async def test_answer_falls_back_to_plain_stream_when_reasoning_flag_rejected(
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert isinstance(result, LLMStopEvent)
@@ -159,6 +164,7 @@ async def test_answer_terminates_as_stop_step(llm_config, displayer, locale_hand
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        user=fake_user(),
     )
 
     assert displayer.display_llm_stream.call_args.kwargs["as_stop_step"] is True

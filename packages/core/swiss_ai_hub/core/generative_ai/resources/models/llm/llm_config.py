@@ -142,12 +142,26 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             },
         )
 
-    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
+    @property
+    def max_input_tokens(self) -> int | None:
+        """The model's context window as LiteLLM declares it, or None when it declares none.
+
+        Callers that bound a prompt need this number before building one, not after the provider rejects it.
+        `None` rather than a raise: a guard must not turn a model with an incomplete LiteLLM entry into a
+        failing run. `to_llama_index` keeps its own strict lookup, where a missing window is a real defect.
+        """
+        return self.get_model_info()["model_info"].get("max_input_tokens")
+
+    def to_llama_index(
+        self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
+    ) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
-        This uses the OpenAILike wrapper since it mimics OpenAI-like APIs. The tokenizer is retrieved
-        from the local model, and parameters are merged to configure the model's behavior.
+        Streamed calls ask the gateway to report real token usage on the final chunk, so
+        ``TokenCountingHandler`` doesn't fall back to re-tokenizing the whole chat history locally on
+        every call. That request lives in ``ResilientOpenAILike`` rather than in ``additional_kwargs``
+        here, because endpoints that reject ``stream_options`` need a plain-stream retry.
         """
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
@@ -173,13 +187,12 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         open_ai_like = ResilientOpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
-            api_key=config.API_KEY.get_secret_value(),
+            api_key=api_key or config.API_KEY.get_secret_value(),
             temperature=self.default_parameter.temperature,
             context_window=context_size,
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
             should_use_structured_outputs=supports_response_schema,
-            tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             logprobs=self.default_parameter.logprobs,
             top_logprobs=self.default_parameter.top_logprobs,

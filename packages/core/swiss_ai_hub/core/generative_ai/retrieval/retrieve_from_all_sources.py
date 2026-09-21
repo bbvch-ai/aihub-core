@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever import KnowledgeRetriever
 from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
@@ -13,6 +14,7 @@ async def retrieve_from_all_sources(
     query: str,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
+    user: UserIdentity | None = None,
 ) -> list[IngestedNode]:
     """
     Create knowledge retrievers and retrieve from all configured sources in parallel.
@@ -26,5 +28,5 @@ async def retrieve_from_all_sources(
         logger.warning("No retrievers configured, skipping retrieval.")
         return []
 
-    results = await asyncio.gather(*[retriever.retrieve(query, t) for retriever in retrievers])
+    results = await asyncio.gather(*[retriever.retrieve(query, t, user) for retriever in retrievers])
     return [node for nodes in results for node in nodes]

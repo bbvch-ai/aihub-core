@@ -4,6 +4,7 @@ __pycache__/
 /packages/pipeline/.env
 /packages/agent/playground/agent/RAGAgent/.env
 .env
+.env.backup-*
 .docker-volumes
 /node_modules/
 docs/node_modules
@@ -37,6 +38,9 @@ CLAUDE.local.md
 .claude/statusline.sh
 .claude/worktrees/*
 .claude/*.lock
+
+# Page snapshots the Playwright MCP server writes into the repo root on every run
+.playwright-mcp/
 
 # E2E (Playwright)
 /e2e/node_modules

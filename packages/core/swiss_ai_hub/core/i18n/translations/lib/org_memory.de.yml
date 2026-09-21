@@ -16,4 +16,5 @@ rerank_organization_memory:
 default_tenant_namespace:
   label: Standard-Organisationsspeicher-Namespace
   help: Namespace für Schreiboperationen im Organisationsspeicher (und für Leseoperationen,
-    wenn kein Event-Override angegeben ist). Leer lassen für den plattformweiten Standard.
+    wenn kein Event-Override angegeben ist). Muss einer der erlaubten Namespaces sein,
+    sofern diese Liste nicht leer ist. Leer lassen für den plattformweiten Standard.

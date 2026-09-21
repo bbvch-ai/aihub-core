@@ -38,6 +38,8 @@ async def api_client():
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 
+    await runner.stop_simulation()
+
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_get_models(api_client):

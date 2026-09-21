@@ -3,7 +3,7 @@ steps:
   title:
     name: Gesprächstitel erstellen
     description: Erstellt einen kurzen, stabilen Titel, der das Thema des Gesprächs
-      zusammenfasst, sobald ein Thema erkennbar ist.
+      beim ersten Zug des Threads zusammenfasst.
   follow_ups:
     name: Folgefragen vorschlagen
     description: Schlägt Folgefragen vor, die der Benutzer als Nächstes stellen könnte,
@@ -11,13 +11,15 @@ steps:
 thoughts:
   generating_title: Ich überlege mir einen Titel für dieses Gespräch
   generating_follow_ups: Ich überlege mir Folgefragen
+default_title: Neues Gespräch
 prompts:
   title: |
     {% chat role="user" %}
     Erstelle einen prägnanten Titel (3-6 Wörter), der das Thema des folgenden Gesprächs zusammenfasst.
     Schreibe den Titel in der Sprache des Gesprächs. Verwende keine Anführungszeichen oder abschließende
-    Satzzeichen. Wenn das Gespräch noch kein erkennbares Thema hat — zum Beispiel nur Begrüßungen oder
-    Smalltalk — gib null zurück, anstatt zu raten.
+    Satzzeichen. Erstelle immer einen einfachen, natürlichen Titel, auch wenn das Gespräch nur eine
+    Begrüßung oder Smalltalk ist — eine bloße Begrüßung kann zum Beispiel mit "Begrüßung" oder
+    "Lockeres Gespräch" betitelt werden. Gib niemals einen leeren Titel zurück.
     <Conversation>
     {% for message in chat_history %}
     <message role="{{ message.role.value }}">

@@ -21,6 +21,22 @@ class MailBatchDraftedEvent(ControlAndDisplayEvent):
 
     source_folder: Annotated[str, Field(description="Folder the drafted messages were read from.")]
     count: Annotated[int, Field(description="Number of reply drafts created in this run.")]
+    per_category: Annotated[
+        dict[str, int],
+        Field(
+            default_factory=dict,
+            description="How many drafts were created for each category, when drafting followed a classification "
+            "run. Empty when the drafting blueprint does not classify.",
+        ),
+    ]
+    skipped_count: Annotated[
+        int,
+        Field(
+            default=0,
+            description="Messages in the batch that got no draft: usually because their category was not opted in, "
+            "or no category fitted them at all.",
+        ),
+    ]
     drafted: Annotated[
         list[DraftedReplyRef],
         Field(default_factory=list, description="Per-message references to the created reply drafts."),

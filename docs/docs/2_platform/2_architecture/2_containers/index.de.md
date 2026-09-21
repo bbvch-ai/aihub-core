@@ -100,9 +100,10 @@ eigene Datenabhängigkeiten (ClickHouse, Postgres, Valkey, SeaweedFS) gehören z
 
 ## Hilfsschicht
 
-Hilfsservices, die die Anwendungsschicht unterstützen, ohne zu ihrem Kern zu gehören: SearXNG für die Websuche, Jupyter
-als Code-Ausführungs-Sandbox, Playwright für die Browser-Automatisierung und Attu als Milvus-Admin-Konsole für
-Operatoren. Diese werden hauptsächlich von OpenWebUI (als Agenten-Tools) und von Operatoren genutzt.
+Hilfsservices, die die Anwendungsschicht unterstützen, ohne zu ihrem Kern zu gehören: SearXNG für die Websuche, Open
+Terminal als Code-Ausführungs-Sandbox für OpenWebUI (reine LLM-Modelle; Isolation pro Benutzer, herunterladbare
+Dateiausgabe), Playwright für die Browser-Automatisierung und Attu als Milvus-Admin-Konsole für Operatoren. Diese werden
+hauptsächlich von OpenWebUI (als Agenten-Tools) und von Operatoren genutzt.
 
 <likec4-view view-id="tier_utility" style="display:block;height:420px"></likec4-view>
 

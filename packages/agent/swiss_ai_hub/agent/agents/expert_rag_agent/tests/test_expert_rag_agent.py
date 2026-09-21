@@ -43,6 +43,7 @@ from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collectio
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event import AnswerStopEvent
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
+from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
@@ -173,6 +174,9 @@ def _(expert_rag_agent_config):
 async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user declines."""
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
+        # Every run that stores user memory delegates the write, so the writer's stream must exist
+        await expert_rag_agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
+
         await expert_rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -204,6 +208,8 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         # Ensure the ExpertAskingAgent stream exists for agent-in-the-loop delegation
         await expert_rag_agent_runner.ensure_dependent_agent_stream("ExpertAskingAgent")
+        # Same for the memory writer, which every run storing user memory delegates its write to
+        await expert_rag_agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
 
         await expert_rag_agent_runner.send_event_from_topic(
             topic=topic,
@@ -226,7 +232,7 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
             topic=topic,
         )
         # Wait for AgentInTheLoop request to expert
-        await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+        aitl_request = await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
         # Mock expert response by sending AnswerStopEvent to the expert agent's topic
         # The ExpertRAGAgent's internal subscription will pick this up and convert it to AgentInTheLoopResponseEvent
@@ -238,7 +244,9 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
             ],
         )
         await expert_rag_agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_expert_answer),
+            start_event=AgentInTheLoopResponseEvent(
+                stop_event=mock_expert_answer, request_event_id=aitl_request.event_id
+            ),
             topic=topic,
         )
 

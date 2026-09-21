@@ -6,6 +6,7 @@ from collections.abc import Awaitable
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ConversationTitleEvent, FollowUpQuestionsEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
@@ -42,20 +43,23 @@ async def do_generate_title(
     displayer: EventDisplayer,
     t: LocaleHandler,
     thread_context: ThreadContext,
+    user: UserIdentity | None,
 ) -> str | None:
     """Generate a stable conversation title once per thread and emit it as a display event.
 
-    A thread keeps a single, stable title: once one is generated and the ThreadContext flag is set,
-    later turns short-circuit without an LLM call. Until then, undeterminable turns (greetings, small
-    talk) leave the flag unset so a later turn can retry. Returns the emitted title (or ``None`` when
-    this turn produced none) for observability.
+    A thread keeps a single, stable title: this fires on the first check for a thread (the
+    ``ThreadContext`` flag unset) and never again — even a greeting gets a title on that first check,
+    never deferred to a later turn. Returns ``None`` only when this turn skipped generation entirely
+    (flag already set); a genuine failure propagates to the best-effort wrapper instead, which leaves the
+    flag unset so a later turn retries — that is a different concern (transient error) from "the model
+    judged the topic unclear."
     """
     if await thread_context.get(TITLE_GENERATED_KEY):
         return None
 
     await displayer.display_thought(t("agent.conversation_metadata.thoughts.generating_title"))
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         prompt = RichPromptTemplate(t("agent.conversation_metadata.prompts.title"))
         result: TitleResult = await llm.astructured_predict(
             TitleResult,
@@ -63,9 +67,7 @@ async def do_generate_title(
             chat_history=_conversation_messages(chat_messages),
         )
 
-    title = (result.title or "").strip()
-    if not title:
-        return None
+    title = result.title.strip() or t("agent.conversation_metadata.default_title")
 
     await displayer.display_event(ConversationTitleEvent(title=title))
     await thread_context.set(TITLE_GENERATED_KEY, True)
@@ -77,6 +79,7 @@ async def do_generate_follow_up_questions(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity | None,
 ) -> list[str]:
     """Generate follow-up questions grounded on the latest answer and emit them as a display event.
 
@@ -85,7 +88,7 @@ async def do_generate_follow_up_questions(
     """
     await displayer.display_thought(t("agent.conversation_metadata.thoughts.generating_follow_ups"))
 
-    async with llm_config.cost_reporting_llm(displayer) as llm:
+    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         prompt = RichPromptTemplate(t("agent.conversation_metadata.prompts.follow_ups"))
         result: FollowUpQuestionsResult = await llm.astructured_predict(
             FollowUpQuestionsResult,
@@ -141,6 +144,7 @@ async def generate_title(
     displayer: EventDisplayer,
     t: LocaleHandler,
     thread_context: ThreadContext,
+    user: UserIdentity | None,
 ) -> None:
     """Best-effort title generation — never propagates (see ``_run_best_effort``).
 
@@ -151,7 +155,7 @@ async def generate_title(
     await _run_best_effort(
         "generate_title",
         _trace_input(chat_messages),
-        do_generate_title(chat_messages, llm_config, displayer, t, thread_context),
+        do_generate_title(chat_messages, llm_config, displayer, t, thread_context, user),
     )
 
 
@@ -160,6 +164,7 @@ async def generate_follow_up_questions(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    user: UserIdentity | None,
 ) -> None:
     """Best-effort follow-up question generation — never propagates (see ``_run_best_effort``).
 
@@ -169,7 +174,7 @@ async def generate_follow_up_questions(
     await _run_best_effort(
         "generate_follow_up_questions",
         _trace_input(chat_messages),
-        do_generate_follow_up_questions(chat_messages, llm_config, displayer, t),
+        do_generate_follow_up_questions(chat_messages, llm_config, displayer, t, user),
     )
 
 
@@ -179,6 +184,7 @@ async def generate_conversation_metadata(
     displayer: EventDisplayer,
     t: LocaleHandler,
     thread_context: ThreadContext,
+    user: UserIdentity,
 ) -> None:
     """Generate title + follow-up questions inline, best-effort, for agents whose answer is a stop event.
 
@@ -194,6 +200,6 @@ async def generate_conversation_metadata(
     terminates normally with its answer intact.
     """
     await asyncio.gather(
-        generate_title(chat_messages, llm_config, displayer, t, thread_context),
-        generate_follow_up_questions(chat_messages, llm_config, displayer, t),
+        generate_title(chat_messages, llm_config, displayer, t, thread_context, user),
+        generate_follow_up_questions(chat_messages, llm_config, displayer, t, user),
     )

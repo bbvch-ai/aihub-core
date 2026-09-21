@@ -152,6 +152,7 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-api": "AGPL-3.0-or-later",
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
+    "email_classification_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
@@ -162,6 +163,7 @@ OWN_IMAGE_LICENSES = {
     "retrieval_agent": "Apache-2.0",
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",
+    "document_ingestion_pipeline": "Apache-2.0",
     # Backup plane variants (dagster webserver/daemon are wired below; the
     # `backup-code` gRPC server runs our packages/backup code directly).
     "backup-code": "AGPL-3.0-or-later",

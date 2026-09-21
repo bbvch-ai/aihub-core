@@ -13,6 +13,7 @@
   "rememberMe": true,
   "ssoSessionIdleTimeout": 432000,
   "ssoSessionMaxLifespan": 2592000,
+  "accessTokenLifespan": 3600,
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,

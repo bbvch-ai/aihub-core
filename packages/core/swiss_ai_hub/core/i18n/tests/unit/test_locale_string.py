@@ -39,3 +39,20 @@ def test_in_locale_strict_returns_none_without_falling_back():
     locale_string = LocaleString(de="Hallo")
     assert locale_string.in_locale("en", fallback=False) is None
     assert locale_string.in_locale("es", fallback=False) is None
+
+
+def test_has_content_is_true_when_any_locale_is_populated():
+    assert LocaleString(fr="Bonjour").has_content()
+
+
+def test_has_content_is_false_when_every_locale_is_unset():
+    assert not LocaleString().has_content()
+
+
+def test_has_content_is_false_for_empty_strings():
+    assert not LocaleString(de="", en="", fr="", it="").has_content()
+
+
+def test_has_content_is_false_for_whitespace_only():
+    """Matches the frontend `localeRequired` rule, which trims before checking."""
+    assert not LocaleString(en="   ").has_content()

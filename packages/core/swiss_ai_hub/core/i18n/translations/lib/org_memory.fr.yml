@@ -16,5 +16,6 @@ rerank_organization_memory:
 default_tenant_namespace:
   label: Espace de noms de mémoire organisationnelle par défaut
   help: Espace de noms utilisé pour les écritures dans la mémoire organisationnelle
-    (et pour les lectures lorsque l'événement ne fournit pas de remplacement). Laisser
-    vide pour utiliser la valeur par défaut de la plateforme.
+    (et pour les lectures lorsque l'événement ne fournit pas de remplacement). Doit
+    figurer parmi les espaces de noms autorisés lorsque cette liste n'est pas vide.
+    Laisser vide pour utiliser la valeur par défaut de la plateforme.

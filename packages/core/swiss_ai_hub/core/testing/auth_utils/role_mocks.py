@@ -29,9 +29,15 @@ def mock_role_entity_methods():
             access_rules.add("aihub.admin.>")
         return access_rules
 
-    with patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles):
-        with patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles):
-            yield
+    # ``TestAuthHandler`` seeds the role on every call. Reporting it as already present keeps that
+    # seeding out of the database entirely, so suites that never boot the API lifespan (and therefore
+    # never call ``mongoengine.connect``) can still mount the handler.
+    with (
+        patch.object(RoleEntity, "filter_existing_roles", side_effect=mock_filter_existing_roles),
+        patch.object(RoleEntity, "get_access_rules_for_roles", side_effect=mock_get_access_rules_for_roles),
+        patch.object(RoleEntity, "tenant_role_exists", return_value=True),
+    ):
+        yield
 
 
 @pytest.fixture()

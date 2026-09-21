@@ -40,6 +40,7 @@ class TestStoreUserMemoryEvent:
             _type=MemoryType.USER_MEMORY,
             _tenant_id=None,
             _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
             results=[
                 ModifiedMemory(id="mem_1", memory="User likes Python", event=MemoryEventType.ADD),
                 ModifiedMemory(id="mem_2", memory="User works at ACME", event=MemoryEventType.ADD),
@@ -67,6 +68,7 @@ class TestStoreUserMemoryEvent:
             _type=MemoryType.USER_MEMORY,
             _tenant_id=None,
             _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
             results=[
                 ModifiedMemory(
                     id="mem_1",
@@ -97,6 +99,7 @@ class TestStoreUserMemoryEvent:
             _type=MemoryType.USER_MEMORY,
             _tenant_id=None,
             _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
             results=[
                 ModifiedMemory(id="mem_1", memory="Deleted memory", event=MemoryEventType.DELETE),
             ],
@@ -122,6 +125,7 @@ class TestStoreUserMemoryEvent:
             _type=MemoryType.USER_MEMORY,
             _tenant_id=None,
             _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
             results=[],
             relations=ModifiedRelations(
                 added_entities=[
@@ -154,6 +158,7 @@ class TestStoreUserMemoryEvent:
             _type=MemoryType.USER_MEMORY,
             _tenant_id=None,
             _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
             results=[
                 ModifiedMemory(id="mem_1", memory="New memory", event=MemoryEventType.ADD),
                 ModifiedMemory(id="mem_2", memory="Updated memory", event=MemoryEventType.UPDATE),
@@ -167,6 +172,48 @@ class TestStoreUserMemoryEvent:
         assert len(event.added_memories) == 1
         assert len(event.updated_memories) == 1
         assert len(event.deleted_memories) == 1
+
+    def test_carries_the_model_that_extracted_the_memories(self, sample_metadata):
+        """Issue #1590: a memory must be attributable to the model that produced it."""
+        memory_added = MemoryAdded(
+            owner_id="test_user",
+            _user_id="test_user",
+            _agent_id="TestAgent/test_1",
+            _thread_id="thread_123",
+            _display_id="display_456",
+            _run_id="run_789",
+            _type=MemoryType.USER_MEMORY,
+            _tenant_id=None,
+            _tenant_namespace=None,
+            llm_model_name="text-generation/memory-model",
+            results=[ModifiedMemory(id="mem_1", memory="User likes Python", event=MemoryEventType.ADD)],
+            relations=ModifiedRelations(),
+        )
+
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
+
+        assert event.llm_model_name == "text-generation/memory-model"
+
+    def test_reports_no_model_for_a_verbatim_write(self, sample_metadata):
+        """Organization memory stores the caller's text without inference, so no model ran."""
+        memory_added = MemoryAdded(
+            owner_id="ACME",
+            _user_id="test_user",
+            _agent_id="TestAgent/test_1",
+            _thread_id="thread_123",
+            _display_id="display_456",
+            _run_id="run_789",
+            _type=MemoryType.ORGANIZATION_MEMORY,
+            _tenant_id="ACME",
+            _tenant_namespace="dept-x",
+            llm_model_name=None,
+            results=[ModifiedMemory(id="mem_1", memory="Policy X applies", event=MemoryEventType.ADD)],
+            relations=ModifiedRelations(),
+        )
+
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
+
+        assert event.llm_model_name is None
 
 
 class TestRetrieveMemoryEvent:

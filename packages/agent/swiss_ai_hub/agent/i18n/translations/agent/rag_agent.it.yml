@@ -51,6 +51,12 @@ config:
   enable_user_memory_storage:
     label: Abilita archiviazione memoria utente
     help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
+  memory_llm:
+    label: Modello di memoria
+    help: Modello che estrae e riconcilia le memorie utente. L'estrazione è breve
+      e meccanica, quindi di solito basta un modello più piccolo. Lasciare disabilitato
+      per usare il modello predefinito della piattaforma; abilitandolo si parte dallo
+      stesso modello.
 steps:
   retrieve_user_memory:
     name: Recupera memoria utente
@@ -107,3 +113,13 @@ steps:
     name: Stop
     description: Completa il workflow dopo che tutti i passaggi richiesti sono stati
       completati
+thoughts:
+  condensation_empty: "Il condensatore non ha prodotto alcuna domanda autonoma, quindi questo turno non ha una query utilizzabile. La richiesta viene rifiutata invece di usare il messaggio grezzo."
+  input_too_large: "L'input non rientra nella finestra di contesto del modello: circa\
+    \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\
+    \ al modello viene rifiutata."
+messages:
+  condensation_empty: "Non sono riuscito a capire cosa cercare da questo messaggio. Riformula la domanda e riprova."
+  input_too_large: Questo file è troppo grande perché io possa leggerlo in una volta
+    sola. Carica un file più piccolo, dividilo in parti, oppure passa a un assistente
+    che usa un modello con una finestra di contesto più ampia.

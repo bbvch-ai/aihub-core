@@ -130,6 +130,48 @@ class TestCountThreadsByUser:
         assert ThreadEntity.count_threads_by_user("u1", filters=ThreadFilters(search="budget")) == 2
 
 
+class TestGetOrCreateScheduledThread:
+    """One thread per profile rather than per occurrence: a five-minute schedule would otherwise leave
+    ~105k single-run threads a year, with nothing cleaning them up."""
+
+    def test_creates_the_thread_on_first_call(self):
+        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+
+        thread = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
+
+        assert thread.name == "Scheduled runs"
+        assert thread.users == []
+        assert [(a.agent_class, a.agent_id) for a in thread.agents] == [("ImapAgent", "inbox-1")]
+
+    def test_returns_the_same_thread_on_every_later_call(self):
+        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+
+        first = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
+        second = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
+
+        assert first.id == second.id
+        assert ThreadEntity.objects.count() == 1
+
+    def test_does_not_reset_created_at_of_an_existing_thread(self):
+        """The thread accumulates a profile's whole run history, so its age must stay its first run's."""
+        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+        first = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
+        # Read back rather than trusting the in-memory instance: Mongo stores milliseconds, so the
+        # saved object still carries microseconds the stored document never had.
+        stored_created_at = ThreadEntity.get_thread_by_id(str(first.id)).created_at
+
+        assert ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent).created_at == stored_created_at
+
+    def test_keeps_profiles_apart(self):
+        first = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+        second = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-2")
+
+        ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", first)
+        ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", second)
+
+        assert ThreadEntity.objects.count() == 2
+
+
 class TestUpdateThreadName:
     def test_update_thread_name_overrides_the_default_name(self):
         thread = _thread("chat")

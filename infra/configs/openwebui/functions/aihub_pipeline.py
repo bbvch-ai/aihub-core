@@ -27,9 +27,11 @@ import html
 import json
 import logging
 import os
+import re
 import time
 import urllib.parse
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from enum import StrEnum
 from typing import Any, Annotated, Optional, Protocol, Self, Callable
 from urllib.parse import urlparse
@@ -50,6 +52,16 @@ logger = logging.getLogger(__name__)
 # the chat title with the user's prompt. Must stay in sync with the key in ``aihub_title_filter.py``.
 AIHUB_TITLE_REDIS_KEY = "aihub:title:{chat_id}"
 AIHUB_TITLE_REDIS_TTL_SECONDS = 600
+
+# OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
+# ``metadata["task"]`` by its ``/api/v1/tasks/moa/completions`` route when a user presses "Merge
+# Responses". Unlike every other task value this one is user-initiated — see the two predicates below.
+MOA_RESPONSE_GENERATION_TASK = "moa_response_generation"
+
+# Salts the merge thread_id so it can never collide with an agent thread (those are salted with
+# ``agent_class/agent_id``), while staying stable per chat so repeated merges group into one
+# LiteLLM/Langfuse session.
+MOA_MERGE_THREAD_SALT = "moa-merge"
 
 
 # ============================================================================
@@ -124,13 +136,17 @@ class ThinkingBlock(ContentBlock):
 
     def to_html(self) -> Annotated[str, "HTML details element"]:
         """Convert to HTML details element for reasoning display"""
-        if self.closed and self.duration:
-            return (
-                f'\n<details type="reasoning" done="true" duration="{self.duration}">\n'
-                f"{self.content.strip()}\n"
-                f"</details>\n"
-            )
-        return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        if not self.closed:
+            return f'\n<details type="reasoning" done="false">\n{self.content.strip()}</details>\n'
+        # A sub-second thought has a duration of 0. Keep it done="true" — gating done on a truthy
+        # duration made fast thoughts render as an unfinished "Thought" — and just drop the attribute,
+        # since OpenWebUI omits the "for N seconds" suffix when there is nothing to report.
+        duration_attribute = f' duration="{self.duration}"' if self.duration else ""
+        return (
+            f'\n<details type="reasoning" done="true"{duration_attribute}>\n'
+            f"{self.content.strip()}\n"
+            f"</details>\n"
+        )
 
     def is_complete(self) -> Annotated[bool, "Whether block has content"]:
         """Thinking blocks are complete when they have content"""
@@ -357,6 +373,9 @@ class StreamingStateManager:
     def __init__(self):
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
+        self._deferred_thinking: Annotated[
+            Optional[ThinkingBlock], "Thoughts that arrived while an answer was streaming"
+        ] = None
         self._block_factory = ContentBlockFactory()
 
     def start_text_block(self, content: Annotated[str, "Initial text content"] = "") -> None:
@@ -374,6 +393,15 @@ class StreamingStateManager:
 
     def start_thinking_block(self, content: Annotated[str, "Initial reasoning content"] = "") -> None:
         """Start or append to thinking block"""
+        # A thought arriving while an answer is streaming comes from a step running concurrently with
+        # it (title generation, follow-up questions), not from the answer itself — display events carry
+        # no step identity, so arrival order is all we have. Opening a block here would finalize the
+        # text block and cut the answer into two paragraphs with a "Thought" wedged between them, so
+        # redirect it to the run's existing reasoning block and keep the answer contiguous.
+        if isinstance(self._current_block, TextBlock):
+            self._defer_thought(content)
+            return
+
         # Close any open tool blocks
         self._close_tool_block_if_open()
 
@@ -395,6 +423,8 @@ class StreamingStateManager:
         # Close any open blocks
         self._close_open_blocks()
         self._finalize_current_block()
+        # A tool call ends the current phase, so deferred thoughts belong before it, not after the run.
+        self._flush_deferred_thoughts()
 
         self._current_block = self._block_factory.create_tool_block(
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
@@ -417,6 +447,41 @@ class StreamingStateManager:
         """Finalize all blocks when stream ends"""
         self._close_open_blocks()
         self._finalize_current_block()
+        self._flush_deferred_thoughts()
+
+    def _defer_thought(self, content: Annotated[str, "Reasoning content to defer"]) -> None:
+        """Route a thought that arrived mid-answer out of the answer's way.
+
+        Preferred target is the reasoning block the run already opened, so one message carries one
+        collapsible and the answer stays last on screen. Its recorded duration is left untouched:
+        the block measures the pre-answer thinking, and stretching it across the answer this thought
+        arrived during would report a wait the user never had.
+        """
+        merge_index = self._last_thinking_block_index()
+        if merge_index is not None:
+            self._content_blocks[merge_index] = self._content_blocks[merge_index].with_content(content)
+            return
+
+        # Nothing to merge into (the run streamed an answer without thinking first), so hold the
+        # thought for a trailing block rather than splitting the answer to place it.
+        block = self._deferred_thinking or self._block_factory.create_thinking_block()
+        self._deferred_thinking = block.with_content(content).with_closure()
+
+    def _last_thinking_block_index(self) -> Annotated[Optional[int], "Index of the newest finalized thinking block"]:
+        """Locate the run's existing reasoning block, if it has one"""
+        for index in reversed(range(len(self._content_blocks))):
+            if isinstance(self._content_blocks[index], ThinkingBlock):
+                return index
+        return None
+
+    def _flush_deferred_thoughts(self) -> None:
+        """Move deferred thoughts behind the content they were held back for"""
+        if not self._deferred_thinking:
+            return
+
+        self._finalize_current_block()
+        self._content_blocks.append(self._deferred_thinking)
+        self._deferred_thinking = None
 
     def _close_open_blocks(self) -> None:
         """Close any blocks that need closing (tool or thinking)"""
@@ -450,6 +515,11 @@ class StreamingStateManager:
         # Render current block if exists
         if self._current_block:
             html_parts.append(self._current_block.to_html())
+
+        # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
+        # answer above them keeps growing, and flushing later lands them in this same position.
+        if self._deferred_thinking:
+            html_parts.append(self._deferred_thinking.to_html())
 
         return "".join(html_parts)
 
@@ -1600,9 +1670,227 @@ class FileProcessingService:
         return response["Body"].read()
 
 
+class ResponseMergeService:
+    """Answers OpenWebUI's "Merge Responses" button with a plain LLM instead of the agent.
+
+    The MoA prompt is a meta-instruction over answers that already exist ("synthesize these responses"),
+    so handing it to the agent would run retrieval over the meta-prompt, cite sources that answer
+    nothing, spend the agent's usage quota, and — because this pipeline relays the agent's title and
+    follow-up protocol events into the chat — let a merge overwrite the conversation's real title and
+    follow-up questions.
+    """
+
+    # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
+    # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
+    # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
+    _DETAILS_BLOCK = re.compile(r"\n?<details\b[^>]*>.*?</details>\n?", re.DOTALL)
+    # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
+    # reasoning text, which closes the match above early and leaves a stray tag behind.
+    _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
+    # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
+    # does not end up glued into one line (nor separated by a growing gap).
+    _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
+
+    def __init__(
+        self,
+        base_url: Annotated[str, "AI-Hub API base URL"],
+        model_name: Annotated[str, "Raw LiteLLM model that synthesizes the merge"],
+        auth_service: Annotated["AuthenticationService", "Signs the OpenWebUI user headers"],
+        timeout: Annotated[int, "Timeout for the non-streaming path"],
+    ):
+        self._base_url = base_url
+        self._model_name = model_name
+        self._auth_service = auth_service
+        self._timeout = timeout
+
+    async def merge(
+        self,
+        body: Annotated[dict[str, Any], "Request body"],
+        user: Annotated[dict[str, str], "User information"],
+        metadata: Annotated[dict[str, str], "Request metadata"],
+        request: Annotated[Any, "HTTP request object"],
+    ) -> Annotated[dict[str, Any] | AsyncGenerator[str, None], "Completion or SSE stream"]:
+        """The frontend always asks for a stream, but the tasks route honours ``stream: false`` too."""
+        if body.get("stream", False):
+            return self._merge_stream(body, user, metadata, request)
+        return await self._merge_blocking(body, user, metadata, request)
+
+    async def _merge_stream(
+        self,
+        body: Annotated[dict[str, Any], "Request body"],
+        user: Annotated[dict[str, str], "User information"],
+        metadata: Annotated[dict[str, str], "Request metadata"],
+        request: Annotated[Any, "HTTP request object"],
+    ) -> AsyncGenerator[str, None]:
+        """Forward the merge to the model gateway, yielding OpenAI-format SSE lines."""
+        if not self._model_name:
+            yield self._notice("Merging responses is not configured. Ask an administrator to set AIHUB_MERGE_MODEL.")
+            return
+
+        # Inside the try: a failure while building the request must still reach the user as text, or the
+        # merged message stays empty — the exact symptom this path exists to remove.
+        client = httpx.AsyncClient(timeout=None, follow_redirects=True)
+        try:
+            headers, payload = self._build_request(body, user, metadata, request)
+            async with client.stream(
+                "POST",
+                url=f"{self._base_url}/api/v1/active/openai/chat/completions",
+                json=payload,
+                headers=headers,
+            ) as stream_response:
+                if stream_response.status_code != 200:
+                    body_bytes = await stream_response.aread()
+                    yield self._notice(f"Merging responses failed: {self._error_message(body_bytes)}")
+                    return
+
+                async for line in stream_response.aiter_lines():
+                    line = line.strip()
+                    if line:
+                        yield f"{line}\n\n"
+        except Exception as merge_error:
+            logger.exception(f"Error while merging responses: {merge_error}")
+            yield self._notice(f"Merging responses failed: {merge_error}")
+        finally:
+            await client.aclose()
+
+    async def _merge_blocking(
+        self,
+        body: Annotated[dict[str, Any], "Request body"],
+        user: Annotated[dict[str, str], "User information"],
+        metadata: Annotated[dict[str, str], "Request metadata"],
+        request: Annotated[Any, "HTTP request object"],
+    ) -> Annotated[dict[str, Any], "OpenAI chat completion object"]:
+        """Non-streaming callers are API clients, so they get the conventional ``error`` channel."""
+        if not self._model_name:
+            return {"error": {"message": "AIHUB_MERGE_MODEL is not configured."}}
+
+        try:
+            headers, payload = self._build_request(body, user, metadata, request)
+            payload["stream"] = False
+            async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
+                response = await client.post(
+                    url=f"{self._base_url}/api/v1/active/openai/chat/completions",
+                    json=payload,
+                    headers=headers,
+                )
+                if response.status_code != 200:
+                    return {"error": {"message": self._error_message(response.content)}}
+                return response.json()
+        except Exception as merge_error:
+            logger.exception(f"Error while merging responses: {merge_error}")
+            return {"error": {"message": str(merge_error)}}
+
+    def _build_request(
+        self,
+        body: Annotated[dict[str, Any], "Request body"],
+        user: Annotated[dict[str, str], "User information"],
+        metadata: Annotated[dict[str, str], "Request metadata"],
+        request: Annotated[Any, "HTTP request object"],
+    ) -> Annotated[tuple[dict[str, str], dict[str, Any]], "Headers and payload"]:
+        """Build the payload field by field rather than splatting ``body``.
+
+        OpenWebUI has already merged the *agent* workspace model's params into the body, so splatting it
+        would let an agent's ``max_tokens`` silently truncate the merge.
+        """
+        accept_language = request.headers.get("Accept-Language") if request else None
+        headers = self._auth_service.prepare_headers(user["name"], user["email"], accept_language)
+        inject(headers)
+
+        payload = {
+            "model": self._model_name,
+            "messages": [{"role": "user", "content": self._strip_agent_markup(self._prompt_of(body))}],
+            "stream": True,
+            "metadata": {
+                "thread_id": self._str_to_object_id(metadata.get("chat_id"), salt=MOA_MERGE_THREAD_SALT),
+                "display_id": self._str_to_object_id(metadata.get("message_id")),
+            },
+        }
+        return headers, payload
+
+    @staticmethod
+    def _prompt_of(body: Annotated[dict[str, Any], "Request body"]) -> Annotated[str, "Rendered MoA prompt"]:
+        """The tasks route renders the whole MoA template into a single user message.
+
+        Content is a plain string there, but the OpenAI schema also allows a list of parts, so join the
+        text parts rather than handing a list to the regexes.
+        """
+        messages = body.get("messages") or []
+        if not messages:
+            return ""
+
+        content = messages[-1].get("content", "")
+        if isinstance(content, str):
+            return content
+        return "\n".join(part.get("text", "") for part in content if isinstance(part, dict))
+
+    @classmethod
+    def _strip_agent_markup(cls, prompt: Annotated[str, "Rendered MoA prompt"]) -> Annotated[str, "Plain text"]:
+        """Remove the reasoning/tool ``<details>`` blocks the agent pipeline embeds in its answers.
+
+        The responses being merged are raw message content, so for agent branches they carry this
+        pipeline's own HTML. Feeding it to the merge model wastes context and invites it to echo the
+        markup into the merged prose, which OpenWebUI then renders as an empty collapsed block.
+        """
+        stripped = cls._DETAILS_BLOCK.sub("\n", prompt)
+        stripped = cls._ORPHAN_MARKUP.sub("", stripped)
+        return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
+
+    @staticmethod
+    def _str_to_object_id(
+        context_id: Annotated[Optional[str], "Context ID to convert"],
+        salt: Annotated[str, "Salt mixed into the hash"] = "",
+    ) -> Annotated[str, "ObjectId string"]:
+        if not context_id:
+            return str(ObjectId())
+        hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
+        return str(ObjectId(hashed)).lower()
+
+    @staticmethod
+    def _error_message(body_bytes: Annotated[bytes, "Error response body"]) -> Annotated[str, "Human-readable cause"]:
+        """``ModelGatewayErrorHandler`` fills ``error.message``; a bare HTTPException only ``detail``."""
+        try:
+            payload = json.loads(body_bytes)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return body_bytes.decode(errors="replace")[:500] or "the model gateway returned an empty error"
+
+        if isinstance(payload, dict):
+            error = payload.get("error")
+            if isinstance(error, dict) and error.get("message"):
+                return str(error["message"])
+            if payload.get("detail"):
+                return str(payload["detail"])
+        return json.dumps(payload)[:500]
+
+    def _notice(self, message: Annotated[str, "Text to show in the merged bubble"]) -> Annotated[str, "SSE line"]:
+        """Deliver failures as message content, never as an SSE ``error``.
+
+        ``openAIStreamToIterator`` turns a top-level ``error`` into ``{done: true, value: ''}`` and
+        ``mergeResponses`` breaks out without writing it anywhere — which is precisely the empty
+        "Merged Response" skeleton this fix exists to remove. For the same reason the chunk must not
+        carry ``sources``, ``selected_model_id`` or ``usage``: the iterator intercepts those before it
+        reads the delta.
+        """
+        chunk = {
+            "id": str(ObjectId()),
+            "object": "chat.completion.chunk",
+            "created": int(time.time()),
+            "model": self._model_name or "unknown",
+            "choices": [{"index": 0, "delta": {"content": f"\n> [!WARNING]\n> {message}\n"}, "finish_reason": None}],
+        }
+        return f"data: {json.dumps(chunk)}\n\n"
+
+
 # ============================================================================
 # Main Pipeline Facade
 # ============================================================================
+
+
+def is_response_merge_request(metadata: dict[str, Any]) -> bool:
+    """True for OpenWebUI's "Merge Responses" button — the one ``task`` a user presses and waits on.
+
+    Answered by a plain LLM rather than the agent, see ``ResponseMergeService``.
+    """
+    return metadata.get("task") == MOA_RESPONSE_GENERATION_TASK
 
 
 def is_auxiliary_task_request(metadata: dict[str, Any]) -> bool:
@@ -1613,8 +1901,12 @@ def is_auxiliary_task_request(metadata: dict[str, Any]) -> bool:
     their output would otherwise leak into the chat answer. The agent already emits the title and
     follow-up questions as protocol events on the real chat turn (relayed to OpenWebUI by the handlers
     above), and tags are set deterministically here, so there is nothing for a task model to produce.
+
+    Every task is auxiliary except the response merge, which a user triggers deliberately. Defining this
+    as the complement of ``is_response_merge_request`` keeps the two predicates disjoint by construction,
+    so any task OpenWebUI adds in future stays blocked by default.
     """
-    return bool(metadata.get("task"))
+    return bool(metadata.get("task")) and not is_response_merge_request(metadata)
 
 
 class Pipe:
@@ -1651,6 +1943,12 @@ class Pipe:
             default=os.getenv("OPENWEBUI_MODEL_NAME_LOCALE") or "en",
             description="Locale used to resolve agent names, kept in sync with the "
             "workspace-model name the provisioner writes under the same setting",
+        )
+        AIHUB_MERGE_MODEL: str = Field(
+            default=os.getenv("AIHUB_MERGE_MODEL", ""),
+            description="Raw LiteLLM model, as capability/name, that synthesizes OpenWebUI's "
+            '"Merge Responses" output. Must be a plain model and not an agent. Empty disables '
+            "merging with a visible notice rather than an endless spinner",
         )
         AIHUB_REQUEST_TIMEOUT: int = Field(
             default=int(os.getenv("AIHUB_REQUEST_TIMEOUT", "60")),
@@ -1702,6 +2000,14 @@ class Pipe:
 
         # Streaming
         self._streaming_service = StreamingService(self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT)
+
+        # Response merging (plain LLM, never the agent)
+        self._merge_service = ResponseMergeService(
+            self.valves.AIHUB_BASE_URL,
+            self.valves.AIHUB_MERGE_MODEL,
+            self._auth_service,
+            self.valves.AIHUB_REQUEST_TIMEOUT,
+        )
 
     async def pipes(
         self,
@@ -1825,7 +2131,9 @@ class Pipe:
         __request__: Annotated[Any, "HTTP request object"] = None,
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
         **kwargs,
-    ) -> Annotated[str, "Response (always empty for streaming)"]:
+    ) -> Annotated[
+        str | dict[str, Any] | AsyncGenerator[str, None], "Empty for the agent stream, SSE/JSON for a merge"
+    ]:
         """Main pipeline entry point"""
         # Extract agent information
         agent_class, agent_id = self._extract_agent_info(body["model"])
@@ -1836,6 +2144,13 @@ class Pipe:
         if is_auxiliary_task_request(__metadata__):
             logger.info(f"Short-circuiting auxiliary task-model request (task={__metadata__.get('task')})")
             return ""
+
+        # "Merge Responses" is the one task a user triggers, so it must produce an answer — but a plain
+        # LLM's, not the agent's. Note __event_emitter__ is None here: OpenWebUI only builds one when
+        # session_id, chat_id and message_id are all present, and the merge request carries no session_id.
+        if is_response_merge_request(__metadata__):
+            logger.info(f"Merging responses for {agent_class}.{agent_id} via {self.valves.AIHUB_MERGE_MODEL}")
+            return await self._merge_service.merge(body, __user__, __metadata__, __request__)
 
         # Generate IDs (salt thread_id with the agent so distinct agents in one chat get distinct threads)
         thread_id, display_id = self._generate_ids(

@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.318.0"
+version = "0.322.0"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
@@ -17,6 +17,7 @@ dev = [
     "pytest-bdd>=8.1.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.14.0",
+    "pytest-timeout>=2.4.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
     "ty>=0.0.34",
@@ -41,6 +42,11 @@ package = false
 # only a transitive dependency (fastapi, mcp, sse-starlette, dagster-graphql), so pin the
 # lower bound to the first fixed release to stop the resolver selecting the affected version.
 constraint-dependencies = ["starlette>=1.0.1"]
+# nltk >= 3.10.3 hardens corpus loading and refuses files with st_nlink > 1 (CWE-59
+# hardlink defence). uv installs with hardlinks by default, so the bundled
+# llama-index nltk_cache lands multiply-linked and SentenceSplitter dies. Every
+# Dockerfile already sets UV_LINK_MODE=copy; this aligns local + CI with them.
+link-mode = "copy"
 
 [tool.uv.workspace]
 members = [

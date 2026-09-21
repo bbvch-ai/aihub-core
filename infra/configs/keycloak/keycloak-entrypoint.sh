@@ -23,10 +23,11 @@
 #   one-shot service (keycloak-config in docker-compose) — not by this script.
 #   This includes the Langfuse sysadmin gate (custom browser flow, deny
 #   sub-flows, marker client scope, and the realm browserFlow binding).
-# - Realm session lifespans: Applied via kcadm update after startup, but only
-#   while a lifespan still holds the Keycloak default (30 min idle / 10 h max) —
-#   the first-start-only realm import never propagates them to existing
-#   deployments, while operator overrides made in the admin console must survive.
+# - Realm token and session lifespans: Applied via kcadm update after startup,
+#   but only while a lifespan still holds the Keycloak default (30 min idle /
+#   10 h max / 5 min access token) — the first-start-only realm import never
+#   propagates them to existing deployments, while operator overrides made in
+#   the admin console must survive.
 
 set -euo pipefail
 
@@ -49,12 +50,12 @@ bash_envsubst /opt/keycloak/data/import-templates/aihub-realm.json \
 
 KCADM=/opt/keycloak/bin/kcadm.sh
 
-# Post-startup configuration applied on every start: realm session lifespans
-# via kcadm (the realm import only runs on first start, so existing deployments
-# would otherwise never pick up lifespan changes and stay on Keycloak defaults
-# of 30 min idle / 10 h max). Each lifespan is only written while it still
-# holds the Keycloak default — values customized by operators in the admin
-# console are left untouched.
+# Post-startup configuration applied on every start: realm token and session
+# lifespans via kcadm (the realm import only runs on first start, so existing
+# deployments would otherwise never pick up lifespan changes and stay on
+# Keycloak defaults of 30 min idle / 10 h max / 5 min access token). Each
+# lifespan is only written while it still holds the Keycloak default — values
+# customized by operators in the admin console are left untouched.
 (
   echo "Waiting for Keycloak to be ready before applying post-startup configuration..."
   until $KCADM config credentials \
@@ -66,7 +67,7 @@ KCADM=/opt/keycloak/bin/kcadm.sh
   done
 
   current_lifespans=$($KCADM get realms/aihub \
-    --fields ssoSessionIdleTimeout,ssoSessionMaxLifespan 2> /dev/null)
+    --fields ssoSessionIdleTimeout,ssoSessionMaxLifespan,accessTokenLifespan 2> /dev/null)
   lifespan_updates=()
   if [[ "$current_lifespans" =~ \"ssoSessionIdleTimeout\"[[:space:]]*:[[:space:]]*1800([^0-9]|$) ]]; then
     lifespan_updates+=(-s ssoSessionIdleTimeout=432000)
@@ -74,12 +75,15 @@ KCADM=/opt/keycloak/bin/kcadm.sh
   if [[ "$current_lifespans" =~ \"ssoSessionMaxLifespan\"[[:space:]]*:[[:space:]]*36000([^0-9]|$) ]]; then
     lifespan_updates+=(-s ssoSessionMaxLifespan=2592000)
   fi
+  if [[ "$current_lifespans" =~ \"accessTokenLifespan\"[[:space:]]*:[[:space:]]*300([^0-9]|$) ]]; then
+    lifespan_updates+=(-s accessTokenLifespan=3600)
+  fi
   if [ ${#lifespan_updates[@]} -gt 0 ]; then
     $KCADM update realms/aihub "${lifespan_updates[@]}" \
-      && echo "Realm session lifespans applied successfully." \
-      || echo "ERROR: Failed to apply realm session lifespans."
+      && echo "Realm token and session lifespans applied successfully." \
+      || echo "ERROR: Failed to apply realm token and session lifespans."
   else
-    echo "Realm session lifespans differ from Keycloak defaults; leaving unchanged."
+    echo "Realm token and session lifespans differ from Keycloak defaults; leaving unchanged."
   fi
 ) &
 

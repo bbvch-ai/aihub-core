@@ -155,8 +155,8 @@ The same single-instance requirement applies to **PrimeVue** (its theme system i
 > { "dependencies": { "vue-router": "4.6.4" } }
 > ```
 >
-> Verify with `pnpm why vue-router` (`@vueuse/router` must show `4.6.4`) and `pnpm build` (`nuxt generate` must succeed —
-> forcing a single `vue-router` major instead breaks `@nuxtjs/i18n`, which needs 5.x).
+> Verify with `pnpm why vue-router` (`@vueuse/router` must show `4.6.4`) and `pnpm build` (`nuxt generate` must succeed
+> — forcing a single `vue-router` major instead breaks `@nuxtjs/i18n`, which needs 5.x).
 
 ## Quick start
 

@@ -132,6 +132,43 @@ export interface TransformOptions {
   locale?: string
   labelTransform?: (label: string) => string
   optionsResolver?: (element: FormElement) => unknown[] | undefined
+  // Resolves a frontend-only warning for an element. The backend form schema carries no
+  // warning of its own, so notices about known platform issues are attached here.
+  fieldWarning?: (element: FormElement) => string | undefined
+}
+
+/**
+ * Warning notice rendered next to a field, styled like a `Message severity="warn"
+ * variant="simple"` (see `.formkit-field-warning` in FormKit/DynamicConfiguration.vue).
+ * A plain `$el` node rather than `$cmp: 'Message'`: PrimeVue components are auto-imported
+ * per component, so FormKitSchema cannot resolve them by name.
+ */
+function buildFieldWarningNode(element: FormElement, text: string): FormKitSchemaNode {
+  const base = (element.id as string | undefined) ?? (element.name as string)
+  return {
+    $el: 'div',
+    key: `${base}__warning`,
+    attrs: { class: 'formkit-field-warning' },
+    children: [
+      { $el: 'i', attrs: { class: 'pi pi-exclamation-triangle' } },
+      { $el: 'span', children: text },
+    ],
+  } as unknown as FormKitSchemaNode
+}
+
+/**
+ * Places the warning directly under the "Enable X" toggle for a nullable element — the
+ * toggle stays mounted when the section is switched off, so the warning remains readable
+ * before the user opts in. Non-nullable elements get it above their own node.
+ */
+function withFieldWarning(
+  nodes: FormKitSchemaNode | FormKitSchemaNode[],
+  warning: FormKitSchemaNode | undefined,
+  afterToggle: boolean,
+): FormKitSchemaNode | FormKitSchemaNode[] {
+  if (!warning) return nodes
+  const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
+  return afterToggle ? [nodeArray[0], warning, ...nodeArray.slice(1)] : [warning, ...nodeArray]
 }
 
 function createGroupNode(
@@ -302,15 +339,25 @@ function nullableToggleId(element: FormElement): string {
 
 /**
  * Combines a synthetic toggle condition with any existing condition_if.
+ *
+ * The `$` on every `$get(...)` must survive. `$:` marks the string as an expression; it does not put the
+ * references inside it into scope. Stripping their `$` made FormKit's compiler see a bare `get`, which it
+ * treats as a literal rather than a provided function — the expression then evaluated to the truthy string
+ * `"0{[nativecode]}.value"`, so a gated field rendered unconditionally and neither checkbox could hide it.
  */
 function combineConditions(toggleCondition: string, existing: string | undefined): string {
   if (!existing) return toggleCondition
-  if (existing.startsWith('$:')) {
-    return `$: ${toggleCondition.slice(1)} && (${existing.slice(2).trim()})`
-  }
-  return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
+  const existingExpression = existing.startsWith('$:') ? existing.slice(2).trim() : existing
+  return `$: ${toggleCondition} && (${existingExpression})`
 }
 
+/**
+ * The toggle inherits the element's own `condition_if` so it disappears with the section it belongs to.
+ * Without this, a nullable field gated on a sibling checkbox (e.g. the memory model, which only applies
+ * while memory storage is on) would hide its input but leave a stray "Enable X" checkbox behind.
+ * The element's nullable-toggle condition is deliberately NOT inherited — that is the condition this very
+ * node controls.
+ */
 function buildNullableToggleNode(
   element: FormElement,
   label: string | undefined,
@@ -318,13 +365,19 @@ function buildNullableToggleNode(
 ): Record<string, unknown> {
   const fieldName = element.name as string
   const toggleId = nullableToggleId(element)
+  const gatingCondition = element.if as string | undefined
   return {
     $formkit: 'primeCheckbox',
+    // `preserve: true` for the same reason the gated input itself carries it: when this toggle's own
+    // condition unmounts it, FormKit would otherwise drop `__<field>__enabled` from the group data, and the
+    // state seeded from the saved value is lost — an already-configured field then remounts reading "off".
+    preserve: true,
     name: nullableToggleName(fieldName),
     id: toggleId,
     key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
     ...(help ? { help } : {}),
+    ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
   }
 }
@@ -362,7 +415,7 @@ export function transformElementToSchema(
   const formkitType = getFormkitType(element)
   if (formkitType === 'repeater') return []
 
-  const { locale = 'en', labelTransform, optionsResolver } = options
+  const { locale = 'en', labelTransform, optionsResolver, fieldWarning } = options
 
   const children = (element.children as FormElement[] || []).flatMap(
     child => transformElementToSchema(child, options),
@@ -376,21 +429,26 @@ export function transformElementToSchema(
   const isNullable = element.nullable === true
   const toggleCondition = isNullable ? `$get(${nullableToggleId(element)}).value` : undefined
 
+  const warningText = fieldWarning?.(element)
+  const warningNode = warningText ? buildFieldWarningNode(element, warningText) : undefined
+
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    if (!isNullable) return groupNode
-    return applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
+    if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
+    const toggledNodes = applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    const toggledNodes = applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
-  return cleanNode as FormKitSchemaNode
+  return withFieldWarning(cleanNode as FormKitSchemaNode, warningNode, false)
 }
 
 function buildLeafNodeForRepeater(
@@ -640,17 +698,18 @@ export function coerceNullableToggles(
 }
 
 /**
- * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
- * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
- * the v-model on registration), so defaults must be merged into the form data instead.
- * Existing values — including falsy ones like `false` or `""` — are preserved.
- *
- * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
- * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
- * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
- * `element.value` looks like; behaviour here is exercised end-to-end on agent and
- * process edit forms.
+ * A nullable leaf stored as `null` is seeded with its default too, mirroring how `seedGroupDefault`
+ * materialises a null nullable group: `null` means "the toggle is off", not "the input holds nothing",
+ * so the field behind the toggle should still offer the default the backend ships (e.g. the memory
+ * model starting on the platform-wide one). Safe in both directions — `seedNullableToggles` has
+ * already decided the toggle from the raw null-ness, so this cannot switch one on, and
+ * `coerceNullableToggles` re-nullifies a disabled field at submit time, so the seeded value is never
+ * persisted while the toggle is off.
  */
+function isDisabledNullableLeaf(element: FormElement, value: unknown): boolean {
+  return element.nullable === true && value === null
+}
+
 /**
  * Seed a group field's value: always materialise its children's defaults (starting from
  * the existing object when present, `{}` otherwise — including for a saved `null`). A null
@@ -684,6 +743,18 @@ function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
   return value === undefined ? [] : value
 }
 
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
+ */
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
@@ -702,7 +773,7 @@ export function seedFormDefaults(
     else if (formkitType === 'repeater') {
       result[name] = seedRepeaterDefault(value, children)
     }
-    else if (!(name in result) && element.value !== undefined) {
+    else if (element.value !== undefined && (!(name in result) || isDisabledNullableLeaf(element, value))) {
       result[name] = element.value
     }
   }

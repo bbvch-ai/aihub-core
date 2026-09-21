@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import MetadataMode, TextNode
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -158,6 +158,29 @@ def nodes_metadata_table(nodes: list[TextNode]):
         TableColumn(REFERENCE_URL, "string"),
     ]
     rows = [node_table_row(node) for node in nodes]
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=_records_matching_schema(rows, columns), schema=table_schema)
+
+
+def skipped_nodes_metadata_table(nodes: list[TextNode]):
+    """Surface which chunks the embedding model refused, so a partial ingest is visible rather than assumed clean."""
+    columns = [
+        TableColumn("id", "string"),
+        TableColumn(PAGE, "int"),
+        TableColumn(NODE_CONTENT_TYPE, "string"),
+        TableColumn("embedded_chars", "int"),
+        TableColumn("content", "string"),
+    ]
+    rows = [
+        {
+            "id": node.id_,
+            PAGE: node.metadata.get(PAGE),
+            NODE_CONTENT_TYPE: node.metadata.get(NODE_CONTENT_TYPE),
+            "embedded_chars": len(node.get_content(metadata_mode=MetadataMode.EMBED)),
+            "content": node.get_content()[:500],
+        }
+        for node in nodes
+    ]
     table_schema = TableSchema(columns=columns)
     return MetadataValue.table(records=_records_matching_schema(rows, columns), schema=table_schema)
 

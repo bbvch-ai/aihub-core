@@ -569,13 +569,23 @@ another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly a
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.
 
 **Self-awareness pattern**: Detection/answer for meta-questions about the agent itself ("What can you do?", "Who are
-you?") is added per agent, not inherited. For a conversational agent: (1) define three thin `@step` methods —
-`detect_meta_question_step` (on `UserMessageEvent`), `answer_meta_question_step`, and `stop_after_meta_answer_step` —
-each delegating to the shared free functions `do_detect_meta_question` / `do_answer_meta_question` /
-`summarize_workflow_for_meta_answer` and passing `agent_config.llm`; (2) gate every raw `UserMessageEvent` entry step
-with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with `check_passed_meta_question_gate`.
-The compliance test `self_awareness/tests/test_self_awareness_wiring.py` fails if a self-aware agent defines a partial
-step set or leaves an entry step ungated. See `RAGAgent` for the reference implementation.
+you?") is added per agent, not inherited. For a conversational agent: (1) define two thin `@step` methods —
+`detect_meta_question_step` (on `UserMessageEvent`) and `answer_meta_question_step` — each delegating to the shared free
+functions `do_detect_meta_question` / `do_answer_meta_question` / `summarize_workflow_for_meta_answer` and passing
+`agent_config.task_llm` (both are auxiliary work; `task_llm` falls back to the main `llm` when unset). There is no
+separate stop step — `answer_meta_question_step` returns the terminal `LLMStopEvent` itself; (2) gate every raw
+`UserMessageEvent` entry step with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with
+`check_passed_meta_question_gate`. The compliance test `self_awareness/tests/test_self_awareness_wiring.py` fails if a
+self-aware agent defines a partial step set or leaves an entry step ungated. See `RAGAgent` for the reference
+implementation.
+
+If the agent also adopts conversation metadata (title + follow-up questions, see ADR `2026_06_18`), the meta branch
+needs its own wiring too — it doesn't inherit the normal-flow wiring automatically. Add a third `@step`
+(`generate_meta_question_title_step`) triggered on the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`
+(so the dispatcher runs both concurrently — title only needs the user's question, not the meta answer, so it must not
+wait for it), calling `generate_title`. Then have `answer_meta_question_step` call `generate_follow_up_questions` (not
+the bundled `generate_conversation_metadata` — title is already handled by the parallel step) on the returned
+`LLMStopEvent.chat_messages` before returning it. See `RAGAgent` for both.
 
 ### The Stop Event Constraint
 

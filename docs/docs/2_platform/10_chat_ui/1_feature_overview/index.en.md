@@ -93,6 +93,21 @@ capabilities. API key permissions can be scoped to specific models or operations
 Comprehensive logging captures user activities, model interactions, and administrative operations, creating audit trails
 supporting compliance requirements and security monitoring.
 
+### Administrator access to user content
+
+Administrative rights do not include reading other people's content. By default a chat administrator sees only the files
+they uploaded themselves, and no one - administrators included - can export other users' conversations. This holds
+across tenants: administration is platform-wide, but visibility into uploads and chats is not.
+
+Deployments that need administrative oversight, for support or compliance workflows, can enable it by setting
+`OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL` (files, plus workspace models, knowledge, prompts and tools) and
+`OPENWEBUI_ENABLE_ADMIN_EXPORT` (chat export) to `true`. Both default to `false`.
+
+Note that the chat administrator role is separate from the platform's tenant roles. It is granted by the `AIHubSysAdmin`
+realm role only; a tenant administrator signs in as an ordinary user here and has never been able to see other users'
+files or chats. See
+[ADR: Scope OpenWebUI Admins to Their Own Files and Chats](/arc42/decisions/2026_09_07_openwebui_admin_scoped_to_own_data.md).
+
 ## User experience
 
 The interface adapts to different screen sizes and devices - desktop, tablet, mobile - maintaining functionality and
@@ -108,6 +123,10 @@ appearance to personal preferences and environmental lighting.
 
 For supported models and configurations, the interface can execute code snippets, enabling interactive programming
 assistance, computational problem solving, and algorithm prototyping within conversational contexts.
+
+The same sandbox lets models produce files — reports, spreadsheets, slide decks, charts, audio and video — which the
+model then opens in the user's file viewer. This needs no code from the user; see
+[File generation](../13_file_generation/) for the supported formats and the recommended model.
 
 Mermaid diagram support enables AI-generated visualizations - flowcharts, sequence diagrams, state machines - rendered
 directly within conversations. This supports systems design, process documentation, and visual explanation.

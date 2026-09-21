@@ -190,6 +190,10 @@ The `likec4` MCP server (`.claude/mcp/mcp-likec4.sh`) exposes the model for runt
 `read-project-summary`, `read-view`, `query-graph`, `find-relationship-paths`. Useful for sanity-checking the model
 without re-reading the `.c4` files.
 
+The server's workspace is its working directory, so the wrapper script `cd`s into `docs/likec4`. Keep it that way: from
+the repo root it would file-watch the entire monorepo (its only default exclude is `**/node_modules/**`, so `.venv/`,
+`.git/` and `infra/.docker-volumes/` are all in scope) and would not find a `docs/likec4/likec4.config.json`.
+
 ## ADRs
 
 - Location: `arc42/decisions/`

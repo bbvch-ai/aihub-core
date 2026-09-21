@@ -47,6 +47,19 @@ Markieren Sie eine Datenbank als "Auto-Sync", um sie mit externen Inhaltsquellen
 
 Das externe System wird zur Quelle der Wahrheit. Ihr Team arbeitet weiterhin in SharePoint, und die Sync-Pipeline bringt Änderungen gemäß dem konfigurierten Zeitplan in den Swiss AI Hub.
 
+### Datenbanken und Sammlungen löschen
+
+Sie können eine ganze Wissensdatenbank oder eine einzelne Sammlung über die Weboberfläche entfernen. Beide Aktionen sind endgültig.
+
+-   **Eine Sammlung löschen** entfernt die Dokumente dieser Sammlung aus dem Speicher und dem Vektorindex; die Datenbank und ihre übrigen Sammlungen bleiben erhalten.
+-   **Eine Datenbank löschen** entfernt die Datenbank vollständig — jede Sammlung, alle ihre Dokumente, ihre Vektor-Collection und ihren Dateispeicher.
+
+Um Versehen zu vermeiden, zeigt der Bestätigungsdialog an, wie viele Dokumente entfernt werden, und verlangt, dass Sie den genauen Namen der Datenbank oder Sammlung eingeben, bevor die Löschschaltfläche aktiv wird.
+
+Das Löschen läuft im Hintergrund. Sobald Sie bestätigen, verschwindet das Element aus der Liste und nimmt keine neuen Uploads mehr an, während die Plattform den zugrunde liegenden Speicher kurz darauf freigibt. Wenn Sie später ein zuvor gelöschtes Dokument erneut hochladen, wird es normal eingelesen.
+
+Auto-synchronisierte Datenbanken können nicht über die Benutzeroberfläche gelöscht werden — ihre Inhalte gehören der externen Quelle, die sie einfach erneut synchronisieren würde. Entfernen Sie stattdessen die externe Verbindung.
+
 ## Dokumentenverarbeitung
 
 Das System verarbeitet jedes hochgeladene Dokument in mehreren Phasen:
@@ -67,7 +80,9 @@ Dokumentenrekonstruktion zeigt, wie der Parser Ihr Dokument interpretiert hat. P
 
 Chunk-Inspektion zeigt an, wie das System Inhalte segmentiert, welche Metadaten es extrahiert hat und wie es Chunks für den Abruf darstellt. Nützlich, wenn Agents erwartete Inhalte nicht finden.
 
-Verarbeitungsstatus gibt an, ob Dokumente hochgeladen, verarbeitet oder bereit sind.
+Verarbeitungsstatus gibt an, ob Dokumente hochgeladen, verarbeitet oder bereit sind. Ein Dokument gilt erst dann
+als bereit, wenn seine Embeddings in die Vektordatenbank geschrieben wurden — bis dahin wird es weiterhin
+verarbeitet und Agenten können es nicht abrufen, auch wenn sein Text bereits geparst wurde.
 
 ## Zugriffskontrolle
 

@@ -93,7 +93,7 @@ jobs:
           NEXT: ${{ steps.cut.outputs.next }}
           BRANCH: ${{ steps.cut.outputs.branch }}
           LINE: ${{ steps.cut.outputs.line }}
-        run: |
+        run: |-
           set -euo pipefail
           main_core="$(grep -m1 -E '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)".*/\1/')"
           # Idempotent + minor-skip guard: only bump when main is still on the cut

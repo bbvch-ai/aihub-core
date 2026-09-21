@@ -87,7 +87,28 @@ forcing a credential re-verification at least monthly.
 - Sessions already expired before the rollout cannot be revived; users see one final forced login after the change is
   deployed.
 
+## Addendum (2026-08-20): access token lifespan
+
+The original decision scoped itself to the two SSO **session** timers and left `accessTokenLifespan` on Keycloak's
+default of 300 seconds — never an explicit choice, simply the value nobody set. Every environment therefore ran on a
+5-minute access token, which forced the admin SPA into a refresh-token grant roughly every 3 minutes
+(`accessTokenExpiringNotificationTimeInSeconds: 120` in `packages/web/plugins/oidc-client.ts`) and broke any consumer
+holding a Keycloak JWT without a refresh loop.
+
+**`accessTokenLifespan` is now set explicitly to 1 hour (3600 seconds)**, defined alongside the session timers in the
+`keycloak:` block of `infra/deployment/compose-config.yml` and rolled out through the same two mechanisms: the bootstrap
+realm import for fresh installs, and a conditional `kcadm` default-migration in the entrypoint (guarded on the value
+still being exactly `300`) for existing deployments.
+
+The security trade-off differs from the session timers. A JWT is validated statelessly against JWKS in
+`KeycloakAuthHandler` with no per-request revocation check, so the access token lifespan — not the session timer — is
+the real bound on how long a logged-out, disabled, or role-revoked user keeps API access. One hour is the accepted
+window; it is also the staleness bound on the `roles` and `tenants` claims that drive sysadmin status and tenant
+membership sync.
+
 ### Related Decisions
 
 - `2026_04_07_active_tenant_as_keycloak_user_attribute.md` — active tenant persisted in Keycloak, restored after login
 - `2025_12_28_keycloak_as_identity_broker.md` — Keycloak as sole OIDC provider
+- `2026_02_19_parent_app_owns_auth_state_for_iframe_services.md` — the post-iframe-logout grace window this lifespan
+  determines

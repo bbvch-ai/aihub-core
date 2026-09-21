@@ -5,7 +5,8 @@ from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs, ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.events.process import ProcessStartEvent, WorkEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
@@ -28,6 +29,7 @@ from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedForm
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
+from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 
 
 class ProcessService:
@@ -95,8 +97,8 @@ class ProcessService:
                         )
 
                 process_human_input_dto = HumanInDTO(
-                    name=t.extract(human_in_specs.name),
-                    description=t.extract(human_in_specs.description),
+                    name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
+                    description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
                     route=human_in_specs.route,
                     method=human_in_specs.method,
                     form=work_form_elements,
@@ -288,7 +290,15 @@ class ProcessService:
         instances = []
         configs = ProcessConfigEntityDocument.find_for_class(process_class)
         for config_entity in configs:
-            instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+            dto = InstanceDtoBuilder.build_or_skip(
+                lambda config_entity=config_entity: FullProcessInstanceDTO.from_class_and_config(
+                    class_entity, config_entity, t
+                ),
+                kind="process instance",
+                key=f"{process_class}/{getattr(config_entity, 'process_id', '?')}",
+            )
+            if dto is not None:
+                instances.append(dto)
         return instances
 
     @staticmethod
@@ -333,17 +343,8 @@ class ProcessService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
@@ -393,17 +394,8 @@ class ProcessService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_process_config_model(
-            ProcessConfigSpecs(
-                process_class=(
-                    class_entity.process_config_specs.process_class
-                    if class_entity.process_config_specs
-                    else process_class
-                ),
-                process_config_schema=(
-                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
-                ),
-            )
+        config_model = ModelCreationService.create_config_model(
+            class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 
@@ -442,7 +434,15 @@ class ProcessService:
 
             configs = ProcessConfigEntityDocument.find_for_class(class_entity.process_class)
             for config_entity in configs:
-                instances.append(FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                dto = InstanceDtoBuilder.build_or_skip(
+                    lambda class_entity=class_entity, config_entity=config_entity: (
+                        FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    ),
+                    kind="process instance",
+                    key=f"{class_entity.process_class}/{getattr(config_entity, 'process_id', '?')}",
+                )
+                if dto is not None:
+                    instances.append(dto)
         return instances
 
     # ==================== Walkthrough Methods ====================

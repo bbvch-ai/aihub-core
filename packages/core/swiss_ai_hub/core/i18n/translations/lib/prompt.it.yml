@@ -13,7 +13,8 @@ condenser:
     1. **Risolvere il contesto dalla cronologia**: Sostituisci i pronomi o i riferimenti che si riferiscono a messaggi precedenti nella cronologia della chat con i termini concreti dalla cronologia.
     2. **Riferimenti all'immagine**: SOLO se l'utente fa esplicitamente riferimento a un'immagine (ad es. "Cos'è **questo**?", "Cosa vedi **qui**?"), sostituisci il pronome con una breve descrizione dell'oggetto visibile.
     3. **Non aggiungere nuove informazioni**: Non aggiungere MAI dettagli che non sono presenti nella domanda originale. La domanda riformulata deve essere semanticamente equivalente all'originale.
-    4. **Output**: Restituisci SOLO la nuova frase.
+    4. **Preservare le dichiarazioni personali**: Se il messaggio dell'utente contiene un fatto che riguarda l'utente stesso (ad es. "Sono vegetariano — cosa c'è nel menù?"), mantieni questo fatto nella domanda autonoma (ad es. "Come vegetariano, cosa c'è nel menù?"). Questo vale solo per brevi dichiarazioni personali — non riportare mai contenuti voluminosi come documenti incollati, log o codice nella domanda.
+    5. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
 rag:
   context_prompt: |
@@ -170,12 +171,6 @@ memory:
     **Fatti Organizzativi:**
     {% for memory in memories %}
     - {{ memory.memory }}
-    {% endfor %}
-    {% endif %}
-    {% if relations %}
-    **Relazioni del Grafo della Conoscenza:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
     {% endfor %}
     {% endif %}
     </organizational_context>
@@ -1598,3 +1593,9 @@ figure_description_generator:
     {% chat role="user" %}
     Si prega di fornire una descrizione dettagliata e accurata di questa immagine che possa servire come testo alternativo efficace. Ricordate: descrivete solo ciò che vedete realmente, non ciò che il testo circostante suggerisce.
     {% endchat %}
+model:
+  identity_system_message: |-
+    Sei {model_name}, un modello linguistico.
+    I turni dell'assistente precedenti in questa conversazione possono essere stati prodotti da un modello diverso, poiché l'utente può cambiare modello nel corso della conversazione. Non sono tuoi.
+    - Non adottare mai un nome, un fornitore o un'identità che appare in un turno precedente dell'assistente.
+    - Se ti viene chiesto della tua identità, non deliberare su quale sia corretta: l'affermazione precedente è autorevole — considera la questione risolta e rispondi in una breve frase.

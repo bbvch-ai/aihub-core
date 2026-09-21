@@ -12,8 +12,6 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
-    AgentConfigSpecs,
-    ConversationTitleEvent,
     DisplayEvent,
     ExceptionEvent,
     HumanInTheLoopRequestEvent,
@@ -43,6 +41,7 @@ from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
+from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +106,15 @@ class AgentService:
 
             configs = AgentConfigEntityDocument.find_for_name(agent_class=class_entity.agent_class, name=search)
             for config_entity in configs:
-                agents.append(FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t))
+                dto = InstanceDtoBuilder.build_or_skip(
+                    lambda class_entity=class_entity, config_entity=config_entity: (
+                        FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
+                    ),
+                    kind="agent instance",
+                    key=f"{class_entity.agent_class}/{getattr(config_entity, 'agent_id', '?')}",
+                )
+                if dto is not None:
+                    agents.append(dto)
         return agents
 
     @staticmethod
@@ -273,9 +280,6 @@ class AgentService:
 
             await event_queue.put(event)
 
-            if isinstance(event, ConversationTitleEvent):
-                ThreadEntity.update_thread_name(str(thread.id), event.title)
-
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
 
             if event.is_stop_event and is_primary_agent:
@@ -362,13 +366,10 @@ class AgentService:
 
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        config_instance = InstanceConfigHelper.validate_config_for_update(
+            configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -453,13 +454,10 @@ class AgentService:
 
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
-        config_model = ModelCreationService.create_agent_config_model(
-            AgentConfigSpecs(
-                agent_class=class_entity.agent_config_specs.agent_class,
-                agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
-            )
+        config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        config_instance = InstanceConfigHelper.validate_config_for_create(
+            config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
-        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

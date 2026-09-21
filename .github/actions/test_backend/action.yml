@@ -67,6 +67,10 @@ inputs:
     description: Regenerate Docker Compose files
     required: false
     default: 'false'
+  pytest_timeout_seconds:
+    description: Per-test timeout; must stay well below the caller's timeout-minutes
+    required: false
+    default: '300'
 runs:
   using: composite
   steps:
@@ -216,9 +220,15 @@ runs:
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       working-directory: ${{ inputs.working_directory }}
+      env:
+        PYTEST_TIMEOUT_SECONDS: ${{ inputs.pytest_timeout_seconds }}
       run: |
         pytest_exit_code=0
+        # A hung test must fail itself, not the job: without a per-test budget it consumes the
+        # workflow's timeout-minutes, and the forced stop leaves no junit XML, no coverage and no
+        # traceback — the run reports only "The operation was canceled".
         uv run pytest -m "not flaky" --cov=. \
+                         --timeout="${PYTEST_TIMEOUT_SECONDS}" \
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?

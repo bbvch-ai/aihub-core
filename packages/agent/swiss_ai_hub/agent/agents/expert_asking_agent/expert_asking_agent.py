@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import BotInTheLoop, RouteOptions, RouterEvent, StoreOrganizationMemoryEvent
 from swiss_ai_hub.core.generative_ai import (
@@ -85,6 +86,7 @@ class ExpertAskingAgent(Agent):
         displayer: EventDisplayer,
         run_context: RunContext,
         t: AgentLocaleHandler,
+        user: UserIdentity,
     ) -> RouterEvent:
         expert_response = expert_response_event.response
         expert_user_id = expert_response_event.responder.user_id
@@ -105,7 +107,7 @@ class ExpertAskingAgent(Agent):
             template_str=t("lib.prompt.router.instructions.expert_answer_sufficient"),
         ).format(chat_history=chat_history, query=initial_question_event.question_to_expert)
 
-        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             return await route_to_event_using_llm(
                 instructions=instructions,
                 routes=[
@@ -198,6 +200,7 @@ class ExpertAskingAgent(Agent):
         displayer: EventDisplayer,
         t: AgentLocaleHandler,
         run_context: RunContext,
+        user: UserIdentity,
     ) -> AskExpertEvent | NoAnswerStopEvent:
         loop_count = await run_context.get("loop_count", 0)
         if loop_count >= agent_config.loop_max:
@@ -209,7 +212,7 @@ class ExpertAskingAgent(Agent):
         chat_history = await run_context.get("chat_history")
         chat_history = [ChatMessage(**message) for message in chat_history]
 
-        async with agent_config.task_llm.cost_reporting_llm(displayer) as llm:
+        async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             chat = RichPromptTemplate(template_str=t("agent.expert_asking_agent.follow_up_question")).format_messages(
                 chat_history=chat_history,
                 question=initial_question_event.question_to_expert,

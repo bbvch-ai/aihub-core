@@ -8,6 +8,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -15,9 +16,11 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
 from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
@@ -248,6 +251,27 @@ class TestAgentServiceUnit:
                     assert second_dto in result
 
     @pytest.mark.asyncio
+    async def test_get_all_agent_instances_skips_record_that_fails_to_build(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """A single instance whose DTO cannot be built must be skipped, not abort the whole sweep."""
+        bad_config = Mock()
+        bad_config.agent_class = "TestAgent"
+        bad_config.agent_id = "bad_agent"
+
+        with patch.object(AgentClassEntity, "get_all", return_value=[sample_agent_class_entity]):
+            with patch.object(
+                AgentConfigEntityDocument, "find_for_class", return_value=[sample_config_entity, bad_config]
+            ):
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    good_dto = Mock(spec=FullAgentInstanceDTO)
+                    mock_from.side_effect = [good_dto, ValueError("could not build DTO")]
+
+                    result = await AgentService.get_all_agent_instances(mock_locale_handler)
+
+        assert result == [good_dto]
+
+    @pytest.mark.asyncio
     async def test_send_event_success(self, mock_nats, mock_user_identity):
         """Test send_event successfully sends event to agent."""
         mock_event = Mock(spec=UserMessageEvent)
@@ -445,8 +469,7 @@ class TestCreateAgentInstanceGrantWiring:
     def _mock_create_dependencies(stack: ExitStack):
         class_entity = Mock()
         class_entity.is_online = True
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         config_entity = Mock()
         grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
@@ -524,8 +547,7 @@ class TestUpdateAgentInstanceLocksAgentId:
     @staticmethod
     def _mock_update_dependencies(stack: ExitStack, config_entity: Mock) -> None:
         class_entity = Mock()
-        class_entity.agent_config_specs.agent_class = "TestAgent"
-        class_entity.agent_config_specs.agent_config_schema = {}
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
         class_entity.form = []
         stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
@@ -556,3 +578,26 @@ class TestUpdateAgentInstanceLocksAgentId:
         assert config_entity.config_data["agent_id"] == "intructed_agent_02"
         assert result["agent_id"] == "intructed_agent_02"
         config_entity.save.assert_called_once()
+
+
+class TestAgentConfigDTOEmptyLocale:
+    """Regression: an instance whose localized name/description is empty must build, not raise.
+
+    This is the read-side resilience the fix guarantees — empty localized fields are legitimate
+    data (LocaleStringEntity columns are all optional), so a required-str DTO field coerces to "".
+    """
+
+    def test_empty_locale_name_and_description_coerce_to_empty_string(self):
+        class_entity = Mock()
+        class_entity.form = None
+
+        config_entity = Mock()
+        config_entity.agent_id = "empty_locale_agent"
+        config_entity.name = LocaleStringEntity()
+        config_entity.description = LocaleStringEntity()
+        config_entity.icon = "mage:robot"
+
+        dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, LocaleHandler())
+
+        assert dto.name == ""
+        assert dto.description == ""

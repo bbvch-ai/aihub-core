@@ -254,8 +254,11 @@ assets by factory functions.
 Factory functions generate the asset definitions for a given pipeline configuration. `documents_factory` composes
 parsing, refinement, and document store insertion into a single graph asset. `nodes_factory` composes chunking,
 embedding, and vector store insertion. `observable_rclone_factory`, `observable_share_point_factory`, and
-`observable_local_file_system_factory` create the Stage 1 source monitoring assets. The `default_definitions` function
-wires all factories, resources, sensors, and schedules into a complete Dagster Definitions object.
+`observable_local_file_system_factory` create the Stage 1 source monitoring assets. The
+`document_ingestion_pipeline_definitions` function wires all Stage 2 factories, resources, sensors, and schedules into a
+complete Dagster Definitions object; the `default_*_to_datalake_definitions` builders do the same for Stage 1. A Stage 2
+pipeline names no bucket — it serves every knowledge database whose `BucketEntity.ingestor` matches, resolving the
+target per run.
 
 #### Resources and I/O managers
 

@@ -13,7 +13,8 @@ condenser:
     1. **Kontext aus Verlauf auflösen**: Ersetze Pronomen oder Referenzen, die sich auf frühere Nachrichten im Chatverlauf beziehen, durch die konkreten Begriffe aus dem Verlauf.
     2. **Bild-Referenzen**: NUR wenn der Benutzer explizit auf ein Bild verweist (z.B. "Was ist **das**?", "Was siehst du **hier**?"), ersetze das Pronomen durch eine kurze Beschreibung des sichtbaren Objekts.
     3. **Keine neuen Informationen hinzufügen**: Füge NIEMALS Details hinzu, die nicht in der ursprünglichen Frage enthalten sind. Die umformulierte Frage muss semantisch äquivalent zur ursprünglichen sein.
-    4. **Output**: Gib NUR den neuen Satz aus.
+    4. **Persönliche Aussagen beibehalten**: Wenn die Nachricht des Benutzers eine Tatsache über ihn selbst enthält (z.B. "Ich bin Vegetarier — was steht auf der Speisekarte?"), behalte diese Tatsache in der eigenständigen Frage bei (z.B. "Was steht für einen Vegetarier auf der Speisekarte?"). Dies gilt nur für kurze persönliche Aussagen — übernimm niemals umfangreiche Inhalte wie eingefügte Dokumente, Logs oder Code in die Frage.
+    5. **Output**: Gib NUR den neuen Satz aus.
     </instructions>
 rag:
   context_prompt: |
@@ -171,12 +172,6 @@ memory:
     **Organisatorische Fakten:**
     {% for memory in memories %}
     - {{ memory.memory }}
-    {% endfor %}
-    {% endif %}
-    {% if relations %}
-    **Wissensgraph-Beziehungen:**
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
     {% endfor %}
     {% endif %}
     </organizational_context>
@@ -1599,3 +1594,9 @@ figure_description_generator:
     {% chat role="user" %}
     Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann. Denken Sie daran: Beschreiben Sie nur, was Sie tatsächlich sehen, nicht das, was der umgebende Text vermuten lässt.
     {% endchat %}
+model:
+  identity_system_message: |-
+    Sie sind {model_name}, ein Sprachmodell.
+    Frühere Assistenten-Beiträge in diesem Gespräch können von einem anderen Modell erzeugt worden sein, da der Benutzer das Modell mitten im Gespräch wechseln kann. Sie stammen nicht von Ihnen.
+    - Übernehmen Sie niemals einen Namen, Anbieter oder eine Identität aus einem früheren Assistenten-Beitrag.
+    - Wenn Sie nach Ihrer Identität gefragt werden, erwägen Sie nicht, welche richtig ist: Die obige Aussage ist verbindlich — behandeln Sie die Frage als geklärt und antworten Sie in einem kurzen Satz.

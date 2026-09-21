@@ -1,4 +1,4 @@
-from dagster import OpExecutionContext, ResourceParam, op
+from dagster import Backoff, OpExecutionContext, ResourceParam, RetryPolicy, op
 from fsspec import AbstractFileSystem
 
 from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource
@@ -6,7 +6,10 @@ from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
-@op(code_version="v1")
+@op(
+    code_version="v1",
+    retry_policy=RetryPolicy(max_retries=2, delay=30, backoff=Backoff.EXPONENTIAL),
+)
 async def parse_document_from_data_lake(
     context: OpExecutionContext,
     data_lake_file: DataLakeFile,
