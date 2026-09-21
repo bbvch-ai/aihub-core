@@ -23089,7 +23089,8 @@ export const ThreadReferenceSchema = {
     thread_id: {
       type: "string",
       title: "Thread Id",
-      description: "The thread ID that owns the requested display",
+      description:
+        "The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.",
     },
   },
   type: "object",

@@ -15659,7 +15659,7 @@ export type ThreadReference = {
   /**
    * Thread Id
    *
-   * The thread ID that owns the requested display
+   * The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.
    */
   thread_id: string;
 };
