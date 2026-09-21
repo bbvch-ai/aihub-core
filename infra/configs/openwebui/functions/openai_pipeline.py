@@ -191,7 +191,7 @@ class Pipe:
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
         model: Annotated[str, "Model behind this answer, so a bug report can name it"],
-        event_emitter: Annotated[Any, "Event emitter (one-way emit; do NOT use event_caller)"],
+        event_call: Annotated[Any, "Event caller (emit + ack), the channel `execute` events arrive on"],
     ) -> None:
         """Tell the parent window which conversation is on screen.
 
@@ -212,7 +212,7 @@ class Pipe:
         }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
         """
         try:
-            await event_emitter({"type": "execute", "data": {"code": code}})
+            await event_call({"type": "execute", "data": {"code": code}})
         except Exception as context_error:
             logger.warning(f"Failed to publish UI context: {context_error}")
 
@@ -222,7 +222,7 @@ class Pipe:
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
-        __event_emitter__: Annotated[Any, "Event emitter"] = None,
+        __event_call__: Annotated[Any, "Event caller"] = None,
     ):
         """
         Handle streaming requests, yielding SSE formatted strings.
@@ -243,6 +243,9 @@ class Pipe:
             },
         }
 
+        if __event_call__:
+            await self._set_ui_context(thread_id, display_id, model_id, __event_call__)
+
         client = httpx.AsyncClient(timeout=None, follow_redirects=True)
 
         try:
@@ -253,9 +256,6 @@ class Pipe:
                 json=payload,
                 headers=headers,
             ) as stream_response:
-                if __event_emitter__:
-                    await self._set_ui_context(thread_id, display_id, model_id, __event_emitter__)
-
                 # Process the stream line by line
                 async for line in stream_response.aiter_lines():
                     line = line.strip()
@@ -311,7 +311,7 @@ class Pipe:
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
-        __event_emitter__: Annotated[Any, "Event emitter"] = None,
+        __event_call__: Annotated[Any, "Event caller"] = None,
     ):
         """
         Handle non-streaming requests, returning a dict with the completion response.
@@ -331,8 +331,8 @@ class Pipe:
             },
         }
 
-        if __event_emitter__:
-            await self._set_ui_context(thread_id, display_id, model_id, __event_emitter__)
+        if __event_call__:
+            await self._set_ui_context(thread_id, display_id, model_id, __event_call__)
 
         try:
             # Use a separate client for non-streaming requests
@@ -368,11 +368,11 @@ class Pipe:
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
-        __event_emitter__: Annotated[Any, "Event emitter"] = None,
+        __event_call__: Annotated[Any, "Event caller"] = None,
     ) -> Annotated[str, "Response (always empty for streaming)"]:
         """Main pipeline entry point.
 
-        ``__event_emitter__`` is injected by OpenWebUI on this method only, so it has to be
+        ``__event_call__`` is injected by OpenWebUI on this method only, so it has to be
         forwarded — without it the turn still answers, but the shell never learns which model
         and thread produced it and a bug report cannot name either.
         """
@@ -382,7 +382,7 @@ class Pipe:
 
         if is_streaming:
             # For streaming, we return the async generator object directly
-            return self.pipe_stream(body, __user__, __metadata__, __request__, __event_emitter__)
+            return self.pipe_stream(body, __user__, __metadata__, __request__, __event_call__)
         else:
             # For non-streaming, we await the result and return it
-            return await self.pipe_non_stream(body, __user__, __metadata__, __request__, __event_emitter__)
+            return await self.pipe_non_stream(body, __user__, __metadata__, __request__, __event_call__)

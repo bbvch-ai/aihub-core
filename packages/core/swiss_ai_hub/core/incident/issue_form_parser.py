@@ -125,7 +125,10 @@ class IssueFormParser:
         value = attributes.get("value")
         if not value:
             raise ValueError(f"Body entry {position} is markdown without a value")
-        return HtmlElement(**{"$el": "p", "children": str(value).strip()})
+        # A list, though the model also accepts a bare string: the FormKit transform reaches
+        # for `children.flatMap`, and this is the codebase's only HtmlElement, so the string
+        # branch has never had to work.
+        return HtmlElement(**{"$el": "p", "children": [str(value).strip()]})
 
     @staticmethod
     def _field(

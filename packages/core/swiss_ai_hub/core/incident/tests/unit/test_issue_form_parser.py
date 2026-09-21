@@ -228,3 +228,10 @@ def test_should_accept_anything_when_the_definition_names_no_extensions() -> Non
 
 def test_should_leave_upload_unset_when_the_definition_declares_none() -> None:
     assert IssueFormParser.parse(MINIMAL_DEFINITION).upload is None
+
+
+def test_should_wrap_prose_children_in_a_list_the_renderer_can_walk() -> None:
+    """The FormKit transform calls `children.flatMap`; a bare string reaches it as characters."""
+    prose = IssueFormParser.parse(MINIMAL_DEFINITION).elements[0]
+
+    assert prose.children == ["Some prose"]
