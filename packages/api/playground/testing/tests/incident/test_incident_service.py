@@ -63,7 +63,7 @@ async def _create(submission: dict, attachments: list[UploadFile], client, **set
 
 
 def test_should_prefill_only_the_questions_the_platform_knows() -> None:
-    form = IncidentService.form(IncidentContext(tenant="Acme (68c1)", reporter_name="Admin User"))
+    form = IncidentService.form(IncidentContext(tenant="Acme (68c1)", reporter_name="Admin User"), IncidentSettings())
 
     by_name = {getattr(element, "name", None): element for element in form.elements}
     assert by_name["tenant"].value == "Acme (68c1)"
@@ -72,7 +72,7 @@ def test_should_prefill_only_the_questions_the_platform_knows() -> None:
 
 
 def test_should_publish_the_submission_schema_alongside_the_elements() -> None:
-    form = IncidentService.form(IncidentContext())
+    form = IncidentService.form(IncidentContext(), IncidentSettings())
 
     assert "what_went_wrong" in form.submission_specs["required"]
     assert "page_url" not in form.submission_specs.get("required", [])
@@ -155,9 +155,9 @@ async def test_should_commit_attachments_under_the_report_reference() -> None:
 @pytest.mark.parametrize(
     ("filename", "expected"),
     [
-        ("../../../etc/passwd", "passwd"),
+        ("../../../etc/passwd.png", "passwd.png"),
         ("C:\\Users\\me\\shot.png", "shot.png"),
-        ("../../secrets.env", "secrets.env"),
+        ("../../secrets.log", "secrets.log"),
         ("sub/dir/report.pdf", "report.pdf"),
         ("naughty;$(whoami).png", "naughty-whoami-.png"),
     ],
@@ -174,12 +174,61 @@ async def test_should_never_let_a_filename_escape_the_attachment_directory(filen
 
 
 @pytest.mark.asyncio
-async def test_should_name_an_attachment_that_arrived_without_a_usable_filename() -> None:
+async def test_should_name_an_attachment_that_arrived_without_a_usable_filename(monkeypatch) -> None:
+    """Only reachable when the definition lists no `accept`: otherwise the name is refused first."""
+    monkeypatch.setattr(INCIDENT_FORM.upload, "accept", [])
     client = _RecordingClient()
 
     created = await _create(VALID, [_upload("...")], client)
 
     assert client.committed[0][0] == f"attachments/{created.reference}/attachment-1"
+
+
+@pytest.mark.asyncio
+async def test_should_reject_a_file_type_the_definition_does_not_accept() -> None:
+    """The picker filters on `accept`, but that is a browser hint and this endpoint is reachable without one."""
+    with pytest.raises(HTTPException) as rejected:
+        await _create(VALID, [_upload("payload.exe")], _RecordingClient())
+
+    assert rejected.value.status_code == 415
+    assert "payload.exe" in rejected.value.detail
+
+
+@pytest.mark.asyncio
+async def test_should_reject_a_report_with_no_file_when_the_definition_requires_one(monkeypatch) -> None:
+    monkeypatch.setattr(INCIDENT_FORM.upload, "required", True)
+
+    with pytest.raises(HTTPException) as rejected:
+        await _create(VALID, [], _RecordingClient())
+
+    assert rejected.value.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_should_refuse_files_when_the_definition_declares_no_upload_field(monkeypatch) -> None:
+    """Dropping the upload entry is how a deployment turns attachments off."""
+    monkeypatch.setattr(INCIDENT_FORM, "upload", None)
+
+    with pytest.raises(HTTPException) as rejected:
+        await _create(VALID, [_upload("shot.png")], _RecordingClient())
+
+    assert rejected.value.status_code == 400
+
+
+def test_should_offer_no_picker_when_the_definition_declares_no_upload_field(monkeypatch) -> None:
+    monkeypatch.setattr(INCIDENT_FORM, "upload", None)
+
+    assert IncidentService.form(IncidentContext(), IncidentSettings()).attachments is None
+
+
+def test_should_describe_the_picker_from_the_definition_and_the_deployment() -> None:
+    """Wording is the definition's to change; the two limits are the operator's."""
+    form = IncidentService.form(IncidentContext(), IncidentSettings(MAX_ATTACHMENTS=3, MAX_ATTACHMENT_BYTES=1024))
+
+    assert form.attachments.label == INCIDENT_FORM.upload.label
+    assert ".png" in form.attachments.accept
+    assert ".exe" not in form.attachments.accept
+    assert (form.attachments.max_files, form.attachments.max_bytes) == (3, 1024)
 
 
 @pytest.mark.asyncio

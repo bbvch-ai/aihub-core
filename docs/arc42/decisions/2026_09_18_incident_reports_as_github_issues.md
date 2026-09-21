@@ -45,7 +45,8 @@ because here the form is data a non-programmer edits rather than a model a progr
 Editing a question is editing that YAML file, reviewed as a pull request. Question `id`s double as the prefill keys:
 every field of `IncidentContext` names one, and a test fails if that correspondence breaks.
 
-Attachments are **committed into the repository** and linked from the issue body.
+Attachments are declared by the definition's `upload` element — label, guidance and accepted extensions are the form's
+to change, count and size the deployment's — and **committed into the repository**, linked from the issue body.
 
 Unset — the default — `IncidentSettings.enabled` is false, no client is constructed, and the endpoints answer 404.
 
@@ -65,6 +66,12 @@ Unset — the default — `IncidentSettings.enabled` is false, no client is cons
    Committing the file instead reaches the audience through a documented one — at the cost of a click, see the
    attachment consequence below. It remains the only route to a screenshot that renders inline, so a deployment that
    wants that badly enough has to accept the machine-user token.
+
+   GitHub's own `upload` element, added to the form schema since, does not change this. It is a property of GitHub's
+   renderer: a signed-in respondent's browser uploads to that same asset pipeline and the resulting URL is injected into
+   the body, so nothing about it reaches the REST API this platform files through. What it does give is the field's
+   declaration, which is why the attachment field now lives in the definition beside the questions rather than in the
+   frontend.
 
 4. **Store reports in the platform and deliver them by Apprise or Microsoft Graph.** The only option that makes tenant
    and reporter authoritative *and* accepts attachments. Rejected on drivers 2 and 6: the questions would live in
@@ -88,7 +95,8 @@ embed built from it works the day the report is filed and breaks afterwards, whi
 attachment, screenshots included, is linked to its page in the repository, which resolves for exactly the people who can
 read the repository. Permanence is the other half of the cost: limits are therefore deliberately small (five files, 5 MB
 each) and the form says so. A reporter's filename becomes a repository path, so it is reduced to a basename over a known
-character set — five traversal shapes are covered by tests.
+character set — five traversal shapes are covered by tests. Which extensions are allowed is the definition's `accept`
+list, enforced by the endpoint and not only by the picker, because a browser hint is not a control.
 
 **Almost nothing in a submission is authoritative.** The reporter can see and correct every prefilled value, which is
 what the platform owner asked for, and means an answer read back out of an issue is a claim rather than a fact. Two

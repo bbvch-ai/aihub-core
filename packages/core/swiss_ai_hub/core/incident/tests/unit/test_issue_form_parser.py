@@ -87,6 +87,12 @@ def test_should_turn_description_into_help_text_on_the_element() -> None:
         ("body:\n  - type: input\n    id: x\n    attributes: {}", "needs a label"),
         ("body:\n  - type: dropdown\n    id: x\n    attributes:\n      label: X", "has no options"),
         ("body:\n  - type: markdown\n    attributes: {}", "markdown without a value"),
+        ("body:\n  - type: upload\n    attributes: {}", "'upload' needs a label"),
+        (
+            "body:\n  - type: upload\n    attributes:\n      label: A\n"
+            "  - type: upload\n    attributes:\n      label: B",
+            "second upload field",
+        ),
         (
             "body:\n  - type: input\n    id: x\n    attributes:\n      label: A\n"
             "  - type: input\n    id: x\n    attributes:\n      label: B",
@@ -166,3 +172,59 @@ def test_should_prefill_every_context_field_from_the_shipped_definition() -> Non
     missing = set(IncidentContext.model_fields) - form.field_ids()
 
     assert missing == set()
+
+
+UPLOAD_DEFINITION = """
+body:
+  - type: textarea
+    id: what_went_wrong
+    attributes:
+      label: What went wrong?
+  - type: upload
+    attributes:
+      label: Screenshots
+      description: Drag them in
+    validations:
+      required: true
+      accept: .PNG, jpg ,, .log
+"""
+
+
+def test_should_read_the_attachment_field_from_the_definition() -> None:
+    upload = IssueFormParser.parse(UPLOAD_DEFINITION).upload
+
+    assert (upload.label, upload.description, upload.required) == ("Screenshots", "Drag them in", True)
+
+
+def test_should_normalise_the_accept_list_github_writes_as_one_string() -> None:
+    """Case, spacing, a missing dot and a stray comma are all things a hand-edited form will contain."""
+    upload = IssueFormParser.parse(UPLOAD_DEFINITION).upload
+
+    assert upload.accept == [".png", ".jpg", ".log"]
+
+
+def test_should_keep_the_attachment_field_out_of_the_questions() -> None:
+    """A file never travels inside the JSON submission, so it must not reach the submission model."""
+    form = IssueFormParser.parse(UPLOAD_DEFINITION)
+
+    assert form.field_ids() == {"what_went_wrong"}
+    assert len(form.elements) == 1, "the picker is the dialog's, not a rendered form element"
+    assert "Screenshots" not in form.submission_model().model_json_schema()["properties"]
+
+
+@pytest.mark.parametrize(
+    ("filename", "accepted"),
+    [("shot.PNG", True), ("trace.log", True), ("payload.exe", False), ("", False)],
+)
+def test_should_decide_acceptance_case_insensitively(filename: str, accepted: bool) -> None:
+    assert IssueFormParser.parse(UPLOAD_DEFINITION).upload.accepts(filename) is accepted
+
+
+def test_should_accept_anything_when_the_definition_names_no_extensions() -> None:
+    definition = "body:\n  - type: upload\n    attributes:\n      label: Files"
+
+    assert IssueFormParser.parse(definition).upload.accepts("anything.whatever")
+
+
+def test_should_leave_upload_unset_when_the_definition_declares_none() -> None:
+    assert IssueFormParser.parse(MINIMAL_DEFINITION).upload is None

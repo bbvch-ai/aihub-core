@@ -43,7 +43,8 @@ class IncidentBodyFormatter:
             cls._section(field.label, cls._answer(field.render, submission.get(field.id))) for field in form.fields
         ]
         if attachment_urls:
-            sections.append(cls._section("Attachments", cls._attachments(attachment_urls)))
+            heading = form.upload.label if form.upload else "Attachments"
+            sections.append(cls._section(heading, cls._attachments(attachment_urls)))
         sections.append(cls._verified(user))
         return "\n\n".join(sections)
 

@@ -12,6 +12,7 @@ from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.incident.issue_form import IssueForm
 from swiss_ai_hub.core.incident.issue_form_field import IssueFormField
+from swiss_ai_hub.core.incident.issue_form_upload import IssueFormUpload
 
 DEFAULT_FORM_PATH = Path(__file__).parent / "incident_form.yml"
 
@@ -41,7 +42,17 @@ class IssueFormParser:
 
         elements: list[ALL_FORM_OPTIONS] = []
         fields: list[IssueFormField] = []
+        upload: IssueFormUpload | None = None
         for position, entry in enumerate(document["body"]):
+            if not isinstance(entry, dict):
+                raise ValueError(f"Body entry {position} must be a mapping")
+            if entry.get("type") == "upload":
+                if upload:
+                    # One report carries one set of files, so a second picker would have
+                    # nowhere to put them — better to say so than to silently merge the two.
+                    raise ValueError(f"Body entry {position} is a second upload field; only one is supported")
+                upload = cls._upload(entry, position)
+                continue
             element, field = cls._parse_entry(entry, position)
             elements.append(element)
             if field:
@@ -53,17 +64,15 @@ class IssueFormParser:
             labels=list(document.get("labels", []) or []),
             elements=elements,
             fields=fields,
+            upload=upload,
         )
 
     @classmethod
     def _parse_entry(
         cls,
-        entry: Annotated[Any, "One body entry"],
+        entry: Annotated[dict, "One body entry"],
         position: Annotated[int, "Index in the body list, used only for error messages"],
     ) -> tuple[ALL_FORM_OPTIONS, IssueFormField | None]:
-        if not isinstance(entry, dict):
-            raise ValueError(f"Body entry {position} must be a mapping")
-
         entry_type = entry.get("type")
         attributes = entry.get("attributes") or {}
 
@@ -77,6 +86,36 @@ class IssueFormParser:
 
         field = cls._field(entry, entry_type, attributes, position)
         return cls._element(field, attributes), field
+
+    @classmethod
+    def _upload(
+        cls,
+        entry: Annotated[dict, "One body entry"],
+        position: Annotated[int, "Index in the body list"],
+    ) -> IssueFormUpload:
+        attributes = entry.get("attributes") or {}
+        label = attributes.get("label")
+        if not label:
+            raise ValueError(f"Body entry {position} of type 'upload' needs a label")
+
+        validations = entry.get("validations") or {}
+        return IssueFormUpload(
+            label=str(label),
+            description=attributes.get("description"),
+            required=bool(validations.get("required", False)),
+            accept=cls._extensions(validations.get("accept")),
+        )
+
+    @staticmethod
+    def _extensions(accept: Annotated[Any, "GitHub writes this as one comma-separated string"]) -> list[str]:
+        if not accept:
+            return []
+        extensions = []
+        for candidate in str(accept).split(","):
+            extension = candidate.strip().lower()
+            if extension:
+                extensions.append(extension if extension.startswith(".") else f".{extension}")
+        return extensions
 
     @staticmethod
     def _prose(

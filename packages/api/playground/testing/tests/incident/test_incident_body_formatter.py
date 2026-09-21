@@ -30,6 +30,9 @@ body:
     id: tenant
     attributes:
       label: Tenant
+  - type: upload
+    attributes:
+      label: Evidence
 """
 
 FORM = IssueFormParser.parse(DEFINITION)
@@ -80,13 +83,15 @@ def test_should_link_every_attachment_including_screenshots() -> None:
 
     assert "[shot.png](https://github.com/o/r/blob/main/attachments/INC-1/shot.png)" in body
     assert "[log.txt](https://github.com/o/r/blob/main/attachments/INC-1/log.txt)" in body
+    assert "### Evidence" in body, "the heading is the definition's to word, not a hardcoded one"
+    assert "### Attachments" not in body
     assert "![" not in body, "an embed would break once its token expires"
 
 
 def test_should_omit_the_attachment_section_when_there_are_none() -> None:
     body = IncidentBodyFormatter.body(FORM, {"what_went_wrong": "x"}, _user(), {})
 
-    assert "### Attachments" not in body
+    assert "### Evidence" not in body
 
 
 def test_should_take_reporter_identity_from_the_token_not_the_submission() -> None:

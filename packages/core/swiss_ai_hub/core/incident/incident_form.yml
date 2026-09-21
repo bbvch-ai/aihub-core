@@ -6,14 +6,19 @@
 # an issue body the same way GitHub renders its own issue forms, so the result
 # reads identically whether it arrived through AI Hub or through GitHub.
 #
-# Two rules when editing:
+# Three rules when editing:
 #   1. `id` is the contract. The API fills every id listed in
 #      swiss_ai_hub.core.incident.incident_context from the caller's session;
 #      renaming one silently stops it being prefilled. Adding a question with a
 #      new id is always safe.
-#   2. Only these `type`s are supported: markdown, input, textarea, dropdown,
-#      checkboxes. Anything else fails at startup rather than when a user
-#      clicks Report — see IssueFormParser.
+#   2. Supported `type`s are GitHub's six: markdown, input, textarea, dropdown,
+#      checkboxes and upload. Anything else fails at startup rather than when a
+#      user clicks Report — see IssueFormParser.
+#   3. `upload` is the attachment field. Its label, description and accepted
+#      extensions come from here; how many files and how large they may be come
+#      from INCIDENT_MAX_ATTACHMENT* on the deployment. Only one is supported,
+#      and the dialog always shows the picker at the top whatever its position
+#      in this file.
 name: Report a problem
 description: Tell us what went wrong so support can reproduce and investigate it.
 title: '[INC] '
@@ -33,6 +38,15 @@ body:
       placeholder: What you were doing, and what the system did.
     validations:
       required: true
+
+  - type: upload
+    attributes:
+      label: Screenshots or files
+      description: Optional. They are filed with the report and stay in the support
+        repository permanently, so do not attach confidential material.
+    validations:
+      required: false
+      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.log,.csv,.json,.zip
 
   - type: dropdown
     id: problem_type

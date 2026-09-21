@@ -29,8 +29,11 @@ class IncidentService:
     """Turns a submitted form into an issue in the deployment's incident repository."""
 
     @staticmethod
-    def form(context: Annotated[IncidentContext, "What the platform knows about this reporter"]) -> IncidentFormDTO:
-        return IncidentFormDTO.from_form(INCIDENT_FORM, context)
+    def form(
+        context: Annotated[IncidentContext, "What the platform knows about this reporter"],
+        settings: Annotated[IncidentSettings, "Deployment's incident configuration"],
+    ) -> IncidentFormDTO:
+        return IncidentFormDTO.from_form(INCIDENT_FORM, context, settings)
 
     @classmethod
     async def create(
@@ -42,7 +45,7 @@ class IncidentService:
         settings: Annotated[IncidentSettings, "Deployment's incident configuration"],
     ) -> CreatedIncidentDTO:
         submission = cls._validated(submission_json)
-        cls._reject_oversized(attachments, settings)
+        cls._reject_unacceptable(attachments, settings)
         await client.ensure_repository_is_private()
 
         reference = cls._reference()
@@ -70,7 +73,17 @@ class IncidentService:
             raise HTTPException(status_code=422, detail=invalid.errors())
 
     @staticmethod
-    def _reject_oversized(attachments: list[UploadFile], settings: IncidentSettings) -> None:
+    def _reject_unacceptable(attachments: list[UploadFile], settings: IncidentSettings) -> None:
+        """Count and size come from the deployment, the accepted extensions from the definition.
+
+        The picker already filters on `accept`, but that is a browser hint and this endpoint is
+        reachable without one — so what the definition says is accepted is enforced here too.
+        """
+        upload = INCIDENT_FORM.upload
+        if attachments and not upload:
+            raise HTTPException(status_code=400, detail="This form does not accept attachments.")
+        if upload and upload.required and not attachments:
+            raise HTTPException(status_code=422, detail=f"{upload.label} is required.")
         if len(attachments) > settings.MAX_ATTACHMENTS:
             raise HTTPException(
                 status_code=413,
@@ -81,6 +94,11 @@ class IncidentService:
                 raise HTTPException(
                     status_code=413,
                     detail=f"{attachment.filename} exceeds the {settings.MAX_ATTACHMENT_BYTES} byte limit.",
+                )
+            if upload and not upload.accepts(attachment.filename or ""):
+                raise HTTPException(
+                    status_code=415,
+                    detail=f"{attachment.filename} is not an accepted file type. Accepted: {', '.join(upload.accept)}.",
                 )
 
     @staticmethod

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.incident.issue_form import IssueForm
     from swiss_ai_hub.core.incident.issue_form_field import IssueFormField
     from swiss_ai_hub.core.incident.issue_form_parser import DEFAULT_FORM_PATH, IssueFormParser
+    from swiss_ai_hub.core.incident.issue_form_upload import IssueFormUpload
 
 __all__ = [
     "DEFAULT_FORM_PATH",
@@ -13,6 +14,7 @@ __all__ = [
     "IncidentSettings",
     "IssueForm",
     "IssueFormField",
+    "IssueFormUpload",
     "IssueFormParser",
 ]
 
@@ -22,6 +24,7 @@ _LAZY_IMPORTS = {
     "IncidentSettings": "swiss_ai_hub.core.incident.incident_settings",
     "IssueForm": "swiss_ai_hub.core.incident.issue_form",
     "IssueFormField": "swiss_ai_hub.core.incident.issue_form_field",
+    "IssueFormUpload": "swiss_ai_hub.core.incident.issue_form_upload",
     "IssueFormParser": "swiss_ai_hub.core.incident.issue_form_parser",
 }
 

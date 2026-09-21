@@ -4,20 +4,26 @@ from pydantic import BaseModel, Field, create_model
 
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.incident.issue_form_field import IssueFormField
+from swiss_ai_hub.core.incident.issue_form_upload import IssueFormUpload
 
 
 class IssueForm(BaseModel):
-    """A parsed issue-form definition, in the two shapes the platform needs.
+    """A parsed issue-form definition, in the shapes the platform needs.
 
     `elements` goes to the browser and is rendered by the same machinery that
     renders agent configuration. `fields` stays server-side and drives both
-    submission validation and the issue body.
+    submission validation and the issue body. `upload` is neither: files travel
+    as multipart rather than as answers, so the definition's attachment field is
+    carried on its own and rendered by the dialog's own picker.
     """
 
     title_prefix: Annotated[str, Field(description="Prefix the definition puts in front of every issue title")] = ""
     labels: Annotated[list[str], Field(description="Labels every issue created from this form carries")] = []
     elements: Annotated[list[ALL_FORM_OPTIONS], Field(description="Renderable form elements, in definition order")]
     fields: Annotated[list[IssueFormField], Field(description="Answerable questions, in definition order")]
+    upload: Annotated[
+        IssueFormUpload | None, Field(description="Attachment field, when the definition declares one")
+    ] = None
 
     def field_ids(self) -> set[str]:
         return {field.id for field in self.fields}

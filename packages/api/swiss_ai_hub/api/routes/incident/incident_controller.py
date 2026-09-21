@@ -48,7 +48,7 @@ class IncidentController(Controller):
                 reporter_name=user.name,
                 reporter_email=user.email,
             )
-            return IncidentService.form(context)
+            return IncidentService.form(context, IncidentSettings())
 
         return self
 
