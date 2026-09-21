@@ -309,6 +309,9 @@ import type {
   UpdateMyDashboardData,
   UpdateMyDashboardError,
   UpdateMyDashboardResponse,
+  UpdateMyLocaleData,
+  UpdateMyLocaleError,
+  UpdateMyLocaleResponse,
   UpdateNamespaceData,
   UpdateNamespaceError,
   UpdateNamespaceResponse,
@@ -656,6 +659,40 @@ export const updateMyDashboard = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/my-account/dashboard",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update My Locale
+ *
+ * Persists the user's preferred UI language so it survives logout.
+ */
+export const updateMyLocale = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateMyLocaleResponse = UpdateMyLocaleResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateMyLocaleData,
+    UpdateMyLocaleResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateMyLocaleResponse | DefaultT,
+    UpdateMyLocaleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/my-account/locale",
     ...options,
     headers: {
       "Content-Type": "application/json",

@@ -49,6 +49,7 @@ const { t, locale, locales } = useI18n()
 const queryCache = useQueryCache()
 const switchLocalePath = useSwitchLocalePath()
 const router = useRouter()
+const { updateMyLocale } = useUpdateMyLocale()
 
 const op = ref()
 const toggle = (event: Event) => {
@@ -74,6 +75,11 @@ const selectedLocale = computed({
     if (newValue?.code && newValue.code !== locale.value) {
       op.value.hide()
       changeLocale(newValue.code)
+      // Fire-and-forget: the switch itself must not wait on the network, and a
+      // failed write only costs the user the cross-device preference.
+      updateMyLocale({ locale: newValue.code }).catch((error) => {
+        console.error('Failed to persist preferred locale', error)
+      })
       router.push(switchLocalePath(newValue.code))
         .then(() => {
           queryCache.invalidateQueries()

@@ -16967,6 +16967,22 @@ export const MultiSelectSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/MultiSelect",
 } as const;
 
+export const MyLocaleDTOSchema = {
+  properties: {
+    locale: {
+      type: "string",
+      title: "Locale",
+      description: "ISO 639-1 language code, one of: de, en, fr, it.",
+      examples: ["en"],
+    },
+  },
+  type: "object",
+  required: ["locale"],
+  title: "MyLocaleDTO",
+  description:
+    "The UI language the user wants persisted against their account.",
+} as const;
+
 export const MyTenantsResponseSchema = {
   properties: {
     tenants: {
@@ -24619,6 +24635,19 @@ export const UserWithAccessDTOSchema = {
       title: "Access Rules",
       description:
         "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
+    preferred_locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Preferred Locale",
+      description:
+        "The user's persisted UI language, or null if they have never chosen one.",
     },
   },
   type: "object",

@@ -77,6 +77,10 @@ import type { MenuItem } from 'primevue/menuitem'
 const route = useRoute()
 const tenantPath = useTenantPath()
 
+// Here rather than app.vue: this layout is where the language switcher lives,
+// and extenders supplying their own app.vue would otherwise lose the restore.
+useRestorePreferredLocale()
+
 const online = ref<boolean>(false)
 
 const { apps } = useApps()

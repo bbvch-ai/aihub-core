@@ -130,6 +130,8 @@ The system supports two types of permission checks:
 - Wraps Keycloak Admin API for user and group management
 - User profile data (name, email) is read from Keycloak, not stored locally
 - Active tenant is stored as a Keycloak user attribute (`active_tenant_id`)
+- Preferred UI language is stored the same way (`preferred_locale`), so it survives logout and follows the user across
+  browsers and devices
 - Tenant group membership is managed via Keycloak groups under `/tenants/`
 
 ### Multi-Tenant Roles
