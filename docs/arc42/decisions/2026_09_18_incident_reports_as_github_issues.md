@@ -120,11 +120,6 @@ that becomes unacceptable, it is the signal that alternative 4 was right after a
 **There is no status for the reporter.** They have no GitHub account, so they are given a reference and an issue number,
 not a link they cannot open. Whoever answers does so out of band, by the contact address in the report.
 
-**Reading the conversation is asked for, not assumed.** The report names a conversation id, and the repository it lands
-in is readable by whoever triages. In a product sold on data sovereignty, that is a permission rather than an
-implication, so the form ends with a checkbox and the issue records the answer. Unticked, support works from the
-description alone — which is worse for them and right for the reporter.
-
 **Agent type, agent name and LLM are three fields, not one.** They were one until the acceptance criteria were read
 against the form: an investigation starts somewhere different depending on which of them is at fault, and an agent's own
 LLM is chosen at runtime from its configuration, so the pipeline can fill the first two and leaves the third to the

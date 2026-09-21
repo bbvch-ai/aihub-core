@@ -180,7 +180,7 @@ body:
 
   - type: markdown
     attributes:
-      value: How to reach you, and one permission we need before reading anything.
+      value: How to reach you if support needs more detail.
 
   - type: input
     id: reporter_name
@@ -199,10 +199,3 @@ body:
     attributes:
       label: Phone
       description: Optional, if you would rather be called back.
-
-  - type: checkboxes
-    id: conversation_consent
-    attributes:
-      label: Support may open the conversation above to investigate
-      description: Without this we work from your description alone. Leave it
-        unticked if the conversation contains anything you would rather not share.
