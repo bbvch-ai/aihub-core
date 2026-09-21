@@ -131,7 +131,12 @@ class RcloneClient:
         timeout_config = aiohttp.ClientTimeout(total=None, sock_read=600, sock_connect=30)
         async with aiohttp.ClientSession(timeout=timeout_config, auth=self._aiohttp_auth) as session:
             async with session.post(f"{self.base_url}/{endpoint}", json=params) as response:
-                response.raise_for_status()
+                if response.status >= 400:
+                    body = await response.json(content_type=None) if response.content_length != 0 else {}
+                    message = body.get("error") if isinstance(body, dict) else None
+                    raise RuntimeError(
+                        f"rclone {endpoint} failed with HTTP {response.status}: {message or response.reason}"
+                    )
                 return await response.json()
 
     def _parse_minimal(self, item: dict[str, Any], remote: str) -> MinimalRcloneFile:

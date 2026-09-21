@@ -154,6 +154,27 @@ class TestCreateWithSource:
         assert "pw" not in response.source_configuration["sftp"]["password"]
 
     @pytest.mark.asyncio
+    async def test_an_empty_source_configuration_validates_as_the_forms_defaults(self, locale_handler):
+        """The normaliser turns {} into None; that must validate like an untouched form, not blow up the walk."""
+        request = CreateDatabaseRequest(
+            ingestor=INGESTOR.id,
+            configuration={"name": {"en": "HR Docs"}, "description": {"en": "Policies"}},
+            source=RCLONE.id,
+            source_configuration={},
+        )
+        s3_service = MagicMock()
+        s3_service.container_exists.return_value = False
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.side_effect = lambda **kwargs: _bucket(
+                source=kwargs["source"], source_configuration=kwargs["source_configuration"]
+            )
+            await KnowledgeService.create_database(DATABASE, request, locale_handler, s3_service, _user())
+
+        stored = bucket_cls.create_bucket.call_args.kwargs["source_configuration"]
+        assert stored == {}
+
+    @pytest.mark.asyncio
     async def test_an_unregistered_source_is_refused_before_anything_is_created(self, locale_handler):
         request = CreateDatabaseRequest(
             ingestor=INGESTOR.id,

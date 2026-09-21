@@ -610,7 +610,8 @@ class KnowledgeService:
         form_elements = source_pipeline.form_elements
         secret_paths = SecretFieldWalker.secret_paths(form_elements)
         encryption = SecretEncryptionService.from_settings()
-        config = InstanceConfigHelper.normalize_form_configuration(submitted)
+        # An empty submission normalises to None; validating {} instead names the missing fields.
+        config = InstanceConfigHelper.normalize_form_configuration(submitted) or {}
         if stored is not None:
             try:
                 config = encryption.restore_masked_paths(config, stored, secret_paths)
