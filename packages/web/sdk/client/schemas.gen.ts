@@ -5977,7 +5977,6 @@ export const CreateDatabaseRequestSchema = {
       title: "Configuration",
       description:
         "The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.",
-      default: {},
     },
     source: {
       anyOf: [
@@ -5998,7 +5997,6 @@ export const CreateDatabaseRequestSchema = {
       title: "Source Configuration",
       description:
         "The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.",
-      default: {},
     },
   },
   type: "object",
@@ -6720,7 +6718,6 @@ export const DatabaseResponseSchema = {
       title: "Configuration",
       description:
         "The ingestor's settings for this database, as validated against its announced schema.",
-      default: {},
     },
     source: {
       anyOf: [
@@ -6741,7 +6738,6 @@ export const DatabaseResponseSchema = {
       title: "Source Configuration",
       description:
         "The source's settings for this database, secret fields masked.",
-      default: {},
     },
     display_name: {
       anyOf: [
@@ -24171,7 +24167,6 @@ export const UpdateDatabaseSourceRequestSchema = {
       title: "Source Configuration",
       description:
         "The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.",
-      default: {},
     },
     replace_existing_documents: {
       type: "boolean",

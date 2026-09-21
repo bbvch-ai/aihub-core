@@ -14,10 +14,11 @@ class UpdateDatabaseSourceRequest(BaseModel):
     source_configuration: Annotated[
         dict[str, Any],
         Field(
+            default_factory=dict,
             description="The source's settings as submitted through its announced form. Secret fields may carry the "
             "mask returned by the API to keep the stored value."
         ),
-    ] = {}
+    ]
     replace_existing_documents: Annotated[
         bool,
         Field(

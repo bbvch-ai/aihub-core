@@ -1,3 +1,12 @@
+"""Per-database source builders for the rclone source pipeline.
+
+One deployed code location fills every database whose ``source`` names it, so nothing source-specific can be baked
+into resources at ``Definitions``-build time. The target database is resolved per run (from the composite partition
+key on the partitioned write path, from the ``aihub/bucket`` run tag on the observe/remove path) and its source
+configuration is read from the row here. Unlike ``ingestor_config_for_bucket`` there are no deployment defaults to
+fall back to: a database without a valid source configuration must not sync from anything.
+"""
+
 from functools import cache
 from typing import Annotated
 
@@ -9,15 +18,6 @@ from swiss_ai_hub.pipeline.resources.rclone.rclone_client import RcloneClient
 from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSyncConfig
 from swiss_ai_hub.pipeline.types.rclone_remote import RcloneRemote
 from swiss_ai_hub.pipeline.util.bucket_utils import ensure_main_db_connection
-
-"""Per-database source builders for the rclone source pipeline.
-
-One deployed code location fills every database whose ``source`` names it, so nothing source-specific can be baked
-into resources at ``Definitions``-build time. The target database is resolved per run (from the composite partition
-key on the partitioned write path, from the ``aihub/bucket`` run tag on the observe/remove path) and its source
-configuration is read from the row here. Unlike ``ingestor_config_for_bucket`` there are no deployment defaults to
-fall back to: a database without a valid source configuration must not sync from anything.
-"""
 
 
 def source_config_for_bucket[TConfig: SourcePipelineConfig](
