@@ -136,14 +136,20 @@ const handleMessage = async (event: MessageEvent) => {
     return
   }
 
-  // set-context: the pipe pushes the correct thread_id as each message streams.
-  const thread_id = data.thread_id as string
+  // set-context: the pipe pushes the thread and the model as each message streams.
+  const thread_id = (data.thread_id as string) ?? ''
+
+  // Remembered before the thread is checked, and including the model: a report raised from the
+  // app rail has no other way to learn either, and a turn whose thread did not resolve is still
+  // worth reporting against the model that produced it.
+  setOpenWebUIContext({
+    threadId: thread_id,
+    displayId: display_id,
+    model: (data.model as string) ?? '',
+  })
+
+  // Keep an already-open panel synced. Only a resolved thread has a panel to sync to.
   if (!thread_id) return
-
-  // Remember it, so a report raised from the app rail still names the conversation.
-  setOpenWebUIContext({ threadId: thread_id, displayId: display_id })
-
-  // Keep an already-open panel synced.
   const view = openPanelView()
   if (view) {
     router.push(tenantPath(`/service/openai/${thread_id}/${display_id}/${view}`))

@@ -115,6 +115,10 @@ class Pipe:
             default=int(os.getenv("AIHUB_REQUEST_TIMEOUT", "60")),
             description="Request timeout in seconds",
         )
+        AIHUB_FRONTEND_URL: str = Field(
+            default=os.getenv("AIHUB_FRONTEND_URL", "http://localhost:3333"),
+            description="Base URL for the AI-Hub frontend",
+        )
 
     def __init__(self):
         self.valves = self.Valves()
@@ -182,12 +186,43 @@ class Pipe:
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed))
 
+    async def _set_ui_context(
+        self,
+        thread_id: Annotated[str, "Thread ID"],
+        display_id: Annotated[str, "Display ID"],
+        model: Annotated[str, "Model behind this answer, so a bug report can name it"],
+        event_emitter: Annotated[Any, "Event emitter (one-way emit; do NOT use event_caller)"],
+    ) -> None:
+        """Tell the parent window which conversation is on screen.
+
+        The chat runs in an iframe, so the shell cannot see it otherwise, and a bug report raised
+        from the app rail would name neither the model nor the thread. A raw-LLM turn has a real
+        AI-Hub thread — it is derived from the chat id and the API persists its history under it —
+        so the same message serves it as serves an agent turn.
+
+        Failing here must never fail the turn: the answer the user asked for matters more than the
+        context a later bug report would have carried.
+        """
+        code = f"""
+        window.parent.postMessage({{
+            type: 'set-context',
+            thread_id: {json.dumps(thread_id)},
+            display_id: {json.dumps(display_id)},
+            model: {json.dumps(model)},
+        }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
+        """
+        try:
+            await event_emitter({"type": "execute", "data": {"code": code}})
+        except Exception as context_error:
+            logger.warning(f"Failed to publish UI context: {context_error}")
+
     async def pipe_stream(
         self,
         body: Annotated[dict[str, Any], "Request body"],
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
+        __event_emitter__: Annotated[Any, "Event emitter"] = None,
     ):
         """
         Handle streaming requests, yielding SSE formatted strings.
@@ -218,6 +253,9 @@ class Pipe:
                 json=payload,
                 headers=headers,
             ) as stream_response:
+                if __event_emitter__:
+                    await self._set_ui_context(thread_id, display_id, model_id, __event_emitter__)
+
                 # Process the stream line by line
                 async for line in stream_response.aiter_lines():
                     line = line.strip()
@@ -273,6 +311,7 @@ class Pipe:
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
+        __event_emitter__: Annotated[Any, "Event emitter"] = None,
     ):
         """
         Handle non-streaming requests, returning a dict with the completion response.
@@ -291,6 +330,9 @@ class Pipe:
                 "display_id": display_id,
             },
         }
+
+        if __event_emitter__:
+            await self._set_ui_context(thread_id, display_id, model_id, __event_emitter__)
 
         try:
             # Use a separate client for non-streaming requests
@@ -326,15 +368,21 @@ class Pipe:
         __user__: Annotated[dict[str, str], "User information"],
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __request__: Annotated[Any, "Request"],
+        __event_emitter__: Annotated[Any, "Event emitter"] = None,
     ) -> Annotated[str, "Response (always empty for streaming)"]:
-        """Main pipeline entry point"""
+        """Main pipeline entry point.
+
+        ``__event_emitter__`` is injected by OpenWebUI on this method only, so it has to be
+        forwarded — without it the turn still answers, but the shell never learns which model
+        and thread produced it and a bug report cannot name either.
+        """
 
         is_streaming = body.get("stream", False)
         logger.debug(f"Request type: {'streaming' if is_streaming else 'non-streaming'}")
 
         if is_streaming:
             # For streaming, we return the async generator object directly
-            return self.pipe_stream(body, __user__, __metadata__, __request__)
+            return self.pipe_stream(body, __user__, __metadata__, __request__, __event_emitter__)
         else:
             # For non-streaming, we await the result and return it
-            return await self.pipe_non_stream(body, __user__, __metadata__, __request__)
+            return await self.pipe_non_stream(body, __user__, __metadata__, __request__, __event_emitter__)
