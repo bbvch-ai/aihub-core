@@ -28,6 +28,28 @@ labels:
 body:
   - type: markdown
     attributes:
+      value: How to reach you if support needs more detail.
+
+  - type: input
+    id: reporter_name
+    attributes:
+      label: Your name
+
+  - type: input
+    id: reporter_email
+    attributes:
+      label: Contact email
+    validations:
+      required: true
+
+  - type: input
+    id: reporter_phone
+    attributes:
+      label: Phone
+      description: Optional, if you would rather be called back.
+
+  - type: markdown
+    attributes:
       value: Describe the problem in your own words. The technical details further
         down are filled in for you — correct them only if they look wrong.
 
@@ -177,25 +199,3 @@ body:
     attributes:
       label: Interface language
       description: Some problems only appear in one language.
-
-  - type: markdown
-    attributes:
-      value: How to reach you if support needs more detail.
-
-  - type: input
-    id: reporter_name
-    attributes:
-      label: Your name
-
-  - type: input
-    id: reporter_email
-    attributes:
-      label: Contact email
-    validations:
-      required: true
-
-  - type: input
-    id: reporter_phone
-    attributes:
-      label: Phone
-      description: Optional, if you would rather be called back.
