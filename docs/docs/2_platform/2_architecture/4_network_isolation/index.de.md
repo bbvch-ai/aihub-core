@@ -51,7 +51,6 @@ Interne Anwendungs- und Verarbeitungs-Services:
 - **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
 - **vLLM**: Lokale LLM-Inferenz (Chat, Embedding, Reranking) – nur GPU Deployments
 - **speaches**: Spracherkennung und Text-zu-Sprache
-- **jupyter**: Code-Ausführungsumgebung
 - **playwright**: Web-Scraping und Automatisierung (auch im `egress` für Internetzugriff)
 - **agents**: Alle Agent Workers (RAG, Expert, Wrapping)
 - **pipelines**: Datenverarbeitungs-Pipelines
@@ -117,7 +116,6 @@ flowchart TB
         presidio[presidio]
         vllm[vLLM]
         agents[agents]
-        jupyter[jupyter]
         playwright[playwright]
         dagster[dagster-*]
         pipelines[pipelines]

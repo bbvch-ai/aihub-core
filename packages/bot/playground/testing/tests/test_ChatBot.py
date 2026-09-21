@@ -8,6 +8,7 @@ import requests
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -192,6 +193,45 @@ async def test_send_message(
     assert test_runner.responses[-1].payload["from"]["id"] == BOT_ID
     assert test_runner.responses[-1].payload["recipient"]["id"] == USER_ID
     assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
+
+
+@pytest.mark.asyncio
+async def test_unprovisioned_user_is_prompted_to_log_in(
+    test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials
+):
+    """Issue #1315: a Teams/bot-first user with no Keycloak account gets an actionable message.
+
+    The user's email (``ghost@example.com``) is never registered in the fake Keycloak store, so
+    ``resolve_user_identity`` raises ``UserNotProvisionedError``. Instead of the opaque generic
+    error, the bot now replies with the ``user_not_provisioned`` message telling the user to sign in
+    to the Hub web portal first — never reaching the agent.
+    """
+    with open(Path(__file__).parent / "user_message.json") as file:
+        payload: dict = json.loads(file.read())
+
+    payload["serviceUrl"] = SERVICE_ENDPOINT
+    payload["conversation"]["id"] = CONVERSATION_ID
+    payload["from"]["id"] = USER_ID
+    payload["from"]["name"] = "ghost@example.com"  # an email NOT provisioned in Keycloak
+    payload["recipient"]["id"] = BOT_ID
+    payload["id"] = ACTIVITY_ID
+    payload["channelId"] = "emulator"
+
+    response = await client.post(url=JSON_ENDPOINT, json=payload)
+
+    # The webhook itself succeeds; the failure is surfaced to the user as a chat reply.
+    assert response.status_code == 200
+
+    reply_text = test_runner.responses[-1].payload["text"]
+    # The unprovisioned user never reaches the agent — no real answer.
+    assert reply_text != "First chunk.\nSecond chunk."
+    # They get the actionable "log in to the Hub first" message (with the portal URL), not the
+    # opaque generic error.
+    locale_handler = LocaleHandler().in_locale("en")
+    login_url = AIHubSettings().primary_frontend_origin
+    assert reply_text == locale_handler("bot.error.user_not_provisioned", url=login_url)
+    assert login_url in reply_text
+    assert reply_text != locale_handler("bot.error.generic_error")
 
 
 @pytest.mark.flaky

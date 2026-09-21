@@ -1,5 +1,10 @@
 # Split the Sysadmin Plane into Separately-Licensed Proprietary Packages
 
+> **Superseded (on the licensing question) by
+> [`2026_06_10_relicense_sysadmin_plane_to_agpl`](./2026_06_10_relicense_sysadmin_plane_to_agpl.md).** The sysadmin
+> packages are now AGPL-3.0-or-later, not proprietary. This ADR is retained as the historical record of the original
+> extraction and proprietary choice; the package-separation reasoning still applies.
+
 ## Context
 
 The repository is being open-sourced under a **mixed-license model**: Apache-2.0 for the platform runtime and shared

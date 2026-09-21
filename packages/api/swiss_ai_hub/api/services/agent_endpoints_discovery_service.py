@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import logging
 from asyncio import sleep
@@ -40,9 +39,11 @@ from swiss_ai_hub.core.persistence import (
     User,
 )
 from swiss_ai_hub.core.publishers import NCPublisher
+from swiss_ai_hub.core.routes import ChatService
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
@@ -167,29 +168,16 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_class_dto = AgentClassDTO.from_discovery_event(response)
                 unique_agents_dict[unique_key] = agent_class_dto
 
-                AgentClassEntity.create_or_update(
-                    agent_class=agent_class_dto.agent_class,
-                    name=agent_class_dto.name,
-                    description=agent_class_dto.description,
-                    icon=agent_class_dto.icon,
-                    form=agent_class_dto.form,
-                    agent_config_specs=agent_class_dto.agent_config_specs,
-                    is_conversational=agent_class_dto.is_conversational,
-                    start_events=agent_class_dto.start_events,
-                    stop_events=agent_class_dto.stop_events,
-                    hitl_request_events=agent_class_dto.hitl_request_events,
-                    hitl_response_events=agent_class_dto.hitl_response_events,
-                    network_graph=agent_class_dto.network_graph,
-                    templates=[t.model_dump() for t in response.templates],
-                )
+                AgentClassEntity.create_or_update(response)
 
         return list(unique_agents_dict.values())
 
     async def _sync_agent_instances_to_provisioners(self) -> None:
         """Sync online agent instances to external provisioners when the set changes."""
-        instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
+        name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
+        instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        current_set = {(inst.agent_class, inst.agent_id) for inst in instances}
+        current_set = {(inst.agent_class, inst.agent_id, inst.name) for inst in instances}
         current_hash = self._compute_agents_hash(current_set)
 
         if await self._agents_hash_unchanged(current_hash):
@@ -202,8 +190,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             await self._store_agents_hash(current_hash)
 
     @staticmethod
-    def _compute_agents_hash(agent_set: set[tuple[str, str]]) -> str:
-        normalized = sorted(f"{ac}:{ai}" for ac, ai in agent_set)
+    def _compute_agents_hash(agent_set: set[tuple[str, str, str]]) -> str:
+        normalized = sorted(f"{ac}:{ai}:{name}" for ac, ai, name in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     async def _agents_hash_unchanged(self, current_hash: str) -> bool:
@@ -517,23 +505,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
             async def sse_event_generator():
                 """Generator that yields raw events as SSE without conversion"""
-                while True:
-                    if resources.stop_signal.is_set() and resources.chunk_queue.empty():
-                        logger.debug("Stop streaming due to stop_event and empty queue")
-                        break
-                    try:
-                        event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
-
-                        # Dump the raw event as JSON for SSE
-                        event_data = event.model_dump_json()
-                        yield f"data: {event_data}\n\n"
-
-                        resources.chunk_queue.task_done()
-                    except TimeoutError:
-                        # No new event yet; keep waiting
-                        continue
-                    except asyncio.CancelledError:
-                        break
+                async for event in ChatService.iter_streamed_display_events(resources):
+                    yield f"data: {event.model_dump_json()}\n\n"
 
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"

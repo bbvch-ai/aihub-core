@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: LicenseRef-Proprietary
 import { defineNuxtConfig } from 'nuxt/config'
 
 // Layer-level config for sysadmin-web. The actual entry point is `.app/`

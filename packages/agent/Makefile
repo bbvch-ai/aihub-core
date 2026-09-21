@@ -49,3 +49,12 @@ run-namespace-selection-agent:
 
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
+
+run-memory-writer-agent:
+	uv run python app/memory_writer_agent/main.py
+
+run-imap-agent:
+	uv run python app/imap_agent/main.py
+
+run-email-classification-agent:
+	uv run python app/email_classification_agent/main.py

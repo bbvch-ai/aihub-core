@@ -1,10 +1,10 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from llama_index.core import PromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import GuardResult, few_shot_guard
+from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
 from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example import FewShotGuardExample
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -16,11 +16,7 @@ scenarios("./features/few_shot_guard.feature")
 @pytest.fixture
 def llm():
     with patch("llama_index.core.llms.llm.LLM", new_callable=Mock) as mock_llm:
-        mock_llm_instance = mock_llm.return_value
-        mock_llm_instance.astructured_predict = AsyncMock(
-            return_value=GuardResult(reasoning="Expected reasoning", success=True)
-        )
-        yield mock_llm_instance
+        yield mock_llm.return_value
 
 
 @given(parsers.parse('a locale handler with locale "{locale}"'), target_fixture="locale_handler")
@@ -44,34 +40,27 @@ def _(query):
     return query
 
 
-@when("the few-shot guard is executed")
+@given(parsers.parse('the guard model replies "{reply}"'))
+def _(llm, reply):
+    llm.achat = AsyncMock(return_value=ChatResponse(message=ChatMessage(role=MessageRole.ASSISTANT, content=reply)))
+
+
+@when("the few-shot guard is executed", target_fixture="guard_result")
 @async_test
 async def _(examples, llm, locale_handler, user_query):
-    await few_shot_guard(
-        examples=examples,
-        llm=llm,
-        t=locale_handler,
-        user_query=user_query,
-    )
+    return await few_shot_guard(examples=examples, llm=llm, t=locale_handler, user_query=user_query)
 
 
-@then("structured_predict should be called", target_fixture="call_args")
-def _(llm):
-    llm.astructured_predict.assert_called()
-    call_args = llm.astructured_predict.call_args
-    return call_args
+@then("the guard should accept the request")
+def _(guard_result):
+    assert guard_result.success is True
 
 
-@then("structured_predict should be called with prompt:")
-def _(call_args, locale_handler, user_query, examples, docstring):
-    prompt = PromptTemplate(locale_handler("lib.guards.few_shot_guard.prompt")).format(**call_args[1])
+@then("the guard should reject the request")
+def _(guard_result):
+    assert guard_result.success is False
 
-    def normalize(text):
-        return "\n".join(line.strip() for line in text.strip().splitlines() if line.strip())
 
-    normalized_prompt = normalize(prompt)
-    normalized_docstring = normalize(docstring)
-
-    assert normalized_prompt == normalized_docstring, (
-        f"\nExpected:\n{repr(normalized_docstring)}\n\nGot:\n{repr(normalized_prompt)}"
-    )
+@then(parsers.parse('the reasoning should be "{expected_reasoning}"'))
+def _(guard_result, expected_reasoning):
+    assert guard_result.reasoning == expected_reasoning

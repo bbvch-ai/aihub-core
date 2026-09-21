@@ -1,4 +1,8 @@
+import { createRequire } from 'node:module'
+
 import { defineNuxtConfig } from 'nuxt/config'
+
+const { version: packageVersion } = createRequire(import.meta.url)('../package.json')
 
 export default defineNuxtConfig({
   extends: ['..'],
@@ -6,6 +10,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       env: process.env.ENV,
+      // The UI service version, baked into the static bundle at build time.
+      // APP_VERSION is set from the Docker build-arg VERSION (the release/image
+      // version); falls back to package.json for local/dev builds.
+      appVersion: process.env.APP_VERSION || packageVersion,
       // Base URL the layer's SDK client (@core/sdk/client) targets. Default is
       // same-origin '/api/v1' (the web app is co-located with its API behind
       // Traefik). Apps that EXTEND this layer from a different origin override

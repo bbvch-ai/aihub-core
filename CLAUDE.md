@@ -57,9 +57,10 @@ Langfuse adds AI-specific observability on top — full prompt/response capture,
 tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
 request to LLM response.
 
-**Network Isolation**: Docker Compose defines five network zones: `proxy` (external ingress via Traefik), `backend`
-(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), and `egress`
-(outbound internet with inter-container communication disabled). Services are assigned only the networks they require.
+**Network Isolation**: Docker Compose defines six network zones: `proxy` (external ingress via Traefik), `backend`
+(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), `egress` (outbound
+internet with inter-container communication disabled), and `code-sandbox` (single-tenant zone for the `open-terminal`
+code-execution sandbox plus exactly its callers). Services are assigned only the networks they require.
 
 ## Dev Stack Services
 
@@ -89,8 +90,8 @@ backup/restore
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
-**Utility**: Jupyter Lab (:8888, code execution sandbox), Playwright (:3036, browser automation), Attu (:3003, Milvus
-admin UI)
+**Utility**: Open Terminal (:8200 in dev, code execution sandbox for OpenWebUI — plain LLM models only), Playwright
+(:3036, browser automation), Attu (:3003, Milvus admin UI)
 
 ## Package Architecture
 
@@ -102,9 +103,9 @@ Code shared by 2+ services belongs in `packages/core`. Service-specific code sta
 - **`packages/process`**: High-level business process orchestration (agents + humans + external programs).
 - **`packages/api`**: REST API + WebSocket gateway (FastAPI). Apache-2.0.
 - **`packages/sysadmin-api`**: System-administration API — sysadmin-gated tenant lifecycle endpoints (FastAPI,
-  proprietary).
+  AGPL-3.0-or-later).
 - **`packages/web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind). AGPL-3.0-or-later.
-- **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (proprietary).
+- **`packages/sysadmin-web`**: System-administration UI — Nuxt Layer extending `packages/web` (AGPL-3.0-or-later).
 - **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
 - **`packages/backup`**: Centralized backup/restore service (independent Dagster instance). AGPL-3.0-or-later.
 - **`.github/actions`**: Reusable GitHub Actions for CI/CD.
@@ -224,6 +225,30 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 3. Update scope `README.md` if changes affect architecture/usage
 4. Create ADR in `docs/arc42/decisions/` for significant architectural decisions
 5. Commit & push following Git workflow above
+6. **After pushing a PR branch, check SonarCloud** — see below
+
+### SonarCloud Check After Pushing
+
+Whenever you push a branch that has (or is about to have) a PR, check what SonarCloud reported on it. CI scans each
+package as its own project, so findings that never reach the terminal will otherwise block review.
+
+1. **Only if the `sonarqube` MCP server is connected.** It needs `SONARQUBE_TOKEN` in `.env` (see `.claude/README.md`).
+   If it is not connected, say so once and move on — do not install it, and do not fall back to guessing.
+2. Wait for the scan. SonarCloud analyses **after** CI runs, so results are not there the instant you push. Check
+   `gh pr checks` first; if the Sonar job has not finished, come back to it.
+3. Query with `search_sonar_issues_in_projects`, passing the **PR number** as `pullRequest` and the project key from the
+   relevant `packages/*/sonar-project.properties`. Pass `ps` as a **number**, not a string. Only query the packages your
+   diff touched.
+4. **Fix trivial findings yourself, then push the fix.** Trivial means the fix is local, obvious, and cannot change
+   behaviour: unused imports or variables, redundant casts, missing `readonly`, duplicated string literals, cognitive
+   complexity resolved by extracting a helper, naming convention violations.
+5. **Do not auto-fix anything else.** Report it to the user with the rule key, the file and line, and what the fix would
+   risk. This covers anything that changes control flow, touches security or auth, alters a public signature, requires a
+   design decision, or is arguably a false positive.
+6. **Always tell the user what you found and what you did** — including when you found nothing, and including each issue
+   you fixed. Never fix Sonar findings silently.
+
+Some findings are deliberately left open; check `git log` and existing comments before "fixing" one.
 
 ## Testing
 

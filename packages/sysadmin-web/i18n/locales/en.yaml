@@ -18,6 +18,8 @@ tenant_admin:
     orphaned_label: Orphaned
     orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
       cannot access it.
+  card:
+    more_rules: +{count} more
   configure:
     title: Configure Tenant
     description: Attach metadata to an existing Keycloak tenant group. The tenant
@@ -25,6 +27,9 @@ tenant_admin:
     tenant_id_label: Keycloak Tenant ID
     empty_unconfigured: No unconfigured Keycloak tenants available. Create a tenant
       group in the Keycloak admin console first.
+    default_rules_error: Could not load this instance's standard access rules. Saving
+      now would create a tenant with no access — check that the platform API and model
+      gateway are reachable.
   form:
     name: Tenant Name
     description: Description

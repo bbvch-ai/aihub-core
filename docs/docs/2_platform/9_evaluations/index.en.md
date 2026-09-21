@@ -7,106 +7,84 @@ title: Agent evaluations
 Agent evaluations test and measure AI agent quality before and after deployment. You get data on whether your agents
 deliver accurate, complete, and concise responses.
 
-Evaluations test agents against predefined questions with known correct answers. You provide the questions and expected
-answers, and the system measures how well your agent performs.
+Evaluations test agents against predefined questions with known correct answers. Experiments are run in
+[Langfuse](https://langfuse.com), the platform's built-in LLM observability tool. Swiss AI Hub auto-provisions
+everything Langfuse needs — your agents, an agent-calling connection, evaluator models, and a prompt template — so you
+can focus on three steps:
 
-Benefits of evaluations:
-
-- Verify agent performance before and after deployment
-- Get measurable ratings instead of subjective opinions
-- Track quality changes as you update knowledge bases and prompts
-- Maintain audit trails for regulatory requirements
-
-## Datasets
-
-Datasets are collections of test questions with reference answers.
-
-Cover representative questions your agent will receive. Include clear, accurate reference answers and edge cases. Start
-with 10 question-answer pairs minimum. 20-50 pairs work better.
-
-::: details Example dataset structure
-- Question: "How do I reset my password?"
-- Reference Answer: "Click 'Forgot Password' on the login page, enter your email, and follow the reset link sent to your
-  inbox."
-:::
-
-To create a dataset, navigate to the evaluation service (under `Services > Evaluations`), provide a name and
-description, add questions and expected answers, then save.
-
-![Dataset Overview](../../../media/evaluation/dataset_overview.png) *Dataset overview showing all evaluation datasets
-with creation dates*
-
-![Creating a Dataset](../../../media/evaluation/dataset_create.png) *Adding test questions with expected answers*
+1. **Create a dataset** of questions and reference answers.
+2. **Create evaluators** that score agent responses.
+3. **Run experiments** against your agent and review the results.
 
 ::: tip
-Start with 20-30 questions covering simple and complex scenarios. Update datasets as your agent evolves. Organize by
-topic or use case.
+This page describes the Swiss AI Hub workflow only. For Langfuse-specific details (dataset upload formats, evaluator
+configuration, experiment comparison), see the [Langfuse documentation](https://langfuse.com/docs).
 :::
 
-## Running experiments
+## 1. Create a dataset
 
-Experiments test your agent against a dataset and produce quality ratings.
+Datasets are collections of test questions with reference answers. Cover representative questions your agent will
+receive, include clear reference answers and edge cases. Start with at least 10 question-answer pairs; 20-50 work
+better.
 
-To run an experiment, select an agent, pick a test dataset, start the experiment, then review the ratings and analysis.
+You can create a dataset in two ways:
 
-![Creating an Experiment](../../../media/evaluation/experiment_create.png) *Creating an experiment by selecting an agent
-and dataset*
+- **In the Swiss AI Hub Admin UI** — open `Datasets`, provide a name and description, add your question-answer pairs,
+  then save.
+- **In Langfuse** — create the dataset directly, for example by uploading a CSV file with one row per question-answer
+  pair.
 
-![Experiment Overview](../../../media/evaluation/experiment_overview.png) *Experiment overview listing past experiments
-\- click for details*
+Either way the dataset is stored in Langfuse and immediately available for experiments.
 
-![Running an Experiment](../../../media/evaluation/experiment_running.png) *Experiment progress during execution*
+![Dataset Overview](../../../media/evaluation/dataset_overview.png) *Dataset overview in the Admin UI*
 
-Run experiments before deploying a new agent, after making significant changes to configuration or knowledge base, and
-regularly (weekly or monthly) for quality monitoring.
+![Creating a Dataset](../../../media/evaluation/dataset_create.png) *Adding test questions with reference answers*
 
-### How AI judges work
-
-Each question gets sent to your agent. Three AI judges (LLMs) evaluate the response against the reference answer.
-Results are averaged and displayed as star ratings.
-
-### Evaluation metrics
-
-Three metrics, rated 0-5 stars:
-
-| Metric       | Description                                                                                                   | Rating Guide                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Correctness  | Factual accuracy compared to the reference answer. Free of misinformation, hallucinations, or contradictions. | 5: Matches reference<br/>3: Some errors<br/>0: Wrong/misleading    |
-| Completeness | Addresses all parts of the query, including multi-part questions and implicit needs.                          | 5: All parts answered<br/>3: Some aspects missed<br/>0: Incomplete |
-| Conciseness  | Efficient and direct. Avoids irrelevant tangents, redundancy, or excessive filler.                            | 5: To the point<br/>3: Verbose<br/>0: Excessive                    |
-
-Rating ranges:
-
-- 4-5 stars: Ready for production.
-- 3-4 stars: Works well but may have minor issues. Review failing test cases.
-- Below 3 stars: Review closely before deployment.
-
-### Viewing results
-
-![Experiment Results](../../../media/evaluation/experiment_result.png) *Experiment results showing overall metrics and
-detailed breakdown per question*
-
-The results page shows star ratings for the three metrics at the top. Below is a table with each test question,
-reference answer, agent's response, ratings, and response latency.
-
-Expand questions to see full text. Low correctness ratings usually mean knowledge base gaps or retrieval issues. Low
-completeness ratings suggest the agent misses parts of multi-part questions. Low conciseness ratings mean overly verbose
-responses.
-
-Update your agent's knowledge base, system prompts, or retrieval settings based on results. Run the experiment again to
-verify improvements.
-
-::: tip
-Langfuse can be accessed for deeper investigation, including conversation traces, cost attribution, and raw telemetry
-data. In development, access Langfuse at `http://localhost:6006`.
+::: warning Datasets created in the Admin UI are append-only
+When editing in the Admin UI you can add new question-answer pairs at any time, but you cannot remove or edit items once
+saved. To change a question, add a corrected item or edit the dataset in Langfuse.
 :::
+
+## 2. Create evaluators
+
+Evaluators score each agent response, typically using LLM-as-a-judge. Configure them in Langfuse. Swiss AI Hub
+provisions a dedicated evaluator LLM connection (`AI-Hub LLM (Evaluators)`), so judge models are available out of the
+box.
+
+Recommended dimensions to score:
+
+| Metric       | What it measures                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| Correctness  | Factual accuracy compared to the reference answer. Free of misinformation, hallucinations, or contradictions. |
+| Completeness | Addresses all parts of the query, including multi-part questions and implicit needs.                          |
+| Conciseness  | Efficient and direct. Avoids irrelevant tangents, redundancy, or excessive filler.                            |
+
+## 3. Run experiments
+
+Open a dataset card in the Admin UI and click **Run Experiments** to jump to the dataset in Langfuse, then create an
+experiment there:
+
+- **Select the agent to test.** Online agents appear automatically as selectable models, named
+  `<agent_class>/<agent_id>` — Swiss AI Hub continuously syncs running agents to Langfuse, so no manual registration is
+  needed.
+- **Use the `ai-hub-agent` prompt template.** This auto-provisioned template maps each dataset question to a request
+  against the agent's OpenAI-compatible endpoint, so Langfuse calls your real agent through the platform.
+- **Attach the evaluators** from step 2 and run the experiment.
+
+Run experiments before deploying a new agent, after significant changes to its configuration or knowledge base, and
+regularly for quality monitoring. Every run is stored in Langfuse, so you can compare runs side-by-side to confirm a
+change improved quality.
+
+When interpreting results: low correctness usually points to knowledge base gaps or retrieval issues, low completeness
+to missed parts of multi-part questions, and low conciseness to overly verbose responses. Adjust the agent's knowledge
+base, system prompts, or retrieval settings accordingly, then re-run to verify improvements.
 
 ## What's not implemented
 
 The following features are not currently implemented:
 
-- Bias monitoring and model drift detection: No automated bias detection, fairness metrics, or drift detection. The
-  evaluation framework and OpenTelemetry tracing provide foundational capabilities that could be extended.
+- Bias monitoring and model drift detection: No automated bias detection, fairness metrics, or drift detection. Langfuse
+  experiments and OpenTelemetry tracing provide foundational capabilities that could be extended.
 
 - Production A/B testing: No integrated traffic splitting or parallel testing of agent variants in production.
-  Pre-deployment comparison via experiments is supported.
+  Pre-deployment comparison via Langfuse experiments is supported.

@@ -11,6 +11,7 @@
     <div class="pt-16">
       <Textarea
         v-model="userInput"
+        :aria-label="t('thread.chat.placeholder')"
         class="w-full"
         auto-resize
         rows="5"

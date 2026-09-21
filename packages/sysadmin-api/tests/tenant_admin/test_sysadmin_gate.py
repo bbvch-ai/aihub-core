@@ -1,10 +1,9 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 """Verifies the ``sys_admin_user()`` gate on ``TenantAdminController`` denies non-sysadmins
 end-to-end, not just at the auth dependency layer.
 
 ``TestAuthHandler`` builds an identity with ``is_sys_admin=False`` by default, so mounting
 the controller behind it is enough to exercise the rejection path. Every endpoint shares
-the same dependency, so one endpoint is representative; we hit all five anyway because the
+the same dependency, so one endpoint is representative; we hit all six anyway because the
 registration is a fluent chain and any of them could silently lose the security decorator
 during refactors.
 """
@@ -27,6 +26,7 @@ def non_sysadmin_client():
         TenantAdminController(auth=auth)
         .list_tenants()
         .list_unconfigured_tenants()
+        .get_default_access_rules()
         .get_tenant()
         .create_tenant_metadata()
         .update_tenant_metadata()
@@ -40,6 +40,7 @@ def non_sysadmin_client():
     [
         ("get", f"{BASE}/", None),
         ("get", f"{BASE}/unconfigured", None),
+        ("get", f"{BASE}/default-access-rules", None),
         ("get", f"{BASE}/some-tenant-id", None),
         ("post", f"{BASE}/", {"tenant_id": "x", "name": "X"}),
         ("patch", f"{BASE}/some-tenant-id", {"name": "X"}),

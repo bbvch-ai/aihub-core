@@ -1,0 +1,15 @@
+{
+  "realm": "aihub",
+  "roles": {
+    "realm": [
+      {
+        "name": "AIHubAccess",
+        "description": "Required role to access AI-Hub. Users without this role are denied at login."
+      },
+      {
+        "name": "AIHubSysAdmin",
+        "description": "System administrator access to infrastructure tools (Dagster, SeaweedFS, Attu, etc.)"
+      }
+    ]
+  }
+}

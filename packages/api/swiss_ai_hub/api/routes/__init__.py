@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.api.routes.access.access_controller import AccessController
     from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
     from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
     from swiss_ai_hub.api.routes.evaluation.dataset_controller import DatasetController
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.webhook.webhook_controller import WebhookController
 
 __all__ = [
+    "AccessController",
     "AgentController",
     "ApiHealthController",
     "AuthProviderController",
@@ -56,6 +58,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AccessController": "swiss_ai_hub.api.routes.access.access_controller",
     "AgentController": "swiss_ai_hub.api.routes.agent.agent_controller",
     "ApiHealthController": "swiss_ai_hub.api.routes.health.api_health_controller",
     "AuthProviderController": "swiss_ai_hub.api.routes.auth_provider.auth_provider_controller",

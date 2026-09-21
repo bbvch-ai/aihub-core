@@ -10,7 +10,7 @@ Connect, orchestrate, and monitor best-in-class open-source tools to deliver\
 what cloud AI platforms promise, but where you own every layer.
 
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
-[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL%20%2F%20Proprietary-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20AGPL-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
@@ -178,12 +178,12 @@ wired together.
 <details>
 <summary><strong>Integrations & utilities</strong></summary>
 
-| Component              | Powered by                                                             | Role                                                                 |
-| ---------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| MS Teams & Slack bots  | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels               |
-| Code execution sandbox | [Jupyter](https://jupyter.org/)                                        | Isolated Python environment for Open-WebUI's code interpreter        |
-| Browser automation     | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing               |
-| Docker socket proxy    | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape |
+| Component              | Powered by                                                             | Role                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| MS Teams & Slack bots  | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels                                                                 |
+| Code execution sandbox | [Open Terminal](https://github.com/open-webui/open-terminal)           | Sandboxed Python runtime for OpenWebUI code execution (plain LLM models); per-user isolation, downloadable file output |
+| Browser automation     | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing                                                                 |
+| Docker socket proxy    | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape                                                   |
 
 </details>
 
@@ -287,14 +287,16 @@ This agent retrieves documents from the knowledge base, answers with an LLM when
 human expert via Teams or Slack when it is not, pausing the workflow until the expert responds:
 
 ```python
-from swiss_ai_hub.agent import Agent, AgentConfig, AgentRunner, step
-from swiss_ai_hub.core.events import UserMessageEvent, LLMStopEvent, StopEvent
-from swiss_ai_hub.core.events.semantic import RetrieverEvent
-from swiss_ai_hub.core.events.guard import ContextSufficientEvent, ContextInsufficientEvent
-from swiss_ai_hub.core.events.botl import BotInTheLoop
+from swiss_ai_hub.agent import Agent, AgentRunner, step
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.events.agent import (
+    UserMessageEvent, LLMStopEvent, StopEvent, RetrieverEvent,
+    ContextSufficientAcceptEvent, ContextInsufficientRejectEvent, BotInTheLoop,
+)
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.retrievers import KnowledgeRetriever
+from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever import KnowledgeRetriever
 from swiss_ai_hub.core.i18n import LocaleString, LocaleHandler
+from llama_index.core.base.llms.types import ChatMessage
 
 class ExpertQAAgent(Agent):
     name = LocaleString(en="Expert QA")
@@ -311,16 +313,16 @@ class ExpertQAAgent(Agent):
 
     # Step 2: emit a guard event — the runtime routes each type to a different step
     @step()
-    async def check_context(self, event: RetrieverEvent) -> ContextSufficientEvent | ContextInsufficientEvent:
+    async def check_context(self, event: RetrieverEvent) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent:
         if event.nodes:
-            return ContextSufficientEvent()  # documents found → routes to respond()
-        return ContextInsufficientEvent()  # no documents → routes to escalate()
+            return ContextSufficientAcceptEvent()  # documents found → routes to respond()
+        return ContextInsufficientRejectEvent()  # no documents → routes to escalate()
 
-    # Step 3a: only triggered by ContextSufficientEvent
+    # Step 3a: only triggered by ContextSufficientAcceptEvent
     # the runtime also injects RetrieverEvent and UserMessageEvent from earlier in the run
     @step()
     async def respond(
-        self, _: ContextSufficientEvent, retrieval: RetrieverEvent, start: UserMessageEvent,
+        self, _: ContextSufficientAcceptEvent, retrieval: RetrieverEvent, start: UserMessageEvent,
         config: AgentConfig, displayer: EventDisplayer,
     ) -> LLMStopEvent:
         context = "\n\n".join(node.content for node in retrieval.nodes)  # build context from documents
@@ -328,11 +330,11 @@ class ExpertQAAgent(Agent):
         async with config.llm.cost_reporting_llm(displayer) as llm:  # tracks token usage and cost
             return await displayer.display_llm_stream(config.llm, llm, messages, as_stop_step=True)  # stream to chat UI
 
-    # Step 3b: only triggered by ContextInsufficientEvent — sends question to a Teams/Slack channel
+    # Step 3b: only triggered by ContextInsufficientRejectEvent — sends question to a Teams/Slack channel
     # BotInTheLoop pauses the workflow until the expert responds
     @step()
     async def escalate(
-        self, _: ContextInsufficientEvent, start: UserMessageEvent, config: AgentConfig,
+        self, _: ContextInsufficientRejectEvent, start: UserMessageEvent, config: AgentConfig,
     ) -> BotInTheLoop.request:
         return BotInTheLoop.invoke(question=start.user_query, user=start.user, channel_config=config.channel)
 
@@ -348,9 +350,9 @@ await runner.run_forever()
 ```
 
 On startup the agent registers itself: it appears in the chat UI, gets a configuration form in the admin panel, and
-receives full distributed tracing through Langfuse. The runtime routes `ContextSufficientEvent` to `respond` and
-`ContextInsufficientEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a configured
-Teams or Slack expert channel and pauses the workflow; when the expert responds, the dispatcher resumes at
+receives full distributed tracing through Langfuse. The runtime routes `ContextSufficientAcceptEvent` to `respond` and
+`ContextInsufficientRejectEvent` to `escalate`; steps never call each other. `BotInTheLoop` sends the question to a
+configured Teams or Slack expert channel and pauses the workflow; when the expert responds, the dispatcher resumes at
 `relay_expert`.
 
 ### Data pipelines
@@ -364,7 +366,9 @@ This pipeline connects to a legacy SFTP server, syncs documents into the data la
 indexes them for RAG — with hierarchical summaries and LLM-powered table refinement:
 
 ```python
-from swiss_ai_hub.pipeline import default_definitions, default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, document_ingestion_pipeline_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.rclone import sftp_source
 
 # Stage 1: SFTP → Data Lake
@@ -381,14 +385,14 @@ stage_1 = default_rclone_to_datalake_definitions(
 )
 
 # Stage 2: Data Lake → Vector Store
-# Monitors the same S3 bucket, processes any new or changed files
-stage_2 = default_definitions(
-    datalake_container_name="acme-knowledge-base",
-    embedding_model_name="embedding/bge-m3",
-    llm_model_name="text-generation/gemma-4-31B-it",
-    with_summary_nodes=True,                         # hierarchical summaries for multi-level RAG
-    with_table_refinement=True,                      # LLM-powered table detection and splitting
-    with_figure_descriptions=True,                   # vision LLM describes images in documents
+# Serves every knowledge database assigned to this ingestor, resolving the target per run
+stage_2 = document_ingestion_pipeline_definitions(
+    ingestor="acme_rag",
+    display_name=LocaleString(en="Acme RAG"),
+    description=LocaleString(en="Contracts and legal documents"),
+    # Models, enrichment steps and observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every knowledge database overrides them in the create dialog
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 
@@ -451,20 +455,17 @@ Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and ope
 
 ## License
 
-Swiss AI Hub uses a **mixed-license model** — each published artifact carries its own license, and the per-package
-`LICENSE` file is authoritative for its subtree:
+Swiss AI Hub is **fully open-source** under a **dual-license model** — each published artifact carries its own license,
+and the per-package `LICENSE` file is authoritative for its subtree:
 
 - **Apache-2.0** — the platform runtime and shared code (`packages/core`, `agent`, `api`, `bot`, `pipeline`, `process`,
   and the repository root). See [LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE).
-- **AGPL-3.0-or-later** — the frontend (`packages/web`) and backup service (`packages/backup`).
-- **Proprietary — All Rights Reserved** — multi-tenant administration (`packages/sysadmin-api`,
-  `packages/sysadmin-web`): no use granted. Public visibility in this repository does not grant any right to use, copy,
-  modify, run, or distribute these packages. A commercial license is required for any use; contact bbv Software Services
-  AG.
+- **AGPL-3.0-or-later** — the frontend (`packages/web`), the multi-tenant administration plane (`packages/sysadmin-api`,
+  `packages/sysadmin-web`), and the backup service (`packages/backup`).
 
 The split is intentional: the backend stays **permissive** so you can build and run proprietary agents and extensions
-without any obligation to disclose them, while the **copyleft** components (the UI and the backup service) keep
-improvements flowing back to the community and block proprietary SaaS rehosts.
+without any obligation to disclose them, while the **copyleft** components (the UI, the administration plane, and the
+backup service) keep improvements flowing back to the community and block proprietary SaaS rehosts.
 
 See [LICENSES.md](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSES.md) for the full per-package matrix and
 rationale.

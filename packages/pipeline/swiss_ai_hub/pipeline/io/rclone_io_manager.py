@@ -16,7 +16,7 @@ class RcloneIOManager(ConfigurableIOManager):
     **Why metadata-only for cleanup**: Comparing source vs data lake only needs paths/timestamps,
     not file content. Loading all content would waste memory and time.
 
-    **Why read-only**: RAG pipelines never write back to source systems.
+    **Why read-only**: Document ingestion pipelines never write back to source systems.
     """
 
     rclone_client: ResourceDependency[RcloneResource]

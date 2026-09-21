@@ -69,7 +69,11 @@ _COMPOSE_REF_RE = re.compile(r"\$\{([A-Z_][A-Z0-9_]*)(:?[-+?])?[^}]*\}")
 # LiteLLM config syntax: `os.environ/VAR_NAME` instructs LiteLLM to resolve the
 # value from the process environment at runtime.
 _OS_ENVIRON_RE = re.compile(r"os\.environ/([A-Z_][A-Z0-9_]*)")
-_CONFIG_REF_PATTERNS = [_COMPOSE_REF_RE, _OS_ENVIRON_RE]
+# Keycloak realm config syntax: `$(env:VAR)` is resolved by keycloak-config-cli
+# (managed files) and by the entrypoint's bash envsubst (first-start import);
+# `$(envjson:VAR)` is the entrypoint-only raw-JSON injection variant.
+_KEYCLOAK_ENV_RE = re.compile(r"\$\(env(?:json)?:([A-Z_][A-Z0-9_]*)\)")
+_CONFIG_REF_PATTERNS = [_COMPOSE_REF_RE, _OS_ENVIRON_RE, _KEYCLOAK_ENV_RE]
 
 _ENV_VAR_NAME_RE = re.compile(r"[A-Z_][A-Z0-9_]*")
 
@@ -324,15 +328,16 @@ def _iter_compose_refs_in(node) -> Iterator[str]:
 def _collect_config_template_refs() -> FilesByVar:
     """Map env var name -> sorted list of config-template basenames that reference it.
 
-    Scans `infra/deployment/templates/configs/*.j2` for both `${VAR}` and the
-    LiteLLM-specific `os.environ/VAR` syntax. These are the env vars that get
+    Recursively scans `infra/deployment/templates/configs/**/*.j2` for `${VAR}`,
+    the LiteLLM-specific `os.environ/VAR` syntax, and the Keycloak
+    `$(env:VAR)` / `$(envjson:VAR)` syntax. These are the env vars that get
     expanded inside a config file mounted into a container at runtime — useful
     for attributing variables that aren't passed via compose's `environment:`
     block but reach the container through a mounted config (Keycloak realm
-    import, identity-provider config, LiteLLM config, etc.).
+    config, LiteLLM config, etc.).
     """
     refs: dict[str, set[str]] = defaultdict(set)
-    for path in sorted(CONFIG_TEMPLATES_DIR.glob("*.j2")):
+    for path in sorted(CONFIG_TEMPLATES_DIR.rglob("*.j2")):
         text = path.read_text(encoding="utf-8")
         for pattern in _CONFIG_REF_PATTERNS:
             for match in pattern.finditer(text):

@@ -176,10 +176,10 @@ class Pipe:
             return model_id[len(self.valves.AIHUB_OPENAI_PIPELINE_PREFIX) :]
         return model_id
 
-    def _str_to_object_id(self, context_id: str | None) -> str:
+    def _str_to_object_id(self, context_id: str | None, salt: str = "") -> str:
         if not context_id:
             return str(ObjectId())
-        hashed = hashlib.md5(context_id.encode()).digest()[:12]
+        hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
         return str(ObjectId(hashed))
 
     async def pipe_stream(
@@ -196,7 +196,7 @@ class Pipe:
         # Prepare headers and payload
         headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
-        thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
+        thread_id = self._str_to_object_id(__metadata__.get("chat_id"), salt=model_id)
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
 
         payload = {
@@ -280,7 +280,7 @@ class Pipe:
         """
         headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
-        thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
+        thread_id = self._str_to_object_id(__metadata__.get("chat_id"), salt=model_id)
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
 
         payload = {

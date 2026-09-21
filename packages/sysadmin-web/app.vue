@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <NuxtLayout>
     <NuxtPage />

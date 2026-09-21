@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 from typing import Self
 
 from swiss_ai_hub.core.i18n import LocaleString

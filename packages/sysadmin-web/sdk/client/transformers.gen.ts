@@ -2,6 +2,7 @@
 
 import type {
   CreateTenantMetadataResponse,
+  GetAccessCapabilitiesResponse,
   GetTenantResponse,
   ListTenantsResponse,
   UpdateTenantMetadataResponse,
@@ -38,5 +39,28 @@ export const updateTenantMetadataResponseTransformer = async (
   data: any,
 ): Promise<UpdateTenantMetadataResponse> => {
   data = tenantResponseSchemaResponseTransformer(data);
+  return data;
+};
+
+const capabilityGroupSchemaResponseTransformer = (data: any) => {
+  if (data.groups) {
+    data.groups = data.groups.map((item: any) =>
+      capabilityGroupSchemaResponseTransformer(item),
+    );
+  }
+  return data;
+};
+
+const accessCapabilitiesResponseSchemaResponseTransformer = (data: any) => {
+  data.groups = data.groups.map((item: any) =>
+    capabilityGroupSchemaResponseTransformer(item),
+  );
+  return data;
+};
+
+export const getAccessCapabilitiesResponseTransformer = async (
+  data: any,
+): Promise<GetAccessCapabilitiesResponse> => {
+  data = accessCapabilitiesResponseSchemaResponseTransformer(data);
   return data;
 };

@@ -5,11 +5,11 @@ import logging
 import uuid
 from collections.abc import AsyncGenerator, Callable
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import HTTPException, UploadFile
 from nats.aio.client import Client as NATS
-from openai import AsyncOpenAI, HttpxBinaryResponseContent
+from openai import APIStatusError, AsyncOpenAI, HttpxBinaryResponseContent
 from openai.types import CompletionUsage, ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
@@ -19,12 +19,14 @@ from opentelemetry.propagate import inject
 from pydantic import BaseModel
 from pydub import AudioSegment
 from starlette.responses import StreamingResponse
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
 from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import HumanInTheLoopRequestEvent
+from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
@@ -121,8 +123,11 @@ class OpenaiService:
         """
         try:
             return await OpenaiService.get_model(model_name)
-        except HTTPException:
-            pass
+        except HTTPException as model_lookup_error:
+            # Only a 404 ("not a known model") should fall through to the agent branch; any other error
+            # (e.g. a future 403) must propagate rather than be masked as an assistant lookup.
+            if model_lookup_error.status_code != 404:
+                raise
         agent_class, agent_id = model_name.split("/")
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
@@ -135,6 +140,56 @@ class OpenaiService:
             agent_class=agent_dto.agent_class,
             agent_id=agent_dto.agent_id,
         )
+
+    @staticmethod
+    def _has_model_access(access_checker: AccessChecker, model_name: str) -> bool:
+        """Whether the checker grants the ``capability/name`` model. A bare id (no ``/``) forms no valid
+        rule, so it is denied rather than raising in the template check. Used to filter model listings."""
+        capability, _, name = model_name.partition("/")
+        return bool(name) and access_checker.has_access_to_model(capability, name)
+
+    @staticmethod
+    def _assert_model_access(user: UserIdentity, model_name: str) -> None:
+        """Enforces per-model access for a direct model invocation. Lives on the service, not the
+        controller, so internal (non-HTTP) callers cannot bypass it."""
+        if not OpenaiService._has_model_access(AccessChecker.from_user(user), model_name):
+            raise HTTPException(
+                status_code=403, detail=f"User {user.id} does not have permission to access model {model_name}"
+            )
+
+    @staticmethod
+    def _apply_model_identity(
+        chat_completion_request: ChatCompletionRequest, model_name: str, t: LocaleHandler
+    ) -> None:
+        """Names the model to itself, because OpenWebUI keeps one history across a model switch and a model
+        asked who it is otherwise answers from the transcript — adopting whichever model spoke earlier, and
+        looping on the conflict until it exhausts its output budget. Applies to every plain-model request:
+        OpenWebUI reaches this endpoint through its own OpenAI connection, whose payload is indistinguishable
+        from an external SDK client's, so there is nothing to gate on. Leads the list because Qwen3.5 rejects
+        a system message that follows any user or assistant turn — which is also why a caller's own system
+        message is merged into this one instead of being left as a second one. See ADR 2026_08_14."""
+        identity = t("lib.prompt.model.identity_system_message").format(model_name=model_name.rpartition("/")[2])
+        messages = list(chat_completion_request.messages or [])
+        leading_message = next(iter(messages), None)
+
+        if leading_message is not None and leading_message.get("role") == "system":
+            merged_system_message = OpenaiService._prefixed_system_message(leading_message, identity)
+            chat_completion_request.messages = [merged_system_message, *messages[1:]]
+        else:
+            chat_completion_request.messages = [{"role": "system", "content": identity}, *messages]
+
+    @staticmethod
+    def _prefixed_system_message(system_message: dict[str, Any], identity: str) -> dict[str, Any]:
+        """Puts the identity ahead of the caller's own system prompt inside a single system message, so the
+        caller still wins on task behaviour without the payload carrying a second system message. Qwen3.5 on
+        Infomaniak rejects the latter with `400 - System message must be at the beginning`, which reaches the
+        user as an empty response — see ADR 2026_06_29."""
+        content = system_message.get("content")
+        if isinstance(content, str):
+            merged: Any = f"{identity}\n\n{content}" if content else identity
+        else:
+            merged = [{"type": "text", "text": identity}, *(content or [])]
+        return {**system_message, "content": merged}
 
     @staticmethod
     @trace_fn
@@ -150,6 +205,8 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
+        OpenaiService._assert_model_access(user, model_name)
+
         embedding_model_names = await OpenaiService._model_names_by_type("embedding", model_name)
 
         if len(embedding_model_names) == 0:
@@ -183,27 +240,47 @@ class OpenaiService:
         Delegates to the underlying chat model; supports both synchronous and streaming responses.
         """
         await OpenaiService.get_model(model_name)  # Ensures model exists
+        OpenaiService._assert_model_access(user, model_name)
+        # Must stay after get_model: its 404 is what routes an assistant to chat_completion_with_assistants'
+        # agent branch, and agents own their identity (ADR 2026_06_04). Injecting before it would hand every
+        # agent a contradicting persona.
+        OpenaiService._apply_model_identity(chat_completion_request, model_name, t)
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
 
         if chat_completion_request.stream:
+            kwargs = OpenaiService._filter_kwargs(
+                client.chat.completions.create,
+                chat_completion_request,
+                user=user,
+                locale=t.locale,
+                thread_id=thread_id,
+                display_id=display_id,
+            )
+            # Opened here rather than inside the generator so that an upstream rejection (unknown
+            # model, exhausted quota) is still raised in the endpoint's scope, where
+            # ModelGatewayErrorHandler can turn it into a response that names the cause. Once
+            # StreamingResponse has begun, the caller can only observe a truncated stream.
+            response = await client.chat.completions.create(**kwargs)
 
             async def stream_chat_completion() -> AsyncGenerator[str]:
-                """Handles streaming responses from OpenAI's API."""
-                kwargs = OpenaiService._filter_kwargs(
-                    client.chat.completions.create,
-                    chat_completion_request,
-                    user=user,
-                    locale=t.locale,
-                    thread_id=thread_id,
-                    display_id=display_id,
-                )
-                response = await client.chat.completions.create(**kwargs)
+                """``async with`` so the upstream stream is closed when the consumer stops early.
 
-                async for chunk in response:
-                    yield f"data: {chunk.model_dump_json()}\n\n"
-                    await asyncio.sleep(0)
+                A browser tab closed mid-answer makes Starlette call ``aclose()`` on this generator,
+                which raises ``GeneratorExit`` at the ``yield`` — without the context manager nothing
+                releases the httpx connection, and ``with_options()`` hands every user a copy over
+                one shared pool, so the leaks accumulate against everyone.
+
+                It does not cover a generator that is never started at all: ``aclose()`` on one runs
+                no code, so no ``__aexit__`` fires. A ``BackgroundTask`` would not close that gap
+                either — Starlette 1.1.0 raises ``ClientDisconnect`` out of ``stream_response`` on
+                ASGI spec >= 2.4 and never reaches its ``background`` call.
+                """
+                async with response:
+                    async for chunk in response:
+                        yield f"data: {chunk.model_dump_json()}\n\n"
+                        await asyncio.sleep(0)
 
             return StreamingResponse(
                 stream_chat_completion(),
@@ -250,10 +327,17 @@ class OpenaiService:
                 user=user,
                 t=t,
             )
-        except HTTPException:
-            pass
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise
 
         agent_class, agent_id = model_name.split("/")
+        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {user.id} does not have permission to access assistant {model_name}",
+            )
+
         agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
@@ -301,7 +385,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -320,9 +407,8 @@ class OpenaiService:
             locale=locale,
             aihub_headers=aihub_headers,
         )
-        # Wait until all events are processed
-        await resources.stop_signal.wait()
-        await resources.subscriber.stop()
+        # Wait until all events are processed, draining trailing events before teardown
+        await ChatService.wait_for_stop_then_drain(resources)
 
         if resources.stop_event.is_exception_event:
             raise HTTPException(resources.stop_event.http_status_code, resources.stop_event.message)
@@ -368,7 +454,10 @@ class OpenaiService:
         thread_id, display_id = OpenaiService._extract_thread_and_display_id(chat_completion_request)
         if thread_id and chat_completion_request.metadata.reconstruct_history:
             chat_completion_request.messages = await OpenaiService._reconstruct_history(
-                chat_completion_request, thread_id
+                chat_completion_request,
+                thread_id,
+                primary_agent_class=agent_class,
+                primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
@@ -401,32 +490,28 @@ class OpenaiService:
 
     @staticmethod
     async def _sse_event_generator(resources: StreamingResources) -> AsyncGenerator[str]:
-        while True:
-            if resources.stop_signal.is_set() and resources.chunk_queue.empty():
-                logger.debug("Stop streaming due to stop_event and empty queue")
-                break
-            try:
-                chunk_event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
-                yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
-                resources.chunk_queue.task_done()
-            except TimeoutError:
-                continue
-            except asyncio.CancelledError:
-                break
+        streamed_parts: list[str] = []
+        async for chunk_event in ChatService.iter_streamed_display_events(resources):
+            streamed_parts.append(chunk_event.content)
+            yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
 
         yield OpenaiService._build_chunk_sse(
-            content=OpenaiService._resolve_final_content(resources.stop_event),
+            content=OpenaiService._resolve_final_content(resources.stop_event, streamed="".join(streamed_parts)),
             model="",
             finish_reason="stop",
         )
 
     @staticmethod
-    def _resolve_final_content(stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None) -> str:
+    def _resolve_final_content(
+        stop_event: StopEvent | HumanInTheLoopRequestEvent | ExceptionEvent | None,
+        streamed: str = "",
+    ) -> str:
         if stop_event.is_hitl_request_event:
             return stop_event.question
         if stop_event.is_exception_event:
             return f"\n\n>[!CAUTION]\n>**Error:** {stop_event.message}\n"
-        return ""
+        full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
+        return ChatService.missing_suffix(streamed, full_answer)
 
     @staticmethod
     def _build_chunk_sse(*, content: str, model: str, finish_reason: str | None = None) -> str:
@@ -458,9 +543,11 @@ class OpenaiService:
         Generate an image using the specified image model.
         Routes the generation request to the corresponding Azure image model client.
         """
+        OpenaiService._assert_model_access(user, model_name)
+
         image_model_names = await OpenaiService._model_names_by_type("image_generation", model_name)
         if len(image_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
         kwargs = OpenaiService._filter_kwargs(client.images.generate, image_generation_request, user=user)
@@ -484,53 +571,127 @@ class OpenaiService:
         Utilizes the specified speech-to-text model and parameters to convert audio into transcription.
         Handles chunking of large audio files to comply with API size limits.
         """
-        tts_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
-        if len(tts_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+        OpenaiService._assert_model_access(user, model_name)
+
+        stt_model_names = await OpenaiService._model_names_by_type("audio_transcription", model_name)
+        if len(stt_model_names) == 0:
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
 
         file_ext = file.filename.rsplit(".", 1)[-1].lower()
         audio = AudioSegment.from_file(file.file, format=file_ext)
-        audio_chunks: list[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
-        transcription_chunks: list[TranscriptionChunk] = []
 
-        for i, audio_chunk in enumerate(audio_chunks):
-            buffer = io.BytesIO()
-            audio_chunk.export(buffer, format="wav")
-            filename_without_ext = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
-            wav_filename = f"{filename_without_ext}_chunk{i}.wav"
-            file_tuple = (wav_filename, buffer, "audio/wav")
-
-            result: TranscriptionChunk = await client.audio.transcriptions.create(
-                model=model_name,
-                file=file_tuple,
-                language=language,
-                prompt=prompt,
-                response_format=response_format,
-                temperature=temperature,
-                timestamp_granularities=timestamp_granularities,
+        if not AudioChunkingService.contains_speech(audio):
+            return OpenaiService._transcription_response(
+                text="", audio=audio, language=language, response_format=response_format
             )
 
-            transcription_chunks.append(result)
+        audio_chunks: list[AudioSegment] = await AudioChunkingService.chunk_audio(audio)
+        transcription_chunks: list[TranscriptionChunk] = []
+        speechless_duration: Annotated[int, "ms"] = 0
 
-        merged_text: str = AudioChunkingService.merge_transcriptions(transcription_chunks)
+        for i, audio_chunk in enumerate(audio_chunks):
+            try:
+                transcription_chunks.append(
+                    await OpenaiService._transcribe_chunk(
+                        client=client,
+                        model_name=model_name,
+                        audio_chunk=audio_chunk,
+                        filename=file.filename,
+                        index=i,
+                        language=language,
+                        prompt=prompt,
+                        response_format=response_format,
+                        temperature=temperature,
+                        timestamp_granularities=timestamp_granularities,
+                    )
+                )
+            except APIStatusError as gateway_failure:
+                if not ModelGatewayErrorHandler.is_untranscribable_audio(gateway_failure):
+                    raise
 
+                speechless_duration += len(audio_chunk)
+                # The provider's own wording is kept verbatim here, unlike in the response: it
+                # carries the upstream request id, which is the only handle for asking the provider
+                # about a chunk it rejected. `str(exception)` would not do — the SDK puts the body
+                # there only when it built the exception itself, so the id has to be unwrapped.
+                logger.exception(
+                    f"Chunk {i + 1}/{len(audio_chunks)} ({len(audio_chunk)} ms) of {file.filename} produced no "
+                    f"transcript: {ModelGatewayErrorHandler.upstream_message(gateway_failure)}"
+                )
+
+        if speechless_duration:
+            logger.error(
+                f"{speechless_duration} ms of the {len(audio)} ms in {file.filename} is not in the transcript: the "
+                "speech-to-text provider found no speech it could align there."
+            )
+
+        # Verified against the provider on 2026-09-04: it answers silence, a pure tone and white
+        # noise with this failure, and 1.3 s of speech with a transcript — so the failure is its
+        # verdict "no speech here", not a fault. That is the verdict `contains_speech` reaches
+        # locally for silence, and it is answered the same way: the empty transcript OpenAI's own
+        # API returns for a recording nobody spoke into.
+        merged_text: str = (
+            AudioChunkingService.merge_transcriptions(transcription_chunks) if transcription_chunks else ""
+        )
+
+        return OpenaiService._transcription_response(
+            text=merged_text, audio=audio, language=language, response_format=response_format
+        )
+
+    @staticmethod
+    async def _transcribe_chunk(
+        *,
+        client: AsyncOpenAI,
+        model_name: str,
+        audio_chunk: AudioSegment,
+        filename: str,
+        index: int,
+        language: str | None,
+        prompt: str | None,
+        response_format: str | None,
+        temperature: float | None,
+        timestamp_granularities: list[Literal["word", "segment"]] | None,
+    ) -> TranscriptionChunk:
+        buffer = io.BytesIO()
+        audio_chunk.export(buffer, format="wav")
+        filename_without_ext = filename.rsplit(".", 1)[0] if "." in filename else filename
+        file_tuple = (f"{filename_without_ext}_chunk{index}.wav", buffer, "audio/wav")
+
+        return await client.audio.transcriptions.create(
+            model=model_name,
+            file=file_tuple,
+            language=language,
+            prompt=prompt,
+            response_format=response_format,
+            temperature=temperature,
+            timestamp_granularities=timestamp_granularities if response_format == "verbose_json" else None,
+        )
+
+    @staticmethod
+    def _transcription_response(
+        *, text: str, audio: AudioSegment, language: str | None, response_format: str | None
+    ) -> Transcription | TranscriptionVerbose | str:
+        """Chunking merges every chunk into one text, so the formats that carry per-segment timing
+        cannot be reassembled and degrade to plain text."""
         if response_format == "text":
-            return merged_text
+            return text
         elif response_format == "srt" or response_format == "vtt":
             logger.warning(f"Format {response_format} not fully supported with chunking, returning as text")
-            return merged_text
+            return text
         elif response_format == "verbose_json":
             return TranscriptionVerbose(
-                text=merged_text,
-                language=language,
+                text=text,
+                # The gateway reports no detected language, and the field is required, so an
+                # unrequested language has nothing to report but the empty string.
+                language=language or "",
                 duration=len(audio) / 1000,  # Convert milliseconds to seconds
                 segments=[],
                 words=[],
             )
         else:
-            return Transcription(text=merged_text)
+            return Transcription(text=text)
 
     @staticmethod
     @trace_fn
@@ -545,12 +706,14 @@ class OpenaiService:
         Convert text to speech and return the audio content.
         Sends a TTS request to the designated model and streams the resulting audio bytes.
         """
+        OpenaiService._assert_model_access(user, model_name)
+
         tts_model_names = await OpenaiService._model_names_by_type("audio_speech", model_name)
         if len(tts_model_names) == 0:
-            raise ValueError(f"Model {model_name} not found.")
+            raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
 
         client: AsyncOpenAI = await LiteLLMService.openai_aclient_for_user(user)
-        kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request)
+        kwargs = OpenaiService._filter_kwargs(client.audio.speech.create, tts_request, user=user)
 
         return await client.audio.speech.create(input=input_text, **kwargs)
 
@@ -570,11 +733,24 @@ class OpenaiService:
 
     @staticmethod
     async def _reconstruct_history(
-        chat_completion_request: ChatCompletionRequest, thread_id: str
+        chat_completion_request: ChatCompletionRequest,
+        thread_id: str,
+        *,
+        primary_agent_class: str,
+        primary_agent_id: str,
     ) -> list[ChatCompletionMessageParam]:
-        history = await ThreadService.thread_as_message_history(thread_id)
-        user_message = chat_completion_request.messages[-1]
-        return history.messages + [user_message]
+        if not chat_completion_request.messages:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one message is required when reconstruct_history is enabled.",
+            )
+        normalized_thread_id = str(str_to_object_id(thread_id))
+        history = await ThreadService.thread_as_message_history(
+            normalized_thread_id,
+            primary_agent_class=primary_agent_class,
+            primary_agent_id=primary_agent_id,
+        )
+        return [*history.messages, chat_completion_request.messages[-1]]
 
     @staticmethod
     def _filter_kwargs(
@@ -616,10 +792,10 @@ class OpenaiService:
 
     @staticmethod
     async def _model_names_by_type(
-        model_type: Literal["chat", "embedding", "image_generation"], model_name: str | None = None
+        model_type: Literal["chat", "embedding", "image_generation", "audio_transcription", "audio_speech"],
+        model_name: str | None = None,
     ) -> list[str]:
-        litellm_client = LiteLLMProxySettings().httpx_aclient
-        models = await litellm_client.get("/v1/model/info")
+        models = await LiteLLMProxySettings().httpx_aclient.get("/v1/model/info")
         candidates = [
             model["model_name"] for model in models.json()["data"] if model["model_info"]["mode"] == model_type
         ]

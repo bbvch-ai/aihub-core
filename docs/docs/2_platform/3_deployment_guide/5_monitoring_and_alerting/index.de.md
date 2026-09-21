@@ -28,14 +28,41 @@ Die Plattform verwendet einen mehrschichtigen Ansatz:
 
 - **Native Docker-Checks**: Überwachen automatisch, ob Service-Prozesse laufen und reagieren. Docker kann ungesunde
   Container neu starten und ermöglicht so eine Selbstheilung bei vorübergehenden Problemen.
-- **Application Endpoint Checks**: Services legen dedizierte Health-Endpoints (`/health`) frei, die nicht nur die
-  Liveness, sondern auch die Bereitschaft zur Ausführung ihrer spezifischen Funktion überprüfen (z.B. kann die Datenbank
-  eine Abfrage akzeptieren?).
+- **Application Endpoint Checks**: Services legen einen Liveness-Endpoint (`/health`) frei, der antwortet, solange der
+  Prozess Anfragen bedient. Die API legt zusätzlich einen Readiness-Endpoint (`/ready`) frei, der jede
+  Backing-Abhängigkeit – NATS, MongoDB, Redis, Milvus und S3 – als eigenes Flag ausweist.
 - **Synthetic Probes**: Für Services ohne native Health-Endpoints pollt die Plattform diese aktiv, um sicherzustellen,
   dass sie verfügbar und reaktionsfähig sind.
 
 Jede Änderung des Health-Status – von gesund zu ungesund, Service-Starts und -Stopps – wird als strukturiertes Ereignis
 erfasst und bietet eine vollständige historische Aufzeichnung der Service-Verfügbarkeit.
+
+#### Degradierte Abhängigkeiten werden gemeldet, nicht neu gestartet
+
+Services starten und bedienen weiterhin Anfragen, wenn ein Backing-Store zeitweise nicht erreichbar ist, anstatt beim
+Start zu scheitern und in dieselbe nicht verfügbare Abhängigkeit hinein neu gestartet zu werden. Die Vektordatenbank ist
+das deutlichste Beispiel: Milvus meldet sich mehrere Minuten früher als gesund, als sein Query-Proxy Verbindungen
+annimmt. API und Agents starten daher ohne Verbindung zum Vector Store und öffnen eine solche bei der ersten Anfrage,
+die sie benötigt.
+
+Die betriebliche Konsequenz: Eine degradierte Abhängigkeit erscheint **nicht** als ungesunder oder neu startender
+Container. Sie erscheint im Readiness-Payload:
+
+```bash
+curl -s http://localhost:8000/api/v1/health/ready
+```
+
+```json
+{
+  "status": "unhealthy",
+  "code": 503,
+  "version": "0.320.0",
+  "checks": { "nats": true, "mongodb": true, "redis": true, "milvus": false, "s3": true }
+}
+```
+
+Das Alerting muss daher `/ready` überwachen – sowohl den Statuscode als auch die einzelnen `checks`-Flags – und nicht
+allein die Container-Gesundheit, die die Plattform als in Ordnung meldet, während die Vektorsuche nicht verfügbar ist.
 
 ### 2. Metriken: „Wie ist die Performance?“
 

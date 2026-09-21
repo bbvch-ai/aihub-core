@@ -1,6 +1,6 @@
-from typing import Annotated, Self
+from typing import Annotated, Self, override
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.generative_ai import (
@@ -48,6 +48,19 @@ class RAGAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="The LLM configuration for the agent."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Model for this agent's auxiliary steps: meta-question detection and answering, "
+                "standalone-question condensation, the few-shot and context-sufficiency guards, and "
+                "conversation title plus follow-up question generation. Generation parameters are inherited "
+                "from the main model. Falls back to the main model when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     number_of_input_tokens: Annotated[
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
@@ -81,10 +94,31 @@ class RAGAgentConfig(AgentConfig):
     org_memory: Annotated[
         OrgMemoryReadConfig | None,
         Field(
-            description=("Configuration for organization-memory scoping. Set to null to disable organization memory."),
+            description="Scoping for the organization memory the agent may read. Disable to skip organization memory.",
             title="Organization Memory",
         ),
     ] = OrgMemoryReadConfig()
+
+    @property
+    @override
+    def memory_llm_model_name(self) -> str | None:
+        """Point the platform's memory hook at this blueprint's own picker (issue #1590).
+
+        Guarded rather than returned raw: in form mode the value is a `ModelSelect`, and a picker submitted
+        blank arrives as an empty string — neither is a model name, and both mean "use the platform default".
+        """
+        memory_llm = self.user_memory.memory_llm
+        return memory_llm if isinstance(memory_llm, str) and memory_llm else None
+
+    @model_validator(mode="after")
+    def derive_task_llm_from_main_llm(self) -> Self:
+        """Only the task model is configurable: its generation parameters always mirror the main llm, and
+        an unset or blank picker falls back to the main model."""
+        if not isinstance(self.llm.model_name, str):
+            return self
+        task_model_name = self.task_llm.model_name if self.task_llm else None
+        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
+        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -97,6 +131,7 @@ class RAGAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(include_default_parameter=False),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
             number_of_input_tokens=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.label"),

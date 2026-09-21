@@ -47,6 +47,9 @@ class PrimeVueElement(FormkitElement, abc.ABC):
             self_copy.label = t.extract(self_copy.label)
         if isinstance(self_copy.help, LocaleString):
             self_copy.help = t.extract(self_copy.help)
-        if "required" in self_copy.validation and "*" not in self_copy.label:
+        # Gate on the flag, not on the rendered rule string: subclasses may emit a differently
+        # named rule (LocaleInput emits `localeRequired`), and a substring match would also
+        # misfire on unrelated rules such as `required_if`.
+        if self_copy.required and "*" not in self_copy.label:
             self_copy.label = f"{self_copy.label} *"
         return self_copy

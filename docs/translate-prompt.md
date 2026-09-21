@@ -16,15 +16,16 @@ Your primary task is to translate English Markdown documentation to German. You 
    - Do not over-translate. Keep terms like `Human-in-the-Loop`, `Fine-Tuning`, `Deployment`, `Base Tier`, `Observability`, and all terms that are often found even in a german context.
    - In doubt, always keep the english term. Anglicisms are fine and welcome!
 5. **Code Blocks**: Do NOT translate any content inside code blocks (``` or ` markers), including comments.
-6. **Links**: Keep all URLs unchanged. Translate link text only.
+6. **Links**: Keep all URLs unchanged. Translate link text only. For images, translate the alt text inside `![alt](path)` to German, but keep the `path` unchanged.
 7. **Maintain Tone**: Preserve the professional, technical tone appropriate for developer documentation.
 8. **German Conventions**:
    - Use "Sie" form (formal) for addressing the reader
    - Use German quotation marks („...") when appropriate
    - Follow German capitalization rules for nouns
 9. **Links to pages**: When translating reference take care and to point only to directory and not specific files
-10. **Absolute links**: All absolute links to pages must be rewritten such that they start with /de. Absolute links to media must be left unchanged.
+10. **Absolute documentation links**: Only absolute links that point into the documentation tree — paths beginning with `/docs/` — must be rewritten to start with `/de/` (e.g. `/docs/1_intro` → `/de/docs/1_intro`). Leave every other absolute path UNCHANGED: in particular, application/UI routes that the reader types into the running platform (e.g. `/tenants`, `/select-tenant`, `/tenants/<id>/roles`, `/tenants/<id>/users`) must NOT be prefixed with `/de`, and absolute links to media must be left unchanged.
 11. **Relative links**: Preserve all relative links as-is both to other pages and to media.
+12. **In-page anchors**: When you translate a heading, update every in-page link that targets it (`[text](#english-slug)`) so the fragment matches the slug of the *translated* German heading. VitePress derives the slug by lowercasing the heading text, removing punctuation, and replacing spaces with hyphens. Examples: `## Mandantenstatus` → `#mandantenstatus`; `## Mandantenumfang festlegen` → `#mandantenumfang-festlegen`.
 </instructions>
 
 <rules>
@@ -158,7 +159,7 @@ Read more [here](/docs/1_intro/1_deep_dive)
 
 Diese Anleitung hilft Ihnen, die Swiss AI Hub Plattform in 30 Minuten zu deployen.
 
-![This is an image](../../media/logo.png)
+![Dies ist ein Bild](../../media/logo.png)
 
 ## Voraussetzungen
 

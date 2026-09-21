@@ -1,10 +1,10 @@
-# packages/sysadmin-api - System Administration API (Proprietary)
+# packages/sysadmin-api - System Administration API (AGPL-3.0-or-later)
 
 **Purpose**: FastAPI service for system-administrator-only operations. Multi-tenant management lives here. Runs as a
 separate Docker image on `sysadmin.${DOMAIN}/api/v1/*`.
 
-**License**: Proprietary — All Rights Reserved (`LicenseRef-Proprietary`). No use granted; commercial license required
-for any use. The package's `LICENSE` is the authoritative source for terms.
+**License**: AGPL-3.0-or-later. Network-copyleft: if you offer a modified version as a hosted service, you must publish
+the source. The package's `LICENSE` is the authoritative source for terms.
 
 ## Scope responsibility
 
@@ -52,7 +52,7 @@ Extend the mount list when adding inherited composables that hit endpoints not i
 ```
 packages/sysadmin-api/
 ├── pyproject.toml
-├── LICENSE                       # Proprietary — All Rights Reserved
+├── LICENSE                       # GNU AGPL-3.0-or-later
 ├── README.md
 ├── Makefile                      # lint, format, test, run-dev, run-prod
 ├── Dockerfile                    # Multi-stage uv-based build
@@ -133,9 +133,9 @@ This package depends on:
 Both dependencies are workspace deps. Cross-package imports go through the public `swiss_ai_hub.api` /
 `swiss_ai_hub.core` interfaces (NOT deep paths) — same convention as every other cross-package import in this repo.
 
-**Apache-2.0 → proprietary is one-way compatible**: Apache code can be embedded in this proprietary package, but the
-resulting artifact remains proprietary. Proprietary code may NOT be embedded back into Apache packages. Do not let
-`sysadmin_api` symbols leak into `core` or `api`.
+**Apache-2.0 → AGPL is one-way compatible**: Apache code can be embedded in this AGPL package, but the resulting
+artifact is AGPL. AGPL code may NOT be embedded back into the Apache-2.0 packages. Do not let `sysadmin_api` symbols
+leak into `core` or `api`.
 
 ## Commands
 
@@ -152,5 +152,5 @@ resulting artifact remains proprietary. Proprietary code may NOT be embedded bac
 - Standalone runner: `swiss_ai_hub/sysadmin_api/sysadmin_runner.py`
 - Controller(s): `swiss_ai_hub/sysadmin_api/routes/tenant_admin/`
 - Tests: `tests/tenant_admin/`
-- Proprietary terms: `LICENSE`
+- License terms: `LICENSE` (AGPL-3.0-or-later)
 - Repo-wide license matrix: `LICENSES.md` (root)

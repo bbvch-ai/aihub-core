@@ -79,6 +79,10 @@ Create a tenant for people who administer the platform for business users. These
 These are business analysts, project managers, or department heads who understand the organization's needs but don't
 write code.
 
+> In the current implementation, **creating and configuring tenants** (Step 1–3 below) requires the `AIHubSysAdmin`
+> realm role. Grant it to the people who fill this Level 2 role so they can run the tenant lifecycle; the remaining
+> Level 2 activities (agent instances, evaluations, knowledge) are ordinary in-tenant admin tasks.
+
 ### Level 3: End users
 
 Create tenants for people who use agents to accomplish work. These users:
@@ -91,27 +95,73 @@ This is everyone else in your organization.
 
 ## Creating a tenant
 
-Navigate to **Service** → **Tenants** in the admin interface. You must be in a tenant that has administrative access to
-the tenant service.
+A tenant lives in **two stores**: a Keycloak group under `/tenants/<id>` (the source of truth for the tenant's existence
+and membership) and the platform's own metadata store (display name, description, access rules). Creating a tenant
+therefore means **first creating the Keycloak group, then attaching metadata to it** from the Tenant Administration UI.
+The order matters — you cannot configure a tenant whose Keycloak group does not yet exist.
 
-Click **Create Tenant**. You need three pieces of information:
+::: warning Required role: `AIHubSysAdmin`
+Tenant administration is gated by the **`AIHubSysAdmin`** Keycloak realm role. Only users carrying this realm role see
+the Tenant Administration entry points and can reach the create/configure flow. A regular tenant admin role (e.g.
+`AIHubAdmin`) is **not** sufficient — that role administers _within_ a tenant, not the tenant lifecycle itself.
+:::
 
-**Name**: Choose something clear and descriptive. "Finance Department", "Customer - Acme Corp", "Production
-Environment". Users see this name when selecting which tenant to work in.
+### Step 1 — Create the Keycloak group (prerequisite)
 
-**Description**: Explain what this tenant is for. "Finance department users - access to financial reporting agents and
-department guidelines." This helps both current and future administrators understand the tenant's purpose.
+Open the **Keycloak admin console**, switch to the **Swiss AI-Hub (`aihub`) realm**, and go to **Groups → `tenants`**.
+On the **Child groups** tab, click **Create group** and give it the tenant's ID — for example `finance`. This creates
+the group `/tenants/finance`.
 
-**Scope**: Define what resources this tenant can access. For the three-level pattern:
+![Creating the tenant group under /tenants/ in the Keycloak admin console](../../../../media/platform/creating_tenants/01_keycloak_create_group.png)
 
-- Sysadmin level: Full platform access
-- Management level: Administrative services but not deployment capabilities
-- End user level: Specific agents and processes, no services
+The group ID becomes the tenant's immutable identifier. Use a short, lowercase, URL-safe slug (`finance`, `acme-corp`,
+`production`); the human-readable display name is set later as metadata.
+
+> Tenant groups are also created automatically by IDP-to-tenant mappings (see _IDP-based tenant assignment_). Those
+> groups arrive **Unconfigured** and show up in exactly the same configure flow described below.
+
+### Step 2 — Open Tenant Administration
+
+Tenant Administration is a **separate, sysadmin-only application** served at `sysadmin.<your-domain>` (in local
+development: `http://localhost:3334`). You do not need to type that URL — reach it from the main app in one of two ways:
+
+- **Tenant switcher** in the top bar → **Tenant Administration** (shown only to `AIHubSysAdmin` users), or
+- the **Tenant Administration** card on the **tenant-selection** screen (`/select-tenant`).
+
+![The Tenant Administration entry point on the tenant-selection screen](../../../../media/platform/creating_tenants/02_enter_tenant_administration.png)
+
+Both land you on the **Tenants** page (`/tenants`), which lists every tenant and its state (Active, Orphaned,
+Unconfigured — see [Tenant states](#tenant-states)).
+
+### Step 3 — Configure the tenant
+
+On the **Tenants** page, click the dashed **New Tenant** card. (If the card is disabled, there are no unconfigured
+Keycloak groups yet — go back to Step 1.) The **Configure Tenant** dialog attaches metadata to your Keycloak group:
+
+![The Tenants page with the New Tenant card](../../../../media/platform/creating_tenants/03_new_tenant_card.png)
+
+- **Keycloak Tenant ID** — a dropdown of Keycloak groups under `/tenants/` that do not yet have metadata. Select the
+  group you created in Step 1 (e.g. `finance`).
+- **Tenant Name** — the human-readable display name users see when selecting a tenant ("Finance Department", "Customer —
+  Acme Corp", "Production"). Must be unique.
+- **Description** — what the tenant is for. Helps current and future administrators understand its purpose.
+- **Access Rules** — optional rules that define the **maximum scope** for everyone in the tenant (see
+  [Scoping tenants](#scoping-tenants)). You can leave this empty and refine it later.
+
+![The Configure Tenant dialog with the unconfigured Keycloak group in the Keycloak Tenant ID dropdown](../../../../media/platform/creating_tenants/04_configure_tenant_dialog.png)
+
+Click **Save**. The platform seeds the tenant's default roles, adds the current sysadmin to the tenant, and writes the
+metadata. The tenant immediately becomes **Active** and is selectable by its members.
+
+![The newly created tenant shown as Active in the Tenants list](../../../../media/platform/creating_tenants/05_tenant_active.png)
+
+> There is no separate "Scope" field on the create form. Tenant boundaries are expressed through **Access Rules**, which
+> you can set at creation time or edit later from the tenant's **Overview** tab.
 
 ## Scoping tenants
 
-The tenant's scope determines the maximum access anyone in that tenant can have. Think of it as drawing a boundary
-around resources.
+A tenant's **access rules** (the **Access Rules** field on the configure form, editable later from the **Overview** tab)
+determine the maximum access anyone in that tenant can have. Think of them as drawing a boundary around resources.
 
 For a Finance department tenant, you might scope it to:
 
@@ -140,10 +190,11 @@ tools. For management tenants, start broad since these users need flexibility to
 
 ## Configuring roles within tenants
 
-After creating the tenant, configure roles that users in that tenant can have. Roles define what users can do within the
-tenant's boundaries.
+Saving a new tenant **seeds a set of default roles automatically**, so the tenant is usable immediately. To review or
+extend them, open the tenant from the Tenants list and switch to its **Roles** tab (`/tenants/<id>/roles`). Roles define
+what users can do within the tenant's boundaries; each role carries its own access rules, bounded by the tenant's.
 
-For a department tenant, you might create:
+For a department tenant, you might add:
 
 **Standard User**: Can chat with department agents, participate in processes, but cannot create or modify anything.
 
@@ -156,12 +207,15 @@ all department resources.
 These roles only apply within this tenant. A user who is "Department Admin" in Finance has no privileges in the HR
 tenant unless explicitly granted.
 
-## Adding users to tenants
+## Assigning roles to users
 
-After creating roles, add users to the tenant and assign them roles.
+Open the tenant and switch to its **Users** tab (`/tenants/<id>/users`). It lists the users known to the platform; for
+each one you **assign or revoke that tenant's roles**.
 
-Search for users by email or name. If a user doesn't exist yet (they haven't logged in), you can still add them. Their
-profile will be created when they first authenticate through your identity provider.
+User _lifecycle_ — creating accounts, deleting them, federating from an external identity provider — is managed in
+**Keycloak**, not here. A user becomes a tenant member through Keycloak group membership (the `/tenants/<id>` group),
+which is also how IDP-based mappings add users automatically. The Users tab is where you grant those members their
+in-tenant roles.
 
 Users can belong to multiple tenants. Someone might be:
 
@@ -226,9 +280,9 @@ platform's own metadata store (display name, description, access rules) — they
 - **Unconfigured**: the Keycloak group exists but no metadata has been attached. End users cannot reach the tenant yet.
   Sysadmins see it in the "configure tenant" flow, where attaching metadata promotes it to Active.
 
-The sysadmin tenant administration UI at `/sysadmin/tenants/` surfaces all three states. The configure-tenant action
-attaches metadata to an Unconfigured group and is the primary path through which an operator-created Keycloak group
-(e.g. for an IDP-to-tenant mapping) becomes a usable tenant.
+The Tenant Administration app (`sysadmin.<your-domain>`, route `/tenants`) surfaces all three states. The
+configure-tenant action attaches metadata to an Unconfigured group and is the primary path through which an
+operator-created Keycloak group (e.g. for an IDP-to-tenant mapping) becomes a usable tenant.
 
 ## Tenant lifecycle
 
@@ -249,8 +303,9 @@ configured later.
 
 ## Practical tips
 
-::: tip Best Practices **Document your decisions**: Write down why you created each tenant and what its scope should be.
-Six months later when roles have changed, this documentation prevents confusion.
+::: tip Best Practices
+**Document your decisions**: Write down why you created each tenant and what its scope should be. Six months later when
+roles have changed, this documentation prevents confusion.
 
 **Start simple**: One management tenant and one end-user tenant works for many organizations. Add complexity only when
 you need it.

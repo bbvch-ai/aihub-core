@@ -22,8 +22,8 @@ class HumanInDTO(BaseModel):
     @classmethod
     def from_human_in_specs(cls, human_in_specs: HumanInSpecs, t: LocaleHandler) -> Self:
         human_in_dto = cls(
-            name=t.extract(human_in_specs.name),
-            description=t.extract(human_in_specs.description),
+            name=t.extract_required(human_in_specs.name, field_name="human_input.name"),
+            description=t.extract_required(human_in_specs.description, field_name="human_input.description"),
             route=human_in_specs.route,
             method=human_in_specs.method,
             is_process_start=human_in_specs.is_process_start,
@@ -36,8 +36,10 @@ class HumanInDTO(BaseModel):
     @classmethod
     def from_entity_specs(cls, human_in_specs_entity: HumanInSpecsEntity, t: LocaleHandler) -> Self:
         human_in_dto = cls(
-            name=t.extract(human_in_specs_entity.name.to_locale_string()),
-            description=t.extract(human_in_specs_entity.description.to_locale_string()),
+            name=t.extract_required(human_in_specs_entity.name.to_locale_string(), field_name="human_input.name"),
+            description=t.extract_required(
+                human_in_specs_entity.description.to_locale_string(), field_name="human_input.description"
+            ),
             route=human_in_specs_entity.route,
             method=human_in_specs_entity.method,
             is_process_start=human_in_specs_entity.is_process_start,

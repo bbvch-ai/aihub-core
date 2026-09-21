@@ -4,20 +4,20 @@
       "command": "./.claude/mcp/mcp-mongodb.sh"
     },
     "swiss_ai_hub_api": {
-      "command": "./.claude/mcp/mcp-swiss-ai-hub-api.sh"
+      "type": "http",
+      "url": "http://localhost:8000/mcp/",
+      "headersHelper": "./.claude/mcp/mcp-swiss-ai-hub-api-headers.sh"
     },
     "langfuse": {
-      "command": "./.claude/mcp/mcp-langfuse.sh"
+      "type": "http",
+      "url": "http://localhost:6006/api/public/mcp",
+      "headersHelper": "./.claude/mcp/mcp-langfuse-headers.sh"
     },
     "context7": {
       "command": "./.claude/mcp/mcp-context7.sh"
     },
     "playwright": {
       "command": "./.claude/mcp/mcp-playwright.sh"
-    },
-    "github": {
-      "command": "./.claude/mcp/mcp-github.sh",
-      "disabled": true
     },
     "postgres": {
       "command": "./.claude/mcp/mcp-postgres.sh"
@@ -26,7 +26,8 @@
       "command": "./.claude/mcp/mcp-primevue.sh"
     },
     "nuxt": {
-      "command": "./.claude/mcp/mcp-nuxt.sh"
+      "type": "http",
+      "url": "https://nuxt.com/mcp"
     },
     "milvus": {
       "command": "./.claude/mcp/mcp-milvus.sh"
@@ -36,6 +37,15 @@
     },
     "dagster": {
       "command": "./.claude/mcp/mcp-dagster.sh"
+    },
+    "likec4": {
+      "command": "./.claude/mcp/mcp-likec4.sh"
+    },
+    "redis": {
+      "command": "./.claude/mcp/mcp-redis.sh"
+    },
+    "sonarqube": {
+      "command": "./.claude/mcp/mcp-sonarqube.sh"
     }
   }
 }

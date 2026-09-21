@@ -17,6 +17,7 @@
     <!-- Editable Select -->
     <Select
       v-model="selectedIcon"
+      :aria-label="placeholder"
       :options="iconOptions"
       :editable="true"
       :placeholder="placeholder"

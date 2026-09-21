@@ -4,7 +4,6 @@
     close-route="/service/datasets"
     :loading="datasetIsLoading"
   >
-    <ConfirmPopup />
     <div class="flex flex-col gap-3">
       <EvaluationDatasetEdit v-model="editableDataset" />
       <Button

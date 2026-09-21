@@ -5,9 +5,9 @@ from pydantic import Field
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.events.process.discovery.agent_in.agent_in_specs import AgentInSpecs
 from swiss_ai_hub.core.events.process.discovery.human_in.human_in_specs import HumanInSpecs
-from swiss_ai_hub.core.events.process.discovery.process_config_specs import ProcessConfigSpecs
 from swiss_ai_hub.core.events.process.discovery.program_in.program_in_specs import ProgramInSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.form.config_specs import ConfigSpecs
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
@@ -39,7 +39,7 @@ class ProcessClassDiscoveryResponseEvent(BaseEvent):
         ),
     ]
     process_config_specs: Annotated[
-        ProcessConfigSpecs,
+        ConfigSpecs,
         Field(
             description="Validation specification including the JSON schema for form submissions. "
             "Used to create Pydantic models for validation.",

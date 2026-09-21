@@ -1,18 +1,27 @@
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.routes.agent.dto.agent_config_dto import AgentConfigDTO
+from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
@@ -242,6 +251,27 @@ class TestAgentServiceUnit:
                     assert second_dto in result
 
     @pytest.mark.asyncio
+    async def test_get_all_agent_instances_skips_record_that_fails_to_build(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """A single instance whose DTO cannot be built must be skipped, not abort the whole sweep."""
+        bad_config = Mock()
+        bad_config.agent_class = "TestAgent"
+        bad_config.agent_id = "bad_agent"
+
+        with patch.object(AgentClassEntity, "get_all", return_value=[sample_agent_class_entity]):
+            with patch.object(
+                AgentConfigEntityDocument, "find_for_class", return_value=[sample_config_entity, bad_config]
+            ):
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    good_dto = Mock(spec=FullAgentInstanceDTO)
+                    mock_from.side_effect = [good_dto, ValueError("could not build DTO")]
+
+                    result = await AgentService.get_all_agent_instances(mock_locale_handler)
+
+        assert result == [good_dto]
+
+    @pytest.mark.asyncio
     async def test_send_event_success(self, mock_nats, mock_user_identity):
         """Test send_event successfully sends event to agent."""
         mock_event = Mock(spec=UserMessageEvent)
@@ -255,13 +285,10 @@ class TestAgentServiceUnit:
 
             with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
-                mock_resources.stop_signal = Mock()
-                mock_resources.stop_signal.wait = AsyncMock()
-                mock_resources.subscriber = Mock()
-                mock_resources.subscriber.stop = AsyncMock()
                 mock_resources.stop_event = mock_stop_event
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
+                mock_chat_service.wait_for_stop_then_drain = AsyncMock()
 
                 thread_id = ObjectId()
                 result = await AgentService._send_event(
@@ -276,8 +303,7 @@ class TestAgentServiceUnit:
 
                 mock_get_thread.assert_called_once_with(str(thread_id))
                 mock_chat_service.start_json_event_interaction.assert_called_once()
-                mock_resources.stop_signal.wait.assert_called_once()
-                mock_resources.subscriber.stop.assert_called_once()
+                mock_chat_service.wait_for_stop_then_drain.assert_called_once_with(mock_resources)
 
                 assert result == mock_stop_event
 
@@ -295,13 +321,10 @@ class TestAgentServiceUnit:
 
             with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
-                mock_resources.stop_signal = Mock()
-                mock_resources.stop_signal.wait = AsyncMock()
-                mock_resources.subscriber = Mock()
-                mock_resources.subscriber.stop = AsyncMock()
                 mock_resources.stop_event = mock_stop_event
 
                 mock_chat_service.start_json_event_interaction = AsyncMock(return_value=mock_resources)
+                mock_chat_service.wait_for_stop_then_drain = AsyncMock()
 
                 result = await AgentService._send_event(
                     nc=mock_nats,
@@ -351,3 +374,230 @@ class TestAgentServiceUnit:
                 await AgentService.get_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
 
             assert str(exc_info.value) == "Database error"
+
+
+class TestInstanceAdminRoleName:
+    """The per-instance role is named after the (globally unique) agent id: PascalCase + 'Admin'."""
+
+    @pytest.mark.parametrize(
+        ("agent_id", "expected"),
+        [
+            ("access-test", "AccessTestAdmin"),
+            ("rag-agent-hr", "RagAgentHrAdmin"),
+            ("demo_naming", "DemoNamingAdmin"),
+            ("test_agent_1", "TestAgent1Admin"),
+        ],
+    )
+    def test_derives_role_name_from_agent_id(self, agent_id: str, expected: str):
+        assert AgentService._instance_admin_role_name(agent_id) == expected
+
+
+_ADMIN_RULE = "aihub.admin.agent.TestAgent.test_agent_1"
+_ROLE_NAME = "TestAgent1Admin"
+
+
+@pytest.fixture
+def creator_user():
+    """A non-sysadmin user acting within a tenant whose ceiling does not cover the instance."""
+    user = Mock(spec=UserIdentity)
+    user.id = "user_123"
+    user.acting_within_tenant = Mock()
+    user.acting_within_tenant.id = "tenant_1"
+    user.acting_within_tenant.access_rules = ["aihub.admin.agent.TestAgent"]
+    return user
+
+
+class TestGrantInstanceAccess:
+    """Unit tests for the per-instance access grant on creation."""
+
+    def test_grants_tenant_rule_and_creator_role_when_not_covered(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False) as mock_covered,
+            patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
+            patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
+            patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
+        ):
+            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        mock_covered.assert_called_once_with(["aihub.admin.agent.TestAgent"], "TestAgent", "test_agent_1")
+        mock_grant.assert_called_once_with("tenant_1", _ADMIN_RULE)
+        mock_ensure.assert_called_once_with(_ROLE_NAME, _ADMIN_RULE, "tenant_1", "TestAgent", "test_agent_1")
+        mock_add_roles.assert_called_once_with("user_123", "tenant_1", [_ROLE_NAME])
+        config_entity.delete.assert_not_called()
+
+    def test_skips_tenant_grant_when_already_covered(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=True),
+            patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
+            patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
+            patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
+        ):
+            AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        mock_grant.assert_not_called()
+        mock_ensure.assert_called_once()
+        mock_add_roles.assert_called_once()
+
+    def test_rolls_back_and_raises_on_grant_failure(self, creator_user):
+        config_entity = Mock()
+        with (
+            patch.object(AccessChecker, "rules_grant_admin_to_agent_instance", return_value=False),
+            patch.object(TenantMetadataEntity, "grant_access_rule"),
+            patch.object(AgentService, "_ensure_instance_admin_role"),
+            patch.object(UserTenantRoleEntity, "add_roles", side_effect=RuntimeError("boom")),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                AgentService._grant_instance_access("TestAgent", "test_agent_1", creator_user, config_entity)
+
+        assert exc_info.value.status_code == 500
+        mock_revoke.assert_called_once_with([_ADMIN_RULE])
+        mock_delete_role.assert_called_once_with(_ROLE_NAME)
+        config_entity.delete.assert_called_once()
+
+
+_MODULE = "swiss_ai_hub.api.routes.agent.agent_service"
+
+
+class TestCreateAgentInstanceGrantWiring:
+    """create_agent_instance only grants when the creator acts within a tenant."""
+
+    @staticmethod
+    def _mock_create_dependencies(stack: ExitStack):
+        class_entity = Mock()
+        class_entity.is_online = True
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
+        config_entity = Mock()
+        grant = stack.enter_context(patch.object(AgentService, "_grant_instance_access"))
+        stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
+        stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
+        stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
+        stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
+        config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = None
+        config_doc.return_value = config_entity
+        return grant, config_entity
+
+    @pytest.mark.asyncio
+    async def test_skips_grant_for_sysadmin_without_tenant(self):
+        request = CreateAgentInstanceRequest(agent_id="demo", configuration={})
+        user = Mock()
+        user.acting_within_tenant = None
+
+        with ExitStack() as stack:
+            grant, _ = self._mock_create_dependencies(stack)
+            await AgentService.create_agent_instance("TestAgent", request, Mock(spec=LocaleHandler), user=user)
+
+        grant.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_grants_when_acting_within_tenant(self):
+        request = CreateAgentInstanceRequest(agent_id="demo", configuration={})
+        user = Mock()
+        user.acting_within_tenant = Mock()
+
+        with ExitStack() as stack:
+            grant, config_entity = self._mock_create_dependencies(stack)
+            await AgentService.create_agent_instance("TestAgent", request, Mock(spec=LocaleHandler), user=user)
+
+        grant.assert_called_once_with("TestAgent", "demo", user, config_entity)
+
+
+class TestDeleteAgentInstanceCleanup:
+    """Unit tests for per-instance access cleanup on deletion."""
+
+    @pytest.mark.asyncio
+    async def test_revokes_rules_and_deletes_role(self):
+        with (
+            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=Mock()),
+            patch.object(AgentConfigEntityDocument, "delete_if_exists_for_class_and_id") as mock_delete_config,
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            await AgentService.delete_agent_instance("TestAgent", "test_agent_1")
+
+        mock_delete_config.assert_called_once_with("TestAgent", "test_agent_1")
+        mock_revoke.assert_called_once_with(["aihub.user.agent.TestAgent.test_agent_1", _ADMIN_RULE])
+        mock_delete_role.assert_called_once_with(_ROLE_NAME)
+
+    @pytest.mark.asyncio
+    async def test_missing_instance_raises_404_without_cleanup(self):
+        with (
+            patch.object(AgentConfigEntityDocument, "find_for_class_and_id", return_value=None),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants") as mock_revoke,
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as mock_delete_role,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                await AgentService.delete_agent_instance("TestAgent", "missing")
+
+        assert exc_info.value.status_code == 404
+        mock_revoke.assert_not_called()
+        mock_delete_role.assert_not_called()
+
+
+class TestUpdateAgentInstanceLocksAgentId:
+    """update_agent_instance keeps config_data['agent_id'] pinned to the immutable instance key."""
+
+    @staticmethod
+    def _mock_update_dependencies(stack: ExitStack, config_entity: Mock) -> None:
+        class_entity = Mock()
+        class_entity.agent_config_specs.to_specs.return_value = ConfigSpecs(config_class="TestAgent")
+        class_entity.form = []
+        stack.enter_context(patch(f"{_MODULE}.AgentClassEntity.get_by_agent_class", return_value=class_entity))
+        stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
+        stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
+        config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
+        helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        helper.normalize_form_configuration.side_effect = lambda configuration: configuration
+        helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity
+        config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = config_entity
+
+    @pytest.mark.asyncio
+    async def test_form_cannot_change_agent_id(self):
+        """A diverging agent_id in the submitted form must be overwritten with the URL key before saving."""
+        config_entity = Mock()
+
+        with ExitStack() as stack:
+            self._mock_update_dependencies(stack, config_entity)
+            result = await AgentService.update_agent_instance(
+                "TestAgent",
+                "intructed_agent_02",
+                {"agent_id": "instructed_agent_02", "system_prompt": "hi"},
+                Mock(spec=LocaleHandler),
+                user=Mock(),
+            )
+
+        assert config_entity.config_data["agent_id"] == "intructed_agent_02"
+        assert result["agent_id"] == "intructed_agent_02"
+        config_entity.save.assert_called_once()
+
+
+class TestAgentConfigDTOEmptyLocale:
+    """Regression: an instance whose localized name/description is empty must build, not raise.
+
+    This is the read-side resilience the fix guarantees — empty localized fields are legitimate
+    data (LocaleStringEntity columns are all optional), so a required-str DTO field coerces to "".
+    """
+
+    def test_empty_locale_name_and_description_coerce_to_empty_string(self):
+        class_entity = Mock()
+        class_entity.form = None
+
+        config_entity = Mock()
+        config_entity.agent_id = "empty_locale_agent"
+        config_entity.name = LocaleStringEntity()
+        config_entity.description = LocaleStringEntity()
+        config_entity.icon = "mage:robot"
+
+        dto = AgentConfigDTO.from_class_and_config(class_entity, config_entity, LocaleHandler())
+
+        assert dto.name == ""
+        assert dto.description == ""

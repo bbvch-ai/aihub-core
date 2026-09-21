@@ -38,6 +38,12 @@ class TraceStore(StoreBase):
     async def get_user_id(self, execution_context_id: str) -> str:
         return await self.get_json_value(execution_context_id, "user_id", "")
 
+    async def store_tenant_id(self, execution_context_id: str, tenant_id: str) -> bool:
+        return await self.put_json_value(execution_context_id, "tenant_id", tenant_id)
+
+    async def get_tenant_id(self, execution_context_id: str) -> str:
+        return await self.get_json_value(execution_context_id, "tenant_id", "")
+
     async def store_output(self, execution_context_id: str, output: str) -> bool:
         return await self.put_json_value(execution_context_id, "output", output)
 

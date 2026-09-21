@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent import ExpertAskingAgent
     from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
     from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
+    from swiss_ai_hub.agent.agents.imap_agent.imap_agent import ImapAgent
     from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
     from swiss_ai_hub.agent.agents.namespace_selection_agent.namespace_selection_agent import NamespaceSelectionAgent
     from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
@@ -17,6 +18,7 @@ __all__ = [
     "ExpertAskingAgent",
     "ExpertRAGAgent",
     "FewShotAgent",
+    "ImapAgent",
     "LLMWrappingAgent",
     "NamespaceSelectionAgent",
     "RAGAgent",
@@ -28,6 +30,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ExpertAskingAgent": "swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent",
     "ExpertRAGAgent": "swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent",
     "FewShotAgent": "swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent",
+    "ImapAgent": "swiss_ai_hub.agent.agents.imap_agent.imap_agent",
     "LLMWrappingAgent": "swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent",
     "NamespaceSelectionAgent": "swiss_ai_hub.agent.agents.namespace_selection_agent.namespace_selection_agent",
     "RAGAgent": "swiss_ai_hub.agent.agents.rag_agent.rag_agent",

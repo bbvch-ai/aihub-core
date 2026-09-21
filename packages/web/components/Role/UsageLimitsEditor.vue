@@ -54,14 +54,16 @@
                         value="MyAgent.*"
                         severity="secondary"
                         size="small"
-                      /> — {{ t('role.pattern_help_wildcard') }}
+                      /> — {{ t('role.pattern_help_wildcard')
+                      }}
                     </li>
                     <li class="whitespace-nowrap">
                       <Badge
                         value="MyAgent.prod"
                         severity="secondary"
                         size="small"
-                      /> — {{ t('role.pattern_help_specific') }}
+                      /> — {{
+                        t('role.pattern_help_specific') }}
                     </li>
                   </ul>
                 </div>
@@ -119,7 +121,9 @@
           <tr>
             <td class="py-2">
               <div class="flex items-center">
-                <span class="whitespace-nowrap rounded-l border border-r-0 border-surface-300 bg-surface-100 px-2 py-1.5 text-xs text-muted-color dark:border-surface-600 dark:bg-surface-800">
+                <span
+                  class="whitespace-nowrap rounded-l border border-r-0 border-surface-300 bg-surface-100 px-2 py-1.5 text-xs text-muted-color dark:border-surface-600 dark:bg-surface-800"
+                >
                   {{ AGENT_PREFIX }}
                 </span>
                 <InputText
@@ -143,6 +147,7 @@
             <td class="py-2">
               <select
                 v-model="newPeriod"
+                :aria-label="t('role.usage_period')"
                 class="w-full rounded border border-surface-300 bg-surface-0 px-2 py-1.5 text-sm dark:border-surface-600 dark:bg-surface-900"
               >
                 <option

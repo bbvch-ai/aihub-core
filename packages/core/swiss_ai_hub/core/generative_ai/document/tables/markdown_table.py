@@ -18,6 +18,49 @@ def create_markdown_table(df: pd.DataFrame) -> str:
     return df.to_markdown(index=False)
 
 
+def create_compact_markdown_table(df: pd.DataFrame) -> str:
+    """
+    Render a DataFrame as markdown without tabulate's column padding.
+
+    `df.to_markdown()` pads every cell to the width of the widest cell in its column. On a wide table whose
+    first row holds long multi-language headers that inflates the output ~36x (measured: 62KB -> 2.2MB on a
+    579x10 table), which lands in the document store and every downstream buffer before anything is chunked.
+    """
+    if df.empty:
+        return df.to_markdown(index=False)
+
+    if has_integer_column_indices(df):
+        df = apply_header_rows(df.copy(), 1)
+
+    header = [_markdown_cell(column) for column in df.columns]
+    lines = [
+        _markdown_row(header),
+        _markdown_row(["---"] * len(header)),
+        *(_markdown_row([_markdown_cell(value) for value in row]) for row in df.values),
+    ]
+    return "\n".join(lines)
+
+
+def _markdown_row(cells: list[str]) -> str:
+    return f"| {' | '.join(cells)} |"
+
+
+def _markdown_cell(value: object) -> str:
+    """
+    Keep every cell on one line, free of delimiters, and free of placeholder text.
+
+    `parse_markdown_table` splits rows on a bare `|` and drops any row whose cell count then disagrees with the
+    header, so a backslash escape would still cost the row its data. Substituting is the only option that keeps
+    the row. Empty cells are blanked the same way `format_for_llm` does them — a merged or empty cell reaches
+    here as NaN, and rendering it would embed the literal string "nan" in the indexed content.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+
+    cell = str(value).replace("\r", " ").replace("\n", " ").replace("|", "/").strip()
+    return "" if cell.lower() in ("none", "nan", "<na>") else cell
+
+
 def has_integer_column_indices(df: pd.DataFrame) -> bool:
     return all(isinstance(col, int) for col in df.columns)
 

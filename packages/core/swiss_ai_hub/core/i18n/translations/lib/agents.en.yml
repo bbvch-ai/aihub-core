@@ -15,3 +15,7 @@ config:
   icon:
     label: Icon
     help: Select a preset icon or enter any Iconify icon name
+  cron:
+    label: Schedule
+    help: When this profile runs automatically. Leave empty to disable scheduled runs.
+    timezone_placeholder: Select timezone...

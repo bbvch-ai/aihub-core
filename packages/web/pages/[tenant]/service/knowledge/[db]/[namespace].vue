@@ -32,6 +32,7 @@
       :sort-order="sortState.order"
       @selected="toDocument"
       @sort="handleSort"
+      @deleted="handleDeleted"
     />
 
     <div class="mt-4">
@@ -58,7 +59,7 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core'
-import { useChangeCase } from '@vueuse/integrations/useChangeCase'
+import { capitalCase } from 'change-case'
 
 import type { DocumentDto } from '@core/sdk/client'
 
@@ -113,11 +114,11 @@ const currentNamespace = computed(() => {
 })
 
 const databaseDisplayName = computed(() => {
-  return currentDatabase.value?.display_name || useChangeCase(route.params.db as string, 'capitalCase').value
+  return currentDatabase.value?.display_name || capitalCase(route.params.db as string)
 })
 
 const namespaceDisplayName = computed(() => {
-  return currentNamespace.value?.display_name || useChangeCase(route.params.namespace as string, 'capitalCase').value
+  return currentNamespace.value?.display_name || capitalCase(route.params.namespace as string)
 })
 
 const toDocument = (document: DocumentDto) => {
@@ -140,5 +141,12 @@ const openUploadModal = () => {
 
 const handleUpload = () => {
   refetch()
+}
+
+const handleDeleted = (documentIds: string[]) => {
+  refetch()
+  if (documentIds.includes(route.params.document_id as string)) {
+    router.push(tenantPath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
+  }
 }
 </script>

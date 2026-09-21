@@ -56,6 +56,17 @@ class Controller(abc.ABC):
     description = LocaleString.from_i18n_path("lib.controllers.base.description")
     icon = "mage:server"  # https://icon-sets.iconify.design/
 
+    suite_visibility_permission: str | None = None
+    """Gates listing this controller's app in the suite navigation — and nothing else.
+
+    Unlike ``additionally_required_permission`` this is never consulted at request time. A controller whose
+    management routes are admin-guarded per resource keeps serving its user-level routes to everyone holding
+    them; those users simply are not offered the management app they could not use.
+
+    ``SuiteService`` is its only consumer; ``AccessCatalogService`` ignores it deliberately, since its
+    "what can I reach" catalog is not the app list.
+    """
+
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
         self.auth: AuthHandler = auth
@@ -181,8 +192,11 @@ class Controller(abc.ABC):
                 else:
                     span.set_attribute(f"resource.{param_name}", str(param_value))
 
-        # Request context
-        span.set_attribute("http.route", request.url.path)
+        # Record the concrete path on url.path (current OTel HTTP semconv; what SigNoz
+        # indexes). Never overwrite http.route, which the FastAPI instrumentation keeps as
+        # the bounded route template — de-templating it exploded metric/label cardinality
+        # (one series per URL) — see issue #1496.
+        span.set_attribute("url.path", request.url.path)
         if client_host := getattr(request.client, "host", None):
             span.set_attribute("client.ip", client_host)
 

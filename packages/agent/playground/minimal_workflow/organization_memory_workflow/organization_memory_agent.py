@@ -84,7 +84,6 @@ class OrganizationMemoryAgent(Agent):
         extended_chat_history = extend_chat_history_with_organization_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
-            relations=memory_event.relations,
             t=t,
         )
         return AddOrganizationMemoryToChatHistoryEvent(extended_history=extended_chat_history)

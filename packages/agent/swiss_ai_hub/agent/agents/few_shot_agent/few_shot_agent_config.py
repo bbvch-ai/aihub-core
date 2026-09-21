@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber
 from swiss_ai_hub.core.form.constraints import Gt
@@ -24,6 +24,19 @@ class FewShotAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM configuration for the agent."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Model for this agent's auxiliary steps: meta-question detection and answering, the "
+                "agent-suitability guard, standalone-question condensation, and conversation title plus "
+                "follow-up question generation. Generation parameters are inherited from the main model. "
+                "Falls back to the main model when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     few_shot: Annotated[
         FewShotStepConfig,
         Field(description="Few-shot prompting configuration with examples."),
@@ -33,6 +46,16 @@ class FewShotAgentConfig(AgentConfig):
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
         Gt(0),
     ] = 100000
+
+    @model_validator(mode="after")
+    def derive_task_llm_from_main_llm(self) -> Self:
+        """Only the task model is configurable: its generation parameters always mirror the main llm, and
+        an unset or blank picker falls back to the main model."""
+        if not isinstance(self.llm.model_name, str):
+            return self
+        task_model_name = self.task_llm.model_name if self.task_llm else None
+        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
+        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -45,6 +68,7 @@ class FewShotAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(include_default_parameter=False),
             few_shot=FewShotStepConfig.as_form(),
             number_of_input_tokens=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.few_shot_agent.config.number_of_input_tokens.label"),

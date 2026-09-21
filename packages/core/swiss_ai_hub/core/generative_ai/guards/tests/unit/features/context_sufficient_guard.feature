@@ -1,71 +1,70 @@
-Feature: Context Sufficient Guard Logic
+Feature: Context Sufficient Guard
 
-  Scenario: Guard accepts when context is sufficient to answer question
+  The guard asks the model for a plain-text SUFFICIENT/INSUFFICIENT verdict (plus a revised QUERY when
+  insufficient and more hops are available) and parses it. A hop needs a query, so an INSUFFICIENT
+  verdict with no query is treated as sufficient. An unrecognizable response fails open (sufficient).
+
+  Scenario: Accepts when context is sufficient
     Given a locale handler with locale "en"
-    And a user query "What is the capital of France?"
-    And the following context "France is a country in Europe. Paris is the capital and largest city of France."
+    And a user query "How many vacation days do I get?"
+    And the following context "Policy: employees receive 25 vacation days per year."
     And no previous queries
     And more hops are available
-    And the LLM returns success=True with reasoning="The context clearly states Paris is the capital"
+    And the guard model replies "SUFFICIENT The policy states 25 days"
     When the context sufficient guard is executed
     Then the guard should accept the request
-    And the reasoning should be "The context clearly states Paris is the capital"
+    And the reasoning should be "The policy states 25 days"
     And no new query should be generated
 
-  Scenario: Guard rejects when context is insufficient and generates new query
+  Scenario: Rejects and generates a new query when insufficient and hops remain
     Given a locale handler with locale "en"
     And a user query "What is the population of France?"
     And the following context "France is a country in Europe."
     And the following previous queries:
-      | query                             |
-      | What are European countries?      |
+      | query                        |
+      | What are European countries? |
     And more hops are available
-    And the LLM returns success=False with reasoning="Context lacks population data" and new_query="Demographics of European countries"
+    And the guard model replies "INSUFFICIENT Missing population data QUERY: demographics of European countries"
     When the context sufficient guard is executed
     Then the guard should reject the request
-    And the reasoning should be "Context lacks population data"
-    And a new query "Demographics of European countries" should be generated
+    And the reasoning should be "Missing population data"
+    And a new query "demographics of European countries" should be generated
 
-  Scenario: Guard rejects when context is insufficient and no more hops available
+  Scenario: Rejects without a new query when no more hops are available
     Given a locale handler with locale "en"
     And a user query "What is the GDP of France?"
     And the following context "France is a country."
     And no previous queries
     And no more hops are available
-    And the LLM returns success=False with reasoning="Insufficient economic data in context"
+    And the guard model replies "INSUFFICIENT No economic data in context"
     When the context sufficient guard is executed
     Then the guard should reject the request
-    And the reasoning should be "Insufficient economic data in context"
+    And the reasoning should be "No economic data in context"
     And no new query should be generated
 
-  Scenario: Guard forwards chat history to the LLM prompt when provided
+  Scenario: Accepts when insufficient but the model gives no query and hops remain
     Given a locale handler with locale "en"
-    And a user query "What is our vacation policy?"
-    And the following context "Employee handbook chapter 3."
+    And a user query "What is the population of France?"
+    And the following context "France is a country in Europe."
     And no previous queries
     And more hops are available
-    And the following chat history:
-      | role   | content                                |
-      | system | [Org memory] Vacation policy: 25 days. |
-      | user   | What is our vacation policy?           |
-    And the LLM returns success=True with reasoning="Organization memory already answers this"
-    When the context sufficient guard is executed with chat history
-    Then the guard should accept the request
-    And the LLM prompt should include the chat history
-
-  Scenario: Guard defaults to empty chat history when none provided
-    Given a locale handler with locale "en"
-    And a user query "What is the capital of France?"
-    And the following context "France is a country in Europe. Paris is the capital."
-    And no previous queries
-    And more hops are available
-    And the LLM returns success=True with reasoning="Context states Paris is the capital"
+    And the guard model replies "INSUFFICIENT Not enough detail to answer"
     When the context sufficient guard is executed
     Then the guard should accept the request
-    And the LLM prompt should render chat history as an empty string
+    And no new query should be generated
 
-  Scenario Outline: Guard prompt renders chat history block in each locale
-    Given a locale handler with locale "<locale>"
+  Scenario: Accepts (fail-open) when the model returns no recognizable verdict
+    Given a locale handler with locale "en"
+    And a user query "What is the capital of France?"
+    And the following context "France is a country in Europe."
+    And no previous queries
+    And more hops are available
+    And the guard model replies "I cannot determine that right now."
+    When the context sufficient guard is executed
+    Then the guard should accept the request
+
+  Scenario: Forwards chat history into the prompt
+    Given a locale handler with locale "en"
     And a user query "What is our vacation policy?"
     And the following context "Employee handbook chapter 3."
     And no previous queries
@@ -74,14 +73,7 @@ Feature: Context Sufficient Guard Logic
       | role   | content                                |
       | system | [Org memory] Vacation policy: 25 days. |
       | user   | What is our vacation policy?           |
-    And the LLM returns success=True with reasoning="Memory contains the answer"
+    And the guard model replies "SUFFICIENT Organization memory already answers this"
     When the context sufficient guard is executed with chat history
     Then the guard should accept the request
-    And the LLM prompt should include the chat history
-
-    Examples:
-      | locale |
-      | en     |
-      | de     |
-      | fr     |
-      | it     |
+    And the prompt should include the chat history

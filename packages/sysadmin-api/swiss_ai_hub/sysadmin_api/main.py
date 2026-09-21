@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: LicenseRef-Proprietary
 # ruff: noqa: E402
 # ASGI entrypoint: `swiss_ai_hub.sysadmin_api.main:app`. The fully-qualified
 # module path avoids the `app.main:app` collision with packages/api (also
@@ -12,7 +11,7 @@ from swiss_ai_hub.core.auth import TokenAndOauth2Handler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.sysadmin_api import SysadminApiRunner, TenantAdminController
+from swiss_ai_hub.sysadmin_api import SysadminAccessController, SysadminApiRunner, TenantAdminController
 
 enable_logging()
 
@@ -28,6 +27,7 @@ runner.mount(
     TenantAdminController(auth=auth)
     .list_tenants()
     .list_unconfigured_tenants()
+    .get_default_access_rules()
     .get_tenant()
     .create_tenant_metadata()
     .update_tenant_metadata()
@@ -46,6 +46,9 @@ runner.mount(
     MyAccountController(auth=auth).get_my_identity(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    # The access catalog depends on the full controller surface a deployment serves, which this curated
+    # plane does not have — SysadminAccessController overrides the endpoints to proxy them to the main API.
+    SysadminAccessController(auth=auth).get_access_capabilities().get_access_presets(),
     AuthProviderController(auth=auth).get_auth_providers(),
 )
 

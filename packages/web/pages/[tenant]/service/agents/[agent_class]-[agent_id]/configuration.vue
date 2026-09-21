@@ -2,15 +2,25 @@
   <StructuralColumn
     :title="t('agent.configuration.title')"
     close-route="/service/agents"
-    :loading="agentInstanceIsLoading"
+    :loading="agentInstanceIsLoading && !hasLoaded"
     size="normal"
   >
     <div class="flex flex-col gap-3">
-      <p class="mb-4 text-sm text-surface-500 dark:text-surface-400">
-        {{ t('agent.configuration.description') }}
-      </p>
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <p class="text-sm text-surface-500 dark:text-surface-400">
+          {{ t('agent.configuration.description') }}
+        </p>
+        <Button
+          icon="pi pi-file-export"
+          severity="secondary"
+          :label="t('agent.export.button')"
+          class="shrink-0"
+          :disabled="!agentInstance"
+          @click="exportAgent"
+        />
+      </div>
       <AgentConfiguration
-        v-if="configForm && configForm.length > 0 && !agentInstanceIsLoading"
+        v-if="hasLoaded && configForm && configForm.length > 0"
         :title="t('agent.configuration.runtimeSettings')"
         :description="agentInstance?.agent_config.description || ''"
         :form="configForm"
@@ -18,7 +28,7 @@
         @submit="submitConfiguration"
       />
       <div
-        v-else-if="agentInstanceIsLoading"
+        v-else-if="!hasLoaded"
         class="text-center text-sm text-surface-500 dark:text-surface-400"
       >
         {{ t('common.loading') }}
@@ -34,55 +44,50 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentConfigDtoReadable } from '@core/sdk/client'
-
-type FormElement = NonNullable<AgentConfigDtoReadable['form']>[number]
+import type { FormkitElement } from '@core/sdk/client'
 
 const route = useRoute()
 const { tenantId } = useTenant()
 const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { updateAgentInstance } = useUpdateAgentInstance()
+const { exportAgentInstance } = useExportAgentInstance()
 const { t } = useI18n()
 const toast = useToast()
 
-const configForm = computed(() => agentInstance.value?.agent_config?.form || [])
-
-/**
- * Recursively initializes nested Group values with empty objects based on form schema.
- * FormKit Groups require object values - they cannot be null or undefined.
- * This ensures all Group elements have at least an empty object as their value.
- */
-const initializeGroupData = (
-  formElements: FormElement[],
-  data: Record<string, unknown>,
-): Record<string, unknown> => {
-  const result = { ...data }
-
-  for (const element of formElements) {
-    const elementRecord = element as Record<string, unknown>
-    const formkitType = elementRecord.formkit || elementRecord.$formkit
-
-    if (formkitType === 'group') {
-      const name = elementRecord.name as string
-      const children = elementRecord.children as FormElement[] | undefined
-
-      if (result[name] === null || result[name] === undefined) {
-        result[name] = {}
-      }
-
-      if (children && Array.isArray(children)) {
-        result[name] = initializeGroupData(children, result[name] as Record<string, unknown>)
-      }
-    }
-  }
-
-  return result
+const exportAgent = () => {
+  if (agentInstance.value) exportAgentInstance(agentInstance.value)
 }
 
-const configurationData = computed(() => {
-  const rawData = (agentInstance.value?.configuration || {}) as Record<string, unknown>
-  return initializeGroupData(configForm.value, rawData)
-})
+// Latch so a background refetch or transient `enabled` flip can't remount the form and
+// re-seed it from server data, dropping unsaved edits (issue #38).
+const hasLoaded = ref(false)
+watch(agentInstance, (value) => {
+  if (value) hasLoaded.value = true
+}, { immediate: true })
+
+// Nuxt reuses this instance across param changes; drop the latch on route identity change so
+// the loading state shows until the new agent resolves, instead of the previous form lingering.
+watch(
+  () => `${route.params.agent_class}/${route.params.agent_id}`,
+  () => { hasLoaded.value = false },
+)
+
+// Lock agent_id on edit: it is the immutable instance key, and a divergent value silently breaks
+// the SSE completion check so the chat never finishes. The backend pins it on save too; this is UX.
+const configForm = computed<FormkitElement[]>(() =>
+  (agentInstance.value?.agent_config?.form || []).map(element =>
+    (element.name === 'agent_id' ? { ...element, disabled: true } : element) as FormkitElement,
+  ),
+)
+
+// Pass the saved configuration through unchanged. DynamicConfiguration hydrates it
+// (seedNullableToggles then seedFormDefaults): non-nullable groups are materialised to
+// objects, while nullable groups keep their saved `null` so their "Enable" toggle loads
+// off. Pre-filling `null` groups with `{}` here would make every disabled nullable group
+// (e.g. reranking_config, org_memory) load as enabled.
+const configurationData = computed(
+  () => (agentInstance.value?.configuration || {}) as Record<string, unknown>,
+)
 
 const submitConfiguration = async (formData: Record<string, unknown>) => {
   const agentClass = route.params.agent_class as string
@@ -112,6 +117,9 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
   }
   catch (error) {
     console.error('Failed to save agent configuration:', error)
+    // No `detail` here on purpose: the SDK's global onResponseError (app.vue) already toasts the
+    // backend's `detail`, and formats pydantic's array-shaped errors while doing it. Passing
+    // `error.message` would only add a second toast reading `[PUT] "<url>": 400 Bad Request`.
     toast.add({
       severity: 'error',
       summary: t('agent.configuration.saveError'),
