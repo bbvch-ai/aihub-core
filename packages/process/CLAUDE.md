@@ -127,12 +127,11 @@ signatures for entity In/Out annotations.
 
 ```python
 @process_step(
-    name=LocaleString(en="My Step"),         # UI display name
-    description=LocaleString(en="Does X"),   # UI description
-    icon="mage:magic-wand",                  # Iconify icon
+    name=LocaleString(en="My Step"),  # UI display name
+    description=LocaleString(en="Does X"),  # UI description
+    icon="mage:magic-wand",  # Iconify icon
 )
-def my_step(self, work: Annotated[SomeWorkEvent, Agent.In(...)]) -> Annotated[SomeRequest, Human.Out(...)]:
-    ...
+def my_step(self, work: Annotated[SomeWorkEvent, Agent.In(...)]) -> Annotated[SomeRequest, Human.Out(...)]: ...
 ```
 
 Parameters are simpler than `@step()` for agents — no `precondition`, `max_executions_per_run`, or `stop_on_error`. The

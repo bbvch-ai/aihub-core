@@ -1004,7 +1004,7 @@ export type ListTenantsData = {
 
 export type ListTenantsResponses = {
   /**
-   * Response List Tenants Admin Tenants  Get
+   * Response List Tenants
    *
    * Successful Response
    */
@@ -1050,7 +1050,7 @@ export type ListUnconfiguredTenantsData = {
 
 export type ListUnconfiguredTenantsResponses = {
   /**
-   * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+   * Response List Unconfigured Tenants
    *
    * Successful Response
    */
@@ -1069,7 +1069,7 @@ export type GetDefaultAccessRulesData = {
 
 export type GetDefaultAccessRulesResponses = {
   /**
-   * Response Get Default Access Rules Admin Tenants Default Access Rules Get
+   * Response Get Default Access Rules
    *
    * Successful Response
    */
@@ -1311,7 +1311,7 @@ export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
 
 export type AssignRoleResponses = {
   /**
-   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   * Response Assign Role
    *
    * Successful Response
    */
@@ -1357,7 +1357,7 @@ export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
 
 export type RevokeRoleResponses = {
   /**
-   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   * Response Revoke Role
    *
    * Successful Response
    */
@@ -1491,7 +1491,7 @@ export type GetRolesData = {
 
 export type GetRolesResponses = {
   /**
-   * Response Get Roles  Tenant Id  Roles  Get
+   * Response Get Roles
    *
    * Successful Response
    */
@@ -1582,7 +1582,7 @@ export type GetAccessPresetsData = {
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Access Presets Get
+   * Response Get Access Presets
    *
    * Successful Response
    */
@@ -1601,7 +1601,7 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers Auth Providers  Get
+   * Response Get Auth Providers
    *
    * Successful Response
    */

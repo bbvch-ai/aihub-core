@@ -26,7 +26,7 @@ RCLONE_AZUREBLOB_KEY=your-access-key-here
 Edit `pipeline.py` to point to your container:
 
 ```python
-source_remote=f"{azureblob.name}:my-container/path/to/folder"
+source_remote = f"{azureblob.name}:my-container/path/to/folder"
 ```
 
 **4. Run Pipeline**

@@ -31,7 +31,7 @@ RCLONE_SFTP_PORT=22
 Edit `pipeline.py` to point to your folder:
 
 ```python
-source_remote=f"{sftp.name}:/path/to/documents"
+source_remote = f"{sftp.name}:/path/to/documents"
 ```
 
 **4. Run Pipeline**

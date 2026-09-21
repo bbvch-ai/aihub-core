@@ -47,7 +47,7 @@ RCLONE_S3_STORAGE_CLASS=STANDARD_IA
 Edit `pipeline.py` to point to your bucket:
 
 ```python
-source_remote=f"{s3.name}:my-bucket-name/path/to/folder"
+source_remote = f"{s3.name}:my-bucket-name/path/to/folder"
 ```
 
 **4. Run Pipeline**

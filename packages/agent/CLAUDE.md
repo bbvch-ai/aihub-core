@@ -151,15 +151,14 @@ reference):
 
 ```python
 @step(
-    name=LocaleString(en="My Step"),         # UI display name
-    description=LocaleString(en="Does X"),   # UI description
-    icon="mage:magic-wand",                  # Iconify icon
-    precondition=my_precondition_fn,         # Async callable → bool
-    max_executions_per_run=3,                # Limits re-execution in loops
-    stop_on_error=True,                      # Default: stop workflow on exception
+    name=LocaleString(en="My Step"),  # UI display name
+    description=LocaleString(en="Does X"),  # UI description
+    icon="mage:magic-wand",  # Iconify icon
+    precondition=my_precondition_fn,  # Async callable → bool
+    max_executions_per_run=3,  # Limits re-execution in loops
+    stop_on_error=True,  # Default: stop workflow on exception
 )
-async def my_step(self, event: InputEvent) -> OutputEvent:
-    ...
+async def my_step(self, event: InputEvent) -> OutputEvent: ...
 ```
 
 Input events are inferred from parameter type annotations, output events from the return type. The decorator extracts
