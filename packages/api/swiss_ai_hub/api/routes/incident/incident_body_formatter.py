@@ -56,7 +56,10 @@ class IncidentBodyFormatter:
     def _answer(render: str | None, value: object) -> str:
         if value is None or value == "" or value == []:
             return NO_ANSWER
-        text = ", ".join(str(item) for item in value) if isinstance(value, list) else str(value)
+        if isinstance(value, list):
+            text = ", ".join(str(item) for item in value)
+        else:
+            text = str(value)
         return f"```{render}\n{text}\n```" if render else text
 
     @staticmethod

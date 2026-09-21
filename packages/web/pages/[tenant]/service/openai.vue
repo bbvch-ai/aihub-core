@@ -72,7 +72,7 @@ const VIEW_BY_ACTION: Record<string, string> = {
   'show-memories': 'memories',
 }
 
-const HANDLED_MESSAGE_TYPES = [...Object.keys(VIEW_BY_ACTION), 'set-model-context', 'set-context']
+const HANDLED_MESSAGE_TYPES = new Set([...Object.keys(VIEW_BY_ACTION), 'set-model-context', 'set-context'])
 
 const openPanelView = (): string | null => {
   if (route.path.endsWith('/tracing')) return 'tracing'
@@ -103,7 +103,7 @@ const handleMessage = async (event: MessageEvent) => {
   if (event.origin !== runtimeConfig.public.webui.url) return
 
   const data = event.data
-  if (!HANDLED_MESSAGE_TYPES.includes(data.type)) {
+  if (!HANDLED_MESSAGE_TYPES.has(data.type)) {
     console.log('Unknown message type:', data.type)
     return
   }

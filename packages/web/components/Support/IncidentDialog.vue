@@ -33,7 +33,11 @@
             v-if="incidentForm.attachments"
             class="flex flex-col gap-2 border-b border-surface-200 pb-4 dark:border-surface-700"
           >
-            <label class="font-medium">{{ incidentForm.attachments.label }}</label>
+            <!-- A heading, not a <label>: it names the whole picker block, and the picker button carries its own
+                 accessible name. -->
+            <p class="font-medium">
+              {{ incidentForm.attachments.label }}
+            </p>
             <p
               v-if="incidentForm.attachments.description"
               class="text-xs font-light text-surface-500 dark:text-surface-400"

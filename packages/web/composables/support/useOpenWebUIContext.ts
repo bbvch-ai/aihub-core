@@ -26,7 +26,8 @@ export const useOpenWebUIContext = () => {
   // Merges, for the one producer that knows a single field: the agent pipe learns the thread
   // after the filter has already described the turn.
   const updateOpenWebUIContext = (partial: Partial<OpenWebUIContext>): void => {
-    context.value = { threadId: '', displayId: '', ...(context.value ?? {}), ...partial }
+    const current = context.value
+    context.value = current ? { ...current, ...partial } : { threadId: '', displayId: '', ...partial }
   }
 
   const clearOpenWebUIContext = (): void => {
