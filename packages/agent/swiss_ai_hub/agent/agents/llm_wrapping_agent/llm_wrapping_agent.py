@@ -6,11 +6,18 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMStopEvent,
+    Message,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import limit_chat_history, merge_consecutive_messages
+from swiss_ai_hub.core.generative_ai import (
+    LLMConfig,
+    estimate_prompt_tokens,
+    limit_chat_history,
+    merge_consecutive_messages,
+    usable_input_budget,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
@@ -134,9 +141,24 @@ class LLMWrappingAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: LLMWrappingAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
         _clear: NotAMetaQuestionEvent,
-    ) -> LimitChatHistoryEvent:
-        """Truncates incoming chat messages to fit within the configured token limit"""
+    ) -> LimitChatHistoryEvent | LLMStopEvent:
+        """Truncate the history to the model's own window, refusing a turn that cannot fit it.
+
+        Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]`
+        when a single message exceeds the limit (llama-index-core 0.14.22), and `number_of_input_tokens` is an
+        admin's cost ceiling that may sit above the model's real window. A chat client that pastes a whole
+        document into one turn -- OpenWebUI does exactly this under `RAG_FULL_CONTEXT` -- therefore reaches the
+        provider regardless.
+
+        Unlike the RAG blueprints, this agent cannot fall back on the provider's own 400: it answers through
+        `astream_chat`, and on a streaming call LiteLLM replaces the provider's message with its own bookkeeping
+        (verified against gemma-4-31B-it -- the same prompt returns "maximum context length is 100016 tokens"
+        unstreamed and a bare "Error code: 400" streamed), leaving `ModelGatewayErrorHandler` nothing to match.
+        So the refusal has to happen here or not at all.
+        """
         locale = event.locale
         system_messages = [msg for msg in event.messages if msg.role == MessageRole.SYSTEM]
         system_prompt = ChatMessage(role=MessageRole.SYSTEM, content=agent_config.system_prompt.in_locale(locale))
@@ -152,11 +174,65 @@ class LLMWrappingAgent(Agent):
                 *regular_messages,
             ]
         )
-        limited_chat_history = limit_chat_history(
-            chat_history=chat_history,
-            number_of_input_tokens=agent_config.number_of_input_tokens,
+        # Merging has fused every system message -- the client's and ours -- into a single one at index 0, so the
+        # head is the agent's instructions and the tail is the conversation. They are held apart from here on:
+        # `ChatMemoryBuffer` keeps the most recent messages with no regard for role, so a history long enough to
+        # trim would otherwise drop the system prompt and quietly leave the agent uninstructed.
+        system_head, conversation = chat_history[:1], chat_history[1:]
+
+        budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
+        if budget is None:
+            return LimitChatHistoryEvent(
+                limited_history=[
+                    *system_head,
+                    *limit_chat_history(
+                        chat_history=conversation,
+                        number_of_input_tokens=agent_config.number_of_input_tokens,
+                    ),
+                ]
+            )
+
+        # The system prompt and the last turn are what must be sent; everything between them is negotiable. Note
+        # the merged last message rather than `event.last_user_message` -- this is the turn that actually goes out,
+        # and the two differ whenever the client appends a trailing system message that merging folds into it.
+        irreducible = [*system_head, *conversation[-1:]]
+        irreducible_tokens = estimate_prompt_tokens(irreducible, agent_config.llm.token_counter)
+        if irreducible_tokens > budget:
+            return await self._refuse_oversized_input(irreducible_tokens, budget, agent_config.llm, displayer, t)
+
+        # Trim only what sits between them, then put both back. Handing the trimmer a list that still holds the
+        # last turn charges it twice: no subset containing it fits the reduced limit, so `ChatMemoryBuffer` falls
+        # through to its most-recent-message branch and drops the whole earlier conversation.
+        older_limit = min(agent_config.number_of_input_tokens, budget - irreducible_tokens)
+        older = (
+            limit_chat_history(chat_history=conversation[:-1], number_of_input_tokens=older_limit)
+            if older_limit > 0
+            else []
         )
-        return LimitChatHistoryEvent(limited_history=limited_chat_history)
+        return LimitChatHistoryEvent(limited_history=[*system_head, *older, *conversation[-1:]])
+
+    @staticmethod
+    async def _refuse_oversized_input(
+        needed: int,
+        budget: int,
+        llm_config: LLMConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> LLMStopEvent:
+        """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
+
+        Shaped exactly like the stop event `display_llm_stream` returns for a real answer, so the refusal reaches
+        non-streaming consumers too -- `OpenaiService` reads the terminal text off `output_messages`.
+        """
+        await displayer.display_thought(
+            t("agent.llm_wrapping_agent.thoughts.input_too_large", tokens=needed, budget=budget)
+        )
+        refusal = t("agent.llm_wrapping_agent.messages.input_too_large")
+        await displayer.display_chunk(refusal, model_name=llm_config.model_name)
+        return LLMStopEvent(
+            output_messages=[Message.from_string(role="assistant", content=refusal, name=llm_config.model_name)],
+            chat_model_name=llm_config.model_name,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.name"),

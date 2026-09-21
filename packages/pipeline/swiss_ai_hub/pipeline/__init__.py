@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
     from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
     from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile, SourceFile
-    from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
     from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
 
 __all__ = [
@@ -28,7 +27,6 @@ __all__ = [
     "S3DataLakeIOManager",
     "SourceFile",
     "VectorStoreIOManager",
-    "default_definitions",
     "uri_to_id",
 ]
 
@@ -44,7 +42,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "S3DataLakeIOManager": "swiss_ai_hub.pipeline.io.s3_data_lake_io_manager",
     "SourceFile": "swiss_ai_hub.pipeline.types.source_file",
     "VectorStoreIOManager": "swiss_ai_hub.pipeline.io.vector_store_io_manager",
-    "default_definitions": "swiss_ai_hub.pipeline.util.definitions_util",
     "uri_to_id": "swiss_ai_hub.pipeline.util.id_utils",
 }
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from typing import Annotated, Self
@@ -80,7 +81,10 @@ class EventController(TenantScopedController):
                     detail=NO_THREAD_ACCESS_DETAIL,
                 )
 
-            return EventService.get_events_in_thread(
+            # Offloaded: reads and deserialises every display event in the thread, so its cost grows
+            # with conversation length. On the event loop that stalls every concurrent request.
+            return await asyncio.to_thread(
+                EventService.get_events_in_thread,
                 locale=t.locale,
                 thread_id=str_to_object_id(thread_id),
                 display_id=str_to_object_id(display_id) if display_id else None,
@@ -176,8 +180,16 @@ class EventController(TenantScopedController):
                         detail=NO_THREAD_ACCESS_DETAIL,
                     )
 
-            return EventService.get_event_timeseries(
-                time_range, agent_id=agent_id, agent_class=agent_class, event_name=event_name, thread_id=thread_id
+            # Offloaded: an unfiltered range aggregates the whole agent_events collection, which took
+            # minutes in production and, on the event loop, pushed concurrent token validation past
+            # its Keycloak timeout — failing valid logins with 500s (aihub-core-private#186).
+            return await asyncio.to_thread(
+                EventService.get_event_timeseries,
+                time_range,
+                agent_id=agent_id,
+                agent_class=agent_class,
+                event_name=event_name,
+                thread_id=thread_id,
             )
 
         return self
@@ -247,14 +259,14 @@ class EventController(TenantScopedController):
             any single tenant, sees the whole platform.
             """
             if user.is_sys_admin:
-                return EventService.get_llm_spend_by_user(since=since)
+                return await EventService.get_llm_spend_by_user(since=since)
 
             # Deny rather than fall open: an unset acting tenant would otherwise mean "no filter",
             # handing a single-tenant admin every tenant's user spend.
             tenant_id = _acting_tenant_id(user)
             if tenant_id is None:
                 raise HTTPException(status_code=403, detail="Must act within a tenant to view user spend.")
-            return EventService.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
+            return await EventService.get_llm_spend_by_user(tenant_id=tenant_id, since=since)
 
         return self
 
@@ -276,6 +288,6 @@ class EventController(TenantScopedController):
             Sysadmin-only: a cross-tenant total is exactly the view a single tenant must not have.
             """
             del user
-            return EventService.get_llm_spend_by_tenant(since=since)
+            return await EventService.get_llm_spend_by_tenant(since=since)
 
         return self

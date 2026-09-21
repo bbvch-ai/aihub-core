@@ -28,3 +28,11 @@ class AgentInTheLoopResponseEvent(ControlAndDisplayEvent):
             description="The stop event from the delegated agent containing the task results and marks the completion."
         ),
     ]
+    request_event_id: Annotated[
+        str,
+        Field(
+            description="`event_id` of the `AgentInTheLoopRequestEvent` this answer belongs to. The only thing that "
+            "tells a caller which delegated answer is which: a run that delegates once can infer it, but a fan-out "
+            "receives N of these on one topic and nothing else on the payload distinguishes them.",
+        ),
+    ]

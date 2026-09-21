@@ -210,6 +210,8 @@ event:
     no_filters: Nessun filtro aggiuntivo
   rag_stop:
     failure_reason:
+      condensation_empty: Non è stato possibile condensare la domanda in una forma
+        ricercabile — questa esecuzione è stata interrotta prima del recupero.
       context_insufficient: Il contesto recuperato era insufficiente — la risposta
         è un ripiego e non è ancorata alle vostre fonti di conoscenza.
       expert_declined: L'esperto umano non ha potuto fornire una risposta — questa
@@ -218,6 +220,9 @@ event:
         non ha prodotto una risposta fondata.
       few_shot_rejected: La richiesta non corrispondeva a nessun pattern noto, quindi
         la risposta è stata prodotta senza recupero.
+      input_too_large: Il messaggio o il file allegato superava la finestra di contesto
+        del modello, quindi questa esecuzione è stata interrotta prima di chiamare
+        il modello.
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente
@@ -452,7 +457,7 @@ document:
     deleting: Eliminazione in corso
     button: Elimina
     button_selected: Elimina selezionati
-    confirmMessage: Vuoi davvero eliminare questo documento? Verrà rimosso definitivamente
+    confirmMessage: Vuoi davvero eliminare "{title}"? Verrà rimosso definitivamente
       dalla base di conoscenza. Questa azione non può essere annullata.
     confirmMessageBatch: Vuoi davvero eliminare {count} documento/i? Verranno rimossi
       definitivamente dalla base di conoscenza. Questa azione non può essere annullata.
@@ -509,21 +514,67 @@ knowledge:
     title: Aggiungi collezione
     description: Crea una nuova collezione di conoscenza
     cancel: Annulla
+  add_database:
+    title: Aggiungi database di conoscenza
+    description: Crea un nuovo database di conoscenza self-service
   auto_sync:
     title: Sincronizzato automaticamente
     description: Le collezioni sono gestite automaticamente
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
+  pipeline: 'Pipeline: {name}'
   edit_namespace: Modifica collezione
   upload_documents: Carica documenti
+  delete_namespace: Elimina collezione
+  delete_database: Elimina database
+  delete:
+    confirm_label: Digita {name} per confermare
+    database:
+      title: Elimina database di conoscenza
+      warning: Questa operazione elimina definitivamente il database {name}, tutte
+        le sue collezioni e i suoi {count} documenti. L’operazione non può essere
+        annullata.
+    namespace:
+      title: Elimina collezione
+      warning: Questa operazione elimina definitivamente la collezione {name} e i
+        suoi {count} documenti. L’operazione non può essere annullata.
+    actions:
+      delete: Elimina
+    scheduled:
+      summary: Eliminazione avviata
+      detail: L’eliminazione viene eseguita in background e potrebbe richiedere un
+        momento.
+    error:
+      summary: Eliminazione non riuscita
+      detail: Impossibile avviare l’eliminazione. Riprova.
   form:
     create:
       title: Crea collezione
+    create_error: Creazione della collezione non riuscita. Riprova.
+    create_database:
+      title: Crea database di conoscenza
+      success: Base di conoscenza creata
+      error: Impossibile creare la base di conoscenza
+      no_ingestors: Nessuna pipeline di ingestione disponibile. Assicurati che almeno
+        una pipeline sia in esecuzione.
+      steps:
+        basic_info: Informazioni di base
     edit:
       title: Modifica collezione
     database:
       label: Database di conoscenza
       placeholder: Nome del database di conoscenza
+    database_name:
+      label: Nome del database
+      placeholder: ilmiodatabase
+      help: Sono consentite solo lettere minuscole e cifre, iniziando con una lettera,
+        da 3 a 63 caratteri. Il nome non può essere modificato in seguito.
+      validation_error: Il nome del database deve iniziare con una lettera minuscola
+        e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
+    ingestor:
+      label: Pipeline di ingestione
+      placeholder: Seleziona una pipeline di ingestione
+      help: La pipeline che elabora i documenti caricati in questo database.
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
@@ -662,6 +713,8 @@ role:
     cambiare questo.
   capability_readonly: Nessuna singola regola lo concede — usa un modello o una regola
     più ampia.
+  capability_also_cleared: 'Deselezionando si rimuove anche: {rules}'
+  capability_also_granted: 'Selezionando si concede anche: {rules}'
   pattern_help_intro: 'I modelli usano caratteri jolly per gli agenti:'
   pattern_help_all: Tutti gli agenti
   pattern_help_wildcard: Tutte le istanze di MyAgent
@@ -822,8 +875,12 @@ lib:
       label: Database
     namespaces:
       label: Spazi dei nomi
-      placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
-      help: Lascia vuoto per cercare tutti gli spazi dei nomi
+      placeholder: Seleziona almeno uno spazio dei nomi
+      help: Vengono cercati solo gli spazi dei nomi selezionati
+    allNamespaces:
+      label: Cerca in tutti gli spazi dei nomi
+      help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
+        aggiunti in seguito ({count} oggi).
     allowedFilterFields:
       label: Campi filtro consentiti
       placeholder: Inserisci una chiave di metadati e premi Invio

@@ -178,13 +178,12 @@ wired together.
 <details>
 <summary><strong>Integrations & utilities</strong></summary>
 
-| Component               | Powered by                                                             | Role                                                                                                                   |
-| ----------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| MS Teams & Slack bots   | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels                                                                 |
-| Code execution sandbox  | [Open Terminal](https://github.com/open-webui/open-terminal)           | Sandboxed Python runtime for OpenWebUI code execution (plain LLM models); per-user isolation, downloadable file output |
-| Code execution (legacy) | [Jupyter](https://jupyter.org/)                                        | Retained in the stack but no longer used by OpenWebUI for code execution                                               |
-| Browser automation      | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing                                                                 |
-| Docker socket proxy     | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape                                                   |
+| Component              | Powered by                                                             | Role                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| MS Teams & Slack bots  | [Microsoft Agents SDK](https://github.com/microsoft/Agents-for-python) | Connects agents to Teams, Slack, and web chat channels                                                                 |
+| Code execution sandbox | [Open Terminal](https://github.com/open-webui/open-terminal)           | Sandboxed Python runtime for OpenWebUI code execution (plain LLM models); per-user isolation, downloadable file output |
+| Browser automation     | [Playwright](https://playwright.dev/)                                  | Headless browser for agent web search and page parsing                                                                 |
+| Docker socket proxy    | [Tecnativa](https://github.com/Tecnativa/docker-socket-proxy)          | Read-only Docker API access for Traefik, preventing container escape                                                   |
 
 </details>
 
@@ -367,7 +366,9 @@ This pipeline connects to a legacy SFTP server, syncs documents into the data la
 indexes them for RAG — with hierarchical summaries and LLM-powered table refinement:
 
 ```python
-from swiss_ai_hub.pipeline import default_definitions, default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, document_ingestion_pipeline_definitions
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.core.rclone import sftp_source
 
 # Stage 1: SFTP → Data Lake
@@ -384,14 +385,14 @@ stage_1 = default_rclone_to_datalake_definitions(
 )
 
 # Stage 2: Data Lake → Vector Store
-# Monitors the same S3 bucket, processes any new or changed files
-stage_2 = default_definitions(
-    datalake_container_name="acme-knowledge-base",
-    embedding_model_name="embedding/bge-m3",
-    llm_model_name="text-generation/gemma-4-31B-it",
-    with_summary_nodes=True,                         # hierarchical summaries for multi-level RAG
-    with_table_refinement=True,                      # LLM-powered table detection and splitting
-    with_figure_descriptions=True,                   # vision LLM describes images in documents
+# Serves every knowledge database assigned to this ingestor, resolving the target per run
+stage_2 = document_ingestion_pipeline_definitions(
+    ingestor="acme_rag",
+    display_name=LocaleString(en="Acme RAG"),
+    description=LocaleString(en="Contracts and legal documents"),
+    # Models, enrichment steps and observation schedule this deployment defaults to, from
+    # DOCUMENT_INGESTION_*; every knowledge database overrides them in the create dialog
+    settings=DocumentIngestionPipelineSettings(),
 )
 ```
 

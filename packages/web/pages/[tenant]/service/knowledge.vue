@@ -5,6 +5,7 @@
       :loading="databasesAreLoading"
     >
       <div class="flex flex-col gap-12">
+        <KnowledgeDatabaseEmptyCard @add="openNewDatabaseModal" />
         <div
           v-for="database in databases"
           :key="database.name"
@@ -21,6 +22,19 @@
               class="pi pi-lock-open text-surface-400 dark:text-surface-500"
               :title="t('knowledge.manual_management.description')"
             />
+            <span class="text-xs text-surface-500 dark:text-surface-400">
+              {{ t('knowledge.pipeline', { name: capitalCase(database.ingestor) }) }}
+            </span>
+            <Button
+              v-if="database.deletable"
+              v-tooltip.top="t('knowledge.delete_database')"
+              icon="pi pi-trash"
+              rounded
+              text
+              size="small"
+              severity="danger"
+              @click="openDeleteDatabaseModal(database)"
+            />
           </div>
           <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
             <KnowledgeNamespaceCard
@@ -31,6 +45,7 @@
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"
               @edit="openEditNamespaceModal(namespace)"
+              @delete="openDeleteNamespaceModal(database, namespace)"
             />
             <KnowledgeNamespaceEmptyCard
               v-if="!database.auto_sync"
@@ -63,6 +78,20 @@
       :namespace="editingNamespace"
       @success="handleUpdateSuccess"
     />
+
+    <KnowledgeDatabaseCreateModal
+      v-model="newDatabaseModalVisible"
+      @success="handleDatabaseCreationSuccess"
+    />
+
+    <KnowledgeDeleteConfirmModal
+      v-model:visible="deleteModalVisible"
+      :title="deleteTitle"
+      :warning="deleteWarning"
+      :expected-name="deleteExpectedName"
+      :is-deleting="isDeleting"
+      @confirm="handleConfirmDelete"
+    />
   </StructuralScreen>
 </template>
 
@@ -71,11 +100,17 @@ import { capitalCase } from 'change-case'
 
 import type { DatabaseDto, NamespaceDto } from '@core/sdk/client'
 
+const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
 const { t } = useI18n()
+const toast = useToast()
+const { tenantId } = useTenant()
 
 const { databases, databasesAreLoading } = useDatabases()
+
+const { deleteDatabase, isDeleting: isDeletingDatabase } = useDeleteDatabase()
+const { deleteNamespace, isDeleting: isDeletingNamespace } = useDeleteNamespace()
 
 const uploadModalVisible = ref(false)
 const selectedDatabaseForUpload = ref('')
@@ -88,6 +123,8 @@ const selectedDatabaseForNewNamespace = ref('')
 
 const editNamespaceModalVisible = ref(false)
 const editingNamespace = ref<NamespaceDto | null>(null)
+
+const newDatabaseModalVisible = ref(false)
 
 const toNamespace = (database_name: string, namespace: NamespaceDto) => {
   router.push(tenantPath(`/service/knowledge/${database_name}/${namespace.name}`))
@@ -122,5 +159,106 @@ const openEditNamespaceModal = (namespace: NamespaceDto) => {
 
 const handleUpdateSuccess = () => {
   editingNamespace.value = null
+}
+
+const openNewDatabaseModal = () => {
+  newDatabaseModalVisible.value = true
+}
+
+const handleDatabaseCreationSuccess = () => {
+  newDatabaseModalVisible.value = false
+}
+
+type PendingDeletion
+  = | { type: 'database', database: string, name: string, count: number }
+    | { type: 'namespace', database: string, namespace: string, name: string, count: number }
+
+const deleteModalVisible = ref(false)
+const pendingDeletion = ref<PendingDeletion | null>(null)
+
+const isDeleting = computed(() => isDeletingDatabase.value || isDeletingNamespace.value)
+
+const deleteExpectedName = computed(() => pendingDeletion.value?.name ?? '')
+
+const deleteTitle = computed(() =>
+  pendingDeletion.value?.type === 'database'
+    ? t('knowledge.delete.database.title')
+    : t('knowledge.delete.namespace.title'),
+)
+
+const deleteWarning = computed(() => {
+  const pending = pendingDeletion.value
+  if (!pending) return ''
+  const params = { name: pending.name, count: pending.count }
+  return pending.type === 'database'
+    ? t('knowledge.delete.database.warning', params)
+    : t('knowledge.delete.namespace.warning', params)
+})
+
+const documentCountFor = (database: DatabaseDto) =>
+  (database.namespaces ?? []).reduce((sum, namespace) => sum + (namespace.number_of_documents ?? 0), 0)
+
+const openDeleteDatabaseModal = (database: DatabaseDto) => {
+  pendingDeletion.value = {
+    type: 'database',
+    database: database.name,
+    name: database.name,
+    count: documentCountFor(database),
+  }
+  deleteModalVisible.value = true
+}
+
+const openDeleteNamespaceModal = (database: DatabaseDto, namespace: NamespaceDto) => {
+  pendingDeletion.value = {
+    type: 'namespace',
+    database: database.name,
+    namespace: namespace.name,
+    name: namespace.name,
+    count: namespace.number_of_documents ?? 0,
+  }
+  deleteModalVisible.value = true
+}
+
+// The nested document route renders inside this page, so deleting what it points at leaves it mounted on a
+// dead URL. Leave for the nearest surviving ancestor first: navigating deactivates the child's queries, so the
+// delete's invalidation only marks them stale instead of refetching a resource the teardown job is purging.
+// Both cases land on the database list — there is no /service/knowledge/[db] route.
+const isViewingPendingDeletion = (pending: PendingDeletion) => {
+  if (route.params.db !== pending.database) return false
+  return pending.type === 'database' || route.params.namespace === pending.namespace
+}
+
+const handleConfirmDelete = async () => {
+  const pending = pendingDeletion.value
+  if (!pending) return
+
+  try {
+    if (isViewingPendingDeletion(pending)) {
+      await router.push(tenantPath('/service/knowledge'))
+    }
+
+    if (pending.type === 'database') {
+      await deleteDatabase({ tenantId: tenantId.value!, database: pending.database })
+    }
+    else {
+      await deleteNamespace({ tenantId: tenantId.value!, database: pending.database, namespace: pending.namespace })
+    }
+    toast.add({
+      severity: 'success',
+      summary: t('knowledge.delete.scheduled.summary'),
+      detail: t('knowledge.delete.scheduled.detail'),
+      life: 4000,
+    })
+    deleteModalVisible.value = false
+    pendingDeletion.value = null
+  }
+  catch {
+    toast.add({
+      severity: 'error',
+      summary: t('knowledge.delete.error.summary'),
+      detail: t('knowledge.delete.error.detail'),
+      life: 4000,
+    })
+  }
 }
 </script>

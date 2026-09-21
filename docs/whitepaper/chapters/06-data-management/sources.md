@@ -12,7 +12,7 @@
 # Data Ingestion Pipelines and Architecture
 
 2_platform/6_pipelines/index.en.md 2_platform/6_pipelines/1_fundamentals/index.en.md
-2_platform/6_pipelines/2_rag_ingestion_pipeline/index.en.md 3_sdk/3_building_pipelines/index.en.md
+2_platform/6_pipelines/2_document_ingestion_pipeline/index.en.md 3_sdk/3_building_pipelines/index.en.md
 3_sdk/3_building_pipelines/1_pipeline_fundamentals/index.en.md 3_sdk/3_building_pipelines/2_core_patterns/index.en.md
 3_sdk/3_building_pipelines/3_data_ingestion_pipeline/index.en.md 3_sdk/3_building_pipelines/4_job_scheduling/index.en.md
 

@@ -27,3 +27,6 @@ steps:
   stop:
     name: Stop
     description: Stops the agent when request is rejected by suitability guard.
+messages:
+  unsuitable_request: I am not the right assistant for this request, so I cannot answer
+    it. %{reason}

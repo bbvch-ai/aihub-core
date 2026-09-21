@@ -29,6 +29,8 @@ Before drafting, ground the issue in the actual codebase — an issue written fr
 2. **Resolve ambiguity with the user via the AskUserQuestion tool** before writing — at minimum **Item Type**
    (Epic/Story/Task) and **Priority** (P0/P1/P2), plus any scope fork the request leaves open. Never guess Priority or
    invent scope; a wrong field or an assumed boundary sends the issue back for rework.
+3. **Verify the state of every issue you plan to cite** before citing it, see "Citing other issues" under Step 3.5. A
+   plausible title or a closed status is not proof it covers what you think.
 
 Carry the answers into the body (Step 3) and the board fields (Step 5).
 
@@ -108,6 +110,69 @@ Rules:
 
   - [ ] {the bug no longer reproduces under the steps above}.
   ```
+
+## Step 3.5: Writing Quality Pass (kill the AI-slop)
+
+Before creating the issue, re-read the whole body once, straight through, as a skeptical editor who never saw the
+conversation that produced it. Two failure modes are specific to issues drafted during a chat, and are the most common
+ones here:
+
+**Structure: lead with the goal, not the drafting trail.**
+
+- The reader has no chat history. The first sentence states what this issue delivers and the value it brings. Not "after
+  further research," "it turns out," "two of the three pieces already exist," or any other sentence that only makes
+  sense to someone who watched the draft evolve. Goal and value first, then the current gap, then supporting detail
+  (files, mechanisms, cross-references).
+- If a citation or an assumption turned out to be wrong mid-conversation, just cite the right thing in the final body.
+  Don't narrate the correction ("X is wrong, actually Y"). The reader never saw the wrong version.
+- Write as if handing this to someone with zero context on the discussion that produced it. No "as discussed," no
+  meta-commentary about the issue-writing process itself.
+
+**Technical specificity: hint at the mechanism, don't map the codebase.**
+
+- It's fine, often useful, to say what *kind* of thing is needed: "a UI component," "a Redis-backed counter," "a new
+  field on the bucket record," "resolved per run instead of fixed at startup." That tells the reader the shape of the
+  work without them having to read code first.
+- It is not fine to string together a paragraph of class names and file paths, such as `LanguageModelResource`,
+  `EmbeddingModelResource`, `MarkdownStructuralNodeParserResource`, three more classes, and two file paths, all in one
+  sentence. That reads like a code review comment, not an issue, and every one of those names rots the moment the code
+  is refactored. One or two anchor references are enough when they truly clarify which part of the system is meant. Past
+  that, cut back to the behavior and the mechanism, not the map. If a paragraph names more than two or three concrete
+  symbols, rewrite it.
+
+**Citing other issues: verify, don't assume.**
+
+- Before naming any issue number as a blocker, a sibling, or "already delivered," check its real state:
+  `gh issue view <N> -R bbvch-ai/aihub-core --json state,stateReason,title,body`.
+- `CLOSED` is not `COMPLETED`. A `NOT_PLANNED` closure (often "spliced into sub-issues," check the closing comment)
+  means the issue itself delivered nothing. Find the actual sub-issue or PR that did the work (`gh api graphql` on
+  `subIssues`), and verify *that* issue's state too before citing it as done.
+- A plausible-sounding title is not proof an issue covers what you think, read its body. Two issues with similar titles
+  can describe entirely different mechanisms (e.g. "agents as MCP hosts via a gateway" and "an agent connecting directly
+  to one MCP server" are not the same thing even though both involve MCP).
+
+**General anti-slop checklist**, run this on the drafted body before creating:
+
+- *Meaning inflation*: no "underscores the importance of," "plays a crucial role," "is a testament to," "marks a turning
+  point." State the fact; let the reader judge importance.
+- *Antithesis crutch*: "not just X, but Y" / "it's not about X, it's about Y" / "rather than X, Y." At most one or two
+  uses in the whole body, and only when the contrast is backed by a concrete named thing (not a vague abstraction).
+- *Say each idea once*: the "why this matters" point belongs in the context paragraph. Don't restate it in In scope,
+  again in Accepted when, and again in a closing line.
+- *No aphorisms without a number or file behind them*: a closing line that sounds wise but points at nothing concrete
+  gets cut.
+- *No signal-word tics*: "honestly," "really," "actually," "fundamentally." At most once in the whole body, usually
+  zero.
+- *No AI vocabulary*: delve, crucial (inflationary), leverage, robust, seamless, holistic, vibrant, landscape
+  (metaphorical), foster/fostering, "valuable insights," "navigate the complexities of."
+- *Plain verbs*: "is," not "functions as" / "serves as" / "represents."
+- *Vague attribution*: no "users often," "this is known to cause issues" without a named symptom, file, or issue number
+  behind it.
+- *Sentence rhythm*: short and concrete over long compound sentences. If a sentence needs two commas and a subordinate
+  clause to land, split it into two.
+- *No em-dashes*: rewrite with a comma, a period, or parentheses instead. Grep the drafted body for `—` before creating
+  and fix every hit. This is one of the single most common AI tells, and older issues in this repo using it are not a
+  reason to keep doing it.
 
 ## Step 4: Create the Issue
 
@@ -234,3 +299,8 @@ Report any gap and fix it before declaring done.
 4. **Forgetting the board.** An issue not added to org project 37 is invisible to the sprint — Step 5 is not optional.
    Item Type is mandatory; Status defaults to `Backlog`.
 5. **Guessing Priority.** P0/P1/P2 is a product call — ask, don't assume.
+6. **Narrating the drafting process.** The body reads like a chat transcript ("this turned out to be wrong," "after
+   digging deeper") instead of a standalone description. Lead with the goal and value; write for a reader who never saw
+   the conversation.
+7. **Citing a closed-not-planned issue as "already delivered."** Check `state`/`stateReason` before citing. A
+   spliced/not-planned issue delivered nothing itself; find and verify its actual completed sub-issue instead.

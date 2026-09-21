@@ -25,13 +25,40 @@ The platform uses a multi-layered approach:
 
 - **Native Docker Checks**: Automatically monitor if service processes are running and responsive. Docker can restart
   unhealthy containers, enabling self-healing for transient issues.
-- **Application Endpoint Checks**: Services expose dedicated health endpoints (`/health`) that verify not just liveness,
-  but readiness to perform their specific function (e.g., can the database accept a query?).
+- **Application Endpoint Checks**: Services expose a liveness endpoint (`/health`) that answers for as long as the
+  process is serving requests. The API additionally exposes a readiness endpoint (`/ready`) that reports each backing
+  dependency - NATS, MongoDB, Redis, Milvus and S3 - as its own flag.
 - **Synthetic Probes**: For services without native health endpoints, the platform actively polls them to ensure they
   are available and responsive.
 
 Every health status change - from healthy to unhealthy, service starts, and stops - is captured as a structured event,
 providing a complete historical record of service availability.
+
+#### Degraded dependencies are reported, not restarted
+
+Services start and keep serving when a backing store is temporarily unreachable, instead of failing their startup and
+being restarted into the same unavailable dependency. The vector database is the clearest example: Milvus reports itself
+healthy several minutes before its query proxy accepts connections, so the API and the agents boot without a vector
+store connection and open one on the first request that needs it.
+
+The operational consequence is that a degraded dependency does **not** appear as an unhealthy or restarting container.
+It appears in the readiness payload:
+
+```bash
+curl -s http://localhost:8000/api/v1/health/ready
+```
+
+```json
+{
+  "status": "unhealthy",
+  "code": 503,
+  "version": "0.320.0",
+  "checks": { "nats": true, "mongodb": true, "redis": true, "milvus": false, "s3": true }
+}
+```
+
+Alerting must therefore watch `/ready` - both its status code and the individual `checks` flags - and not container
+health alone, which would report the platform as fine while vector search is unavailable.
 
 ### 2. Metrics: "How is it performing?"
 

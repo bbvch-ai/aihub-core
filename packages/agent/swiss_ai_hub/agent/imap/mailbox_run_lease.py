@@ -14,6 +14,7 @@ _KEY_PREFIX = "mailbox:run_lease"
 _LUA_DIR = Path(__file__).parent / "lua"
 _RENEW_IF_HOLDER_LUA = (_LUA_DIR / "renew_if_holder.lua").read_text()
 _RELEASE_IF_HOLDER_LUA = (_LUA_DIR / "release_if_holder.lua").read_text()
+_REACQUIRE_IF_FREE_OR_HOLDER_LUA = (_LUA_DIR / "reacquire_if_free_or_holder.lua").read_text()
 
 # Bounds how long a *crashed* run blocks its successor, never how long a healthy run may take: a run holding the
 # lease heartbeats it for as long as its process lives, so the TTL only starts counting down once that process is
@@ -81,6 +82,41 @@ class MailboxRunLease:
         """Extend this run's hold by another TTL, reporting False when the lease is no longer ours."""
         extended = await self._redis.eval(_RENEW_IF_HOLDER_LUA, 1, self._key(agent_class, agent_id), run_id, self._ttl)
         return bool(extended)
+
+    async def reacquire(self, agent_class: str, agent_id: str, run_id: str) -> bool:
+        """Take the mailbox back when it is still ours or has lapsed unclaimed, reporting False only when another
+        run holds it.
+
+        This reverses the class's own rule that a lost lease means stop — deliberately, and only for the phase after
+        the batch has been filed.
+
+        The rule exists because losing the lease mid-classification means a second run is working the same unread
+        mail. After filing, that situation cannot arise: every message of the batch has left the inbox, so a
+        concurrent run's `list_unread` finds nothing of this batch to classify, fetch or file. What remains is
+        drafting, and the delegation window it spans is unbounded — a run waits on N RAG agents with no step body to
+        heartbeat from, so a lapsed lease there is the expected case, not evidence of a competitor. Treating it as
+        fatal would throw away a batch's drafts every time the delegates were slow, and the mail is already filed, so
+        those drafts would never be retried.
+
+        A lease another run actually holds still refuses. That run reached `acquire` after this one's lapsed, which
+        means it is working *later* mail, and both runs appending into the same Drafts folder is the one thing the
+        drafting phase still has to avoid.
+        """
+        reacquired = await self._redis.eval(
+            _REACQUIRE_IF_FREE_OR_HOLDER_LUA, 1, self._key(agent_class, agent_id), run_id, self._ttl
+        )
+        if not reacquired:
+            logger.warning(
+                "[lease] %s/%s is held by run %s — run %s cannot take it back",
+                agent_class,
+                agent_id,
+                await self._holder(agent_class, agent_id),
+                run_id,
+            )
+            return False
+
+        logger.info("[lease] %s/%s reacquired by run %s", agent_class, agent_id, run_id)
+        return True
 
     async def release(self, agent_class: str, agent_id: str, run_id: str) -> None:
         """Hand the mailbox back, doing nothing when the lease is no longer ours."""

@@ -17,11 +17,6 @@ SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2
 
 TRUNCATION_MARKER = "[… truncated]"
 
-# A subject longer than this is not a subject. Both prompts put it in a fixed part they do not trim — the drafting
-# envelope and the classification header — so without a bound here one inbound message could exceed any budget before
-# a single trimmable character is considered. The subject is attacker-controlled, which is what makes that reachable.
-MAX_SUBJECT_CHARACTERS = 512
-
 
 class TokenBudget:
     """A token allowance for one prompt, and the measuring and trimming both prompt builders need.

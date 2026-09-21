@@ -1,7 +1,9 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -14,13 +16,14 @@ class VectorStoreInput(PrimeVueElement):
 
     This element renders as three controls:
     1. Database dropdown (loads from /api/v1/knowledge/databases)
-    2. Namespace multi-select (populated based on selected database)
+    2. "All namespaces" switch, or a namespace multi-select populated from the selected database
     3. Free-form chips input for `allowed_metadata_filter_fields`
 
-    The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+    The output matches the configurable fields of `MilvusVectorStoreConfig`:
     {
         "collection_name": str,
         "index_namespaces": list[str],
+        "all_namespaces": bool,
         "allowed_metadata_filter_fields": list[str],
     }
 
@@ -92,3 +95,45 @@ class VectorStoreInput(PrimeVueElement):
         if isinstance(self_copy.allowed_filter_fields_placeholder, LocaleString):
             self_copy.allowed_filter_fields_placeholder = t.extract(self_copy.allowed_filter_fields_placeholder)
         return self_copy
+
+    def validate_authorization(
+        self,
+        field_path: str,
+        value: Any,
+        access_checker: AccessChecker,
+        accessible_tenant_ids: set[str],
+        t: LocaleHandler,
+    ) -> list[ConfigAuthorizationViolation]:
+        """Named namespaces are checked one by one; ``all_namespaces`` needs a rule covering the whole database.
+
+        An empty list without the flag is left to model validation, which rejects it.
+        """
+        if not isinstance(value, dict) or not isinstance(value.get("collection_name"), str):
+            return []
+        database: str = value["collection_name"]
+        namespaces = value.get("index_namespaces") or []
+        if not isinstance(namespaces, list):
+            return []
+        if value.get("all_namespaces") is True:
+            if access_checker.has_access_to_all_knowledge_namespaces(database):
+                return []
+            return [
+                ConfigAuthorizationViolation(
+                    field=field_path,
+                    resource_type="knowledge_database",
+                    resource=database,
+                    message=t("lib.common.authorization.no_access_whole_knowledge_database", name=database),
+                )
+            ]
+        return [
+            ConfigAuthorizationViolation(
+                field=field_path,
+                resource_type="knowledge_namespace",
+                resource=f"{database}/{namespace}",
+                message=t(
+                    "lib.common.authorization.no_access_knowledge_namespace", database=database, namespace=namespace
+                ),
+            )
+            for namespace in namespaces
+            if isinstance(namespace, str) and not access_checker.has_access_to_knowledge_namespace(database, namespace)
+        ]

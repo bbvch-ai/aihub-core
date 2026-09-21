@@ -30,11 +30,11 @@
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 {%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gemma-4-31B-it' %}
 {#- OpenWebUI resolves TASK_MODEL against its own registry and denies non-admins any model without a
-    read grant. Only the provisioned workspace model carries grants — the raw LiteLLM name behind it is
-    deliberately left unregistered — so background tasks must name the workspace model, not the raw one.
-    Corollary: chat titles and follow-up questions only work for roles whose access rules grant this
-    model. A role that excludes it loses both features silently (admins are exempt from the check). #}
-{%- set task_model = 'aihub-model-' + default_model | replace('/', '-') %}
+    read grant. The provisioner registers this raw LiteLLM id directly as the base-registry row — no
+    separate preset one hop above it (see OpenWebuiProvisioner._build_llm_model_data) — so TASK_MODEL
+    names the raw id as-is. Corollary: chat titles and follow-up questions only work for roles whose
+    access rules grant this model. A role that excludes it loses both features silently (admins are
+    exempt from the check). #}
 {#- Must match the transcription model_name registered in configs/litellm-config.yml.j2 for the same hardware variant. #}
 {%- set stt_model = 'transcription/faster-whisper-large-v3' if gpu_enabled else 'transcription/whisper-large-v3' %}
 
@@ -60,7 +60,6 @@
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
-{%- set JUPYTER_URL = "http://jupyter:8888" %}
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
@@ -207,12 +206,15 @@ services:
       - "8080"
       - "18080"
     {%- endif %}
+    {#- -max caps volume slots, not disk: the master runs without preallocation, so an empty volume
+        costs nothing. Each collection (one per knowledge database, plus one per infrastructure
+        service) claims a batch of 7 slots on its first write, so 100 ran out at ~8 databases. #}
     command: >
       volume
       -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
-      -max=100
+      -max=500
       -dataCenter=dc1
     environment:
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -1884,37 +1886,9 @@ services:
   # ===================================================================
   # Utility & Code Execution Services
   # ===================================================================
-  # These services provide code execution runtimes (Jupyter) and
+  # These services provide code execution runtimes (Open Terminal) and
   # browser automation (Playwright) for various platform features.
   # ===================================================================
-
-  {{ service_license('jupyter') }}
-  jupyter:
-    container_name: jupyter-lab
-    image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
-    restart: always
-    {%- if stage in ['dev', 'local', 'build'] %}
-    ports:
-      - "8888:8888"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
-    environment:
-      JUPYTER_ENABLE_LAB: true
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
-    healthcheck:
-      test: ["CMD", "/etc/jupyter/docker_healthcheck.py"]
-      interval: 15s
-      timeout: 3s
-      start_period: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
 
   {{ service_license('open-terminal') }}
   open-terminal:
@@ -2015,7 +1989,7 @@ services:
   # Document Processing Stack
   # ===================================================================
   # This stack, powered by MinerU, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # uploaded documents for the document ingestion pipeline. VLM requests are routed
   # through LiteLLM for unified model routing.
   # ===================================================================
 
@@ -2289,8 +2263,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: {{ task_model }}
-      TASK_MODEL_EXTERNAL: {{ task_model }}
+      TASK_MODEL: {{ default_model }}
+      TASK_MODEL_EXTERNAL: {{ default_model }}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
       # Conversation metadata is owned by the agent pipeline (#1047): the agent emits the title and
@@ -2330,6 +2304,14 @@ services:
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
+      {#- Model that synthesizes OpenWebUI's "Merge Responses" output. Raw LiteLLM name, exactly like
+          OPENWEBUI_CONVERSATION_METADATA_MODEL below: the agent pipeline sends the merge straight to the
+          AI-Hub model gateway rather than through OpenWebUI's own registry, so this must NOT be the
+          `aihub-model-…` workspace id used for TASK_MODEL. Derived from `default_model` and never from
+          `task_model`, whose `/`→`-` substitution is not reversible. Same silent-failure class as
+          TASK_MODEL (see the note above it): a role without `aihub.user.model.<capability>.<name>` for
+          this model gets a visible warning in place of a merged answer. #}
+      AIHUB_MERGE_MODEL: {{ default_model }}
       AIHUB_REQUEST_TIMEOUT: 60
       OPENWEBUI_MODEL_NAME_LOCALE: ${OPENWEBUI_MODEL_NAME_LOCALE}
 
@@ -2356,8 +2338,12 @@ services:
       {%- endif %}
 
       # --- Admin ---
-      ENABLE_ADMIN_EXPORT: True
+      # OpenWebUI admin is the AIHubSysAdmin realm role (OAUTH_ADMIN_ROLES below). Upstream lets that role
+      # read every user's files and export every user's chats across all tenants; both are scoped to the
+      # admin's own data by default here and can be opened up per deployment (issue #104).
+      ENABLE_ADMIN_EXPORT: ${OPENWEBUI_ENABLE_ADMIN_EXPORT}
       ENABLE_ADMIN_CHAT_ACCESS: False
+      BYPASS_ADMIN_ACCESS_CONTROL: ${OPENWEBUI_BYPASS_ADMIN_ACCESS_CONTROL}
       SHOW_ADMIN_DETAILS: True
       ADMIN_EMAIL: ${ADMIN_EMAIL}
 
@@ -2380,7 +2366,8 @@ services:
       RAG_FULL_CONTEXT: True
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: True
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
@@ -2875,6 +2862,7 @@ services:
       AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+      AIHUB_SHOW_LEGACY_KNOWLEDGE: ${AIHUB_SHOW_LEGACY_KNOWLEDGE}
 
       # Startup tenant — read by StartupTenantSettings on first boot to seed
       # the initial tenant. ID also goes to keycloak for realm-import group naming.
@@ -2882,6 +2870,15 @@ services:
       AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
       AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
       AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
+
+      {#- Models withheld from a newly created tenant's default access ceiling. Read only while deriving that
+          default (startup tenant on first boot, and the sysadmin plane's create-tenant call, which proxies
+          here because only this service is wired to the model gateway). Existing tenants are untouched. #}
+      AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS: ${AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS}
+      {#- Agent classes a newly created tenant's default ceiling grants. Same read-once lifecycle as the
+          exclusions above, but an allow list: no agent has answered discovery yet at first boot, so there
+          would be nothing for an exclusion to subtract from. #}
+      AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES: ${AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES}
 
       # User signup roles — read by UserSignupSettings.
       AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
@@ -2905,6 +2902,7 @@ services:
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Langfuse
@@ -2921,8 +2919,8 @@ services:
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
       OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
-      {#- Same model as open-webui's TASK_MODEL above, but in raw LiteLLM form: the access catalog matches
-          it against the `capability/name` pairs it enumerates, so the workspace-id translation stays there. #}
+      {#- Same value as open-webui's TASK_MODEL above (both name the raw LiteLLM id directly now); kept
+          as its own setting since the access catalog reads it independently as a `capability/name` pair. #}
       OPENWEBUI_CONVERSATION_METADATA_MODEL: {{ default_model }}
 
 
@@ -2954,10 +2952,6 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
-
-      # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: {{ JUPYTER_URL }}
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
@@ -4054,13 +4048,7 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
-    {%- if image_tags.default_rag_pipeline[stage] == 'localbuild' %}
-    build:
-      context: ..
-      dockerfile: ./packages/pipeline/app/default_rag_pipeline/Dockerfile
-    {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
-    {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -4137,13 +4125,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    {%- if image_tags.shared_rag_pipeline[stage] == 'localbuild' %}
-    build:
-      context: ..
-      dockerfile: ./packages/pipeline/app/shared_rag_pipeline/Dockerfile
-    {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.shared_rag_pipeline[stage] }}
-    {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -4208,6 +4190,95 @@ services:
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
       MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: "{{ NOTIFICATION_DAGSTER_UI_BASE_URL }}"
+      NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
+      NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
+  {%- if image_tags.document_ingestion_pipeline[stage] %}
+  {{ service_license('document_ingestion_pipeline') }}
+  document_ingestion_pipeline:
+    container_name: document-ingestion-pipeline
+    restart: always
+    {%- if image_tags.document_ingestion_pipeline[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/pipeline/app/document_ingestion_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.document_ingestion_pipeline[stage] }}
+    {%- endif %}
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # NATS
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Generic Document Ingestion Pipeline processing recipe
+      DOCUMENT_INGESTION_EMBEDDING_MODEL: ${DOCUMENT_INGESTION_EMBEDDING_MODEL}
+      DOCUMENT_INGESTION_LLM_MODEL: ${DOCUMENT_INGESTION_LLM_MODEL}
+      DOCUMENT_INGESTION_VISION_MODEL: ${DOCUMENT_INGESTION_VISION_MODEL}
+      DOCUMENT_INGESTION_WITH_SUMMARY_NODES: ${DOCUMENT_INGESTION_WITH_SUMMARY_NODES}
+      DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT: ${DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT}
+      DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS: ${DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS}
+      DOCUMENT_INGESTION_OBSERVE_JOB_HOUR: ${DOCUMENT_INGESTION_OBSERVE_JOB_HOUR}
+      DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE: ${DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}
