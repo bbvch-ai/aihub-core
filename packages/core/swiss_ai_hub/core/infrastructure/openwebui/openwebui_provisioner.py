@@ -29,8 +29,32 @@ from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleString
 logger = logging.getLogger(__name__)
 
 AIHUB_GROUP_PREFIX = "aihub:"
+
+# Pre-0.11.3 preset id prefixes. OpenWebUI 0.11.3 made an unregistered base_model_id admin-only
+# (see _build_model_data / _build_llm_model_data below), so provisioning switched to registering the
+# raw pipe/LiteLLM id directly as a base row instead of a preset pointing at it from one hop above.
+# Kept only so _delete_legacy_preset_models can clean up presets created by prior versions of this
+# provisioner — remove both the constants and that method once every deployment has synced past the
+# change (one release after this ships).
 AIHUB_AGENT_PREFIX = "aihub-agent-"
 AIHUB_LLM_MODEL_PREFIX = "aihub-model-"
+
+# Marks a base-registry row (base_model_id is None) as managed by this provisioner, so a sync can
+# tell it apart from a base row a human created directly in the OpenWebUI workspace. See
+# _build_model_data / _build_llm_model_data.
+AIHUB_MANAGED_META_KEY = "aihub_managed"
+
+# The function-calling mode _build_model_data / _build_llm_model_data provision onto every managed
+# row (see their docstrings for why). Shared with _compute_model_diff and _sync_llm_workspace_models
+# so a row already synced under a prior value of this constant is treated as drifted and updated —
+# without that check, only brand-new rows would ever pick up a changed default, since name is
+# otherwise the sole field either diff reconciles for an already-existing row.
+_MANAGED_FUNCTION_CALLING = "legacy"
+
+# Prefix of an agent's own base-registry id (e.g. "aihub-pipeline.RAGAgent.picasso-2"), as opposed
+# to an LLM model's (e.g. "text-generation/Kimi-K2.6") — the two managed-row shapes base-row syncs
+# and grant parsing need to tell apart now that both live in the same base-model registry.
+AGENT_PIPE_ID_PREFIX = "aihub-pipeline."
 
 _LOCK_TIMEOUT = 60
 # The group critical section lists all SCIM groups/users + all Keycloak users and then issues one
@@ -287,12 +311,8 @@ class OpenWebuiProvisioner:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _workspace_model_id(agent_class: str, agent_id: str) -> str:
-        return f"{AIHUB_AGENT_PREFIX}{agent_class}-{agent_id}"
-
-    @staticmethod
     def _base_model_id(agent_class: str, agent_id: str) -> str:
-        return f"aihub-pipeline.{agent_class}.{agent_id}"
+        return f"{AGENT_PIPE_ID_PREFIX}{agent_class}.{agent_id}"
 
     @staticmethod
     def _agent_capabilities() -> dict[str, bool]:
@@ -307,24 +327,45 @@ class OpenWebuiProvisioner:
         return {"web_search": False}
 
     def _build_model_data(self, agent: OnlineAgent) -> dict[str, Any]:
+        """Registers the raw agent pipe id directly as a base-registry row (no base_model_id).
+
+        OpenWebUI 0.11.3 made ``has_base_model_access`` deny everyone but admins through a
+        ``base_model_id`` with no registry row of its own — the opposite of 0.9.x, which treated an
+        unregistered base as a gate-free raw provider model. A preset pointing at the pipe id from one
+        hop above no longer routes for non-admins, so the pipe id itself must carry the grant instead.
+
+        ``function_calling: "legacy"`` — see ``_build_llm_model_data`` for why. The agent pipe never
+        read OpenWebUI's ``tools``/builtins in the first place, so this is pure upside here: it just
+        makes OpenWebUI perform image generation/web search/code interpreter itself again instead of
+        handing the agent's LLM a tool spec it has nothing to invoke.
+
+        ``capabilities.web_search: False`` (see ``_agent_capabilities``) hides the Web Search toggle
+        for agent rows regardless of tool-calling mode: even under legacy, OpenWebUI's own search only
+        hands the agent pipe a ``files`` entry with no file id, which the pipe's file processing drops
+        — the agent never sees a result and answers "not in the documents" while the UI claims it
+        searched. Hiding the button beats leaving one that silently does nothing.
+        """
         return {
-            "id": self._workspace_model_id(agent.agent_class, agent.agent_id),
+            "id": self._base_model_id(agent.agent_class, agent.agent_id),
             "name": agent.display_name,
-            "base_model_id": self._base_model_id(agent.agent_class, agent.agent_id),
             "meta": {
                 "description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}",
+                AIHUB_MANAGED_META_KEY: True,
                 "capabilities": self._agent_capabilities(),
             },
+            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
         }
 
     async def _build_update_data(self, http: httpx.AsyncClient, agent: OnlineAgent) -> dict[str, Any]:
         """Overlays the fields AI-Hub manages onto the stored model instead of replacing it.
 
         ``/models/model/update`` writes every column of ``ModelForm``, so posting a freshly built
-        payload would drop whatever the workspace holds — ``params`` and every ``meta`` key AI-Hub
-        never writes. The stored model is read back through ``get_model`` rather than reused from
-        ``list_models``: the listing hands back ``/static/favicon.png`` in place of the stored
-        ``profile_image_url``, so merging from it would overwrite a custom icon with the placeholder.
+        payload would drop whatever the workspace holds — every ``meta``/``params`` key this
+        provisioner doesn't itself write (a human-set ``capabilities`` entry, an admin-tuned
+        ``params.temperature``, …). The stored model is read back through ``get_model`` rather than
+        reused from ``list_models``: the listing hands back ``/static/favicon.png`` in place of the
+        stored ``profile_image_url``, so merging from it would overwrite a custom icon with the
+        placeholder.
         """
         desired = self._build_model_data(agent)
         stored = await self._openwebui.get_model(http, desired["id"])
@@ -336,7 +377,7 @@ class OpenWebuiProvisioner:
                 **desired["meta"],
                 "capabilities": {**(stored_meta.get("capabilities") or {}), **desired["meta"]["capabilities"]},
             },
-            "params": stored.get("params") or {},
+            "params": {**(stored.get("params") or {}), **desired["params"]},
         }
 
     @staticmethod
@@ -346,17 +387,19 @@ class OpenWebuiProvisioner:
         """Returns (models_to_create, models_to_update, model_ids_to_delete).
 
         An agent is updated when its workspace model exists but the stored name drifted from the
-        current agent name (e.g. after a rename), or when the capabilities we push drifted from the
-        stored ones. Without the capability comparison a model created before a capability existed
-        would keep its stale meta forever, since nothing else rewrites an existing model. Access
-        grants are reconciled separately by _sync_access_grants.
+        current agent name (e.g. after a rename), its stored function-calling mode drifted from
+        ``_MANAGED_FUNCTION_CALLING``, or the capabilities we push (``_agent_capabilities``) drifted
+        from the stored ones — three fields this diff reconciles, all for the same reason: a
+        provisioner default that changes after a row was already synced must still reach that row,
+        since name is otherwise the only thing that would ever trigger an update to an existing
+        model. Access grants are reconciled separately by _sync_access_grants.
         """
         desired_capabilities = OpenWebuiProvisioner._agent_capabilities()
         desired_ids: set[str] = set()
         to_create: list[OnlineAgent] = []
         to_update: list[OnlineAgent] = []
         for agent in online_agents:
-            model_id = OpenWebuiProvisioner._workspace_model_id(agent.agent_class, agent.agent_id)
+            model_id = OpenWebuiProvisioner._base_model_id(agent.agent_class, agent.agent_id)
             desired_ids.add(model_id)
             existing = existing_models.get(model_id)
             if existing is None:
@@ -366,14 +409,25 @@ class OpenWebuiProvisioner:
             capabilities_drifted = any(
                 stored_capabilities.get(name) != value for name, value in desired_capabilities.items()
             )
-            if existing.get("name") != agent.display_name or capabilities_drifted:
+            function_calling_drifted = existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+            if existing.get("name") != agent.display_name or capabilities_drifted or function_calling_drifted:
                 to_update.append(agent)
         to_delete = set(existing_models) - desired_ids
         return to_create, to_update, to_delete
 
     async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
-        existing_models = await self._openwebui.list_models(http)
-        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_AGENT_PREFIX)}
+        """Reconciles agent pipe ids in the base-model registry (see ``_build_model_data``).
+
+        Reads ``list_base_models`` rather than ``list_models``: a managed row has no
+        ``base_model_id``, which is exactly what ``list_models``'s search filters out (and what makes
+        it invisible to the Workspace UI too — see ``OpenWebuiClient.list_base_models``).
+        """
+        existing_rows = await self._openwebui.list_base_models(http)
+        existing_aihub = {
+            m["id"]: m
+            for m in existing_rows
+            if m.get("id", "").startswith(AGENT_PIPE_ID_PREFIX) and m.get("meta", {}).get(AIHUB_MANAGED_META_KEY)
+        }
 
         to_create, to_update, to_delete = self._compute_model_diff(online_agents, existing_aihub)
 
@@ -402,37 +456,65 @@ class OpenWebuiProvisioner:
     # LLM model sync
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _llm_workspace_model_id(model: AvailableModel) -> str:
-        return f"{AIHUB_LLM_MODEL_PREFIX}{model.capability}-{model.name}"
-
     def _build_llm_model_data(self, model: AvailableModel) -> dict[str, Any]:
-        """Points ``base_model_id`` at the raw LiteLLM connection model so chat routes through it.
+        """Registers the raw LiteLLM model id directly as a base-registry row (no base_model_id).
 
-        That base has no OpenWebUI registry entry, so ``has_base_model_access`` treats it as a raw
-        provider model and lets granted users through — gating happens via this entry's access grants.
+        See ``_build_model_data`` for why: 0.11.3 denies non-admins through any unregistered
+        ``base_model_id``, so the raw id itself must carry the grant now instead of a preset above it.
+
+        ``function_calling: "legacy"`` — 0.11.3 defaults every row to Native, where OpenWebUI's
+        built-in image generation/web search/code interpreter stop running server-side and instead
+        get offered to the model as a ``generate_image``/``search_web``/``execute_code`` tool, on the
+        hope it chooses to call it. That hope doesn't hold reliably: verified against this deployment's
+        own chat history that the same model (gemma) both succeeded and failed at spontaneously calling
+        ``generate_image`` across otherwise-identical requests, with zero code-side difference between
+        the two — see issue aihub-core-private#240. Legacy restores the pre-0.11.3 behavior where
+        OpenWebUI performs the action itself rather than trusting the model's tool-calling judgment.
+        Costs Open Terminal (registered as a direct tool server) its native ``tool_calls`` fidelity,
+        falling back to single-tool-per-turn, task-model-JSON-parsed invocation instead — the one
+        capability this deployment's own history shows is actually exercised via native mode today.
+        A user who needs native tool orchestration for one conversation can still override this in
+        that chat's own Advanced Params, which takes precedence over this row-level default.
         """
         return {
-            "id": self._llm_workspace_model_id(model),
+            "id": model.litellm_name,
             "name": model.display_name,
-            "base_model_id": model.litellm_name,
-            "meta": {"description": f"AI-Hub model: {model.litellm_name}"},
+            "meta": {
+                "description": f"AI-Hub model: {model.litellm_name}",
+                AIHUB_MANAGED_META_KEY: True,
+            },
+            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
         }
 
     async def _sync_llm_workspace_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
-        existing_models = await self._openwebui.list_models(http)
-        existing_aihub = {m["id"]: m for m in existing_models if m.get("id", "").startswith(AIHUB_LLM_MODEL_PREFIX)}
+        """Reconciles LLM model ids in the base-model registry (see ``_build_llm_model_data``).
 
-        desired = {self._llm_workspace_model_id(model): model for model in models}
+        Reads ``list_base_models`` rather than ``list_models`` — see ``_sync_workspace_models``.
+
+        A row is updated when its stored name drifted, or its stored function-calling mode drifted
+        from ``_MANAGED_FUNCTION_CALLING`` — see ``_compute_model_diff``'s docstring for why the
+        latter check exists (a changed default here would otherwise never reach an already-synced row).
+        """
+        existing_rows = await self._openwebui.list_base_models(http)
+        existing_aihub = {
+            m["id"]: m
+            for m in existing_rows
+            if not m.get("id", "").startswith(AGENT_PIPE_ID_PREFIX) and m.get("meta", {}).get(AIHUB_MANAGED_META_KEY)
+        }
+
+        desired = {model.litellm_name: model for model in models}
 
         for model_id, model in desired.items():
             existing = existing_aihub.get(model_id)
             if existing is None:
                 await self._openwebui.create_model(http, self._build_llm_model_data(model))
                 logger.info(f"OpenWebUI: Created LLM workspace model '{model_id}'")
-            elif existing.get("name") != model.display_name:
+            elif (
+                existing.get("name") != model.display_name
+                or existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+            ):
                 await self._openwebui.update_model(http, self._build_llm_model_data(model))
-                logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}' name to '{model.display_name}'")
+                logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}'")
 
         for model_id in set(existing_aihub) - set(desired):
             await self._openwebui.delete_model(http, model_id)
@@ -504,17 +586,21 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _parse_agent_from_model(model: dict[str, Any]) -> tuple[str, str] | None:
-        """Extracts (agent_class, agent_id) from a workspace model via its base_model_id."""
-        base_model_id = model.get("base_model_id", "")
-        if not base_model_id.startswith("aihub-pipeline."):
+        """Extracts (agent_class, agent_id) from a managed base row's own id.
+
+        Ids no longer carry a ``base_model_id`` hop to read this from — the row's ``id`` *is* the
+        pipe id now (see ``_build_model_data``).
+        """
+        model_id = model.get("id", "")
+        if not model_id.startswith(AGENT_PIPE_ID_PREFIX):
             return None
-        parts = base_model_id[len("aihub-pipeline.") :].split(".", 1)
+        parts = model_id[len(AGENT_PIPE_ID_PREFIX) :].split(".", 1)
         return (parts[0], parts[1]) if len(parts) == 2 else None
 
     @staticmethod
     def _parse_llm_from_model(model: dict[str, Any]) -> tuple[str, str] | None:
-        """Extracts (capability, name) from an LLM workspace model via its base_model_id."""
-        capability, _, name = model.get("base_model_id", "").partition("/")
+        """Extracts (capability, name) from a managed base row's own id — see ``_parse_agent_from_model``."""
+        capability, _, name = model.get("id", "").partition("/")
         return (capability, name) if capability and name else None
 
     def _compute_grants_for_managed_model(
@@ -524,15 +610,13 @@ class OpenWebuiProvisioner:
         tenant_rules: TenantAccessRules,
         role_rules: RoleAccessRules,
     ) -> list[AccessGrant] | None:
-        """Dispatches grant computation by managed-model prefix; returns None for unparseable models."""
+        """Dispatches grant computation by id shape; returns None for unparseable models."""
         model_id = model.get("id", "")
-        if model_id.startswith(AIHUB_AGENT_PREFIX):
+        if model_id.startswith(AGENT_PIPE_ID_PREFIX):
             parsed = self._parse_agent_from_model(model)
             return self._compute_access_for_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
-        if model_id.startswith(AIHUB_LLM_MODEL_PREFIX):
-            parsed = self._parse_llm_from_model(model)
-            return self._compute_access_for_llm_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
-        return None
+        parsed = self._parse_llm_from_model(model)
+        return self._compute_access_for_llm_model(*parsed, groups, tenant_rules, role_rules) if parsed else None
 
     @staticmethod
     def _build_role_rules() -> RoleAccessRules:
@@ -546,45 +630,37 @@ class OpenWebuiProvisioner:
             if role.tenant_id in tenant_name_by_id
         }
 
-    async def _delete_shadowing_base_models(
-        self, http: httpx.AsyncClient, managed_models: list[dict[str, Any]]
-    ) -> None:
-        """Removes registry entries that shadow the raw models our workspace models point at.
+    async def _delete_legacy_preset_models(self, http: httpx.AsyncClient) -> None:
+        """One-time migration: removes pre-0.11.3 ``aihub-agent-*`` / ``aihub-model-*`` preset rows.
 
-        Both ``_build_model_data`` and ``_build_llm_model_data`` depend on those bases staying
-        unregistered. Once an entry exists for one, OpenWebUI's ``has_base_model_access`` walks
-        workspace model -> base and denies everyone lacking a grant on that entry, so the model stays
-        visible in the picker but chatting with it fails with "Model not found". Saving the model list
-        in the OpenWebUI workspace (``POST /models/sync``) writes such an entry for every model it
-        renders, so reassert the invariant on every sync rather than cleaning up once.
-
-        Derived from each workspace model's own ``base_model_id`` so agent pipes and raw LiteLLM
-        models are covered by the same pass.
+        Those pointed ``base_model_id`` at an unregistered raw id; provisioning now registers that
+        raw id directly as a base row instead (see ``_build_model_data`` / ``_build_llm_model_data``),
+        so a preset left behind by a prior version of this provisioner would otherwise sit alongside
+        its replacement and double up the picker. Safe to remove once every deployment has synced
+        past the change (see the comment on ``AIHUB_AGENT_PREFIX`` / ``AIHUB_LLM_MODEL_PREFIX``).
         """
-        shadowing_ids = {m.get("id", "") for m in await self._openwebui.list_base_models(http)}
-        preset_by_base = {
-            m["base_model_id"]: m["id"]
-            for m in managed_models
-            if m.get("base_model_id") and m["base_model_id"] in shadowing_ids
-        }
-
-        for base_model_id, preset_id in preset_by_base.items():
-            await self._openwebui.delete_model(http, base_model_id)
-            logger.warning(
-                f"OpenWebUI: Deleted registry entry '{base_model_id}' shadowing the raw model behind "
-                f"'{preset_id}' — it denied every non-admin access to the workspace model above it"
+        existing_models = await self._openwebui.list_models(http)
+        legacy_ids = [
+            m["id"] for m in existing_models if m.get("id", "").startswith((AIHUB_AGENT_PREFIX, AIHUB_LLM_MODEL_PREFIX))
+        ]
+        for model_id in legacy_ids:
+            await self._openwebui.delete_model(http, model_id)
+            logger.info(
+                f"OpenWebUI: Deleted legacy preset model '{model_id}' (superseded by direct base-row registration)"
             )
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
-        existing_models = await self._openwebui.list_models(http)
-        aihub_models = [
-            m for m in existing_models if m.get("id", "").startswith((AIHUB_AGENT_PREFIX, AIHUB_LLM_MODEL_PREFIX))
-        ]
+        """Recomputes and pushes access grants for every managed base-registry row.
+
+        Reads ``list_base_models`` rather than ``list_models`` — see ``_sync_workspace_models``.
+        """
+        await self._delete_legacy_preset_models(http)
+
+        existing_rows = await self._openwebui.list_base_models(http)
+        aihub_models = [m for m in existing_rows if m.get("meta", {}).get(AIHUB_MANAGED_META_KEY)]
 
         if not aihub_models:
             return
-
-        await self._delete_shadowing_base_models(http, aihub_models)
 
         async with self._openwebui.scim_session() as scim:
             all_groups = await self._openwebui.list_groups(scim=scim)

@@ -77,6 +77,8 @@ logger = logging.getLogger(__name__)
 
 _S3_URI_SCHEME = "s3://"
 
+_DOCUMENT_NOT_FOUND_DETAIL = "Document not found"
+
 _SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
 
@@ -134,10 +136,17 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
-        """Retrieves a single document by its ID from the knowledge database."""
+    def get_document_by_id(db: str, namespace: str, document_id: str) -> DocumentDTO:
+        """Retrieves a single document by its ID from the knowledge database.
+
+        Scoped by namespace like every other document read: the route is only authorised for the namespace
+        named in its path, so a lookup by id alone would hand out documents from any namespace of the database.
+        """
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         return DocumentDTO.from_ref_doc(ref_doc)
 
     @staticmethod
@@ -809,7 +818,7 @@ class KnowledgeService:
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
         source = ref_doc.data.metadata.source
         source = source.removeprefix(_S3_URI_SCHEME)
         parts = source.split("/", 1)
@@ -846,7 +855,7 @@ class KnowledgeService:
         try:
             ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
         except DoesNotExist:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise HTTPException(status_code=404, detail=_DOCUMENT_NOT_FOUND_DETAIL)
 
         source = ref_doc.data.metadata.source
         container, file_path = KnowledgeService._delete_source_from_data_lake(s3_service, source)
