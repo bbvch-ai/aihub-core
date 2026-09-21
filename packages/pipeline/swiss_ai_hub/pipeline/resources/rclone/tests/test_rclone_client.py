@@ -49,9 +49,10 @@ class TestUpsertRemote:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json={"State": "*oauth", "Option": {"Name": "config_token"}})
 
+        config = RcloneSourceConfig(name="r", backend_type=RcloneBackendType.ONEDRIVE, options={})
         for client in _client(handler):
             with pytest.raises(ValueError, match="pre-obtained token"):
-                client.upsert_remote(RcloneSourceConfig(name="r", backend_type=RcloneBackendType.ONEDRIVE, options={}))
+                client.upsert_remote(config)
 
     def test_an_rclone_error_surfaces_the_daemons_message_not_the_request(self):
         """rclone echoes the request under ``input`` in every error body, credentials included."""
@@ -66,13 +67,12 @@ class TestUpsertRemote:
                 },
             )
 
+        config = RcloneSourceConfig(
+            name="r", backend_type=RcloneBackendType.S3, options={"secret_access_key": "TOPSECRET"}
+        )
         for client in _client(handler):
             with pytest.raises(RuntimeError, match="didn't find backend") as exc_info:
-                client.upsert_remote(
-                    RcloneSourceConfig(
-                        name="r", backend_type=RcloneBackendType.S3, options={"secret_access_key": "TOPSECRET"}
-                    )
-                )
+                client.upsert_remote(config)
         assert "TOPSECRET" not in str(exc_info.value)
 
     def test_a_non_json_error_body_falls_back_to_the_status_phrase(self):
@@ -132,6 +132,7 @@ class TestGetAndDeleteRemote:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json={"State": "teamdrive_ok", "Option": {"Name": "config_change_team_drive"}})
 
+        config = RcloneSourceConfig(name="r", backend_type=RcloneBackendType.DRIVE, options={})
         for client in _client(handler):
             with pytest.raises(ValueError, match="config_change_team_drive"):
-                client.upsert_remote(RcloneSourceConfig(name="r", backend_type=RcloneBackendType.DRIVE, options={}))
+                client.upsert_remote(config)

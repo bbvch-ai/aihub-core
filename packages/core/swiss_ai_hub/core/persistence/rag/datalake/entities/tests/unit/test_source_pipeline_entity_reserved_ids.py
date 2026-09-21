@@ -35,5 +35,6 @@ class TestReservedIds:
         assert "datalake" in SourcePipelineEntity.reserved_ids()
 
     def test_upsert_rejects_a_reserved_id_before_touching_the_database(self):
+        reserved = _source_pipeline(IngestorType.DOCUMENT_INGESTION.value)
         with pytest.raises(ValidationError, match="reserved"):
-            SourcePipelineEntity.upsert(_source_pipeline(IngestorType.DOCUMENT_INGESTION.value))
+            SourcePipelineEntity.upsert(reserved)

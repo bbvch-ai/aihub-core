@@ -43,7 +43,7 @@ def data_version_by_partition_for_rclone_files(
         )
 
     if nested_files:
-        last_file = sorted(nested_files, key=lambda file: file.path)[-1]
+        last_file = max(nested_files, key=lambda file: file.path)
         context.instance.report_runless_asset_event(
             AssetMaterialization(
                 asset_key=asset_key,

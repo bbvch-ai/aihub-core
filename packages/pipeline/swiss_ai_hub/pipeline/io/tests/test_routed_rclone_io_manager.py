@@ -65,5 +65,6 @@ class TestNonPartitionedRead:
 
 class TestWrite:
     def test_sources_are_never_written_to(self):
+        manager = RoutedRcloneIOManager(source="rclone")
         with pytest.raises(NotImplementedError):
-            RoutedRcloneIOManager(source="rclone").handle_output(MagicMock(), object())
+            manager.handle_output(MagicMock(), object())

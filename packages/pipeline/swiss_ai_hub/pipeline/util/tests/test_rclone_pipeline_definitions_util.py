@@ -50,12 +50,9 @@ class TestEveryNameDerivesFromTheSource:
 
 class TestRegistrationGate:
     def test_an_ingestor_token_cannot_be_claimed_as_a_source(self):
+        labels = {"display_name": LocaleString(en="x"), "description": LocaleString(en="x")}
         with pytest.raises(ValueError, match="reserved"):
-            rclone_pipeline_definitions(
-                source=IngestorType.DOCUMENT_INGESTION.value,
-                display_name=LocaleString(en="x"),
-                description=LocaleString(en="x"),
-            )
+            rclone_pipeline_definitions(source=IngestorType.DOCUMENT_INGESTION.value, **labels)
 
     def test_a_custom_source_without_labels_is_rejected_at_build_time(self):
         with pytest.raises(ValueError, match="display_name"):
