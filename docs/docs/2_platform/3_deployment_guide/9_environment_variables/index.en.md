@@ -71,7 +71,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
 | `INCIDENT_GITHUB_APP_ID` | `IncidentSettings.GITHUB_APP_ID` | `api` | GitHub App id. The App needs Issues: write and Contents: write. |
 | `INCIDENT_GITHUB_INSTALLATION_ID` | `IncidentSettings.GITHUB_INSTALLATION_ID` | `api` | Installation id of the App on the target repository. |
-| `INCIDENT_GITHUB_PRIVATE_KEY` | `IncidentSettings.GITHUB_PRIVATE_KEY` | `api` | PEM private key of the GitHub App, used to sign the JWT that buys an installation token. Supply it as a Docker secret or from a vault, never in a committed env file. |
+| `INCIDENT_GITHUB_PRIVATE_KEY` | `IncidentSettings.GITHUB_PRIVATE_KEY` | `api` | PEM private key of the GitHub App, used to sign the JWT that buys an installation token. Supply it as a Docker secret mounted at /run/secrets/incident_github_private_key (a compose override adding a `secrets:` entry to the api service) or from a vault, never in a committed env file. An empty INCIDENT_GITHUB_PRIVATE_KEY in the environment does not shadow the secret. |
 | `INCIDENT_GITHUB_REPOSITORY` | `IncidentSettings.GITHUB_REPOSITORY` | `api` | Repository issues are filed in, as 'owner/name'. Must be private — reports carry customer data, and a public repository would publish it irreversibly. |
 | `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |

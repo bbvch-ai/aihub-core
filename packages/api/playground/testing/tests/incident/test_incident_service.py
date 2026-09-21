@@ -114,6 +114,16 @@ async def test_should_reject_a_submission_missing_a_required_answer() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("blank", ["", "   "])
+async def test_should_reject_a_blank_answer_to_a_required_question(blank: str) -> None:
+    """The picker enforces `required` in the browser; a direct call must not file `_No response_` under it."""
+    with pytest.raises(HTTPException) as rejected:
+        await _create(VALID | {"what_went_wrong": blank}, [], _RecordingClient())
+
+    assert rejected.value.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_should_reject_a_dropdown_answer_the_form_does_not_offer() -> None:
     with pytest.raises(HTTPException) as rejected:
         await _create(VALID | {"impact": "Catastrophic"}, [], _RecordingClient())

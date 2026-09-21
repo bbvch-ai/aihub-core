@@ -130,7 +130,7 @@ runner.mount(
     .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
-    IncidentController(auth=auth).get_incident_form().create_incident(),
+    IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
     UserMemoryController(auth=auth)
     .get_user_memories()
     .search_user_memories()

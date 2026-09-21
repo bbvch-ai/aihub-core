@@ -11371,6 +11371,21 @@ export const IncidentAttachmentsDTOSchema = {
     "How the reporter's file picker should be configured.\n\nWording and accepted types come from the form definition, the two limits from the\ndeployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also\nhave to hunt down a translated string that repeats the old number.",
 } as const;
 
+export const IncidentAvailabilityDTOSchema = {
+  properties: {
+    enabled: {
+      type: "boolean",
+      title: "Enabled",
+      description: "True when an incident repository is configured",
+    },
+  },
+  type: "object",
+  required: ["enabled"],
+  title: "IncidentAvailabilityDTO",
+  description:
+    "Whether this deployment files reports at all.\n\nAnswered with 200 on every deployment, unlike the form and submit endpoints, so the UI can\ndecide whether to draw the report button without a 404 that the shell's global error handler\nwould toast at a user who has not done anything yet.",
+} as const;
+
 export const IncidentFormDTOSchema = {
   properties: {
     elements: {

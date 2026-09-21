@@ -16,7 +16,10 @@ class IncidentSettings(EnvironmentSettings):
     exactly as it did before this existed.
     """
 
-    model_config = EnvironmentSettings.create_settings_config("INCIDENT_")
+    # `env_ignore_empty`: the compose template passes every INCIDENT_* variable through from the env
+    # file, where an unused one is `''`. Without this, that empty string outranks a mounted Docker
+    # secret and the documented way of supplying the private key silently leaves the feature off.
+    model_config = EnvironmentSettings.create_settings_config("INCIDENT_") | {"env_ignore_empty": True}
 
     GITHUB_REPOSITORY: Annotated[
         str | None,
@@ -39,7 +42,9 @@ class IncidentSettings(EnvironmentSettings):
         Field(
             default=None,
             description="PEM private key of the GitHub App, used to sign the JWT that buys an installation token. "
-            "Supply it as a Docker secret or from a vault, never in a committed env file.",
+            "Supply it as a Docker secret mounted at /run/secrets/incident_github_private_key (a compose override "
+            "adding a `secrets:` entry to the api service) or from a vault, never in a committed env file. An empty "
+            "INCIDENT_GITHUB_PRIVATE_KEY in the environment does not shadow the secret.",
         ),
     ]
     MAX_ATTACHMENTS: Annotated[

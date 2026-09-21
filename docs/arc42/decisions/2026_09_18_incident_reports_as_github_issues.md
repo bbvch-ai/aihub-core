@@ -43,7 +43,8 @@ every field of `IncidentContext` names one, and a test fails if that corresponde
 Attachments are declared by the definition's `upload` element — label, guidance and accepted extensions are the form's
 to change, count and size the deployment's — and **committed into the repository**, linked from the issue body.
 
-Unset — the default — `IncidentSettings.enabled` is false, no client is constructed, and the endpoints answer 404.
+Unset — the default — `IncidentSettings.enabled` is false, no client is constructed, the form and submit endpoints
+answer 404, and `/incidents/availability` answers `enabled: false`, on which the UI draws no button at all.
 
 ## Alternatives Considered
 
@@ -125,6 +126,15 @@ chats without sending anything carries the previous conversation's id, and a tur
 carries nothing. Both are visible: those fields are shown to the reporter and editable, which is the same reason nothing
 in a submission is treated as authoritative. If misattributed conversations show up in practice, the per-message action
 is an independent addition, not a redesign.
+
+**The questions are in English, whichever of the four interface languages is active.** GitHub's issue-form schema has no
+notion of locale: `label`, `description` and `options` are single strings, and keeping the file a valid issue form — one
+that could be dropped unchanged into a repository's `.github/ISSUE_TEMPLATE` — was preferred over a dialect of it. The
+dialog's own chrome (buttons, toasts, the unavailable notice) is translated; the questions are not, and the issue body
+is read by a support team working in English anyway. Dropdown answers are also stable values that triage filters on, so
+translating them would mean splitting label from value. If a single-language user base makes this unacceptable,
+`IssueFormParser` is the one place to accept a `{de, en, fr, it}` mapping beside the plain string — `FormkitElement`
+already carries `LocaleString` labels — and the definition file is where the translations would go.
 
 **Multipart upload arrives at the API.** Every other upload in the platform hands the browser a presigned S3 URL; the
 destination here is GitHub, which issues no such URL, so these bytes pass through the API. It is the one deliberate

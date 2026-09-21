@@ -7777,6 +7777,24 @@ export type IncidentAttachmentsDto = {
 };
 
 /**
+ * IncidentAvailabilityDTO
+ *
+ * Whether this deployment files reports at all.
+ *
+ * Answered with 200 on every deployment, unlike the form and submit endpoints, so the UI can
+ * decide whether to draw the report button without a 404 that the shell's global error handler
+ * would toast at a user who has not done anything yet.
+ */
+export type IncidentAvailabilityDto = {
+  /**
+   * Enabled
+   *
+   * True when an incident repository is configured
+   */
+  enabled: boolean;
+};
+
+/**
  * IncidentFormDTO
  *
  * The report form, already carrying what the platform knows about this reporter.
@@ -30370,6 +30388,23 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse =
   UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type GetIncidentAvailabilityData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/availability";
+};
+
+export type GetIncidentAvailabilityResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentAvailabilityDto;
+};
+
+export type GetIncidentAvailabilityResponse =
+  GetIncidentAvailabilityResponses[keyof GetIncidentAvailabilityResponses];
 
 export type GetIncidentFormData = {
   body?: never;

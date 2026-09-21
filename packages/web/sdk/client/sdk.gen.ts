@@ -161,6 +161,8 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIncidentAvailabilityData,
+  GetIncidentAvailabilityResponse,
   GetIncidentFormData,
   GetIncidentFormResponse,
   GetIngestorsData,
@@ -3454,6 +3456,37 @@ export const updateNotification = <
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get Incident Availability
+ *
+ * Says whether reporting is configured here, so the UI shows the button only where it leads somewhere.
+ */
+export const getIncidentAvailability = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentAvailabilityResponse =
+    GetIncidentAvailabilityResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentAvailabilityData,
+    GetIncidentAvailabilityResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentAvailabilityResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/availability",
+    ...options,
   });
 
 /**

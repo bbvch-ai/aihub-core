@@ -8,7 +8,9 @@ from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.incident.dependencies.use_incident_client import use_incident_client
+from swiss_ai_hub.api.routes.incident.dependencies.use_optional_incident_client import use_optional_incident_client
 from swiss_ai_hub.api.routes.incident.dto.created_incident_dto import CreatedIncidentDTO
+from swiss_ai_hub.api.routes.incident.dto.incident_availability_dto import IncidentAvailabilityDTO
 from swiss_ai_hub.api.routes.incident.dto.incident_form_dto import IncidentFormDTO
 from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClient
 from swiss_ai_hub.api.routes.incident.incident_service import IncidentService
@@ -34,6 +36,17 @@ class IncidentController(Controller):
 
     def __init__(self, *, auth: AuthHandler, route: str = "/incidents", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
+
+    def get_incident_availability(self, route: str = "/availability") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_incident_availability(
+            _: Annotated[UserIdentity, Security(self.authenticated_user())],
+            client: Annotated[GitHubIssueClient | None, Depends(use_optional_incident_client)],
+        ) -> IncidentAvailabilityDTO:
+            """Says whether reporting is configured here, so the UI shows the button only where it leads somewhere."""
+            return IncidentAvailabilityDTO.from_client(client)
+
+        return self
 
     def get_incident_form(self, route: str = "/form") -> Self:
         @self.router.get(route, tags=self.tags)

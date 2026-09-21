@@ -127,6 +127,21 @@ def test_should_reject_a_submission_naming_an_option_the_form_does_not_offer() -
         model(what_went_wrong="It broke", impact="Catastrophic")
 
 
+@pytest.mark.parametrize("blank", ["", "   ", "\n"])
+def test_should_reject_a_blank_answer_to_a_required_question(blank: str) -> None:
+    """The browser enforces `required`; the API is reachable without one, so the schema must too."""
+    model = IssueFormParser.parse(MINIMAL_DEFINITION).submission_model()
+
+    with pytest.raises(ValidationError):
+        model(what_went_wrong=blank, impact="High")
+
+
+def test_should_accept_a_blank_answer_to_an_optional_question() -> None:
+    model = IssueFormParser.parse(MINIMAL_DEFINITION).submission_model()
+
+    assert model(what_went_wrong="It broke", impact="High", tenant="").tenant == ""
+
+
 def test_should_allow_an_optional_question_to_go_unanswered() -> None:
     model = IssueFormParser.parse(MINIMAL_DEFINITION).submission_model()
 

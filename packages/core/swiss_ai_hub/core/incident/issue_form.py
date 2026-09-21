@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, StringConstraints, create_model
 
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.incident.issue_form_field import IssueFormField
@@ -67,4 +67,8 @@ class IssueForm(BaseModel):
             # Literal accepts a tuple, which is how a runtime-sized option list gets in.
             option_literal = Literal[tuple(field.options)]  # type: ignore[valid-type]
             return list[option_literal] if field.multiple else option_literal  # type: ignore[valid-type]
+        if field.required:
+            # GitHub's `required` means "answered", not "present": a key holding "" or whitespace
+            # is a skipped question and would otherwise file an issue reading `_No response_`.
+            return Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
         return str
