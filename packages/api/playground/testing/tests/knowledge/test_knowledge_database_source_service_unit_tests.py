@@ -249,9 +249,7 @@ class TestUpdateSource:
         bucket_cls.update_source.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_an_acknowledged_handover_and_an_empty_database_are_sourced_without_a_question(
-        self, locale_handler
-    ):
+    async def test_an_acknowledged_handover_and_an_empty_database_are_sourced_without_a_question(self, locale_handler):
         for request, documents in (
             (UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=_sftp_configuration("pw")), 0),
             (
@@ -291,7 +289,8 @@ class TestUpdateSource:
     @pytest.mark.asyncio
     async def test_a_mask_with_nothing_stored_is_a_client_error(self, locale_handler):
         request = UpdateDatabaseSourceRequest(
-            source=RCLONE.id, source_configuration=_sftp_configuration(f"{SecretEncryptionService.MASK}:0123456789abcdef")
+            source=RCLONE.id,
+            source_configuration=_sftp_configuration(f"{SecretEncryptionService.MASK}:0123456789abcdef"),
         )
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration={})

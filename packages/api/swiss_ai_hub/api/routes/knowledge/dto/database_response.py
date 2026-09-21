@@ -9,7 +9,10 @@ class DatabaseResponse(BaseModel):
     ingestor: Annotated[str, Field(description="The deployed ingestion pipeline that owns this database.")]
     configuration: Annotated[
         dict[str, Any],
-        Field(default_factory=dict, description="The ingestor's settings for this database, as validated against its announced schema."),
+        Field(
+            default_factory=dict,
+            description="The ingestor's settings for this database, as validated against its announced schema.",
+        ),
     ]
     source: Annotated[
         str | None, Field(description="The deployed source pipeline that fills this database; null for manual upload.")

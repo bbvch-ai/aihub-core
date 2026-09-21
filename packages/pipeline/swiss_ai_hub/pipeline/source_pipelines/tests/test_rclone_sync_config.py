@@ -98,7 +98,10 @@ class TestToRcloneSourceConfig:
 
 class TestMultiLineSecrets:
     def test_a_pretty_printed_service_account_file_is_sent_to_rclone_on_one_line(self):
-        pretty = '{\n  "type": "service_account",\n  "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"\n}\n'
+        pretty = (
+            '{\n  "type": "service_account",\n'
+            '  "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"\n}\n'
+        )
         config = RcloneSyncConfig.model_validate(
             {"backend_type": "drive", "drive": {"service_account_credentials": pretty}}
         )
@@ -106,10 +109,9 @@ class TestMultiLineSecrets:
         sent = config.to_rclone_source_config("r").options["service_account_credentials"]
 
         assert "\n" not in sent
-        assert (
-            sent
-            == '{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"}'
-        )
+        expected = '{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nabc\\n'
+        expected += '-----END PRIVATE KEY-----\\n"}'
+        assert sent == expected
 
     def test_credentials_that_are_not_json_are_rejected_with_the_field_named(self):
         with pytest.raises(ValueError, match="Google Drive credentials"):

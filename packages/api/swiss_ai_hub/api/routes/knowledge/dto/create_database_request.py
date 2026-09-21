@@ -23,7 +23,7 @@ class CreateDatabaseRequest(BaseModel):
             description=(
                 "The database's configuration as submitted through the ingestor's announced form: its multilingual "
                 "name and description plus every knob the pipeline declares. Validated against the ingestor's schema."
-            )
+            ),
         ),
     ]
     source: Annotated[
@@ -42,6 +42,6 @@ class CreateDatabaseRequest(BaseModel):
             description=(
                 "The source's settings as submitted through its announced form (backend, credentials, root folder, "
                 "patterns). Validated against the source's schema; secret fields are stored encrypted."
-            )
+            ),
         ),
     ]
