@@ -18,7 +18,6 @@ from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
-    RAGStartEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
@@ -26,10 +25,10 @@ from swiss_ai_hub.core.events.agent import (
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryRequestedEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    EmptyCondensationError,
     IngestedNode,
     LLMConfig,
     OrgMemoryNamespaceResolver,
@@ -69,6 +68,20 @@ PREV_GROUNDING_NODES_KEY = "prev_grounding_nodes"
 
 # Bounds a hung backend, not normal latency: well above the ~0.25s graph-free median from issue #1713.
 MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
+
+
+def effective_input_token_limit(
+    number_of_input_tokens: int,
+    llm_configs: list[LLMConfig | None],
+) -> int:
+    """The admin's cost ceiling capped by the narrowest model window that could receive the prompt.
+
+    `number_of_input_tokens` is a cost ceiling and may sit above the model's real context window, so
+    trimming to it alone does not bound what the provider will accept. Falls back to the ceiling when no
+    window can be established, matching `usable_input_budget`'s fail-open contract.
+    """
+    budget = usable_input_budget(llm_configs)
+    return number_of_input_tokens if budget is None else min(number_of_input_tokens, budget)
 
 
 async def do_limit_chat_history(
@@ -146,14 +159,39 @@ async def do_condense_standalone_question(
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity | None,
-) -> StandaloneQuestionCondenserEvent:
-    """Condense chat history and user query into standalone question."""
+) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
+    """Condense chat history and user query into standalone question.
+
+    A blank condensation refuses the turn rather than escaping as an `ExceptionEvent`. The raise in
+    `condense_standalone_question` is the right call at that layer — no caller can use an empty question —
+    but letting it reach the dispatcher renders its English message straight into the chat. This is the
+    same refusal shape `_refuse_oversized_input` uses for the other "we cannot serve this turn" case.
+    """
     await displayer.display_thought(t("agent.thought.condense_question"))
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        condensed = await condense_standalone_question(
-            chat_history=limited_history, message=last_user_message, t=t, llm=llm
-        )
+        try:
+            condensed = await condense_standalone_question(
+                chat_history=limited_history, message=last_user_message, t=t, llm=llm
+            )
+        except EmptyCondensationError:
+            return await _refuse_empty_condensation(llm_config.model_name, displayer, t)
         return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
+
+
+async def _refuse_empty_condensation(
+    model_name: str,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> RAGFailureStopEvent:
+    """Stop the run with a message the user can act on, keeping the mechanism to the thought.
+
+    Retrying is pointless (identical re-issue at `temperature=0.1` returns the same nothing) and there is
+    no fallback question to answer with, so asking the user to rephrase is the only useful move left.
+    """
+    await displayer.display_thought(t("agent.rag_agent.thoughts.condensation_empty"))
+    refusal = t("agent.rag_agent.messages.condensation_empty")
+    await displayer.display_chunk(refusal, model_name=model_name)
+    return RAGFailureStopEvent(reason=RAGFailureReason.CONDENSATION_EMPTY, answer=refusal)
 
 
 async def do_respond_with_llm(
@@ -223,22 +261,25 @@ async def do_few_shot_guard(
 
 
 async def do_retrieve_user_memory(
-    event: UserMessageEvent | RAGStartEvent,
+    query: str,
+    user_id: str,
     memory: AgentMemory,
     rerank: bool,
 ) -> RetrieveUserMemoryEvent:
     """Retrieve user memories for personalized context.
+
+    Searches with the condensed standalone question, never the raw last user message — chat clients
+    running full-context RAG inline whole documents into that message (issue #1753).
 
     A failing memory subsystem degrades to an empty event instead of propagating (issue #1713): raising
     would end the run, while `stop_on_error=False` would suppress the `ExceptionEvent` but emit nothing at
     all — and `check_memory_ready_for_chat_history` blocks until this event exists, so the run would hang.
     A hung backend degrades the same way, since a stall blocks the chat turn just as a raise ends it.
     """
-    user_id = event.user.id
     try:
         memory_result = await asyncio.wait_for(
             memory.search_user_memory(
-                query=event.user_query,
+                query=query,
                 user_id=user_id,
                 limit=10,
                 threshold=0.5,
@@ -258,27 +299,31 @@ async def do_retrieve_user_memory(
 
 
 async def do_retrieve_organization_memory(
-    event: UserMessageEvent | RAGStartEvent,
+    query: str,
+    requested_namespaces: list[str],
+    user_id: str | None,
     org_memory: OrgMemoryReadConfig,
     memory: AgentMemory,
 ) -> RetrieveOrganizationMemoryEvent:
     """Retrieve organization memories for shared expert-knowledge context.
 
-    Degrades to an empty event on failure for the same reason as `do_retrieve_user_memory`.
+    Searches with the condensed standalone question for the same reason as `do_retrieve_user_memory`
+    (issue #1753). Degrades to an empty event on failure for the same reason as well. Organization memory
+    is tenant-scoped and runs without an identity — `user_id` exists only for the degradation log line, so
+    an identity-less delegated run passes `None` rather than dereferencing an absent user.
 
     Namespace resolution is deliberately left outside that safety net: a start event asking for a namespace
     outside the configured allow-list is a caller error, and silently answering from the wrong scope (or
     from none) would hide it. Only the memory-subsystem call degrades.
     """
-    requested = event.org_memory_namespaces if isinstance(event, RAGStartEvent) else []
     tenant_namespaces = OrgMemoryNamespaceResolver.resolve_for_search(
-        requested=requested,
+        requested=requested_namespaces,
         configured=org_memory.allowed_tenant_namespaces,
     )
     try:
         memory_result = await asyncio.wait_for(
             memory.search_organization_memory(
-                query=event.user_query,
+                query=query,
                 tenant_id=org_memory.tenant_id,
                 tenant_namespaces=tenant_namespaces,
                 user_id=None,
@@ -294,10 +339,7 @@ async def do_retrieve_organization_memory(
             "tenant_id=%s namespaces=%s user_id=%s",
             org_memory.tenant_id,
             tenant_namespaces,
-            # Organization memory is tenant-scoped and runs without an identity, so this log line is the one
-            # place a delegated, identity-less run would still dereference the absent user — turning a
-            # recoverable memory hiccup into the AttributeError that ends the run.
-            event.user.id if event.user else None,
+            user_id,
             exc_info=True,
         )
         return RetrieveOrganizationMemoryEvent(memories=[], relations=[])
@@ -313,7 +355,7 @@ async def do_retrieve(
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
-        query = event.condensed_chat_message.content or ""
+        query = event.condensed_question
     else:
         query = event.new_query
     all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
@@ -475,6 +517,22 @@ def do_finalize_rag_stop(
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
     return RAGSuccessStopEvent(answer=answer)
+
+
+def build_memory_conversation(
+    condense_event: StandaloneQuestionCondenserEvent,
+    llm_event: LLMEvent,
+) -> list[ChatMessage]:
+    """
+    Build the mem0 fact-extraction payload: the condensed standalone question plus the answer.
+
+    Never the final LLM input — that carries the client-augmented user message and the USER-role RAG
+    context message, both of which feed document text into stored "user facts" (issue #1753). The
+    condensed question is the turn's only doc-free representation; prior turns were already extracted
+    by their own runs' store steps.
+    """
+    output_messages = llm_event.output_messages or []
+    return [condense_event.condensed_chat_message, *(message.to_llama_index() for message in output_messages)]
 
 
 def build_memory_storage_request(

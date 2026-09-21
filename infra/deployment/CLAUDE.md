@@ -41,6 +41,7 @@ deployment/
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
     ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
+    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py

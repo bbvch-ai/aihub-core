@@ -12579,6 +12579,7 @@ export type PromptTokensDetails = {
  * Why a RAG run failed to produce a useful answer.
  */
 export const RagFailureReason = {
+  CONDENSATION_EMPTY: "condensation_empty",
   CONTEXT_INSUFFICIENT: "context_insufficient",
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",

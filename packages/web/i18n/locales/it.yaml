@@ -210,6 +210,8 @@ event:
     no_filters: Nessun filtro aggiuntivo
   rag_stop:
     failure_reason:
+      condensation_empty: Non è stato possibile condensare la domanda in una forma
+        ricercabile — questa esecuzione è stata interrotta prima del recupero.
       context_insufficient: Il contesto recuperato era insufficiente — la risposta
         è un ripiego e non è ancorata alle vostre fonti di conoscenza.
       expert_declined: L'esperto umano non ha potuto fornire una risposta — questa

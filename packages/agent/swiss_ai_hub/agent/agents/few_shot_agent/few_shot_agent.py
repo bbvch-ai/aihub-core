@@ -316,11 +316,18 @@ class FewShotAgent(Agent):
         thread_context: ThreadContext,
         user: UserIdentity,
     ) -> StopEvent:
+        # Without a chunk this path produces no assistant text at all: the admin UI renders the reject
+        # event itself (GuardRejectionEvent.vue), but OpenAI-compatible clients build the answer from the
+        # streamed chunks plus the stop event's output, so a bare StopEvent reaches OpenWebUI and the bots
+        # as an empty message. Stream the refusal like ExpertRAGAgent's decline/error paths do. The guard's
+        # `reason` carries the specific mismatch and comes back in the run's locale (the whole guard prompt
+        # is localized), but it is third-person justification, so a first-person sentence leads it.
+        refusal = t("agent.few_shot_agent.messages.unsuitable_request", reason=event.reason)
+        await displayer.display_chunk(refusal, model_name=FewShotAgent.__name__)
+
         # Neither title nor follow-ups have fired on this path yet — the guard rejected the request
         # before the agent produced anything, so both are missing (unlike the meta-question branch,
-        # which already has an early title step). The guard's `reason` is shown to the user
-        # (GuardRejectionEvent.vue), so treat it as the answer text to ground follow-ups on, same as
-        # ExpertRAGAgent's canned decline/error messages.
-        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=event.reason)]
+        # which already has an early title step). Ground them on the refusal the user actually read.
+        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=refusal)]
         await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context, user)
         return StopEvent()
