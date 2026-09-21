@@ -363,6 +363,7 @@ export type AgentClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -497,6 +498,7 @@ export type AgentConfigDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6094,6 +6096,7 @@ export type FullProcessInstanceDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6281,6 +6284,7 @@ export type Group = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6637,6 +6641,7 @@ export type HumanInDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6718,6 +6723,7 @@ export type HumanInSpecs = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -7917,6 +7923,7 @@ export type IngestorDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -8743,6 +8750,153 @@ export type Knob = {
    * Template string for value display
    */
   valueTemplate?: string | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelector = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
   /**
    * Validation
    */
@@ -12175,6 +12329,7 @@ export type ProcessClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -13183,6 +13338,7 @@ export type Repeater = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -17292,6 +17448,7 @@ export type AgentClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17426,6 +17583,7 @@ export type AgentConfigDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -19885,6 +20043,7 @@ export type FullProcessInstanceDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20011,6 +20170,7 @@ export type GroupWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20215,6 +20375,7 @@ export type HumanInDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20296,6 +20457,7 @@ export type HumanInSpecsWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20827,6 +20989,7 @@ export type IngestorDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -21595,6 +21758,149 @@ export type KnobWritable = {
    * Template string for value display
    */
   valueTemplate?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelectorWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
   [key: string]: unknown;
 };
 
@@ -23369,6 +23675,7 @@ export type ProcessClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -24041,6 +24348,7 @@ export type RepeaterWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
