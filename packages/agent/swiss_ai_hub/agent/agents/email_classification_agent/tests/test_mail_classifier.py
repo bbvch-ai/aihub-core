@@ -4,7 +4,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 from swiss_ai_hub.core.agents import AgentRef
-from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, MailCategory
+from swiss_ai_hub.core.imap import (
+    MAX_SUBJECT_CHARACTERS,
+    DraftEmailSettings,
+    EmailClassificationSettings,
+    MailCategory,
+    ParsedMessage,
+)
 
 from swiss_ai_hub.agent.agents.email_classification_agent.configs.knowledge_delegation_config import (
     KnowledgeDelegationConfig,
@@ -14,8 +20,6 @@ from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import
     ClassificationOutcome,
     MailClassifier,
 )
-from swiss_ai_hub.agent.imap.parsed_message import ParsedMessage
-from swiss_ai_hub.agent.imap.token_budget import MAX_SUBJECT_CHARACTERS
 
 _SUPPORT = MailCategory(category="support_request", imap_folder="Triage/Support", description="Needs an action.")
 _INVOICE = MailCategory(category="invoice", imap_folder="Triage/Invoices", description="A bill.")

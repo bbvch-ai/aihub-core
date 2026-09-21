@@ -12,7 +12,8 @@ from typing import Annotated, ClassVar
 from pydantic import Field
 from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs, CronStartEvent, StopEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import CronStartEvent, StopEvent, UserMessageEvent
+from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.form.elements.cron_input import CronInput
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.i18n import LocaleString
@@ -65,8 +66,8 @@ def _runner(agent_type: type[Agent]) -> AgentRunner:
 
 
 def _schema_properties(runner: AgentRunner) -> set[str]:
-    specs = AgentConfigSpecs.from_agent_config(runner.published_config, runner.agent_class)
-    return set(specs.agent_config_schema["properties"])
+    specs = ConfigSpecs.from_form(runner.published_config, runner.agent_class)
+    return set(specs.config_schema["properties"])
 
 
 class TestSchedulabilityIsDerived:

@@ -26,16 +26,19 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `ACME_EMAIL` |  | `traefik` |  |
 | `ADMIN_EMAIL` |  | `open-webui` |  |
 | `ADMIN_PASSWORD_HASH` |  | `traefik` |  |
+| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
 | `AIHUB_DEFAULT_NAMESPACE_NAME` | `AIHubSettings.DEFAULT_NAMESPACE_NAME` | `api` | Name of the default namespace |
 | `AIHUB_SHARED_BUCKET_NAME` | `AIHubSettings.SHARED_BUCKET_NAME` | `api`, `seaweedfs-init`, `shared_rag_pipeline` | Name of the shared knowledge bucket |
 | `AIHUB_SHARED_NAMESPACE_NAME` | `AIHubSettings.SHARED_NAMESPACE_NAME` | `api` | Name of the shared namespace |
 | `AIHUB_SHOW_LEGACY_KNOWLEDGE` | `AIHubSettings.SHOW_LEGACY_KNOWLEDGE` | `api` | Whether the legacy deploy-bound knowledge databases (default_rag / shared_rag) are listed and readable. Off by default: their pipelines are disabled in every stage, so the databases are obsolete unless a deployment still runs a legacy pipeline — set this to true there to keep managing them. With it off they are neither listed nor browsable, so their documents cannot be reached by name either. Read once at startup: changing it requires an API restart. |
-| `AIHUB_STARTUP_TENANT_ACCESS_RULES` | `StartupTenantSettings.ACCESS_RULES` | `api` | Comma-separated access rules for the startup tenant. Use 'aihub.admin.>' for unrestricted access to all platform features. |
+| `AIHUB_STARTUP_TENANT_ACCESS_RULES` | `StartupTenantSettings.ACCESS_RULES` | `api` | Comma-separated access rules for the startup tenant. Use 'aihub.admin.>' for unrestricted access to all platform features. Leave empty to derive the ceiling from the models this instance actually serves, minus AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS — the same default a sysadmin-created tenant gets. Setting it explicitly skips that lookup entirely, so a deployment whose model gateway is not reachable at first boot can still seed its tenant. |
 | `AIHUB_STARTUP_TENANT_DESCRIPTION` | `StartupTenantSettings.DESCRIPTION` | `api` | Description of the startup tenant. |
 | `AIHUB_STARTUP_TENANT_ID` | `StartupTenantSettings.ID` | `api`, `keycloak` | Unique identifier for the startup tenant. Also used as the Keycloak group name. |
 | `AIHUB_STARTUP_TENANT_NAME` | `StartupTenantSettings.NAME` | `api` | Display name of the startup tenant. |
+| `AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES` | `TenantDefaultAccessSettings.AGENT_CLASSES` | `api` | Comma-separated agent classes a new tenant's default ceiling grants, each named as the blueprint reports itself (e.g. ``RAGAgent``). The grant is the blueprint itself, not its existing profiles: the tenant may create assistants of these types, and reaches only the ones it creates. Every other blueprint stays hidden from that tenant until a sysadmin grants it. An allow list rather than exclusions because the discovered-class roster is still empty when the startup tenant is seeded. |
+| `AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS` | `TenantDefaultAccessSettings.EXCLUDED_MODELS` | `api` | Comma-separated models withheld from a new tenant's default ceiling, each as ``capability/name`` exactly as LiteLLM reports it (e.g. ``text-generation/Apertus-70B-Instruct-2509``). Matched against the live roster verbatim, so a renamed or removed model silently matches nothing and the capability falls back to a plain wildcard. |
 | `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES` | `UserSignupSettings.FIRST_ADMIN_USER_ROLES` | `api` | Comma-separated list of roles assigned to the very first user. This user is typically the initial platform administrator. |
 | `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` | `UserSignupSettings.REGULAR_USER_ROLES` | `api` | Comma-separated list of roles assigned to regular users (not the first user). These users typically have standard platform access. |
 | `AIHUB_VERSION` | `AIHubSettings.VERSION` | `api`, `bot`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api` | Version of the app |
@@ -48,13 +51,14 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_DB` |  | `backup-code` |  |
 | `DAGSTER_DEBUG_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_INFO_LOG_RETENTION_DAYS` |  | `backup-code` |  |
-| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `shared_rag_pipeline` |  |
+| `DAGSTER_MAX_CONCURRENT_RUNS` |  | `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `shared_rag_pipeline` |  |
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOCUMENT_INGESTION_EMBEDDING_MODEL` | `DocumentIngestionPipelineSettings.EMBEDDING_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used to embed chunks. |
 | `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for summaries, table refinement and figure descriptions. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_HOUR` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_HOUR` | `document_ingestion_pipeline` | Hour of the daily per-bucket observation schedule. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_MINUTE` | `document_ingestion_pipeline` | Minute of the daily per-bucket observation schedule. |
+| `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for figure descriptions; the text model when unset. |
 | `DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS` | `DocumentIngestionPipelineSettings.WITH_FIGURE_DESCRIPTIONS` | `document_ingestion_pipeline` | Generate figure descriptions with a vision LLM. |
 | `DOCUMENT_INGESTION_WITH_SUMMARY_NODES` | `DocumentIngestionPipelineSettings.WITH_SUMMARY_NODES` | `document_ingestion_pipeline` | Generate recursive summaries for hierarchical RAG. |
 | `DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT` | `DocumentIngestionPipelineSettings.WITH_TABLE_REFINEMENT` | `document_ingestion_pipeline` | Refine tables with the LLM to detect structure and split them. |
@@ -65,7 +69,6 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
 | `GEMINI_API_KEY` |  | `litellm` |  |
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
-| `JUPYTER_TOKEN` |  | `api`, `jupyter` |  |
 | `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
@@ -95,8 +98,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `LOG_LEVEL` | `LogSettings.LEVEL` | `api`, `bot`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api`, `traefik` | Logging level |
 | `MAINTENANCE_DISABLED` |  | `backup-code` |  |
 | `MEM0_EMBEDDING_MODEL_NAME` | `Mem0Settings.EMBEDDING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
-| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use |
-| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
+| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use. Platform default; an agent may override it per profile. |
+| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the reranking model to use |
 | `MEM0_TELEMETRY` |  | `api`, `bot`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` |  |
 | `MILVUS_DIMENSION` | `MilvusSettings.DIMENSION` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Dimension of the embedding vector |
 | `MILVUS_ROOT_PASSWORD` | `MilvusSettings.ROOT_PASSWORD` | `api`, `attu`, `backup-code`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Root password for Milvus authentication. If not set, no auth is used. Username is always 'root'. |
@@ -141,6 +144,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
+| `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
+| `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |
 | `RAG_IMAGE_INLINE_MAX_BYTES` |  | `litellm` |  |
 | `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `rclone` | RC API password for authentication. |
@@ -260,6 +265,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LITE_LLM_PROXY_USER_RPM_LIMIT` | `LiteLLMProxySettings.USER_RPM_LIMIT` | `None` |  | Specify rpm limit for a given user (Requests per minute) |
 | `LITE_LLM_PROXY_USER_SOFT_BUDGET` | `LiteLLMProxySettings.USER_SOFT_BUDGET` | `None` |  | Get alerts when user crosses given budget, doesn't block requests. |
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `None` |  | Specify tpm limit for a given user (Tokens per minute) |
+| `MEM0_SEARCH_QUERY_EMBEDDING_WINDOW` | `Mem0Settings.SEARCH_QUERY_EMBEDDING_WINDOW` | `None` |  | Override for the embedding model's input window, in the model's own tokens. Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at first use. Queries are truncated to half this value: they can only be counted with tiktoken, which undercounts the embedder's tokenizer by up to 2x. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |
 | `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` |  | Default tenant ID for memory scoping |

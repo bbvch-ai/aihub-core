@@ -20,6 +20,9 @@ jobs:
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
       github.event.pull_request.author_association) }}
     runs-on: ubuntu-slim
+    # TODO: Remove once CLAUDE_CODE_OAUTH_TOKEN is refreshed. Keeps the review
+    # advisory so an expired token cannot block pull requests.
+    continue-on-error: true
     timeout-minutes: 20
     permissions:
       contents: write

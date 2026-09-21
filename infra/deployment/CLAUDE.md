@@ -41,6 +41,7 @@ deployment/
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
     ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
+    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -191,7 +192,7 @@ routes through Traefik.
 | Network        | Purpose                           | Internal | ICC | Key Services                                                  |
 | -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
 | `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
+| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
 | `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
 | `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |

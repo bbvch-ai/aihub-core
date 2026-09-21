@@ -139,6 +139,8 @@ import type {
   GetDatasetResponse,
   GetDatasetsData,
   GetDatasetsResponse,
+  GetDefaultTenantRulesData,
+  GetDefaultTenantRulesResponse,
   GetDocumentByIdData,
   GetDocumentByIdError,
   GetDocumentByIdResponse,
@@ -1303,7 +1305,7 @@ export const getOpenChatHitl = <
 /**
  * Get Agent Classes
  *
- * Retrieve all available agent classes.
+ * Retrieve the agent classes this caller may reach.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
 export const getAgentClasses = <
@@ -2357,6 +2359,37 @@ export const getAccessPresets = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/access/presets",
+    ...options,
+  });
+
+/**
+ * Derive Default Tenant Access Rules
+ *
+ * Returns the access ceiling a newly created tenant should start with, derived from the models this instance actually serves minus the configured exclusions.
+ */
+export const getDefaultTenantRules = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetDefaultTenantRulesResponse =
+    GetDefaultTenantRulesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetDefaultTenantRulesData,
+    GetDefaultTenantRulesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetDefaultTenantRulesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/access/default-tenant-rules",
     ...options,
   });
 

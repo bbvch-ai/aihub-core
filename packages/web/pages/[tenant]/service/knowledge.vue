@@ -100,6 +100,7 @@ import { capitalCase } from 'change-case'
 
 import type { DatabaseDto, NamespaceDto } from '@core/sdk/client'
 
+const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
 const { t } = useI18n()
@@ -218,11 +219,24 @@ const openDeleteNamespaceModal = (database: DatabaseDto, namespace: NamespaceDto
   deleteModalVisible.value = true
 }
 
+// The nested document route renders inside this page, so deleting what it points at leaves it mounted on a
+// dead URL. Leave for the nearest surviving ancestor first: navigating deactivates the child's queries, so the
+// delete's invalidation only marks them stale instead of refetching a resource the teardown job is purging.
+// Both cases land on the database list — there is no /service/knowledge/[db] route.
+const isViewingPendingDeletion = (pending: PendingDeletion) => {
+  if (route.params.db !== pending.database) return false
+  return pending.type === 'database' || route.params.namespace === pending.namespace
+}
+
 const handleConfirmDelete = async () => {
   const pending = pendingDeletion.value
   if (!pending) return
 
   try {
+    if (isViewingPendingDeletion(pending)) {
+      await router.push(tenantPath('/service/knowledge'))
+    }
+
     if (pending.type === 'database') {
       await deleteDatabase({ tenantId: tenantId.value!, database: pending.database })
     }

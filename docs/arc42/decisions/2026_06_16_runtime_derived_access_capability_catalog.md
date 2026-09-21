@@ -65,6 +65,16 @@ the tenant-ceiling cap included. There is no parallel matcher: the catalog rides
 re-deriving access from rule strings, so neither the rule *nor* the grant decision can drift. `locked` (granted via a
 rule broader than the one this checkbox would add) and `toggleable` are then read off the draft rule set.
 
+**Class-level rows carry a per-family subtree policy.** A guard with one path parameter stands for a whole resource
+rather than one endpoint, and the rule grammar has no form covering a node and its subtree at once — a `.>` rule never
+matches its own root. Which of the two forms the checkbox writes is the one thing *not* derivable from the guard: it
+depends on whether the class owns what sits beneath it. `_CLASS_SUBTREE_POLICIES` names that per service — knowledge
+grants and clears both forms, because a database owns its namespaces; agents clear `<Class>.>` without ever writing it,
+because `agent_configs` has no tenant column and so a subtree rule there reaches every tenant's profiles
+(`2026_09_08_standard_blueprints_as_tenant_ceiling`); everything else carries neither. The DTO states which is which
+rather than naming the policy: `companion_rules` are written and removed with the row, `revoked_rules` only removed — so
+the client applies an instruction instead of re-deriving one.
+
 Who the `subject` and `ceiling` are selects the audience: the **role editor** evaluates the draft rules under the acting
 tenant's ceiling, which prunes — never merely disables — capabilities the ceiling cannot grant; the **sysadmin ceiling
 editor** drops the ceiling to show the full platform; the **user-detail page** renders read-only against the viewed
@@ -118,6 +128,11 @@ controllers carry no proxy concern, while the sysadmin web app stays purely same
   discoverable, so such a change fails loudly rather than silently dropping rows.
 - Per-resource enumeration (agents, processes, knowledge namespaces) is custom per resource type rather than fully
   generic.
+- The subtree policy on class-level rows is the **single** authored exception to "the guard is the single source of
+  truth" — the guard says what the rule is, but not whether the wildcard beneath it belongs to the same grant. It is
+  therefore the one place where a change meant for one family silently reshapes another, which is exactly how
+  `2026_09_08_standard_blueprints_as_tenant_ceiling` first landed on knowledge. A test builds both families in one
+  catalog and asserts they disagree, so the coupling fails loudly.
 - Broad wildcard grants are shown as locked and cannot be decomposed into per-resource toggles, so the raw rule list
   remains necessary as a fallback.
 - The sysadmin tenant-ceiling editor's full catalog depends on the main API being reachable from the sysadmin plane (a

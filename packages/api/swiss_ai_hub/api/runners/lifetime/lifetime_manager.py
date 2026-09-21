@@ -32,9 +32,11 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
+    carry_over_bucket_model_columns,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
+    strip_retired_agent_config_keys,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -259,6 +261,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_startup_tenant()
         await finalize_role_setup()
         await initialize_knowledge_buckets()
+        await carry_over_bucket_model_columns()
+        strip_retired_agent_config_keys()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.

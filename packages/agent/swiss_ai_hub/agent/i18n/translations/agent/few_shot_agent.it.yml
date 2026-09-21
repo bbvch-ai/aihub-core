@@ -29,3 +29,6 @@ steps:
     name: Ferma
     description: Ferma l'agente quando la richiesta viene rifiutata dalla verifica
       di idoneità.
+messages:
+  unsuitable_request: Non sono l'assistente giusto per questa richiesta, quindi non
+    posso rispondere. %{reason}

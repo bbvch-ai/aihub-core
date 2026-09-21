@@ -169,7 +169,7 @@ class KnowledgeController(TenantScopedController):
             """
             if database in self._non_browsable_database_names:
                 raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
-            return KnowledgeService.get_document_by_id(db=database, document_id=document_id)
+            return KnowledgeService.get_document_by_id(db=database, namespace=namespace, document_id=document_id)
 
         return self
 
@@ -271,9 +271,7 @@ class KnowledgeController(TenantScopedController):
                 raise HTTPException(
                     status_code=400, detail=f"Database name '{database}' is reserved and cannot be used."
                 )
-            return await KnowledgeService.create_database(
-                database, request, t, s3_service, user, self.translation_llm_config
-            )
+            return await KnowledgeService.create_database(database, request, t, s3_service, user)
 
         return self
 

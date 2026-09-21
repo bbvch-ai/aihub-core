@@ -115,9 +115,9 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
   function resetForm() {
     selectedClass.value = initialClass()
-    formData.value = {}
+    formData.value = hydrateFormData({}, configForm.value as FormElement[])
     activeStep.value = 0
-    seededForClass = null
+    seededForClass = selectedClassData.value ? selectedClass.value : null
   }
 
   return {
