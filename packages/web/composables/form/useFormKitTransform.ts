@@ -6,6 +6,10 @@ export interface RepeaterConfig {
   label?: string
   addLabel?: string
   childrenSchema: FormKitSchemaNode[]
+  // Seeded default for a freshly added item. `childrenSchema` is transformed and has its
+  // `value` defaults stripped (see EXCLUDED_FIELDS), so a new item must be cloned from this
+  // instead of `{}` — otherwise fields like "documents to retrieve" render empty.
+  defaultItem: Record<string, unknown>
   min?: number
   max?: number
 }
@@ -128,6 +132,43 @@ export interface TransformOptions {
   locale?: string
   labelTransform?: (label: string) => string
   optionsResolver?: (element: FormElement) => unknown[] | undefined
+  // Resolves a frontend-only warning for an element. The backend form schema carries no
+  // warning of its own, so notices about known platform issues are attached here.
+  fieldWarning?: (element: FormElement) => string | undefined
+}
+
+/**
+ * Warning notice rendered next to a field, styled like a `Message severity="warn"
+ * variant="simple"` (see `.formkit-field-warning` in FormKit/DynamicConfiguration.vue).
+ * A plain `$el` node rather than `$cmp: 'Message'`: PrimeVue components are auto-imported
+ * per component, so FormKitSchema cannot resolve them by name.
+ */
+function buildFieldWarningNode(element: FormElement, text: string): FormKitSchemaNode {
+  const base = (element.id as string | undefined) ?? (element.name as string)
+  return {
+    $el: 'div',
+    key: `${base}__warning`,
+    attrs: { class: 'formkit-field-warning' },
+    children: [
+      { $el: 'i', attrs: { class: 'pi pi-exclamation-triangle' } },
+      { $el: 'span', children: text },
+    ],
+  } as unknown as FormKitSchemaNode
+}
+
+/**
+ * Places the warning directly under the "Enable X" toggle for a nullable element — the
+ * toggle stays mounted when the section is switched off, so the warning remains readable
+ * before the user opts in. Non-nullable elements get it above their own node.
+ */
+function withFieldWarning(
+  nodes: FormKitSchemaNode | FormKitSchemaNode[],
+  warning: FormKitSchemaNode | undefined,
+  afterToggle: boolean,
+): FormKitSchemaNode | FormKitSchemaNode[] {
+  if (!warning) return nodes
+  const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
+  return afterToggle ? [nodeArray[0], warning, ...nodeArray.slice(1)] : [warning, ...nodeArray]
 }
 
 function createGroupNode(
@@ -225,6 +266,8 @@ const EXCLUDED_FIELDS = new Set([
   'placeholder', // Transformed via getLocalizedString
   'children', // Handled separately for recursion
   'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
+  'defaultEnabled', // Wrapper-level signal (initial nullable-toggle state); never a FormKit prop
+  'default_enabled', // snake_case form of the above
   // Backend serialises the Pydantic default into element.value (form duality). FormKit pushes
   // schema `value` up to the parent v-model on input registration, which would clobber the
   // loaded data with the backend default. Defaults belong in data, seeded via seedFormDefaults.
@@ -296,35 +339,62 @@ function nullableToggleId(element: FormElement): string {
 
 /**
  * Combines a synthetic toggle condition with any existing condition_if.
+ *
+ * The `$` on every `$get(...)` must survive. `$:` marks the string as an expression; it does not put the
+ * references inside it into scope. Stripping their `$` made FormKit's compiler see a bare `get`, which it
+ * treats as a literal rather than a provided function — the expression then evaluated to the truthy string
+ * `"0{[nativecode]}.value"`, so a gated field rendered unconditionally and neither checkbox could hide it.
  */
 function combineConditions(toggleCondition: string, existing: string | undefined): string {
   if (!existing) return toggleCondition
-  if (existing.startsWith('$:')) {
-    return `$: ${toggleCondition.slice(1)} && (${existing.slice(2).trim()})`
-  }
-  return `$: ${toggleCondition.slice(1)} && (${existing.slice(1)})`
+  const existingExpression = existing.startsWith('$:') ? existing.slice(2).trim() : existing
+  return `$: ${toggleCondition} && (${existingExpression})`
 }
 
-function buildNullableToggleNode(element: FormElement, label: string | undefined): Record<string, unknown> {
+/**
+ * The toggle inherits the element's own `condition_if` so it disappears with the section it belongs to.
+ * Without this, a nullable field gated on a sibling checkbox (e.g. the memory model, which only applies
+ * while memory storage is on) would hide its input but leave a stray "Enable X" checkbox behind.
+ * The element's nullable-toggle condition is deliberately NOT inherited — that is the condition this very
+ * node controls.
+ */
+function buildNullableToggleNode(
+  element: FormElement,
+  label: string | undefined,
+  help: string | undefined,
+): Record<string, unknown> {
   const fieldName = element.name as string
   const toggleId = nullableToggleId(element)
+  const gatingCondition = element.if as string | undefined
   return {
     $formkit: 'primeCheckbox',
+    // `preserve: true` for the same reason the gated input itself carries it: when this toggle's own
+    // condition unmounts it, FormKit would otherwise drop `__<field>__enabled` from the group data, and the
+    // state seeded from the saved value is lost — an already-configured field then remounts reading "off".
+    preserve: true,
     name: nullableToggleName(fieldName),
     id: toggleId,
     key: toggleId,
     label: label ? `Enable ${label}` : 'Enable',
+    ...(help ? { help } : {}),
+    ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
   }
 }
 
+/**
+ * `help` is only supplied for groups: a group's own node renders no help, so the toggle is the
+ * only place to hang it. Nullable leaves already render their help on the input itself — passing
+ * it here too would print the same sentence twice.
+ */
 function applyNullableToggle(
   element: FormElement,
   baseNode: FormKitSchemaNode | FormKitSchemaNode[],
   label: string | undefined,
+  help?: string,
 ): FormKitSchemaNode[] {
   const nodeArray = Array.isArray(baseNode) ? baseNode : [baseNode]
-  return [buildNullableToggleNode(element, label) as FormKitSchemaNode, ...nodeArray]
+  return [buildNullableToggleNode(element, label, help) as FormKitSchemaNode, ...nodeArray]
 }
 
 function gateElement(element: FormElement, toggleCondition: string): FormElement {
@@ -345,7 +415,7 @@ export function transformElementToSchema(
   const formkitType = getFormkitType(element)
   if (formkitType === 'repeater') return []
 
-  const { locale = 'en', labelTransform, optionsResolver } = options
+  const { locale = 'en', labelTransform, optionsResolver, fieldWarning } = options
 
   const children = (element.children as FormElement[] || []).flatMap(
     child => transformElementToSchema(child, options),
@@ -359,20 +429,26 @@ export function transformElementToSchema(
   const isNullable = element.nullable === true
   const toggleCondition = isNullable ? `$get(${nullableToggleId(element)}).value` : undefined
 
+  const warningText = fieldWarning?.(element)
+  const warningNode = warningText ? buildFieldWarningNode(element, warningText) : undefined
+
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
+    if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
+    const toggledNodes = applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    const toggledNodes = applyNullableToggle(element, cleanNode as FormKitSchemaNode, label)
+    return withFieldWarning(toggledNodes, warningNode, true)
   }
 
-  return cleanNode as FormKitSchemaNode
+  return withFieldWarning(cleanNode as FormKitSchemaNode, warningNode, false)
 }
 
 function buildLeafNodeForRepeater(
@@ -421,7 +497,8 @@ export function transformElementForRepeater(
   if (formkitType === 'group') {
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
-    return isNullable ? applyNullableToggle(element, groupNode, label) : groupNode
+    if (!isNullable) return groupNode
+    return applyNullableToggle(element, groupNode, label, getLocalizedString(element.help, locale))
   }
 
   const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)
@@ -449,33 +526,42 @@ export function extractRepeaterConfigs(
     const formkitType = getFormkitType(element)
     const elementName = element.name as string
 
-    if (formkitType === 'repeater') {
-      const childrenSchema = (element.children as FormElement[] || []).flatMap(
-        child => transformElementForRepeater(child, locale),
-      ) as FormKitSchemaNode[]
+    // Isolate each element so one malformed repeater (or a group containing one) is skipped
+    // rather than throwing out of the computed and breaking every repeater on the form.
+    try {
+      if (formkitType === 'repeater') {
+        const childrenSchema = (element.children as FormElement[] || []).flatMap(
+          child => transformElementForRepeater(child, locale),
+        ) as FormKitSchemaNode[]
 
-      // Build full path for nested data access
-      const fullPath = parentPath ? `${parentPath}.${elementName}` : elementName
+        // Build full path for nested data access
+        const fullPath = parentPath ? `${parentPath}.${elementName}` : elementName
 
-      repeaters.push({
-        name: elementName,
-        path: fullPath,
-        label: getLocalizedString(element.label, locale),
-        addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
-        childrenSchema,
-        min: element.min as number | undefined,
-        max: element.max as number | undefined,
-      })
+        const itemChildren = (element.children as FormElement[]) || []
+        repeaters.push({
+          name: elementName,
+          path: fullPath,
+          label: getLocalizedString(element.label, locale),
+          addLabel: getLocalizedString(element.addLabel || element.add_label, locale),
+          childrenSchema,
+          defaultItem: seedFormDefaults({}, itemChildren),
+          min: element.min as number | undefined,
+          max: element.max as number | undefined,
+        })
+      }
+      else if (formkitType === 'group' && element.children) {
+        // Recursively search for repeaters inside groups, passing the current path
+        const groupPath = parentPath ? `${parentPath}.${elementName}` : elementName
+        const nestedRepeaters = extractRepeaterConfigs(
+          element.children as FormElement[],
+          locale,
+          groupPath,
+        )
+        repeaters.push(...nestedRepeaters)
+      }
     }
-    else if (formkitType === 'group' && element.children) {
-      // Recursively search for repeaters inside groups, passing the current path
-      const groupPath = parentPath ? `${parentPath}.${elementName}` : elementName
-      const nestedRepeaters = extractRepeaterConfigs(
-        element.children as FormElement[],
-        locale,
-        groupPath,
-      )
-      repeaters.push(...nestedRepeaters)
+    catch (error) {
+      console.error(`Error extracting repeater "${elementName ?? '<unknown>'}":`, error)
     }
   }
 
@@ -491,13 +577,19 @@ export function buildFormKitSchema(
 ): FormKitSchemaNode[] {
   if (!formElements || formElements.length === 0) return []
 
-  try {
-    return formElements.flatMap(el => transformElementToSchema(el, options)) as FormKitSchemaNode[]
-  }
-  catch (error) {
-    console.error('Error transforming schema:', error)
-    return []
-  }
+  // Isolate each element: a single malformed element is skipped (and logged) instead of
+  // collapsing the whole section to []. A blanket try/catch here meant one throwing input
+  // took every sibling down with it — e.g. a bad config field wiped the entire Basic Info
+  // step (agent_id, name, …), leaving an unusable form.
+  return formElements.flatMap((element) => {
+    try {
+      return transformElementToSchema(element, options)
+    }
+    catch (error) {
+      console.error(`Error transforming form element "${(element?.name as string) ?? '<unknown>'}":`, error)
+      return []
+    }
+  }) as FormKitSchemaNode[]
 }
 
 const LOCALE_KEYS = new Set(['de', 'en', 'fr', 'it'])
@@ -606,25 +698,28 @@ export function coerceNullableToggles(
 }
 
 /**
- * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
- * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
- * the v-model on registration), so defaults must be merged into the form data instead.
- * Existing values — including falsy ones like `false` or `""` — are preserved.
- *
- * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
- * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
- * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
- * `element.value` looks like; behaviour here is exercised end-to-end on agent and
- * process edit forms.
+ * A nullable leaf stored as `null` is seeded with its default too, mirroring how `seedGroupDefault`
+ * materialises a null nullable group: `null` means "the toggle is off", not "the input holds nothing",
+ * so the field behind the toggle should still offer the default the backend ships (e.g. the memory
+ * model starting on the platform-wide one). Safe in both directions — `seedNullableToggles` has
+ * already decided the toggle from the raw null-ness, so this cannot switch one on, and
+ * `coerceNullableToggles` re-nullifies a disabled field at submit time, so the seeded value is never
+ * persisted while the toggle is off.
  */
+function isDisabledNullableLeaf(element: FormElement, value: unknown): boolean {
+  return element.nullable === true && value === null
+}
+
 /**
- * Seed a group field's value: leave a disabled nullable group as `null`; otherwise
- * materialise its children's defaults (starting from the existing object when present).
- * `coerceNullableToggles` re-nullifies disabled subtrees at submit time, so seeding a
- * group whose toggle will end up off is safe.
+ * Seed a group field's value: always materialise its children's defaults (starting from
+ * the existing object when present, `{}` otherwise — including for a saved `null`). A null
+ * nullable group must still hold an object so FormKit can mount and render its children
+ * when the user flips the "Enable" toggle on. Visibility is governed by the synthetic
+ * toggle (seeded earlier from the raw null-ness by `seedNullableToggles`), and
+ * `coerceNullableToggles` re-nullifies disabled subtrees at submit time — so a materialised
+ * but disabled group is never persisted.
  */
-function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> | null {
-  if (value === null) return null
+function seedGroupDefault(value: unknown, children: FormElement[]): Record<string, unknown> {
   const groupValue = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {}
@@ -648,6 +743,18 @@ function seedRepeaterDefault(value: unknown, children: FormElement[]): unknown {
   return value === undefined ? [] : value
 }
 
+/**
+ * Recursively fills missing leaf keys with the backend's serialised Pydantic defaults
+ * (`element.value`). FormKit no longer receives `value` in the schema (it would clobber
+ * the v-model on registration), so defaults must be merged into the form data instead.
+ * Existing values — including falsy ones like `false` or `""` — are preserved.
+ *
+ * NOTE: This helper is load-bearing for edit/clone/template flows but has no direct
+ * unit tests yet — Vitest is not configured for packages/web (see packages/web/CLAUDE.md).
+ * The Python-side `Form.to_formkit_form()` tests in packages/core lock in what
+ * `element.value` looks like; behaviour here is exercised end-to-end on agent and
+ * process edit forms.
+ */
 export function seedFormDefaults(
   data: Record<string, unknown>,
   elements: FormElement[],
@@ -666,7 +773,7 @@ export function seedFormDefaults(
     else if (formkitType === 'repeater') {
       result[name] = seedRepeaterDefault(value, children)
     }
-    else if (!(name in result) && element.value !== undefined) {
+    else if (element.value !== undefined && (!(name in result) || isDisabledNullableLeaf(element, value))) {
       result[name] = element.value
     }
   }
@@ -675,8 +782,11 @@ export function seedFormDefaults(
 }
 
 /**
- * Recursively seeds synthetic toggle values from initial data: toggle is on iff the
- * matching field was non-null/undefined in the source data.
+ * Recursively seeds synthetic toggle values from initial data. When the field is present in
+ * the source data the toggle follows its null-ness (edit/clone). When it is absent — a fresh
+ * form — the toggle falls back to the backend's `default_enabled` (the field's data default is
+ * non-null), so a nullable field that ships a default (e.g. a prompt, or org_memory) comes up
+ * enabled while a `None`-defaulting one (e.g. reranking_config) stays off.
  */
 export function seedNullableToggles(
   data: Record<string, unknown>,
@@ -687,7 +797,9 @@ export function seedNullableToggles(
   for (const element of elements) {
     const name = element.name as string
     if (element.nullable === true) {
-      result[nullableToggleName(name)] = result[name] !== null && result[name] !== undefined
+      result[nullableToggleName(name)] = name in result
+        ? result[name] !== null && result[name] !== undefined
+        : (element.defaultEnabled ?? element.default_enabled) === true
     }
 
     const formkitType = getFormkitType(element)
@@ -707,6 +819,45 @@ export function seedNullableToggles(
   }
 
   return result
+}
+
+/**
+ * Strips FormKit submission artifacts: the `slots` helper key and the repeater validation
+ * mirror keys (`__validate__*`) registered by Repeater.vue. Recurses into nested group objects.
+ */
+export function cleanFormData(data: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'slots' || key.startsWith('__validate__')) continue
+    result[key] = value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? cleanFormData(value as Record<string, unknown>)
+      : value
+  }
+  return result
+}
+
+/**
+ * Raw saved/template/empty data → a fully hydrated FormKit model: nullable toggles seeded from
+ * the data's null-ness (or `default_enabled` on a fresh form), then groups materialised and
+ * leaf defaults filled. Single entry point so create and edit forms hydrate identically.
+ */
+export function hydrateFormData(
+  raw: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  return seedFormDefaults(seedNullableToggles(raw, elements), elements)
+}
+
+/**
+ * FormKit model → submission payload: disabled nullable subtrees nulled and synthetic toggle
+ * keys dropped (coerceNullableToggles), LocaleStrings normalised, FormKit artifacts stripped.
+ * Single entry point so create and edit forms serialise identically.
+ */
+export function serializeFormData(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  return cleanFormData(normalizeFormLocaleStrings(coerceNullableToggles(data, elements)))
 }
 
 /**
@@ -752,9 +903,11 @@ export function extractGroupConfigs(
   const groups: GroupConfig[] = []
 
   for (const element of formElements) {
-    const formkitType = getFormkitType(element)
+    if (getFormkitType(element) !== 'group') continue
 
-    if (formkitType === 'group') {
+    // Isolate each group so a single malformed group is skipped rather than throwing out
+    // of the computed and blanking the whole step list.
+    try {
       const schema = transformElementToSchema(element, { locale })
       const schemaArray = Array.isArray(schema) ? schema : [schema]
 
@@ -763,6 +916,9 @@ export function extractGroupConfigs(
         label: getLocalizedString(element.label, locale),
         schema: schemaArray,
       })
+    }
+    catch (error) {
+      console.error(`Error transforming group "${(element?.name as string) ?? '<unknown>'}":`, error)
     }
   }
 

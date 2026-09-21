@@ -1,4 +1,4 @@
-.PHONY: mirror-image build-and-push-postgres-image build-and-push-playwright-image
+.PHONY: mirror-image build-and-push-postgres-image build-and-push-playwright-image build-and-push-open-terminal-image
 
 # Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
 #
@@ -20,6 +20,25 @@ build-and-push-postgres-image:
 	@docker push ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17
 	@echo "Successfully published pgvector-repack:pg17"
 
+# Build the project-managed Open Terminal image (full sandbox + office/file libs)
+# and push to ghcr.
+#
+# OpenWebUI's code-execution path routes to this sandbox; the upstream image lacks
+# reportlab and fpdf2. The full variant (not `-slim`) is required for multi-user
+# isolation. The Dockerfile lives at
+# `infra/deployment/docker/open-terminal/Dockerfile`. Re-run this whenever the
+# pinned base tag or the installed libraries change. After running, non-build
+# stages pick up the new image automatically via `docker compose pull`.
+build-and-push-open-terminal-image:
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34..."
+	@docker login ghcr.io
+	@docker build \
+		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34 \
+		-f docker/open-terminal/Dockerfile \
+		docker/open-terminal
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+	@echo "Successfully published open-terminal-office:0.11.34"
+
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.
 #
@@ -28,14 +47,14 @@ build-and-push-postgres-image:
 # changes. After running, non-build stages pick up the new image automatically
 # via `docker compose pull`.
 build-and-push-playwright-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy..."
 	@docker login ghcr.io
 	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy \
+		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy \
 		-f docker/playwright/Dockerfile \
 		docker/playwright
-	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
-	@echo "Successfully published playwright:v1.58.0-jammy"
+	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy
+	@echo "Successfully published playwright:v1.60.0-jammy"
 
 # Mirror an image from source to target
 # Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag

@@ -1,0 +1,159 @@
+---
+name: Verify SDK Sync
+# PR check: the committed frontend SDK client (packages/*/sdk/client) must match a
+# fresh regeneration from the backend OpenAPI spec. Backend event/endpoint changes
+# that forget `pnpm generate-sdk` leave the SDK stale; this catches that at PR time
+# instead of letting the drift surface later in an unrelated contributor's diff.
+#
+# Approach: the OpenAPI spec is a static document, so there's no need to boot the
+# platform. We import the ASGI app and dump the mounted FastAPI app's openapi()
+# offline — connections live in the lifespan, which never runs on import — then
+# serve that JSON at the same URL openapi-ts.config.ts already points at, run
+# `pnpm generate-sdk`, and `git diff --exit-code`. No docker services required.
+#
+# Always runs (no trigger-level paths filter) so it can be a required check; the
+# work only happens when the relevant backend/SDK paths actually changed.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: ${{ matrix.web_package }}
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Main plane: @swiss-ai-hub/web SDK ← packages/api on :8000.
+          - web_package: packages/web
+            api_dir: packages/api
+            api_port: 8000
+            app_module: app.main
+          # Sysadmin plane: @swiss-ai-hub/sysadmin-web SDK ← packages/sysadmin-api on :8001.
+          - web_package: packages/sysadmin-web
+            api_dir: packages/sysadmin-api
+            api_port: 8001
+            app_module: swiss_ai_hub.sysadmin_api.main
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Detect relevant changes
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          API_DIR: ${{ matrix.api_dir }}
+          WEB_PACKAGE: ${{ matrix.web_package }}
+        run: |
+          # The SDK for this plane can drift when its backend contract (api scope or
+          # shared packages/core) changes, when the committed client itself changes,
+          # or when this workflow changes. Anything else can't affect the diff.
+          if git diff --name-only "$BASE_SHA"...HEAD | grep -qE \
+            "^(${API_DIR}/|packages/core/|${WEB_PACKAGE}/sdk/|pnpm-lock\.yaml$|uv\.lock$|\.github/workflows/verify-sdk-sync\.yml$)"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No backend or SDK changes affecting ${WEB_PACKAGE} — skipping."
+          fi
+      - name: Set up Python
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        if: steps.changes.outputs.changed == 'true'
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          enable-cache: true
+      - name: Install Python dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: uv sync --all-packages --dev --frozen
+      - name: Export OpenAPI spec (offline, no server)
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.api_dir }}
+        env:
+          APP_MODULE: ${{ matrix.app_module }}
+          SPEC_DIR: ${{ runner.temp }}/spec/api/v1
+        run: |
+          # Settings read the env; export .env.dev so import-time BaseSettings resolve.
+          set -a; . "${GITHUB_WORKSPACE}/.env.dev"; set +a
+          mkdir -p "$SPEC_DIR"
+          # Import the ASGI app and dump the mounted FastAPI app's schema — identical
+          # to the document served at /api/v1/openapi.json, without a running server.
+          uv run python - <<'PY'
+          import json
+          import os
+          from importlib import import_module
+          from fastapi import FastAPI
+          from starlette.routing import Mount
+          app = import_module(os.environ["APP_MODULE"]).app
+          mount = next(
+              route
+              for route in app.routes
+              if isinstance(route, Mount) and isinstance(route.app, FastAPI)
+          )
+          schema = mount.app.openapi()
+          # The live server serves this spec through the mount, so FastAPI injects the
+          # mount path as the server URL (from the request root_path). Offline there is
+          # no request, so replicate it — otherwise the generated client baseURL drifts.
+          schema["servers"] = [{"url": mount.path}]
+          out = os.path.join(os.environ["SPEC_DIR"], "openapi.json")
+          with open(out, "w") as handle:
+              json.dump(schema, handle)
+          print(f"Wrote OpenAPI spec to {out}")
+          PY
+      - name: Serve the spec at the generator's URL
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          # openapi-ts.config.ts points at http://localhost:<port>/api/v1/openapi.json;
+          # serve the exported file there so the config needs no change.
+          python -m http.server ${{ matrix.api_port }} \
+            --directory "${{ runner.temp }}/spec" > /tmp/spec-server.log 2>&1 &
+          echo "SPEC_SERVER_PID=$!" >> "$GITHUB_ENV"
+          URL="http://localhost:${{ matrix.api_port }}/api/v1/openapi.json"
+          for _ in $(seq 1 20); do
+            if curl -sf -o /dev/null "$URL"; then
+              echo "Serving spec at $URL"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::spec file was not served at $URL"; cat /tmp/spec-server.log; exit 1
+      - name: Setup Node.js
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        with:
+          node-version: 25.x
+      - name: Install pnpm via corepack
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: |
+          npm install -g --ignore-scripts corepack@0.34.7
+          corepack enable pnpm
+          corepack install
+      - name: Install frontend dependencies
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Regenerate SDK
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: ${{ matrix.web_package }}
+        run: pnpm generate-sdk
+      - name: Verify SDK is in sync
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          if ! git diff --exit-code -- "${{ matrix.web_package }}/sdk/client"; then
+            echo "::error::The committed SDK client in ${{ matrix.web_package }}/sdk/client is out of sync with the backend OpenAPI spec."
+            echo "::error::Run 'pnpm generate-sdk' in ${{ matrix.web_package }} (with the API running) and commit the result."
+            exit 1
+          fi
+          echo "SDK client is in sync with the backend. ✅"
+      - name: Stop spec server
+        if: always() && steps.changes.outputs.changed == 'true' && env.SPEC_SERVER_PID
+          != ''
+        run: kill "$SPEC_SERVER_PID" || true

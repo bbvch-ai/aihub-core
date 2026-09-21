@@ -13,18 +13,23 @@ class TableBoundary(BaseModel):
 class TableSplitAnalysis(BaseModel):
     """LLM analysis result for detecting merged tables."""
 
+    # reasoning is declared first on purpose. Under guided JSON decoding the field order is the generation
+    # order, and a model that emits the answer first has nothing left to say for a trailing required
+    # explanation - but the grammar forbids closing the object without it. Whitespace stays legal, so the
+    # model emits it until max_tokens. Measured on gemma-4-31B: answer-first deadlocks every call,
+    # reasoning-first returns valid JSON in ~1s.
+    reasoning: Annotated[str, Field(description="Brief explanation of why tables were split or kept together")]
     tables: Annotated[
         list[TableBoundary],
         Field(description="List of table boundaries. First table always starts at row 0."),
     ]
-    reasoning: Annotated[str, Field(description="Brief explanation of why tables were split or kept together")]
 
 
 class HeaderAnalysis(BaseModel):
     """LLM analysis result for detecting header rows."""
 
-    num_header_rows: Annotated[int, Field(description="Number of header rows (1-4)")]
     reasoning: Annotated[str, Field(description="Brief explanation of header structure detected")]
+    num_header_rows: Annotated[int, Field(description="Number of header rows (1-4)")]
 
 
 # Result Models
@@ -41,7 +46,12 @@ class TableRefinementStats(BaseModel):
 class TableRefinementMetadata(BaseModel):
     """Aggregated metadata for all table refinements in a document."""
 
-    tables_processed: Annotated[int, Field(description="Number of tables processed")]
+    tables_found: Annotated[int, Field(description="Number of <table> blocks found in the document")]
+    tables_processed: Annotated[int, Field(description="Number of tables actually refined by the LLM")]
+    tables_unparseable: Annotated[int, Field(description="Number of tables that could not be parsed into a table")]
+    tables_skipped_oversized: Annotated[
+        int, Field(description="Number of tables too large to fit the LLM's input limit")
+    ]
     tables_split: Annotated[int, Field(description="Number of tables that were split")]
     total_tables_after_split: Annotated[int, Field(description="Total tables after all splitting")]
     table_stats: Annotated[list[TableRefinementStats], Field(description="Per-table statistics")]

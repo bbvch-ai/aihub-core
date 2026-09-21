@@ -3,13 +3,11 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
-from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
 
 
 def extend_chat_history_with_organization_memory(
     chat_history: list[ChatMessage],
     memories: list[Memory],
-    relations: list[MemoryRelation] | None,
     t: LocaleHandler,
 ) -> list[ChatMessage]:
     """
@@ -24,13 +22,16 @@ def extend_chat_history_with_organization_memory(
 
     Why after existing system messages? Agent behavior/personality system messages come first to establish
     foundational context, with organizational memory context layered on top.
+
+    Graph relations are gone as of issue #1713: organization memory no longer runs the mem0 graph store, so
+    the block that rendered them could only ever be empty.
     """
-    if not (memories or relations):
+    if not memories:
         return chat_history
 
     template_string = t("lib.prompt.memory.organization_memory_system_message")
     template = Template(template_string)
-    memory_content = template.render(memories=memories, relations=relations or [])
+    memory_content = template.render(memories=memories)
     memory_message = ChatMessage(role=MessageRole.SYSTEM, content=memory_content)
 
     # Find the index after the last system message at the start of chat history

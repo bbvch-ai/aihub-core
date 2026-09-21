@@ -27,6 +27,7 @@
         :label="rep.label"
         :add-label="rep.addLabel"
         :children-schema="rep.childrenSchema"
+        :default-item="rep.defaultItem"
         :min="rep.min"
         :max="rep.max"
         @update:model-value="setRepeaterData(rep.path, $event)"
@@ -38,40 +39,53 @@
 <script setup lang="ts">
 import {
   buildFormKitSchema,
-  coerceNullableToggles,
   extractRepeaterConfigs,
   getNestedValue,
-  normalizeFormLocaleStrings,
-  seedFormDefaults,
-  seedNullableToggles,
+  hydrateFormData,
+  serializeFormData,
   setNestedValue,
   type FormElement,
   type RepeaterConfig,
 } from '@core/composables/form/useFormKitTransform'
-import { merge } from 'lodash-es'
+import { cloneDeep } from 'lodash-es'
 
 import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaDefinition } from '@formkit/core'
 
 const { t } = useI18n()
 
+// Fields with a known platform issue, keyed by the backend element id. Frontend-only on
+// purpose: the notice is temporary and carries no config semantics, so it stays out of the
+// agent's form schema. Drop the entry once the underlying issue is fixed.
+const FIELD_WARNING_KEYS: Record<string, string> = {
+  org_memory: 'form.warnings.org_memory_performance',
+}
+
 const props = defineProps<{
   form: FormkitElement[]
   initialData?: Record<string, unknown>
 }>()
 
+// Clone so the form model never shares references with the Pinia-Colada cache: otherwise
+// FormKit's write-backs mutate the cached object and the watcher loops on its own mutations.
 function hydrate(raw: Record<string, unknown>): Record<string, unknown> {
-  const seeded = seedNullableToggles(raw, props.form as FormElement[])
-  return seedFormDefaults(seeded, props.form as FormElement[])
+  return hydrateFormData(cloneDeep(raw), props.form as FormElement[])
 }
 
 const data = ref<Record<string, unknown>>(hydrate(props.initialData || {}))
 
+// Seed from `initialData` only once. A save refetches the query, so `initialData` becomes a new
+// object; re-hydrating then would reassign `data`, which FormKit's `v-model` re-commits in a
+// slightly different shape and reassigns again — an infinite render loop that froze the tab.
+let formSeeded = !!(props.initialData && Object.keys(props.initialData).length > 0)
+
 watch(() => props.initialData, (newData) => {
+  if (formSeeded) return
   if (newData && Object.keys(newData).length > 0) {
-    data.value = merge({}, data.value, hydrate(newData))
+    data.value = hydrate(newData)
+    formSeeded = true
   }
-}, { deep: true })
+})
 
 const emit = defineEmits<{
   submit: [Record<string, unknown>]
@@ -91,9 +105,15 @@ function replaceLabelVariables(label: string): string {
   })
 }
 
+function fieldWarning(element: FormElement): string | undefined {
+  const warningKey = FIELD_WARNING_KEYS[element.id as string]
+  return warningKey ? t(warningKey) : undefined
+}
+
 const schema = computed<FormKitSchemaDefinition>(() => {
   return buildFormKitSchema(props.form as FormElement[], {
     labelTransform: replaceLabelVariables,
+    fieldWarning,
   })
 })
 
@@ -110,9 +130,7 @@ function setRepeaterData(path: string, value: Record<string, unknown>[]): void {
 }
 
 async function submitHandler() {
-  const coerced = coerceNullableToggles(data.value, props.form as FormElement[])
-  const normalizedData = normalizeFormLocaleStrings(coerced)
-  emit('submit', normalizedData)
+  emit('submit', serializeFormData(data.value, props.form as FormElement[]))
 }
 </script>
 
@@ -131,6 +149,10 @@ async function submitHandler() {
 
 .content :deep(.formkit-outer) {
   @apply pt-3 pb-1;
+}
+
+.content :deep(.formkit-field-warning) {
+  @apply flex items-start gap-1.5 pb-1 text-xs text-amber-600 dark:text-amber-400;
 }
 
 .content :deep(.formkit-group-fieldset) {

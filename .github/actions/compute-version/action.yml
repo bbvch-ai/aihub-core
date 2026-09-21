@@ -1,0 +1,78 @@
+---
+name: Compute Channel Version
+description: Derive a channel-suffixed version from the pyproject core version and
+  git height.
+# Reads the clean semver from the [project] table of the root pyproject.toml and
+# appends a channel pre-release identifier. The build number is the git height
+# (commit count), which is deterministic and monotonic. Requires the caller to
+# have checked out with `fetch-depth: 0` so `git rev-list --count` sees full
+# history.
+#
+# Bumping pyproject.toml is the deliberate act that opens a new core-version
+# window; merges to main do NOT bump it, so the core only moves when someone
+# changes pyproject (see the versioning process doc).
+inputs:
+  channel:
+    description: 'Release channel: nightly, rc, or stable'
+    required: true
+outputs:
+  version:
+    description: Full tag including the v prefix, e.g. v0.314.0-nightly.42
+    value: ${{ steps.compute.outputs.version }}
+  core:
+    description: Core semver with v prefix, e.g. v0.314.0
+    value: ${{ steps.compute.outputs.core }}
+  build:
+    description: Build number (git height)
+    value: ${{ steps.compute.outputs.build }}
+runs:
+  using: composite
+  steps:
+    - name: Compute version
+      id: compute
+      shell: bash
+      env:
+        CHANNEL: ${{ inputs.channel }}
+      run: |-
+        set -euo pipefail
+        # Read version only from the [project] table, so an earlier `version =`
+        # line in some other table cannot be picked up by mistake.
+        core="$(awk '
+          /^\[/ { in_project = ($0 == "[project]") }
+          in_project && /^version[[:space:]]*=/ {
+            sub(/^version[[:space:]]*=[[:space:]]*"/, "")
+            sub(/".*/, "")
+            print
+            exit
+          }
+        ' pyproject.toml)"
+        if ! printf '%s' "$core" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "::error::Could not read a clean semver from the [project] version in pyproject.toml (got '$core')."
+          exit 1
+        fi
+        build="$(git rev-list --count HEAD)"
+        if ! printf '%s' "$build" | grep -Eq '^[0-9]+$'; then
+          echo "::error::git-height is not numeric (got '$build'). Ensure a full-history checkout (fetch-depth: 0)."
+          exit 1
+        fi
+        case "$CHANNEL" in
+          nightly) version="v${core}-nightly.${build}" ;;
+          rc)
+            # Release candidates are numbered per release line, counting up from
+            # rc.1. The build number is NOT the global git-height (that would
+            # collide confusingly with nightly): it is 1 + the number of rc tags
+            # that already exist for this exact core version. Requires tags to be
+            # present (full-history checkout with tags fetched).
+            existing_rc="$(git tag -l "v${core}-rc.*" | wc -l | tr -d ' ')"
+            build="$((existing_rc + 1))"
+            version="v${core}-rc.${build}"
+            ;;
+          stable)  version="v${core}" ;;
+          *) echo "::error::Unknown channel '$CHANNEL' (expected nightly, rc, or stable)."; exit 1 ;;
+        esac
+        {
+          echo "core=v${core}"
+          echo "build=${build}"
+          echo "version=${version}"
+        } >> "$GITHUB_OUTPUT"
+        echo "Computed ${CHANNEL} version: ${version}"

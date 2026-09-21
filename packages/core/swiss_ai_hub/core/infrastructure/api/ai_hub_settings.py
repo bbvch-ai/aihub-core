@@ -24,6 +24,17 @@ class AIHubSettings(EnvironmentSettings):
 
     SHARED_BUCKET_NAME: Annotated[str, Field(description="Name of the shared knowledge bucket")] = "sharedknowledge"
 
+    SHOW_LEGACY_KNOWLEDGE: Annotated[
+        bool,
+        Field(
+            description="Whether the legacy deploy-bound knowledge databases (default_rag / shared_rag) are listed "
+            "and readable. Off by default: their pipelines are disabled in every stage, so the databases are "
+            "obsolete unless a deployment still runs a legacy pipeline — set this to true there to keep managing "
+            "them. With it off they are neither listed nor browsable, so their documents cannot be reached by name "
+            "either. Read once at startup: changing it requires an API restart.",
+        ),
+    ] = False
+
     DEFAULT_NAMESPACE_NAME: Annotated[str, Field(description="Name of the default namespace")] = "defaultnamespace"
 
     SHARED_NAMESPACE_NAME: Annotated[str, Field(description="Name of the shared namespace")] = "sharednamespace"
@@ -35,6 +46,16 @@ class AIHubSettings(EnvironmentSettings):
             description="Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection",
         ),
     ] = "http://api:8000/api/v1/active/openai"
+
+    INTERNAL_API_BASE_URL: Annotated[
+        str,
+        Field(
+            pattern=r"^https?://[^/]+$",
+            description="Internal base URL of the main platform API (no path), used for server-to-server calls "
+            "such as the sysadmin plane proxying the access-capability catalog. Predictable per deployment: "
+            "the Docker service name in compose, localhost in local dev.",
+        ),
+    ] = "http://api:8000"
 
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
@@ -52,6 +73,11 @@ class AIHubSettings(EnvironmentSettings):
             f"\n{self._STARTUP_BANNER}\n"
             f"The open-source AI infrastructure stack for Swiss enterprises - v{self.VERSION}\n"
         )
+
+    @property
+    def primary_frontend_origin(self) -> str:
+        """The primary web portal URL — the first entry of the comma-separated FRONTEND_ORIGIN."""
+        return self.FRONTEND_ORIGIN.split(",")[0].strip()
 
     MONGO_MAIN_DB_NAME: Annotated[
         str,

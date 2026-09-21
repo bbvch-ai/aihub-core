@@ -24,7 +24,12 @@ RUN pnpm install --frozen-lockfile --ignore-scripts --filter @swiss-ai-hub/web..
 # Layer 2: package sources (invalidates only when sources change)
 COPY packages/web ./packages/web
 
-# Build the application for production
+# Build the application for production. VERSION is the release/image version
+# passed by CI as a build-arg; it is baked into runtimeConfig.public.appVersion
+# so the static bundle reports the exact build it was produced from. Falls back
+# to packages/web/package.json when unset (local builds).
+ARG VERSION=""
+ENV APP_VERSION=${VERSION}
 WORKDIR /app/packages/web
 RUN pnpm run build
 
@@ -45,6 +50,9 @@ RUN chown -R nginx:nginx /usr/share/nginx/html
 
 USER nginx
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --spider -q http://127.0.0.1:8080/ || exit 1
 
 # Generate /config.js from the template and start Nginx on container startup.
 CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]

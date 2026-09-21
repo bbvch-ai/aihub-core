@@ -1,5 +1,7 @@
 from swiss_ai_hub.core.events.agent import (
+    ConversationTitleEvent,
     DisplayEvent,
+    FollowUpQuestionsEvent,
     HumanInTheLoopChatRequestEvent,
     HumanInTheLoopChatResponseEvent,
     HumanInTheLoopConfirmationRequestEvent,
@@ -119,6 +121,26 @@ def test_chat_response_subclass_discriminator_resolves_to_chat_response():
         topic=_make_topic(),
     )
     assert event_discriminator(event) == "HumanInTheLoopChatResponseEvent"
+
+
+def test_display_events_union_tags_conversation_metadata_events():
+    """The conversation-metadata display events are in the discriminated union (no silent downcast)."""
+    valid_tags = {arg.__metadata__[0].tag for arg in DisplayEvents.__args__}
+    assert {
+        "ConversationTitleEvent",
+        "FollowUpQuestionsEvent",
+    }.issubset(valid_tags)
+
+
+def test_conversation_metadata_events_preserved_through_contextualized_dump():
+    """Each metadata event survives ContextualizedAgentEvent.model_dump() with its own type and payload."""
+    title = _wrap(ConversationTitleEvent(title="Weather in Ho Chi Minh City")).model_dump()["event"]
+    assert title["_event_name"] == "ConversationTitleEvent"
+    assert title["title"] == "Weather in Ho Chi Minh City"
+
+    follow_ups = _wrap(FollowUpQuestionsEvent(questions=["What is the forecast?"])).model_dump()["event"]
+    assert follow_ups["_event_name"] == "FollowUpQuestionsEvent"
+    assert follow_ups["questions"] == ["What is the forecast?"]
 
 
 def test_agent_subclass_preserved_through_contextualized_dump():

@@ -4,6 +4,8 @@ import {
   EventDisplayAgentInTheLoopRequestEvent,
   EventDisplayAgentInTheLoopResponseEvent,
   EventDisplayChunkEvent,
+  EventDisplayConversationTitleEvent,
+  EventDisplayFollowUpQuestionsEvent,
   EventDisplayEmbeddingEvent,
   EventDisplayHumanInTheLoopRequestEvent,
   EventDisplayHumanInTheLoopResponseEvent,
@@ -29,6 +31,7 @@ import {
   EventDisplayBaseRetrieveMemoryEvent,
   EventDisplayBaseStoreMemoryEvent,
   EventDisplayAddMemoryToChatHistoryEvent,
+  EventDisplayMetaQuestionDetectedEvent,
 } from '#components'
 
 export const useEventComponent = () => {
@@ -41,6 +44,8 @@ export const useEventComponent = () => {
       LLMCostEvent: EventDisplayLLMCostEvent,
       LimitChatHistoryEvent: EventDisplayLimitChatHistoryEvent,
       ThoughtEvent: EventDisplayThoughtEvent,
+      ConversationTitleEvent: EventDisplayConversationTitleEvent,
+      FollowUpQuestionsEvent: EventDisplayFollowUpQuestionsEvent,
       EmbeddingEvent: EventDisplayEmbeddingEvent,
       RerankerEvent: EventDisplayRerankerEvent,
       RetrieverEvent: EventDisplayRetrieverEvent,
@@ -69,6 +74,7 @@ export const useEventComponent = () => {
       BaseRetrieveMemoryEvent: EventDisplayBaseRetrieveMemoryEvent,
       BaseStoreMemoryEvent: EventDisplayBaseStoreMemoryEvent,
       AddMemoryToChatHistoryEvent: EventDisplayAddMemoryToChatHistoryEvent,
+      MetaQuestionDetectedEvent: EventDisplayMetaQuestionDetectedEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

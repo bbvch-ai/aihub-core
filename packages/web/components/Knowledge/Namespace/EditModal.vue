@@ -28,8 +28,8 @@
           <span class="ml-1 text-xs text-gray-400">(optional)</span>
         </label>
         <InputText
+          id="edit-namespace-display-name-input"
           v-model="displayName"
-          input-id="edit-namespace-display-name-input"
           :placeholder="t('knowledge.form.display_name.placeholder')"
         />
         <small class="text-gray-500">{{ t('knowledge.form.display_name.help') }}</small>

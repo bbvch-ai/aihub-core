@@ -48,6 +48,7 @@ class AgentInTheLoop:
         share_thread_id: bool = True,
         share_display_id: bool = True,
         share_run_id: bool = False,
+        timeout_seconds: float | None = None,
     ):
         """
         Create an `AgentInTheLoopRequestEvent` to delegate a task to another agent.
@@ -57,6 +58,15 @@ class AgentInTheLoop:
         the other agent completes its task, the workflow can resume from the correct point. It also
         configures context sharing between agents to maintain workflow continuity.
         """
+        # `PartialAgentTopic.to_subject` renders a blank segment as the NATS wildcard `*`, so a
+        # half-configured delegation would publish to a subject no instance is subscribed to and the
+        # caller would wait forever with nothing logged. Fail loudly instead.
+        if not (agent_class or "").strip() or not (agent_id or "").strip():
+            raise ValueError(
+                f"Cannot delegate to an incomplete agent reference: "
+                f"agent_class={agent_class!r}, agent_id={agent_id!r}. Both are required."
+            )
+
         return cls.request(
             start_event=start_event,
             other_agent_topic=PartialAgentTopic(
@@ -69,6 +79,7 @@ class AgentInTheLoop:
             share_thread_id=share_thread_id,
             share_display_id=share_display_id,
             share_run_id=share_run_id,
+            timeout_seconds=timeout_seconds,
             response=cls.response,
             exception=cls.exception,
         )

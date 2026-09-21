@@ -1,7 +1,7 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
-source_sha: 92f32680a3b8671f48c2358eda18afedec1da677f69e4c27c249c8f46ae348e2
+source_sha: ce2d82fcfea5955b1aeb6f0b3bd5d6b03774074c365006dde1e0a84890659fe5
 
 hero:
   name: Swiss AI Hub
@@ -16,7 +16,7 @@ hero:
       link: /de/docs/1_vision_and_positioning/1_introduction
     - theme: brand
       text: Plattformübersicht
-      link: /de/docs/2_platform/2_architecture/1_core_components/
+      link: /de/docs/2_platform/2_architecture/
 
 features:
   - title: Die Open-Source-KI-Wette

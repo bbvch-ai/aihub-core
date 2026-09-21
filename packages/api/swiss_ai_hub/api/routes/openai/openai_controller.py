@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal, Self
 
-from fastapi import Body, Depends, File, Form, Request, Security, UploadFile
+from fastapi import Body, Depends, File, Form, HTTPException, Request, Security, UploadFile
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
@@ -78,9 +78,16 @@ class OpenaiController(TenantScopedController):
             tags=self.tags,
         )
         async def get_models(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelResponse:
-            return await OpenaiService.get_models()
+            access_checker = AccessChecker.from_user(user)
+            model_response = await OpenaiService.get_models()
+
+            model_response.data = [
+                m for m in model_response.data if OpenaiService._has_model_access(access_checker, m.id)
+            ]
+
+            return model_response
 
         return self
 
@@ -142,8 +149,16 @@ class OpenaiController(TenantScopedController):
         ) -> ModelDetails:
             model = await OpenaiService.get_model_with_assistants(model_name=full_path, t=t)
             access_checker = AccessChecker.from_user(user)
-            if not access_checker.has_access_to_agent(model.agent_class, model.agent_id):
-                raise ValueError(f"User {user.id} does not have permission to access model {model.name}")
+            if model.object == "assistant":
+                permitted = access_checker.has_access_to_agent(model.agent_class, model.agent_id)
+            else:
+                permitted = OpenaiService._has_model_access(access_checker, model.id)
+
+            if not permitted:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"User {user.id} does not have permission to access model {model.id}",
+                )
 
             return model
 
@@ -222,11 +237,6 @@ class OpenaiController(TenantScopedController):
         ) -> ChatCompletion | StreamingResponse:
             completion_request.user = completion_request.user or user.id
             model_name = completion_request.model
-
-            if model_name.count("/") == 1:
-                agent_class, agent_id = model_name.split("/")
-                if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
-                    raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             aihub_headers = NATSMessageHeaders.extract_aihub_headers(dict(request.headers))
 

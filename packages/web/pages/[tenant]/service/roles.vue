@@ -34,6 +34,7 @@
           v-model:visible="createModalOpen"
           modal
           :header="t('role.create_new')"
+          :style="{ width: '50rem' }"
         >
           <RoleCreate
             @close="createModalOpen = false"

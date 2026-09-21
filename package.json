@@ -9,7 +9,8 @@
   "pnpm": {
     "overrides": {
       "vue": "3.5.17",
-      "@vueuse/router>vue-router": "4.6.4"
+      "@vueuse/router>vue-router": "4.6.4",
+      "tar": "^7.5.19"
     },
     "peerDependencyRules": {
       "allowedVersions": {
@@ -20,6 +21,6 @@
     }
   },
   "devDependencies": {
-    "prettier": "^3.8.3"
+    "prettier": "^3.9.6"
   }
 }

@@ -1,0 +1,53 @@
+---
+steps:
+  detect:
+    name: Détecter une méta-question
+    description: Classe si le message de l'utilisateur est une question sur l'assistant
+      lui-même (identité, capacités ou comportement) plutôt qu'une tâche à exécuter.
+  answer:
+    name: Répondre à une méta-question
+    description: Répond à une question sur l'assistant à partir de sa propre configuration
+      et de la définition de son flux de travail.
+thought:
+  detecting: Je vérifie s'il s'agit d'une question à mon sujet
+  answering: Je réponds à une question à mon sujet
+detect:
+  is_meta: Vrai si l'utilisateur pose une question sur l'assistant lui-même — son
+    identité, ce qu'il peut faire ou pourquoi il s'est comporté d'une certaine manière
+    — plutôt que de lui demander d'exécuter une tâche.
+  category: L'aspect de l'assistant concerné par la question - identité, capacités
+    ou comportement. Nul lorsque le message n'est pas une méta-question.
+  reasoning: Brève justification de la classification.
+  prompt: |
+    Vous êtes un classifieur qui détermine si le message d'un utilisateur est une
+    « méta-question » sur l'assistant IA lui-même, plutôt qu'une tâche normale pour
+    l'assistant.
+    Une méta-question est l'une des suivantes :
+    - identity : qui ou quoi est l'assistant (par ex. « qui êtes-vous ? », « quel est votre nom ? »)
+    - capabilities : ce que l'assistant peut faire (par ex. « que pouvez-vous faire ? »)
+    - behavior : pourquoi l'assistant a fait quelque chose (par ex. « pourquoi avez-vous fait cela ? »)
+    Un message n'est PAS une méta-question lorsqu'il demande à l'assistant d'exécuter
+    une tâche, de répondre à une question de domaine ou de traiter du contenu — même
+    s'il contient les mots « vous » ou « faire » (par ex. « que puis-je faire avec
+    ce document ? » est une tâche normale).
+    En particulier, une question sur un sujet, un lieu, une personne, une entité ou un
+    domaine de connaissance est une tâche NORMALE, même formulée comme « connaissez-vous
+    X ? », « que savez-vous sur X ? », « avez-vous entendu parler de X ? » ou « pouvez-vous
+    me parler de X ? » — elle cherche des informations sur X, et non sur l'assistant
+    lui-même (par ex. « connaissez-vous la Terre ? » est une tâche normale).
+    Une question de capacités porte sur les fonctions générales de l'assistant, et non
+    sur le fait qu'il connaisse un sujet particulier.
+    En cas de doute, classez le message comme N'ÉTANT PAS une méta-question.
+    Classez le message suivant.
+    Message : {user_query}
+answer:
+  prompt: |-
+    Vous êtes {agent_name}. {agent_description}
+    L'utilisateur pose une question à votre sujet (en particulier sur votre {category}).
+    Répondez-y de manière utile et concise, à la première personne, uniquement sur
+    la base des faits ci-dessous. N'inventez pas de capacités que vous n'avez pas.
+    Si vous ne pouvez pas répondre à partir de ces faits, dites-le clairement.
+    Votre flux de travail — les étapes que vous exécutez pour traiter une demande — est décrit par ce
+    diagramme de flux Mermaid :
+    {workflow}
+    Répondez dans la langue du message de l'utilisateur.

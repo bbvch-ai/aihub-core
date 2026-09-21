@@ -5,7 +5,7 @@ import { setMyActiveTenant } from '@core/sdk/client'
  *
  * - **Read**: ``tenantId`` is a reactive computed derived from the route. Tenant-scoped
  *   routes carry the id as ``route.params.tenant`` (``/[tenant]/...``); sysadmin admin
- *   routes carry it as ``route.params.tenant_id`` (``/sysadmin/tenants/[tenant_id]/...``).
+ *   routes carry it as ``route.params.tenant_id`` (``/tenants/[tenant_id]/...``).
  *   Both shapes resolve to the same tenant context so composables and components that
  *   depend on ``useTenant()`` work transparently in either place.
  * - **Write**: ``setTenant(id)`` navigates to the same route with the new ``tenant``

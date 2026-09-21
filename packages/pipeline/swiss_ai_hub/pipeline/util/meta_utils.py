@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import MetadataMode, TextNode
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     H1,
@@ -52,6 +52,18 @@ def meta_timestamp_or_none(timestamp: int):
     if not timestamp:
         return None
     return MetadataValue.timestamp(float(timestamp))
+
+
+def _records_matching_schema(rows: list[dict], columns: list[TableColumn]) -> list[TableRecord]:
+    """Coerce each row to exactly the schema columns.
+
+    Row builders spread arbitrary document metadata, so heterogeneous documents (e.g. a fully
+    ingested doc next to a placeholder) yield records with differing field sets. Dagster's
+    ``MetadataValue.table`` requires every record to share the same fields, so we project each
+    row onto the declared columns, filling missing keys with ``None`` and dropping extras.
+    """
+    column_names = [column.name for column in columns]
+    return [TableRecord({name: row.get(name) for name in column_names}) for row in rows]
 
 
 def node_table_row(node: TextNode):
@@ -145,9 +157,32 @@ def nodes_metadata_table(nodes: list[TextNode]):
         TableColumn(REFERENCE_NAME, "string"),
         TableColumn(REFERENCE_URL, "string"),
     ]
-    records = [TableRecord(node_table_row(node)) for node in nodes]
+    rows = [node_table_row(node) for node in nodes]
     table_schema = TableSchema(columns=columns)
-    return MetadataValue.table(records=records, schema=table_schema)
+    return MetadataValue.table(records=_records_matching_schema(rows, columns), schema=table_schema)
+
+
+def skipped_nodes_metadata_table(nodes: list[TextNode]):
+    """Surface which chunks the embedding model refused, so a partial ingest is visible rather than assumed clean."""
+    columns = [
+        TableColumn("id", "string"),
+        TableColumn(PAGE, "int"),
+        TableColumn(NODE_CONTENT_TYPE, "string"),
+        TableColumn("embedded_chars", "int"),
+        TableColumn("content", "string"),
+    ]
+    rows = [
+        {
+            "id": node.id_,
+            PAGE: node.metadata.get(PAGE),
+            NODE_CONTENT_TYPE: node.metadata.get(NODE_CONTENT_TYPE),
+            "embedded_chars": len(node.get_content(metadata_mode=MetadataMode.EMBED)),
+            "content": node.get_content()[:500],
+        }
+        for node in nodes
+    ]
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=_records_matching_schema(rows, columns), schema=table_schema)
 
 
 def data_lake_metadata_table(data_lake_files: list[DataLakeFile]):
@@ -180,9 +215,9 @@ def ref_doc_metadata_table(ref_docs: list[RefDocDocument]):
         TableColumn(UPDATED_AT, "int"),
         TableColumn(INSERTED_AT, "int"),
     ]
-    records = [TableRecord(ref_doc_table_row(ref_doc)) for ref_doc in ref_docs]
+    rows = [ref_doc_table_row(ref_doc) for ref_doc in ref_docs]
     table_schema = TableSchema(columns=columns)
-    return MetadataValue.table(records=records, schema=table_schema)
+    return MetadataValue.table(records=_records_matching_schema(rows, columns), schema=table_schema)
 
 
 def share_point_file_table_row(share_point_file: MinimalSharePointFile) -> dict:

@@ -50,7 +50,7 @@ ______________________________________________________________________
   Dagster can process many partitions at once.
 - To reduce boilerplate and enforce consistency, the SDK relies heavily on the **factory pattern**. Instead of writing
   complex asset and resource definitions from scratch, you use simple factory functions (e.g., `documents_factory`,
-  `default_definitions`) that generate fully configured pipeline components for you.
+  `document_ingestion_pipeline_definitions`) that generate fully configured pipeline components for you.
 
 ## Next Steps
 

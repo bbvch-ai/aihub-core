@@ -31,3 +31,6 @@ steps:
     name: Stoppen
     description: Stoppt den Agenten, wenn die Anfrage von der Eignungsprüfung abgelehnt
       wird.
+messages:
+  unsuitable_request: Ich bin nicht der richtige Assistent für diese Anfrage und kann
+    sie daher nicht beantworten. %{reason}

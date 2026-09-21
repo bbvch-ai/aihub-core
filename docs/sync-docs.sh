@@ -15,9 +15,11 @@ rm -rf swiss-ai-hub
 rm -f LICENSE_REPORT.md
 rm -f CHANGELOG.md
 
-# Remove old synced documentation from 6_code_deep_dive (except the index files)
-# This ensures no duplicate index.md/index.en.md files exist
-find docs/6_code_deep_dive -mindepth 1 -maxdepth 1 ! -name 'index.*.md' -exec rm -rf {} +
+# Remove old synced documentation from 6_code_deep_dive (except the index files
+# and hand-authored sections, which are committed and must survive the sync —
+# keep this list in line with the exceptions in docs/.gitignore)
+find docs/6_code_deep_dive -mindepth 1 -maxdepth 1 ! -name 'index.*.md' \
+    ! -name '2_keycloak_configuration' -exec rm -rf {} +
 
 mkdir -p "licenses"
 mkdir -p "changelog"

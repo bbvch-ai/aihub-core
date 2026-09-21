@@ -20,6 +20,9 @@ jobs:
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
       github.event.pull_request.author_association) }}
     runs-on: ubuntu-slim
+    # TODO: Remove once CLAUDE_CODE_OAUTH_TOKEN is refreshed. Keeps the review
+    # advisory so an expired token cannot block pull requests.
+    continue-on-error: true
     timeout-minutes: 20
     permissions:
       contents: write
@@ -34,7 +37,7 @@ jobs:
           fetch-depth: 0
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@86eb26bf0139bdd75acd15ea5f00f45ee0a284c2  # v1.0.122
+        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b  # v1.0.183
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

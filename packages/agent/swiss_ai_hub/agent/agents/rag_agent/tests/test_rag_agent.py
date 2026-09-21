@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    MetaQuestionDetectedEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
@@ -42,6 +43,7 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection
 
+from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
@@ -184,6 +186,7 @@ def test_collection(event_loop):
         uri="http://localhost",
         collection_name="development",
         dimensions=1024,
+        all_namespaces=True,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
 
@@ -271,6 +274,8 @@ def _(self_hosted_agent_config):
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
+        await agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
+
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -301,6 +306,20 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
+
+
+@then("a MetaQuestionDetectedEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_class(MetaQuestionDetectedEvent), (
+        "Agent did not classify the message as a meta question"
+    )
+
+
+@then("no RetrieverEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert not agent_runner.has_event_of_class(RetrieverEvent), (
+        "Retrieval ran for a meta question — the self-awareness gate failed"
+    )
 
 
 @then(parsers.parse('a RetrieverEvent is present with more than "{node_count:d}" retrieved nodes'))
@@ -371,6 +390,8 @@ def _(agent_runner: AgentTestRunner, datatable):
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
+        await agent_runner.ensure_dependent_agent_stream(MemoryWriterAgentConfig.AGENT_CLASS)
+
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(

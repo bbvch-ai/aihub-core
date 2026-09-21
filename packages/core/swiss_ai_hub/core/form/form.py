@@ -95,6 +95,15 @@ class Form(BaseModel):
 
     _form_registry: ClassVar[dict[str, type[Form]]] = {}
 
+    required_access_rule: ClassVar[str | None] = None
+    """Access rule the configuring user must hold to submit this form as an enabled nested section.
+
+    Surfaces on the wrapping Group and is enforced at submit time. Only meaningful for Forms used
+    as nested sections; ignored for a top-level config."""
+
+    required_access_rule_message_path: ClassVar[str] = "lib.common.authorization.no_access_section"
+    """i18n path for the 403 message shown when `required_access_rule` is not satisfied."""
+
     @computed_field
     @property
     def _form_name(self) -> str:
@@ -172,9 +181,13 @@ class Form(BaseModel):
                             Group(
                                 name=field_name,
                                 label=label,
+                                help=self._extract_help_from_field(field_info),
                                 children=nested_elements,
                                 ref=group_ref,
                                 nullable=True,
+                                default_enabled=self._default_is_non_null(field_info),
+                                access_rule=nested_form_type.required_access_rule,
+                                access_denied_message_path=nested_form_type.required_access_rule_message_path,
                             )
                         )
                 continue
@@ -188,6 +201,10 @@ class Form(BaseModel):
             elif isinstance(field_value, Form):
                 nested_prefix = f"{_id_prefix}{field_name}."
                 nested_elements = field_value.to_formkit_form(_id_prefix=nested_prefix)
+                # A data-mode nested Form contributes no elements; a non-nullable group has no
+                # enable toggle either, so it would render as an empty fieldset.
+                if not nested_elements and not allows_none:
+                    continue
                 label = self._extract_label_from_field(field_info)
                 group_condition = self._derive_group_condition(nested_elements)
                 # Use prefixed ref for unique group ID (ref serializes as 'id' in JSON)
@@ -195,10 +212,14 @@ class Form(BaseModel):
                 group = Group(
                     name=field_name,
                     label=label,
+                    help=self._extract_help_from_field(field_info) if allows_none else None,
                     children=nested_elements,
                     condition_if=group_condition,
                     ref=group_ref,
                     nullable=allows_none,
+                    default_enabled=self._default_is_non_null(field_info) if allows_none else None,
+                    access_rule=type(field_value).required_access_rule,
+                    access_denied_message_path=type(field_value).required_access_rule_message_path,
                 )
                 formkit_elements.append(group)
 
@@ -256,13 +277,16 @@ class Form(BaseModel):
             element_copy.required = is_required
             if allows_none and not is_skip_required:
                 element_copy.nullable = True
+                element_copy.default_enabled = self._default_is_non_null(field_info)
 
             # If element has no explicit value, use Pydantic field default
             if element_copy.value is None and field_info.default is not PydanticUndefined:
-                # Only use primitive defaults (not FormkitElements or Forms)
+                # A BaseModel default (e.g. a LocaleString prompt) is dumped to its dict so it fits
+                # the primitive `value` type and doesn't trip the Pydantic serializer; FormkitElement
+                # and Form defaults are not values (they describe structure) so they are skipped.
                 default = field_info.default
-                if not isinstance(default, FormkitElement | Form) and default is not None:
-                    element_copy.value = default
+                if default is not None and not isinstance(default, FormkitElement | Form):
+                    element_copy.value = default.model_dump() if isinstance(default, BaseModel) else default
 
             return element_copy
 
@@ -282,6 +306,12 @@ class Form(BaseModel):
             return type(None) in union_args
 
         return False
+
+    @staticmethod
+    def _default_is_non_null(field_info: FieldInfo) -> bool:
+        """Whether the field's data default is a concrete non-null value. Drives a nullable
+        element's initial toggle state on a fresh form (toggle on ⇔ default is non-null)."""
+        return field_info.default is not PydanticUndefined and field_info.default is not None
 
     @staticmethod
     def _extract_form_type(annotation: Any) -> type[Form] | None:
@@ -317,6 +347,20 @@ class Form(BaseModel):
             desc = field_info.description
             if len(desc) <= 50:
                 return desc
+        return None
+
+    @staticmethod
+    def _extract_help_from_field(field_info: FieldInfo) -> str | None:
+        """
+        Extract help text for nullable nested Groups from the field's description.
+
+        Only when the label came from an explicit title — otherwise `_extract_label_from_field`
+        already used the description as the label and repeating it would print it twice. Callers
+        restrict this to nullable groups: their generated "Enable X" toggle is the only place a
+        group's help is rendered, so a non-nullable group carrying help would ship unread data.
+        """
+        if field_info.title and field_info.description:
+            return field_info.description
         return None
 
     @staticmethod

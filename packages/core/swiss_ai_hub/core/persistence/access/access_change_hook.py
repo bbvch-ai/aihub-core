@@ -38,9 +38,12 @@ class AccessChangeHook:
             logger.info("Access entity changed (%s), scheduling OpenWebUI sync", sender.__name__)
             cls._schedule_sync()
 
+        # weak=False is required: ``_on_change`` is a local closure with no other strong reference, so
+        # blinker's default weak ref would let it be garbage-collected the moment ``connect`` returns,
+        # silently dropping the subscription so no access change ever triggers an OpenWebUI re-sync.
         for entity_cls in [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]:
-            signals.post_save.connect(_on_change, sender=entity_cls)
-            signals.post_delete.connect(_on_change, sender=entity_cls)
+            signals.post_save.connect(_on_change, sender=entity_cls, weak=False)
+            signals.post_delete.connect(_on_change, sender=entity_cls, weak=False)
 
         logger.info(
             "AccessChangeHook connected for %s",

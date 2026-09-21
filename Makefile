@@ -62,7 +62,7 @@ format:
 
 format-md:
 	@echo "Formatting markdown files..."
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 format-yaml:
 	@echo "Formatting YAML files..."
@@ -103,32 +103,18 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.292.0
+TAG ?= v0.322.0
 
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
-
-# Extract release notes for a specific version from CHANGELOG.md (TAG=v0.267.1, OUTPUT=release-notes.md)
-OUTPUT ?= release-notes.md
-extract-release-notes:
-	@if ! echo "$(TAG)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
-		echo "ERROR: Invalid TAG format '$(TAG)'. Expected vMAJOR.MINOR.PATCH (e.g. v0.267.1)"; \
-		exit 1; \
-	fi
-	@awk -v ver="$(TAG)" 'index($$0, "## [" ver "]") == 1 {found=1; next} found && /^## \[/{exit} found{print}' CHANGELOG.md | sed '/^_\{3,\}/d' > $(OUTPUT)
-	@if [ ! -s $(OUTPUT) ]; then \
-		echo "No changelog section found for $(TAG), using fallback"; \
-		echo "Release $(TAG)" > $(OUTPUT); \
-	fi
-	@echo "Release notes for $(TAG) written to $(OUTPUT) ($$(wc -c < $(OUTPUT)) bytes)"
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/' | grep -v '9_environment_variables/index')
 
 # Generate Docker Compose files from the template
 generate-compose:
@@ -153,6 +139,7 @@ local-cert:
 	mkcert -key-file infra/configs/traefik/certs/dev-key.pem -cert-file infra/configs/traefik/certs/dev-cert.pem \
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+	cp "$$(mkcert -CAROOT)/rootCA.pem" infra/configs/traefik/certs/rootCA.pem
 	@echo "Certificates written to infra/configs/traefik/certs/"
 
 install-ffmpeg:
@@ -171,7 +158,7 @@ down-dev:
 # Requires `make up-dev` first. UI at http://localhost:3000.
 playground:
 	@echo "Starting Dagster playground at http://localhost:3000 ..."
-	cd packages/pipeline && uv run dagster dev -m playground
+	@$(MAKE) -C packages/pipeline playground
 
 up-dev-gpu:
 	@echo "Starting development GPU environment with Docker Compose..."

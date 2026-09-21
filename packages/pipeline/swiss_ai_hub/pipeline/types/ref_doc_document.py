@@ -65,6 +65,6 @@ class RefDocDocument(Document):
             SOURCE: data_lake_file.uri,
             SOURCE_ORIGIN: data_lake_file.metadata.get(SOURCE_ORIGIN),
             DOCUMENT_TITLE: data_lake_file.metadata.get(DOCUMENT_TITLE, document_title),
-            IS_INGESTED: True,
+            IS_INGESTED: False,
         }
         return self

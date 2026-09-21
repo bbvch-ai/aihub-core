@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <StructuralColumn
     :title="tenant?.name"

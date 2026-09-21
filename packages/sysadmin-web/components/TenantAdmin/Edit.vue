@@ -1,4 +1,3 @@
-<!-- SPDX-License-Identifier: LicenseRef-Proprietary -->
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
@@ -28,6 +27,7 @@
     <AccessRulesEditor
       v-model:rules="accessRules"
       :initial-rules="initialAccessRules"
+      :restrict-to-tenant="false"
     />
   </div>
 </template>

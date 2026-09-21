@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput, Select
@@ -78,6 +78,18 @@ class ExpertAskingAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM configuration for the agent."),
     ]
+    task_llm: Annotated[
+        LLMConfig | None,
+        Field(
+            default=None,
+            description=(
+                "Model for this agent's auxiliary steps: routing the conversation to the next workflow "
+                "branch, and refining the follow-up question sent to the expert. Generation parameters are "
+                "inherited from the main model. Falls back to the main model when disabled."
+            ),
+            title="Task LLM",
+        ),
+    ] = None
     loop_max: Annotated[
         int | InputNumber,
         Field(description="Maximum number of loops to ask experts."),
@@ -106,6 +118,16 @@ class ExpertAskingAgentConfig(AgentConfig):
         Field(title="Channel Configuration", description="Configuration for the expert escalation channel."),
     ]
 
+    @model_validator(mode="after")
+    def derive_task_llm_from_main_llm(self) -> Self:
+        """Only the task model is configurable: its generation parameters always mirror the main llm, and
+        an unset or blank picker falls back to the main model."""
+        if not isinstance(self.llm.model_name, str):
+            return self
+        task_model_name = self.task_llm.model_name if self.task_llm else None
+        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         """Factory method to create a form-mode ExpertAskingAgentConfig - NO ARGUMENTS."""
@@ -117,6 +139,7 @@ class ExpertAskingAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             llm=LLMConfig.as_form(),
+            task_llm=LLMConfig.as_form(include_default_parameter=False),
             loop_max=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.loop_max.label"),
                 min=1,
