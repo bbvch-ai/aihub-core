@@ -286,6 +286,15 @@ function buildNodeProperties(
     return buildLocaleInputProperties(element, label, locale)
   }
 
+  // Markup, not an input: an `$el` element carries no formkit type, and giving it one anyway
+  // emitted `$formkit: undefined` alongside the tag, which FormKit rendered as an empty box.
+  const tag = element.$el ?? element.el
+  if (!formkitType && tag) {
+    const markup: Record<string, unknown> = { $el: tag as string }
+    if (element.attrs) markup.attrs = element.attrs
+    return markup
+  }
+
   // `preserve: true` keeps the input's value in the form context when an `if:`
   // condition (nullable toggle or backend-supplied `condition_if`) unmounts it.
   const cleanNode: Record<string, unknown> = { $formkit: formkitType, preserve: true }
@@ -406,6 +415,22 @@ function gateElement(element: FormElement, toggleCondition: string): FormElement
  * Handles groups specially by wrapping them in fieldsets when they have labels.
  * Skips repeater elements (they are handled separately).
  */
+/**
+ * Transforms an element's children, letting text through untouched.
+ *
+ * A child may be prose rather than another element — `$el` nodes carry their content that way and
+ * the schema takes a bare string there (see `buildFieldWarningNode`). Recursing into a string
+ * yielded nothing, so an element declaring text rendered as an empty tag.
+ */
+function transformChildren(
+  children: unknown,
+  transform: (child: FormElement) => FormKitSchemaNode | FormKitSchemaNode[],
+): FormKitSchemaNode[] {
+  if (!children) return []
+  const list = Array.isArray(children) ? children : [children]
+  return list.flatMap(child => (typeof child === 'string' ? child : transform(child as FormElement))) as FormKitSchemaNode[]
+}
+
 export function transformElementToSchema(
   element: FormElement,
   options: TransformOptions = {},
@@ -417,9 +442,7 @@ export function transformElementToSchema(
 
   const { locale = 'en', labelTransform, optionsResolver, fieldWarning } = options
 
-  const children = (element.children as FormElement[] || []).flatMap(
-    child => transformElementToSchema(child, options),
-  ) as FormKitSchemaNode[]
+  const children = transformChildren(element.children, child => transformElementToSchema(child, options))
 
   let label = getLocalizedString(element.label, locale)
   if (label && labelTransform) {
