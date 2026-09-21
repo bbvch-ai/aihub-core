@@ -212,6 +212,8 @@ event:
     no_filters: Keine zusätzlichen Filter
   rag_stop:
     failure_reason:
+      condensation_empty: Die Frage konnte nicht in eine durchsuchbare Form verdichtet
+        werden – dieser Lauf wurde vor dem Retrieval gestoppt.
       context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort
         ist eine Notlösung und nicht in Ihren Wissensquellen verankert.
       expert_declined: Der menschliche Experte konnte keine Antwort liefern – dieser
@@ -220,6 +222,8 @@ event:
         – dieser Lauf hat keine fundierte Antwort produziert.
       few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
         die Antwort ohne Retrieval erzeugt.
+      input_too_large: Die Nachricht oder die angehängte Datei überschritt das Kontextfenster
+        des Modells, daher wurde dieser Lauf vor dem Modellaufruf gestoppt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent
@@ -710,6 +714,8 @@ role:
     dies zu ändern.
   capability_readonly: Keine einzelne Regel gewährt dies allein — nutze eine Vorlage
     oder eine breitere Regel.
+  capability_also_cleared: 'Das Abwählen entfernt zusätzlich: {rules}'
+  capability_also_granted: 'Das Auswählen gewährt zusätzlich: {rules}'
   pattern_help_intro: 'Muster verwenden Platzhalter für Agenten:'
   pattern_help_all: Alle Agenten
   pattern_help_wildcard: Alle Instanzen von MyAgent

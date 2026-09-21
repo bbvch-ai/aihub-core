@@ -26,6 +26,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `ACME_EMAIL` |  | `traefik` |  |
 | `ADMIN_EMAIL` |  | `open-webui` |  |
 | `ADMIN_PASSWORD_HASH` |  | `traefik` |  |
+| `AIHUB_CONFIG_ENCRYPTION_KEY` | `ConfigEncryptionSettings.ENCRYPTION_KEY` | `api`, `document_ingestion_pipeline` | Fernet key (url-safe base64, 32 bytes) encrypting secret configuration fields at rest. |
 | `AIHUB_CREATE_DEFAULT_BUCKETS` | `AIHubSettings.CREATE_DEFAULT_BUCKETS` | `api`, `seaweedfs-init` | Creates default knowledge buckets and namespaces |
 | `AIHUB_DEFAULT_BUCKET_NAME` | `AIHubSettings.DEFAULT_BUCKET_NAME` | `api`, `default_rag_pipeline`, `seaweedfs-init` | Name of the default knowledge bucket |
 | `AIHUB_DEFAULT_NAMESPACE_NAME` | `AIHubSettings.DEFAULT_NAMESPACE_NAME` | `api` | Name of the default namespace |
@@ -36,7 +37,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `AIHUB_STARTUP_TENANT_DESCRIPTION` | `StartupTenantSettings.DESCRIPTION` | `api` | Description of the startup tenant. |
 | `AIHUB_STARTUP_TENANT_ID` | `StartupTenantSettings.ID` | `api`, `keycloak` | Unique identifier for the startup tenant. Also used as the Keycloak group name. |
 | `AIHUB_STARTUP_TENANT_NAME` | `StartupTenantSettings.NAME` | `api` | Display name of the startup tenant. |
-| `AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES` | `TenantDefaultAccessSettings.AGENT_CLASSES` | `api` | Comma-separated agent classes a new tenant's default ceiling grants, each named as the blueprint reports itself (e.g. ``RAGAgent``). Every other blueprint stays hidden from that tenant until a sysadmin grants it. An allow list rather than exclusions because the discovered-class roster is still empty when the startup tenant is seeded. |
+| `AIHUB_TENANT_DEFAULT_ACCESS_AGENT_CLASSES` | `TenantDefaultAccessSettings.AGENT_CLASSES` | `api` | Comma-separated agent classes a new tenant's default ceiling grants, each named as the blueprint reports itself (e.g. ``RAGAgent``). The grant is the blueprint itself, not its existing profiles: the tenant may create assistants of these types, and reaches only the ones it creates. Every other blueprint stays hidden from that tenant until a sysadmin grants it. An allow list rather than exclusions because the discovered-class roster is still empty when the startup tenant is seeded. |
 | `AIHUB_TENANT_DEFAULT_ACCESS_EXCLUDED_MODELS` | `TenantDefaultAccessSettings.EXCLUDED_MODELS` | `api` | Comma-separated models withheld from a new tenant's default ceiling, each as ``capability/name`` exactly as LiteLLM reports it (e.g. ``text-generation/Apertus-70B-Instruct-2509``). Matched against the live roster verbatim, so a renamed or removed model silently matches nothing and the capability falls back to a plain wildcard. |
 | `AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES` | `UserSignupSettings.FIRST_ADMIN_USER_ROLES` | `api` | Comma-separated list of roles assigned to the very first user. This user is typically the initial platform administrator. |
 | `AIHUB_USER_SIGNUP_REGULAR_USER_ROLES` | `UserSignupSettings.REGULAR_USER_ROLES` | `api` | Comma-separated list of roles assigned to regular users (not the first user). These users typically have standard platform access. |
@@ -68,7 +69,6 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
 | `GEMINI_API_KEY` |  | `litellm` |  |
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
-| `JUPYTER_TOKEN` |  | `api`, `jupyter` |  |
 | `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
@@ -98,8 +98,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `LOG_LEVEL` | `LogSettings.LEVEL` | `api`, `bot`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `sysadmin-api`, `traefik` | Logging level |
 | `MAINTENANCE_DISABLED` |  | `backup-code` |  |
 | `MEM0_EMBEDDING_MODEL_NAME` | `Mem0Settings.EMBEDDING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
-| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use |
-| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the embedding model to use |
+| `MEM0_LLM_NAME` | `Mem0Settings.LLM_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the LLM to use. Platform default; an agent may override it per profile. |
+| `MEM0_RERANKING_MODEL_NAME` | `Mem0Settings.RERANKING_MODEL_NAME` | `api`, `bot`, `expert_asking_agent`, `expert_rag_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `rag_agent`, `shared_rag_pipeline` | Name of the reranking model to use |
 | `MEM0_TELEMETRY` |  | `api`, `bot`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` |  |
 | `MILVUS_DIMENSION` | `MilvusSettings.DIMENSION` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Dimension of the embedding vector |
 | `MILVUS_ROOT_PASSWORD` | `MilvusSettings.ROOT_PASSWORD` | `api`, `attu`, `backup-code`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `milvus-standalone`, `namespace_selection_agent`, `open-webui`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | Root password for Milvus authentication. If not set, no auth is used. Username is always 'root'. |
@@ -144,6 +144,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `shared_rag_pipeline` |  |
+| `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
+| `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |
 | `RAG_IMAGE_INLINE_MAX_BYTES` |  | `litellm` |  |
 | `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `rclone` | RC API password for authentication. |

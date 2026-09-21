@@ -46,12 +46,29 @@ access.**
   subtract from and would seed a tenant with no agents at all. Consequently the configured names are **not** validated
   against the roster: a class that has not been discovered yet is the normal case at boot, not an error.
 
-- **Two rules are emitted per class**, `aihub.admin.agent.<Class>` and `aihub.admin.agent.<Class>.>`, for the same
-  reason the knowledge family carries both. A `.>` rule never matches its own root, and the bare root is what *creating*
-  an instance is guarded on — with only the subtree form a tenant would see its standard blueprints and be unable to
-  create a single profile from them.
+- **One rule is emitted per class**, the bare `aihub.admin.agent.<Class>` and never `aihub.admin.agent.<Class>.>`. This
+  reverses the two-rule form this ADR originally recorded, which granted each new tenant every existing profile of its
+  standard blueprints — other tenants' included, because profiles share one global collection with no tenant column, so
+  a subtree rule over a class is deployment-wide by construction (aihub-core-private#257). The bare root is what
+  *creating* a profile is guarded on, and the profiles a tenant then creates are reached through
+  `AgentService._grant_instance_access`, which grants each profile's own rule to the tenant that created it
+  (`2026_06_15_auto_grant_creator_access_to_agent_instances`). The knowledge family still carries both forms, via
+  `_CLASS_SUBTREE_POLICIES` below: a database's namespaces genuinely belong to the database, where a blueprint's
+  profiles belong to whoever built them.
 
-- **`GET /agents/classes` filters by `has_access_to_agent_class`.** Its route guard is the existence query
+- **The blueprint checkbox grants the root and revokes the subtree — for agents only.** The catalog's class-level rows
+  are generic machinery shared by every enumerable family, so this is expressed as a *per-family* policy
+  (`_CLASS_SUBTREE_POLICIES` in `access_capability_service.py`) rather than as behaviour of the row: whether the
+  wildcard under a class is the subject's to hold depends on whether the class owns what sits beneath it. A knowledge
+  database owns its namespaces, so its row keeps writing and probing both forms; an agent class does not own the
+  profiles built from it, so its `<Class>.>` moved to `Capability.revoked_rules` — written never, cleared always — and
+  its `granted` became the root alone. A conjunction there would read a curated ceiling as not granted and bounce the
+  box back when ticked. Untick still clears `<Class>.>` so a ceiling seeded under the old shape can be cleaned from the
+  editor rather than by hand.
+
+- **`GET /agents/classes` filters by `has_access_to_agent_class`,** which probes `aihub.user.agent.<Class>.?>`. The `?>`
+  form matters: `?*` demands a rule strictly *below* the class, so it would hide every blueprint from a tenant holding
+  only the bare roots — an empty Agents page with no way to add anything to it. Its route guard is the existence query
   `aihub.user.agent.?>`, which any single agent rule satisfies, so without this a curated tenant saw all ten cards and
   met the block only on click-through. The filter mirrors the sibling instances endpoint, which already narrows its
   result with `AccessChecker.from_user(user)`, and matches how the capability catalog already drops rows a ceiling
@@ -75,13 +92,22 @@ access.**
 - **The ceiling is an enumerated snapshot.** A blueprint added to the standard set later does not reach tenants created
   earlier; a sysadmin grants it. For agents this is the intended opt-in behaviour, but it is the same limitation the
   model ADR records, and for the same reason: the rule grammar has no deny form.
-- **Existing tenants are untouched** and keep `aihub.admin.agent.>`, so they still see every blueprint. Two classes of
-  tenant coexist until someone migrates the old ones — best done by the "apply standard set" tenant-editor action the
-  model ADR already names as its own follow-up.
+- **Existing tenants are untouched** and keep `aihub.admin.agent.>`, so they still see every blueprint. Tenants seeded
+  in the window where this ADR emitted both forms likewise keep `aihub.admin.agent.<Class>.>` and go on seeing every
+  profile of those classes; nothing migrates them, and unticking the blueprint in the editor is the one-click cleanup.
+  Two classes of tenant coexist until someone migrates the old ones — best done by the "apply standard set"
+  tenant-editor action the model ADR already names as its own follow-up.
+- **Rule hygiene is the only thing isolating profiles between tenants.** `agent_configs` has no tenant column, so any
+  future `agent.>` rule re-opens the leak this reverses — the `aihub.admin.agent.>` access preset included. Giving the
+  collection a real tenant discriminator is the durable fix and deserves its own decision.
 - **All ten containers still run**, so the change saves no resources. Reducing the footprint would mean not deploying
   the optional agents, which is a separate decision with a redeploy as its only way back.
 - **Two curation styles now live in one service** — an allow list for agents, exclusions for models. Justified above,
   but it is a thing a reader must be told rather than infer.
+- **The subtree policy is the one piece of catalog behaviour not derived from the route guard.** Two families disagree
+  about it and a third would have to choose deliberately; that is the price of a guard-derived catalog having nowhere to
+  express ownership. A family added to `_CLASS_SUBTREE_POLICIES` inherits its entry for every class-level guard it
+  gains, so a new guard in an existing family is not a neutral addition.
 - **Hiding is not authorization.** Enforcement remains in the per-class route guards and the ceiling; the list filter is
   a UX consequence of them, and must not become the only barrier.
 

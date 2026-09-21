@@ -43,7 +43,14 @@ _NON_AGENT_CEILING = [
     "aihub.user.memory.>",
 ]
 
-_STANDARD_CEILING = [*_NON_AGENT_CEILING, *(f"aihub.admin.agent.{agent_class}.>" for agent_class in _STANDARD)]
+# The bare class root, which is all the derivation now emits: a subtree rule would also hand the tenant
+# every existing profile of the class, other tenants' included (aihub-core-private#257).
+_STANDARD_CEILING = [*_NON_AGENT_CEILING, *(f"aihub.admin.agent.{agent_class}" for agent_class in _STANDARD)]
+# What tenants seeded before that shape change still hold. They keep working untouched.
+_LEGACY_SUBTREE_CEILING = [
+    *_NON_AGENT_CEILING,
+    *(f"aihub.admin.agent.{agent_class}.>" for agent_class in _STANDARD),
+]
 
 
 def _agent_class(agent_class: str) -> AgentClassDTO:
@@ -143,12 +150,25 @@ def test_a_sysadmin_bypasses_the_ceiling() -> None:
 
 def test_a_tenant_granted_one_extra_blueprint_sees_it() -> None:
     """The "add one for a customer" path: granting the class is all it takes, with no redeploy."""
-    returned = _returned_classes(
-        tenant_access_rules=[*_STANDARD_CEILING, "aihub.admin.agent.EmailClassificationAgent.>"]
-    )
+    returned = _returned_classes(tenant_access_rules=[*_STANDARD_CEILING, "aihub.admin.agent.EmailClassificationAgent"])
 
     assert "EmailClassificationAgent" in returned
     assert "ExpertRAGAgent" not in returned
+
+
+def test_a_bare_class_root_is_enough_to_see_the_blueprint() -> None:
+    """A curated tenant holds the class root and nothing under it, and starts with no profiles at all.
+
+    The filter probes ``?>`` rather than ``?*`` for exactly this: ``?*`` demands a rule *below* the class,
+    so it would hide every blueprint from a tenant that may create profiles but has not created one yet —
+    leaving the Agents page empty with no way to add anything to it.
+    """
+    assert sorted(_returned_classes(tenant_access_rules=_STANDARD_CEILING)) == sorted(_STANDARD)
+
+
+def test_a_legacy_subtree_ceiling_still_sees_its_blueprints() -> None:
+    """Tenants seeded before the rule shape changed are not migrated, so both shapes must resolve."""
+    assert sorted(_returned_classes(tenant_access_rules=_LEGACY_SUBTREE_CEILING)) == sorted(_STANDARD)
 
 
 def test_curation_withholds_blueprints_and_never_their_templates() -> None:

@@ -210,6 +210,8 @@ event:
     no_filters: Aucun filtre supplémentaire
   rag_stop:
     failure_reason:
+      condensation_empty: La question n'a pas pu être condensée en une formulation
+        exploitable — cette exécution a été arrêtée avant la récupération.
       context_insufficient: Le contexte récupéré était insuffisant — la réponse est
         une solution de repli et n'est pas ancrée dans vos sources de connaissances.
       expert_declined: L'expert humain n'a pas pu fournir de réponse — cette exécution
@@ -218,6 +220,8 @@ event:
         produit de réponse fondée.
       few_shot_rejected: La requête ne correspondait à aucun motif connu, la réponse
         a donc été produite sans récupération.
+      input_too_large: Le message ou le fichier joint dépassait la fenêtre de contexte
+        du modèle, cette exécution a donc été arrêtée avant l'appel au modèle.
   limitChatHistory:
     summary: Historique de chat limité à {count} messages
     assistant: Assistant
@@ -710,6 +714,8 @@ role:
     changer ceci.
   capability_readonly: Aucune règle unique ne l'accorde — utilisez un modèle ou une
     règle plus large.
+  capability_also_cleared: 'Décocher supprime également : {rules}'
+  capability_also_granted: 'Cocher accorde également : {rules}'
   pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
   pattern_help_all: Tous les agents
   pattern_help_wildcard: Toutes les instances de MyAgent

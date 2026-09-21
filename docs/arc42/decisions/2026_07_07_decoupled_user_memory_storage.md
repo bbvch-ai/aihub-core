@@ -4,6 +4,10 @@
 
 Accepted. Builds on `2026_07_07_disable_graph_store_for_user_memory` (cost reduction) and addresses issue #1179.
 
+**Amended 2026-09-11 by `2026_09_11_async_user_memory_storage_as_the_only_mode`:** the `enable_async_memory_storage`
+flag and the inline storage mode it guarded were removed — delegation to the writer is now the only path. The mechanism
+described below is unchanged; only the flag-gated rollout and the per-agent opt-out are superseded.
+
 ## Context
 
 Issue #1179: after a RAG agent answers, `store_user_memory_step` persists user memory **inline** on the run's critical
