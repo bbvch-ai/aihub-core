@@ -1824,9 +1824,9 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
- * Body_create_incident_incidents_post
+ * Body_create_incident
  */
-export type BodyCreateIncidentIncidentsPost = {
+export type BodyCreateIncident = {
   /**
    * Submission
    *
@@ -1842,9 +1842,9 @@ export type BodyCreateIncidentIncidentsPost = {
 };
 
 /**
- * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
+ * Body_create_transcription
  */
-export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
+export type BodyCreateTranscription = {
   /**
    * File
    *
@@ -2313,10 +2313,12 @@ export type ChatCompletion = {
    * Object
    */
   object: "chat.completion";
+  moderation?: Moderation | null;
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+  service_tier?:
+    "auto" | "default" | "flex" | "scale" | "priority" | "fast" | null;
   /**
    * System Fingerprint
    */
@@ -2467,6 +2469,7 @@ export type ChatCompletionContentPartImageParam = {
    * Type
    */
   type: "image_url";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2481,6 +2484,7 @@ export type ChatCompletionContentPartInputAudioParam = {
    * Type
    */
   type: "input_audio";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2513,6 +2517,7 @@ export type ChatCompletionContentPartTextParam = {
    * Type
    */
   type: "text";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2764,6 +2769,10 @@ export type ChatCompletionRequest = {
    */
   model:
     | string
+    | "gpt-5.6-sol"
+    | "gpt-5.6-terra"
+    | "gpt-5.6-luna"
+    | "gpt-5.5"
     | "gpt-5.4"
     | "gpt-5.4-mini"
     | "gpt-5.4-nano"
@@ -2906,7 +2915,7 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
+    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
   /**
    * Response Format
    */
@@ -6032,6 +6041,7 @@ export type File = {
    * Type
    */
   type: "file";
+  prompt_cache_breakpoint?: FilePromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -6051,6 +6061,21 @@ export type FileFile = {
    * Filename
    */
   filename?: string;
+  [key: string]: unknown;
+};
+
+/**
+ * FilePromptCacheBreakpoint
+ *
+ * Marks the exact end of a reusable prompt prefix.
+ *
+ * The breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.
+ */
+export type FilePromptCacheBreakpoint = {
+  /**
+   * Mode
+   */
+  mode: "explicit";
   [key: string]: unknown;
 };
 
@@ -11860,6 +11885,186 @@ export type ModelTypeGroupDto = {
 };
 
 /**
+ * Moderation
+ *
+ * Moderation results for the request input and generated output, if moderated
+ * completions were requested.
+ */
+export type Moderation = {
+  /**
+   * Input
+   */
+  input: ModerationInputModerationResults | ModerationInputError;
+  /**
+   * Output
+   */
+  output: ModerationOutputModerationResults | ModerationOutputError;
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputError
+ *
+ * An error produced while attempting moderation.
+ */
+export type ModerationInputError = {
+  /**
+   * Code
+   */
+  code: string;
+  /**
+   * Message
+   */
+  message: string;
+  /**
+   * Type
+   */
+  type: "error";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputModerationResults
+ *
+ * Successful moderation results for the request input or generated output.
+ */
+export type ModerationInputModerationResults = {
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Results
+   */
+  results: Array<ModerationInputModerationResultsResult>;
+  /**
+   * Type
+   */
+  type: "moderation_results";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputModerationResultsResult
+ *
+ * A moderation result produced for the response input or output.
+ */
+export type ModerationInputModerationResultsResult = {
+  /**
+   * Categories
+   */
+  categories: {
+    [key: string]: boolean;
+  };
+  /**
+   * Category Applied Input Types
+   */
+  category_applied_input_types: {
+    [key: string]: Array<"text" | "image">;
+  };
+  /**
+   * Category Scores
+   */
+  category_scores: {
+    [key: string]: number;
+  };
+  /**
+   * Flagged
+   */
+  flagged: boolean;
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Type
+   */
+  type: "moderation_result";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputError
+ *
+ * An error produced while attempting moderation.
+ */
+export type ModerationOutputError = {
+  /**
+   * Code
+   */
+  code: string;
+  /**
+   * Message
+   */
+  message: string;
+  /**
+   * Type
+   */
+  type: "error";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputModerationResults
+ *
+ * Successful moderation results for the request input or generated output.
+ */
+export type ModerationOutputModerationResults = {
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Results
+   */
+  results: Array<ModerationOutputModerationResultsResult>;
+  /**
+   * Type
+   */
+  type: "moderation_results";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputModerationResultsResult
+ *
+ * A moderation result produced for the response input or output.
+ */
+export type ModerationOutputModerationResultsResult = {
+  /**
+   * Categories
+   */
+  categories: {
+    [key: string]: boolean;
+  };
+  /**
+   * Category Applied Input Types
+   */
+  category_applied_input_types: {
+    [key: string]: Array<"text" | "image">;
+  };
+  /**
+   * Category Scores
+   */
+  category_scores: {
+    [key: string]: number;
+  };
+  /**
+   * Flagged
+   */
+  flagged: boolean;
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Type
+   */
+  type: "moderation_result";
+  [key: string]: unknown;
+};
+
+/**
  * MultiSelect
  *
  * https://formkit-primevue.netlify.app/inputs/MultiSelect
@@ -13200,6 +13405,21 @@ export type ProgramWorkResponseDto = {
 };
 
 /**
+ * PromptCacheBreakpoint
+ *
+ * Marks the exact end of a reusable prompt prefix.
+ *
+ * The breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.
+ */
+export type PromptCacheBreakpoint = {
+  /**
+   * Mode
+   */
+  mode: "explicit";
+  [key: string]: unknown;
+};
+
+/**
  * PromptTokensDetails
  *
  * Breakdown of tokens used in the prompt.
@@ -13209,6 +13429,10 @@ export type PromptTokensDetails = {
    * Audio Tokens
    */
   audio_tokens?: number | null;
+  /**
+   * Cache Write Tokens
+   */
+  cache_write_tokens?: number | null;
   /**
    * Cached Tokens
    */
@@ -16782,6 +17006,10 @@ export type Transcription = {
    */
   text: string;
   /**
+   * Languages
+   */
+  languages?: Array<TranscriptionLanguage> | null;
+  /**
    * Logprobs
    */
   logprobs?: Array<Logprob> | null;
@@ -16789,6 +17017,19 @@ export type Transcription = {
    * Usage
    */
   usage?: UsageTokens | UsageDuration | null;
+  [key: string]: unknown;
+};
+
+/**
+ * TranscriptionLanguage
+ *
+ * A language detected in transcribed audio.
+ */
+export type TranscriptionLanguage = {
+  /**
+   * Code
+   */
+  code: string;
   [key: string]: unknown;
 };
 
@@ -27829,7 +28070,7 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers Auth Providers  Get
+   * Response Get Auth Providers
    *
    * Successful Response
    */
@@ -27987,7 +28228,7 @@ export type GetMyDashboardData = {
 
 export type GetMyDashboardResponses = {
   /**
-   * Response Get My Dashboard  Tenant Id  My Account Dashboard Get
+   * Response Get My Dashboard
    *
    * Successful Response
    */
@@ -28179,7 +28420,7 @@ export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
 
 export type AssignRoleResponses = {
   /**
-   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   * Response Assign Role
    *
    * Successful Response
    */
@@ -28225,7 +28466,7 @@ export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
 
 export type RevokeRoleResponses = {
   /**
-   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   * Response Revoke Role
    *
    * Successful Response
    */
@@ -28292,7 +28533,7 @@ export type GetAgentEventsInThreadError =
 
 export type GetAgentEventsInThreadResponses = {
   /**
-   * Response Get Agent Events In Thread  Tenant Id  Events Agents Threads  Thread Id  Get
+   * Response Get Agent Events In Thread
    *
    * Successful Response
    */
@@ -28430,7 +28671,7 @@ export type GetLlmSpendByUserError =
 
 export type GetLlmSpendByUserResponses = {
   /**
-   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   * Response Get Llm Spend By User
    *
    * Successful Response
    */
@@ -28473,7 +28714,7 @@ export type GetLlmSpendByTenantError =
 
 export type GetLlmSpendByTenantResponses = {
   /**
-   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   * Response Get Llm Spend By Tenant
    *
    * Successful Response
    */
@@ -28499,7 +28740,7 @@ export type GetLitellmModelsData = {
 
 export type GetLitellmModelsResponses = {
   /**
-   * Response Get Litellm Models  Tenant Id  Models Get
+   * Response Get Litellm Models
    *
    * Successful Response
    */
@@ -28539,7 +28780,7 @@ export type GetLitellmModelsByModeError =
 
 export type GetLitellmModelsByModeResponses = {
   /**
-   * Response Get Litellm Models By Mode  Tenant Id  Models Mode  Mode  Get
+   * Response Get Litellm Models By Mode
    *
    * Successful Response
    */
@@ -28984,7 +29225,7 @@ export type GetAgentClassesError =
 
 export type GetAgentClassesResponses = {
   /**
-   * Response Get Agent Classes  Tenant Id  Agents Classes Get
+   * Response Get Agent Classes
    *
    * Successful Response
    */
@@ -29061,7 +29302,7 @@ export type GetAgentClassInstancesError =
 
 export type GetAgentClassInstancesResponses = {
   /**
-   * Response Get Agent Class Instances  Tenant Id  Agents Classes  Agent Class  Instances Get
+   * Response Get Agent Class Instances
    *
    * Successful Response
    */
@@ -29335,7 +29576,7 @@ export type GetAllAgentInstancesError =
 
 export type GetAllAgentInstancesResponses = {
   /**
-   * Response Get All Agent Instances  Tenant Id  Agents Instances Get
+   * Response Get All Agent Instances
    *
    * Successful Response
    */
@@ -29462,7 +29703,7 @@ export type GetProcessClassesError =
 
 export type GetProcessClassesResponses = {
   /**
-   * Response Get Process Classes  Tenant Id  Processes Classes Get
+   * Response Get Process Classes
    *
    * Successful Response
    */
@@ -29540,7 +29781,7 @@ export type GetProcessClassInstancesError =
 
 export type GetProcessClassInstancesResponses = {
   /**
-   * Response Get Process Class Instances  Tenant Id  Processes Classes  Process Class  Instances Get
+   * Response Get Process Class Instances
    *
    * Successful Response
    */
@@ -29747,7 +29988,7 @@ export type GetAllProcessInstancesError =
 
 export type GetAllProcessInstancesResponses = {
   /**
-   * Response Get All Process Instances  Tenant Id  Processes Instances Get
+   * Response Get All Process Instances
    *
    * Successful Response
    */
@@ -29846,7 +30087,7 @@ export type GetProcessStartFormsError =
 
 export type GetProcessStartFormsResponses = {
   /**
-   * Response Get Process Start Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id  Start Forms Get
+   * Response Get Process Start Forms
    *
    * Successful Response
    */
@@ -29894,7 +30135,7 @@ export type GetProcessOpenFormsError =
 
 export type GetProcessOpenFormsResponses = {
   /**
-   * Response Get Process Open Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id   Process Walkthrough Id  Open Forms Get
+   * Response Get Process Open Forms
    *
    * Successful Response
    */
@@ -30036,7 +30277,7 @@ export type ListTokensEndpointData = {
 
 export type ListTokensEndpointResponses = {
   /**
-   * Response List Tokens Endpoint  Tenant Id  Tokens  Get
+   * Response List Tokens Endpoint
    *
    * Successful Response
    */
@@ -30243,7 +30484,7 @@ export type GetRolesData = {
 
 export type GetRolesResponses = {
   /**
-   * Response Get Roles  Tenant Id  Roles  Get
+   * Response Get Roles
    *
    * Successful Response
    */
@@ -30334,7 +30575,7 @@ export type GetAccessPresetsData = {
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Access Presets Get
+   * Response Get Access Presets
    *
    * Successful Response
    */
@@ -30360,7 +30601,7 @@ export type GetDefaultTenantRulesData = {
 
 export type GetDefaultTenantRulesResponses = {
   /**
-   * Response Get Default Tenant Rules  Tenant Id  Access Default Tenant Rules Get
+   * Response Get Default Tenant Rules
    *
    * Successful Response
    */
@@ -30532,7 +30773,7 @@ export type GenerateImageResponse =
   GenerateImageResponses[keyof GenerateImageResponses];
 
 export type CreateTranscriptionData = {
-  body: BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost;
+  body: BodyCreateTranscription;
   path: {
     /**
      * Tenant Id
@@ -30557,7 +30798,7 @@ export type CreateTranscriptionError =
 
 export type CreateTranscriptionResponses = {
   /**
-   * Response Create Transcription  Tenant Id  Openai Audio Transcriptions Post
+   * Response Create Transcription
    *
    * Successful Response
    */
@@ -30613,7 +30854,7 @@ export type GetDatasetsData = {
 
 export type GetDatasetsResponses = {
   /**
-   * Response Get Datasets  Tenant Id  Datasets  Get
+   * Response Get Datasets
    *
    * Successful Response
    */
@@ -30749,7 +30990,7 @@ export type GetIngestorsData = {
 
 export type GetIngestorsResponses = {
   /**
-   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   * Response Get Ingestors
    *
    * Successful Response
    */
@@ -30775,7 +31016,7 @@ export type GetSourcePipelinesData = {
 
 export type GetSourcePipelinesResponses = {
   /**
-   * Response Get Source Pipelines  Tenant Id  Knowledge Source Pipelines Get
+   * Response Get Source Pipelines
    *
    * Successful Response
    */
@@ -31037,7 +31278,7 @@ export type GetDatabasesData = {
 
 export type GetDatabasesResponses = {
   /**
-   * Response Get Databases  Tenant Id  Knowledge Databases Get
+   * Response Get Databases
    *
    * Successful Response
    */
@@ -31289,7 +31530,7 @@ export type GetNodesForDocumentError =
 
 export type GetNodesForDocumentResponses = {
   /**
-   * Response Get Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
+   * Response Get Nodes For Document
    *
    * Successful Response
    */
@@ -31337,7 +31578,7 @@ export type GetSummaryNodesForDocumentError =
 
 export type GetSummaryNodesForDocumentResponses = {
   /**
-   * Response Get Summary Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Summaries Get
+   * Response Get Summary Nodes For Document
    *
    * Successful Response
    */
@@ -31447,7 +31688,7 @@ export type GetSupportedFileTypesData = {
 
 export type GetSupportedFileTypesResponses = {
   /**
-   * Response Get Supported File Types  Tenant Id  Knowledge Supported Types Get
+   * Response Get Supported File Types
    *
    * Successful Response
    */
@@ -31739,7 +31980,7 @@ export type UpdateNotificationsBulkError =
 
 export type UpdateNotificationsBulkResponses = {
   /**
-   * Response Update Notifications Bulk  Tenant Id  Notifications  Patch
+   * Response Update Notifications Bulk
    *
    * Successful Response
    */
@@ -31822,7 +32063,7 @@ export type GetIncidentFormResponse =
   GetIncidentFormResponses[keyof GetIncidentFormResponses];
 
 export type CreateIncidentData = {
-  body: BodyCreateIncidentIncidentsPost;
+  body: BodyCreateIncident;
   path?: never;
   query?: never;
   url: "/incidents";

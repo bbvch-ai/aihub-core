@@ -1,5 +1,21 @@
+from fastapi.routing import APIRoute
+
+
 class OpenApiSchemaService:
     """Post-processing helpers for FastAPI's auto-generated OpenAPI schema."""
+
+    @staticmethod
+    def operation_id_from_route_name(route: APIRoute) -> str:
+        """Name OpenAPI operations after the endpoint method, so the generated SDK exposes
+        ``addAgentToThread`` rather than FastAPI's default path-derived mouthful.
+
+        Pass as ``FastAPI(generate_unique_id_function=...)`` rather than assigning
+        ``route.operation_id`` by walking ``app.routes`` after mounting: since FastAPI 0.14x
+        ``include_router`` keeps the sub-router behind a wrapper instead of flattening its
+        ``APIRoute``s into the parent, so such a walk silently matches nothing and every
+        operation falls back to its default id.
+        """
+        return route.name
 
     @staticmethod
     def inject_tenant_id_into_openapi(openapi_schema: dict) -> dict:
