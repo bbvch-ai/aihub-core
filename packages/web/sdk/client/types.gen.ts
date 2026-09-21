@@ -7729,6 +7729,54 @@ export type ImagesResponse = {
 };
 
 /**
+ * IncidentAttachmentsDTO
+ *
+ * How the reporter's file picker should be configured.
+ *
+ * Wording and accepted types come from the form definition, the two limits from the
+ * deployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also
+ * have to hunt down a translated string that repeats the old number.
+ */
+export type IncidentAttachmentsDto = {
+  /**
+   * Label
+   *
+   * Heading shown above the picker
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * Guidance shown under the label
+   */
+  description: string | null;
+  /**
+   * Required
+   *
+   * Whether at least one file must be attached
+   */
+  required: boolean;
+  /**
+   * Accept
+   *
+   * Accepted extensions, each with its leading dot
+   */
+  accept: Array<string>;
+  /**
+   * Max Files
+   *
+   * How many files one report may carry
+   */
+  max_files: number;
+  /**
+   * Max Bytes
+   *
+   * Largest single attachment accepted, in bytes
+   */
+  max_bytes: number;
+};
+
+/**
  * IncidentFormDTO
  *
  * The report form, already carrying what the platform knows about this reporter.
@@ -7781,6 +7829,10 @@ export type IncidentFormDto = {
   submission_specs: {
     [key: string]: unknown;
   };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
 };
 
 /**
@@ -20941,6 +20993,10 @@ export type IncidentFormDtoWritable = {
   submission_specs: {
     [key: string]: unknown;
   };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
 };
 
 /**

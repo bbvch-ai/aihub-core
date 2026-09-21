@@ -970,9 +970,6 @@ tenant:
 support:
   report_bug: Segnala un problema
   dialog_title: Segnala un problema
-  attachments: Screenshot o file
-  attachments_help: Opzionale. Vengono allegati alla segnalazione e restano permanentemente nel
-    repository di supporto, quindi non allegare materiale riservato.
   choose_files: Scegli i file
   submit: Invia segnalazione
   submitting: Invio…

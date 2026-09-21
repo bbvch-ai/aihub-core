@@ -973,9 +973,6 @@ tenant:
 support:
   report_bug: Signaler un problème
   dialog_title: Signaler un problème
-  attachments: Captures d'écran ou fichiers
-  attachments_help: Optionnel. Ils sont joints au signalement et restent définitivement dans le
-    dépôt de support — n'y joignez donc rien de confidentiel.
   choose_files: Choisir des fichiers
   submit: Envoyer le signalement
   submitting: Envoi…

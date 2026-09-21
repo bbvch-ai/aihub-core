@@ -749,6 +749,7 @@ export {
   ImageMode,
   type ImagesResponse,
   type ImageUrl,
+  type IncidentAttachmentsDto,
   type IncidentFormDto,
   type IncidentFormDtoWritable,
   type IngestedNode,

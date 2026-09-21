@@ -11314,6 +11314,63 @@ export const ImagesResponseSchema = {
   description: "The response from the image generation endpoint.",
 } as const;
 
+export const IncidentAttachmentsDTOSchema = {
+  properties: {
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Heading shown above the picker",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Guidance shown under the label",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether at least one file must be attached",
+    },
+    accept: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Accept",
+      description: "Accepted extensions, each with its leading dot",
+    },
+    max_files: {
+      type: "integer",
+      title: "Max Files",
+      description: "How many files one report may carry",
+    },
+    max_bytes: {
+      type: "integer",
+      title: "Max Bytes",
+      description: "Largest single attachment accepted, in bytes",
+    },
+  },
+  type: "object",
+  required: [
+    "label",
+    "description",
+    "required",
+    "accept",
+    "max_files",
+    "max_bytes",
+  ],
+  title: "IncidentAttachmentsDTO",
+  description:
+    "How the reporter's file picker should be configured.\n\nWording and accepted types come from the form definition, the two limits from the\ndeployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also\nhave to hunt down a translated string that repeats the old number.",
+} as const;
+
 export const IncidentFormDTOSchema = {
   properties: {
     elements: {
@@ -11426,6 +11483,18 @@ export const IncidentFormDTOSchema = {
       type: "object",
       title: "Submission Specs",
       description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
     },
   },
   type: "object",
@@ -31005,6 +31074,18 @@ export const IncidentFormDTOWritableSchema = {
       type: "object",
       title: "Submission Specs",
       description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
     },
   },
   type: "object",

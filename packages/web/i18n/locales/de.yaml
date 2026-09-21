@@ -975,9 +975,6 @@ tenant:
 support:
   report_bug: Fehler melden
   dialog_title: Problem melden
-  attachments: Screenshots oder Dateien
-  attachments_help: Optional. Sie werden mit der Meldung erfasst und bleiben dauerhaft im Support-Repository
-    — fügen Sie daher keine vertraulichen Inhalte an.
   choose_files: Dateien auswählen
   submit: Meldung senden
   submitting: Wird gesendet…

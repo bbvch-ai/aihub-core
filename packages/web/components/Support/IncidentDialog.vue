@@ -22,16 +22,25 @@
     </Message>
 
     <template v-else-if="incidentForm">
-      <div class="flex flex-col gap-2 border-b border-surface-200 pb-4 dark:border-surface-700">
-        <label class="font-medium">{{ t('support.attachments') }}</label>
-        <p class="text-xs font-light text-surface-500 dark:text-surface-400">
-          {{ t('support.attachments_help') }}
+      <div
+        v-if="incidentForm.attachments"
+        class="flex flex-col gap-2 border-b border-surface-200 pb-4 dark:border-surface-700"
+      >
+        <label class="font-medium">{{ incidentForm.attachments.label }}</label>
+        <p
+          v-if="incidentForm.attachments.description"
+          class="text-xs font-light text-surface-500 dark:text-surface-400"
+        >
+          {{ incidentForm.attachments.description }}
         </p>
         <FileUpload
           mode="basic"
           multiple
           custom-upload
           :auto="false"
+          :accept="incidentForm.attachments.accept.join(',')"
+          :file-limit="incidentForm.attachments.max_files"
+          :max-file-size="incidentForm.attachments.max_bytes"
           :choose-label="t('support.choose_files')"
           @select="onSelect"
         />

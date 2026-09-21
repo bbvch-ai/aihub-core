@@ -958,9 +958,6 @@ tenant:
 support:
   report_bug: Report a bug
   dialog_title: Report a problem
-  attachments: Screenshots or files
-  attachments_help: Optional. They are filed with the report and stay in the support repository
-    permanently, so do not attach confidential material.
   choose_files: Choose files
   submit: Send report
   submitting: Sending…
