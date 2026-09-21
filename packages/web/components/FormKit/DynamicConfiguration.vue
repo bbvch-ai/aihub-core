@@ -32,6 +32,9 @@
         :max="rep.max"
         @update:model-value="setRepeaterData(rep.path, $event)"
       />
+
+      <!-- Inside the form so it lands above the submit button, which FormKit renders last. -->
+      <slot name="before-submit" />
     </FormKit>
   </div>
 </template>

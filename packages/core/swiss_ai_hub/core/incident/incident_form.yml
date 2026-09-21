@@ -17,8 +17,7 @@
 #   3. `upload` is the attachment field. Its label, description and accepted
 #      extensions come from here; how many files and how large they may be come
 #      from INCIDENT_MAX_ATTACHMENT* on the deployment. Only one is supported,
-#      and the dialog always shows the picker at the top whatever its position
-#      in this file.
+#      and the dialog draws it last, just above the send button.
 name: Report a problem
 description: Tell us what went wrong so support can reproduce and investigate it.
 title: '[INC] '
@@ -60,16 +59,6 @@ body:
       placeholder: What you were doing, and what the system did.
     validations:
       required: true
-
-  - type: upload
-    attributes:
-      label: Screenshots or files
-      description: A screenshot showing the problem, or the document we failed to
-        process. They are filed with the report and stay in the support repository
-        permanently, so do not attach confidential material.
-    validations:
-      required: false
-      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.pptx,.txt,.log,.csv,.json,.eml,.msg,.zip
 
   - type: dropdown
     id: problem_type
@@ -199,3 +188,13 @@ body:
     attributes:
       label: Interface language
       description: Some problems only appear in one language.
+
+  - type: upload
+    attributes:
+      label: Screenshots or files
+      description: A screenshot showing the problem, or the document we failed to
+        process. They are filed with the report and stay in the support repository
+        permanently, so do not attach confidential material.
+    validations:
+      required: false
+      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.pptx,.txt,.log,.csv,.json,.eml,.msg,.zip

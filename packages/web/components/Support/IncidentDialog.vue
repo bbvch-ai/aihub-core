@@ -22,50 +22,52 @@
     </Message>
 
     <template v-else-if="incidentForm">
-      <div
-        v-if="incidentForm.attachments"
-        class="flex flex-col gap-2 border-b border-surface-200 pb-4 dark:border-surface-700"
-      >
-        <label class="font-medium">{{ incidentForm.attachments.label }}</label>
-        <p
-          v-if="incidentForm.attachments.description"
-          class="text-xs font-light text-surface-500 dark:text-surface-400"
-        >
-          {{ incidentForm.attachments.description }}
-        </p>
-        <FileUpload
-          mode="basic"
-          multiple
-          custom-upload
-          :auto="false"
-          :accept="incidentForm.attachments.accept.join(',')"
-          :file-limit="incidentForm.attachments.max_files"
-          :max-file-size="incidentForm.attachments.max_bytes"
-          :choose-label="t('support.choose_files')"
-          @select="onSelect"
-        />
-        <ul
-          v-if="attachments.length"
-          class="flex flex-col gap-1 text-xs text-surface-600 dark:text-surface-300"
-        >
-          <li
-            v-for="file in attachments"
-            :key="file.name"
-            class="flex items-center gap-2"
-          >
-            <i class="pi pi-paperclip" />
-            <span>{{ file.name }}</span>
-            <span class="text-surface-400">{{ Math.ceil(file.size / 1024) }} KB</span>
-          </li>
-        </ul>
-      </div>
-
       <FormKitDynamicConfiguration
         :form="incidentForm.elements"
         :initial-data="initialData"
         :submit-label="incidentIsSubmitting ? t('support.submitting') : t('support.submit')"
         @submit="onSubmit"
-      />
+      >
+        <template #before-submit>
+          <div
+            v-if="incidentForm.attachments"
+            class="flex flex-col gap-2 border-b border-surface-200 pb-4 dark:border-surface-700"
+          >
+            <label class="font-medium">{{ incidentForm.attachments.label }}</label>
+            <p
+              v-if="incidentForm.attachments.description"
+              class="text-xs font-light text-surface-500 dark:text-surface-400"
+            >
+              {{ incidentForm.attachments.description }}
+            </p>
+            <FileUpload
+              mode="basic"
+              multiple
+              custom-upload
+              :auto="false"
+              :accept="incidentForm.attachments.accept.join(',')"
+              :file-limit="incidentForm.attachments.max_files"
+              :max-file-size="incidentForm.attachments.max_bytes"
+              :choose-label="t('support.choose_files')"
+              @select="onSelect"
+            />
+            <ul
+              v-if="attachments.length"
+              class="flex flex-col gap-1 text-xs text-surface-600 dark:text-surface-300"
+            >
+              <li
+                v-for="file in attachments"
+                :key="file.name"
+                class="flex items-center gap-2"
+              >
+                <i class="pi pi-paperclip" />
+                <span>{{ file.name }}</span>
+                <span class="text-surface-400">{{ Math.ceil(file.size / 1024) }} KB</span>
+              </li>
+            </ul>
+          </div>
+        </template>
+      </FormKitDynamicConfiguration>
     </template>
   </Dialog>
 </template>
