@@ -72,9 +72,9 @@ Fourteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence re
 **We migrate persistence from MongoEngine to Beanie, incrementally, and adopt Beanie's migration framework as the answer
 to #1152.**
 
-### Six rules that are not optional
+### Eight rules that are not optional
 
-Every one of these was found by a check that first appeared to pass. All six failure modes are **silent** — no
+Every one of these was found by a check that first appeared to pass. All eight failure modes are **silent** — no
 exception, no warning, success reported — so none of them would be caught by a reviewer reading a diff.
 
 1. **Never opt in to `use_transaction=True`.** Beanie 2.2 defaults it to `False`; the rule guards the opt-in. FerretDB
@@ -108,6 +108,15 @@ exception, no warning, success reported — so none of them would be caught by a
    cannot be written this way is split into an iterative migration for the data and a free-fall migration for the index
    or rename only. Reviewers ask for the re-run test, not the happy-path test.
 
+7. **Every migration declares `Backward`, or declares itself irreversible** in its docstring and in the release notes.
+   Beanie's runner does not require `Backward`: without one, a backward run reports success and moves the log pointer
+   while the data stays migrated (check 15, T1). An irreversible migration is a release the platform cannot roll back,
+   so it is a release decision, not a file omission.
+
+8. **Backward runs always carry an explicit `--distance`, and are run by an operator, never on startup.** `distance=0`
+   means "without limit" in both directions and is the CLI default, so a bare backward run undoes every migration ever
+   applied (check 15, T3). Rules 4, 5 and 6 apply in both directions.
+
 Rules 3 and 5 share a root cause with the test-infrastructure cost below: **Beanie's database binding is
 process-global.** `init_beanie` and `DBHandler` both mutate class-level state, so anything that retargets it must be
 serialised or given its own process. Three symptoms — cross-tenant misrouting, dead-loop clients in tests, corrupt
@@ -120,10 +129,27 @@ as coroutines and awaits none of them until the whole collection is transformed
 can be rolled back. This does **not** extend to a failure inside that final `asyncio.gather`, nor is it verified beyond
 the 10 000-document default `batch_size`.
 
-**A `@free_fall_migration` has no such property.** The same failure expressed as a free-fall migration, verified against
-FerretDB 2.5.0 during review of this ADR, left 2 of 4 documents migrated and `migrations_log` empty. Free-fall is the
-only kind that can create an index, touch two collections or rename a field with `$rename`, so it cannot simply be
-banned. Hence rule 6.
+**A `@free_fall_migration` has no such property.** The same failure expressed as a free-fall migration left 2 of 4
+documents migrated and `migrations_log` empty (check 14b). Free-fall is the only kind that can create an index, touch
+two collections or rename a field with `$rename`, so it cannot simply be banned. Hence rule 6.
+
+### Rollback
+
+A deploy is rolled back in two steps, in this order: run the backward migration from the **new** image, which is where
+the `Backward` code lives, then deploy the old image. The old MongoEngine code tolerates fields it does not know through
+`strict: False`; it does not tolerate a field that was renamed or removed. Deploying the old image first produces the
+outage the migration was meant to prevent.
+
+A migration that failed partway is **not** recovered by a backward run. The runner rolls back the last migration
+recorded in `migrations_log`, and a failed migration never reached the log, so `--direction BACKWARD --distance 1`
+undoes the previous, healthy migration and leaves the failed one's partial writes in place (check 15, T2). Recovery from
+a failed iterative migration is a plain retry, because it wrote nothing. Recovery from a failed free-fall migration is a
+forward re-run, which rule 6 makes safe.
+
+Normalising drift and then tightening to `strict: True`, the goal of #1152, means dropping fields, and no `Backward`
+restores a dropped field. Every lossy migration ships as expand then contract: the release that stops reading a field
+ships without the migration that removes it, and the removal ships one release later, once the previous image is no
+longer a rollback target. The rollback window for a lossy change is therefore one release.
 
 ### Order of work
 
@@ -198,9 +224,12 @@ resume after its worker thread returns. The benefit comes from freeing the loop,
   from all 913 async tests including the majority that never touch the database. The `@async_test` rewrite is
   **identified but not built** — it must not be priced as cheap until it is.
 - **No performance gain, and a small per-operation loss.** Beanie was slower in every sequential measurement taken.
-- **Six silent failure modes to defend against.** CI checks and a routing registry are mitigations, not guarantees; a
+- **Eight silent failure modes to defend against.** CI checks and a routing registry are mitigations, not guarantees; a
   future author who does not know rule 4 exists can still reintroduce a double-applying migration, and one who writes a
   free-fall migration as a plain loop reintroduces partial application.
+- **Lossy migrations cannot be rolled back**, so every field removal is spread across two releases under
+  expand-and-contract, and the intermediate release must keep reading the old shape. Rollback beyond one release is not
+  offered.
 - **The per-database routing registry is new code** with concurrency requirements that did not exist under MongoEngine,
   replacing a mechanical translation that fails in a cross-tenant direction.
 - **Migration effort across 36 entity classes and 144 `.objects(` call sites**, and the surface grows while the decision
@@ -255,6 +284,16 @@ the answer. Checks 05–08 were cost inputs.
 | --- | ------------------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 13  | Does Beanie's migration framework work on FerretDB?                      | **PASS WITH ONE HARD RULE** | Forward transforms documents, the run is recorded, a second run is a **no-op**, backward rolls back. With `use_transaction=True`: writes land, commit fails, log left empty. Source of rule 1.                                                                                                                      |
 | 14  | Does it survive partial failure, concurrent replicas and many databases? | **1 PASS, 2 FAIL**          | A failed **iterative** migration writes **nothing**; a failed free-fall migration writes everything up to the raise (added during ADR review, rule 6). Four concurrent replicas **double-applied** every document while all reporting success (rule 4), and concurrent multi-database migration corrupted (rule 5). |
+
+### Added during review of this ADR
+
+Run against the same FerretDB 2.5.0 and Beanie 2.2.0 during review of PR #1931. Scripts and verbatim output are attached
+to that PR, not to the spike branch.
+
+| #   | Question                                                           | Verdict                 | Key finding                                                                                                                                                                                                                                                |
+| --- | ------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 14b | Does the partial-failure guarantee hold for a free-fall migration? | **FAIL**                | Check 14 Q1's failure expressed as `@free_fall_migration` left **2 of 4** documents migrated with `migrations_log` empty. Source of rule 6.                                                                                                                |
+| 15  | What does a backward run actually do?                              | **3 SILENT BEHAVIOURS** | T1: no `Backward` class, runner reports OK, log moves, data untouched. T2: after a failed migration, backward undoes the previous **healthy** one. T3: default `distance=0` rolls back **everything**. Source of rules 7 and 8 and the rollback procedure. |
 
 ### How the evidence was produced
 
