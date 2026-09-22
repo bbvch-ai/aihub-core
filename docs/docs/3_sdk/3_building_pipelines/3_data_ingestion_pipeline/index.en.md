@@ -77,10 +77,10 @@ serves every database whose source is `rclone`, and nothing about a source lives
 
 A knowledge database carries two independent settings:
 
-| Axis       | Field on the database              | Question it answers               | Set by                              |
-| ---------- | ---------------------------------- | --------------------------------- | ----------------------------------- |
-| `ingestor` | `ingestor` + `configuration`       | How are files processed (Stage 2) | Create dialog, fixed after creation |
-| `source`   | `source` + `source_configuration`  | Where do files come from (Stage 1) | Create dialog, replaceable          |
+| Axis       | Field on the database             | Question it answers                | Set by                              |
+| ---------- | --------------------------------- | ---------------------------------- | ----------------------------------- |
+| `ingestor` | `ingestor` + `configuration`      | How are files processed (Stage 2)  | Create dialog, fixed after creation |
+| `source`   | `source` + `source_configuration` | Where do files come from (Stage 1) | Create dialog, replaceable          |
 
 A database without a source is filled by manual upload. The source configuration stays replaceable because credentials
 rotate; a change takes effect on the pipeline's next run.
@@ -103,14 +103,14 @@ the sync; the files already in the data lake stay until the database is deleted.
 `source_configuration` holds the `backend_type`, `root_path`, `include_patterns`, `exclude_patterns`, and one option
 group per backend:
 
-| `backend_type` | Source                          | Options                                                                                   |
-| -------------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `onedrive`     | OneDrive, SharePoint            | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`  |
-| `drive`        | Google Drive                    | `client_id`, `client_secret`, `token` or `service_account_credentials`, `root_folder_id`  |
-| `s3`           | AWS S3, MinIO, S3-compatible    | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                    |
-| `azureblob`    | Azure Blob Storage              | `account`, `key` or `sas_url`, `endpoint`                                                 |
-| `sftp`         | SFTP servers                    | `host`, `port`, `user`, `password` or `key_pem`                                           |
-| `local`        | Path inside the rclone container | none                                                                                     |
+| `backend_type` | Source                           | Options                                                                                    |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `onedrive`     | OneDrive, SharePoint             | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`   |
+| `drive`        | Google Drive                     | `client_id`, `client_secret`, `token` or `service_account_credentials`, `root_folder_id`   |
+| `s3`           | AWS S3, MinIO, S3-compatible     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                     |
+| `azureblob`    | Azure Blob Storage               | `account`, `key` or `sas_url`, `endpoint`                                                  |
+| `sftp`         | SFTP servers                     | `host`, `port`, `user`, `password` or `key_pem`                                            |
+| `local`        | Path inside the rclone container | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory |
 
 A SharePoint document library is `onedrive` with `drive_type=documentLibrary`. OAuth backends accept a pre-obtained
 rclone `token` JSON instead of client credentials; OneDrive without a token uses client credentials.
@@ -145,12 +145,13 @@ itself runs on a daily schedule.
 The platform ships the pipeline as the `rclone_pipeline` compose service (Dagster workspace entry `rclone_pipeline`),
 next to the `rclone` daemon it drives over the RC API. Nothing per source is deployed; the service needs:
 
-| Variable                                          | Purpose                                                          |
-| ------------------------------------------------- | ---------------------------------------------------------------- |
-| `AIHUB_CONFIG_ENCRYPTION_KEY`                     | Decrypts stored credentials; must equal the API's key            |
-| `RCLONE_URL`, `RCLONE_RC_USER`, `RCLONE_RC_PASS`  | Reach and authenticate against the rclone daemon                 |
-| `RCLONE_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE`    | Time of the daily per-database sync                              |
-| `RCLONE_PIPELINE_MAX_PARTITIONS`                  | Partitions added or removed per database per observation         |
+| Variable                                         | Purpose                                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `AIHUB_CONFIG_ENCRYPTION_KEY`                    | Decrypts stored credentials; must equal the API's key                                                  |
+| `RCLONE_URL`, `RCLONE_RC_USER`, `RCLONE_RC_PASS` | Reach and authenticate against the rclone daemon                                                       |
+| `RCLONE_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE`   | Time of the daily per-database sync                                                                    |
+| `RCLONE_PIPELINE_MAX_PARTITIONS`                 | Partitions added or removed per database per observation                                               |
+| `RCLONE_LOCAL_SOURCE_ROOT`                       | Optional: directory inside the rclone container that `local` sources may read; unset hides the backend |
 
 The `rclone` container keeps no configuration file: the pipeline re-creates each database's remote from the stored
 configuration on every run, so a credential change applies on the next run and a restarted daemon needs no operator

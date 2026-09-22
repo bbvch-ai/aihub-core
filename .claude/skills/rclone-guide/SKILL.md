@@ -32,26 +32,26 @@ SourcePipelineEntity ◀── registration sensor ── rclone_pipeline (Dagst
 
 ## Key Files
 
-| Concern                           | Path                                                                                                                                                                                                          |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Announced form (all six backends) | `packages/pipeline/swiss_ai_hub/pipeline/source_pipelines/rclone_sync_config.py`                                                                                                                              |
-| Per-run resolution                | `packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py`                                                                                                                                             |
-| RC API client                     | `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/rclone_client.py`                                                                                                                                   |
-| IO manager (read-only)            | `packages/pipeline/swiss_ai_hub/pipeline/io/routed_rclone_io_manager.py`                                                                                                                                      |
-| Observable asset                  | `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py`                                                                                                   |
-| Partitions + versions             | `packages/pipeline/swiss_ai_hub/pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`                                                                                                            |
-| Write + announce                  | `packages/pipeline/swiss_ai_hub/pipeline/ops/source/routed/`                                                                                                                                                  |
-| Definitions factory               | `packages/pipeline/swiss_ai_hub/pipeline/util/rclone_pipeline_definitions_util.py`                                                                                                                            |
-| Deployed app                      | `packages/pipeline/app/rclone_pipeline/__init__.py`                                                                                                                                                           |
-| Registration / cleanup sensors    | `packages/pipeline/swiss_ai_hub/pipeline/sensors/source_pipeline_registration_sensor.py`, `source_bucket_cleanup_sensor.py`                                                                                   |
-| Core: config base, record, entity | `packages/core/swiss_ai_hub/core/source_pipelines/`, `packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/source_pipeline*.py`                                                                  |
-| Settings                          | `packages/core/swiss_ai_hub/core/infrastructure/rclone/rclone_settings.py` (`RCLONE_URL`, `RCLONE_RC_USER/PASS`), `rclone_pipeline_settings.py` (`RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`, `MAX_PARTITIONS`) |
+| Concern                                                                     | Path                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Announced form (six backends, `local` only with `RCLONE_LOCAL_SOURCE_ROOT`) | `packages/pipeline/swiss_ai_hub/pipeline/source_pipelines/rclone_sync_config.py`                                                                                                                                                          |
+| Per-run resolution                                                          | `packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py`                                                                                                                                                                         |
+| RC API client                                                               | `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/rclone_client.py`                                                                                                                                                               |
+| IO manager (read-only)                                                      | `packages/pipeline/swiss_ai_hub/pipeline/io/routed_rclone_io_manager.py`                                                                                                                                                                  |
+| Observable asset                                                            | `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py`                                                                                                                               |
+| Partitions + versions                                                       | `packages/pipeline/swiss_ai_hub/pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`                                                                                                                                        |
+| Write + announce                                                            | `packages/pipeline/swiss_ai_hub/pipeline/ops/source/routed/`                                                                                                                                                                              |
+| Definitions factory                                                         | `packages/pipeline/swiss_ai_hub/pipeline/util/rclone_pipeline_definitions_util.py`                                                                                                                                                        |
+| Deployed app                                                                | `packages/pipeline/app/rclone_pipeline/__init__.py`                                                                                                                                                                                       |
+| Registration / cleanup sensors                                              | `packages/pipeline/swiss_ai_hub/pipeline/sensors/source_pipeline_registration_sensor.py`, `source_bucket_cleanup_sensor.py`                                                                                                               |
+| Core: config base, record, entity                                           | `packages/core/swiss_ai_hub/core/source_pipelines/`, `packages/core/swiss_ai_hub/core/persistence/rag/datalake/entities/source_pipeline*.py`                                                                                              |
+| Settings                                                                    | `packages/core/swiss_ai_hub/core/infrastructure/rclone/rclone_settings.py` (`RCLONE_URL`, `RCLONE_RC_USER/PASS`, `RCLONE_LOCAL_SOURCE_ROOT`), `rclone_pipeline_settings.py` (`RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`, `MAX_PARTITIONS`) |
 
 ## RcloneSyncConfig (what a database stores)
 
 ```python
 class RcloneSyncConfig(SourcePipelineConfig):
-    backend_type: str | Select          # onedrive | drive | s3 | azureblob | sftp | local
+    backend_type: str | Select          # onedrive | drive | s3 | azureblob | sftp | local (local only when RCLONE_LOCAL_SOURCE_ROOT is set)
     root_path: str | InputText          # folder inside the remote; its top-level folders become namespaces
     include_patterns: list[str] | ChipsInput   # rclone glob rules
     exclude_patterns: list[str] | ChipsInput
@@ -107,8 +107,12 @@ removal to the ingestion pipeline.
 
 ## Deployment
 
-- Service `rclone_pipeline` (compose template + `compose-config.yml` image tags; CI builds any `*_pipeline` with
-  `build: localbuild`), Dagster workspace entry `rclone_pipeline:4000`.
+- Service `rclone_pipeline` (compose template + `compose-config.yml` image tags; the release workflow builds
+  `packages/pipeline/app/<name>/Dockerfile` for any `*_pipeline` with `build: localbuild`, passing only `VERSION`, so
+  each app has its own Dockerfile: `app/rclone_pipeline/Dockerfile` is the ingestion one with
+  `ARG PIPELINE=rclone_pipeline`), Dagster workspace entry `rclone_pipeline:4000`.
+- `local` sources are refused per run unless `RCLONE_LOCAL_SOURCE_ROOT` names a directory inside the rclone container,
+  and a stored `root_path` outside it fails before the remote is created.
 - The `rclone` container sits on `backend` (reachable by the pipeline) and `egress` (reaches cloud providers).
 - Env: `AIHUB_CONFIG_ENCRYPTION_KEY` (same as the API), `RCLONE_URL`, `RCLONE_RC_USER/PASS` (non-dev),
   `RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`.

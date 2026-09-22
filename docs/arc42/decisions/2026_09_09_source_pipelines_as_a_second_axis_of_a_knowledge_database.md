@@ -103,6 +103,8 @@ itself, is configured, and is resolved per run exactly like an ingestion pipelin
   until the files are moved into a folder; the observation reports how many were skipped.
 - **A database once sourced keeps its content when the source is cleared.** Clearing only stops the sync; the files
   stay until the database is deleted or the ingestion pipeline is told otherwise.
+- **The `local` backend is deployment-gated.** It reads the rclone container's own filesystem, so it is offered and
+  run only where `RCLONE_LOCAL_SOURCE_ROOT` names a directory, and a database's root path is confined to it per run.
 - **The MS-Graph SharePoint and local-filesystem deploy-time factories remain.** They have no deployed consumer either;
   retiring them is a separate decision.
 
