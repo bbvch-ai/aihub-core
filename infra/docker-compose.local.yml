@@ -775,6 +775,7 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,api
     logging:
       driver: json-file
       options:
@@ -864,6 +865,7 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: 'false'
       AUTH_DISABLE_SIGNUP: 'false'
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,api
     healthcheck:
       test:
         - CMD-SHELL
@@ -2330,7 +2332,6 @@ services:
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_PUBLIC_URL: https://litellm.${DOMAIN}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
@@ -2356,7 +2357,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: https://langfuse.${DOMAIN}
       LANGFUSE_PROJECT_ID: aihub-project
-      AIHUB_OPENAI_API_BASE_URL: https://${DOMAIN}/api/v1/active/openai
+      AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://open-webui:8080
