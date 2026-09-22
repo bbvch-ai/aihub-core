@@ -231,6 +231,8 @@ import type {
   GetRoleResponse,
   GetRolesData,
   GetRolesResponse,
+  GetSourcePipelinesData,
+  GetSourcePipelinesResponse,
   GetSuiteData,
   GetSuiteResponse,
   GetSummaryNodesForDocumentData,
@@ -303,6 +305,9 @@ import type {
   UpdateAgentInstanceData,
   UpdateAgentInstanceError,
   UpdateAgentInstanceResponse,
+  UpdateDatabaseSourceData,
+  UpdateDatabaseSourceError,
+  UpdateDatabaseSourceResponse,
   UpdateDatasetData,
   UpdateDatasetError,
   UpdateDatasetResponse,
@@ -2769,6 +2774,36 @@ export const getIngestors = <
   });
 
 /**
+ * Get selectable source pipelines
+ *
+ * Returns the source pipelines a knowledge database can be filled from, with their configuration forms.
+ */
+export const getSourcePipelines = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetSourcePipelinesResponse = GetSourcePipelinesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetSourcePipelinesData,
+    GetSourcePipelinesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetSourcePipelinesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/source-pipelines",
+    ...options,
+  });
+
+/**
  * Delete a knowledge database
  *
  * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
@@ -2821,6 +2856,41 @@ export const createDatabase = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Set or clear a knowledge database's source
+ *
+ * Replaces the database's source and its configuration; secrets resubmitted as the mask keep their stored
+ * value. Takes effect on the source pipeline's next run.
+ */
+export const updateDatabaseSource = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateDatabaseSourceResponse = UpdateDatabaseSourceResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateDatabaseSourceData,
+    UpdateDatabaseSourceResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateDatabaseSourceResponse | DefaultT,
+    UpdateDatabaseSourceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/source",
     ...options,
     headers: {
       "Content-Type": "application/json",
