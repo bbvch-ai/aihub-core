@@ -19,7 +19,7 @@ The evaluation is gated: the cheapest test that can kill the Beanie option runs 
 | ----- | ------------------------------------------------- | ---------------------- | ------------------------- |
 | 1     | FerretDB 2.5 compatibility probe (go/no-go)       | `phase_1_report.md`    | **complete — verdict GO** |
 | 2     | Interim `asyncio.to_thread` fix (separate branch) | PR body                | not started               |
-| 3     | Full evaluation, incl. three-variant load measure | `phase_3_report.md`    | in progress — step 1 done |
+| 3     | Full evaluation, incl. four-variant load measure  | `phase_3_report.md`    | **complete**              |
 | 4     | ADR                                               | `docs/arc42/decisions` | not started               |
 | 5     | Migration plan + sub-issues                       | in the ADR             | not started               |
 
@@ -44,16 +44,18 @@ findings that change the migration plan.
 
 ## Phase 3 checks
 
-| #                                         | Check                                   | Gate                    | Verdict            |
-| ----------------------------------------- | --------------------------------------- | ----------------------- | ------------------ |
-| [09](checks/09_test_infrastructure.md)    | Test infrastructure (loop-bound client) | hard, for feasibility   | **PASS WITH COST** |
-| 10                                        | Three-variant load measurement          | decides the ADR          | not run            |
-| 11                                        | Sync contexts (pipeline, bot)           | cost                    | not run            |
-| 12                                        | Naive-local datetime inventory          | cost                    | not run            |
+| #                                      | Check                                   | Gate                  | Verdict            |
+| -------------------------------------- | --------------------------------------- | --------------------- | ------------------ |
+| [09](checks/09_test_infrastructure.md) | Test infrastructure (loop-bound client) | hard, for feasibility | **PASS WITH COST** |
+| [10](checks/10_load.md)                | Four-variant load measurement           | decides the ADR       | **`to_thread` holds** |
+| [11](checks/11_sync_contexts.md)       | Sync contexts (pipeline, bot)           | cost                  | **PASS** — concern evaporates |
+| [12](checks/12_datetime_inventory.md)  | Naive-local datetime inventory          | cost                  | **PASS** — 5 fields |
 
-Check 10 needs an **uncontended** stack — only FerretDB, its Postgres and NATS — and a thread pool pinned to a
-production-like width. See [check 08](checks/08_coexistence.md) for why timings taken on the full dev stack are
-contaminated.
+[`phase_3_report.md`](phase_3_report.md) holds the synthesis and the recommendation: **do not migrate now**, recorded
+against criteria pre-registered before the first measurement.
+
+Note the phase-1 entity inventory is corrected in [check 11](checks/11_sync_contexts.md): the split is 20 Document-like
++ 15 Embedded across **core and bot only**; `packages/pipeline` has zero MongoEngine entities.
 
 ## Evidence rules
 
