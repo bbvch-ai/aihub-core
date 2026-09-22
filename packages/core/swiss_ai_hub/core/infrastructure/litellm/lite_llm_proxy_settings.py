@@ -24,12 +24,13 @@ class LiteLLMProxySettings(EnvironmentSettings):
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
 
-    PUBLIC_URL: Annotated[
+    INTERNAL_BASE_URL: Annotated[
         str | None,
         Field(
-            description="Internet-reachable LiteLLM URL. Only consumed when registering the Langfuse evaluator "
-            "LLM connection: Langfuse resolves the baseURL from its own container and refuses private addresses. "
-            "All in-cluster traffic uses BASE_URL."
+            description="In-cluster LiteLLM URL that Langfuse dials from its own containers when running managed "
+            "evaluators. Falls back to BASE_URL, which is already correct wherever the API and Langfuse share a "
+            "network; set it only where they do not, as in local development where the API runs on the host. Its "
+            "hostname must appear in LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST on langfuse-web and langfuse-worker."
         ),
     ] = None
 
@@ -58,6 +59,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
             'months ("1mo").'
         ),
     ] = None
+
+    @property
+    def internal_base_url(self) -> str:
+        """Langfuse dials the registered connection itself, from a container that may not share BASE_URL's vantage."""
+        return self.INTERNAL_BASE_URL or self.BASE_URL
 
     @property
     def authorization_header(self) -> dict[str, str]:

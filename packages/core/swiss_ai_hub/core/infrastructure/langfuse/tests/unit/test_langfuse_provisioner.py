@@ -22,10 +22,10 @@ LITELLM_MODELS = [
 ]
 
 
-def _litellm_settings(public_url: str | None = "https://litellm.example.com", api_key: str | None = "sk-litellm"):
+def _litellm_settings(internal_base_url: str = "http://litellm:4000", api_key: str | None = "sk-litellm"):
     settings = MagicMock()
-    settings.BASE_URL = "http://litellm:4000"
-    settings.PUBLIC_URL = public_url
+    settings.BASE_URL = "http://localhost:4000"
+    settings.internal_base_url = internal_base_url
     if api_key is None:
         settings.API_KEY = None
     else:
@@ -134,6 +134,26 @@ class TestUpsertLLMConnection:
 
         with pytest.raises(httpx.HTTPStatusError):
             await provisioner._upsert_llm_connection(mock_client, {}, "Test")
+
+    @pytest.mark.asyncio
+    async def test_blocked_address_names_the_allowlist_and_the_hostname(self, provisioner: LangfuseProvisioner) -> None:
+        """A bare 400 cost a full debugging cycle downstream — the log must carry the remedy."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.put.return_value = httpx.Response(
+            status_code=400,
+            json={"message": "Invalid baseURL: Blocked IP address detected", "error": "InvalidRequestError"},
+            request=httpx.Request("PUT", "http://test"),
+        )
+
+        with pytest.raises(ValueError) as blocked:
+            await provisioner._upsert_llm_connection(
+                mock_client, {"baseURL": "http://litellm:4000"}, "AI-Hub LLM (Evaluators)"
+            )
+
+        message = str(blocked.value)
+        assert "LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST" in message
+        assert "'litellm'" in message
+        assert "langfuse-worker" in message
 
 
 class TestCreateModelDefinition:
@@ -253,10 +273,12 @@ class TestJudgeModels:
 
 
 class TestRegisterLiteLLMConnection:
-    """Langfuse dials this connection from its own container, so it must carry the public URL."""
+    """Langfuse dials this connection from its own container, so it carries the URL reachable from there."""
 
     @pytest.mark.asyncio
-    async def test_registers_the_public_url_never_the_cluster_url(self, provisioner: LangfuseProvisioner) -> None:
+    async def test_registers_the_langfuse_facing_url_not_the_api_side_one(
+        self, provisioner: LangfuseProvisioner
+    ) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
@@ -266,8 +288,8 @@ class TestRegisterLiteLLMConnection:
             await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
 
         connection_data = mock_upsert.call_args[0][1]
-        assert connection_data["baseURL"] == "https://litellm.example.com"
-        assert "http://litellm:4000" not in str(connection_data)
+        assert connection_data["baseURL"] == "http://litellm:4000"
+        assert "localhost:4000" not in str(connection_data)
 
     @pytest.mark.asyncio
     async def test_custom_models_exclude_ocr_entries(self, provisioner: LangfuseProvisioner) -> None:
@@ -282,13 +304,18 @@ class TestRegisterLiteLLMConnection:
         assert mock_upsert.call_args[0][1]["customModels"] == ["text-generation/gemma-4-31B-it"]
 
     @pytest.mark.asyncio
-    async def test_raises_when_public_url_is_unset(self, provisioner: LangfuseProvisioner) -> None:
+    @pytest.mark.parametrize("loopback", ["http://localhost:4000", "http://127.0.0.1:4000", "http://[::1]:4000"])
+    async def test_raises_when_the_url_is_loopback(self, provisioner: LangfuseProvisioner, loopback: str) -> None:
+        """Falling back to the host-side BASE_URL in dev would register a URL that only reaches Langfuse itself."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings(public_url=None)),
+            patch(
+                f"{PROVISIONER_MODULE}.LiteLLMProxySettings",
+                return_value=_litellm_settings(internal_base_url=loopback),
+            ),
             patch.object(provisioner, "_upsert_llm_connection") as mock_upsert,
-            pytest.raises(ValueError, match="LITE_LLM_PROXY_PUBLIC_URL"),
+            pytest.raises(ValueError, match="LITE_LLM_PROXY_INTERNAL_BASE_URL"),
         ):
             await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
 
@@ -306,6 +333,20 @@ class TestRegisterLiteLLMConnection:
             await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
 
         mock_upsert.assert_not_called()
+
+
+class TestBuildAihubConnectionData:
+    """The agents connection is dialled from the Langfuse container just as the evaluator one is."""
+
+    def test_raises_when_the_agent_url_is_loopback(self, provisioner: LangfuseProvisioner) -> None:
+        settings = MagicMock()
+        settings.OPENAI_API_BASE_URL = "http://localhost:8000/api/v1/active/openai"
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.AIHubSettings", return_value=settings),
+            pytest.raises(ValueError, match="AIHUB_OPENAI_API_BASE_URL"),
+        ):
+            provisioner._build_aihub_connection_data(custom_models=[])
 
 
 class TestRunStep:
