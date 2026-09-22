@@ -20,7 +20,7 @@ def _bucket(**overrides) -> MagicMock:
         id=BUCKET_ID,
         bucket_name=DATABASE,
         db_name=DATABASE,
-        auto_sync=False,
+        source=None,
         ingestor=IngestorType.DOCUMENT_INGESTION.value,
     )
     defaults.update(overrides)
@@ -50,19 +50,18 @@ class TestDeleteDatabase:
         assert exc_info.value.status_code == 404
         bucket_cls.mark_deleting.assert_not_called()
 
-    def test_refuses_to_delete_an_auto_sync_database(self):
+    def test_allows_deleting_a_sourced_database(self):
+        """Tearing a sourced database down ends its sync; nothing refills it, unlike the deploy-bound legacy ones."""
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
         ):
-            bucket_cls.get_bucket_by_db_name.return_value = _bucket(auto_sync=True)
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone")
+            namespace_cls.get_namespaces_by_bucket.return_value = []
 
-            with pytest.raises(HTTPException) as exc_info:
-                KnowledgeService.delete_database(database=DATABASE)
+            KnowledgeService.delete_database(database=DATABASE)
 
-        assert exc_info.value.status_code == 403
-        bucket_cls.mark_deleting.assert_not_called()
-        namespace_cls.mark_all_deleting_for_bucket.assert_not_called()
+        bucket_cls.mark_deleting.assert_called_once()
 
     @pytest.mark.parametrize("legacy_ingestor", [IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value])
     def test_refuses_to_delete_a_legacy_database(self, legacy_ingestor):
@@ -107,12 +106,13 @@ class TestDeleteNamespace:
         assert exc_info.value.status_code == 404
         namespace_cls.mark_deleting.assert_not_called()
 
-    def test_refuses_a_namespace_delete_on_an_auto_sync_database(self):
+    def test_refuses_a_namespace_delete_on_a_sourced_database(self):
+        """The source would recreate the folder on its next run; the namespace is managed at the source."""
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
         ):
-            bucket_cls.get_bucket_by_db_name.return_value = _bucket(auto_sync=True)
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone")
 
             with pytest.raises(HTTPException) as exc_info:
                 KnowledgeService.delete_namespace(database=DATABASE, namespace=NAMESPACE)

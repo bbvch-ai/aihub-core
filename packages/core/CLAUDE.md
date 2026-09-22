@@ -78,6 +78,8 @@ packages/core/swiss_ai_hub/core/
 │   └── utils/                       # Shared AI utilities
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
+├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
+│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from Password elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
 │   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
@@ -113,11 +115,11 @@ packages/core/swiss_ai_hub/core/
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
 │   ├── form/                        # ConfigSpecsEntity (announced schema, stored as a JSON string)
 │   ├── i18n/                        # LocaleStringEntity
-│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, NamespaceEntity, …)
+│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, SourcePipelineEntity, NamespaceEntity, …)
 │   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)
-├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral)
+├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral) + SourceUpdatedPublisher (data lake changed → owning ingestor)
 ├── records/                         # Record types
 ├── requester/                       # RPC request side (AbstractRequester, NCRequester)
 ├── responder/                       # RPC response side (AbstractResponder, NCResponder)
