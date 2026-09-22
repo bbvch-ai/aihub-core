@@ -54,7 +54,7 @@ Fourteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence re
   Beanie and MongoEngine write **identical document shapes**, and a synchronous `MongoClient` coexists with an
   `AsyncMongoClient` on one collection in one process, each reading the other's writes. Entities can move one at a time.
 - **The migration surface is smaller than the issue implies**\
-  35 entity classes live in `packages/core` (28) and `packages/bot` (7) **only**. `packages/pipeline` holds **zero** —
+  36 entity classes live in `packages/core` (29) and `packages/bot` (7) **only**. `packages/pipeline` holds **zero** —
   its two `Document` classes are LlamaIndex's and its `connect_to_mongo_db` is dead code. There is no synchronous
   context to work around, and no need for Bunnet or a permanent two-ODM split.
 - **Beanie 2.x uses PyMongo's supported async driver**\
@@ -184,7 +184,8 @@ resume after its worker thread returns. The benefit comes from freeing the loop,
   future author who does not know rule 4 exists can still reintroduce a double-applying migration.
 - **The per-database routing registry is new code** with concurrency requirements that did not exist under MongoEngine,
   replacing a mechanical translation that fails in a cross-tenant direction.
-- **Migration effort across 35 entity classes and 139 `.objects(` call sites.** Every repository classmethod becomes
+- **Migration effort across 36 entity classes and 144 `.objects(` call sites**, and the surface grows while the decision
+  is deliberated — `SourcePipelineEntity` landed on `main` during this evaluation. Every repository classmethod becomes
   `async`, cascading into every service and test that calls it.
 - **The evaluation ran on a development host**, not production: 20 cores, Windows, single-node FerretDB, a synthetic
   saturator, no LLM traffic, no agent runners and a warm corpus, exercising only the config RPC path. The 123-second
