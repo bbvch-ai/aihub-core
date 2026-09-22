@@ -128,10 +128,27 @@ const groupedOptions = computed<CollectionGroup[]>(() => {
     })
     byDatabase.set(pair.bucket_name, options)
   }
-  return [...byDatabase.entries()].map(([database, items]) => ({
+  const groups = [...byDatabase.entries()].map(([database, items]) => ({
     label: databaseNames.value[database] || capitalCase(database),
     items,
   }))
+
+  // PrimeVue labels a chip from the matching option, so a selection the agent does not retrieve from
+  // would otherwise render as its remove icon and nothing else. It is listed under its own group,
+  // qualified by database because that is usually what went wrong — the selection was made against a
+  // different agent — and so the narrowing the run still applies stays visible enough to act on.
+  const available = new Set(collections.value.map(keyOf))
+  const unavailable = currentValue.value.filter(pair => !available.has(keyOf(pair)))
+  if (unavailable.length === 0) return groups
+
+  return [...groups, {
+    label: t('lib.knowledgeCollections.unavailable'),
+    items: unavailable.map(pair => ({
+      key: keyOf(pair),
+      displayName: `${databaseNames.value[pair.bucket_name] || capitalCase(pair.bucket_name)} / ${capitalCase(pair.namespace_name)}`,
+      pair,
+    })),
+  }]
 })
 
 // A selection saved before the referenced agent lost a collection would silently disappear from the

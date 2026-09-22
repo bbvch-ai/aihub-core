@@ -877,6 +877,7 @@ lib:
     noSource: Diesem Feld ist kein Wissensagent zugeordnet, daher können keine Sammlungen
       angeboten werden.
     empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
+    unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

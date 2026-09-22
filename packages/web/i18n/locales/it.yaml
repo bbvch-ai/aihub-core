@@ -876,6 +876,7 @@ lib:
     noSource: A questo campo non è associato alcun agente di conoscenza, quindi non
       è possibile offrire raccolte.
     empty: L'agente selezionato non è configurato per alcuna raccolta.
+    unavailable: Salvata, ma non consultata dall'agente selezionato
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
