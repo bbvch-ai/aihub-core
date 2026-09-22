@@ -75,7 +75,7 @@ config:
       fit, keeping the opening of the body.
   classification_model:
     label: Classification Model
-    help: Chat model used to classify each message. Leave empty to use the agent's
+    help: Chat model used to classify each message. Leave it off to use the agent's
       main model.
   classification_prompt:
     label: Classification Prompt
@@ -105,7 +105,7 @@ config:
   category_knowledge_namespace:
     label: Knowledge Collection
     help: Collection this category's replies are grounded in. Set it and the reply
-      is answered from the documents in that collection and no other. Leave it empty
+      is answered from the documents in that collection and no other. Leave it off
       and the reply is written from the message alone, without retrieval.
   knowledge_databases:
     label: Knowledge Databases

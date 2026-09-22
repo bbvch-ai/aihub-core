@@ -82,8 +82,8 @@ config:
       troncati, mantenendo l'inizio del corpo.
   classification_model:
     label: Modello di classificazione
-    help: Modello di chat usato per classificare ogni messaggio. Lascia vuoto per
-      usare il modello principale dell'agente.
+    help: Modello di chat usato per classificare ogni messaggio. Lascialo disattivato
+      per usare il modello principale dell'agente.
   classification_prompt:
     label: Prompt di classificazione
     help: Istruzioni che guidano il modo in cui il modello sceglie una categoria.
@@ -112,8 +112,8 @@ config:
   category_knowledge_namespace:
     label: Raccolta di conoscenze
     help: Raccolta su cui si basano le risposte di questa categoria. Se impostata,
-      la risposta proviene solo dai documenti di quella raccolta. Se vuota, la risposta
-      è scritta unicamente dal messaggio, senza ricerca.
+      la risposta proviene solo dai documenti di quella raccolta. Se disattivata,
+      la risposta è scritta unicamente dal messaggio, senza ricerca.
   knowledge_databases:
     label: Basi di conoscenza
     help: Basi in cui vengono cercate le raccolte delle categorie. Necessarie solo

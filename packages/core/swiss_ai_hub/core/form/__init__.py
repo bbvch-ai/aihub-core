@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
     from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
+    from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
     from swiss_ai_hub.core.form.config_specs import ConfigSpecs
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
@@ -51,6 +52,7 @@ __all__ = [
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
+    "PrimeVueElement",
     "Repeater",
     "SecretFieldWalker",
     "Select",
@@ -83,6 +85,7 @@ _LAZY_IMPORTS = {
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
+    "PrimeVueElement": "swiss_ai_hub.core.form.base.prime_vue_element",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
     "Select": "swiss_ai_hub.core.form.elements.select",

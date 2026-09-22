@@ -82,8 +82,8 @@ config:
       tronqués, en conservant le début du corps.
   classification_model:
     label: Modèle de classification
-    help: Modèle de chat utilisé pour classer chaque message. Laissez vide pour utiliser
-      le modèle principal de l'agent.
+    help: Modèle de chat utilisé pour classer chaque message. Laissez-le désactivé
+      pour utiliser le modèle principal de l'agent.
   classification_prompt:
     label: Invite de classification
     help: Instructions guidant la façon dont le modèle choisit une catégorie.
@@ -114,7 +114,8 @@ config:
     label: Collection de connaissances
     help: Collection sur laquelle les réponses de cette catégorie sont fondées. Si
       elle est définie, la réponse provient uniquement des documents de cette collection.
-      Si elle est vide, la réponse est rédigée à partir du seul message, sans recherche.
+      Si elle est désactivée, la réponse est rédigée à partir du seul message, sans
+      recherche.
   knowledge_databases:
     label: Bases de connaissances
     help: Bases dans lesquelles les collections des catégories sont recherchées. Nécessaire

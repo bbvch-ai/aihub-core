@@ -80,8 +80,8 @@ config:
       wobei der Anfang des Textes erhalten bleibt.
   classification_model:
     label: Klassifizierungsmodell
-    help: Chat-Modell, das jede Nachricht klassifiziert. Leer lassen, um das Hauptmodell
-      des Agenten zu verwenden.
+    help: Chat-Modell, das jede Nachricht klassifiziert. Ausgeschaltet lassen, um
+      das Hauptmodell des Agenten zu verwenden.
   classification_prompt:
     label: Klassifizierungs-Prompt
     help: Anweisungen, wie das Modell eine Kategorie auswählt.
@@ -113,7 +113,8 @@ config:
     label: Wissenssammlung
     help: Sammlung, auf der die Antworten dieser Kategorie basieren. Ist sie gesetzt,
       wird die Antwort ausschliesslich aus den Dokumenten dieser Sammlung erstellt.
-      Bleibt sie leer, wird die Antwort allein aus der Nachricht verfasst, ohne Suche.
+      Bleibt sie ausgeschaltet, wird die Antwort allein aus der Nachricht verfasst,
+      ohne Suche.
   knowledge_databases:
     label: Wissensdatenbanken
     help: Datenbanken, in denen die Sammlungen der Kategorien gesucht werden. Nur

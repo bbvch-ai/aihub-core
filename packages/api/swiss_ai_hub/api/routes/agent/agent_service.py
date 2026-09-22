@@ -367,6 +367,9 @@ class AgentService:
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
         config_instance = InstanceConfigHelper.validate_config_for_update(
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
@@ -455,6 +458,9 @@ class AgentService:
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
         config_instance = InstanceConfigHelper.validate_config_for_create(
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )

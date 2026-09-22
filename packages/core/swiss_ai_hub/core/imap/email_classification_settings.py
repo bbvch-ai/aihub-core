@@ -38,13 +38,13 @@ class EmailClassificationSettings(StepConfig):
         ),
     ]
     knowledge_databases: Annotated[
-        list[str] | KnowledgeDatabaseSelector,
+        list[str] | KnowledgeDatabaseSelector | None,
         Field(
-            default_factory=list,
+            default=None,
             title="Knowledge databases",
             description="Databases the categories' collections are looked up in. Needed only when a category names a "
             "collection: a collection name alone does not identify a database, and the RAG agent's retrievers are "
-            "keyed by database.",
+            "keyed by database. Leave unset otherwise.",
         ),
     ]
     fallback_folder: Annotated[
@@ -77,8 +77,8 @@ class EmailClassificationSettings(StepConfig):
         Gt(0),
     ]
     model_name: Annotated[
-        str | ModelSelect,
-        Field(default="", description="Chat model used to classify. Leave empty to use the agent's main model."),
+        str | ModelSelect | None,
+        Field(default=None, description="Chat model used to classify. Unset to use the agent's main model."),
     ]
     classification_prompt: Annotated[
         str | Textarea,

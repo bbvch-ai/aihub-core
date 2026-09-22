@@ -6,6 +6,7 @@ from swiss_ai_hub.core.agents import CRON_CONFIG_KEY
 from swiss_ai_hub.core.form import (
     FormkitElement,
     Group,
+    PrimeVueElement,
     Repeater,
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
@@ -151,6 +152,102 @@ class InstanceConfigHelper:
             if isinstance(entry, dict):
                 undeclared.extend(InstanceConfigHelper._undeclared_fields(children, entry, f"{field_path}.{index}."))
         return undeclared
+
+    @staticmethod
+    def reject_blank_required_fields(elements: list[FormkitElement], config: dict[str, Any]) -> None:
+        """Reject a submission that left a field blank which the announced form marks required.
+
+        The generated model cannot do this reliably. `required` on a form element carries FormKit's
+        meaning — the user must put something here — while the JSON schema only carries Pydantic's,
+        which is that the key is present, and `{"type": "string"}` is satisfied by `""` just as much as
+        by a real value. A field with no Pydantic default (e.g. `ImapClientConfig.host`) happens to
+        reject a missing/`None` submission too, via `str`'s own type check — but that is an accident of
+        the annotation, not a required-field rule: it rejects `None` and accepts `""` identically,
+        neither one because it is "blank". A required field carrying a default (`password`, which
+        defaults to `""` so its login can stay optional at the class level) is not even in the schema's
+        `required` list, so the accidental protection does not apply to it at all.
+
+        Read from the announced elements rather than the schema, because they are the only place holding
+        the form's own answer, independent of whether a Pydantic default happens to mask it.
+
+        Runs before the generated model so a blank field is named as itself. The model, when it does
+        reject a leaf, reports either a missing key or a type mismatch and says nothing about a
+        present-and-empty value, which is the case that actually reaches here.
+        """
+        blank = InstanceConfigHelper._blank_required_fields(elements, config, prefix="")
+        if not blank:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(blank)}")
+
+    @staticmethod
+    def _blank_required_fields(elements: list[FormkitElement], config: dict[str, Any], prefix: str) -> list[str]:
+        """Every required leaf left blank, deepest-last, as `field`, `group.field`, `repeater.0.field`."""
+        blank: list[str] = []
+
+        for element in elements:
+            name = getattr(element, "name", None)
+            if not name:
+                continue
+
+            value = config.get(name)
+            field_path = f"{prefix}{name}"
+
+            if isinstance(element, Group):
+                # Only descend into a submitted object. A null group is a nullable section switched off, and
+                # requiring the children it is not submitting would make the toggle impossible to leave off.
+                if isinstance(value, dict):
+                    blank.extend(InstanceConfigHelper._blank_required_fields(element.children, value, f"{field_path}."))
+            elif isinstance(element, Repeater):
+                blank.extend(InstanceConfigHelper._blank_required_in_entries(element.children, value, field_path))
+            elif InstanceConfigHelper._is_blank_required_leaf(element, value):
+                blank.append(f"{field_path}: required field is empty")
+
+        return blank
+
+    @staticmethod
+    def _blank_required_in_entries(children: list[FormkitElement], entries: Any, field_path: str) -> list[str]:
+        """Each repeated entry against the same announced children, indexed so a rejection names the row."""
+        if not isinstance(entries, list):
+            return []
+
+        blank: list[str] = []
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict):
+                blank.extend(InstanceConfigHelper._blank_required_fields(children, entry, f"{field_path}.{index}."))
+        return blank
+
+    @staticmethod
+    def _is_blank_required_leaf(element: FormkitElement, value: Any) -> bool:
+        """Whether this leaf is one the form requires and the submission left blank.
+
+        A conditional element is skipped: whether it is shown at all depends on a FormKit expression over the
+        rest of the form (`$get(...).value`), which only the browser can evaluate. Rejecting a field the user
+        was never offered would be a worse bug than the gap this closes.
+        """
+        if not isinstance(element, PrimeVueElement) or not element.required:
+            return False
+        if element.condition_if is not None:
+            return False
+        return InstanceConfigHelper._is_blank(value)
+
+    @staticmethod
+    def _is_blank(value: Any) -> bool:
+        """FormKit's `empty()`, over the values a submission can carry.
+
+        `None` and `""` are treated identically — deliberately, since which shape a blank field arrives in
+        depends on how it got there (an untouched fresh field seeds to `None`; a template's placeholder
+        carries `""`), not on whether it is actually filled in. `False` and `0` are values, not blanks — as
+        on the client, where an unchecked box satisfies `required` (and why `Form._prepare_formkit_element`
+        never auto-requires a toggle). Deliberately not trimmed, to match the plain `required` rule the
+        browser runs: `required:trim` is a separate opt-in rule, and being stricter here than the form would
+        reject a submission the user watched pass validation.
+        """
+        if value is None:
+            return True
+        if isinstance(value, str | list | dict | tuple):
+            return len(value) == 0
+        return False
 
     @staticmethod
     def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:

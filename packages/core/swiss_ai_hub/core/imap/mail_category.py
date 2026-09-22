@@ -52,11 +52,11 @@ class MailCategory(Form):
         ),
     ]
     knowledge_namespace: Annotated[
-        str | InputText,
+        str | InputText | None,
         Field(
-            default="",
+            default=None,
             description="Knowledge collection this category's replies are grounded in. Set it and the reply is "
-            "answered from the documents in that collection and no other; leave it empty and the reply is written "
+            "answered from the documents in that collection and no other; leave it unset and the reply is written "
             "from the message alone, with no retrieval.",
         ),
     ]
