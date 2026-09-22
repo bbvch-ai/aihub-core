@@ -113,14 +113,33 @@ class IncidentService:
         client: GitHubIssueClient,
     ) -> dict[str, str]:
         urls: dict[str, str] = {}
-        for attachment in attachments:
-            name = cls._safe_filename(attachment.filename, len(urls))
+        for index, attachment in enumerate(attachments):
+            name = cls._unused(cls._safe_filename(attachment.filename, index), urls)
             urls[name] = await client.commit_attachment(
                 path=f"attachments/{reference}/{name}",
                 content=await attachment.read(),
                 message=f"Attach {name} to {reference}",
             )
         return urls
+
+    @staticmethod
+    def _unused(name: str, taken: dict[str, str]) -> str:
+        """Every attachment on one report shares a directory, so a repeated name has to move.
+
+        Two screenshots both called `image.png` is the ordinary case, not an edge one — a
+        screenshot tool names them that way. The contents API refuses a write over an existing
+        path outright, which would otherwise lose the whole report, and the name is also the
+        link text in the issue body, so the second file has to stay distinguishable there too.
+        """
+        if name not in taken:
+            return name
+        stem, dot, extension = name.rpartition(".")
+        if not dot:
+            stem, extension = name, ""
+        ordinal = 2
+        while f"{stem}-{ordinal}{dot}{extension}" in taken:
+            ordinal += 1
+        return f"{stem}-{ordinal}{dot}{extension}"
 
     @staticmethod
     def _safe_filename(filename: str | None, index: int) -> str:

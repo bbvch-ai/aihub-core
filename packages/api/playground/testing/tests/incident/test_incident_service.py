@@ -162,6 +162,49 @@ async def test_should_commit_attachments_under_the_report_reference() -> None:
 
 
 @pytest.mark.asyncio
+async def test_should_keep_both_attachments_a_reporter_gave_the_same_name() -> None:
+    """Two screenshots both called `image.png` is what a screenshot tool produces, not an edge case.
+
+    One path per report directory, so the repeated name has to move: the contents API refuses a
+    write over an existing path, and that refusal would otherwise lose the entire report.
+    """
+    client = _RecordingClient()
+
+    created = await _create(VALID, [_upload("image.png", b"first"), _upload("image.png", b"second")], client)
+
+    assert [path for path, _ in client.committed] == [
+        f"attachments/{created.reference}/image.png",
+        f"attachments/{created.reference}/image-2.png",
+    ]
+    assert [content for _, content in client.committed] == [b"first", b"second"]
+    assert created.attachments == 2
+
+
+@pytest.mark.asyncio
+async def test_should_separate_names_that_only_collide_once_sanitised() -> None:
+    """`my file.png` and `my-file.png` are distinct to the reporter and identical after cleaning."""
+    client = _RecordingClient()
+
+    created = await _create(VALID, [_upload("my file.png"), _upload("my-file.png")], client)
+
+    assert [path for path, _ in client.committed] == [
+        f"attachments/{created.reference}/my-file.png",
+        f"attachments/{created.reference}/my-file-2.png",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_should_list_every_attachment_in_the_issue_body() -> None:
+    """Same-named files must not collapse into one link — the body is the only index of them."""
+    client = _RecordingClient()
+
+    await _create(VALID, [_upload("image.png"), _upload("image.png")], client)
+
+    assert "[image.png]" in client.issue["body"]
+    assert "[image-2.png]" in client.issue["body"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("filename", "expected"),
     [
