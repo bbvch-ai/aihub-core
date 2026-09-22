@@ -88,6 +88,7 @@ dependencies = [
     "starlette>=1.0.1",
     "croniter>=6.2.4",
     "cryptography>=44.0.0",
+    "beanie>=2.2.0",
 ]
 
 [dependency-groups]
