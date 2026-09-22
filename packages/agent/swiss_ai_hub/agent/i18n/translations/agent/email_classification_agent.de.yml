@@ -1,11 +1,8 @@
 ---
 metadata:
-  name: E-Mail-Klassifizierungsagent
-  description: Liest jede ungelesene Nachricht in einem Postfach, entscheidet, zu
-    welcher Kategorie sie gehört, und legt sie im Ordner dieser Kategorie ab. E-Mails,
-    bei denen er unsicher ist, kommen in einen Ausweichordner. Er versendet nie. Für
-    Kategorien, die dies verlangen, werden Antworten entworfen und im Entwurfsordner
-    abgelegt.
+  name: E-Mail-Verarbeitungsagent
+  description: Sortiert ungelesene E-Mails in Kategorienordner und entwirft Antworten,
+    die ein Mensch versendet.
 steps:
   list_unread:
     name: Ungelesene E-Mails auflisten
