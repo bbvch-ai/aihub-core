@@ -9,7 +9,8 @@ from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSync
 
 
 class TestAnnouncedForm:
-    def test_one_group_per_backend_shown_only_for_the_selected_backend(self):
+    def test_one_group_per_backend_shown_only_for_the_selected_backend(self, monkeypatch):
+        monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data")
         elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
 
         assert isinstance(elements["backend_type"], Select)
@@ -19,6 +20,13 @@ class TestAnnouncedForm:
         for name, group in groups.items():
             assert group.condition_if == f"$get(rclone_backend_type).value === '{name}'"
             assert group.nullable is False
+
+    def test_the_local_backend_is_not_offered_unless_the_deployment_names_a_root(self, monkeypatch):
+        monkeypatch.delenv("RCLONE_LOCAL_SOURCE_ROOT", raising=False)
+        elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
+
+        assert "local" not in elements["backend_type"].options
+        assert len(elements["backend_type"].options) == len(RcloneBackendType) - 1
 
     def test_every_credential_is_a_secret_path_derived_from_the_form(self):
         assert RcloneSyncConfig.secret_field_paths() == {
@@ -87,13 +95,37 @@ class TestToRcloneSourceConfig:
         with pytest.raises(ValueError, match="access_key_id\\+secret_access_key"):
             config.to_rclone_source_config("r")
 
-    def test_the_remote_spec_keeps_local_paths_absolute_and_strips_cloud_paths(self):
+    def test_the_remote_spec_keeps_local_paths_absolute_and_strips_cloud_paths(self, monkeypatch):
+        monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data")
         cloud = RcloneSyncConfig.model_validate({"backend_type": "s3", "root_path": "/bucket/docs/"})
         local = RcloneSyncConfig.model_validate({"backend_type": "local", "root_path": "/data/shared"})
 
         assert cloud.remote_fs("r") == "r:bucket/docs"
         assert local.remote_fs("r") == "r:/data/shared"
         assert local.to_rclone_source_config("r").options == {}
+
+
+class TestLocalBackendConfinement:
+    def test_a_local_source_is_refused_per_run_where_the_deployment_allows_no_directory(self, monkeypatch):
+        monkeypatch.delenv("RCLONE_LOCAL_SOURCE_ROOT", raising=False)
+        config = RcloneSyncConfig.model_validate({"backend_type": "local", "root_path": "/etc"})
+
+        with pytest.raises(ValueError, match="RCLONE_LOCAL_SOURCE_ROOT"):
+            config.remote_fs("r")
+
+    @pytest.mark.parametrize("escape", ["/etc", "/data/../etc", "/data2", "/"])
+    def test_a_root_outside_the_allowed_directory_is_refused(self, monkeypatch, escape):
+        monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data/")
+        config = RcloneSyncConfig.model_validate({"backend_type": "local", "root_path": escape})
+
+        with pytest.raises(ValueError, match="may only read below '/data'"):
+            config.remote_fs("r")
+
+    def test_an_empty_root_path_means_the_allowed_directory_itself(self, monkeypatch):
+        monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data")
+        config = RcloneSyncConfig.model_validate({"backend_type": "local"})
+
+        assert config.remote_fs("r") == "r:/data"
 
 
 class TestMultiLineSecrets:

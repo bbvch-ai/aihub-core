@@ -1,11 +1,13 @@
 import json
+import posixpath
+from pathlib import PurePosixPath
 from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator
 from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure.rclone import RcloneBackendType, RcloneSourceConfig
+from swiss_ai_hub.core.infrastructure.rclone import RcloneBackendType, RcloneSettings, RcloneSourceConfig
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 _I18N = "lib.source_pipelines.rclone.config"
@@ -174,7 +176,8 @@ class SftpOptions(Form):
 
 
 class LocalOptions(Form):
-    """rclone ``local`` has no credentials; ``root_path`` is a path inside the rclone container."""
+    """rclone ``local`` has no credentials; ``root_path`` is a path inside the rclone container, and only below
+    ``RCLONE_LOCAL_SOURCE_ROOT``: without that setting the backend is neither offered nor run."""
 
     @classmethod
     def as_form(cls) -> Self:
@@ -221,12 +224,18 @@ class RcloneSyncConfig(SourcePipelineConfig):
     local: Annotated[LocalOptions, Field(description="Local filesystem options.")] = Field(default_factory=LocalOptions)
 
     @classmethod
+    def offered_backends(cls) -> list[RcloneBackendType]:
+        """Every backend but ``local`` unless the deployment names a directory the daemon may serve from."""
+        allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
+        return [b for b in RcloneBackendType if b is not RcloneBackendType.LOCAL or allowed_root]
+
+    @classmethod
     def as_form(cls) -> Self:
         return cls(
             backend_type=Select(
                 label=LocaleString.from_i18n_path(f"{_I18N}.backend_type.label"),
                 help=LocaleString.from_i18n_path(f"{_I18N}.backend_type.help"),
-                options=[backend.value for backend in RcloneBackendType],
+                options=[backend.value for backend in cls.offered_backends()],
                 ref=_BACKEND_REF,
                 required=True,
             ),
@@ -278,8 +287,24 @@ class RcloneSyncConfig(SourcePipelineConfig):
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)
 
     def remote_fs(self, remote_name: str) -> str:
-        root = self.root_path if self.backend is RcloneBackendType.LOCAL else self.root_path.strip("/")
-        return f"{remote_name}:{root}"
+        if self.backend is RcloneBackendType.LOCAL:
+            return f"{remote_name}:{self._local_root_within_allowed_directory()}"
+        return f"{remote_name}:{self.root_path.strip('/')}"
+
+    def _local_root_within_allowed_directory(self) -> str:
+        """The form is advisory: a stored configuration is re-checked on every run against the deployment's
+        ``RCLONE_LOCAL_SOURCE_ROOT``, so a `local` source can never leave that directory or run where the
+        setting is absent."""
+        allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
+        if not allowed_root:
+            raise ValueError(
+                "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
+            )
+        allowed = PurePosixPath(posixpath.normpath(allowed_root))
+        requested = PurePosixPath(posixpath.normpath(self.root_path)) if self.root_path.strip() else allowed
+        if requested != allowed and allowed not in requested.parents:
+            raise ValueError(f"rclone backend 'local' may only read below '{allowed}', not '{requested}'.")
+        return str(requested)
 
     def _require(self, options: dict[str, Any]) -> None:
         alternatives: dict[RcloneBackendType, list[set[str]]] = {

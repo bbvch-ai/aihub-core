@@ -53,10 +53,11 @@ def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     """
     config = source_config_for_bucket(bucket, source, RcloneSyncConfig)
     name = remote_name_for_bucket(bucket, source)
+    fs = config.remote_fs(name)
     build_rclone_client().upsert_remote(config.to_rclone_source_config(name))
     return RcloneRemote(
         name=name,
-        fs=config.remote_fs(name),
+        fs=fs,
         include_patterns=config.include_patterns or [],
         exclude_patterns=config.exclude_patterns or [],
     )
