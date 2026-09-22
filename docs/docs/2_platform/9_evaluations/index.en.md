@@ -38,18 +38,17 @@ Set it once, after deployment:
 This is a one-time action per deployment — Langfuse runs a single project for the whole platform, so it does not need
 repeating per tenant.
 
-::: warning Experiments do not work out of the box in local development
-Langfuse issues both the agent call and the judge call **from its own container**, and refuses any private address, so
-both connections are registered with public URLs. Development, `local` and `build` have no public domain, so:
+::: tip Upgrading a local environment created before September 2026
+Langfuse issues both the agent call and the judge call **from its own container**, so both connections must carry
+addresses reachable from there. `.env.dev` now ships them, but an `.env` copied before that change does not. Add:
 
-- The evaluator connection cannot be registered at all — API startup logs an error naming `LITE_LLM_PROXY_PUBLIC_URL`
-  and `AI-Hub LLM (Evaluators)` stays absent.
-- Agent experiments fail with `Connection error`, because the dev compose file has no `api` service (the API runs on
-  your host), so `api` does not resolve inside the Langfuse container.
+```bash
+LITE_LLM_PROXY_INTERNAL_BASE_URL='http://litellm:4000'
+AIHUB_OPENAI_API_BASE_URL='http://host.docker.internal:8000/api/v1/active/openai'
+```
 
-To exercise them locally, point both settings at addresses the Langfuse container can reach — for example
-`LITE_LLM_PROXY_PUBLIC_URL='http://litellm:4000'` and
-`AIHUB_OPENAI_API_BASE_URL='http://host.docker.internal:8000/api/v1/active/openai'`. Otherwise use a deployed stage.
+Without them the API refuses to register the connections at startup, logging an error that names the missing setting —
+the host-side defaults point at `localhost`, which inside the Langfuse container is Langfuse itself.
 :::
 
 ## 1. Create a dataset
