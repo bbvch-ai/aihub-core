@@ -340,14 +340,14 @@ def _grounding_three() -> dict:
 
 
 @given(
-    "an EmailClassificationAgent runner narrowing support_request but not invoice",
+    "an EmailClassificationAgent runner grounding support_request but not invoice",
     target_fixture="scenario",
 )
 def _grounding_mixed() -> dict:
-    """Both categories are answered from knowledge; only one of them narrows which collections answer it.
+    """One category answers from knowledge, the other from the message alone, in the same run.
 
-    Narrowing is what a category decides — whether replies are grounded at all is the profile's knowledge agent, so
-    the unnarrowed category is delegated too, with the delegate's own scope.
+    Grounding is what a category opts into: naming collections delegates it, naming none drafts it locally even with
+    a knowledge agent configured. The two paths still converge on one drafting pass, which is what this exercises.
     """
     invoice_drafting = _INVOICE.model_copy(update={"draft_reply": True})
     return {
@@ -357,7 +357,7 @@ def _grounding_mixed() -> dict:
         "draft": _grounded_drafting(),
         "knowledge_delegation": _delegation(),
         "collections": [_SUPPORT_COLLECTION],
-        "expected_delegations": 2,
+        "expected_delegations": 1,
     }
 
 
@@ -850,18 +850,20 @@ def _(agent_runner: AgentTestRunner):
     assert _NO_INFORMATION_DRAFT not in bodies[0], "reporting an outage as an absence of knowledge hides the outage"
 
 
-@then("only the support_request delegation was scoped to a collection")
+@then("only support_request was delegated, scoped to its collection")
 def _(agent_runner: AgentTestRunner):
-    """Both messages are answered from knowledge; only the narrowed category restricts which collections answer it.
+    """Only the category naming collections is delegated; the other is drafted from the message alone.
 
-    An unnarrowed category sends no selection at all rather than a selection of everything — `narrow_retrievers`
-    reads an empty one as "leave every configured retriever in place", which is the delegate's own scope.
+    The unnarrowed category is deliberately not delegated with an empty selection: `narrow_retrievers` reads an empty
+    one as "leave every configured retriever in place", so it would answer from the delegate's whole scope — a
+    widening the category never opted into. Both still converge on one drafting pass, which is why the body count is
+    asserted alongside the delegation count.
     """
     scopes = [
         [(pair.bucket_name, pair.namespace_name) for pair in request.start_event.selected_namespaces]
         for request in _delegations(agent_runner)
     ]
-    assert sorted(scopes) == [[], [(_KNOWLEDGE_DB, _SUPPORT_COLLECTION)]]
+    assert scopes == [[(_KNOWLEDGE_DB, _SUPPORT_COLLECTION)]]
 
     bodies = _appended_bodies(agent_runner)
     assert len(bodies) == 2
