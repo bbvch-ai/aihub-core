@@ -112,9 +112,9 @@ config:
   category_knowledge_namespaces:
     label: Raccolte di conoscenze
     help: Raccolte da cui vengono scritte le risposte di questa categoria. Senza selezione
-      la risposta proviene da tutto ciò che l'agente di conoscenza consulta; con la
-      selezione attiva la ricerca è limitata alle raccolte scelte qui e a nessun'altra.
-      Vengono offerte solo le raccolte per cui quell'agente è configurato.
+      la risposta è scritta solo dal messaggio, senza ricerca; con la selezione attiva
+      proviene dalle raccolte scelte qui e da nessun'altra. Vengono offerte solo le
+      raccolte per cui è configurato l'agente di conoscenza del profilo.
     placeholder: Seleziona raccolte
   no_information_draft:
     label: Bozza quando non è stato trovato nulla

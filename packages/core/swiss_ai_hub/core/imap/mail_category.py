@@ -24,11 +24,11 @@ class MailCategory(Form):
     `thanking` mail rarely does. Mail no category fitted goes to the fallback folder and is therefore never drafted —
     the opt-in lives on the category, and uncategorised mail has none.
 
-    `knowledge_namespaces` is what keeps a grounded reply precise. Whether replies are grounded at all is the
-    profile's knowledge agent to decide; what a category decides is how far retrieval is narrowed. Left off, the
-    reply is answered from everything that agent retrieves from. Turned on, it is answered from the collections named
-    here and no others — which is what lets a `support_request` retrieve support material and nothing else, selected
-    by the category verdict.
+    `knowledge_namespaces` is what makes a drafted reply worth sending, and it is per category for the same reason
+    `draft_reply` is: a `support_request` has documentation behind it worth retrieving, a `thanking` mail has none and
+    would only retrieve noise. Left off, the reply is written from the message alone with no retrieval. Turned on, it
+    is answered from the collections named here and no others, selected by the category verdict. The profile's
+    knowledge agent supplies which collections can be named; the category decides whether its own replies use them.
     """
 
     category: Annotated[
@@ -59,8 +59,8 @@ class MailCategory(Form):
         Field(
             default=None,
             description="Knowledge collections this category's replies are answered from. Left off, the reply is "
-            "answered from every collection the profile's knowledge agent retrieves from; turned on, retrieval is "
-            "narrowed to the collections named here and no others.",
+            "written from the message alone with no retrieval; turned on, it is answered from the collections named "
+            "here and no others.",
         ),
     ] = None
 

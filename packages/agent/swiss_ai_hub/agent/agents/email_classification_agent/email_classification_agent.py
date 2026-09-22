@@ -290,10 +290,12 @@ class EmailClassificationAgent(Agent):
         `collect_and_draft_step` waits on delegated answers, and with none due it could never fire.
         """
         to_draft = self._drafting_batch(event, classification, draft)
-        grounded, ungrounded = self._split_by_grounding(to_draft, agent_config.knowledge_delegation)
+        grounded, ungrounded = self._split_by_grounding(to_draft, classification, agent_config.knowledge_delegation)
 
         if not grounded:
-            await self._report_nothing_to_ground(event, to_draft, classification, draft, displayer)
+            await self._report_nothing_to_ground(
+                event, to_draft, classification, draft, agent_config.knowledge_delegation, displayer
+            )
             return await self._append_all_drafts(
                 classified=event,
                 grounded=[],
@@ -380,7 +382,7 @@ class EmailClassificationAgent(Agent):
         The agent still never sends. A draft is an IMAP `APPEND`; there is no SMTP path anywhere in the platform.
         """
         to_draft = self._drafting_batch(classified, classification, draft)
-        grounded, ungrounded = self._split_by_grounding(to_draft, agent_config.knowledge_delegation)
+        grounded, ungrounded = self._split_by_grounding(to_draft, classification, agent_config.knowledge_delegation)
         request_index: dict[str, str] = await run_context.get(GROUNDED_REQUEST_INDEX_KEY, {})
 
         bodies_by_message_id = await self._bodies_from_answers(answers, request_index, draft, displayer)
@@ -454,19 +456,29 @@ class EmailClassificationAgent(Agent):
     @staticmethod
     def _split_by_grounding(
         to_draft: list[MailClassificationRef],
+        classification: EmailClassificationSettings,
         knowledge_delegation: KnowledgeDelegationConfig | None,
     ) -> tuple[list[MailClassificationRef], list[MailClassificationRef]]:
         """Split the drafting batch into the messages answered from knowledge and those answered from the mail alone.
 
-        Whether a reply is grounded at all is the profile's decision, not the category's: a configured knowledge
-        agent answers every drafted message, and what a category decides is how far retrieval is narrowed — to the
-        collections it names, or to everything that agent retrieves from. With no knowledge agent configured there is
-        nothing to delegate to, so the whole batch is drafted from the message alone, which is what keeps a
-        deployment with no RAG agent at all working.
+        Grounding is opted into per category so a customer adopts it one category at a time: a `support_request` has
+        documentation behind it worth retrieving, while a `thanking` mail has none and would only retrieve noise. A
+        category naming no collection is drafted from the message alone even with a knowledge agent configured — the
+        profile supplies the agent, the category decides whether its own replies are answered from it. Not the
+        reverse: grounding every drafted message the moment an agent is configured would silently widen retrieval for
+        categories that never asked for it, and an upgraded profile whose per-category setting predates this field
+        would answer from a scope nobody chose. With no knowledge agent there is nothing to delegate to, so the whole
+        batch takes the local path, which is what keeps a deployment with no RAG agent at all working.
         """
         if knowledge_delegation is None:
             return [], to_draft
-        return to_draft, []
+        grounded_categories = {
+            category.category for category in classification.categories if category.knowledge_namespaces
+        }
+        return (
+            [ref for ref in to_draft if ref.category in grounded_categories],
+            [ref for ref in to_draft if ref.category not in grounded_categories],
+        )
 
     async def _delegate_one(
         self,
@@ -481,9 +493,9 @@ class EmailClassificationAgent(Agent):
     ) -> AgentInTheLoop.request:
         """One delegated RAG run for one message, scoped to its category's collections and nothing else.
 
-        A category that narrows to nothing sends no selection at all, which is not a missing scope but the whole of
-        the delegate's own: `narrow_retrievers` leaves every configured retriever in place when the selection is
-        empty.
+        Only a category naming collections is delegated at all, so the selection here is never empty — an empty one
+        reads to `narrow_retrievers` as the delegate's whole scope, which is the opposite of what the category asked
+        for. `_validate_grounding` rejects that state up front rather than letting it reach a run.
         """
         category = next(item for item in classification.categories if item.category == ref.category)
         parsed = await self._reparse_archived(ref, agent_config.imap, topic)
@@ -698,10 +710,11 @@ class EmailClassificationAgent(Agent):
         to_draft: list[MailClassificationRef],
         classification: EmailClassificationSettings,
         draft: DraftEmailSettings,
+        knowledge_delegation: KnowledgeDelegationConfig | None,
         displayer: EventDisplayer,
     ) -> None:
-        """Say why nothing was delegated, so a silent run is never ambiguous between 'off', 'nothing matched' and
-        'nothing grounded'."""
+        """Say why nothing was delegated, so a silent run is never ambiguous between 'off', 'nothing matched',
+        'no knowledge agent' and 'no category answers from a collection'."""
         if not draft.enable_draft:
             logger.info("[draft] enable_draft=False — filed %d message(s), drafting none", event.count)
             await displayer.display_thought("Reply drafting is disabled — no drafts were written.")
@@ -717,11 +730,24 @@ class EmailClassificationAgent(Agent):
             )
             return
 
+        if knowledge_delegation is None:
+            logger.info(
+                "[draft] no knowledge agent is configured — drafting %d message(s) from the mail alone", len(to_draft)
+            )
+            await displayer.display_thought(
+                f"No knowledge agent is configured — drafting {len(to_draft)} reply/replies from the messages alone."
+            )
+            return
+
+        # Distinct from the case above, and worth saying: the agent is configured, so an admin who expected grounded
+        # replies here is looking at categories that never opted in rather than at a missing knowledge agent.
         logger.info(
-            "[draft] no knowledge agent is configured — drafting %d message(s) from the mail alone", len(to_draft)
+            "[draft] no category in this batch answers from a collection — drafting %d message(s) from the mail alone",
+            len(to_draft),
         )
         await displayer.display_thought(
-            f"No knowledge agent is configured — drafting {len(to_draft)} reply/replies from the messages alone."
+            f"No category in this run answers from a knowledge collection — drafting {len(to_draft)} reply/replies "
+            "from the messages alone."
         )
 
     async def _compose_all(
@@ -966,14 +992,14 @@ class EmailClassificationAgent(Agent):
                 "again"
             )
 
-        # An enabled selection holding nothing is not the same as no selection: the delegated run would silently fall
-        # back to the delegate's whole scope, which is the opposite of what narrowing was turned on to do.
+        # An enabled selection holding nothing is not the same as no selection: it reads as "answer from knowledge"
+        # while naming none, and the delegated run would fall back to the delegate's whole scope.
         empty = [category.category for category in narrowed if not category.knowledge_namespaces]
         if empty:
             raise ValueError(
                 f"categories {empty} have their collection selection switched on but name no collection — either "
-                "pick the collections their replies are answered from, or switch the selection off to answer from "
-                "everything the knowledge agent retrieves from"
+                "pick the collections their replies are answered from, or switch the selection off to draft their "
+                "replies from the message alone"
             )
 
         # `draft_reply` is what puts a message in the drafting batch at all, so a narrowed category that is not

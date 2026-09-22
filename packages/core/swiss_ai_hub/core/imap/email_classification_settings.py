@@ -1,6 +1,6 @@
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from swiss_ai_hub.core.agents.agent_config import StepConfig
 from swiss_ai_hub.core.form.constraints import Gt, MinLen
@@ -36,6 +36,7 @@ class EmailClassificationSettings(StepConfig):
             description="Categories mail is sorted into. Each needs a folder and a description of what belongs in it.",
         ),
     ]
+
     fallback_folder: Annotated[
         str | InputText,
         Field(
@@ -73,6 +74,44 @@ class EmailClassificationSettings(StepConfig):
         str | Textarea,
         Field(default=_DEFAULT_CLASSIFICATION_PROMPT, description="Instructions steering how the model classifies."),
     ]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _carry_over_pre_pair_collections(cls, data: Any) -> Any:
+        """Carry a profile saved before collections became (database, collection) pairs.
+
+        That shape named one collection per category in `knowledge_namespace` and the databases to look it up in
+        once, here, in `knowledge_databases`. Both fields are gone, and `MailCategory` ignores unknown keys, so
+        without this an upgraded profile loses its grounding silently — the categories come back unset and their
+        replies are drafted from the message alone, with no error anywhere to say a setting was dropped. Reading the
+        old keys is the only way to tell "never configured" from "configured before the rename", which is why this
+        cannot live in the form or the API.
+
+        Every database is paired with the collection name because the old shape did not record which one held it;
+        `narrow_retrievers` ignores a pair the delegate does not retrieve from, so a surplus pair is inert.
+        """
+        if not isinstance(data, dict) or not isinstance(data.get("categories"), list):
+            return data
+
+        databases = [database for database in data.get("knowledge_databases") or [] if isinstance(database, str)]
+        if not databases:
+            return data
+
+        migrated = []
+        for category in data["categories"]:
+            legacy = isinstance(category, dict) and category.get("knowledge_namespace")
+            if not legacy or category.get("knowledge_namespaces") is not None:
+                migrated.append(category)
+                continue
+            migrated.append(
+                category
+                | {
+                    "knowledge_namespaces": [
+                        {"bucket_name": database, "namespace_name": legacy} for database in databases
+                    ]
+                }
+            )
+        return data | {"categories": migrated}
 
     @classmethod
     def as_form(cls) -> Self:

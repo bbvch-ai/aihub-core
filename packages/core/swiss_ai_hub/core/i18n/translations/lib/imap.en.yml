@@ -105,9 +105,9 @@ config:
   category_knowledge_namespaces:
     label: Knowledge Collections
     help: Collections this category's replies are answered from. Leave it off and
-      the reply is answered from everything the knowledge agent retrieves from; turn
-      it on to narrow retrieval to the collections picked here and no others. Only
-      the collections that agent is configured for are offered.
+      the reply is written from the message alone, with no retrieval; turn it on to
+      answer from the collections picked here and no others. Only the collections
+      the profile's knowledge agent is configured for are offered.
     placeholder: Select collections
   no_information_draft:
     label: Draft When Nothing Was Found

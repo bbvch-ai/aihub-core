@@ -213,12 +213,12 @@ Agent** and drafts are written from your documents instead — the agent asks th
 and uses the answer as the draft. Leave the Knowledge Agent off and every draft is written from the message alone, with
 no retrieval at all.
 
-What each category then decides is how *narrowly* its replies are looked up. Every category starts out answered from
-everything the knowledge agent retrieves from. Tick **Knowledge Collections** on a category and pick one or more
-collections, and its replies are answered from those and nothing else — so a message classified as `support_request` can
-be answered from your support material alone, with the category verdict making the lookup precise. Only the collections
-the knowledge agent you picked is actually configured for are offered, because a collection outside its scope would
-retrieve nothing at all.
+Each category then opts in for itself. Tick **Knowledge Collections** on a category and pick one or more collections,
+and its replies are answered from those and nothing else — so a message classified as `support_request` can be answered
+from your support material alone, with the category verdict making the lookup precise. Leave it off and that category's
+replies stay written from the message alone, even with a knowledge agent configured: a `thanking` mail has no
+documentation behind it and would only retrieve noise. Only the collections the knowledge agent you picked is actually
+configured for are offered, because a collection outside its scope would retrieve nothing at all.
 
 **The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
 creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that
@@ -236,14 +236,24 @@ support-kb/                 ← knowledge database
 
 Configure it in two places:
 
-| Field                     | Where                | What it is                                                                                                           |
-| ------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Knowledge Agent**       | Knowledge delegation | The agent that answers your mail from your documents. Leaving it off turns grounding off for the whole profile.      |
-| **Knowledge Collections** | On each category     | Tick it to narrow that category's replies to the collections you pick. Left off, they are answered from all of them. |
+| Field                     | Where                | What it is                                                                                                                  |
+| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Knowledge Agent**       | Knowledge delegation | The agent that answers your mail from your documents. Leaving it off turns grounding off for the whole profile.             |
+| **Knowledge Collections** | On each category     | Tick it to answer that category's replies from the collections you pick. Left off, they are written from the message alone. |
 
-A category narrowed to a collection your knowledge base no longer holds fails the run **before** any mail is classified,
-rather than quietly answering from nothing. So does a narrowed category whose **Draft a Reply** switch is off, which
-would otherwise have you looking for drafts that were never due.
+A category pointed at a collection your knowledge base no longer holds fails the run **before** any mail is classified,
+rather than quietly answering from nothing. So does a category that names collections while its **Draft a Reply** switch
+is off, which would otherwise have you looking for drafts that were never due, and one whose selection is switched on
+but empty — switch it off instead to draft that category from the message alone.
+
+::: warning Upgrading a profile configured before this release
+Earlier releases named one collection per category in a plain text field, with the databases listed once on the
+classification section. Both fields were replaced by the per-category picker. A profile saved in the old shape is
+carried over on load — each category's old collection name is paired with the databases that were configured — so
+grounding keeps working without you re-entering it. Categories that named no collection stay ungrounded, exactly as
+before. Open the profile and check the picker once after upgrading: a carried-over collection the knowledge agent you
+picked is not configured for is listed as unavailable, and that category needs a new selection.
+:::
 
 **Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
 model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest
@@ -312,8 +322,8 @@ Input Tokens** if your model accepts more and you want less trimming.
 5. **Then put it on a schedule** (above), and the inbox drains itself.
 6. **Turn on drafting last**, and only for the categories that need it. Read the first few drafts before you trust the
    rest.
-7. **Then ground the drafts.** Pick a knowledge agent, and narrow the categories worth narrowing to their own
-   collections. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
+7. **Then ground the drafts.** Pick a knowledge agent, and tick **Knowledge Collections** on the categories that have
+   documents behind them. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
 
 ## What it does *not* do
 
