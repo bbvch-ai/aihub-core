@@ -15,29 +15,32 @@ Executing the migration is explicitly out of scope — it follows as sub-issues.
 
 The evaluation is gated: the cheapest test that can kill the Beanie option runs first.
 
-| Phase | Work                                              | Report                 | State       |
-| ----- | ------------------------------------------------- | ---------------------- | ----------- |
-| 1     | FerretDB 2.5 compatibility probe (go/no-go)       | `phase_1_report.md`    | not started |
-| 2     | Interim `asyncio.to_thread` fix (separate branch) | PR body                | not started |
-| 3     | Full evaluation, incl. three-variant load measure | `phase_3_report.md`    | not started |
-| 4     | ADR                                               | `docs/arc42/decisions` | not started |
-| 5     | Migration plan + sub-issues                       | in the ADR             | not started |
+| Phase | Work                                              | Report                 | State                     |
+| ----- | ------------------------------------------------- | ---------------------- | ------------------------- |
+| 1     | FerretDB 2.5 compatibility probe (go/no-go)       | `phase_1_report.md`    | **complete — verdict GO** |
+| 2     | Interim `asyncio.to_thread` fix (separate branch) | PR body                | not started               |
+| 3     | Full evaluation, incl. three-variant load measure | `phase_3_report.md`    | not started               |
+| 4     | ADR                                               | `docs/arc42/decisions` | not started               |
+| 5     | Migration plan + sub-issues                       | in the ADR             | not started               |
 
 Phase 1 is the gate. Checks 01–04 are hard gates: any FAIL ends the Beanie option and the answer becomes "extend the
 `asyncio.to_thread` pattern". Checks 05–08 are cost inputs — they inform the ADR rather than kill the option.
 
 ## Phase 1 checks
 
-| #                              | Check                                      | Gate | Verdict |
-| ------------------------------ | ------------------------------------------ | ---- | ------- |
-| [01](checks/01_init_beanie.md) | `init_beanie` startup and index creation   | hard | not run |
-| [02](checks/02_basic_crud.md)  | Insert, `find_one`, replace/save           | hard | not run |
-| [03](checks/03_find_one_and_update.md) | `find_one_and_update`              | hard | not run |
-| [04](checks/04_aggregation.md) | `$group`, `$lookup`, `allowDiskUse`        | hard | not run |
-| [05](checks/05_multi_db.md)    | One Document class against two databases   | cost | not run |
-| [06](checks/06_extra_allow.md) | `extra="allow"` round-trip (`strict:False`) | cost | not run |
-| [07](checks/07_datetime_shape.md) | Datetime storage shape                  | cost | not run |
-| [08](checks/08_coexistence.md) | Sync and async clients on one collection   | cost | not run |
+| #                                      | Check                                       | Gate | Verdict            |
+| -------------------------------------- | ------------------------------------------- | ---- | ------------------ |
+| [01](checks/01_init_beanie.md)         | `init_beanie` startup and index creation    | hard | **PASS**           |
+| [02](checks/02_basic_crud.md)          | Insert, `find_one`, replace/save            | hard | **PASS**           |
+| [03](checks/03_find_one_and_update.md) | `find_one_and_update`                       | hard | **PASS**           |
+| [04](checks/04_aggregation.md)         | `$group`, `$lookup`, `allowDiskUse`         | hard | **PASS**           |
+| [05](checks/05_multi_db.md)            | One Document class against two databases    | cost | **PASS WITH COST** |
+| [06](checks/06_extra_allow.md)         | `extra="allow"` round-trip (`strict:False`) | cost | **PASS WITH COST** |
+| [07](checks/07_datetime_shape.md)      | Datetime storage shape                      | cost | **PASS**           |
+| [08](checks/08_coexistence.md)         | Sync and async clients on one collection    | cost | **PASS**           |
+
+See [`phase_1_report.md`](phase_1_report.md) for the synthesis, what the phase does **not** prove, and the three
+findings that change the migration plan.
 
 ## Evidence rules
 
