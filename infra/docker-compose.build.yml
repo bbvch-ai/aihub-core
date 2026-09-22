@@ -3489,9 +3489,7 @@ services:
     restart: always
     build:
       context: ..
-      dockerfile: ./packages/pipeline/app/document_ingestion_pipeline/Dockerfile
-      args:
-        PIPELINE: rclone_pipeline
+      dockerfile: ./packages/pipeline/app/rclone_pipeline/Dockerfile
     depends_on:
       rclone:
         condition: service_healthy

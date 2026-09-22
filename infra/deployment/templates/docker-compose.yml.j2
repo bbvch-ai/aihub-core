@@ -4310,9 +4310,7 @@ services:
     {%- if image_tags.rclone_pipeline[stage] == 'localbuild' %}
     build:
       context: ..
-      dockerfile: ./packages/pipeline/app/document_ingestion_pipeline/Dockerfile
-      args:
-        PIPELINE: rclone_pipeline
+      dockerfile: ./packages/pipeline/app/rclone_pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.rclone_pipeline[stage] }}
     {%- endif %}

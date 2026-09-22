@@ -97,9 +97,10 @@ packages/pipeline/                        # SDK framework
 app/                                   # Deployable pipelines (Dagster gRPC code locations)
 ├── document_ingestion_pipeline/        # THE document ingestion pipeline — one deployment, all self-service knowledge DBs
 │   ├── __init__.py                    # defs = document_ingestion_pipeline_definitions()  (route-per-run, no bucket env var)
-│   └── Dockerfile                     # dagster api grpc on port 4000 (shared by every app via the PIPELINE build arg)
+│   └── Dockerfile                     # dagster api grpc on port 4000; rclone_pipeline/Dockerfile is the same file with another PIPELINE default
 └── rclone_pipeline/                    # THE rclone source pipeline — one deployment, every database whose source is `rclone`
-    └── __init__.py                    # defs = rclone_pipeline_definitions()  (route-per-run, no source env vars)
+    ├── __init__.py                    # defs = rclone_pipeline_definitions()  (route-per-run, no source env vars)
+    └── Dockerfile                     # copy of the ingestion Dockerfile with PIPELINE=rclone_pipeline (release workflow builds app/<name>/Dockerfile)
 
 playground/                            # Examples (START HERE)
 ├── __init__.py                        # defs = document_ingestion_pipeline_definitions() + a playground BucketEntity
@@ -657,7 +658,7 @@ where it sits, including inside the pipeline images that `COPY packages/pipeline
 - `rclone_pipeline/` — **the** rclone source pipeline (Stage 1). One deployment syncs *every* knowledge database whose
   `BucketEntity.source` is `rclone`, from the backend and credentials stored on that database. Built by
   `rclone_pipeline_definitions()` in `util/rclone_pipeline_definitions_util.py`. Compose service `rclone_pipeline`
-  (built from the shared `document_ingestion_pipeline/Dockerfile` with `PIPELINE: rclone_pipeline`), workspace entry
+  (built from `app/rclone_pipeline/Dockerfile`, a copy of the ingestion one whose `PIPELINE` default is `rclone_pipeline`, because the release workflow builds `app/<name>/Dockerfile` with `VERSION` as its only build arg), workspace entry
   `rclone_pipeline:4000`, env `AIHUB_CONFIG_ENCRYPTION_KEY`, `RCLONE_URL`, `RCLONE_RC_USER/PASS`,
   `RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`. See
   [Rclone Source Pipeline](#rclone-source-pipeline-stage-1-configured-per-database).
