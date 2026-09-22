@@ -21,7 +21,7 @@ def _release_pools() -> None:
 
 def test_internal_base_url_falls_back_to_base_url() -> None:
     """Wherever the API and Langfuse share a network, BASE_URL is already the URL Langfuse can dial."""
-    assert _settings().internal_base_url == "http://litellm:4000"
+    assert _settings().get_internal_base_url() == "http://litellm:4000"
 
 
 def test_internal_base_url_prefers_the_override() -> None:
@@ -29,7 +29,7 @@ def test_internal_base_url_prefers_the_override() -> None:
         BASE_URL="http://localhost:4000", API_KEY="sk-master", INTERNAL_BASE_URL="http://litellm:4000"
     )
 
-    assert settings.internal_base_url == "http://litellm:4000"
+    assert settings.get_internal_base_url() == "http://litellm:4000"
     assert settings.BASE_URL == "http://localhost:4000"
 
 

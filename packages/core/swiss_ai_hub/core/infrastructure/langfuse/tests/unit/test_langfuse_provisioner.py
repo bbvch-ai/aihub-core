@@ -25,7 +25,7 @@ LITELLM_MODELS = [
 def _litellm_settings(internal_base_url: str = "http://litellm:4000", api_key: str | None = "sk-litellm"):
     settings = MagicMock()
     settings.BASE_URL = "http://localhost:4000"
-    settings.internal_base_url = internal_base_url
+    settings.get_internal_base_url.return_value = internal_base_url
     if api_key is None:
         settings.API_KEY = None
     else:
@@ -426,4 +426,7 @@ class TestRunStep:
             result = await LangfuseProvisioner._run_step("LiteLLM connection", boom())
 
         assert result is None
-        assert any(record.levelno == logging.ERROR for record in caplog.records)
+        errors = [record for record in caplog.records if record.levelno == logging.ERROR]
+        assert errors
+        assert "LiteLLM connection" in errors[0].getMessage()
+        assert errors[0].exc_info is not None, "the traceback must survive — the message alone rarely locates the cause"

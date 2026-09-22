@@ -60,8 +60,7 @@ class LiteLLMProxySettings(EnvironmentSettings):
         ),
     ] = None
 
-    @property
-    def internal_base_url(self) -> str:
+    def get_internal_base_url(self) -> str:
         """Langfuse dials the registered connection itself, from a container that may not share BASE_URL's vantage."""
         return self.INTERNAL_BASE_URL or self.BASE_URL
 

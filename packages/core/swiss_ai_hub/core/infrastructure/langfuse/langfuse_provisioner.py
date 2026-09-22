@@ -73,7 +73,7 @@ class LangfuseProvisioner:
         try:
             return await coro
         except Exception as e:
-            logger.error(f"Langfuse provisioning: '{name}' failed — {e}")
+            logger.exception(f"Langfuse provisioning: '{name}' failed — {e}")
             return None
 
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
@@ -88,7 +88,7 @@ class LangfuseProvisioner:
         if not litellm_settings.API_KEY:
             raise ValueError("LITE_LLM_PROXY_API_KEY is required to register the Langfuse evaluator connection")
 
-        base_url = litellm_settings.internal_base_url
+        base_url = litellm_settings.get_internal_base_url()
         self._assert_dialable_from_langfuse(base_url, "LITE_LLM_PROXY_INTERNAL_BASE_URL")
 
         chat_models = self._judge_models(litellm_models)
