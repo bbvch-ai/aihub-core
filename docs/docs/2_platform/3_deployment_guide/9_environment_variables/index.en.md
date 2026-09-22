@@ -91,6 +91,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `LANGFUSE_PUBLIC_KEY` | `LangfuseSettings.PUBLIC_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse public API key |
 | `LANGFUSE_SALT` |  | `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_SECRET_KEY` | `LangfuseSettings.SECRET_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse secret API key |
+| `LITELLM_CONFIG_VARIANT` |  | `litellm` |  |
 | `LITELLM_MASTER_KEY` | `litellm-config.yml` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `mineru-api`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` |  |
 | `LITELLM_UI_PASSWORD` |  | `litellm` |  |
 | `LITELLM_UI_USERNAME` |  | `litellm` |  |
@@ -165,6 +166,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SEAWEEDFS_TOKEN` |  | `seaweedfs-filer`, `seaweedfs-master`, `seaweedfs-s3`, `seaweedfs-volume` |  |
 | `SLACK_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
+| `STONEY_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
+| `STONEY_CLOUD_API_KEY` | `litellm-config.yml` | `litellm` |  |
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |
 | `SUPERUSER_FIRSTNAME` | `users-superuser.json` | `keycloak` |  |
 | `SUPERUSER_LASTNAME` | `users-superuser.json` | `keycloak` |  |

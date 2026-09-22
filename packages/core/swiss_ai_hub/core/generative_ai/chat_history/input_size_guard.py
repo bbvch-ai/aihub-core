@@ -4,7 +4,9 @@ Carries no safety factor, unlike `recursive_summary_parser` and the agent packag
 a budget they then *fill*, where over-counting only wastes room; a budget used to refuse a user outright would instead
 reject prompts the model accepts. The tokenizer behind `LLMConfig.token_counter` is tiktoken, not the served model's,
 and the error runs both ways -- measured against gemma-4-31B-it, 121k tiktoken tokens of Vietnamese fit a declared
-100k window. So the only thing these numbers can settle is whether an input exceeds the window on a single reading,
+100k window. That window is now provider-dependent for this model (Infomaniak declares 100000, stoney-cloud 155648),
+so treat the measurement as the floor rather than the current headroom. The only thing these numbers can settle is
+whether an input exceeds the window on a single reading,
 which no downstream step could rescue. Anything subtler belongs to the model, whose own 400 `ModelGatewayErrorHandler`
 rewrites into a sentence naming the limit.
 """

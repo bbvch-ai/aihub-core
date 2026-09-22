@@ -155,8 +155,9 @@ class LLMWrappingAgent(Agent):
 
         Unlike the RAG blueprints, this agent cannot fall back on the provider's own 400: it answers through
         `astream_chat`, and on a streaming call LiteLLM replaces the provider's message with its own bookkeeping
-        (verified against gemma-4-31B-it -- the same prompt returns "maximum context length is 100016 tokens"
-        unstreamed and a bare "Error code: 400" streamed), leaving `ModelGatewayErrorHandler` nothing to match.
+        (verified against gemma-4-31B-it on Infomaniak -- the same prompt returns "maximum context length is 100016
+        tokens" unstreamed and a bare "Error code: 400" streamed), leaving `ModelGatewayErrorHandler` nothing to
+        match. The quoted limit tracks whichever provider serves the model, but the masking behaviour does not.
         So the refusal has to happen here or not at all.
         """
         locale = event.locale

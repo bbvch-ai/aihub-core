@@ -52,7 +52,29 @@ deployment/
 
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
+- `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
 - `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+
+### LiteLLM provider variants
+
+The LiteLLM config carries a **third axis** on top of stage x hardware: `LITELLM_VARIANTS` in `generate_compose.py`
+(`infomaniak`, `stoney`). Any spec whose name pattern contains `{variant}` is rendered once per entry; everything else
+keeps the two-axis shape.
+
+Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
+at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
+the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token window
+on `stoney`, Infomaniak with 100000 on `infomaniak`. Every other model is identical.
+
+This is deliberately **not** a stage or channel conditional. Every release bundle renders as `stage='latest'`
+(`generate_release`), and all customers deploy the same `latest` artifact, so which provider serves a model is a
+per-deployment property — not something the build can decide. It also makes switching or rolling back an env change plus
+a `litellm` restart rather than a rebuild. An unset or misspelled value points `--config` at a file that does not exist,
+so LiteLLM fails to start loudly instead of silently falling back.
+
+`max_input_tokens` and the cost fields must stay **literal numbers** in the template. LiteLLM does resolve `os.environ/`
+inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
+and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
 ## Generation Pipeline
 
