@@ -55,6 +55,15 @@ def _ok_response(status_code: int = 200, json_data: dict | None = None) -> httpx
     return resp
 
 
+def _model_info_response(json_data: dict) -> httpx.Response:
+    """`_fetch_litellm_models` calls `raise_for_status`, which needs the originating request attached."""
+    return httpx.Response(
+        status_code=200,
+        json=json_data,
+        request=httpx.Request("GET", "http://localhost:4000/v1/model/info"),
+    )
+
+
 class TestProvision:
     """Tests for the main provision() orchestration method."""
 
@@ -333,6 +342,62 @@ class TestRegisterLiteLLMConnection:
             await provisioner._register_litellm_connection(mock_client, LITELLM_MODELS)
 
         mock_upsert.assert_not_called()
+
+
+class TestFetchLiteLLMModels:
+    """Discovery is a server-to-server call from this process, so it stays on the API-side BASE_URL."""
+
+    @pytest.mark.asyncio
+    async def test_queries_the_api_side_url_not_the_langfuse_facing_one(self) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _model_info_response({"data": LITELLM_MODELS})
+
+        with patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings()):
+            models = await LangfuseProvisioner._fetch_litellm_models(mock_client)
+
+        assert models == LITELLM_MODELS
+        url = mock_client.get.call_args[0][0]
+        assert url == "http://localhost:4000/v1/model/info"
+        assert mock_client.get.call_args[1]["headers"]["Authorization"] == "Bearer sk-litellm"
+
+    @pytest.mark.asyncio
+    async def test_propagates_http_errors_rather_than_returning_an_empty_list(self) -> None:
+        """Swallowing this used to report zero judge models as though LiteLLM had none."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = httpx.Response(
+            status_code=503, request=httpx.Request("GET", "http://litellm:4000/v1/model/info")
+        )
+
+        with (
+            patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings()),
+            pytest.raises(httpx.HTTPStatusError),
+        ):
+            await LangfuseProvisioner._fetch_litellm_models(mock_client)
+
+    @pytest.mark.asyncio
+    async def test_missing_api_key_sends_an_empty_bearer(self) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _model_info_response({})
+
+        with patch(f"{PROVISIONER_MODULE}.LiteLLMProxySettings", return_value=_litellm_settings(api_key=None)):
+            assert await LangfuseProvisioner._fetch_litellm_models(mock_client) == []
+
+        assert mock_client.get.call_args[1]["headers"]["Authorization"] == "Bearer "
+
+
+class TestRegisterAihubConnection:
+    """Startup registers the agents connection with no models; the discovery loop fills it in."""
+
+    @pytest.mark.asyncio
+    async def test_registers_with_an_empty_model_list(self, provisioner: LangfuseProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with patch.object(provisioner, "_upsert_llm_connection") as mock_upsert:
+            await provisioner._register_aihub_connection(mock_client)
+
+        connection_data = mock_upsert.call_args[0][1]
+        assert connection_data["provider"] == "ai-hub-agents"
+        assert connection_data["customModels"] == []
 
 
 class TestBuildAihubConnectionData:
