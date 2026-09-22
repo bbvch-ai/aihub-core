@@ -19,7 +19,7 @@ The evaluation is gated: the cheapest test that can kill the Beanie option runs 
 | ----- | ------------------------------------------------- | ---------------------- | ------------------------- |
 | 1     | FerretDB 2.5 compatibility probe (go/no-go)       | `phase_1_report.md`    | **complete — verdict GO** |
 | 2     | Interim `asyncio.to_thread` fix (separate branch) | PR body                | not started               |
-| 3     | Full evaluation, incl. three-variant load measure | `phase_3_report.md`    | not started               |
+| 3     | Full evaluation, incl. three-variant load measure | `phase_3_report.md`    | in progress — step 1 done |
 | 4     | ADR                                               | `docs/arc42/decisions` | not started               |
 | 5     | Migration plan + sub-issues                       | in the ADR             | not started               |
 
@@ -41,6 +41,19 @@ Phase 1 is the gate. Checks 01–04 are hard gates: any FAIL ends the Beanie opt
 
 See [`phase_1_report.md`](phase_1_report.md) for the synthesis, what the phase does **not** prove, and the three
 findings that change the migration plan.
+
+## Phase 3 checks
+
+| #                                         | Check                                   | Gate                    | Verdict            |
+| ----------------------------------------- | --------------------------------------- | ----------------------- | ------------------ |
+| [09](checks/09_test_infrastructure.md)    | Test infrastructure (loop-bound client) | hard, for feasibility   | **PASS WITH COST** |
+| 10                                        | Three-variant load measurement          | decides the ADR          | not run            |
+| 11                                        | Sync contexts (pipeline, bot)           | cost                    | not run            |
+| 12                                        | Naive-local datetime inventory          | cost                    | not run            |
+
+Check 10 needs an **uncontended** stack — only FerretDB, its Postgres and NATS — and a thread pool pinned to a
+production-like width. See [check 08](checks/08_coexistence.md) for why timings taken on the full dev stack are
+contaminated.
 
 ## Evidence rules
 
