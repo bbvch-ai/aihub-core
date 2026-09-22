@@ -115,6 +115,8 @@ class InstanceConfigHelper:
         # `normalize_form_configuration` strips FormKit's own keys only at the top level, and making it
         # recursive would change what the agent and process paths persist — `Form.deserialize_form` dispatches
         # on a nested `_form_name`. So the same convention is applied locally, at every depth.
+        # `normalize_form_configuration` turns an empty submission into None; nothing is undeclared in it.
+        config = config or {}
         undeclared = [
             f"{prefix}{key}: not a configurable field of the announced form"
             for key in config

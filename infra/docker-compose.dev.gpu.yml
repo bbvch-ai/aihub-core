@@ -871,9 +871,11 @@ services:
       - --rc-serve
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
-      - --config=/dev/null  # Disable config file, use environment variables only
+      - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
     ports: [5572:5572]
-    networks: [default]
+    networks:
+      - backend  # reached by the rclone pipeline
+      - egress  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s

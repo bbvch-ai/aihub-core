@@ -1,0 +1,114 @@
+---
+manual_upload:
+  display_name: Caricamento manuale
+  description: I documenti vengono caricati a mano tramite le viste della conoscenza;
+    nulla li sincronizza.
+rclone:
+  display_name: Sincronizzazione archivio cloud (rclone)
+  description: Mantiene la base sincronizzata con un sito SharePoint, OneDrive, Google
+    Drive, un bucket S3, un contenitore Azure Blob o un server SFTP. Ogni cartella
+    di primo livello diventa un namespace.
+  config:
+    backend_type:
+      label: Backend di archiviazione
+      help: Da quale tipo di sistema vengono recuperati i file.
+    root_path:
+      label: Cartella radice
+      help: Cartella della sorgente da sincronizzare. Ognuna delle sue cartelle di
+        primo livello diventa un namespace; i file direttamente al suo interno non
+        vengono sincronizzati.
+    include_patterns:
+      label: Pattern di inclusione
+      help: Regole glob rclone; se impostate, vengono sincronizzati solo i file corrispondenti
+        (es. *.pdf, reports/**).
+    exclude_patterns:
+      label: Pattern di esclusione
+      help: Regole glob rclone per i file da saltare (es. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: ID client
+        help: ID applicazione (client) della registrazione app Entra ID.
+      client_secret:
+        label: Segreto client
+        help: Segreto client della registrazione app. Archiviato cifrato.
+      tenant:
+        label: ID tenant
+        help: ID del tenant (directory) Entra ID.
+      drive_id:
+        label: ID unità
+        help: ID dell'unità da sincronizzare; per SharePoint l'unità della raccolta
+          documenti.
+      drive_type:
+        label: Tipo di unità
+        help: personal, business o documentLibrary (SharePoint).
+      region:
+        label: Regione
+        help: 'Cloud Microsoft: global, us, de o cn.'
+      token:
+        label: Token OAuth
+        help: JSON del token rclone ottenuto in anticipo, in alternativa alle credenziali
+          client. Archiviato cifrato.
+    drive:
+      client_id:
+        label: ID client
+        help: ID client OAuth del progetto Google Cloud.
+      client_secret:
+        label: Segreto client
+        help: Segreto client OAuth. Archiviato cifrato.
+      token:
+        label: Token OAuth
+        help: JSON del token rclone ottenuto in anticipo. Archiviato cifrato.
+      service_account_credentials:
+        label: JSON account di servizio
+        help: Contenuto del file chiave dell'account di servizio, in alternativa a
+          un token OAuth. Archiviato cifrato.
+      root_folder_id:
+        label: ID cartella radice
+        help: ID della cartella Drive da usare come radice; vuoto per tutta l'unità.
+    s3:
+      provider:
+        label: Provider
+        help: Nome del provider S3 rclone, es. AWS, Minio, Ceph.
+      access_key_id:
+        label: Access key ID
+        help: Access key ID.
+      secret_access_key:
+        label: Secret access key
+        help: Secret access key. Archiviata cifrata.
+      region:
+        label: Regione
+        help: Regione, es. eu-central-1.
+      endpoint:
+        label: Endpoint
+        help: URL dell'endpoint per provider non AWS.
+    azureblob:
+      account:
+        label: Account di archiviazione
+        help: Nome dell'account di archiviazione Azure.
+      key:
+        label: Chiave account
+        help: Chiave dell'account di archiviazione. Archiviata cifrata.
+      sas_url:
+        label: URL SAS
+        help: URL di firma di accesso condiviso, in alternativa a una chiave account.
+          Archiviato cifrato.
+      endpoint:
+        label: Endpoint
+        help: Endpoint personalizzato per cloud sovrani.
+    sftp:
+      host:
+        label: Host
+        help: Nome host o IP SFTP.
+      port:
+        label: Porta
+        help: Porta SFTP.
+      user:
+        label: Utente
+        help: Nome utente SFTP.
+      password:
+        label: Password
+        help: Password, in alternativa a una chiave privata. Archiviata cifrata.
+      key_pem:
+        label: Chiave privata (PEM)
+        help: Chiave privata in formato PEM, in alternativa a una password. Archiviata
+          cifrata.
