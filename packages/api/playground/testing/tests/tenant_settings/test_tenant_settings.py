@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth import AuthHandler, UserIdentity
+from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence import TenantMetadataEntity, TenantSettingsEntity
 
@@ -17,7 +18,7 @@ from swiss_ai_hub.api.routes.tenant_settings.tenant_settings_controller import T
 
 @pytest.fixture
 def client():
-    """Real routes, permission checks, tenant resolution and persistence; identity-provider I/O is stubbed."""
+    """Use MongoDB with stubbed authentication and tenant access."""
     connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
     TenantSettingsEntity.drop_collection()
 
@@ -130,13 +131,41 @@ def test_persistence_localization_fallback_and_tenant_isolation(client):
     [
         {"chat_disclaimer": {}},
         {"chat_disclaimer": {"en": " \n "}},
-        {"chat_disclaimer": {"en": "x" * 401}},
+        {"chat_disclaimer": {"en": "x" * 101}},
+        {"chat_disclaimer": {"en": "🙂" * 101}},
         {"chat_disclaimer": {"en": "Valid"}, "tenant_id": "two"},
     ],
 )
 def test_invalid_settings_do_not_persist(client, body):
     assert client.put("/one/tenant-settings", headers={"x-test-role": "admin"}, json=body).status_code == 422
     assert TenantSettingsEntity.get_chat_disclaimer("one") is None
+
+
+def test_disclaimer_limit_counts_unicode_characters(client):
+    text = "🙂" * 100
+    response = client.put(
+        "/one/tenant-settings", headers={"x-test-role": "admin"}, json={"chat_disclaimer": {"en": text}}
+    )
+    assert response.status_code == 200
+    assert TenantSettingsEntity.get_chat_disclaimer("one").en == text
+
+
+def test_saved_disclaimer_above_current_limit_can_be_read_and_shortened(client):
+    text = "x" * 314
+    TenantSettingsEntity.set_chat_disclaimer("one", LocaleString(en=text))
+    admin = {"x-test-role": "admin"}
+    response = client.get("/one/tenant-settings", headers=admin)
+    assert response.status_code == 200
+    assert response.json()["chat_disclaimer"]["en"] == text
+    assert client.put("/one/tenant-settings", headers=admin, json=response.json()).status_code == 422
+    assert TenantSettingsEntity.get_chat_disclaimer("one").en == text
+
+    shortened = {"chat_disclaimer": {"en": "Verify answers."}}
+    saved = client.put("/one/tenant-settings", headers=admin, json=shortened)
+    assert saved.status_code == 200
+    assert saved.json()["chat_disclaimer"]["en"] == "Verify answers."
+    assert client.get("/one/tenant-settings", headers=admin).json() == saved.json()
+    assert TenantSettingsEntity.get_chat_disclaimer("one").en == "Verify answers."
 
 
 def test_deleting_a_tenant_removes_only_its_settings(client):

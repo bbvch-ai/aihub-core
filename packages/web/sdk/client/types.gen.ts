@@ -15831,7 +15831,7 @@ export type TenantSelect = {
  */
 export type TenantSettingsDto = {
   /**
-   * Plain text below the chat input, up to 400 characters per language. At least one translation is required.
+   * Chat disclaimer in each supported language.
    */
   chat_disclaimer: LocaleString;
 };
@@ -17178,6 +17178,16 @@ export type UpdateRoleRequest = {
    * Pattern-based usage limit rules.
    */
   usage_limits?: Array<UsageLimitDto> | null;
+};
+
+/**
+ * UpdateTenantSettingsRequest
+ */
+export type UpdateTenantSettingsRequest = {
+  /**
+   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
+   */
+  chat_disclaimer: LocaleString;
 };
 
 /**
@@ -27897,7 +27907,7 @@ export type GetTenantSettingsResponse =
   GetTenantSettingsResponses[keyof GetTenantSettingsResponses];
 
 export type UpdateTenantSettingsData = {
-  body: TenantSettingsDto;
+  body: UpdateTenantSettingsRequest;
   path: {
     /**
      * Tenant Id

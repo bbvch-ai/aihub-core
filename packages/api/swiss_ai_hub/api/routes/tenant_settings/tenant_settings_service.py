@@ -5,6 +5,7 @@ from swiss_ai_hub.core.persistence import TenantSettingsEntity
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.tenant_settings.dto.tenant_settings_dto import TenantSettingsDTO
+from swiss_ai_hub.api.routes.tenant_settings.dto.update_tenant_settings_request import UpdateTenantSettingsRequest
 
 
 class TenantSettingsService:
@@ -18,6 +19,6 @@ class TenantSettingsService:
 
     @staticmethod
     @trace_fn
-    async def update_settings(tenant_id: str, settings: TenantSettingsDTO) -> TenantSettingsDTO:
+    async def update_settings(tenant_id: str, settings: UpdateTenantSettingsRequest) -> TenantSettingsDTO:
         await asyncio.to_thread(TenantSettingsEntity.set_chat_disclaimer, tenant_id, settings.chat_disclaimer)
-        return settings
+        return TenantSettingsDTO(chat_disclaimer=settings.chat_disclaimer)

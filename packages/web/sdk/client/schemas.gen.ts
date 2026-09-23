@@ -23827,8 +23827,7 @@ export const TenantSettingsDTOSchema = {
   properties: {
     chat_disclaimer: {
       $ref: "#/components/schemas/LocaleString",
-      description:
-        "Plain text below the chat input, up to 400 characters per language. At least one translation is required.",
+      description: "Chat disclaimer in each supported language.",
     },
   },
   additionalProperties: false,
@@ -25897,6 +25896,20 @@ export const UpdateRoleRequestSchema = {
   title: "UpdateRoleRequest",
   description:
     "Request model for updating an existing role. All fields are optional.",
+} as const;
+
+export const UpdateTenantSettingsRequestSchema = {
+  properties: {
+    chat_disclaimer: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Plain text below the chat input, up to 100 characters per language. At least one translation is required.",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["chat_disclaimer"],
+  title: "UpdateTenantSettingsRequest",
 } as const;
 
 export const UsageDurationSchema = {

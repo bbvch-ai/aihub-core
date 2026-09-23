@@ -1133,6 +1133,7 @@ export {
   type UpdateTenantSettingsData,
   type UpdateTenantSettingsError,
   type UpdateTenantSettingsErrors,
+  type UpdateTenantSettingsRequest,
   type UpdateTenantSettingsResponse,
   type UpdateTenantSettingsResponses,
   type UpdateUserMemoryData,

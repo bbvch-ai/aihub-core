@@ -4,12 +4,10 @@
 
   const messageType = 'aihub:chat-disclaimer';
   const marker = 'data-aihub-chat-disclaimer';
-  const footerClasses = 'text-xs text-gray-500 text-center line-clamp-1';
+  const footerClasses = 'text-xs text-gray-500 text-center';
   let text = '';
   let input = null;
   let footer = null;
-  let paddedContainer = null;
-  let originalPadding = '';
   let scheduled = false;
 
   function render() {
@@ -34,30 +32,21 @@
       if (slot) break;
       ancestor = ancestor.parentElement;
     }
-    // Preserve an upstream footer if it has been enabled.
     if (slot?.textContent.trim()) return;
-
-    if (slot) {
-      // The disabled upstream footer reserves only 8px, less than its 16px line height.
-      paddedContainer = slot.parentElement;
-      originalPadding = paddedContainer.style.paddingBottom;
-      paddedContainer.style.paddingBottom = '1.5rem';
-    }
 
     footer = document.createElement('div');
     footer.setAttribute(marker, '');
     footer.className = footerClasses;
+    footer.style.overflowWrap = 'anywhere';
     footer.textContent = text;
     footer.title = text;
-    // The centered new-chat layout has no outer footer slot.
-    (slot ?? form).append(footer);
+    // Normal flow reserves space for wrapped text in both chat layouts.
+    form.append(footer);
   }
 
   function clearFooter() {
     footer?.remove();
     footer = null;
-    if (paddedContainer) paddedContainer.style.paddingBottom = originalPadding;
-    paddedContainer = null;
   }
 
   function scheduleRender() {
@@ -79,13 +68,13 @@
       if (event.source !== window.parent || event.origin !== parentOrigin) return;
       const data = event.data;
       if (!data || data.type !== messageType || data.version !== 1) return;
-      if (typeof data.text !== 'string' || [...data.text].length > 400) return;
+      if (typeof data.text !== 'string' || [...data.text].length > 100) return;
       text = data.text;
       if (!text) clearFooter();
       scheduleRender();
     });
 
-    // Observe only structural changes. Text updates while streaming do not need reattachment.
+    // Streaming text updates do not require reattaching the footer.
     const observer = new MutationObserver(() => {
       if (!footer?.isConnected || !input?.isConnected) scheduleRender();
     });

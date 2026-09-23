@@ -1,9 +1,9 @@
-import { updateTenantSettings, type TenantSettingsDto } from '@core/sdk/client'
+import { updateTenantSettings, type UpdateTenantSettingsRequest } from '@core/sdk/client'
 
 export const useUpdateTenantSettings = defineMutation(() => {
   const queryCache = useQueryCache()
   const { mutateAsync: saveSettings, isLoading: isSaving } = useMutation({
-    mutation: async ({ tenantId, settings }: { tenantId: string, settings: TenantSettingsDto }) => {
+    mutation: async ({ tenantId, settings }: { tenantId: string, settings: UpdateTenantSettingsRequest }) => {
       const saved = await updateTenantSettings({
         composable: '$fetch',
         path: { tenant_id: tenantId },

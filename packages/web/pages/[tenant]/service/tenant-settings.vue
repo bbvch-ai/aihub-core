@@ -77,7 +77,7 @@ watch(settings, (value, previous) => {
 
 function disclaimerLength(node: { value: unknown }) {
   return Object.values((node.value ?? {}) as Record<string, string | null>)
-    .every(value => !value || [...value.trim()].length <= 400)
+    .every(value => !value || [...value.trim()].length <= 100)
 }
 
 async function save() {

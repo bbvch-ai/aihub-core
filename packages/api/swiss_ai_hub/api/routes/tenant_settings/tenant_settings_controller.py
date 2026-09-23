@@ -6,6 +6,7 @@ from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.tenant_settings.dto.tenant_settings_dto import TenantSettingsDTO
+from swiss_ai_hub.api.routes.tenant_settings.dto.update_tenant_settings_request import UpdateTenantSettingsRequest
 from swiss_ai_hub.api.routes.tenant_settings.tenant_settings_service import TenantSettingsService
 
 
@@ -35,7 +36,7 @@ class TenantSettingsController(TenantScopedController):
     def update_tenant_settings(self, route: str = "") -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_tenant_settings(
-            settings: TenantSettingsDTO,
+            settings: UpdateTenantSettingsRequest,
             user: Annotated[
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],

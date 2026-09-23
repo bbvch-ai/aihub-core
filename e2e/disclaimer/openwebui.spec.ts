@@ -40,6 +40,22 @@ async function send(page: Page, text: string, version = 1) {
   }, { text, version, webui })
 }
 
+async function expectWrappedFooter(frame: Frame) {
+  const footer = frame.locator(selector)
+  await expect.poll(() => footer.evaluate((element) => {
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    const textBox = range.getBoundingClientRect()
+    const box = element.getBoundingClientRect()
+    return element.clientHeight > Number.parseFloat(getComputedStyle(element).lineHeight)
+      && textBox.bottom <= box.bottom + 1 && textBox.right <= box.right + 1
+      && element.scrollWidth <= element.clientWidth && element.scrollHeight <= element.clientHeight
+  })).toBe(true)
+  const inputBox = await frame.locator('#message-input-container').boundingBox()
+  const footerBox = await footer.boundingBox()
+  expect(footerBox!.y).toBeGreaterThanOrEqual(inputBox!.y + inputBox!.height)
+}
+
 async function createChat(frame: Frame) {
   return frame.evaluate(async () => {
     const userId = crypto.randomUUID()
@@ -71,12 +87,11 @@ test('stock OpenWebUI keeps the localized footer across chat layouts and rejects
   const chatId = await createChat(frame)
 
   try {
-    // Existing chats have the original commented-out footer. Assert its real geometry.
     await frame.goto(`${webui}/c/${chatId}`)
     const footer = frame.locator(selector)
     await expect(footer).toHaveText(defaultText)
     await expect(footer).toHaveCount(1)
-    expect(await footer.evaluate(element => element.parentElement!.classList.contains('absolute'))).toBe(true)
+    expect(await footer.evaluate(element => element.parentElement!.tagName)).toBe('FORM')
     const inputBox = await frame.locator('#message-input-container').boundingBox()
     const footerBox = await footer.boundingBox()
     expect(footerBox!.y).toBeGreaterThanOrEqual(inputBox!.y + inputBox!.height)
@@ -89,7 +104,7 @@ test('stock OpenWebUI keeps the localized footer across chat layouts and rejects
     await expect(footer.locator('img')).toHaveCount(0)
 
     await send(page, 'WRONG VERSION', 2)
-    await send(page, 'x'.repeat(401))
+    await send(page, 'x'.repeat(101))
     // A sibling frame has the correct origin, but is not the trusted parent window.
     await page.evaluate((webui) => {
       const sibling = document.createElement('iframe')
@@ -104,23 +119,33 @@ test('stock OpenWebUI keeps the localized footer across chat layouts and rejects
     await expect(footer).toHaveCount(0)
     await send(page, defaultText)
     await expect(footer).toHaveText(defaultText)
-    await send(page, '🙂'.repeat(400))
-    await expect(footer).toHaveText('🙂'.repeat(400))
-    await send(page, '🙂'.repeat(401))
-    await expect(footer).toHaveText('🙂'.repeat(400))
+    await send(page, '🙂'.repeat(100))
+    await expect(footer).toHaveText('🙂'.repeat(100))
+    await send(page, '🙂'.repeat(101))
+    await expect(footer).toHaveText('🙂'.repeat(100))
     await send(page, defaultText)
     await expect(footer).toHaveText(defaultText)
     await footer.evaluate(element => element.remove())
     await expect(footer).toHaveText(defaultText)
     await expect(footer).toHaveCount(1)
 
+    await page.setViewportSize({ width: 390, height: 844 })
+    await send(page, 'W'.repeat(100))
+    await expect(footer).toHaveText('W'.repeat(100))
+    await expectWrappedFooter(frame)
+    await send(page, defaultText)
+    await expect(footer).toHaveText(defaultText)
+
     // Use the app's own navigation so Svelte replaces the composer without a document reload.
+    await page.setViewportSize({ width: 1440, height: 1000 })
     await frame.locator('a[href="/"]').first().evaluate(element => (element as HTMLElement).click())
     await expect.poll(() => frame.url()).toBe(`${webui}/`)
     await expect(footer).toHaveText(defaultText)
     await expect(footer).toHaveCount(1)
     await page.setViewportSize({ width: 390, height: 844 })
-    await expect(footer).toBeVisible()
+    await send(page, 'W'.repeat(100))
+    await expect(footer).toHaveText('W'.repeat(100))
+    await expectWrappedFooter(frame)
     await frame.evaluate(() => document.documentElement.classList.replace('light', 'dark'))
     await expect(footer).toBeVisible()
     expect(errors).toEqual([])
