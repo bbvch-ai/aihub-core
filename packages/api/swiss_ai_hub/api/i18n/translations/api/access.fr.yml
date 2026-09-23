@@ -95,6 +95,9 @@ capabilities:
       manage:
         label: Gérer
         description: Configurer et ingérer des documents dans ce namespace.
+      manage_database:
+        label: Gérer
+        description: Configurer cette base de connaissances, y ajouter des dossiers et la supprimer.
     model:
       use:
         description: Utiliser ce modèle.

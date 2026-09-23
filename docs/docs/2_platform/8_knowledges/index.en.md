@@ -148,7 +148,9 @@ parent, its collections (namespaces) are the children, and a rule on one level n
 | `aihub.user.knowledge.>`              | Browse every database and every collection                                                  |
 
 The seeded `AIHubKnowledgeUser` and `AIHubKnowledgeAdmin` roles bundle the last row and the first two rows respectively,
-and the role editor offers the same three rules as presets. Admin rules imply the matching user rule.
+and the role editor offers the same three rules as presets. Admin rules imply the matching user rule. Per resource, the
+role and tenant editors offer **Manage** on each database (`<db>` together with `<db>.>`) and **Use** and **Manage** on
+each collection (`<db>.<ns>`), so one collection can be handed to someone without the rest of its database.
 `aihub.admin.knowledge.>` covers every existing database and collection but not the bare `aihub.admin.knowledge` root,
 so a role that should create databases needs the root rule explicitly.
 
