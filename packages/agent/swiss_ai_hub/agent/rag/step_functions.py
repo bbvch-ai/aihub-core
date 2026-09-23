@@ -108,10 +108,8 @@ async def do_limit_chat_history(
     any one step's prompt. `condense_standalone_question` really does pay for the turn twice -- it renders the
     limited history into its system prompt and appends the message again -- but tiktoken is not the served model's
     tokenizer and over-counts enough on non-Latin scripts that budgeting for the doubling refuses prompts the model
-    accepts (121k tiktoken tokens of Vietnamese fit gemma-4-31B-it as Infomaniak declares it, at 100k; stoney-cloud
-    declares 155648 for the same model, so the headroom is provider-dependent and the measurement is the floor). A
-    prompt that fits here and
-    still overflows downstream gets the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a
+    accepts (121k tiktoken tokens of Vietnamese fit gemma-4-31B-it's 100k window on Infomaniak). A prompt that fits
+    here and still overflows downstream gets the provider's own 400, which `ModelGatewayErrorHandler` rewrites into a
     sentence naming the limit.
 
     Refusing loses the thread's title, which `generate_conversation_title_step` anchors on the event this no longer

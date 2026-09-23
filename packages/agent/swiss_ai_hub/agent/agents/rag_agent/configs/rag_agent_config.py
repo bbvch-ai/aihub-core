@@ -137,8 +137,7 @@ class RAGAgentConfig(AgentConfig):
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.help"),
                 min=1024,
-                # Matches the other agents' forms. `effective_input_token_limit` clamps to the selected model's
-                # own window, so a value above it costs nothing.
+                # Matches the other agents; `effective_input_token_limit` still clamps to the model's window.
                 max=200000,
                 step=1024,
             ),

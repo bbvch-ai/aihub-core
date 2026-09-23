@@ -24,9 +24,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 logger = logging.getLogger(__name__)
 
-# Conservative default for a model that declares no window. gemma-4-31B-it declares 100000 on Infomaniak and 155648
-# on stoney-cloud, so this is well below either; the pipeline caps lower still (MAX_INPUT_TOKENS_CEILING).
-DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768
+DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default, below either provider's gemma-4-31B-it window
 
 # Absorbs the prompt-template overhead the budget check cannot measure until render time and the tokenizer
 # mismatch between our counter and the model actually enforcing the limit.

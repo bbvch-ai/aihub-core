@@ -71,9 +71,7 @@ model_list:
       additional_drop_params: [chat_template_kwargs]
     model_info:
       mode: chat
-      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model, not the model's own
-      # architecture limit. Their OpenAI-compatible /v1/models carries no context field to verify this against,
-      # so it must be checked manually against their native API if this model's serving changes.
+      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model.
       max_input_tokens: 100000
       max_output_tokens: 8192
       supports_function_calling: true

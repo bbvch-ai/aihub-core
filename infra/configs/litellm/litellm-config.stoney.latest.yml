@@ -38,17 +38,12 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-      # stoney-cloud's /v1/models declares max_model_len: 163840, which its own 400 confirms is the TOTAL budget
-      # ("max_model_len=max_total_tokens"), not an input limit: input + max_tokens are summed against it. Measured
-      # 2026-09-22 — a 155648-token prompt with max_tokens 8192 is accepted, 155649 is rejected. So these two must
-      # keep summing to 163840; raising one requires lowering the other.
+      # stoney's max_model_len 163840 is input + output combined, so these two must sum to it.
       max_input_tokens: 155648
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
-      # CHF 0.25 / 1.00 per MTok, derived from the provider's own GET /v1/usage over a controlled 151k-token run
-      # (predicted and billed matched to 9 decimal places). stoney publishes no rate card; re-derive the same way
-      # if the contract changes.
+      # CHF 0.25 / 1.00 per MTok, measured via stoney's GET /v1/usage (no published rate card).
       input_cost_per_token: 0.00000025
       output_cost_per_token: 0.000001
   - model_name: text-generation/Kimi-K2.6
@@ -75,9 +70,7 @@ model_list:
       additional_drop_params: [chat_template_kwargs]
     model_info:
       mode: chat
-      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model, not the model's own
-      # architecture limit. Their OpenAI-compatible /v1/models carries no context field to verify this against,
-      # so it must be checked manually against their native API if this model's serving changes.
+      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model.
       max_input_tokens: 100000
       max_output_tokens: 8192
       supports_function_calling: true

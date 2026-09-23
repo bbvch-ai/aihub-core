@@ -29,13 +29,7 @@ DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 STAGES = ["dev", "local", "latest", "nightly", "build"]
 GPU_MODES = {False: "", True: ".gpu"}
 
-# Provider variants for the LiteLLM config. A config whose name pattern contains
-# `{variant}` is rendered once per entry here, and the deployment picks one at
-# runtime via LITELLM_CONFIG_VARIANT (see the litellm service in the compose
-# template). This is what lets a single release bundle serve gemma-4-31B-it from
-# stoney-cloud on staging/latest while every other deployment stays on Infomaniak
-# — the release bundle cannot encode that, because every channel renders as
-# stage='latest' and all customers share the same `latest` artifact.
+# Configs with `{variant}` in their name render once per entry; LITELLM_CONFIG_VARIANT picks one at runtime.
 LITELLM_VARIANTS = ["infomaniak", "stoney"]
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
@@ -581,8 +575,7 @@ def main():
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
-    # The compose template mounts one config per variant, so it must iterate the same list the
-    # renderer does — otherwise adding a variant silently produces a config nothing mounts.
+    # Shared with the compose template so every rendered variant is also mounted.
     env.globals["litellm_variants"] = LITELLM_VARIANTS
 
     if args.check_env:

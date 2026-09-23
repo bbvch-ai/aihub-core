@@ -157,7 +157,7 @@ class LLMWrappingAgent(Agent):
         `astream_chat`, and on a streaming call LiteLLM replaces the provider's message with its own bookkeeping
         (verified against gemma-4-31B-it on Infomaniak -- the same prompt returns "maximum context length is 100016
         tokens" unstreamed and a bare "Error code: 400" streamed), leaving `ModelGatewayErrorHandler` nothing to
-        match. The quoted limit tracks whichever provider serves the model, but the masking behaviour does not.
+        match.
         So the refusal has to happen here or not at all.
         """
         locale = event.locale

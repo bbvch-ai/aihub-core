@@ -1449,10 +1449,7 @@ services:
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
-      # Both provider variants ship; LITELLM_CONFIG_VARIANT picks one at `docker compose up`. Compose interpolates
-      # it from the deployment's .env, which is what lets staging/latest run gemma-4-31B-it on stoney-cloud while
-      # every other deployment stays on Infomaniak from the same release bundle. An unset or misspelled value
-      # points at a file that does not exist and LiteLLM refuses to start — loud, not silent.
+      # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
       - ./configs/litellm/litellm-config.infomaniak.build.yml:/app/config.infomaniak.yml
       - ./configs/litellm/litellm-config.stoney.build.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
