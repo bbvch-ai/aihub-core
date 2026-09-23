@@ -581,6 +581,9 @@ def main():
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
+    # The compose template mounts one config per variant, so it must iterate the same list the
+    # renderer does — otherwise adding a variant silently produces a config nothing mounts.
+    env.globals["litellm_variants"] = LITELLM_VARIANTS
 
     if args.check_env:
         from env_check import check_env_vs_compose

@@ -1846,8 +1846,9 @@ services:
       # it from the deployment's .env, which is what lets staging/latest run gemma-4-31B-it on stoney-cloud while
       # every other deployment stays on Infomaniak from the same release bundle. An unset or misspelled value
       # points at a file that does not exist and LiteLLM refuses to start — loud, not silent.
-      - ./configs/litellm/litellm-config.infomaniak{{ config_variant_suffix }}.yml:/app/config.infomaniak.yml
-      - ./configs/litellm/litellm-config.stoney{{ config_variant_suffix }}.yml:/app/config.stoney.yml
+      {%- for litellm_variant in litellm_variants %}
+      - ./configs/litellm/litellm-config.{{ litellm_variant }}{{ config_variant_suffix }}.yml:/app/config.{{ litellm_variant }}.yml
+      {%- endfor %}
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
