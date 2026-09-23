@@ -55,6 +55,7 @@ produce a config that nothing mounts.
   secrets.
 - #9 extends this by adding a `stoney-primary` variant carrying both entries under one `model_name` with `order: 1` and
   `order: 2`. Selector, axis and vault key are unchanged.
-- A larger declared window is not free elsewhere: a single turn between the old 100000 and the new 155648 can serialize
-  past NATS's 1 MB `max_payload`, and the run then stalls with no error surfaced. The token guard cannot prevent it — it
-  measures tokens, the limit is bytes.
+- A larger declared window is not free elsewhere: a single turn can serialize past NATS's `max_payload`, and the run
+  then stalls with no error surfaced. The token guard cannot prevent it — it measures tokens, the limit is bytes. Every
+  release bundle and the Helm chart set 2 MB (about 13.5 bytes per token at 155648); only dev, local and build keep 1
+  MB, so local runs fail on prompts the deployments accept.

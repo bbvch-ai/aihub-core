@@ -64,7 +64,7 @@ class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: Annotated[
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
-    ] = 128000
+    ] = 155648
     context_sufficient_guard: Annotated[
         ContextSufficientGuardStepConfig,
         Field(
@@ -137,7 +137,9 @@ class RAGAgentConfig(AgentConfig):
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.help"),
                 min=1024,
-                max=128000,
+                # Ceiling of the widest window any configured chat model declares. `effective_input_token_limit`
+                # still clamps to the selected model's own window, so a value above it costs nothing.
+                max=155648,
                 step=1024,
             ),
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
