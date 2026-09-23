@@ -141,7 +141,9 @@ class TestDeleteNamespace:
 
 class TestDeleteRevokesAccess:
     def test_revokes_the_database_and_every_namespace_rule_and_role(self):
-        """Grants outlive the rows they name unless delete revokes them, leaving inert rules to pile up."""
+        """Grants outlive the rows they name unless delete revokes them, leaving inert rules to pile up. The
+        subtree forms matter most: left behind, they hand a later database of the same name to the tenants
+        that held the deleted one."""
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
             patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
@@ -156,7 +158,9 @@ class TestDeleteRevokesAccess:
         revoked = tenant_cls.revoke_access_rule_from_all_tenants.call_args.args[0]
         assert set(revoked) == {
             f"aihub.user.knowledge.{DATABASE}",
+            f"aihub.user.knowledge.{DATABASE}.>",
             f"aihub.admin.knowledge.{DATABASE}",
+            f"aihub.admin.knowledge.{DATABASE}.>",
             f"aihub.user.knowledge.{DATABASE}.{NAMESPACE}",
             f"aihub.admin.knowledge.{DATABASE}.{NAMESPACE}",
         }
