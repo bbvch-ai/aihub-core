@@ -45,7 +45,7 @@ class FewShotAgentConfig(AgentConfig):
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
         Gt(0),
-    ] = 155648
+    ] = 100000
 
     @model_validator(mode="after")
     def derive_task_llm_from_main_llm(self) -> Self:

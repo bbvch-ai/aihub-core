@@ -25,7 +25,7 @@ class LLMWrappingAgentConfig(AgentConfig):
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
         Gt(0),
-    ] = 155648
+    ] = 100000
     llm: Annotated[
         LLMConfig,
         Field(description="The LLM configuration for the agent."),
