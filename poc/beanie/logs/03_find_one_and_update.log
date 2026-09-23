@@ -1,0 +1,51 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_03_find_one_and_update.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+FIRST RUN of this script failed at step 6 with an unhandled exception; the script was then
+extended with a second Document class to test both configurations. The original traceback:
+
+    File "poc/beanie/checks/check_03_find_one_and_update.py", line 98, in main
+        await doc.save_changes()
+      File ".venv/Lib/site-packages/beanie/odm/utils/state.py", line 48, in async_wrapper
+        check_if_state_saved(self)
+      File ".venv/Lib/site-packages/beanie/odm/utils/state.py", line 19, in check_if_state_saved
+        raise StateManagementIsTurnedOff(
+            "State management is turned off for this document"
+        )
+    beanie.exceptions.StateManagementIsTurnedOff: State management is turned off for this document
+
+SECOND RUN (script as committed):
+
+== 0. clean slate ==
+inserted doc-1
+
+== 1. driver-level find_one_and_update, plain field set ==
+returned (AFTER) : counter=1
+returned (BEFORE): counter=1
+stored now       : counter=2  -> BEFORE/AFTER semantics correct
+
+== 2. nested-field set (the ref_doc.py:366 shape) ==
+data.metadata    : {'is_ingested': True, 'source': 'spike'}
+siblings intact  : text='hello'
+
+== 3. upsert ==
+upserted _id=ObjectId('6ab2233f1e01f34c9f07ccc1') type=ObjectId counter=99
+
+== 4. no-match without upsert returns None ==
+returned: None
+
+== 5. Beanie API: .set() ==
+after .set()     : counter=42
+
+== 6a. save_changes() WITHOUT state management ==
+refused by Beanie: StateManagementIsTurnedOff: State management is turned off for this document
+-> save_changes() is NOT available by default; it is opt-in per Document
+
+== 6b. save_changes() WITH use_state_management = True ==
+after save_changes: counter=7 metadata={'is_ingested': True, 'source': 'changed'}
+
+== 6c. does state management change the stored shape? ==
+keys: ['_id', 'counter', 'data', 'ref_doc_id']
+
+== 7. Beanie API: query-level update with Set ==
+after query update: counter=100

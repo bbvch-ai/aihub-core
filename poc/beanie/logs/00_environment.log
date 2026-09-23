@@ -1,0 +1,23 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/probe_environment.py
+(MONGO_* loaded from .env)
+
+## Host
+python            3.13.13
+platform          Windows-11-10.0.26200-SP0
+utc_offset        +7h (standard time)
+
+## Packages
+beanie            not installed
+pymongo           4.17.0
+motor             3.7.1
+mongoengine       0.29.3
+pydantic          2.13.4
+
+## Database
+target            localhost:27017
+spike_db          aihub_beanie_spike
+version           7.0.77
+ferretdb          {'version': 'v2.5.0', 'package': 'docker'}
+maxWireVersion    21
+databases         ['aihub', 'defaultknowledge', 'development', 'emailtesting', 'followup_affirmation_test', 'localknowledge', 'notreserveddb', 'retrieval_agent_development', 'sharedknowledge', 'test']
+spike_db_exists   False

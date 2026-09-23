@@ -1,0 +1,131 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_10_load.py ...
+Environment: FerretDB 2.5.0 + postgres-documentdb + NATS 2.11.4 ONLY. Every other dev-stack
+container stopped. beanie 2.2.0, mongoengine 0.29.3, Python 3.13.13, 20-core Windows host.
+"timed out after 5.0s" logger lines from NCRequester are filtered from the tables below; the
+`t/out` column carries the count.
+
+
+=========================================================================================
+RUN 1 -- THE WRONG HARNESS, kept because it is the pre-registered failure mode
+=========================================================================================
+Saturator: ~400 small document writes/second, standing in for EventPersister.
+
+variant          conc    ok  t/out  err   p50 ms   p95 ms   p99 ms  writes
+--------------------------------------------------------------------------
+raw                 1     1      0    0       36       36       36     395
+raw                10    10      0    0       39       40       40     408
+to_thread_part      1     1      0    0       22       22       22     458
+to_thread_part     10    10      0    0       32       35       35     479
+to_thread_full      1     1      0    0       33       33       33     413
+to_thread_full     10    10      0    0       22       27       27     315
+beanie              1     1      0    0       11       11       11     347
+beanie             10    10      0    0       15       19       19     453
+
+The `raw` CONTROL showed no starvation, which is the pre-registered "the harness is not
+reproducing the symptom" outcome. Cause: many small writes do not starve a loop. The source
+comment at persisted_agent_event_entity.py:584 names the real culprit -- "a 123s cold read of
+30 days off disk". The saturator was rebuilt around ONE SLOW READ.
+
+
+=========================================================================================
+CALIBRATION -- how much corpus makes a FerretDB aggregation slow
+=========================================================================================
+   5000 docs | seed   0.11s | aggregate  0.061s (then 0.068s, 0.067s) | 50 rows
+  20000 docs | seed   0.48s | aggregate  0.377s (then 0.371s, 0.314s) | 50 rows
+  50000 docs | seed   1.19s | aggregate  0.772s (then 0.747s, 0.843s) | 50 rows
+(FerretDB caps a write batch at 25000 operations.)
+
+
+=========================================================================================
+DIAGNOSTIC -- why to_thread_part looked WORSE than raw
+=========================================================================================
+=== raw ===
+    client round-trip      :     1380 ms
+    queued before handler  :     1071 ms
+    lookup inside handler  :       35 ms
+
+=== to_thread ===
+    client round-trip      :     1834 ms
+    queued before handler  :     1014 ms
+    lookup inside handler  :      516 ms
+
+Both wait ~1s for the loop. The difference is AFTER the handler is entered: to_thread needs a
+SECOND loop slice to resume once the worker thread finishes, and on a contended loop that is
+another blocking cycle. Real mechanism, not a harness artifact.
+
+
+=========================================================================================
+RUN 2 -- contention sweep (`gap` = idle seconds between saturator passes)
+=========================================================================================
+corpus=50000 docs | one saturator pass blocks for 570 ms | pool=default(24) | runs=3 | RPC budget=5000 ms
+variant           gap s conc    ok  t/out  err   p50 ms   p95 ms   p99 ms  passes
+---------------------------------------------------------------------------------
+raw                0.00    1     1      0    0     2976     2976     2976       9
+raw                0.00   10    10      0    0     3102     3102     3102       9
+raw                0.00   50    50      0    0     3425     3425     3425       9
+to_thread_part     0.00    1     1      0    0     4483     4483     4483      12
+to_thread_part     0.00   10    10      0    0     4249     4249     4249      12
+to_thread_part     0.00   50    50      0    0     4085     4085     4085      12
+to_thread_full     0.00    1     1      0    0       44       44       44       4
+to_thread_full     0.00   10    10      0    0       34       46       46       3
+to_thread_full     0.00   50    50      0    0       57       68       74       3
+beanie             0.00    1     1      0    0       19       19       19       3
+beanie             0.00   10    10      0    0       32       41       41       3
+beanie             0.00   50    50      0    0       62       79       82       3
+---------------------------------------------------------------------------------
+raw                0.25    1     1      0    0       24       24       24       2
+raw                0.25   10    10      0    0      134      134      134       2
+raw                0.25   50    50      0    0      161      162      162       3
+to_thread_part     0.25    1     1      0    0       25       25       25       2
+to_thread_part     0.25   10    10      0    0       21       26       26       2
+to_thread_part     0.25   50    50      0    0       55       63       65       2
+to_thread_full     0.25    1     1      0    0       44       44       44       2
+to_thread_full     0.25   10    10      0    0       30       43       43       2
+to_thread_full     0.25   50    50      0    0       55       70       71       2
+beanie             0.25    1     1      0    0       14       14       14       2
+beanie             0.25   10    10      0    0       28       31       31       3
+beanie             0.25   50    50      0    0       43       59       61       3
+---------------------------------------------------------------------------------
+raw                1.00    1     1      0    0       30       30       30       2
+raw                1.00   10    10      0    0       55       55       55       2
+raw                1.00   50    50      0    0      111      111      111       2
+to_thread_part     1.00    1     1      0    0       40       40       40       1
+to_thread_part     1.00   10    10      0    0       23      586      586       2
+to_thread_part     1.00   50    50      0    0       79      702      703       2
+to_thread_full     1.00    1     1      0    0       14       14       14       1
+to_thread_full     1.00   10    10      0    0       24       33       33       1
+to_thread_full     1.00   50    50      0    0       67       79       79       2
+beanie             1.00    1     1      0    0        6        6        6       1
+beanie             1.00   10    10      0    0       27       33       33       2
+beanie             1.00   50    50      0    0       71       90       93       2
+---------------------------------------------------------------------------------
+
+
+=========================================================================================
+RUN 3 -- production-container pool width, higher concurrency
+=========================================================================================
+corpus=50000 docs | one saturator pass blocks for 512 ms | pool=6 | runs=3 | RPC budget=5000 ms
+variant           gap s conc    ok  t/out  err   p50 ms   p95 ms   p99 ms  passes
+---------------------------------------------------------------------------------
+to_thread_full     0.00   50    50      0    0       63       74       80       3
+to_thread_full     0.00  100   100      0    0       81      108      109       3
+to_thread_full     0.00  200   200      0    0      124      208      208       3
+to_thread_full     0.00  400   400      0    0      221      393      396       4
+beanie             0.00   50    50      0    0       67       86       93       3
+beanie             0.00  100   100      0    0       75      105      108       4
+beanie             0.00  200   200      0    0      148      212      218       4
+beanie             0.00  400   400      0    0      267      395      401       4
+---------------------------------------------------------------------------------
+
+
+=========================================================================================
+RUN 4 -- absurd floor: 2-thread pool, up to 800 concurrent
+=========================================================================================
+corpus=50000 docs | one saturator pass blocks for 532 ms | pool=2 | runs=3 | RPC budget=5000 ms
+variant           gap s conc    ok  t/out  err   p50 ms   p95 ms   p99 ms  passes
+---------------------------------------------------------------------------------
+to_thread_full     0.00  400   400      0    0      308      519      537       4
+to_thread_full     0.00  800   800      0    0      974     1491     1536       4
+beanie             0.00  400   400      0    0      327      488      494       4
+beanie             0.00  800   800      0    0      582      880      885       4
+---------------------------------------------------------------------------------

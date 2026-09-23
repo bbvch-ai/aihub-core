@@ -1,0 +1,67 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe -m pytest poc/beanie/checks/check_09_test_infrastructure.py -v -s
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0; pytest 9.0.3; pytest-asyncio 1.3.0)
+
+REPRODUCTION GOTCHA: switching git branches desyncs the venv. `fix/api-mongo-blocking-loop`
+does not declare beanie, so checking it out and back uninstalled it and this module failed to
+import. `uv sync --all-packages` on the spike branch restores it.
+
+============================= test session starts =============================
+collected 7 items
+
+test_a_client_initialised_in_one_asyncio_run_used_in_the_next
+[A] reuse across asyncio.run() boundaries -> RuntimeError: Cannot use AsyncMongoClient in different event loop. AsyncMongoClient uses low-level asyncio APIs that bind it to the event loop it was created on.
+PASSED
+
+test_a2_reinitialising_in_each_asyncio_run_is_the_workaround
+[A2] re-init inside every asyncio.run() -> OK; 5 steps, 46 ms each
+PASSED
+
+test_b1_first_test_using_a_module_scoped_client
+[B1] first test, module-scoped client -> RuntimeError: Cannot use AsyncMongoClient in different event loop. AsyncMongoClient uses low-level asyncio APIs that bind it to the event loop it was created on.
+PASSED
+
+test_b2_second_test_using_the_same_module_scoped_client
+[B2] second test, SAME module-scoped client, new loop -> RuntimeError: Cannot use AsyncMongoClient in different event loop. AsyncMongoClient uses low-level asyncio APIs that bind it to the event loop it was created on.
+PASSED
+
+test_b3_function_scoped_init_is_the_workaround
+[B3] per-test init -> OK; 46 ms
+PASSED
+
+test_c_db_isolation_uses_a_sync_client_and_is_unaffected
+[C] sync drop_database (the db_isolation mechanism) -> OK
+PASSED
+
+test_d_document_class_retains_the_client_after_its_loop_dies
+[D] Document class still holds a collection handle after its loop closed: True
+    handle: AsyncCollection
+PASSED
+
+============================== 7 passed in 1.54s ==============================
+
+
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe -m pytest poc/beanie/checks/check_09b_loop_scope_mitigation.py -v -s
+
+============================= test session starts =============================
+collected 4 items
+
+test_first_test_on_the_session_loop
+[E1] session-scoped loop + session-scoped client, test 1 -> OK
+     loop id: 1513267287760
+PASSED
+
+test_second_test_on_the_session_loop
+[E2] session-scoped loop + session-scoped client, test 2 -> OK
+     loop id: 1513267287760  (same id as E1 = one shared loop)
+PASSED
+
+test_a_default_scoped_test_alongside_them
+[E3] DEFAULT per-test loop + session-scoped client -> RuntimeError: Cannot use AsyncMongoClient in different event loop. AsyncMongoClient uses low-level asyncio APIs that bind it to the event loop it was crea
+     loop id: 1513267297680  (different id = the mismatch)
+PASSED
+
+test_asyncio_run_alongside_a_session_loop
+[E4] asyncio.run() (the @async_test shape) against the session client -> RuntimeError: Cannot use AsyncMongoClient in different event loop. AsyncMongoClient uses low-level asyncio APIs that bind it to the event loop it was crea
+PASSED
+
+============================== 4 passed in 0.66s ==============================

@@ -1,0 +1,29 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_08_coexistence.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0; mongoengine 0.29.3)
+NOTE: the full dev stack was running against this FerretDB instance -- timings are
+contaminated and are NOT the phase-3 measurement. They demonstrate a mechanism, not a rate.
+
+== 0. clean slate, both clients open on the same collection ==
+  AsyncMongoClient (Beanie) and MongoClient (MongoEngine) both connected
+
+== 1. interleaved writes, read by the other side ==
+  Beanie reads MongoEngine's doc      : b value=2
+  MongoEngine reads Beanie's doc      : a value=1
+
+== 2. write by one, update by the other, read back by the first ==
+  Beanie doc updated by MongoEngine   : value=99 (expect 99)
+
+== 3. connection counts ==
+  server reports: {}
+
+== 4. does the SYNC half still block the event loop? ==
+   A background task ticks every 10ms. A blocking MongoEngine read runs on the loop.
+  ticks in a free 200ms window                 : 13
+  200 blocking MongoEngine reads took          : 447ms
+  ticks during that window                     : 0 (expect ~44 if the loop were free)
+  200 async Beanie reads took                  : 524ms
+  ticks during that window                     : 49 (expect ~52 if the loop stayed free)
+
+== 5. verdict on loop starvation ==
+  blocking path starved the loop: True
+  async path kept the loop alive: True

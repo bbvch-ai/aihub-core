@@ -1,0 +1,26 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_01_init_beanie.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== 0. clean slate ==
+dropped aihub_beanie_spike.agent_configs
+
+== 1. init_beanie (cold, collection absent) ==
+returned without error in 0.103s
+
+== 2. indexes as FerretDB reports them ==
+{'v': 2, 'key': SON([('_id', 1)]), 'name': '_id_'}
+{'v': 2, 'key': SON([('agent_class', 1), ('agent_id', 1)]), 'name': 'agent_class_1_agent_id_1', 'unique': True}
+{'v': 2, 'key': SON([('agent_class', 1)]), 'name': 'agent_class_1'}
+
+== 3. is the unique constraint actually enforced? ==
+inserted spike-a
+RESULT: second insert rejected -> unique index IS enforced (DuplicateKeyError)
+
+== 4. a different agent_id on the same class must still be allowed ==
+inserted spike-b (compound index behaves as compound, not as unique-on-agent_class)
+
+== 5. init_beanie again (warm, collection and indexes exist) ==
+returned without error in 0.009s -> idempotent
+
+== 6. index count unchanged after re-init ==
+['_id_', 'agent_class_1', 'agent_class_1_agent_id_1']

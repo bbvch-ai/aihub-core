@@ -1,0 +1,55 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_06_extra_allow.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+NOTE: an earlier run of this script omitted step 6b. It reported every path "safe",
+which was misleading -- the strict-model + replace() combination had not been tried.
+The script was extended and re-run; the output below is the complete run.
+
+== 0. clean slate ==
+
+== 1. can a STRICT model even load a document with extras? ==
+  loaded without error: title='original title'
+  -> Beanie does not reject unknown fields on read by default
+
+== 2. STRICT model: read -> modify -> save() ==
+  after StrictDoc.save()
+    keys stored : ['legacy_owner', 'nested_legacy', 'removed_in_v2', 'thread_id', 'title']
+    extras kept : ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+    extras LOST : none
+
+== 3. LENIENT model (extra='allow'): are extras visible in Python? ==
+  model_extra: {'legacy_owner': 'someone@example.com', 'removed_in_v2': 42, 'nested_legacy': {'a': {'b': [1, 2, 3]}}}
+
+== 4. LENIENT model: read -> modify -> save() ==
+  after LenientDoc.save()
+    keys stored : ['legacy_owner', 'nested_legacy', 'removed_in_v2', 'thread_id', 'title']
+    extras kept : ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+    extras LOST : none
+
+== 5. LENIENT model: read -> modify -> save_changes() ==
+  after LenientDoc.save_changes()
+    keys stored : ['legacy_owner', 'nested_legacy', 'removed_in_v2', 'thread_id', 'title']
+    extras kept : ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+    extras LOST : none
+
+== 6. LENIENT model: read -> modify -> replace() ==
+  after LenientDoc.replace()
+    keys stored : ['legacy_owner', 'nested_legacy', 'removed_in_v2', 'thread_id', 'title']
+    extras kept : ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+    extras LOST : none
+
+== 6b. THE DANGEROUS COMBINATION: strict model + replace() ==
+  StrictDoc discards extras on load, so if replace() writes the whole document
+  back, the extras have nothing to come from. This is the case to fear.
+  model_extra on strict model: None
+  after StrictDoc.replace()
+    keys stored : ['thread_id', 'title']
+    extras kept : NONE
+    extras LOST : ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+
+== 7. summary ==
+  StrictDoc.save()               safe
+  StrictDoc.replace()            DATA LOSS  ['legacy_owner', 'nested_legacy', 'removed_in_v2']
+  LenientDoc.save()              safe
+  LenientDoc.save_changes()      safe
+  LenientDoc.replace()           safe

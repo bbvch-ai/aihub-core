@@ -1,0 +1,53 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_13_migration_framework.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== 1. can FerretDB open a session at all? ==
+  write+read inside a session: OK
+  start_session() -> OK
+
+== 2. does FerretDB support start_transaction()? ==
+  start_transaction() -> OperationFailure: no such command: 'commitTransaction', full error: {'ok': 0.0, 'errmsg': "no such command: 'commitTransaction'", 'code': 59, 'codeName': 'CommandNotFound'}
+
+== 3. forward migration, use_transaction=False (the default) ==
+  before:
+    {'full_name': 'Ada Lovelace', 'tenant': 't1'}
+    {'full_name': 'Alan Turing', 'tenant': 't1'}
+    {'full_name': 'Grace', 'tenant': 't2'}
+  run_migrate FORWARD -> OK
+  after:
+    {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+    {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+    {'first_name': 'Grace', 'last_name': '', 'tenant': 't2'}
+
+== 4. was the run recorded? (no 'auto' migration without this) ==
+    migrations_log: name='20260922000001_split_name_field.py' is_current=True ts=2026-09-22 16:07:15.649000
+
+== 5. is a second forward run a no-op? ==
+  second run -> OK
+  after second run (must be unchanged):
+    {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+    {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+    {'first_name': 'Grace', 'last_name': '', 'tenant': 't2'}
+
+== 6. backward migration (rollback) ==
+  run_migrate BACKWARD -> OK
+  after rollback:
+    {'full_name': 'Ada Lovelace', 'tenant': 't1'}
+    {'full_name': 'Alan Turing', 'tenant': 't1'}
+    {'full_name': 'Grace', 'tenant': 't2'}
+
+== 7. forward migration WITH use_transaction=True ==
+  run_migrate FORWARD (transactional) -> OperationFailure: no such command: 'commitTransaction', full error: {'ok': 0.0, 'errmsg': "no such command: 'commitTransaction'", 'code': 59, 'codeName': 'CommandNotFound'}
+  after:
+    {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+    {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+    {'first_name': 'Grace', 'last_name': '', 'tenant': 't2'}
+
+
+FOLLOW-UP PROBE -- state after the FAILED transactional run:
+   data  : {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+   data  : {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+   data  : {'first_name': 'Grace', 'last_name': '', 'tenant': 't2'}
+   log entries: 0
+
+The data WAS migrated and the run was NOT recorded.

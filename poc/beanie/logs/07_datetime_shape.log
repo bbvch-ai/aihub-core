@@ -1,0 +1,47 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_07_datetime_shape.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0; mongoengine 0.29.3)
+
+host UTC offset: +7h  (a UTC host would make this check meaningless)
+
+== 0. the two values, in Python ==
+  datetime.now()     -> datetime.datetime(2026, 9, 22, 13, 59, 26, 712182)
+  datetime.now(UTC)  -> datetime.datetime(2026, 9, 22, 6, 59, 26, 712184, tzinfo=datetime.timezone.utc)
+  difference         -> 7.0h
+
+== 1. write both through Beanie ==
+== 2. write both through MongoEngine ==
+
+== 3. raw BSON, read with a plain PyMongo client (tz_aware=False, the default) ==
+  beanie_aware_utc           datetime.datetime(2026, 9, 22, 6, 59, 26, 712000)  tzinfo=None
+  beanie_naive_local         datetime.datetime(2026, 9, 22, 13, 59, 26, 712000)  tzinfo=None
+  mongoengine_aware_utc      datetime.datetime(2026, 9, 22, 6, 59, 26, 712000)  tzinfo=None
+  mongoengine_naive_local    datetime.datetime(2026, 9, 22, 13, 59, 26, 712000)  tzinfo=None
+
+== 4. same documents, read with tz_aware=True ==
+  beanie_aware_utc           datetime.datetime(2026, 9, 22, 6, 59, 26, 712000, tzinfo=FixedOffset(datetime.timedelta(0), 'UTC'))
+  beanie_naive_local         datetime.datetime(2026, 9, 22, 13, 59, 26, 712000, tzinfo=FixedOffset(datetime.timedelta(0), 'UTC'))
+  mongoengine_aware_utc      datetime.datetime(2026, 9, 22, 6, 59, 26, 712000, tzinfo=FixedOffset(datetime.timedelta(0), 'UTC'))
+  mongoengine_naive_local    datetime.datetime(2026, 9, 22, 13, 59, 26, 712000, tzinfo=FixedOffset(datetime.timedelta(0), 'UTC'))
+
+== 5. what comes back through each ODM ==
+  Beanie      beanie_naive_local         datetime.datetime(2026, 9, 22, 13, 59, 26, 712000) tzinfo=None
+  Beanie      beanie_aware_utc           datetime.datetime(2026, 9, 22, 6, 59, 26, 712000) tzinfo=None
+  Beanie      mongoengine_naive_local    datetime.datetime(2026, 9, 22, 13, 59, 26, 712000) tzinfo=None
+  Beanie      mongoengine_aware_utc      datetime.datetime(2026, 9, 22, 6, 59, 26, 712000) tzinfo=None
+  MongoEngine beanie_naive_local         datetime.datetime(2026, 9, 22, 13, 59, 26, 712000) tzinfo=None
+  MongoEngine beanie_aware_utc           datetime.datetime(2026, 9, 22, 6, 59, 26, 712000) tzinfo=None
+  MongoEngine mongoengine_naive_local    datetime.datetime(2026, 9, 22, 13, 59, 26, 712000) tzinfo=None
+  MongoEngine mongoengine_aware_utc      datetime.datetime(2026, 9, 22, 6, 59, 26, 712000) tzinfo=None
+
+== 6. the is_online comparison, as agent_class_entity.py:110 performs it ==
+   `datetime.now() - last_discovered < ONLINE_THRESHOLD`, freshly written = must be ONLINE
+  beanie_naive_local         age=0:00:00.148751       ONLINE (correct)
+  beanie_aware_utc           age=7:00:00.148813       OFFLINE (WRONG, age=7:00:00.148813)
+  mongoengine_naive_local    age=0:00:00.148855       ONLINE (correct)
+  mongoengine_aware_utc      age=7:00:00.148891       OFFLINE (WRONG, age=7:00:00.148891)
+
+== 7. and the reverse error: comparing against an aware UTC now ==
+  beanie_naive_local         age=-1 day, 17:00:00.150843 ONLINE
+  beanie_aware_utc           age=0:00:00.150878       ONLINE
+  mongoengine_naive_local    age=-1 day, 17:00:00.150888 ONLINE
+  mongoengine_aware_utc      age=0:00:00.150895       ONLINE

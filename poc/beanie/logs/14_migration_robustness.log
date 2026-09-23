@@ -1,0 +1,52 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_14_migration_robustness.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== Q1: what does a migration that fails partway leave behind? ==
+  run_migrate -> MigrationExploded: deliberate failure partway through the migration
+    a-before   state='original'
+    b-before   state='original'
+    boom       state='original'
+    z-after    state='original'
+  0/4 documents migrated, migrations_log entries: 0
+  -> nothing was written before the failure
+
+== Q2: 4 replicas call the runner at the same time ==
+  before: applied=[0, 0, 0]
+  replica 0: worker: OK
+  replica 1: worker: OK
+  replica 2: worker: OK
+  replica 3: worker: OK
+  after : applied=[2, 2, 2], migrations_log entries=4
+  -> DOUBLE-APPLIED: migrations_log does not serialise concurrent runners
+
+== Q3: migrations across several tenant databases ==
+  -- sequentially, one database after another --
+    aihub_beanie_spike_tenant_a      OK           applied=[1, 1, 1] log=1
+    aihub_beanie_spike_tenant_b      OK           applied=[1, 1, 1] log=1
+  -- concurrently, in ONE process (the DBHandler global-state question) --
+    aihub_beanie_spike_tenant_a      OK           applied=[0, 0, 0] log=0   <-- WRONG
+    aihub_beanie_spike_tenant_b      OK           applied=[1, 1, 1] log=2
+
+
+SOURCE READ that explains Q1 -- beanie/migrations/controllers/iterative.py:93-127
+
+    async def run(self, session):
+        output_documents = []
+        all_migration_ops = []
+        async for input_document in self.input_document_model.find_all(session=session):
+            ...
+            output_documents.append(output_document)
+            if len(output_documents) == self.batch_size:          # batch_size default 10000 (line 45)
+                all_migration_ops.append(
+                    self.output_document_model.replace_many(documents=output_documents, session=session)
+                )
+                output_documents = []
+        if output_documents:
+            all_migration_ops.append(
+                self.output_document_model.replace_many(documents=output_documents, session=session)
+            )
+        await asyncio.gather(*all_migration_ops)                   # <-- NOTHING is awaited until here
+
+The replace_many coroutines are COLLECTED, not awaited, until the whole collection has
+been transformed. So a failure in the transform writes nothing, at any collection size.
+A failure inside the final gather is a different matter -- see the check's caveats.

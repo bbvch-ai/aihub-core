@@ -1,0 +1,23 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_05_multi_db.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== approach 1: one initialised Document subclass per database ==
+  db A contains: ['in-a']
+  db B contains: ['in-b']
+  isolated correctly: True
+  cost: one extra subclass + one init_beanie per database, known at startup
+
+== approach 2: one class, route by dropping to the raw collection ==
+  wrote to db B via raw collection: raw-to-b
+  read back and rehydrated: raw-to-b payload={'db': 'B'}
+  leaked into db A: False
+  cost: manual encode/decode, no Beanie validation on write, no hooks, no typed query API
+
+== approach 3: re-init the Document per call ==
+  20 routed writes via re-init: 0.202s (10.1 ms/write)
+  landed in A: 10, in B: 10 (expect 10 / 10)
+  cost: mutates PROCESS-WIDE class state; unsafe under concurrency
+
+== approach 3 under concurrency: two routed writes on one event loop ==
+  race-to-a: intended=aihub_beanie_spike landed=aihub_beanie_spike_tenant_b -> MISROUTED
+  race-to-b: intended=aihub_beanie_spike_tenant_b landed=aihub_beanie_spike_tenant_b -> OK

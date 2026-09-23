@@ -1,0 +1,35 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_04_aggregation.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== 0. clean slate ==
+seeded 6 spend events, 3 process events
+
+== 1. spend pipeline through Beanie, allowDiskUse=True ==
+  {'_id': {'user_id': 'alice', 'tenant_id': 't1'}, 'calls': 2, 'prompt_tokens_costs': 1.5, 'completion_tokens_costs': 2.5, 'embedding_tokens_costs': 0}
+  {'_id': {'user_id': 'alice', 'tenant_id': 't2'}, 'calls': 1, 'prompt_tokens_costs': 10.0, 'completion_tokens_costs': 0.0, 'embedding_tokens_costs': 0}
+  {'_id': {'user_id': 'bob', 'tenant_id': 't1'}, 'calls': 1, 'prompt_tokens_costs': 3.0, 'completion_tokens_costs': 1.0, 'embedding_tokens_costs': 0}
+
+== 2. same pipeline, plain PyMongo, allowDiskUse=True ==
+  {'_id': {'user_id': 'alice', 'tenant_id': 't1'}, 'calls': 2, 'prompt_tokens_costs': 1.5, 'completion_tokens_costs': 2.5, 'embedding_tokens_costs': 0}
+  {'_id': {'user_id': 'alice', 'tenant_id': 't2'}, 'calls': 1, 'prompt_tokens_costs': 10.0, 'completion_tokens_costs': 0.0, 'embedding_tokens_costs': 0}
+  {'_id': {'user_id': 'bob', 'tenant_id': 't1'}, 'calls': 1, 'prompt_tokens_costs': 3.0, 'completion_tokens_costs': 1.0, 'embedding_tokens_costs': 0}
+
+== 3. do they agree? ==
+  identical: True
+
+== 4. assertions on the spend result ==
+  alice/t1 calls=2 (expect 2: duplicate event_id collapsed)
+  alice/t1 prompt=1.5 (expect 1.5)
+  alice/t1 embedding=0 (expect 0.0 via $ifNull, not null)
+  400-day-old event excluded: True
+
+== 5. allowDiskUse rejected outright? ==
+  accepted (no error)
+
+== 6. correlated $lookup through Beanie ==
+  unanswered: UnansweredRequest forms=[{'_event_name': 'FormB'}]
+
+== 7. same $lookup, plain PyMongo ==
+  unanswered: UnansweredRequest
+  identical: True
+  expected exactly 1 unanswered (FormB): True

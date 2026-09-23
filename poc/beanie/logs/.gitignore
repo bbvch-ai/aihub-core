@@ -1,0 +1,4 @@
+# The root .gitignore excludes *.log. These logs are the spike's evidence -- the ADR
+# cites this directory as the verbatim record behind every check -- so they are tracked
+# deliberately. A nested .gitignore takes precedence over the parent's pattern.
+!*.log
