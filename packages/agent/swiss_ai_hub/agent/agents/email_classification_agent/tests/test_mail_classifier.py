@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from swiss_ai_hub.core.agents import AgentRef
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair
 from swiss_ai_hub.core.imap import (
     MAX_SUBJECT_CHARACTERS,
     DraftEmailSettings,
@@ -351,8 +352,13 @@ def test_a_workable_budget_passes_validation():
 # --- grounding validation ---
 
 
-def _grounded(namespace: str = "support") -> MailCategory:
-    return _SUPPORT.model_copy(update={"draft_reply": True, "knowledge_namespace": namespace})
+def _narrowed(namespace: str = "support") -> MailCategory:
+    return _SUPPORT.model_copy(
+        update={
+            "draft_reply": True,
+            "knowledge_namespaces": [BucketNamespacePair(bucket_name="support-kb", namespace_name=namespace)],
+        }
+    )
 
 
 def _delegation() -> KnowledgeDelegationConfig:
@@ -360,33 +366,38 @@ def _delegation() -> KnowledgeDelegationConfig:
 
 
 def _grounded_settings() -> EmailClassificationSettings:
-    settings = _settings([_grounded(), _INVOICE])
-    settings.knowledge_databases = ["support-kb"]
-    return settings
+    return _settings([_narrowed(), _INVOICE])
 
 
 def test_a_grounded_setup_that_can_produce_a_draft_passes():
     EmailClassificationAgent._validate(_grounded_settings(), _drafting(), "INBOX", _counter, _delegation())
 
 
-def test_grounding_without_a_knowledge_agent_is_rejected():
+def test_a_category_answering_from_the_whole_knowledge_agent_passes():
+    """No selection is not a missing scope — it is the delegate's own, which is the default this feature ships."""
+    settings = _settings([_SUPPORT.model_copy(update={"draft_reply": True}), _INVOICE])
+
+    EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter, _delegation())
+
+
+def test_narrowing_without_a_knowledge_agent_is_rejected():
     settings = _grounded_settings()
     draft = _drafting()
     with pytest.raises(ValueError, match="no knowledge agent is configured"):
         EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, None)
 
 
-def test_grounding_without_a_knowledge_database_is_rejected():
-    """A collection name alone identifies nothing — retrieval would be scoped to no bucket and answer from nothing."""
-    settings = _grounded_settings()
-    settings.knowledge_databases = []
+def test_an_empty_collection_selection_is_rejected():
+    """Switched on and holding nothing, the delegated run would silently answer from the delegate's whole scope —
+    the opposite of what narrowing was turned on to do."""
+    settings = _settings([_narrowed().model_copy(update={"knowledge_namespaces": []}), _INVOICE])
     draft = _drafting()
     delegation = _delegation()
-    with pytest.raises(ValueError, match="no knowledge database is configured"):
+    with pytest.raises(ValueError, match="switched on but name no collection"):
         EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
 
 
-def test_a_grounded_category_that_gets_no_drafted_reply_is_rejected():
+def test_a_narrowed_category_that_gets_no_drafted_reply_is_rejected():
     """It would retrieve nothing and leave the admin looking for drafts that were never due.
 
     Another category *is* opted in, so this has to be caught by the grounding rule specifically — the existing
@@ -394,11 +405,10 @@ def test_a_grounded_category_that_gets_no_drafted_reply_is_rejected():
     """
     settings = _settings(
         [
-            _grounded().model_copy(update={"draft_reply": False}),
+            _narrowed().model_copy(update={"draft_reply": False}),
             _INVOICE.model_copy(update={"draft_reply": True}),
         ]
     )
-    settings.knowledge_databases = ["support-kb"]
     draft = _drafting()
     delegation = _delegation()
     with pytest.raises(ValueError, match="name a knowledge collection but are not set to get a drafted reply"):
@@ -421,6 +431,4 @@ def test_grounding_is_not_checked_when_drafting_is_off():
     The reachable case is an admin who set grounding up and later paused drafting: every classification run would
     otherwise die on a feature that `_drafting_batch` disables anyway.
     """
-    settings = _grounded_settings()
-    settings.knowledge_databases = []
-    EmailClassificationAgent._validate(settings, _no_drafting(), "INBOX", _counter, None)
+    EmailClassificationAgent._validate(_grounded_settings(), _no_drafting(), "INBOX", _counter, None)

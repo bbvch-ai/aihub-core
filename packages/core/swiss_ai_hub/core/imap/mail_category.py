@@ -4,9 +4,11 @@ from pydantic import Field
 
 from swiss_ai_hub.core.form.constraints import MinLen
 from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
 from swiss_ai_hub.core.form.elements.textarea import Textarea
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
 from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
@@ -22,10 +24,11 @@ class MailCategory(Form):
     `thanking` mail rarely does. Mail no category fitted goes to the fallback folder and is therefore never drafted —
     the opt-in lives on the category, and uncategorised mail has none.
 
-    `knowledge_namespace` is what makes a drafted reply worth sending. A reply written from the message alone can
-    only acknowledge it; one written from the collection that answers this category can actually answer it. It is per
-    category rather than per agent because that is what keeps retrieval precise — a `support_request` retrieves
-    support material and nothing else, and the category verdict is what selects it.
+    `knowledge_namespaces` is what makes a drafted reply worth sending, and it is per category for the same reason
+    `draft_reply` is: a `support_request` has documentation behind it worth retrieving, a `thanking` mail has none and
+    would only retrieve noise. Left off, the reply is written from the message alone with no retrieval. Turned on, it
+    is answered from the collections named here and no others, selected by the category verdict. The profile's
+    knowledge agent supplies which collections can be named; the category decides whether its own replies use them.
     """
 
     category: Annotated[
@@ -51,15 +54,15 @@ class MailCategory(Form):
             "human to review and send. Mail is never sent.",
         ),
     ]
-    knowledge_namespace: Annotated[
-        str | InputText,
+    knowledge_namespaces: Annotated[
+        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
         Field(
-            default="",
-            description="Knowledge collection this category's replies are grounded in. Set it and the reply is "
-            "answered from the documents in that collection and no other; leave it empty and the reply is written "
-            "from the message alone, with no retrieval.",
+            default=None,
+            description="Knowledge collections this category's replies are answered from. Left off, the reply is "
+            "written from the message alone with no retrieval; turned on, it is answered from the collections named "
+            "here and no others.",
         ),
-    ]
+    ] = None
 
     @classmethod
     def as_form(cls) -> Self:
@@ -82,8 +85,13 @@ class MailCategory(Form):
                 label=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.category_draft_reply.help"),
             ),
-            knowledge_namespace=InputText(
-                label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespace.label"),
-                help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespace.help"),
+            knowledge_namespaces=KnowledgeCollectionSelector(
+                label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.help"),
+                placeholder=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.placeholder"),
+                # Only ever evaluated while the enable toggle is on, since the toggle unmounts the field: switched
+                # on and left empty is the one state that reads like narrowing and silently retrieves everything, so
+                # it is rejected in the form rather than by the run that would have been answered too widely.
+                additional_validation_rules="required",
             ),
         )

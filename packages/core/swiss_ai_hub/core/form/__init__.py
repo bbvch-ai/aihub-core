@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.group import Group
     from swiss_ai_hub.core.form.elements.input_number import InputNumber
     from swiss_ai_hub.core.form.elements.input_text import InputText
+    from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
@@ -49,6 +50,7 @@ __all__ = [
     "Group",
     "InputNumber",
     "InputText",
+    "KnowledgeCollectionSelector",
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
@@ -82,6 +84,7 @@ _LAZY_IMPORTS = {
     "Group": "swiss_ai_hub.core.form.elements.group",
     "InputNumber": "swiss_ai_hub.core.form.elements.input_number",
     "InputText": "swiss_ai_hub.core.form.elements.input_text",
+    "KnowledgeCollectionSelector": "swiss_ai_hub.core.form.elements.knowledge_collection_selector",
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",

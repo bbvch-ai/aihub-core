@@ -14,12 +14,14 @@ def narrow_retrievers(
     """Narrow configured retrievers by publisher-selected namespaces and runtime metadata filters.
 
     Primary caller is the `RAGStartEvent` path in RAG agents. The agent's configured namespace scope is
-    always the upper bound: a publisher-supplied namespace outside the named set drops the retriever, and
-    only a retriever configured with `all_namespaces` accepts any namespace.
+    always the upper bound: a publisher-supplied namespace outside the named set is dropped, a bucket left
+    with none of its selected namespaces drops the retriever, and only a retriever configured with
+    `all_namespaces` accepts any namespace. Several pairs may name the same bucket, which narrows that
+    retriever to all of them rather than to the last one seen.
     `additional_filters` keys must be listed in `allowed_metadata_filter_fields`; the reserved
     `namespace` key is rejected.
     """
-    selected_namespace_by_bucket = {pair.bucket_name: pair.namespace_name for pair in selected_namespaces}
+    selected_namespaces_by_bucket = _index_namespaces_by_bucket(selected_namespaces)
     filters_by_bucket = _index_filters_by_bucket(additional_filters)
 
     _reject_unknown_buckets(filters_by_bucket, retrievers)
@@ -29,18 +31,22 @@ def narrow_retrievers(
         bucket = retriever.vector_store.collection_name
 
         # Publisher made a selection but this bucket isn't in it — drop.
-        if selected_namespace_by_bucket and bucket not in selected_namespace_by_bucket:
+        if selected_namespaces_by_bucket and bucket not in selected_namespaces_by_bucket:
             continue
 
         narrowed_config = retriever
-        if bucket in selected_namespace_by_bucket:
-            selected_namespace = selected_namespace_by_bucket[bucket]
+        if bucket in selected_namespaces_by_bucket:
             configured = retriever.vector_store
-            # Publisher's selected namespace is outside the agent's configured set — drop.
-            if not configured.all_namespaces and selected_namespace not in configured.index_namespaces:
+            within_scope = [
+                namespace
+                for namespace in selected_namespaces_by_bucket[bucket]
+                if configured.all_namespaces or namespace in configured.index_namespaces
+            ]
+            # Every selected namespace for this bucket is outside the agent's configured set — drop.
+            if not within_scope:
                 continue
             narrowed_vector_store = configured.model_copy(
-                update={"index_namespaces": [selected_namespace], "all_namespaces": False}
+                update={"index_namespaces": within_scope, "all_namespaces": False}
             )
             narrowed_config = retriever.model_copy(update={"vector_store": narrowed_vector_store})
 
@@ -53,6 +59,17 @@ def narrow_retrievers(
         )
 
     return runtime_configs
+
+
+def _index_namespaces_by_bucket(selected_namespaces: list[BucketNamespacePair]) -> dict[str, list[str]]:
+    """Group the selection by bucket, keeping order and dropping repeats — a namespace listed twice would otherwise
+    reach Milvus twice in one filter."""
+    namespaces_by_bucket: dict[str, list[str]] = {}
+    for pair in selected_namespaces:
+        namespaces = namespaces_by_bucket.setdefault(pair.bucket_name, [])
+        if pair.namespace_name not in namespaces:
+            namespaces.append(pair.namespace_name)
+    return namespaces_by_bucket
 
 
 def _index_filters_by_bucket(

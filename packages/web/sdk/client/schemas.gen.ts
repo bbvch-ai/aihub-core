@@ -434,6 +434,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -663,6 +666,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/InputText",
+              },
+              {
+                $ref: "#/components/schemas/KnowledgeCollectionSelector",
               },
               {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -8789,6 +8795,9 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9085,6 +9094,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -9606,6 +9618,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9753,6 +9768,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -11707,6 +11725,9 @@ export const IngestorDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -13152,6 +13173,205 @@ export const KnobSchema = {
   required: ["label", "validation"],
   title: "Knob",
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
+} as const;
+
+export const KnowledgeCollectionSelectorSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
 } as const;
 
 export const KnowledgeDatabaseSelectorSchema = {
@@ -18060,6 +18280,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -19594,6 +19817,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -25620,6 +25846,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -25849,6 +26078,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/InputTextWritable",
+              },
+              {
+                $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
               },
               {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -29480,6 +29712,9 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29706,6 +29941,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -30010,6 +30248,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -30157,6 +30398,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -31030,6 +31274,9 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -32399,6 +32646,200 @@ export const KnobWritableSchema = {
   required: ["label"],
   title: "Knob",
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
+} as const;
+
+export const KnowledgeCollectionSelectorWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
 } as const;
 
 export const KnowledgeDatabaseSelectorWritableSchema = {
@@ -35074,6 +35515,9 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -36188,6 +36632,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",

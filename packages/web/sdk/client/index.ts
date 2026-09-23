@@ -767,6 +767,8 @@ export {
   type JsonSchema,
   type Knob,
   type KnobWritable,
+  type KnowledgeCollectionSelector,
+  type KnowledgeCollectionSelectorWritable,
   type KnowledgeDatabaseSelector,
   type KnowledgeDatabaseSelectorWritable,
   type LimitChatHistoryEvent,
