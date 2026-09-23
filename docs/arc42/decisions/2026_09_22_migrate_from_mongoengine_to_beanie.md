@@ -25,7 +25,7 @@ becomes either a manual operator step or an `if old_shape:` branch in code — w
 with one decision instead of two.
 
 The evaluation ran as a throwaway spike on branch `poc/beanie-spike` (head `34055e94`), deliberately never merged.
-Sixteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence recorded at the end of this document.
+Eighteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence recorded at the end of this document.
 
 ## Decision Drivers
 
@@ -72,10 +72,11 @@ Sixteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence rec
 **We migrate persistence from MongoEngine to Beanie, incrementally, and adopt Beanie's migration framework as the answer
 to #1152.**
 
-### Eight rules that are not optional
+### Nine rules that are not optional
 
-Every one of these was found by a check that first appeared to pass. All eight failure modes are **silent** — no
-exception, no warning, success reported — so none of them would be caught by a reviewer reading a diff.
+Every one of these was found by a check that first appeared to pass. Eight of the nine failure modes are **silent** — no
+exception, no warning, success reported — so they would not be caught by a reviewer reading a diff. Rule 9's is the
+exception: it fails loudly, but on every newly provisioned tenant.
 
 1. **Never opt in to `use_transaction=True`.** Beanie 2.2 defaults it to `False`; the rule guards the opt-in. FerretDB
    2.5 does not implement `commitTransaction` (`code 59, CommandNotFound`). With the flag on, the migration's writes
@@ -116,6 +117,16 @@ exception, no warning, success reported — so none of them would be caught by a
 8. **Backward runs always carry an explicit `--distance`, and are run by an operator, never on startup.** `distance=0`
    means "without limit" in both directions and is the CLI default, so a bare backward run undoes every migration ever
    applied (check 15, T3). Rules 4, 5 and 6 apply in both directions.
+
+9. **A newly provisioned tenant database is stamped as current, never migrated from zero.** Beanie has no
+   `InitialCreate` and needs none — MongoDB has no schema to create, so a fresh database is usable with zero migrations
+   run. The consequence is the inverse problem: a fresh database holds **current-shape** data but an empty
+   `migrations_log`, so the runner believes nothing has been applied and replays history against it. Measured, that
+   raised a `ValidationError` because the historical migration required a field the fresh database never had (check 17).
+   Beanie offers no `--fake` (Django) or `stamp` (Alembic) equivalent — verified against `beanie migrate --help` — so
+   tenant provisioning writes the `MigrationLog` row itself, naming the newest migration with `is_current=True`, next to
+   the code that creates the database. This matters more here than in a single-database application: the platform
+   provisions tenant databases continuously, and rule 5 has the runner walk every one of them.
 
 Rules 3 and 5 share a root cause with the test-infrastructure cost below: **Beanie's database binding is
 process-global.** `init_beanie` and `DBHandler` both mutate class-level state, so anything that retargets it must be
@@ -249,7 +260,7 @@ resume after its worker thread returns. The benefit comes from freeing the loop,
   Duration, memory use and how long a leader lease must be held are all unknown, as is the write-stage failure mode
   above the 10 000-document `batch_size`.
 
-## Evidence — the sixteen checks
+## Evidence — the eighteen checks
 
 Recorded here because the spike branch is never merged. Each check on that branch holds its question, the script that
 answers it, verbatim unedited output in `poc/beanie/logs/`, an interpretation and its own caveats. This table is the
@@ -284,7 +295,7 @@ the answer. Checks 05–08 were cost inputs.
 | 11  | What do the sync contexts in pipeline and bot do? | **PASS**              | `packages/pipeline` holds **zero** MongoEngine entities. `packages/bot` has 7 call sites and is already async. No Bunnet, no two-ODM split.                                               |
 | 12  | How big is the datetime migration?                | **PASS**              | **5 fields in 3 collections.** `ThreadEntity.created_at` is the trap: no field default, naive only via two assignment sites.                                                              |
 
-### Phase 4 — the migration framework (checks 13–15)
+### Phase 4 — the migration framework (checks 13–17)
 
 | #   | Question                                                                 | Verdict                     | Key finding                                                                                                                                                                                                                                                                                                         |
 | --- | ------------------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -296,10 +307,12 @@ the answer. Checks 05–08 were cost inputs.
 Run against the same FerretDB 2.5.0 and Beanie 2.2.0 during review of PR #1931. Scripts and verbatim output are attached
 to that PR, not to the spike branch.
 
-| #   | Question                                                           | Verdict                 | Key finding                                                                                                                                                                                                                                                |
-| --- | ------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 14b | Does the partial-failure guarantee hold for a free-fall migration? | **FAIL**                | Check 14 Q1's failure expressed as `@free_fall_migration` left **2 of 4** documents migrated with `migrations_log` empty. Source of rule 6.                                                                                                                |
-| 15  | What does a backward run actually do?                              | **3 SILENT BEHAVIOURS** | T1: no `Backward` class, runner reports OK, log moves, data untouched. T2: after a failed migration, backward undoes the previous **healthy** one. T3: default `distance=0` rolls back **everything**. Source of rules 7 and 8 and the rollback procedure. |
+| #   | Question                                                              | Verdict                 | Key finding                                                                                                                                                                                                                                                |
+| --- | --------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 14b | Does the partial-failure guarantee hold for a free-fall migration?    | **FAIL**                | Check 14 Q1's failure expressed as `@free_fall_migration` left **2 of 4** documents migrated with `migrations_log` empty. Source of rule 6.                                                                                                                |
+| 15  | What does a backward run actually do?                                 | **3 SILENT BEHAVIOURS** | T1: no `Backward` class, runner reports OK, log moves, data untouched. T2: after a failed migration, backward undoes the previous **healthy** one. T3: default `distance=0` rolls back **everything**. Source of rules 7 and 8 and the rollback procedure. |
+| 16  | Can an environment several migrations behind catch up in one command? | **PASS**                | A bare `migrate` applies every pending migration in order from the log pointer and applies none twice — the direct equivalent of `dotnet ef database update`. Resuming from the middle was the case tested.                                                |
+| 17  | Does a fresh deployment have to replay migration history?             | **GAP**                 | It cannot: a fresh database holds current-shape data with an empty log, so replaying history raised a `ValidationError`. Beanie has no `--fake`/`stamp` equivalent. Source of rule 9.                                                                      |
 
 ### How the evidence was produced
 
