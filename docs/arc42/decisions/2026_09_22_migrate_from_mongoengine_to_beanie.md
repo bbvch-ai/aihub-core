@@ -140,11 +140,17 @@ the `Backward` code lives, then deploy the old image. The old MongoEngine code t
 `strict: False`; it does not tolerate a field that was renamed or removed. Deploying the old image first produces the
 outage the migration was meant to prevent.
 
-A migration that failed partway is **not** recovered by a backward run. The runner rolls back the last migration
-recorded in `migrations_log`, and a failed migration never reached the log, so `--direction BACKWARD --distance 1`
-undoes the previous, healthy migration and leaves the failed one's partial writes in place (check 15, T2). Recovery from
-a failed iterative migration is a plain retry, because it wrote nothing. Recovery from a failed free-fall migration is a
-forward re-run, which rule 6 makes safe.
+A migration that failed partway is **not** recovered by a backward run, and attempting one makes things worse. The
+runner rolls back the last migration recorded in `migrations_log`, and a failed migration never reached the log, so
+`--direction BACKWARD --distance 1` undoes the previous, **healthy** migration instead. What then happens to the failed
+migration's partial writes is not defined by the framework: it depends entirely on what that previous migration's
+`Backward` does to rows it was never written to see. Measured, the healthy `Backward` wrote unconditionally and
+**overwrote** the partial rows — `['after-B', 'after-B', 'after-A']` became `['original', 'original', 'original']`
+(check 15, T2). That was benign only because the `Backward` happened to normalise; one that inverts a specific
+transformation, applied to rows in a state it does not expect, corrupts them instead.
+
+Recovery from a failed iterative migration is therefore a plain retry, because it wrote nothing. Recovery from a failed
+free-fall migration is a forward re-run, which rule 6 makes safe. In neither case is a backward run the answer.
 
 Normalising drift and then tightening to `strict: True`, the goal of #1152, means dropping fields, and no `Backward`
 restores a dropped field. Every lossy migration ships as expand then contract: the release that stops reading a field
