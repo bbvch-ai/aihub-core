@@ -1,0 +1,24 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_16_catch_up.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+chain has 3 migrations, each incrementing `applied` by 1
+
+== S1: fresh database, bare `migrate` (distance defaults to 0) ==
+  migrate -> OK
+    applied=[3, 3, 3]  current=20260923000063_chain_step_3.py  log_entries=3
+    PASS: all three ran
+
+== S2: THE EF CORE CASE -- one applied, then bare `migrate` ==
+  migrate --distance 1 (simulating an environment left behind) -> OK
+    applied=[1, 1, 1]  current=20260923000061_chain_step_1.py
+  now bring it current with a bare `migrate`:
+  migrate -> OK
+    applied=[3, 3, 3]  current=20260923000063_chain_step_3.py  log_entries=3
+    PASS: caught up to 3. Migration 1 did NOT re-run -- it would read 4.
+
+== S3: all applied, then a new migration arrives in the next release ==
+  release N   (2 migrations) -> OK
+    applied=[2, 2, 2]  current=20260923000062_chain_step_2.py
+  release N+1 (3 migrations) -> OK
+    applied=[3, 3, 3]  current=20260923000063_chain_step_3.py  log_entries=3
+    PASS: only the new migration ran.
