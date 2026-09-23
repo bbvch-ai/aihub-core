@@ -25,7 +25,7 @@ becomes either a manual operator step or an `if old_shape:` branch in code — w
 with one decision instead of two.
 
 The evaluation ran as a throwaway spike on branch `poc/beanie-spike` (head `34055e94`), deliberately never merged.
-Fourteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence recorded at the end of this document.
+Sixteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence recorded at the end of this document.
 
 ## Decision Drivers
 
@@ -243,7 +243,7 @@ resume after its worker thread returns. The benefit comes from freeing the loop,
   Duration, memory use and how long a leader lease must be held are all unknown, as is the write-stage failure mode
   above the 10 000-document `batch_size`.
 
-## Evidence — the fourteen checks
+## Evidence — the sixteen checks
 
 Recorded here because the spike branch is never merged. Each check on that branch holds its question, the script that
 answers it, verbatim unedited output in `poc/beanie/logs/`, an interpretation and its own caveats. This table is the
@@ -278,7 +278,7 @@ the answer. Checks 05–08 were cost inputs.
 | 11  | What do the sync contexts in pipeline and bot do? | **PASS**              | `packages/pipeline` holds **zero** MongoEngine entities. `packages/bot` has 7 call sites and is already async. No Bunnet, no two-ODM split.                                               |
 | 12  | How big is the datetime migration?                | **PASS**              | **5 fields in 3 collections.** `ThreadEntity.created_at` is the trap: no field default, naive only via two assignment sites.                                                              |
 
-### Phase 4 — the migration framework (checks 13–14)
+### Phase 4 — the migration framework (checks 13–15)
 
 | #   | Question                                                                 | Verdict                     | Key finding                                                                                                                                                                                                                                                                                                         |
 | --- | ------------------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
