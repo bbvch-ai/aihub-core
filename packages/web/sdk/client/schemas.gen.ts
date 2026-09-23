@@ -21817,6 +21817,9 @@ export const SourcePipelineDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -38217,6 +38220,9 @@ export const SourcePipelineDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
