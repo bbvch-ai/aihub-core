@@ -1,0 +1,39 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_17_fresh_deployment.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+
+== 0. simulate a FRESH deployment ==
+    {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+    {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+  migrations_log entries: 0  (empty -- nothing applied)
+
+== 1. deploy runs `beanie migrate`, as it would on any environment ==
+  run_migrate -> ValidationError: 1 validation error for OldPerson
+full_name
+  Field required [type=missing, input_value={'_id': ObjectId('6ab3a1c...1cc70'), 'tenant': 't1'}, input_type=dict]
+
+== 2. what happened to the already-current data? ==
+    {'first_name': 'Ada', 'last_name': 'Lovelace', 'tenant': 't1'}
+    {'first_name': 'Alan', 'last_name': 'Turing', 'tenant': 't1'}
+  migrations_log entries: 0
+
+== 3. verdict ==
+  The migration RAISED against already-current data.
+  -> a fresh deployment cannot simply run the full history; it needs baselining,
+     and Beanie provides no --fake/--stamp flag to do it.
+
+
+CLI SURFACE, for the record -- `beanie migrate --help`:
+  --forward / --backward
+  -d, --distance TEXT              0 = all the migrations. Default is 0
+  -uri, --connection-uri TEXT
+  -db, --database_name TEXT
+  -p, --path TEXT
+  --allow-index-dropping / --forbid-index-dropping
+  --use-transaction / --no-use-transaction
+        "When enabled, Beanie uses transactions for migration, which
+         necessitates a replica set."
+
+There is NO --fake, --stamp or baseline option. The only skip mechanism in the
+source is runner.py:207, "Skip migrations that start with an underscore" -- which
+is global to the migrations directory, not per environment, so it cannot baseline
+one database while leaving others to migrate.
