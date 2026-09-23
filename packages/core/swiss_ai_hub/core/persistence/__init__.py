@@ -90,6 +90,7 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
+    from swiss_ai_hub.core.persistence.tenant_settings_entity import TenantSettingsEntity
     from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
@@ -156,6 +157,7 @@ __all__ = [
     "SOURCE_ORIGIN",
     "TYPE",
     "TenantMetadataEntity",
+    "TenantSettingsEntity",
     "ThreadEntity",
     "TimeRange",
     "UPDATED_AT",
@@ -234,6 +236,7 @@ _LAZY_IMPORTS = {
     "SOURCE_ORIGIN": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "TYPE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "TenantMetadataEntity": "swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity",
+    "TenantSettingsEntity": "swiss_ai_hub.core.persistence.tenant_settings_entity",
     "ThreadEntity": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
     "TimeRange": "swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity",
     "UPDATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

@@ -23823,6 +23823,20 @@ export const TenantSelectSchema = {
     'A FormKit element for selecting one of the tenants the user belongs to.\n\nRenders as a select dropdown listing tenant *names*, while the submitted value is the\ntenant *id*. The frontend populates the options from the user\'s memberships and\npre-selects their active tenant.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    tenant_id: Annotated[\n        str | TenantSelect,\n        Field(description="Tenant to scope against"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            tenant_id=TenantSelect(\n                label=LocaleString(en="Tenant"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(tenant_id="507f1f77bcf86cd799439011")\n```',
 } as const;
 
+export const TenantSettingsDTOSchema = {
+  properties: {
+    chat_disclaimer: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Plain text below the chat input, up to 400 characters per language. At least one translation is required.",
+    },
+  },
+  additionalProperties: false,
+  type: "object",
+  required: ["chat_disclaimer"],
+  title: "TenantSettingsDTO",
+} as const;
+
 export const TextBlockSchema = {
   properties: {
     block_type: {

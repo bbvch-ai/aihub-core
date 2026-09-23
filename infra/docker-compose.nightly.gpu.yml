@@ -1896,7 +1896,12 @@ services:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
     restart: always
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -3951,10 +3956,11 @@ services:
       - traefik.http.routers.bot.tls=true
       - traefik.http.routers.bot.middlewares=security-headers@file
       - traefik.http.services.bot.loadbalancer.server.port=8001
-    networks:
-      - proxy
-      - backend
-      - data
+    networks: [proxy, backend, data]
+configs:
+  openwebui-disclaimer:
+    content: |
+      {"parentOrigin": "https://${DOMAIN}"}
 # ===================================================================
 # Network Configuration
 # ===================================================================

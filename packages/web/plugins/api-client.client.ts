@@ -29,7 +29,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     auth: async () => await getToken(),
     onRequest: ({ options }) => {
       const locale = (nuxtApp.$i18n as { locale?: { value?: string } } | undefined)?.locale?.value
-      if (locale) options.headers.set('lang', locale)
+      if (locale && !options.headers.has('lang')) options.headers.set('lang', locale)
     },
     onResponseError: ({ response }) => {
       console.error('AI-Hub API error', response.status, response._data?.detail)

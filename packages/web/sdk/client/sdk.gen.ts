@@ -135,6 +135,8 @@ import type {
   GetAnonymousFileUrlError,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
+  GetChatDisclaimerData,
+  GetChatDisclaimerResponse,
   GetDatabasesData,
   GetDatabasesResponse,
   GetDatasetData,
@@ -247,6 +249,8 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantSettingsData,
+  GetTenantSettingsResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
@@ -342,6 +346,9 @@ import type {
   UpdateRoleData,
   UpdateRoleError,
   UpdateRoleResponse,
+  UpdateTenantSettingsData,
+  UpdateTenantSettingsError,
+  UpdateTenantSettingsResponse,
   UpdateUserMemoryData,
   UpdateUserMemoryError,
   UpdateUserMemoryResponse,
@@ -452,6 +459,66 @@ export const getSuite = <
     ],
     url: "/{tenant_id}/suites/",
     ...options,
+  });
+
+/**
+ * Get Tenant Settings
+ */
+export const getTenantSettings = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantSettingsResponse = GetTenantSettingsResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantSettingsData,
+    GetTenantSettingsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantSettingsResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/tenant-settings",
+    ...options,
+  });
+
+/**
+ * Update Tenant Settings
+ */
+export const updateTenantSettings = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateTenantSettingsResponse = UpdateTenantSettingsResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateTenantSettingsData,
+    UpdateTenantSettingsResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateTenantSettingsResponse | DefaultT,
+    UpdateTenantSettingsError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/tenant-settings",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**
@@ -2439,6 +2506,36 @@ export const getDefaultTenantRules = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/access/default-tenant-rules",
+    ...options,
+  });
+
+/**
+ * Get Chat Disclaimer
+ *
+ * Read the current tenant's chat disclaimer in the user's requested language.
+ */
+export const getChatDisclaimer = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetChatDisclaimerResponse = GetChatDisclaimerResponse,
+>(
+  options: Options<
+    TComposable,
+    GetChatDisclaimerData,
+    GetChatDisclaimerResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetChatDisclaimerResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/openai/chat-disclaimer",
     ...options,
   });
 

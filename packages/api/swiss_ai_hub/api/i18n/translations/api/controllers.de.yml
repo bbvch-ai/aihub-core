@@ -74,3 +74,6 @@ organization_memory:
 webhook:
   name: Webhooks
   description: Webhook-Empfänger für externe Dienste
+tenant_settings:
+  name: Mandanteneinstellungen
+  description: Einstellungen für alle Personen in diesem Mandanten verwalten

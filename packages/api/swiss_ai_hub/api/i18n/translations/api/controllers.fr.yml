@@ -76,3 +76,6 @@ organization_memory:
 webhook:
   name: Webhooks
   description: Récepteurs de webhooks pour services externes
+tenant_settings:
+  name: Paramètres du tenant
+  description: Gérer les paramètres communs à tous les utilisateurs de ce tenant

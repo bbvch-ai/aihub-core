@@ -15827,6 +15827,16 @@ export type TenantSelect = {
 };
 
 /**
+ * TenantSettingsDTO
+ */
+export type TenantSettingsDto = {
+  /**
+   * Plain text below the chat input, up to 400 characters per language. At least one translation is required.
+   */
+  chat_disclaimer: LocaleString;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -27862,6 +27872,64 @@ export type GetSuiteResponses = {
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 
+export type GetTenantSettingsData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/tenant-settings";
+};
+
+export type GetTenantSettingsResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantSettingsDto;
+};
+
+export type GetTenantSettingsResponse =
+  GetTenantSettingsResponses[keyof GetTenantSettingsResponses];
+
+export type UpdateTenantSettingsData = {
+  body: TenantSettingsDto;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/tenant-settings";
+};
+
+export type UpdateTenantSettingsErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateTenantSettingsError =
+  UpdateTenantSettingsErrors[keyof UpdateTenantSettingsErrors];
+
+export type UpdateTenantSettingsResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantSettingsDto;
+};
+
+export type UpdateTenantSettingsResponse =
+  UpdateTenantSettingsResponses[keyof UpdateTenantSettingsResponses];
+
 export type GetMyTenantsData = {
   body?: never;
   path?: never;
@@ -30369,6 +30437,32 @@ export type GetDefaultTenantRulesResponses = {
 
 export type GetDefaultTenantRulesResponse =
   GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
+
+export type GetChatDisclaimerData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/chat-disclaimer";
+};
+
+export type GetChatDisclaimerResponses = {
+  /**
+   * Response Get Chat Disclaimer  Tenant Id  Openai Chat Disclaimer Get
+   *
+   * Successful Response
+   */
+  200: string;
+};
+
+export type GetChatDisclaimerResponse =
+  GetChatDisclaimerResponses[keyof GetChatDisclaimerResponses];
 
 export type GetModelsData = {
   body?: never;

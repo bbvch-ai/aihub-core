@@ -2177,6 +2177,10 @@ services:
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -4482,6 +4486,11 @@ services:
       - backend
       - data
   {%- endif %}
+
+configs:
+  openwebui-disclaimer:
+    content: |
+      {"parentOrigin": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}"}
 
 # ===================================================================
 # Network Configuration

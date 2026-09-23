@@ -33,7 +33,7 @@ client.setConfig({
     return await getToken()
   },
   onRequest: ({ options }) => {
-    options.headers.set('lang', locale.value)
+    if (!options.headers.has('lang')) options.headers.set('lang', locale.value)
   },
   onResponseError: async ({ response }) => {
     console.error('API error', response.status, response._data?.detail)

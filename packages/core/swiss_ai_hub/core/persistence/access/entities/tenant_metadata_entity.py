@@ -200,7 +200,7 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def cascade_delete_tenant_data(cls, tenant_id: str) -> None:
-        """Deletes the tenant-scoped role and membership rows.
+        """Deletes tenant settings, roles and memberships.
 
         Must run only after ``delete_tenant_metadata`` has confirmed the row-delete
         does not violate the last-tenant invariant — this cascade is irreversible
@@ -210,6 +210,8 @@ class TenantMetadataEntity(Document):
         # Deferred: RoleEntity / UserTenantRoleEntity import this module at top level.
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+        from swiss_ai_hub.core.persistence.tenant_settings_entity import TenantSettingsEntity
 
+        TenantSettingsEntity.objects(id=tenant_id).delete()
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()

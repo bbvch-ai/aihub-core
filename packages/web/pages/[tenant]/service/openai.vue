@@ -2,6 +2,7 @@
   <div class="flex flex-row">
     <div class="h-[calc(100vh-50px)] w-full">
       <iframe
+        ref="chatIframe"
         :src="`${runtimeConfig.public.webui.url}/oauth/oidc/login`"
         width="100%"
         height="100%"
@@ -43,6 +44,14 @@ const localePath = useLocalePath()
 const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant, tenantId } = useTenant()
 const { setOpenWebUIContext, updateOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
+const chatIframe = ref<HTMLIFrameElement | null>(null)
+const { disclaimer } = useChatDisclaimer()
+const visibleDisclaimer = computed(() => {
+  if (backendTenantId.value && backendTenantId.value !== tenantId.value) return ''
+  // Use generic text until OpenWebUI's active tenant has been confirmed.
+  return backendTenantId.value === tenantId.value ? disclaimer.value : t('tenant_settings.default_disclaimer')
+})
+const { sendDisclaimer } = useOpenWebuiDisclaimer(chatIframe, visibleDisclaimer)
 
 async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
@@ -52,6 +61,7 @@ async function onSwitchToBackendTenant() {
 let initialLoadDone = false
 
 const handleIframeLoad = () => {
+  sendDisclaimer()
   // Skip the initial load when iframe first renders OpenWebUI
   if (!initialLoadDone) {
     initialLoadDone = true

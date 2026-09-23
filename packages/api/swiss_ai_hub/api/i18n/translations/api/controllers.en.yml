@@ -74,3 +74,6 @@ organization_memory:
 webhook:
   name: Webhooks
   description: Webhook receivers for external services
+tenant_settings:
+  name: Tenant Settings
+  description: Manage settings shared by everyone in this tenant

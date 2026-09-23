@@ -1411,7 +1411,12 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
     restart: always
     network_mode: host
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -1687,6 +1692,10 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+configs:
+  openwebui-disclaimer:
+    content: |
+      {"parentOrigin": "http://localhost:3333"}
 # ===================================================================
 # Network Configuration
 # ===================================================================
