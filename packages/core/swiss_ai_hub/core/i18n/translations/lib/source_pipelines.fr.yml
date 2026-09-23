@@ -1,0 +1,114 @@
+---
+manual_upload:
+  display_name: Téléversement manuel
+  description: Les documents sont téléversés à la main via les vues de connaissances
+    ; rien ne les synchronise.
+rclone:
+  display_name: Synchronisation de stockage cloud (rclone)
+  description: Maintient la base synchronisée avec un site SharePoint, OneDrive, Google
+    Drive, un bucket S3, un conteneur Azure Blob ou un serveur SFTP. Chaque dossier
+    de premier niveau devient un espace de noms.
+  config:
+    backend_type:
+      label: Backend de stockage
+      help: Type de système d'où les fichiers sont récupérés.
+    root_path:
+      label: Dossier racine
+      help: Dossier de la source à synchroniser. Chacun de ses dossiers de premier
+        niveau devient un espace de noms ; les fichiers placés directement dedans
+        ne sont pas synchronisés.
+    include_patterns:
+      label: Motifs d'inclusion
+      help: Règles glob rclone ; si définies, seuls les fichiers correspondants sont
+        synchronisés (p. ex. *.pdf, reports/**).
+    exclude_patterns:
+      label: Motifs d'exclusion
+      help: Règles glob rclone pour les fichiers à ignorer (p. ex. **/~$*, drafts/**).
+    onedrive:
+      client_id:
+        label: ID client
+        help: ID d'application (client) de l'inscription d'application Entra ID.
+      client_secret:
+        label: Secret client
+        help: Secret client de l'inscription d'application. Stocké chiffré.
+      tenant:
+        label: ID de tenant
+        help: ID du tenant (annuaire) Entra ID.
+      drive_id:
+        label: ID de lecteur
+        help: ID du lecteur à synchroniser ; pour SharePoint, le lecteur de la bibliothèque
+          de documents.
+      drive_type:
+        label: Type de lecteur
+        help: personal, business ou documentLibrary (SharePoint).
+      region:
+        label: Région
+        help: 'Cloud Microsoft : global, us, de ou cn.'
+      token:
+        label: Jeton OAuth
+        help: JSON de jeton rclone préobtenu, en alternative aux identifiants client.
+          Stocké chiffré.
+    drive:
+      client_id:
+        label: ID client
+        help: ID client OAuth de votre projet Google Cloud.
+      client_secret:
+        label: Secret client
+        help: Secret client OAuth. Stocké chiffré.
+      token:
+        label: Jeton OAuth
+        help: JSON de jeton rclone préobtenu. Stocké chiffré.
+      service_account_credentials:
+        label: JSON du compte de service
+        help: Contenu du fichier de clé du compte de service, en alternative à un
+          jeton OAuth. Stocké chiffré.
+      root_folder_id:
+        label: ID du dossier racine
+        help: ID du dossier Drive à traiter comme racine ; vide pour tout le lecteur.
+    s3:
+      provider:
+        label: Fournisseur
+        help: Nom du fournisseur S3 rclone, p. ex. AWS, Minio, Ceph.
+      access_key_id:
+        label: ID de clé d'accès
+        help: ID de clé d'accès.
+      secret_access_key:
+        label: Clé d'accès secrète
+        help: Clé d'accès secrète. Stockée chiffrée.
+      region:
+        label: Région
+        help: Région, p. ex. eu-central-1.
+      endpoint:
+        label: Point de terminaison
+        help: URL du point de terminaison pour les fournisseurs non AWS.
+    azureblob:
+      account:
+        label: Compte de stockage
+        help: Nom du compte de stockage Azure.
+      key:
+        label: Clé de compte
+        help: Clé du compte de stockage. Stockée chiffrée.
+      sas_url:
+        label: URL SAS
+        help: URL de signature d'accès partagé, en alternative à une clé de compte.
+          Stockée chiffrée.
+      endpoint:
+        label: Point de terminaison
+        help: Point de terminaison personnalisé pour les clouds souverains.
+    sftp:
+      host:
+        label: Hôte
+        help: Nom d'hôte ou IP SFTP.
+      port:
+        label: Port
+        help: Port SFTP.
+      user:
+        label: Utilisateur
+        help: Nom d'utilisateur SFTP.
+      password:
+        label: Mot de passe
+        help: Mot de passe, en alternative à une clé privée. Stocké chiffré.
+      key_pem:
+        label: Clé privée (PEM)
+        help: Clé privée au format PEM, en alternative à un mot de passe. Stockée
+          chiffrée.
