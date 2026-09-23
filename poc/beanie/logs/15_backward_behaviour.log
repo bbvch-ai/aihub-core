@@ -1,0 +1,45 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_15_backward_behaviour.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+NOTE: the full dev stack was running. Correctness check, not a timing one.
+
+== T1: a migration that declares no Backward class ==
+  forward  -> OK
+    data=['migrated', 'migrated', 'migrated']  log=['20260923000040_forward_only.py']
+  backward -> OK
+    data=['migrated', 'migrated', 'migrated']  log=['20260923000040_forward_only.py', 'root']
+  -> DATA STILL MIGRATED after a backward run that did not raise.
+     The pointer moved; the data did not. Silent. Source of rule 7.
+
+== T2: migration A healthy, migration B fails partway, then backward distance 1 ==
+  forward (A then B, B raises) -> MigrationBExploded: migration B fails after writing row-0 and row-1
+    data=['after-B', 'after-B', 'after-A']  log=['20260923000050_healthy.py']
+    (B is absent from the log -- it never completed)
+  backward distance 1 -> OK
+    data=['original', 'original', 'original']  log=['20260923000050_healthy.py', 'root']
+  -> if the data is now PRE-A, the backward run undid the healthy migration,
+     not the failed one. Recovery from a failed migration is a forward re-run.
+
+== T3: a bare backward run, distance left at its default of 0 ==
+  forward all three -> OK
+    data=[3, 3, 3]  log=['20260923000061_chain_step_1.py', '20260923000062_chain_step_2.py', '20260923000063_chain_step_3.py']  (expect 3 applications)
+  backward, distance=0 (the CLI default) -> OK
+    data=[0, 0, 0]  log=['20260923000061_chain_step_1.py', '20260923000062_chain_step_2.py', '20260923000063_chain_step_3.py', '20260923000062_chain_step_2.py', '20260923000061_chain_step_1.py', 'root']
+  -> ALL THREE migrations were undone by a run that named no distance.
+     distance=0 means 'without limit', not 'one step'. Source of rule 8.
+
+
+TWO OBSERVATIONS NOT PREDICTED BY THE ADR
+-----------------------------------------
+1. T2's partial writes were NOT "left in place". Before the backward run the data was
+   ['after-B', 'after-B', 'after-A'] -- B had written two rows. Afterwards it was
+   ['original', 'original', 'original']. A's Backward sets state unconditionally, so it
+   OVERWROTE B's partial writes rather than leaving them. The outcome therefore depends
+   entirely on what the previous migration's Backward happens to do to rows it never
+   wrote. Here it normalised them; a Backward that inverts a specific transformation
+   would corrupt them instead.
+
+2. `migrations_log` is append-only. After T3's three forward and three backward runs it
+   holds six entries plus 'root', including duplicates:
+   [step_1, step_2, step_3, step_2, step_1, root]
+   Direction is not recorded in the name; `is_current` is the only pointer. So the log is
+   not an audit trail of what is applied -- it is a cursor with history attached.

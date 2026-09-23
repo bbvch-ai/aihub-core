@@ -1,0 +1,24 @@
+$ PYTHONPATH=packages/core .venv/Scripts/python.exe poc/beanie/checks/check_14b_freefall_partial_failure.py
+(MONGO_* loaded from .env; FerretDB 2.5.0 @ localhost:27017; beanie 2.2.0)
+NOTE: the full dev stack was running. This is a correctness check, not a timing one,
+so contention is irrelevant here -- unlike check 10.
+
+== 0. clean slate ==
+seeded 4 documents, all state='original'
+
+== 1. run the free-fall migration that raises on the third document ==
+  run_migrate -> FreeFallExploded: deliberate failure partway through a free-fall migration
+
+== 2. what did it leave behind? ==
+    a-before   state='migrated'
+    b-before   state='migrated'
+    boom       state='original'
+    z-after    state='original'
+  2/4 documents migrated, migrations_log entries: 0
+
+== 3. verdict ==
+  PARTIAL APPLICATION -- the collection is in a mixed state.
+  Contrast check 14 Q1, where the same failure as an iterative migration wrote 0/4.
+  And migrations_log is EMPTY, so nothing records that a partial write happened.
+  -> a backward run would undo the PREVIOUS migration, not this one (see check 15 T2)
+  -> recovery is a forward RE-RUN, which is only safe if the migration is idempotent (rule 6)
