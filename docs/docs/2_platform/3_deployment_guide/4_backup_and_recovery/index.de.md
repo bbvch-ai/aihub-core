@@ -146,6 +146,21 @@ wiederherstellen möchte. Dies ist eine bewusste Sicherheitsmassnahme — ein au
 Wiederherstellung könnte das System in einem inkonsistenten Zustand hinterlassen.
 :::
 
+::: warning Ein Backup von vor einem Langfuse-Upgrade ist kein Rollback-Ziel
+Die Wiederherstellung prüft nur, ob die erwarteten Artefakte **vorhanden** sind. Sie enthält keine
+Schema-Versionsmarkierung und stellt ein unter einer älteren Langfuse-Version erstelltes Backup daher problemlos in
+einem Stack mit einer neueren Version wieder her.
+
+Langfuse umfasst zwei Speicher, die von unabhängigen Handlern wiederhergestellt werden: die Postgres-Datenbank
+(`langfuse.dump`) und die ClickHouse-Tabellen (`clickhouse/`). ClickHouse wird mit einem nativen `BACKUP DATABASE`
+gesichert, sodass die Wiederherstellung neben den Daten auch die **Tabellendefinitionen** zurücksetzt. Nichts prüft, ob
+die beiden Speicher zueinander passen, und es folgt kein Migrationsschritt — das Schema bewegt sich erst wieder
+vorwärts, wenn die Langfuse-Container das nächste Mal starten.
+
+Behandeln Sie eine Langfuse-Versionsanhebung als Einbahnstrasse: Erstellen Sie vorher ein Backup zur Datenrettung,
+planen Sie die Wiederherstellung aber vorwärts statt als Downgrade.
+:::
+
 ______________________________________________________________________
 
 ## VM-Snapshots

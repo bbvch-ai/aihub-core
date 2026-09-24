@@ -27,8 +27,8 @@ image_tags:
   attu: attu:v2.5.12
   postgres: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
-  langfuse_web: langfuse/langfuse:3
-  langfuse_worker: langfuse/langfuse-worker:3
+  langfuse_web: langfuse/langfuse:3.225.8
+  langfuse_worker: langfuse/langfuse-worker:3.225.8
   nats: nats:2.11.4
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
