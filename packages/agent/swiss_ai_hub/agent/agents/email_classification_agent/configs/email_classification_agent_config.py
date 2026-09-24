@@ -39,8 +39,9 @@ class EmailClassificationAgentConfig(AgentConfig):
         Field(
             default=None,
             title="Knowledge delegation",
-            description="The RAG agent that grounds drafted replies in a category's collection. Required as soon as "
-            "any category names one; leave it off to keep drafting from the message alone.",
+            description="The RAG agent that grounds drafted replies. Every drafted reply is answered from it, narrowed "
+            "to a category's collections where the category names some. Required as soon as any category names one; "
+            "leave it off to keep drafting from the message alone.",
         ),
     ] = None
 

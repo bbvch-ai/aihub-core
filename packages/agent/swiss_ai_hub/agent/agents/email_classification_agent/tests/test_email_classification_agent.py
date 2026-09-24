@@ -340,14 +340,14 @@ def _grounding_three() -> dict:
 
 
 @given(
-    "an EmailClassificationAgent runner grounding support_request but not invoice",
+    "an EmailClassificationAgent runner grounding support_request in its collection and invoice in all",
     target_fixture="scenario",
 )
 def _grounding_mixed() -> dict:
-    """One category answers from knowledge, the other from the message alone, in the same run.
+    """One category narrowed to a collection, the other naming none, in the same run.
 
-    Grounding is what a category opts into: naming collections delegates it, naming none drafts it locally even with
-    a knowledge agent configured. The two paths still converge on one drafting pass, which is what this exercises.
+    With a knowledge agent configured both are delegated: naming collections narrows the lookup, naming none leaves
+    it at everything the knowledge agent retrieves from.
     """
     invoice_drafting = _INVOICE.model_copy(update={"draft_reply": True})
     return {
@@ -357,7 +357,7 @@ def _grounding_mixed() -> dict:
         "draft": _grounded_drafting(),
         "knowledge_delegation": _delegation(),
         "collections": [_SUPPORT_COLLECTION],
-        "expected_delegations": 1,
+        "expected_delegations": 2,
     }
 
 
@@ -850,20 +850,14 @@ def _(agent_runner: AgentTestRunner):
     assert _NO_INFORMATION_DRAFT not in bodies[0], "reporting an outage as an absence of knowledge hides the outage"
 
 
-@then("only support_request was delegated, scoped to its collection")
+@then("support_request was scoped to its collection and invoice to every collection")
 def _(agent_runner: AgentTestRunner):
-    """Only the category naming collections is delegated; the other is drafted from the message alone.
-
-    The unnarrowed category is deliberately not delegated with an empty selection: `narrow_retrievers` reads an empty
-    one as "leave every configured retriever in place", so it would answer from the delegate's whole scope — a
-    widening the category never opted into. Both still converge on one drafting pass, which is why the body count is
-    asserted alongside the delegation count.
-    """
-    scopes = [
+    """An unchecked selection is sent as an empty one, which `narrow_retrievers` reads as the delegate's whole scope."""
+    scopes = sorted(
         [(pair.bucket_name, pair.namespace_name) for pair in request.start_event.selected_namespaces]
         for request in _delegations(agent_runner)
-    ]
-    assert scopes == [[(_KNOWLEDGE_DB, _SUPPORT_COLLECTION)]]
+    )
+    assert scopes == [[], [(_KNOWLEDGE_DB, _SUPPORT_COLLECTION)]]
 
     bodies = _appended_bodies(agent_runner)
     assert len(bodies) == 2

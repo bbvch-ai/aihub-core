@@ -24,11 +24,11 @@ class MailCategory(Form):
     `thanking` mail rarely does. Mail no category fitted goes to the fallback folder and is therefore never drafted —
     the opt-in lives on the category, and uncategorised mail has none.
 
-    `knowledge_namespaces` is what makes a drafted reply worth sending, and it is per category for the same reason
-    `draft_reply` is: a `support_request` has documentation behind it worth retrieving, a `thanking` mail has none and
-    would only retrieve noise. Left off, the reply is written from the message alone with no retrieval. Turned on, it
-    is answered from the collections named here and no others, selected by the category verdict. The profile's
-    knowledge agent supplies which collections can be named; the category decides whether its own replies use them.
+    `knowledge_namespaces` narrows retrieval per category: a `support_request` is answered from the support
+    documentation, not from invoices. Left off, the reply is answered from every collection the profile's knowledge
+    agent retrieves from; turned on, from the collections named here and no others. The knowledge agent supplies which
+    collections can be named. The selection only applies while `draft_reply` is on, since retrieval only ever serves
+    a drafted reply; a selection left behind on a category that stopped drafting is kept but ignored.
     """
 
     category: Annotated[
@@ -59,8 +59,8 @@ class MailCategory(Form):
         Field(
             default=None,
             description="Knowledge collections this category's replies are answered from. Left off, the reply is "
-            "written from the message alone with no retrieval; turned on, it is answered from the collections named "
-            "here and no others.",
+            "answered from every collection the knowledge agent retrieves from; turned on, from the collections "
+            "named here and no others.",
         ),
     ] = None
 
@@ -89,9 +89,15 @@ class MailCategory(Form):
                 label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.help"),
                 placeholder=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.placeholder"),
+                toggle_label=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.toggle_label"),
+                toggle_help=LocaleString.from_i18n_path("lib.imap.config.category_knowledge_namespaces.toggle_help"),
                 # Only ever evaluated while the enable toggle is on, since the toggle unmounts the field: switched
-                # on and left empty is the one state that reads like narrowing and silently retrieves everything, so
-                # it is rejected in the form rather than by the run that would have been answered too widely.
+                # on and left empty reads like narrowing but retrieves everything, so it is rejected in the form
+                # rather than by the run that would have been answered too widely.
                 additional_validation_rules="required",
+                # A row-data reference, not `$get(...)`: categories are a repeater, and `$get` resolves through one
+                # global node registry shared by every row. Collections only shape a drafted reply, so they are
+                # offered only where one is drafted.
+                condition_if="$draft_reply",
             ),
         )

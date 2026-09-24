@@ -82,8 +82,8 @@ class EmailClassificationSettings(StepConfig):
 
         That shape named one collection per category in `knowledge_namespace` and the databases to look it up in
         once, here, in `knowledge_databases`. Both fields are gone, and `MailCategory` ignores unknown keys, so
-        without this an upgraded profile loses its grounding silently — the categories come back unset and their
-        replies are drafted from the message alone, with no error anywhere to say a setting was dropped. Reading the
+        without this an upgraded profile loses its narrowing silently — the categories come back unset and their
+        replies are answered from every collection, with no error anywhere to say a setting was dropped. Reading the
         old keys is the only way to tell "never configured" from "configured before the rename", which is why this
         cannot live in the form or the API.
 

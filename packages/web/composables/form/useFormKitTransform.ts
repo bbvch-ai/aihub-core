@@ -268,6 +268,8 @@ const EXCLUDED_FIELDS = new Set([
   'nullable', // Wrapper-level signal for the transform; never a FormKit/PrimeVue prop
   'defaultEnabled', // Wrapper-level signal (initial nullable-toggle state); never a FormKit prop
   'default_enabled', // snake_case form of the above
+  'toggleLabel', // Rendered on the synthetic nullable toggle, never on the element itself
+  'toggleHelp', // Rendered on the synthetic nullable toggle, never on the element itself
   // Backend serialises the Pydantic default into element.value (form duality). FormKit pushes
   // schema `value` up to the parent v-model on input registration, which would clobber the
   // loaded data with the backend default. Defaults belong in data, seeded via seedFormDefaults.
@@ -363,9 +365,12 @@ function buildNullableToggleNode(
   label: string | undefined,
   help: string | undefined,
   toggleId: string | undefined,
+  locale: string,
 ): Record<string, unknown> {
   const fieldName = element.name as string
   const gatingCondition = element.if as string | undefined
+  const toggleLabel = getLocalizedString(element.toggleLabel, locale) ?? (label ? `Enable ${label}` : 'Enable')
+  const toggleHelp = getLocalizedString(element.toggleHelp, locale) ?? help
   return {
     $formkit: 'primeCheckbox',
     // `preserve: true` for the same reason the gated input itself carries it: when this toggle's own
@@ -378,8 +383,8 @@ function buildNullableToggleNode(
     // unique one per instance; they gate on row data instead of `$get`, so nothing looks the id up.
     ...(toggleId ? { id: toggleId } : {}),
     key: toggleId ?? nullableToggleName(fieldName),
-    label: label ? `Enable ${label}` : 'Enable',
-    ...(help ? { help } : {}),
+    label: toggleLabel,
+    ...(toggleHelp ? { help: toggleHelp } : {}),
     ...(gatingCondition ? { if: gatingCondition } : {}),
     binary: true,
   }
@@ -388,17 +393,19 @@ function buildNullableToggleNode(
 /**
  * `help` is only supplied for groups: a group's own node renders no help, so the toggle is the
  * only place to hang it. Nullable leaves already render their help on the input itself — passing
- * it here too would print the same sentence twice.
+ * it here too would print the same sentence twice. An element's own `toggleHelp` is meant for the
+ * toggle alone, so it is rendered there for leaves and groups alike.
  */
 function applyNullableToggle(
   element: FormElement,
   baseNode: FormKitSchemaNode | FormKitSchemaNode[],
   label: string | undefined,
   toggleId: string | undefined,
+  locale: string,
   help?: string,
 ): FormKitSchemaNode[] {
   const nodeArray = Array.isArray(baseNode) ? baseNode : [baseNode]
-  return [buildNullableToggleNode(element, label, help, toggleId) as FormKitSchemaNode, ...nodeArray]
+  return [buildNullableToggleNode(element, label, help, toggleId, locale) as FormKitSchemaNode, ...nodeArray]
 }
 
 function gateElement(element: FormElement, toggleCondition: string): FormElement {
@@ -442,7 +449,7 @@ export function transformElementToSchema(
     const groupNode = createGroupNode(gatedElement, children, label)
     if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
     const toggledNodes = applyNullableToggle(
-      element, groupNode, label, toggleId, getLocalizedString(element.help, locale),
+      element, groupNode, label, toggleId, locale, getLocalizedString(element.help, locale),
     )
     return withFieldWarning(toggledNodes, warningNode, true)
   }
@@ -451,7 +458,7 @@ export function transformElementToSchema(
   if (children.length > 0) cleanNode.children = children
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    const toggledNodes = applyNullableToggle(element, cleanNode as FormKitSchemaNode, label, toggleId)
+    const toggledNodes = applyNullableToggle(element, cleanNode as FormKitSchemaNode, label, toggleId, locale)
     return withFieldWarning(toggledNodes, warningNode, true)
   }
 
@@ -519,13 +526,13 @@ export function transformElementForRepeater(
     const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
     const groupNode = createGroupNode(gatedElement, children, label)
     if (!isNullable) return groupNode
-    return applyNullableToggle(element, groupNode, label, undefined, getLocalizedString(element.help, locale))
+    return applyNullableToggle(element, groupNode, label, undefined, locale, getLocalizedString(element.help, locale))
   }
 
   const cleanNode = buildLeafNodeForRepeater(element, formkitType, label, locale, children)
   if (isNullable) {
     cleanNode.if = combineConditions(toggleCondition!, element.if as string | undefined)
-    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label, undefined)
+    return applyNullableToggle(element, cleanNode as FormKitSchemaNode, label, undefined, locale)
   }
 
   return cleanNode as FormKitSchemaNode
