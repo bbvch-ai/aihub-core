@@ -5462,6 +5462,7 @@ name = "swiss-ai-hub-agent"
 version = "0.322.0"
 source = { editable = "packages/agent" }
 dependencies = [
+    { name = "azure-identity" },
     { name = "fastmcp" },
     { name = "imapclient" },
     { name = "llama-index-llms-azure-openai" },
@@ -5478,6 +5479,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "azure-identity", specifier = ">=1.19.0" },
     { name = "fastmcp", specifier = ">=3.0.0" },
     { name = "imapclient", specifier = ">=3.0.1" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },

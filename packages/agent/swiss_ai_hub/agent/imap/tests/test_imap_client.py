@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from imapclient.exceptions import IMAPClientError, LoginError
@@ -458,6 +458,62 @@ async def test_factory_raises_and_logs_out_on_failed_login():
             async with ImapClientFactory.create(config):
                 pytest.fail("client must not be yielded after a failed login")
 
+    connection.logout.assert_called_once()
+
+
+def _oauth_config(**overrides: str) -> ImapClientConfig:
+    values = {
+        "host": "outlook.office365.com",
+        "username": "shared@contoso.com",
+        "auth_method": "oauth2_client_credentials",
+        "tenant_id": "tenant-guid",
+        "client_id": "client-guid",
+        "client_secret": "secret",
+    }
+    return ImapClientConfig(**(values | overrides))
+
+
+@async_test
+async def test_factory_logs_in_with_password_by_default():
+    connection = MagicMock()
+    config = ImapClientConfig(host="imap.test", username="a@test", password="pw")
+
+    with patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection):
+        async with ImapClientFactory.create(config):
+            pass
+
+    connection.login.assert_called_once_with("a@test", "pw")
+    connection.oauth2_login.assert_not_called()
+
+
+@async_test
+async def test_factory_logs_in_with_xoauth2_for_the_mailbox_when_oauth_is_selected():
+    connection = MagicMock()
+    provider = MagicMock()
+    provider.get_token = AsyncMock(return_value="access-token")
+
+    with (
+        patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection),
+        patch("swiss_ai_hub.agent.imap.imap_client.EntraTokenProvider.from_config", return_value=provider),
+    ):
+        async with ImapClientFactory.create(_oauth_config()):
+            pass
+
+    connection.oauth2_login.assert_called_once_with("shared@contoso.com", "access-token")
+    connection.login.assert_not_called()
+
+
+@async_test
+async def test_factory_refuses_oauth_with_a_missing_field_and_still_logs_out():
+    connection = MagicMock()
+
+    with patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection):
+        with pytest.raises(ValueError, match="client_secret"):
+            async with ImapClientFactory.create(_oauth_config(client_secret="")):
+                pytest.fail("client must not be yielded without credentials")
+
+    connection.oauth2_login.assert_not_called()
+    connection.login.assert_not_called()
     connection.logout.assert_called_once()
 
 

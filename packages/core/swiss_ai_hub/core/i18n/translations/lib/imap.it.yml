@@ -6,12 +6,31 @@ config:
   port:
     label: Porta IMAP
     help: Porta del server IMAP. Usare 993 per il TLS implicito.
+  auth_method:
+    label: Autenticazione
+    help: Come l'agente accede alla casella di posta. Scegliere Microsoft 365 (OAuth
+      2.0) per le caselle Microsoft 365 con l'autenticazione di base disattivata;
+      richiede una registrazione dell'app in Microsoft Entra ID.
+    password_label: Nome utente e password
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Nome utente
-    help: Login della casella di posta, di solito l'indirizzo e-mail completo.
+    help: Login della casella di posta, di solito l'indirizzo e-mail completo. Con
+      Microsoft 365 (OAuth 2.0), l'indirizzo della casella da elaborare.
   password:
     label: Password
     help: Password della casella di posta o token specifico dell'applicazione.
+  tenant_id:
+    label: ID tenant
+    help: ID della directory (tenant) del tuo tenant Microsoft Entra ID.
+  client_id:
+    label: ID client
+    help: ID applicazione (client) della registrazione dell'app Entra ID autorizzata
+      ad accedere a questa casella tramite IMAP.
+  client_secret:
+    label: Segreto client
+    help: Segreto client della registrazione dell'app Entra ID. I segreti scadono,
+      quindi rinnovarlo qui prima della data di scadenza.
   use_tls:
     label: Usa TLS
     help: Connessione tramite TLS implicito. Disattivare solo per server di test in

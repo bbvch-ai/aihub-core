@@ -14,6 +14,7 @@ from imapclient.exceptions import IMAPClientError
 from swiss_ai_hub.core.events.agent import UnreadMailSummary
 from swiss_ai_hub.core.imap import ImapClientConfig, MailParser, ParsedMessage
 
+from swiss_ai_hub.agent.imap.entra_token_provider import EntraTokenProvider
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 
 logger = logging.getLogger(__name__)
@@ -413,7 +414,7 @@ class ImapClientFactory:
         """
         connection = await asyncio.to_thread(IMAPClient, config.host, port=config.port, ssl=config.use_tls)
         try:
-            await asyncio.to_thread(connection.login, config.username, config.password)
+            await ImapClientFactory._authenticate(connection, config)
             yield ImapClient(
                 connection,
                 config.inbox_folder,
@@ -426,3 +427,17 @@ class ImapClientFactory:
             # Best-effort cleanup — a failed logout must never mask the original step failure.
             with suppress(Exception):
                 await asyncio.to_thread(connection.logout)
+
+    @staticmethod
+    async def _authenticate(connection: IMAPClient, config: ImapClientConfig) -> None:
+        """Log in with the configured method — for OAuth 2.0 the ``username`` names the mailbox in the XOAUTH2 string.
+
+        Password login is kept alongside OAuth: it is the only option for Gmail, self-hosted Dovecot and the
+        GreenMail-backed integration tests.
+        """
+        match config.auth_method:
+            case "oauth2_client_credentials":
+                access_token = await EntraTokenProvider.from_config(config).get_token()
+                await asyncio.to_thread(connection.oauth2_login, config.username, access_token)
+            case "password":
+                await asyncio.to_thread(connection.login, config.username, config.password)
