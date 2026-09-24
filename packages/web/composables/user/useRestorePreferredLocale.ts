@@ -7,7 +7,8 @@
  * is the only copy that survives that, a cleared cookie, or a second device.
  */
 export const useRestorePreferredLocale = () => {
-  const { locale, setLocale } = useI18n()
+  const { locale } = useI18n()
+  const { applyLocale } = useApplyLocale()
   const { myUser } = useMyUser()
   const { updateMyLocale } = useUpdateMyLocale()
   // useState, not a plain ref: the layout may remount, and reapplying would
@@ -29,8 +30,9 @@ export const useRestorePreferredLocale = () => {
     }
 
     if (persisted !== locale.value) {
-      // setLocale writes the i18n cookie and re-routes to the locale prefix.
-      setLocale(persisted as typeof locale.value)
+      // The same full switch as the language selector: without it, FormKit and
+      // queries already fetched under the old `lang` header stay untranslated.
+      applyLocale(persisted)
     }
   }, { immediate: true })
 }
