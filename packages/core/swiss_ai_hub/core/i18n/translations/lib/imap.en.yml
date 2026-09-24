@@ -104,11 +104,11 @@ config:
     help: Characters kept from a single attachment's extracted text.
   category_knowledge_namespaces:
     label: Knowledge Collections
-    help: Collections this category's replies are answered from. Leave it off and
-      the reply is written from the message alone, with no retrieval; turn it on to
-      answer from the collections picked here and no others. Only the collections
+    help: Collections this category's replies are answered from. Only the collections
       the profile's knowledge agent is configured for are offered.
     placeholder: Select collections
+    toggle_label: Select Knowledge Collections
+    toggle_help: Uncheck to search all collections.
   no_information_draft:
     label: Draft When Nothing Was Found
     help: Draft body used when retrieval found nothing that answers the message. Used

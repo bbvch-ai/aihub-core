@@ -111,11 +111,11 @@ config:
     help: Caratteri conservati dal testo estratto di un singolo allegato.
   category_knowledge_namespaces:
     label: Raccolte di conoscenze
-    help: Raccolte da cui vengono scritte le risposte di questa categoria. Senza selezione
-      la risposta è scritta solo dal messaggio, senza ricerca; con la selezione attiva
-      proviene dalle raccolte scelte qui e da nessun'altra. Vengono offerte solo le
-      raccolte per cui è configurato l'agente di conoscenza del profilo.
+    help: Raccolte da cui vengono scritte le risposte di questa categoria. Vengono
+      offerte solo le raccolte per cui è configurato l'agente di conoscenza del profilo.
     placeholder: Seleziona raccolte
+    toggle_label: Seleziona raccolte di conoscenze
+    toggle_help: Deseleziona per cercare in tutte le raccolte.
   no_information_draft:
     label: Bozza quando non è stato trovato nulla
     help: Testo della bozza quando la ricerca non ha trovato nulla che risponda al

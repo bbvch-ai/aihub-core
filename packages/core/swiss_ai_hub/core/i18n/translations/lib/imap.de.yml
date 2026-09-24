@@ -111,12 +111,11 @@ config:
       übernommen werden.
   category_knowledge_namespaces:
     label: Wissenssammlungen
-    help: Sammlungen, aus denen die Antworten dieser Kategorie erstellt werden. Bleibt
-      die Auswahl aus, wird die Antwort allein aus der Nachricht verfasst, ohne Suche;
-      ist sie aktiv, wird aus den hier gewählten Sammlungen und keinen anderen geantwortet.
-      Angeboten werden nur Sammlungen, für die der Wissensagent des Profils konfiguriert
-      ist.
+    help: Sammlungen, aus denen die Antworten dieser Kategorie erstellt werden. Angeboten
+      werden nur Sammlungen, für die der Wissensagent des Profils konfiguriert ist.
     placeholder: Sammlungen auswählen
+    toggle_label: Wissenssammlungen auswählen
+    toggle_help: Deaktivieren, um in allen Sammlungen zu suchen.
   no_information_draft:
     label: Entwurf, wenn nichts gefunden wurde
     help: Entwurfstext, wenn die Suche nichts gefunden hat, das die Nachricht beantwortet.

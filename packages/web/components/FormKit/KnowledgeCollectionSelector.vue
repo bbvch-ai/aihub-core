@@ -42,7 +42,6 @@
 
 <script setup lang="ts">
 import { getAgentInstance, getDatabases } from '@core/sdk/client'
-import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
 import type { FormKitNode } from '@formkit/core'
@@ -107,6 +106,7 @@ const inputId = computed(() => `${props.context.id ?? 'knowledge-collections'}-s
 const agentRef = ref<AgentRefValue | null>(null)
 const collections = ref<BucketNamespacePair[]>([])
 const databaseNames = ref<Record<string, string>>({})
+const collectionNames = ref<Record<string, string>>({})
 const isLoading = ref(false)
 
 const hasAgent = computed(() => !!agentRef.value?.agent_class && !!agentRef.value?.agent_id)
@@ -117,19 +117,23 @@ function keyOf(pair: BucketNamespacePair): string {
   return `${pair.bucket_name}/${pair.namespace_name}`
 }
 
+function collectionLabel(pair: BucketNamespacePair): string {
+  return collectionNames.value[keyOf(pair)] || pair.namespace_name
+}
+
 const groupedOptions = computed<CollectionGroup[]>(() => {
   const byDatabase = new Map<string, CollectionOption[]>()
   for (const pair of collections.value) {
     const options = byDatabase.get(pair.bucket_name) ?? []
     options.push({
       key: keyOf(pair),
-      displayName: capitalCase(pair.namespace_name),
+      displayName: collectionLabel(pair),
       pair,
     })
     byDatabase.set(pair.bucket_name, options)
   }
   const groups = [...byDatabase.entries()].map(([database, items]) => ({
-    label: databaseNames.value[database] || capitalCase(database),
+    label: databaseNames.value[database] || database,
     items,
   }))
 
@@ -145,7 +149,7 @@ const groupedOptions = computed<CollectionGroup[]>(() => {
     label: t('lib.knowledgeCollections.unavailable'),
     items: unavailable.map(pair => ({
       key: keyOf(pair),
-      displayName: `${databaseNames.value[pair.bucket_name] || capitalCase(pair.bucket_name)} / ${capitalCase(pair.namespace_name)}`,
+      displayName: `${databaseNames.value[pair.bucket_name] || pair.bucket_name} / ${collectionLabel(pair)}`,
       pair,
     })),
   }]
@@ -218,7 +222,12 @@ async function loadCollections() {
       getDatabases({ composable: '$fetch', path: { tenant_id: tenantId.value! } }),
     ])
     databaseNames.value = Object.fromEntries(
-      databases.map(database => [database.name, database.display_name || capitalCase(database.name)]),
+      databases.map(database => [database.name, database.display_name || database.name]),
+    )
+    collectionNames.value = Object.fromEntries(
+      databases.flatMap(database => database.namespaces
+        .filter(namespace => namespace.display_name)
+        .map(namespace => [keyOf({ bucket_name: database.name, namespace_name: namespace.name }), namespace.display_name!])),
     )
     collections.value = collectionsFromRetrievers(instance.configuration ?? {}, databases)
   }

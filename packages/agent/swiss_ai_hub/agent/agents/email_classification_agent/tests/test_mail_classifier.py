@@ -397,11 +397,10 @@ def test_an_empty_collection_selection_is_rejected():
         EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
 
 
-def test_a_narrowed_category_that_gets_no_drafted_reply_is_rejected():
-    """It would retrieve nothing and leave the admin looking for drafts that were never due.
+def test_a_selection_left_on_a_category_that_stopped_drafting_is_ignored():
+    """The form hides the selection once drafting is off, so an admin cannot see it — it must not fail the run.
 
-    Another category *is* opted in, so this has to be caught by the grounding rule specifically — the existing
-    "drafting on but nothing opted in" check does not fire here.
+    No knowledge agent is configured either, which would reject the same selection on a drafting category.
     """
     settings = _settings(
         [
@@ -409,10 +408,8 @@ def test_a_narrowed_category_that_gets_no_drafted_reply_is_rejected():
             _INVOICE.model_copy(update={"draft_reply": True}),
         ]
     )
-    draft = _drafting()
-    delegation = _delegation()
-    with pytest.raises(ValueError, match="name a knowledge collection but are not set to get a drafted reply"):
-        EmailClassificationAgent._validate(settings, draft, "INBOX", _counter, delegation)
+
+    EmailClassificationAgent._validate(settings, _drafting(), "INBOX", _counter, None)
 
 
 def test_a_blank_fallback_text_is_rejected_up_front():

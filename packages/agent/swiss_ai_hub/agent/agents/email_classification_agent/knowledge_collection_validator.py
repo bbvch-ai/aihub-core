@@ -29,6 +29,8 @@ class KnowledgeCollectionValidator:
         mail.
         """
         for category in classification.categories:
+            if not category.draft_reply:
+                continue
             for pair in category.knowledge_namespaces or []:
                 if not await KnowledgeCollectionValidator._holds(pair):
                     raise ValueError(

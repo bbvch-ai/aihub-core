@@ -113,11 +113,11 @@ config:
   category_knowledge_namespaces:
     label: Collections de connaissances
     help: Collections à partir desquelles les réponses de cette catégorie sont rédigées.
-      Sans sélection, la réponse est rédigée à partir du seul message, sans recherche
-      ; avec une sélection, elle provient des collections choisies ici et d'aucune
-      autre. Seules les collections pour lesquelles l'agent de connaissances du profil
-      est configuré sont proposées.
+      Seules les collections pour lesquelles l'agent de connaissances du profil est
+      configuré sont proposées.
     placeholder: Sélectionner des collections
+    toggle_label: Sélectionner des collections de connaissances
+    toggle_help: Décocher pour rechercher dans toutes les collections.
   no_information_draft:
     label: Brouillon lorsque rien n'a été trouvé
     help: Texte du brouillon lorsque la recherche n'a rien trouvé qui réponde au message.
