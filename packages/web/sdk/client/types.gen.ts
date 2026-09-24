@@ -363,6 +363,7 @@ export type AgentClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -497,6 +498,7 @@ export type AgentConfigDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -4057,6 +4059,20 @@ export type CreateDatabaseRequest = {
   configuration?: {
     [key: string]: unknown;
   };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -4534,15 +4550,23 @@ export type DatabaseDto = {
    */
   display_name: string | null;
   /**
-   * Auto Sync
+   * Source
    *
-   * Whether this database auto-syncs namespaces
+   * Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.
    */
-  auto_sync: boolean;
+  source: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked; empty for manual upload.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
   /**
    * Deletable
    *
-   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   * Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.
    */
   deletable: boolean;
   /**
@@ -4587,6 +4611,20 @@ export type DatabaseResponse = {
    * The ingestor's settings for this database, as validated against its announced schema.
    */
   configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database; null for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked.
+   */
+  source_configuration?: {
     [key: string]: unknown;
   };
   /**
@@ -6094,6 +6132,7 @@ export type FullProcessInstanceDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6281,6 +6320,7 @@ export type Group = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6637,6 +6677,7 @@ export type HumanInDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6718,6 +6759,7 @@ export type HumanInSpecs = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -7917,6 +7959,7 @@ export type IngestorDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -8743,6 +8786,153 @@ export type Knob = {
    * Template string for value display
    */
   valueTemplate?: string | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelector = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
   /**
    * Validation
    */
@@ -12189,6 +12379,7 @@ export type ProcessClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -13197,6 +13388,7 @@ export type Repeater = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -14488,6 +14680,69 @@ export const SortOrder = { 1: 1, "-1": -1 } as const;
  * SortOrder
  */
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDto = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
 
 /**
  * StandaloneQuestionCondenserEvent
@@ -16211,6 +16466,32 @@ export type UpdateAgentInstanceDto = {
 };
 
 /**
+ * UpdateDatabaseSourceRequest
+ */
+export type UpdateDatabaseSourceRequest = {
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Replace Existing Documents
+   *
+   * Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.
+   */
+  replace_existing_documents?: boolean;
+};
+
+/**
  * UpdateMemoryRequest
  *
  * Request for updating a memory's content.
@@ -17312,6 +17593,7 @@ export type AgentClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17446,6 +17728,7 @@ export type AgentConfigDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -19905,6 +20188,7 @@ export type FullProcessInstanceDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20031,6 +20315,7 @@ export type GroupWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20235,6 +20520,7 @@ export type HumanInDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20316,6 +20602,7 @@ export type HumanInSpecsWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20847,6 +21134,7 @@ export type IngestorDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -21615,6 +21903,149 @@ export type KnobWritable = {
    * Template string for value display
    */
   valueTemplate?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelectorWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
   [key: string]: unknown;
 };
 
@@ -23389,6 +23820,7 @@ export type ProcessClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -24061,6 +24493,7 @@ export type RepeaterWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -25005,6 +25438,69 @@ export type SliderWritable = {
    */
   orientation?: "horizontal" | "vertical" | null;
   [key: string]: unknown;
+};
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDtoWritable = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
 };
 
 /**
@@ -29247,6 +29743,32 @@ export type GetIngestorsResponses = {
 export type GetIngestorsResponse =
   GetIngestorsResponses[keyof GetIngestorsResponses];
 
+export type GetSourcePipelinesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/source-pipelines";
+};
+
+export type GetSourcePipelinesResponses = {
+  /**
+   * Response Get Source Pipelines  Tenant Id  Knowledge Source Pipelines Get
+   *
+   * Successful Response
+   */
+  200: Array<SourcePipelineDto>;
+};
+
+export type GetSourcePipelinesResponse =
+  GetSourcePipelinesResponses[keyof GetSourcePipelinesResponses];
+
 export type DeleteDatabaseData = {
   body?: never;
   path: {
@@ -29321,6 +29843,44 @@ export type CreateDatabaseResponses = {
 
 export type CreateDatabaseResponse =
   CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type UpdateDatabaseSourceData = {
+  body: UpdateDatabaseSourceRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/source";
+};
+
+export type UpdateDatabaseSourceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateDatabaseSourceError =
+  UpdateDatabaseSourceErrors[keyof UpdateDatabaseSourceErrors];
+
+export type UpdateDatabaseSourceResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type UpdateDatabaseSourceResponse =
+  UpdateDatabaseSourceResponses[keyof UpdateDatabaseSourceResponses];
 
 export type DeleteNamespaceData = {
   body?: never;

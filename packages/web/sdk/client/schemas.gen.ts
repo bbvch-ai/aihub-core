@@ -434,6 +434,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -663,6 +666,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/InputText",
+              },
+              {
+                $ref: "#/components/schemas/KnowledgeCollectionSelector",
               },
               {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -5977,7 +5983,26 @@ export const CreateDatabaseRequestSchema = {
       title: "Configuration",
       description:
         "The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.",
-      default: {},
+    },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.",
     },
   },
   type: "object",
@@ -6622,16 +6647,31 @@ export const DatabaseDTOSchema = {
       title: "Display Name",
       description: "Localized display name of database",
     },
-    auto_sync: {
-      type: "boolean",
-      title: "Auto Sync",
-      description: "Whether this database auto-syncs namespaces",
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked; empty for manual upload.",
     },
     deletable: {
       type: "boolean",
       title: "Deletable",
       description:
-        "Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.",
+        "Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.",
     },
     ingestor: {
       type: "string",
@@ -6652,7 +6692,7 @@ export const DatabaseDTOSchema = {
   required: [
     "name",
     "display_name",
-    "auto_sync",
+    "source",
     "deletable",
     "ingestor",
     "namespaces",
@@ -6684,7 +6724,26 @@ export const DatabaseResponseSchema = {
       title: "Configuration",
       description:
         "The ingestor's settings for this database, as validated against its announced schema.",
-      default: {},
+    },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database; null for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked.",
     },
     display_name: {
       anyOf: [
@@ -8736,6 +8795,9 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9032,6 +9094,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -9553,6 +9618,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9700,6 +9768,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -11654,6 +11725,9 @@ export const IngestorDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -13099,6 +13173,205 @@ export const KnobSchema = {
   required: ["label", "validation"],
   title: "Knob",
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
+} as const;
+
+export const KnowledgeCollectionSelectorSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
 } as const;
 
 export const KnowledgeDatabaseSelectorSchema = {
@@ -18023,6 +18296,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -19557,6 +19833,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
@@ -21474,6 +21753,151 @@ export const SortOrderSchema = {
   type: "integer",
   enum: [1, -1],
   title: "SortOrder",
+} as const;
+
+export const SourcePipelineDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
 } as const;
 
 export const StandaloneQuestionCondenserEventSchema = {
@@ -23964,6 +24388,40 @@ export const UpdateAgentInstanceDTOSchema = {
   description: "Request body for updating an agent instance configuration.",
 } as const;
 
+export const UpdateDatabaseSourceRequestSchema = {
+  properties: {
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.",
+    },
+    replace_existing_documents: {
+      type: "boolean",
+      title: "Replace Existing Documents",
+      description:
+        "Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.",
+      default: false,
+    },
+  },
+  type: "object",
+  title: "UpdateDatabaseSourceRequest",
+} as const;
+
 export const UpdateMemoryRequestSchema = {
   properties: {
     data: {
@@ -25417,6 +25875,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -25646,6 +26107,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/InputTextWritable",
+              },
+              {
+                $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
               },
               {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -29277,6 +29741,9 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29503,6 +29970,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -29807,6 +30277,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29954,6 +30427,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -30827,6 +31303,9 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -32196,6 +32675,200 @@ export const KnobWritableSchema = {
   required: ["label"],
   title: "Knob",
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
+} as const;
+
+export const KnowledgeCollectionSelectorWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
 } as const;
 
 export const KnowledgeDatabaseSelectorWritableSchema = {
@@ -34871,6 +35544,9 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -35985,6 +36661,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
@@ -37489,6 +38168,151 @@ export const SliderWritableSchema = {
   required: ["label"],
   title: "Slider",
   description: "https://formkit-primevue.netlify.app/inputs/Slider",
+} as const;
+
+export const SourcePipelineDTOWritableSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
 } as const;
 
 export const StandaloneQuestionCondenserEventWritableSchema = {

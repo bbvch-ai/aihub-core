@@ -1,13 +1,13 @@
 ---
-title: Email Classification Agent
+title: Email Processing Agent
 description: A mailbox agent that reads every unread message, decides which category it belongs to, and files it into that category's folder — with a fallback folder for anything it is unsure about.
 ---
 
-# Email Classification Agent
+# Email Processing Agent
 
-The **Email Classification Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every
-unread message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder.
-Anything no category fits goes to a fallback folder rather than being guessed into a bucket.
+The **Email Processing Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every unread
+message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder. Anything
+no category fits goes to a fallback folder rather than being guessed into a bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
 trigger it programmatically — by another workflow, or via the API.
@@ -70,7 +70,7 @@ sees genuinely unread mail waiting for them — the agent sorted it, it did not 
 
 ## Configuration
 
-Create a profile from the **Email Classification Agent** blueprint in the Admin UI.
+Create a profile from the **Email Processing Agent** blueprint in the Admin UI.
 
 ### Mailbox connection
 
@@ -208,14 +208,17 @@ your case history, and it will not know what it does not know.
 
 #### Grounding drafts in your own documents
 
-A reply written from the incoming message alone can acknowledge it, but it cannot *answer* it. Point a category at a
-**Knowledge Collection** and its replies are written from the documents in that collection instead — the agent asks a
-knowledge agent to answer the message from that collection, and uses the answer as the draft.
+A reply written from the incoming message alone can acknowledge it, but it cannot *answer* it. Pick a **Knowledge
+Agent** and drafts are written from your documents instead — the agent asks that knowledge agent to answer each message,
+and uses the answer as the draft. Leave the Knowledge Agent off and every draft is written from the message alone, with
+no retrieval at all.
 
-Grounding is chosen per category, on the same row as the folder and the description. This is what keeps retrieval
-precise: a message classified as `support_request` is answered from your support material and from nothing else, so the
-category verdict is what makes the lookup accurate. A category with no collection keeps writing from the message alone,
-so you can adopt this one category at a time.
+Each category then opts in for itself. Tick **Knowledge Collections** on a category and pick one or more collections,
+and its replies are answered from those and nothing else — so a message classified as `support_request` can be answered
+from your support material alone, with the category verdict making the lookup precise. Leave it off and that category's
+replies stay written from the message alone, even with a knowledge agent configured: a `thanking` mail has no
+documentation behind it and would only retrieve noise. Only the collections the knowledge agent you picked is actually
+configured for are offered, because a collection outside its scope would retrieve nothing at all.
 
 **The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
 creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that
@@ -231,17 +234,26 @@ support-kb/                 ← knowledge database
     └── opening-hours.md
 ```
 
-Configure it in three places:
+Configure it in two places:
 
-| Field                    | Where                | What it is                                                                                             |
-| ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Knowledge Agent**      | Knowledge delegation | The agent that answers a message from a collection. Only agents that can be scoped to one are offered. |
-| **Knowledge Databases**  | Email classification | The databases your collections live in. A collection name alone does not identify one.                 |
-| **Knowledge Collection** | On each category     | The collection that category's replies are answered from. Leave empty for no retrieval.                |
+| Field                     | Where                | What it is                                                                                                                  |
+| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Knowledge Agent**       | Knowledge delegation | The agent that answers your mail from your documents. Leaving it off turns grounding off for the whole profile.             |
+| **Knowledge Collections** | On each category     | Tick it to answer that category's replies from the collections you pick. Left off, they are written from the message alone. |
 
-A category naming a collection that none of the configured databases holds fails the run **before** any mail is
-classified, rather than quietly answering from nothing. So does a grounded category whose **Draft a Reply** switch is
-off, which would otherwise have you looking for drafts that were never due.
+A category pointed at a collection your knowledge base no longer holds fails the run **before** any mail is classified,
+rather than quietly answering from nothing. So does a category that names collections while its **Draft a Reply** switch
+is off, which would otherwise have you looking for drafts that were never due, and one whose selection is switched on
+but empty — switch it off instead to draft that category from the message alone.
+
+::: warning Upgrading a profile configured before this release
+Earlier releases named one collection per category in a plain text field, with the databases listed once on the
+classification section. Both fields were replaced by the per-category picker. A profile saved in the old shape is
+carried over on load — each category's old collection name is paired with the databases that were configured — so
+grounding keeps working without you re-entering it. Categories that named no collection stay ungrounded, exactly as
+before. Open the profile and check the picker once after upgrading: a carried-over collection the knowledge agent you
+picked is not configured for is listed as unavailable, and that category needs a new selection.
+:::
 
 **Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
 model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest
@@ -310,8 +322,8 @@ Input Tokens** if your model accepts more and you want less trimming.
 5. **Then put it on a schedule** (above), and the inbox drains itself.
 6. **Turn on drafting last**, and only for the categories that need it. Read the first few drafts before you trust the
    rest.
-7. **Then ground the categories worth grounding.** Load the documents that answer a category into its own collection and
-   point the category at it. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
+7. **Then ground the drafts.** Pick a knowledge agent, and tick **Knowledge Collections** on the categories that have
+   documents behind them. An ungrounded draft can only acknowledge a message; a grounded one can answer it.
 
 ## What it does *not* do
 
@@ -319,8 +331,9 @@ Input Tokens** if your model accepts more and you want less trimming.
   leaves the mailbox, and the platform has no way to send mail at all.
 - **It does not read attachments to classify.** Classification uses the headers and the plain-text body only.
   Attachments can feed a *drafted reply* (above), but never the choice of category.
-- **It does not answer from a collection you did not point it at.** Grounding is per category and opt-in; a category
-  with no collection is drafted from the message and its attachments alone.
+- **It does not answer from documents the knowledge agent you picked cannot reach.** Narrowing a category only ever
+  restricts that agent's own scope; with no knowledge agent configured, every draft is written from the message and its
+  attachments alone.
 - **It has no chat interface.**
 - **It does not skip a message it cannot handle.** A run is all-or-nothing: if one message fails to classify, nothing in
   that batch is filed and the whole batch is retried next run. That keeps a transient outage from scattering mail into

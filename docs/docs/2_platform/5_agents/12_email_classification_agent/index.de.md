@@ -1,14 +1,14 @@
 ---
-title: E-Mail-Klassifizierungsagent
+title: E-Mail-Verarbeitungsagent
 description: Ein Postfach-Agent, der jede ungelesene Nachricht liest, entscheidet, zu welcher Kategorie sie gehört, und sie im Ordner dieser Kategorie ablegt — mit einem Ausweichordner für alles, bei dem er unsicher ist.
 ---
 
-# E-Mail-Klassifizierungsagent
+# E-Mail-Verarbeitungsagent
 
-Der **E-Mail-Klassifizierungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert.
-Bei jedem Lauf liest er jede ungelesene Nachricht im Posteingang, entscheidet, zu welcher Ihrer Kategorien sie gehört,
-und verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner,
-statt in eine Kategorie geraten zu werden.
+Der **E-Mail-Verarbeitungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert. Bei
+jedem Lauf liest er jede ungelesene Nachricht im Posteingang, entscheidet, zu welcher Ihrer Kategorien sie gehört, und
+verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner, statt
+in eine Kategorie geraten zu werden.
 
 Wie der [E-Mail-Agent](../11_email_agent/) hat er **keine Chat-Oberfläche**. Sie konfigurieren ihn einmal in der
 Admin-UI und lösen ihn programmatisch aus — durch einen anderen Workflow oder über die API.
@@ -69,7 +69,7 @@ sieht weiterhin echte ungelesene Post — der Agent hat sie sortiert, nicht erle
 
 ## Konfiguration
 
-Erstellen Sie in der Admin-UI ein Profil aus der Vorlage **E-Mail-Klassifizierungsagent**.
+Erstellen Sie in der Admin-UI ein Profil aus der Vorlage **E-Mail-Verarbeitungsagent**.
 
 ### Postfachverbindung
 

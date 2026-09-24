@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 04.09.2026
+Generated on: 22.09.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -27,7 +27,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | aiofile                                          | 3.11.1          | Apache-2.0                                              |                                                                      |
 | ✅     | aiofiles                                         | 25.1.0          | Apache Software License                                 |                                                                      |
 | ✅     | aiohappyeyeballs                                 | 2.6.1           | Python Software Foundation License                      |                                                                      |
-| ✅     | aiohttp                                          | 3.13.5          | Apache-2.0 AND MIT                                      |                                                                      |
+| ✅     | aiohttp                                          | 3.14.3          | Apache-2.0 AND MIT                                      |                                                                      |
 | ✅     | aioitertools                                     | 0.13.0          | MIT                                                     |                                                                      |
 | ✅     | aiosignal                                        | 1.4.0           | Apache Software License                                 |                                                                      |
 | ✅     | aiosqlite                                        | 0.22.1          | MIT License                                             |                                                                      |
@@ -380,7 +380,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | stringcase                                       | 1.2.0           | MIT                                                     |                                                                      |
 | ✅     | striprtf                                         | 0.0.26          | BSD License                                             |                                                                      |
 | ✅     | structlog                                        | 25.5.0          | MIT OR Apache-2.0                                       |                                                                      |
-| ✅     | swiss-ai-hub                                     | 0.321.0         | Apache-2.0                                              |                                                                      |
+| ✅     | swiss-ai-hub                                     | 0.322.0         | Apache-2.0                                              |                                                                      |
 | ✅     | swiss-ai-hub-jambo                               | 0.5.0           | MIT                                                     |                                                                      |
 | ✅     | sympy                                            | 1.14.0          | BSD License                                             |                                                                      |
 | ✅     | tabulate                                         | 0.10.0          | MIT                                                     |                                                                      |

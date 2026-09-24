@@ -211,17 +211,21 @@ Common issues: FerretDB not running, database name mismatch (derived from bucket
 
 **Symptoms**: `ClientConnectorError`, `403 Forbidden`, remote not found
 
-Settings: `packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSettings.py` Client:
-`packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneClient.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/rclone/rclone_settings.py` Client:
+`packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/rclone_client.py` Per-run remote:
+`packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py`
 
-| Env Variable     | Purpose         |
-| ---------------- | --------------- |
-| `RCLONE_URL`     | RC API endpoint |
-| `RCLONE_RC_USER` | Auth username   |
-| `RCLONE_RC_PASS` | Auth password   |
+| Env Variable               | Purpose                                                          |
+| -------------------------- | ---------------------------------------------------------------- |
+| `RCLONE_URL`               | RC API endpoint                                                  |
+| `RCLONE_RC_USER`           | Auth username                                                    |
+| `RCLONE_RC_PASS`           | Auth password                                                    |
+| `RCLONE_LOCAL_SOURCE_ROOT` | Directory a `local` source may read; unset disables that backend |
 
-Common issues: Rclone service not running, remote not configured, OAuth token expired, wrong `--rc-serve` flag (required
-for file downloads).
+Common issues: Rclone service not running, the daemon lost its remotes after a restart (expected, it keeps no config
+file: the next run re-creates them from the database's stored source configuration), OAuth token expired, wrong
+`--rc-serve` flag (required for file downloads), a `config/create` error such as `invalid key or value contains \n` (a
+multi-line credential; Google Drive JSON and SFTP PEM keys are normalised, other backends are not).
 
 ### NATS
 
@@ -265,10 +269,12 @@ collection), and document ID conversion (URI to hash) is consistent.
 
 ### "Rclone remote not found"
 
-Read: `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneResource.py`
+Read: `packages/pipeline/swiss_ai_hub/pipeline/util/source_builders.py` (`rclone_remote_for_bucket`).
 
-Remote not configured in rclone, `rclone_config_dict` not provided or malformed, remote name doesn't match
-`source_remote` prefix.
+Remotes are named `rclone_{bucket}` and rebuilt from `BucketEntity.source_configuration` on every run; nothing is
+configured by hand. A missing remote therefore means the run never reached `config/create`: the database has no `source`
+any more, its stored configuration fails validation (check the run's first step), or the daemon at `RCLONE_URL` is not
+the one the pipeline talks to.
 
 ______________________________________________________________________
 
