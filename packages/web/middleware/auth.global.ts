@@ -36,6 +36,9 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
   }
 }
 
+// Redirects are returned as plain locations, not via navigateTo(): after an
+// await, another navigation may already have finished, and navigateTo() then
+// navigates on its own instead of redirecting this one (see home-redirect.ts).
 export default defineNuxtRouteMiddleware(async (to) => {
   const { $auth, $i18n } = useNuxtApp()
   const locale = $i18n.locale.value
@@ -52,7 +55,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     if (!user) {
       rememberRedirect(to.fullPath, isAuthPath)
-      return navigateTo(`/${locale}/auth/login`)
+      return `/${locale}/auth/login`
     }
 
     if (user.expired) {
@@ -62,7 +65,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       catch {
         await $auth.removeUser()
         rememberRedirect(to.fullPath, isAuthPath)
-        return navigateTo(`/${locale}/auth/login`)
+        return `/${locale}/auth/login`
       }
     }
 
@@ -76,6 +79,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
   catch (error) {
     console.error('Error in auth middleware:', error)
-    return navigateTo(`/${locale}/auth/login`)
+    return `/${locale}/auth/login`
   }
 })
