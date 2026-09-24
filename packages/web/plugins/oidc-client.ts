@@ -41,13 +41,12 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     console.log('Access token expiring, attempting silent renewal')
   })
 
-  auth.events.addAccessTokenExpired(() => {
-    console.log('Access token expired')
-    // Redirect to login when token expires and cannot be renewed
-    const locale = $i18n.locale.value
-    $router.push(`/${locale}/auth/login`)
-  })
-
+  // No addAccessTokenExpired handler on purpose. For a stored user that is
+  // already expired it fires ~1s after load, while middleware/auth.global.ts is
+  // still refreshing that same session; a redirect from here races that initial
+  // navigation (login bounce, or a fatal 500 via home-redirect). A session that
+  // really cannot be renewed ends up in addSilentRenewError below or in the
+  // middleware's own refresh.
   auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
     // Refresh token rejected (e.g. Keycloak invalidated it): drop the dead
