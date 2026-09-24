@@ -346,7 +346,9 @@ class KnowledgeController(TenantScopedController):
             """
             Updates display name and description for an existing namespace.
             """
-            return await KnowledgeService.update_namespace(namespace, request, t, user, self.translation_llm_config)
+            return await KnowledgeService.update_namespace(
+                database, namespace, request, t, user, self.translation_llm_config
+            )
 
         return self
 
