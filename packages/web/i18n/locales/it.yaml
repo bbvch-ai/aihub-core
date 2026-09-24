@@ -993,3 +993,14 @@ tenant:
   mismatch_switch_action: Cambia tenant
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
+support:
+  report_bug: Segnala un problema
+  dialog_title: Segnala un problema
+  choose_files: Scegli i file
+  submit: Invia segnalazione
+  submitting: Invio…
+  sent: Segnalazione inviata
+  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà via e-mail.'
+  send_failed: Segnalazione non inviata
+  send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
+  unavailable: La segnalazione non è configurata su questa installazione. Contatta l'amministratore.

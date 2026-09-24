@@ -1812,6 +1812,24 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
+ * Body_create_incident_incidents_post
+ */
+export type BodyCreateIncidentIncidentsPost = {
+  /**
+   * Submission
+   *
+   * Answers to the form, as a JSON object
+   */
+  submission: string;
+  /**
+   * Attachments
+   *
+   * Files to file with the report
+   */
+  attachments?: Array<Blob | File>;
+};
+
+/**
  * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
@@ -4222,6 +4240,36 @@ export type CreateTokenResponse = {
    * The generated API token, only returned at creation
    */
   token: string;
+};
+
+/**
+ * CreatedIncidentDTO
+ *
+ * What the reporter is shown after submitting.
+ *
+ * Carries the issue number so support and reporter can name the same report, but no issue
+ * URL: the reporter has no GitHub account and a link they cannot open reads as a broken
+ * promise rather than a receipt.
+ */
+export type CreatedIncidentDto = {
+  /**
+   * Number
+   *
+   * Issue number in the incident repository
+   */
+  number: number;
+  /**
+   * Reference
+   *
+   * Reference shown to the reporter and used in attachment paths
+   */
+  reference: string;
+  /**
+   * Attachments
+   *
+   * How many files were filed with the report
+   */
+  attachments?: number;
 };
 
 /**
@@ -7720,6 +7768,131 @@ export type ImagesResponse = {
   size?: "1024x1024" | "1024x1536" | "1536x1024" | null;
   usage?: OpenaiTypesImagesResponseUsage | null;
   [key: string]: unknown;
+};
+
+/**
+ * IncidentAttachmentsDTO
+ *
+ * How the reporter's file picker should be configured.
+ *
+ * Wording and accepted types come from the form definition, the two limits from the
+ * deployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also
+ * have to hunt down a translated string that repeats the old number.
+ */
+export type IncidentAttachmentsDto = {
+  /**
+   * Label
+   *
+   * Heading shown above the picker
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * Guidance shown under the label
+   */
+  description: string | null;
+  /**
+   * Required
+   *
+   * Whether at least one file must be attached
+   */
+  required: boolean;
+  /**
+   * Accept
+   *
+   * Accepted extensions, each with its leading dot
+   */
+  accept: Array<string>;
+  /**
+   * Max Files
+   *
+   * How many files one report may carry
+   */
+  max_files: number;
+  /**
+   * Max Bytes
+   *
+   * Largest single attachment accepted, in bytes
+   */
+  max_bytes: number;
+};
+
+/**
+ * IncidentAvailabilityDTO
+ *
+ * Whether this deployment files reports at all.
+ *
+ * Answered with 200 on every deployment, unlike the form and submit endpoints, so the UI can
+ * decide whether to draw the report button without a 404 that the shell's global error handler
+ * would toast at a user who has not done anything yet.
+ */
+export type IncidentAvailabilityDto = {
+  /**
+   * Enabled
+   *
+   * True when an incident repository is configured
+   */
+  enabled: boolean;
+};
+
+/**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDto = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
 };
 
 /**
@@ -15759,7 +15932,7 @@ export type ThreadReference = {
   /**
    * Thread Id
    *
-   * The thread ID that owns the requested display
+   * The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.
    */
   thread_id: string;
 };
@@ -21070,6 +21243,65 @@ export type IconSelectorWritable = {
    */
   placeholder?: LocaleString | string | null;
   [key: string]: unknown;
+};
+
+/**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDtoWritable = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
 };
 
 /**
@@ -30716,6 +30948,67 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse =
   UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type GetIncidentAvailabilityData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/availability";
+};
+
+export type GetIncidentAvailabilityResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentAvailabilityDto;
+};
+
+export type GetIncidentAvailabilityResponse =
+  GetIncidentAvailabilityResponses[keyof GetIncidentAvailabilityResponses];
+
+export type GetIncidentFormData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/form";
+};
+
+export type GetIncidentFormResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentFormDto;
+};
+
+export type GetIncidentFormResponse =
+  GetIncidentFormResponses[keyof GetIncidentFormResponses];
+
+export type CreateIncidentData = {
+  body: BodyCreateIncidentIncidentsPost;
+  path?: never;
+  query?: never;
+  url: "/incidents";
+};
+
+export type CreateIncidentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateIncidentError =
+  CreateIncidentErrors[keyof CreateIncidentErrors];
+
+export type CreateIncidentResponses = {
+  /**
+   * Successful Response
+   */
+  201: CreatedIncidentDto;
+};
+
+export type CreateIncidentResponse =
+  CreateIncidentResponses[keyof CreateIncidentResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;

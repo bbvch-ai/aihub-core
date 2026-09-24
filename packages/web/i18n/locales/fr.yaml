@@ -996,3 +996,14 @@ tenant:
   mismatch_switch_action: Changer de locataire
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
+support:
+  report_bug: Signaler un problème
+  dialog_title: Signaler un problème
+  choose_files: Choisir des fichiers
+  submit: Envoyer le signalement
+  submitting: Envoi…
+  sent: Signalement envoyé
+  sent_detail: 'Référence {reference}, signalement #{number}. Le support vous répondra par e-mail.'
+  send_failed: Signalement non envoyé
+  send_failed_detail: Vos réponses sont toujours là — réessayez.
+  unavailable: Le signalement n'est pas configuré sur cette installation. Contactez votre administrateur.

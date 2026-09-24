@@ -2644,6 +2644,12 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+      # Incident reporting. Unset, the feature is off and its endpoints answer 404.
+      INCIDENT_GITHUB_REPOSITORY: ${INCIDENT_GITHUB_REPOSITORY}
+      INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
+      INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
+      INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
       interval: 30s

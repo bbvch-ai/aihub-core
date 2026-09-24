@@ -25,9 +25,11 @@
           </Button>
         </NuxtLink>
       </div>
-      <div>
+      <div class="flex flex-col items-center">
+        <SupportIncidentButton />
         <UserSettings />
       </div>
+      <SupportIncidentDialog />
     </div>
     <div class="w-full pl-[50px]">
       <div class="fixed z-50 flex h-[50px] w-full items-center justify-between bg-surface-50 pr-[50px] dark:bg-surface-950">
