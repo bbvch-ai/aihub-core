@@ -90,16 +90,22 @@ prompt reconciles duplicates — re-feeding history only multiplies embedding co
   into it reintroduces the embedder-window failure this decision exists to remove. Prompt compliance is probabilistic,
   so the mitigation belongs in a Langfuse evaluation set rather than a CI assertion that would flake.
 - Making the condensed question load-bearing everywhere makes an empty one fatal, so `condense_standalone_question`
-  raises `EmptyCondensationError` on a blank answer and both condenser events reject blank content with a
-  `field_validator` — on the field, because JetStream replay and redelivery deserialize events with no step body to
-  check them. Blank condensations are real: 8 runs between 30 June and 14 July 2026, all `ExpertRAGAgent`. There is no
-  retry (identical re-issue at `temperature=0.1` returns the same nothing) and no fallback to the raw last user message,
-  which is the document-inlined prompt this decision removes. `StandaloneQuestionCondenserEvent` and
-  `FewShotStandaloneQuestionCondenserEvent` each need their own validator — different bases, no shared ancestor. In the
-  RAG agents the raise is caught one layer up, in `do_condense_standalone_question`, and turned into a localized
+  raises `EmptyCondensationError` on a blank answer. Blank condensations are real: 8 runs between 30 June and 14 July
+  2026, all `ExpertRAGAgent`. There is no retry (identical re-issue at `temperature=0.1` returns the same nothing) and
+  no fallback to the raw last user message, which is the document-inlined prompt this decision removes. In the RAG
+  agents the raise is caught one layer up, in `do_condense_standalone_question`, and turned into a localized
   `RAGFailureStopEvent(reason=CONDENSATION_EMPTY)` — the same refusal shape `_refuse_oversized_input` uses for #1880.
   Left uncaught it reaches the dispatcher as an `ExceptionEvent` (`stop_on_error` defaults to True), which renders the
   error class's English sentence into the chat.
+- **(−)** The producer is the *only* place the invariant is enforced. Both condenser events originally carried a
+  `field_validator` as well, on the reasoning that JetStream replay and redelivery deserialize events with no step body
+  to check them. That was backwards: a validator on an event also runs on every `model_validate`, which is how the
+  immutable log is read back, so the only events it could ever reject were the blanks written before this decision
+  existed. It broke them on read — the event store logged a `ValidationError` for each one on every agent start (the
+  subscription consumer carries a fresh uuid, so every process replays the whole stream), and
+  `EventService.get_events_in_thread`, which deserializes the persisted display copy with no per-event guard, returned a
+  500 for any thread containing one. Both validators were removed; the raise in the producer already makes a blank event
+  unpublishable, and it is the only check that can still change an outcome.
 - **(−)** `FewShotAgent` inherits that raise even though it never retrieves, stores or escalates. Accepted rather than
   exempted: it drops chat history and the original message from its final prompt, so a blank condensation leaves the
   model classifying nothing — the failure the raise prevents is worse there than in the RAG agents, not milder.
