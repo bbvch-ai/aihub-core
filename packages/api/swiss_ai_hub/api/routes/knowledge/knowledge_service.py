@@ -744,19 +744,29 @@ class KnowledgeService:
 
     @staticmethod
     async def update_namespace(
-        namespace_id: str,
+        database: str,
+        namespace: str,
         request: UpdateNamespaceRequest,
         t: LocaleHandler,
         user: UserIdentity,
         llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
-        """
-        Updates display name and description for an existing namespace.
+        """Updates display name and description for an existing namespace.
+
+        Resolved by name, never by id: the route guard authorises ``aihub.admin.knowledge.{database}.{namespace}``,
+        so only a name lookup guarantees the row written is the one the caller was cleared for.
         """
         try:
-            NamespaceEntity.get_namespace_by_id(namespace_id)
-        except Exception:
-            raise HTTPException(status_code=404, detail=f"Folder with ID '{namespace_id}' not found")
+            bucket = BucketEntity.get_bucket_by_db_name(database)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from None
+
+        try:
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
+        except DoesNotExist:
+            raise HTTPException(
+                status_code=404, detail=f"Folder '{namespace}' not found in database '{database}'"
+            ) from None
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
             text=request.display_name, t=t, llm_config=llm_config, user=user
@@ -766,7 +776,7 @@ class KnowledgeService:
         )
 
         updated_entity = NamespaceEntity.update_namespace(
-            namespace_id=namespace_id,
+            namespace_id=str(namespace_entity.id),
             display_name=display_name_entity,
             description=description_entity,
         )
