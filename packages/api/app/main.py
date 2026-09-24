@@ -49,7 +49,12 @@ runner.mount(
     AuthProviderController(auth=auth).get_auth_providers(),
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
-    MyAccountController(auth=auth).get_my_account().get_my_identity().get_my_dashboard().update_my_dashboard(),
+    MyAccountController(auth=auth)
+    .get_my_account()
+    .get_my_identity()
+    .get_my_dashboard()
+    .update_my_dashboard()
+    .update_my_locale(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth)

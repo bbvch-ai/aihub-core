@@ -263,7 +263,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
-    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage_database")
     def update_database_source(self, route: str = "/databases/{database}/source") -> Self:
         @self.router.put(route, tags=self.tags, summary="Set or clear a knowledge database's source")
         async def update_database_source(
@@ -313,7 +313,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
-    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage_database")
     def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_namespace(
@@ -350,6 +350,9 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    # The one annotated admin guard at namespace depth, and so what gives each folder its own "Manage" row in the
+    # role and tenant editors. Every folder-level admin route shares this guard, so one entry covers them all.
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
     def initiate_document_upload(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/upload/initiate"
     ) -> Self:
