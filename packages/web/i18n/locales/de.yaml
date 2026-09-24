@@ -997,3 +997,15 @@ tenant:
   mismatch_switch_action: Mandant wechseln
   administration_title: Tenant-Verwaltung
   administration_description: Tenants plattformweit verwalten
+support:
+  report_bug: Fehler melden
+  dialog_title: Problem melden
+  choose_files: Dateien auswählen
+  submit: Meldung senden
+  submitting: Wird gesendet…
+  sent: Meldung gesendet
+  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per E-Mail.'
+  send_failed: Meldung nicht gesendet
+  send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
+  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte wenden Sie
+    sich an Ihre Administration.

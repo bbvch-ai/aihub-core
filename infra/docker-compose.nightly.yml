@@ -1392,6 +1392,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      STONEY_CLOUD_API_BASE_URL: ${STONEY_CLOUD_API_BASE_URL}
+      STONEY_CLOUD_API_KEY: ${STONEY_CLOUD_API_KEY}
       SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
       SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
@@ -1415,9 +1417,11 @@ services:
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
-      - ./configs/litellm/litellm-config.nightly.yml:/app/config.yml
+      # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
+      - ./configs/litellm/litellm-config.infomaniak.nightly.yml:/app/config.infomaniak.yml
+      - ./configs/litellm/litellm-config.stoney.nightly.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
-    command: --config /app/config.yml
+    command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
@@ -2387,6 +2391,12 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+      # Incident reporting. Unset, the feature is off and its endpoints answer 404.
+      INCIDENT_GITHUB_REPOSITORY: ${INCIDENT_GITHUB_REPOSITORY}
+      INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
+      INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
+      INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8000/api/v1/health]
       interval: 30s

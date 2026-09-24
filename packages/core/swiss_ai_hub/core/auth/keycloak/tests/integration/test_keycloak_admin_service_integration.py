@@ -175,6 +175,42 @@ class TestTenantGroups:
             await admin.a_get_group_by_path(f"/tenants/{tenant_id}")
 
 
+class TestPreferredLocaleAttribute:
+    @pytest.mark.asyncio
+    async def test_set_preferred_locale(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "fr")
+
+        raw = await admin.a_get_user(user_id)
+        assert raw.get("attributes", {}).get("preferred_locale") == ["fr"]
+
+    @pytest.mark.asyncio
+    async def test_get_preferred_locale(self, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+        await KeycloakAdminService.set_preferred_locale(user_id, "it")
+
+        assert await KeycloakAdminService.get_preferred_locale(user_id) == "it"
+
+    @pytest.mark.asyncio
+    async def test_get_preferred_locale_returns_none_when_unset(self, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+        assert await KeycloakAdminService.get_preferred_locale(user_id) is None
+
+    @pytest.mark.asyncio
+    async def test_set_preserves_active_tenant(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
+        """The two attributes share one Keycloak user record; writing one must not drop the other."""
+        user_id, _ = seeded_user
+        tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
+        await KeycloakAdminService.set_active_tenant(user_id, tenant_id)
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "en")
+
+        raw_after = await admin.a_get_user(user_id)
+        assert raw_after["attributes"]["active_tenant_id"] == [tenant_id]
+        assert raw_after["attributes"]["preferred_locale"] == ["en"]
+
+
 class TestActiveTenantAttribute:
     @pytest.mark.asyncio
     async def test_set_active_tenant(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:

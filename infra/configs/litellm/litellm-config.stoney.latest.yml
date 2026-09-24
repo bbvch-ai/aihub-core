@@ -9,7 +9,7 @@
 #   - deployment/compose-config.yml (for changing model versions and configs)
 #   - deployment/templates/configs/litellm-config.yml.j2 (for changing litellm structure)
 #
-# Stage: local
+# Stage: latest
 # Hardware: CPU
 # ===================================================================
 model_list:
@@ -33,20 +33,19 @@ model_list:
   - model_name: text-generation/gemma-4-31B-it
     litellm_params:
       model: openai/google/gemma-4-31B-it
-      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      api_base: os.environ/STONEY_CLOUD_API_BASE_URL
+      api_key: os.environ/STONEY_CLOUD_API_KEY
       drop_params: true
     model_info:
       mode: chat
-      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model, not the model's own
-      # 256K architecture limit. Their OpenAI-compatible /v1/models carries no context field to verify this
-      # against, so it must be checked manually against their native API if this model's serving changes.
-      max_input_tokens: 100000
+      # stoney's max_model_len 163840 is input + output combined, so these two must sum to it.
+      max_input_tokens: 155648
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
-      input_cost_per_token: 0.0000002
-      output_cost_per_token: 0.0000008
+      # CHF 0.25 / 1.00 per MTok, measured via stoney's GET /v1/usage (no published rate card).
+      input_cost_per_token: 0.00000025
+      output_cost_per_token: 0.000001
   - model_name: text-generation/Kimi-K2.6
     litellm_params:
       model: openai/moonshotai/Kimi-K2.6
@@ -71,14 +70,13 @@ model_list:
       additional_drop_params: [chat_template_kwargs]
     model_info:
       mode: chat
-      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model; see the note on
-      # gemma-4-31B-it above.
+      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model.
       max_input_tokens: 100000
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
-      input_cost_per_token: 0.00000001
-      output_cost_per_token: 0.00000003
+      input_cost_per_token: 0.0000003
+      output_cost_per_token: 0.0000004
   - model_name: text-generation/Qwen3.5-122B-A10B-FP8
     litellm_params:
       model: openai/Qwen/Qwen3.5-122B-A10B-FP8
@@ -92,8 +90,8 @@ model_list:
       supports_function_calling: true
       supports_response_schema: true
       supports_vision: false
-      input_cost_per_token: 0.0000007
-      output_cost_per_token: 0.000002
+      input_cost_per_token: 0.0000004
+      output_cost_per_token: 0.0000032
 
   # ===================================================================
   # OCR Model

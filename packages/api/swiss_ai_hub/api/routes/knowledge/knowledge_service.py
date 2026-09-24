@@ -275,8 +275,21 @@ class KnowledgeService:
         return f"Knowledge{pascal_case}Admin"
 
     @staticmethod
+    def _database_admin_rules(database: str) -> list[str]:
+        """The database root and everything beneath it.
+
+        A rule matches only its own depth, so the root alone would leave out every namespace — including the
+        ones an ingestion or source pipeline creates, which are granted to no one when they appear. The subtree
+        is safe to hand the creating tenant because a database owns its namespaces, unlike an agent class,
+        whose profiles belong to whichever tenant built them. It is also exactly the pair the capability
+        catalog's knowledge "Manage" row writes, so the row reads as granted rather than half-granted.
+        """
+        root = AccessChecker.knowledge_database_admin_rule(database)
+        return [root, f"{root}.>"]
+
+    @staticmethod
     def _grant_knowledge_access(
-        admin_rule: Annotated[str, "Concrete admin permission for the resource just created"],
+        admin_rules: Annotated[list[str], "Admin rules for the resource just created"],
         role_name: Annotated[str, "Per-resource admin role to bind the creator to"],
         role_description: Annotated[str, "Human-readable description stored on the role"],
         user: UserIdentity,
@@ -285,27 +298,28 @@ class KnowledgeService:
     ) -> None:
         """Grants the creating tenant and creator admin on the new resource, rolling back on failure.
 
-        Without this, creating a knowledge database left it usable only by a holder of the global
-        ``aihub.admin.knowledge.>`` wildcard — the creator could not see what they had just made.
+        The tenant ceiling carries no knowledge wildcard (aihub-core-private#269), so this grant is the only
+        thing that makes a new database reachable, and only for the tenant that created it.
         """
         tenant = user.acting_within_tenant
-        granted_tenant_rule = False
+        granted_tenant_rules: list[str] = []
         created_role = False
         try:
-            if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
-                TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
-                granted_tenant_rule = True
-            created_role = KnowledgeService._ensure_admin_role(role_name, admin_rule, tenant.id, role_description)
+            for admin_rule in admin_rules:
+                if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
+                    TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
+                    granted_tenant_rules.append(admin_rule)
+            created_role = KnowledgeService._ensure_admin_role(role_name, admin_rules, tenant.id, role_description)
             UserTenantRoleEntity.add_roles(user.id, tenant.id, [role_name])
         except Exception as error:
             if created_role:
                 KnowledgeService._best_effort(
                     lambda: RoleEntity.delete_role_from_all_tenants(role_name), f"delete role {role_name}"
                 )
-            if granted_tenant_rule:
+            if granted_tenant_rules:
                 KnowledgeService._best_effort(
-                    lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants([admin_rule]),
-                    f"revoke {admin_rule}",
+                    lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(granted_tenant_rules),
+                    f"revoke {granted_tenant_rules}",
                 )
             KnowledgeService._best_effort(rollback, f"roll back {resource_label}")
             raise HTTPException(
@@ -314,12 +328,12 @@ class KnowledgeService:
             ) from error
 
     @staticmethod
-    def _ensure_admin_role(role_name: str, admin_rule: str, tenant_id: str, description: str) -> bool:
+    def _ensure_admin_role(role_name: str, admin_rules: list[str], tenant_id: str, description: str) -> bool:
         """Creates the per-resource admin role if absent. Returns whether it was created."""
         if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
             return False
         RoleEntity.create_tenant_role(
-            name=role_name, description=description, access_rules=[admin_rule], tenant_id=tenant_id
+            name=role_name, description=description, access_rules=admin_rules, tenant_id=tenant_id
         )
         return True
 
@@ -535,7 +549,7 @@ class KnowledgeService:
 
         if user.acting_within_tenant is not None:
             KnowledgeService._grant_knowledge_access(
-                admin_rule=AccessChecker.knowledge_database_admin_rule(database),
+                admin_rules=KnowledgeService._database_admin_rules(database),
                 role_name=KnowledgeService._knowledge_admin_role_name(database),
                 role_description=f"Admin access to knowledge database {database}",
                 user=user,
@@ -711,7 +725,7 @@ class KnowledgeService:
 
         if user.acting_within_tenant is not None:
             KnowledgeService._grant_knowledge_access(
-                admin_rule=AccessChecker.knowledge_namespace_admin_rule(database, namespace),
+                admin_rules=[AccessChecker.knowledge_namespace_admin_rule(database, namespace)],
                 role_name=KnowledgeService._knowledge_admin_role_name(database, namespace),
                 role_description=f"Admin access to knowledge folder {database}/{namespace}",
                 user=user,
@@ -1062,7 +1076,8 @@ class KnowledgeService:
         KnowledgeService._revoke_knowledge_access(
             rules=[
                 AccessChecker.knowledge_database_user_rule(database),
-                AccessChecker.knowledge_database_admin_rule(database),
+                f"{AccessChecker.knowledge_database_user_rule(database)}.>",
+                *KnowledgeService._database_admin_rules(database),
                 *[
                     rule
                     for entity in namespaces

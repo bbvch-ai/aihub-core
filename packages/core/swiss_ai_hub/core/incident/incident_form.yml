@@ -1,0 +1,200 @@
+# The incident report form, in GitHub's issue-form schema.
+#
+# This file is the form. Editing it is how a question is added, reworded or
+# removed — no Python, no frontend change. The platform parses it into its own
+# form elements and renders it natively, and the API formats a submission into
+# an issue body the same way GitHub renders its own issue forms, so the result
+# reads identically whether it arrived through AI Hub or through GitHub.
+#
+# Three rules when editing:
+#   1. `id` is the contract. The API fills every id listed in
+#      swiss_ai_hub.core.incident.incident_context from the caller's session;
+#      renaming one silently stops it being prefilled. Adding a question with a
+#      new id is always safe.
+#   2. Supported `type`s are GitHub's six: markdown, input, textarea, dropdown,
+#      checkboxes and upload. Anything else fails at startup rather than when a
+#      user clicks Report — see IssueFormParser.
+#   3. `upload` is the attachment field. Its label, description and accepted
+#      extensions come from here; how many files and how large they may be come
+#      from INCIDENT_MAX_ATTACHMENT* on the deployment. Only one is supported,
+#      and the dialog draws it last, just above the send button.
+name: Report a problem
+description: Tell us what went wrong so support can reproduce and investigate it.
+title: '[INC] '
+labels:
+  - incident
+
+body:
+  - type: markdown
+    attributes:
+      value: How to reach you if support needs more detail.
+
+  - type: input
+    id: reporter_name
+    attributes:
+      label: Your name
+
+  - type: input
+    id: reporter_email
+    attributes:
+      label: Contact email
+    validations:
+      required: true
+
+  - type: input
+    id: reporter_phone
+    attributes:
+      label: Phone
+      description: Optional, if you would rather be called back.
+
+  - type: markdown
+    attributes:
+      value: Describe the problem in your own words. The technical details further
+        down are filled in for you — correct them only if they look wrong.
+
+  - type: textarea
+    id: what_went_wrong
+    attributes:
+      label: What went wrong?
+      placeholder: What you were doing, and what the system did.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem_type
+    attributes:
+      label: What kind of problem is it?
+      options:
+        - Too slow
+        - Wrong or poor answers
+        - Error or no response
+        - File not processed
+        - Login or access
+        - Something else
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: How much is this holding you up?
+      options:
+        - I can't continue
+        - I already found a workaround
+        - Minor, not urgent
+        - The whole team is affected
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Most times
+        - It happened once so far
+        - Random, unpredictable
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+
+  - type: textarea
+    id: expected_result
+    attributes:
+      label: What did you expect to happen?
+
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: What happened instead?
+
+  - type: markdown
+    attributes:
+      value: 'Technical details — filled in automatically. Correct them only if
+        they look wrong.'
+
+  - type: input
+    id: occurred_at
+    attributes:
+      label: When did it happen?
+      description: Carries your UTC offset, because the logs are in UTC.
+    validations:
+      required: true
+
+  - type: input
+    id: page_url
+    attributes:
+      label: Page you were on
+
+  - type: input
+    id: tenant
+    attributes:
+      label: Tenant
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AI Hub version
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Which deployment this is — the version alone does not say where.
+
+  - type: input
+    id: agent_class
+    attributes:
+      label: Agent type
+      description: Empty when you were talking to a model rather than an agent.
+
+  - type: input
+    id: agent_name
+    attributes:
+      label: Agent name
+
+  - type: input
+    id: model
+    attributes:
+      label: LLM model
+      description: The model behind the answer, where the platform knows it.
+
+  - type: input
+    id: conversation_id
+    attributes:
+      label: Conversation ID
+      description: Lets support replay the exact conversation this is about.
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+
+  - type: input
+    id: locale
+    attributes:
+      label: Interface language
+      description: Some problems only appear in one language.
+
+  - type: upload
+    attributes:
+      label: Screenshots or files
+      description: A screenshot showing the problem, or the document we failed to
+        process. They are filed with the report and stay in the support repository
+        permanently, so do not attach confidential material.
+    validations:
+      required: false
+      accept: .png,.jpg,.jpeg,.gif,.webp,.pdf,.docx,.xlsx,.pptx,.txt,.log,.csv,.json,.eml,.msg,.zip

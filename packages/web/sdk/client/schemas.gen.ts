@@ -2415,6 +2415,29 @@ export const BatchDeleteDocumentsResponseSchema = {
   description: "Per-document results of a best-effort batch deletion.",
 } as const;
 
+export const Body_create_incident_incidents_postSchema = {
+  properties: {
+    submission: {
+      type: "string",
+      title: "Submission",
+      description: "Answers to the form, as a JSON object",
+    },
+    attachments: {
+      items: {
+        type: "string",
+        contentMediaType: "application/octet-stream",
+      },
+      type: "array",
+      title: "Attachments",
+      description: "Files to file with the report",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["submission"],
+  title: "Body_create_incident_incidents_post",
+} as const;
+
 export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =
   {
     properties: {
@@ -6356,6 +6379,33 @@ export const CreateTokenResponseSchema = {
   type: "object",
   required: ["id", "name", "expiry_date", "token"],
   title: "CreateTokenResponse",
+} as const;
+
+export const CreatedIncidentDTOSchema = {
+  properties: {
+    number: {
+      type: "integer",
+      title: "Number",
+      description: "Issue number in the incident repository",
+    },
+    reference: {
+      type: "string",
+      title: "Reference",
+      description:
+        "Reference shown to the reporter and used in attachment paths",
+    },
+    attachments: {
+      type: "integer",
+      title: "Attachments",
+      description: "How many files were filed with the report",
+      default: 0,
+    },
+  },
+  type: "object",
+  required: ["number", "reference"],
+  title: "CreatedIncidentDTO",
+  description:
+    "What the reporter is shown after submitting.\n\nCarries the issue number so support and reporter can name the same report, but no issue\nURL: the reporter has no GitHub account and a link they cannot open reads as a broken\npromise rather than a receipt.",
 } as const;
 
 export const CronInputSchema = {
@@ -11653,6 +11703,211 @@ export const ImagesResponseSchema = {
   required: ["created"],
   title: "ImagesResponse",
   description: "The response from the image generation endpoint.",
+} as const;
+
+export const IncidentAttachmentsDTOSchema = {
+  properties: {
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Heading shown above the picker",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Guidance shown under the label",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether at least one file must be attached",
+    },
+    accept: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Accept",
+      description: "Accepted extensions, each with its leading dot",
+    },
+    max_files: {
+      type: "integer",
+      title: "Max Files",
+      description: "How many files one report may carry",
+    },
+    max_bytes: {
+      type: "integer",
+      title: "Max Bytes",
+      description: "Largest single attachment accepted, in bytes",
+    },
+  },
+  type: "object",
+  required: [
+    "label",
+    "description",
+    "required",
+    "accept",
+    "max_files",
+    "max_bytes",
+  ],
+  title: "IncidentAttachmentsDTO",
+  description:
+    "How the reporter's file picker should be configured.\n\nWording and accepted types come from the form definition, the two limits from the\ndeployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also\nhave to hunt down a translated string that repeats the old number.",
+} as const;
+
+export const IncidentAvailabilityDTOSchema = {
+  properties: {
+    enabled: {
+      type: "boolean",
+      title: "Enabled",
+      description: "True when an incident repository is configured",
+    },
+  },
+  type: "object",
+  required: ["enabled"],
+  title: "IncidentAvailabilityDTO",
+  description:
+    "Whether this deployment files reports at all.\n\nAnswered with 200 on every deployment, unlike the form and submit endpoints, so the UI can\ndecide whether to draw the report button without a 404 that the shell's global error handler\nwould toast at a user who has not done anything yet.",
+} as const;
+
+export const IncidentFormDTOSchema = {
+  properties: {
+    elements: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Elements",
+      description: "Form elements to render, with known values prefilled",
+    },
+    submission_specs: {
+      additionalProperties: true,
+      type: "object",
+      title: "Submission Specs",
+      description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
+    },
+  },
+  type: "object",
+  required: ["elements", "submission_specs"],
+  title: "IncidentFormDTO",
+  description:
+    "The report form, already carrying what the platform knows about this reporter.",
 } as const;
 
 export const IngestedNodeSchema = {
@@ -17910,6 +18165,22 @@ export const MultiSelectSchema = {
   required: ["label", "options", "validation"],
   title: "MultiSelect",
   description: "https://formkit-primevue.netlify.app/inputs/MultiSelect",
+} as const;
+
+export const MyLocaleDTOSchema = {
+  properties: {
+    locale: {
+      type: "string",
+      title: "Locale",
+      description: "ISO 639-1 language code, one of: de, en, fr, it.",
+      examples: ["en"],
+    },
+  },
+  type: "object",
+  required: ["locale"],
+  title: "MyLocaleDTO",
+  description:
+    "The UI language the user wants persisted against their account.",
 } as const;
 
 export const MyTenantsResponseSchema = {
@@ -24236,7 +24507,8 @@ export const ThreadReferenceSchema = {
     thread_id: {
       type: "string",
       title: "Thread Id",
-      description: "The thread ID that owns the requested display",
+      description:
+        "The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.",
     },
   },
   type: "object",
@@ -26104,6 +26376,19 @@ export const UserWithAccessDTOSchema = {
       title: "Access Rules",
       description:
         "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
+    preferred_locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Preferred Locale",
+      description:
+        "The user's persisted UI language, or null if they have never chosen one.",
     },
   },
   type: "object",
@@ -32543,6 +32828,139 @@ export const IconSelectorWritableSchema = {
   title: "IconSelector",
   description:
     'A FormKit element for selecting or entering an Iconify icon name.\n\nThis element renders as an editable select with icon preview capability.\nUsers can either select from preset icon options or enter any valid Iconify icon name.\nThe selected/entered icon is displayed live in the input field.\n\n### Features\n- Dropdown with preset icon options (each showing the icon preview)\n- Editable input for entering custom Iconify icon names\n- Live icon preview in the input field\n- Supports any valid Iconify icon (e.g., \'lucide:bot\', \'meteor-icons:robot\')\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    icon: Annotated[\n        str | IconSelector,\n        Field(description="Icon for the agent"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    icon=IconSelector(label=LocaleString(en="Icon", de="Symbol")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    icon="mage:robot",\n)\n```',
+} as const;
+
+export const IncidentFormDTOWritableSchema = {
+  properties: {
+    elements: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Elements",
+      description: "Form elements to render, with known values prefilled",
+    },
+    submission_specs: {
+      additionalProperties: true,
+      type: "object",
+      title: "Submission Specs",
+      description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
+    },
+  },
+  type: "object",
+  required: ["elements", "submission_specs"],
+  title: "IncidentFormDTO",
+  description:
+    "The report form, already carrying what the platform knows about this reporter.",
 } as const;
 
 export const IngestorDTOWritableSchema = {

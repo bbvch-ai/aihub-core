@@ -26,6 +26,9 @@ knowledge:
 model:
   name: Modelli IA
   description: Visualizza i modelli IA disponibili
+incident:
+  name: Segnala un problema
+  description: Segnala un problema quando qualcosa in AI Hub non funziona
 notification:
   name: Notifiche
   description: Visualizza e gestisci le tue notifiche

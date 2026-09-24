@@ -26,6 +26,9 @@ knowledge:
 model:
   name: KI-Modelle
   description: Verfügbare KI-Modelle anzeigen
+incident:
+  name: Problem melden
+  description: Melden Sie ein Problem, wenn im AI Hub etwas nicht funktioniert
 notification:
   name: Benachrichtigungen
   description: Benachrichtigungen anzeigen und verwalten
