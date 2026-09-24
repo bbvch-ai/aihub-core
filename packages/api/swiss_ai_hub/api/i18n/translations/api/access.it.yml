@@ -94,6 +94,9 @@ capabilities:
       manage:
         label: Gestisci
         description: Configura e inserisci documenti in questo namespace.
+      manage_database:
+        label: Gestisci
+        description: Configura questa base di conoscenza, aggiungi cartelle ed eliminala.
     model:
       use:
         description: Usa questo modello.

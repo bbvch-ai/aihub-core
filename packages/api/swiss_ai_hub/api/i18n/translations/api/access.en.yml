@@ -94,6 +94,9 @@ capabilities:
       manage:
         label: Manage
         description: Configure and ingest documents into this namespace.
+      manage_database:
+        label: Manage
+        description: Configure this knowledge base, add folders and delete it.
     model:
       use:
         description: Use this model.
