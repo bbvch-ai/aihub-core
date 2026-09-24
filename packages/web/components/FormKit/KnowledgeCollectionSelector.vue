@@ -42,7 +42,6 @@
 
 <script setup lang="ts">
 import { getAgentInstance, getDatabases } from '@core/sdk/client'
-import { capitalCase } from 'change-case'
 
 import type { DatabaseDto } from '@core/sdk/client'
 import type { FormKitNode } from '@formkit/core'
@@ -119,7 +118,7 @@ function keyOf(pair: BucketNamespacePair): string {
 }
 
 function collectionLabel(pair: BucketNamespacePair): string {
-  return collectionNames.value[keyOf(pair)] || capitalCase(pair.namespace_name)
+  return collectionNames.value[keyOf(pair)] || pair.namespace_name
 }
 
 const groupedOptions = computed<CollectionGroup[]>(() => {
@@ -134,7 +133,7 @@ const groupedOptions = computed<CollectionGroup[]>(() => {
     byDatabase.set(pair.bucket_name, options)
   }
   const groups = [...byDatabase.entries()].map(([database, items]) => ({
-    label: databaseNames.value[database] || capitalCase(database),
+    label: databaseNames.value[database] || database,
     items,
   }))
 
@@ -150,7 +149,7 @@ const groupedOptions = computed<CollectionGroup[]>(() => {
     label: t('lib.knowledgeCollections.unavailable'),
     items: unavailable.map(pair => ({
       key: keyOf(pair),
-      displayName: `${databaseNames.value[pair.bucket_name] || capitalCase(pair.bucket_name)} / ${collectionLabel(pair)}`,
+      displayName: `${databaseNames.value[pair.bucket_name] || pair.bucket_name} / ${collectionLabel(pair)}`,
       pair,
     })),
   }]
@@ -223,7 +222,7 @@ async function loadCollections() {
       getDatabases({ composable: '$fetch', path: { tenant_id: tenantId.value! } }),
     ])
     databaseNames.value = Object.fromEntries(
-      databases.map(database => [database.name, database.display_name || capitalCase(database.name)]),
+      databases.map(database => [database.name, database.display_name || database.name]),
     )
     collectionNames.value = Object.fromEntries(
       databases.flatMap(database => database.namespaces
