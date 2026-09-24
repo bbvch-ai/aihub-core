@@ -35,7 +35,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | annotated-doc                                    | 0.0.4           | MIT                                                     |                                                                      |
 | ✅     | annotated-types                                  | 0.7.0           | MIT License                                             |                                                                      |
 | ✅     | antlr4-python3-runtime                           | 4.13.2          | BSD                                                     |                                                                      |
-| ✅     | anyio                                            | 4.13.0          | MIT (override)                                          |                                                                      |
+| ✅     | anyio                                            | 4.14.2          | MIT (override)                                          |                                                                      |
 | ✅     | apprise                                          | 1.10.0          | BSD-2-Clause                                            |                                                                      |
 | ✅     | asgi-lifespan                                    | 2.1.0           | MIT                                                     |                                                                      |
 | ✅     | asgiref                                          | 3.11.1          | BSD License                                             |                                                                      |

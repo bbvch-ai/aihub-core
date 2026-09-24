@@ -11505,6 +11505,9 @@ export const IncidentFormDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -31532,6 +31535,9 @@ export const IncidentFormDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
           },
           {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
