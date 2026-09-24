@@ -7982,6 +7982,7 @@ export type IncidentFormDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -21796,6 +21797,7 @@ export type IncidentFormDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
