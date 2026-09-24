@@ -15827,16 +15827,6 @@ export type TenantSelect = {
 };
 
 /**
- * TenantSettingsDTO
- */
-export type TenantSettingsDto = {
-  /**
-   * Chat disclaimer in each supported language.
-   */
-  chat_disclaimer: LocaleString;
-};
-
-/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -17178,16 +17168,6 @@ export type UpdateRoleRequest = {
    * Pattern-based usage limit rules.
    */
   usage_limits?: Array<UsageLimitDto> | null;
-};
-
-/**
- * UpdateTenantSettingsRequest
- */
-export type UpdateTenantSettingsRequest = {
-  /**
-   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
-   */
-  chat_disclaimer: LocaleString;
 };
 
 /**
@@ -27881,64 +27861,6 @@ export type GetSuiteResponses = {
 };
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
-
-export type GetTenantSettingsData = {
-  body?: never;
-  path: {
-    /**
-     * Tenant Id
-     *
-     * Tenant identifier: a name, ObjectId, or 'active'
-     */
-    tenant_id: string;
-  };
-  query?: never;
-  url: "/{tenant_id}/tenant-settings";
-};
-
-export type GetTenantSettingsResponses = {
-  /**
-   * Successful Response
-   */
-  200: TenantSettingsDto;
-};
-
-export type GetTenantSettingsResponse =
-  GetTenantSettingsResponses[keyof GetTenantSettingsResponses];
-
-export type UpdateTenantSettingsData = {
-  body: UpdateTenantSettingsRequest;
-  path: {
-    /**
-     * Tenant Id
-     *
-     * Tenant identifier: a name, ObjectId, or 'active'
-     */
-    tenant_id: string;
-  };
-  query?: never;
-  url: "/{tenant_id}/tenant-settings";
-};
-
-export type UpdateTenantSettingsErrors = {
-  /**
-   * Validation Error
-   */
-  422: HttpValidationError;
-};
-
-export type UpdateTenantSettingsError =
-  UpdateTenantSettingsErrors[keyof UpdateTenantSettingsErrors];
-
-export type UpdateTenantSettingsResponses = {
-  /**
-   * Successful Response
-   */
-  200: TenantSettingsDto;
-};
-
-export type UpdateTenantSettingsResponse =
-  UpdateTenantSettingsResponses[keyof UpdateTenantSettingsResponses];
 
 export type GetMyTenantsData = {
   body?: never;

@@ -3653,11 +3653,10 @@ services:
       - traefik.http.routers.bot.tls=true
       - traefik.http.routers.bot.middlewares=security-headers@file
       - traefik.http.services.bot.loadbalancer.server.port=8001
-    networks: [proxy, backend, data]
-configs:
-  openwebui-disclaimer:
-    content: |
-      {"parentOrigin": "https://${DOMAIN}"}
+    networks:
+      - proxy
+      - backend
+      - data
 # ===================================================================
 # Network Configuration
 # ===================================================================
@@ -3713,3 +3712,7 @@ volumes:
   clickhouse-data:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-logs:
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "https://${DOMAIN}"}

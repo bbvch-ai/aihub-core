@@ -28,7 +28,6 @@ from swiss_ai_hub.api.routes import (
     ProcessController,
     RoleController,
     SuiteController,
-    TenantSettingsController,
     ThreadController,
     TokenController,
     TranslationController,
@@ -49,7 +48,6 @@ runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
     AuthProviderController(auth=auth).get_auth_providers(),
     SuiteController(auth=auth).get_suite(),
-    TenantSettingsController(auth=auth).get_tenant_settings().update_tenant_settings(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
     MyAccountController(auth=auth)
     .get_my_account()

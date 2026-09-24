@@ -1692,10 +1692,6 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
-configs:
-  openwebui-disclaimer:
-    content: |
-      {"parentOrigin": "http://localhost:3333"}
 # ===================================================================
 # Network Configuration
 # ===================================================================
@@ -1747,3 +1743,7 @@ volumes:
   clickhouse-data:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-logs:
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "http://localhost:3333"}

@@ -4487,11 +4487,6 @@ services:
       - data
   {%- endif %}
 
-configs:
-  openwebui-disclaimer:
-    content: |
-      {"parentOrigin": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}"}
-
 # ===================================================================
 # Network Configuration
 # ===================================================================
@@ -4558,3 +4553,8 @@ volumes:
   {{ service_license('clickhouse-logs') }}
   clickhouse-logs:
 {%- endif %}
+
+configs:
+  openwebui-disclaimer:
+    content: |
+      {"parentOrigin": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}"}

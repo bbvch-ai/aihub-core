@@ -49,7 +49,7 @@ const { disclaimer } = useChatDisclaimer()
 const visibleDisclaimer = computed(() => {
   if (backendTenantId.value && backendTenantId.value !== tenantId.value) return ''
   // Use generic text until OpenWebUI's active tenant has been confirmed.
-  return backendTenantId.value === tenantId.value ? disclaimer.value : t('tenant_settings.default_disclaimer')
+  return backendTenantId.value === tenantId.value ? disclaimer.value : t('openwebui.default_disclaimer')
 })
 const { sendDisclaimer } = useOpenWebuiDisclaimer(chatIframe, visibleDisclaimer)
 

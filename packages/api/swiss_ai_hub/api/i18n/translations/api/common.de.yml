@@ -1,5 +1,6 @@
 ---
 test: Das ist ein deutscher Test
+default_chat_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
 translation:
   prompt: |
     Sie sind ein professioneller Übersetzer. Ihre Aufgabe ist es, Texte präzise zu übersetzen und dabei Bedeutung, Ton und kulturellen Kontext zu bewahren.

@@ -28,7 +28,6 @@ from swiss_ai_hub.api.routes.openai.dto.model_details import ModelDetails
 from swiss_ai_hub.api.routes.openai.dto.model_response import ModelResponse
 from swiss_ai_hub.api.routes.openai.dto.text_to_speech_request import TextToSpeechRequest
 from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
-from swiss_ai_hub.api.routes.tenant_settings.tenant_settings_service import TenantSettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +75,7 @@ class OpenaiController(TenantScopedController):
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> str:
             """Read the current tenant's chat disclaimer in the user's requested language."""
-            settings = await TenantSettingsService.get_settings(user.acting_within_tenant.id)
-            return t.extract(settings.chat_disclaimer) or ""
+            return await OpenaiService.get_chat_disclaimer(user.acting_within_tenant.id, t)
 
         return self
 

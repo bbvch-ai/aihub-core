@@ -973,6 +973,7 @@ memory:
       title: Eliminazione fallita
       message: Impossibile eliminare tutti i ricordi. Riprova.
 openwebui:
+  default_disclaimer: L’IA può commettere errori. Verifica le risposte.
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente

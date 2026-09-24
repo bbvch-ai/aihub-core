@@ -3750,11 +3750,10 @@ services:
       - traefik.http.routers.bot.tls=true
       - traefik.http.routers.bot.middlewares=security-headers@file
       - traefik.http.services.bot.loadbalancer.server.port=8001
-    networks: [proxy, backend, data]
-configs:
-  openwebui-disclaimer:
-    content: |
-      {"parentOrigin": "https://${DOMAIN}"}
+    networks:
+      - proxy
+      - backend
+      - data
 # ===================================================================
 # Network Configuration
 # ===================================================================
@@ -3798,3 +3797,7 @@ networks:
     name: code-sandbox
     driver: bridge
     internal: true
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "https://${DOMAIN}"}

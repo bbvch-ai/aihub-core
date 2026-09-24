@@ -7,13 +7,18 @@ export const useChatDisclaimer = defineQuery(() => {
     key: () => ['tenant', tenantId.value ?? '', 'chat-disclaimer', locale.value],
     enabled: useTenantReady(),
     staleTime: 0,
-    query: () => getChatDisclaimer({
-      composable: '$fetch',
-      path: { tenant_id: tenantId.value! },
-      headers: { lang: locale.value },
-    }),
+    query: () => {
+      const language = locale.value
+      return getChatDisclaimer({
+        composable: '$fetch',
+        path: { tenant_id: tenantId.value! },
+        onRequest: ({ options }) => {
+          options.headers.set('lang', language)
+        },
+      })
+    },
   })
 
-  const disclaimer = computed(() => data.value ?? t('tenant_settings.default_disclaimer'))
+  const disclaimer = computed(() => data.value ?? t('openwebui.default_disclaimer'))
   return { disclaimer }
 })
