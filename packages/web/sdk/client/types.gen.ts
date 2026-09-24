@@ -11757,6 +11757,20 @@ export type MultiSelect = {
 };
 
 /**
+ * MyLocaleDTO
+ *
+ * The UI language the user wants persisted against their account.
+ */
+export type MyLocaleDto = {
+  /**
+   * Locale
+   *
+   * ISO 639-1 language code, one of: de, en, fr, it.
+   */
+  locale: string;
+};
+
+/**
  * MyTenantsResponse
  *
  * Response for the GET /my-tenants endpoint, including sysadmin status.
@@ -14882,6 +14896,7 @@ export type SourcePipelineDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -17184,6 +17199,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**
@@ -25694,6 +25715,7 @@ export type SourcePipelineDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -27226,6 +27248,40 @@ export type UpdateMyDashboardResponses = {
 
 export type UpdateMyDashboardResponse =
   UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
+
+export type UpdateMyLocaleData = {
+  body: MyLocaleDto;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/my-account/locale";
+};
+
+export type UpdateMyLocaleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateMyLocaleError =
+  UpdateMyLocaleErrors[keyof UpdateMyLocaleErrors];
+
+export type UpdateMyLocaleResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type UpdateMyLocaleResponse =
+  UpdateMyLocaleResponses[keyof UpdateMyLocaleResponses];
 
 export type GetUserData = {
   body?: never;
