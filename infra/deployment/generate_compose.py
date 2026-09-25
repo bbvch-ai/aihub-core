@@ -29,6 +29,9 @@ DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 STAGES = ["dev", "local", "latest", "nightly", "build"]
 GPU_MODES = {False: "", True: ".gpu"}
 
+# Configs with `{variant}` in their name render once per entry; LITELLM_CONFIG_VARIANT picks one at runtime.
+LITELLM_VARIANTS = ["infomaniak", "stoney"]
+
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
@@ -62,7 +65,7 @@ CONFIG_SPECS = [
         "60-service-accounts.{stage}{hardware}.json",
     ),
     # Service configs - optional, skipped if template missing
-    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
+    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{variant}.{stage}{hardware}.yml"),
     ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
     ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
     ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
@@ -164,6 +167,7 @@ OWN_IMAGE_LICENSES = {
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",
     "document_ingestion_pipeline": "Apache-2.0",
+    "rclone_pipeline": "Apache-2.0",
     # Backup plane variants (dagster webserver/daemon are wired below; the
     # `backup-code` gRPC server runs our packages/backup code directly).
     "backup-code": "AGPL-3.0-or-later",
@@ -263,6 +267,11 @@ def generate_keycloak_realm(env, context, output_path):
     output_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
 
 
+def _config_variants_for(name_pattern):
+    """Provider variants a config is rendered for — one unnamed pass unless it opts in via `{variant}`."""
+    return LITELLM_VARIANTS if "{variant}" in name_pattern else [""]
+
+
 def _strip_stage_hardware(name_pattern):
     """Remove {stage}, {hardware}, and surrounding dots to produce clean filenames.
 
@@ -322,12 +331,13 @@ def generate_default(env, config_data):
         if needs_stage_hardware:
             for gpu_enabled, hardware in GPU_MODES.items():
                 for stage in STAGES:
-                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
-                    filename = name_pattern.format(hardware=hardware, stage=stage)
-                    output_path = out_dir / filename
+                    for config_variant in _config_variants_for(name_pattern):
+                        context = {"stage": stage, "gpu_enabled": gpu_enabled, "variant": config_variant, **config_data}
+                        filename = name_pattern.format(hardware=hardware, stage=stage, variant=config_variant)
+                        output_path = out_dir / filename
 
-                    generate_config(template, context, output_path)
-                    stats[config_name] += 1
+                        generate_config(template, context, output_path)
+                        stats[config_name] += 1
         else:
             context = {"stage": "default", "gpu_enabled": False, **config_data}
             output_path = out_dir / name_pattern
@@ -461,31 +471,33 @@ def generate_release(env, config_data, version, output_dir, project):
 
             needs_stage_hardware = "{stage}" in name_pattern or "{hardware}" in name_pattern
 
-            if needs_stage_hardware:
-                context = {
-                    "stage": "latest",
-                    "gpu_enabled": gpu_enabled,
-                    "config_file_suffix": "",
-                    **config_data,
-                }
-                # Inject release header for docker-compose template only
-                if "docker-compose" in template_path:
-                    context["release_header"] = _release_compose_header(project, version, gpu_enabled)
-                filename = _strip_stage_hardware(name_pattern)
-            else:
-                context = {"stage": "default", "gpu_enabled": False, **config_data}
-                filename = name_pattern
+            for config_variant in _config_variants_for(name_pattern):
+                if needs_stage_hardware:
+                    context = {
+                        "stage": "latest",
+                        "gpu_enabled": gpu_enabled,
+                        "variant": config_variant,
+                        "config_file_suffix": "",
+                        **config_data,
+                    }
+                    # Inject release header for docker-compose template only
+                    if "docker-compose" in template_path:
+                        context["release_header"] = _release_compose_header(project, version, gpu_enabled)
+                    filename = _strip_stage_hardware(name_pattern).format(variant=config_variant)
+                else:
+                    context = {"stage": "default", "gpu_enabled": False, **config_data}
+                    filename = name_pattern
 
-            # Output into variant subdirectory, preserving config subpath
-            if isinstance(rel_output_dir, str):
-                out_dir = variant_dir / rel_output_dir
-            else:
-                # ROOT_DIR case (docker-compose.yml) -> root of variant dir
-                out_dir = variant_dir
+                # Output into variant subdirectory, preserving config subpath
+                if isinstance(rel_output_dir, str):
+                    out_dir = variant_dir / rel_output_dir
+                else:
+                    # ROOT_DIR case (docker-compose.yml) -> root of variant dir
+                    out_dir = variant_dir
 
-            output_path = out_dir / filename
-            generate_config(template, context, output_path)
-            stats[config_name] += 1
+                output_path = out_dir / filename
+                generate_config(template, context, output_path)
+                stats[config_name] += 1
 
         realm_context = {"stage": "latest", "gpu_enabled": gpu_enabled, "config_file_suffix": "", **config_data}
         generate_keycloak_realm(env, realm_context, variant_dir / "configs/keycloak/aihub-realm.json")
@@ -563,6 +575,8 @@ def main():
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
+    # Shared with the compose template so every rendered variant is also mounted.
+    env.globals["litellm_variants"] = LITELLM_VARIANTS
 
     if args.check_env:
         from env_check import check_env_vs_compose

@@ -363,6 +363,7 @@ export type AgentClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -497,6 +498,7 @@ export type AgentConfigDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -1098,6 +1100,18 @@ export type AgentSelector = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -1810,6 +1824,24 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
+ * Body_create_incident_incidents_post
+ */
+export type BodyCreateIncidentIncidentsPost = {
+  /**
+   * Submission
+   *
+   * Answers to the form, as a JSON object
+   */
+  submission: string;
+  /**
+   * Attachments
+   *
+   * Files to file with the report
+   */
+  attachments?: Array<Blob | File>;
+};
+
+/**
  * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
 export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
@@ -2077,6 +2109,18 @@ export type CascadeSelect = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -3114,6 +3158,18 @@ export type Checkbox = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -3255,6 +3311,18 @@ export type ChipsInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -3520,6 +3588,18 @@ export type ColorPicker = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -4057,6 +4137,20 @@ export type CreateDatabaseRequest = {
   configuration?: {
     [key: string]: unknown;
   };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -4209,6 +4303,36 @@ export type CreateTokenResponse = {
 };
 
 /**
+ * CreatedIncidentDTO
+ *
+ * What the reporter is shown after submitting.
+ *
+ * Carries the issue number so support and reporter can name the same report, but no issue
+ * URL: the reporter has no GitHub account and a link they cannot open reads as a broken
+ * promise rather than a receipt.
+ */
+export type CreatedIncidentDto = {
+  /**
+   * Number
+   *
+   * Issue number in the incident repository
+   */
+  number: number;
+  /**
+   * Reference
+   *
+   * Reference shown to the reporter and used in attachment paths
+   */
+  reference: string;
+  /**
+   * Attachments
+   *
+   * How many files were filed with the report
+   */
+  attachments?: number;
+};
+
+/**
  * CronInput
  *
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
@@ -4276,6 +4400,18 @@ export type CronInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -4534,15 +4670,23 @@ export type DatabaseDto = {
    */
   display_name: string | null;
   /**
-   * Auto Sync
+   * Source
    *
-   * Whether this database auto-syncs namespaces
+   * Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.
    */
-  auto_sync: boolean;
+  source: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked; empty for manual upload.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
   /**
    * Deletable
    *
-   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   * Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.
    */
   deletable: boolean;
   /**
@@ -4587,6 +4731,20 @@ export type DatabaseResponse = {
    * The ingestor's settings for this database, as validated against its announced schema.
    */
   configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database; null for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked.
+   */
+  source_configuration?: {
     [key: string]: unknown;
   };
   /**
@@ -4765,6 +4923,18 @@ export type DatePicker = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -6094,6 +6264,7 @@ export type FullProcessInstanceDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6238,6 +6409,18 @@ export type Group = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -6281,6 +6464,7 @@ export type Group = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6553,6 +6737,18 @@ export type HtmlElement = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $El
    *
    * HTML element tag name
@@ -6637,6 +6833,7 @@ export type HumanInDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6718,6 +6915,7 @@ export type HumanInSpecs = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -7438,6 +7636,18 @@ export type IconSelector = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -7681,6 +7891,132 @@ export type ImagesResponse = {
 };
 
 /**
+ * IncidentAttachmentsDTO
+ *
+ * How the reporter's file picker should be configured.
+ *
+ * Wording and accepted types come from the form definition, the two limits from the
+ * deployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also
+ * have to hunt down a translated string that repeats the old number.
+ */
+export type IncidentAttachmentsDto = {
+  /**
+   * Label
+   *
+   * Heading shown above the picker
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * Guidance shown under the label
+   */
+  description: string | null;
+  /**
+   * Required
+   *
+   * Whether at least one file must be attached
+   */
+  required: boolean;
+  /**
+   * Accept
+   *
+   * Accepted extensions, each with its leading dot
+   */
+  accept: Array<string>;
+  /**
+   * Max Files
+   *
+   * How many files one report may carry
+   */
+  max_files: number;
+  /**
+   * Max Bytes
+   *
+   * Largest single attachment accepted, in bytes
+   */
+  max_bytes: number;
+};
+
+/**
+ * IncidentAvailabilityDTO
+ *
+ * Whether this deployment files reports at all.
+ *
+ * Answered with 200 on every deployment, unlike the form and submit endpoints, so the UI can
+ * decide whether to draw the report button without a 404 that the shell's global error handler
+ * would toast at a user who has not done anything yet.
+ */
+export type IncidentAvailabilityDto = {
+  /**
+   * Enabled
+   *
+   * True when an incident repository is configured
+   */
+  enabled: boolean;
+};
+
+/**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDto = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeCollectionSelector
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
+};
+
+/**
  * IngestedNode
  *
  * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
@@ -7917,6 +8253,7 @@ export type IngestorDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -7989,6 +8326,18 @@ export type InputMask = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8137,6 +8486,18 @@ export type InputNumber = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8328,6 +8689,18 @@ export type InputOtp = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue InputOtp element.
@@ -8457,6 +8830,18 @@ export type InputText = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8621,6 +9006,18 @@ export type Knob = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Knob element.
@@ -8751,6 +9148,165 @@ export type Knob = {
 };
 
 /**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelector = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * KnowledgeDatabaseSelector
  *
  * A FormKit element for selecting multiple knowledge databases.
@@ -8812,6 +9368,18 @@ export type KnowledgeDatabaseSelector = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -9363,6 +9931,18 @@ export type Listbox = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -9538,6 +10118,18 @@ export type LocaleInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -11150,6 +11742,18 @@ export type ModelSelect = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -11292,6 +11896,18 @@ export type MultiSelect = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue MultiSelect element.
@@ -11391,6 +12007,20 @@ export type MultiSelect = {
    */
   readonly validation: string;
   [key: string]: unknown;
+};
+
+/**
+ * MyLocaleDTO
+ *
+ * The UI language the user wants persisted against their account.
+ */
+export type MyLocaleDto = {
+  /**
+   * Locale
+   *
+   * ISO 639-1 language code, one of: de, en, fr, it.
+   */
+  locale: string;
 };
 
 /**
@@ -12005,6 +12635,18 @@ export type Password = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Password element.
@@ -12175,6 +12817,7 @@ export type ProcessClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -12814,6 +13457,18 @@ export type RadioButton = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue RadioButton element.
@@ -12945,6 +13600,18 @@ export type Rating = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -13104,6 +13771,18 @@ export type Repeater = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit repeater element
@@ -13183,6 +13862,7 @@ export type Repeater = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -13821,6 +14501,18 @@ export type Select = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Select element.
@@ -13976,6 +14668,18 @@ export type SelectButton = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -14366,6 +15070,18 @@ export type Slider = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Slider element.
@@ -14474,6 +15190,70 @@ export const SortOrder = { 1: 1, "-1": -1 } as const;
  * SortOrder
  */
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDto = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeCollectionSelector
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
 
 /**
  * StandaloneQuestionCondenserEvent
@@ -14965,6 +15745,18 @@ export type TenantSelect = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Tenant select element.
@@ -15150,6 +15942,18 @@ export type Textarea = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -15504,7 +16308,7 @@ export type ThreadReference = {
   /**
    * Thread Id
    *
-   * The thread ID that owns the requested display
+   * The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.
    */
   thread_id: string;
 };
@@ -15560,6 +16364,18 @@ export type ToggleButton = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -15696,6 +16512,18 @@ export type ToggleSwitch = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -16194,6 +17022,32 @@ export type UpdateAgentInstanceDto = {
   configuration: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * UpdateDatabaseSourceRequest
+ */
+export type UpdateDatabaseSourceRequest = {
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Replace Existing Documents
+   *
+   * Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.
+   */
+  replace_existing_documents?: boolean;
 };
 
 /**
@@ -16730,6 +17584,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**
@@ -16843,6 +17703,18 @@ export type VectorStoreInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -17292,6 +18164,7 @@ export type AgentClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17426,6 +18299,7 @@ export type AgentConfigDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17755,6 +18629,18 @@ export type AgentSelectorWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -18233,6 +19119,18 @@ export type CascadeSelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue CascadeSelect element.
@@ -18418,6 +19316,18 @@ export type CheckboxWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -18555,6 +19465,18 @@ export type ChipsInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -18698,6 +19620,18 @@ export type ColorPickerWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -19134,6 +20068,18 @@ export type CronInputWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Cron schedule input element.
@@ -19286,6 +20232,18 @@ export type DatePickerWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -19885,6 +20843,7 @@ export type FullProcessInstanceDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -19968,6 +20927,18 @@ export type GroupWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -20011,6 +20982,7 @@ export type GroupWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20215,6 +21187,7 @@ export type HumanInDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20296,6 +21269,7 @@ export type HumanInSpecsWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20720,6 +21694,18 @@ export type IconSelectorWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -20786,6 +21772,66 @@ export type IconSelectorWritable = {
 };
 
 /**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDtoWritable = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
+};
+
+/**
  * IngestorDTO
  */
 export type IngestorDtoWritable = {
@@ -20827,6 +21873,7 @@ export type IngestorDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20884,6 +21931,18 @@ export type InputMaskWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21028,6 +22087,18 @@ export type InputNumberWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21215,6 +22286,18 @@ export type InputOtpWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue InputOtp element.
@@ -21340,6 +22423,18 @@ export type InputTextWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21473,6 +22568,18 @@ export type KnobWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Knob element.
@@ -21599,6 +22706,161 @@ export type KnobWritable = {
 };
 
 /**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelectorWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
  * KnowledgeDatabaseSelector
  *
  * A FormKit element for selecting multiple knowledge databases.
@@ -21660,6 +22922,18 @@ export type KnowledgeDatabaseSelectorWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -22102,6 +23376,18 @@ export type ListboxWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -22273,6 +23559,18 @@ export type LocaleInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -22839,6 +24137,18 @@ export type ModelSelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -22976,6 +24286,18 @@ export type MultiSelectWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -23203,6 +24525,18 @@ export type PasswordWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Password element.
@@ -23369,6 +24703,7 @@ export type ProcessClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -23680,6 +25015,18 @@ export type RadioButtonWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue RadioButton element.
@@ -23807,6 +25154,18 @@ export type RatingWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -23962,6 +25321,18 @@ export type RepeaterWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit repeater element
@@ -24041,6 +25412,7 @@ export type RepeaterWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -24456,6 +25828,18 @@ export type SelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Select element.
@@ -24607,6 +25991,18 @@ export type SelectButtonWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -24892,6 +26288,18 @@ export type SliderWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Slider element.
@@ -24985,6 +26393,70 @@ export type SliderWritable = {
    */
   orientation?: "horizontal" | "vertical" | null;
   [key: string]: unknown;
+};
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDtoWritable = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
 };
 
 /**
@@ -25298,6 +26770,18 @@ export type TenantSelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Tenant select element.
@@ -25399,6 +26883,18 @@ export type TextareaWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -25712,6 +27208,18 @@ export type ToggleButtonWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleButton element.
@@ -25843,6 +27351,18 @@ export type ToggleSwitchWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -26179,6 +27699,18 @@ export type VectorStoreInputWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Vector store input element.
@@ -26498,6 +28030,40 @@ export type UpdateMyDashboardResponses = {
 
 export type UpdateMyDashboardResponse =
   UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
+
+export type UpdateMyLocaleData = {
+  body: MyLocaleDto;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/my-account/locale";
+};
+
+export type UpdateMyLocaleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateMyLocaleError =
+  UpdateMyLocaleErrors[keyof UpdateMyLocaleErrors];
+
+export type UpdateMyLocaleResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type UpdateMyLocaleResponse =
+  UpdateMyLocaleResponses[keyof UpdateMyLocaleResponses];
 
 export type GetUserData = {
   body?: never;
@@ -29193,6 +30759,32 @@ export type GetIngestorsResponses = {
 export type GetIngestorsResponse =
   GetIngestorsResponses[keyof GetIngestorsResponses];
 
+export type GetSourcePipelinesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/source-pipelines";
+};
+
+export type GetSourcePipelinesResponses = {
+  /**
+   * Response Get Source Pipelines  Tenant Id  Knowledge Source Pipelines Get
+   *
+   * Successful Response
+   */
+  200: Array<SourcePipelineDto>;
+};
+
+export type GetSourcePipelinesResponse =
+  GetSourcePipelinesResponses[keyof GetSourcePipelinesResponses];
+
 export type DeleteDatabaseData = {
   body?: never;
   path: {
@@ -29267,6 +30859,44 @@ export type CreateDatabaseResponses = {
 
 export type CreateDatabaseResponse =
   CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type UpdateDatabaseSourceData = {
+  body: UpdateDatabaseSourceRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/source";
+};
+
+export type UpdateDatabaseSourceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateDatabaseSourceError =
+  UpdateDatabaseSourceErrors[keyof UpdateDatabaseSourceErrors];
+
+export type UpdateDatabaseSourceResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type UpdateDatabaseSourceResponse =
+  UpdateDatabaseSourceResponses[keyof UpdateDatabaseSourceResponses];
 
 export type DeleteNamespaceData = {
   body?: never;
@@ -30156,6 +31786,67 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse =
   UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type GetIncidentAvailabilityData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/availability";
+};
+
+export type GetIncidentAvailabilityResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentAvailabilityDto;
+};
+
+export type GetIncidentAvailabilityResponse =
+  GetIncidentAvailabilityResponses[keyof GetIncidentAvailabilityResponses];
+
+export type GetIncidentFormData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/form";
+};
+
+export type GetIncidentFormResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentFormDto;
+};
+
+export type GetIncidentFormResponse =
+  GetIncidentFormResponses[keyof GetIncidentFormResponses];
+
+export type CreateIncidentData = {
+  body: BodyCreateIncidentIncidentsPost;
+  path?: never;
+  query?: never;
+  url: "/incidents";
+};
+
+export type CreateIncidentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateIncidentError =
+  CreateIncidentErrors[keyof CreateIncidentErrors];
+
+export type CreateIncidentResponses = {
+  /**
+   * Successful Response
+   */
+  201: CreatedIncidentDto;
+};
+
+export type CreateIncidentResponse =
+  CreateIncidentResponses[keyof CreateIncidentResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;

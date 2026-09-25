@@ -39,8 +39,9 @@ class EmailClassificationAgentConfig(AgentConfig):
         Field(
             default=None,
             title="Knowledge delegation",
-            description="The RAG agent that grounds drafted replies in a category's collection. Required as soon as "
-            "any category names one; leave it off to keep drafting from the message alone.",
+            description="The RAG agent that grounds drafted replies. Every drafted reply is answered from it, narrowed "
+            "to a category's collections where the category names some. Required as soon as any category names one; "
+            "leave it off to keep drafting from the message alone.",
         ),
     ] = None
 
@@ -72,10 +73,24 @@ class EmailClassificationAgentConfig(AgentConfig):
             icon=base.icon,
             imap=cls._imap_form(),
             llm=LLMConfig.as_form(),
-            classification=EmailClassificationSettings.as_form(),
+            classification=cls._classification_form(),
             draft=cls._draft_form(),
             knowledge_delegation=KnowledgeDelegationConfig.as_form(),
         )
+
+    @staticmethod
+    def _classification_form() -> EmailClassificationSettings:
+        """The category form, with each category's collection picker pointed at this blueprint's knowledge agent.
+
+        The path is assigned here rather than in `MailCategory.as_form()` because it names a field this blueprint
+        owns: a category only knows that its collections belong to some agent, and which agent that is — where the
+        `AgentSelector` sits on the form — is settled one level up. The picker offers the collections that agent is
+        configured to retrieve from and nothing else, which is what keeps a selection from narrowing retrieval to a
+        collection the delegate would drop, answering from nothing.
+        """
+        form = EmailClassificationSettings.as_form()
+        form.categories[0].knowledge_namespaces.agent_ref = "knowledge_delegation.rag_agent"
+        return form
 
     @staticmethod
     def _imap_form() -> ImapClientConfig:

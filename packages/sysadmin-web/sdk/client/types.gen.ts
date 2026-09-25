@@ -949,6 +949,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**

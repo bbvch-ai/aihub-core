@@ -7,6 +7,14 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
 
   // Keycloak-compatible OIDC configuration
   // Authority URL is the Keycloak realm URL (e.g., http://localhost:8180/realms/aihub)
+  //
+  // The locale in the three redirect URIs below is frozen at bootstrap: this
+  // plugin never re-runs when the user switches language (that is a client-side
+  // route push). They are bootstrap defaults only -- composables/auth/useAuth.ts
+  // overrides redirect_uri and post_logout_redirect_uri per call with the locale
+  // that is live at that moment. silent_redirect_uri keeps the bootstrap value
+  // because automaticSilentRenew reads it from here, and /auth/renew renders
+  // nothing the user sees.
   const auth = new UserManager({
     authority: config.public.oidc.authorityUrl,
     client_id: config.public.oidc.clientId,
@@ -33,13 +41,12 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     console.log('Access token expiring, attempting silent renewal')
   })
 
-  auth.events.addAccessTokenExpired(() => {
-    console.log('Access token expired')
-    // Redirect to login when token expires and cannot be renewed
-    const locale = $i18n.locale.value
-    $router.push(`/${locale}/auth/login`)
-  })
-
+  // No addAccessTokenExpired handler on purpose. For a stored user that is
+  // already expired it fires ~1s after load, while middleware/auth.global.ts is
+  // still refreshing that same session; a redirect from here races that initial
+  // navigation (login bounce, or a fatal 500 via home-redirect). A session that
+  // really cannot be renewed ends up in addSilentRenewError below or in the
+  // middleware's own refresh.
   auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
     // Refresh token rejected (e.g. Keycloak invalidated it): drop the dead

@@ -527,7 +527,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
     restart: always
     depends_on:
       postgres:
@@ -574,6 +574,16 @@ services:
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
       LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,host.docker.internal
+    # Probes $(hostname), not localhost: the worker binds the container address only,
+    # so a loopback probe is refused. Same form as langfuse-web below.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget --no-verbose --tries=1 --spider http://$(hostname):3030/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     logging:
       driver: json-file
       options:
@@ -587,7 +597,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
     restart: always
     depends_on:
       postgres:
@@ -881,9 +891,11 @@ services:
       - --rc-serve
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
-      - --config=/dev/null  # Disable config file, use environment variables only
+      - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
     ports: [5572:5572]
-    networks: [default]
+    networks:
+      - backend  # reached by the rclone pipeline
+      - egress  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s
@@ -1129,6 +1141,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      STONEY_CLOUD_API_BASE_URL: ${STONEY_CLOUD_API_BASE_URL}
+      STONEY_CLOUD_API_KEY: ${STONEY_CLOUD_API_KEY}
       SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
       SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
@@ -1152,9 +1166,11 @@ services:
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
-      - ./configs/litellm/litellm-config.dev.yml:/app/config.yml
+      # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
+      - ./configs/litellm/litellm-config.infomaniak.dev.yml:/app/config.infomaniak.yml
+      - ./configs/litellm/litellm-config.stoney.dev.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
-    command: --config /app/config.yml
+    command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started

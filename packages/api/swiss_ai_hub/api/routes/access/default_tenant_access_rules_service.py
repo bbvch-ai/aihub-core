@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 # ceiling caps every rule family, so omitting one here leaves the tenant unable to reach knowledge,
 # processes or the admin UI.
 _UNCURATED_FAMILY_RULES: tuple[str, ...] = (
-    # Both forms are needed: ``knowledge.>`` covers every existing database, while the bare root is what
-    # *creating* one is guarded on — a database that does not exist yet cannot be named by a rule, and a
-    # ``.>`` rule never matches its own root. Mirrors the ``AIHubKnowledgeAdmin`` seed in
-    # ``initialize_db._DEFAULT_ROLE_DEFINITIONS``, which carries both for the same reason.
+    # The bare root only, which is what *creating* a database is guarded on. Databases live in one global
+    # collection with no tenant column, so ``knowledge.>`` would not mean "this tenant's databases" — it would
+    # hand every new tenant every database in the deployment, whoever created it (aihub-core-private#269).
+    # Reachability for the databases a tenant then creates arrives per database from
+    # ``KnowledgeService._grant_knowledge_access``, which grants ``knowledge.<db>`` and ``knowledge.<db>.>``.
     "aihub.admin.knowledge",
-    "aihub.admin.knowledge.>",
     "aihub.admin.process.>",
     "aihub.admin.service.>",
     "aihub.user.memory.>",

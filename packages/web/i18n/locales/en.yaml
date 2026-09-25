@@ -511,9 +511,9 @@ knowledge:
   add_database:
     title: Add Knowledge Database
     description: Create a new self-service knowledge database
-  auto_sync:
-    title: Auto-synchronized
-    description: Collections are automatically managed
+  source:
+    description: 'Synchronised from {name}'
+    edit: 'Edit source'
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
@@ -551,6 +551,16 @@ knowledge:
         is running.
       steps:
         basic_info: Basic Info
+        source: 'Source'
+    edit_source:
+      title: 'Source of {name}'
+      success: 'Source updated'
+      error: 'Failed to update the source'
+      switch_to_manual: 'Switch to manual upload'
+      replace_documents:
+        header: 'Hand the content over to the source?'
+        message: '{name} already holds {count} manually uploaded document(s). Once a source fills this database, every file the source does not have is removed on the next sync.'
+        accept: 'Replace existing documents'
     edit:
       title: Edit Collection
     database:
@@ -563,6 +573,13 @@ knowledge:
         3 to 63 characters. The name cannot be changed later.
       validation_error: The database name must start with a lowercase letter and contain
         only lowercase letters and digits, between 3 and 63 characters
+    source:
+      label: 'Source'
+      placeholder: 'Select where documents come from'
+      help: 'A source pipeline keeps this database in sync with an external system; each top-level folder becomes a namespace.'
+      manual_upload:
+        label: 'Manual upload'
+        description: 'Documents are uploaded by hand into namespaces you create.'
     ingestor:
       label: Ingestion Pipeline
       placeholder: Select an ingestion pipeline
@@ -855,6 +872,15 @@ lib:
       placeholder: Select a timezone
       help: The cron positions are interpreted in this timezone, so a daily schedule
         keeps the same wall-clock time across daylight-saving changes.
+  knowledgeCollections:
+    placeholder: Select collections
+    help: Only the selected collections are searched.
+    noAgent: Pick a knowledge agent first — its collections are what can be selected
+      here.
+    noSource: No knowledge agent is linked to this field, so no collections can be
+      offered.
+    empty: The selected agent is not configured to retrieve from any collection.
+    unavailable: Saved, but not retrieved by the selected agent
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -955,3 +981,14 @@ tenant:
   mismatch_switch_action: Switch Tenant
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
+support:
+  report_bug: Report a bug
+  dialog_title: Report a problem
+  choose_files: Choose files
+  submit: Send report
+  submitting: Sending…
+  sent: Report sent
+  sent_detail: 'Reference {reference}, report #{number}. Support will get back to you by email.'
+  send_failed: Report not sent
+  send_failed_detail: Your answers are still here — try sending again.
+  unavailable: Reporting is not configured on this deployment. Please contact your administrator.

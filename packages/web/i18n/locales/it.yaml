@@ -517,9 +517,9 @@ knowledge:
   add_database:
     title: Aggiungi database di conoscenza
     description: Crea un nuovo database di conoscenza self-service
-  auto_sync:
-    title: Sincronizzato automaticamente
-    description: Le collezioni sono gestite automaticamente
+  source:
+    description: 'Sincronizzato da {name}'
+    edit: 'Modifica sorgente'
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -559,6 +559,16 @@ knowledge:
         una pipeline sia in esecuzione.
       steps:
         basic_info: Informazioni di base
+        source: 'Sorgente'
+    edit_source:
+      title: 'Sorgente di {name}'
+      success: 'Sorgente aggiornata'
+      error: 'Impossibile aggiornare la sorgente'
+      switch_to_manual: 'Passa al caricamento manuale'
+      replace_documents:
+        header: 'Affidare il contenuto alla sorgente?'
+        message: '{name} contiene già {count} documento/i caricato/i manualmente. Quando una sorgente alimenta questo database, alla prossima sincronizzazione viene rimosso ogni file che la sorgente non possiede.'
+        accept: 'Sostituisci i documenti esistenti'
     edit:
       title: Modifica collezione
     database:
@@ -571,6 +581,13 @@ knowledge:
         da 3 a 63 caratteri. Il nome non può essere modificato in seguito.
       validation_error: Il nome del database deve iniziare con una lettera minuscola
         e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
+    source:
+      label: 'Sorgente'
+      placeholder: 'Scegli da dove provengono i documenti'
+      help: 'Una pipeline sorgente mantiene questa base sincronizzata con un sistema esterno; ogni cartella di primo livello diventa un namespace.'
+      manual_upload:
+        label: 'Caricamento manuale'
+        description: 'I documenti vengono caricati a mano in namespace creati da te.'
     ingestor:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione
@@ -868,6 +885,15 @@ lib:
       placeholder: Seleziona un fuso orario
       help: Le posizioni cron sono interpretate in questo fuso orario, così una pianificazione
         giornaliera mantiene la stessa ora durante i cambi di orario.
+  knowledgeCollections:
+    placeholder: Seleziona raccolte
+    help: Vengono cercate solo le raccolte selezionate.
+    noAgent: Scegli prima un agente di conoscenza — qui si possono selezionare le
+      sue raccolte.
+    noSource: A questo campo non è associato alcun agente di conoscenza, quindi non
+      è possibile offrire raccolte.
+    empty: L'agente selezionato non è configurato per alcuna raccolta.
+    unavailable: Salvata, ma non consultata dall'agente selezionato
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -967,3 +993,14 @@ tenant:
   mismatch_switch_action: Cambia tenant
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
+support:
+  report_bug: Segnala un problema
+  dialog_title: Segnala un problema
+  choose_files: Scegli i file
+  submit: Invia segnalazione
+  submitting: Invio…
+  sent: Segnalazione inviata
+  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà via e-mail.'
+  send_failed: Segnalazione non inviata
+  send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
+  unavailable: La segnalazione non è configurata su questa installazione. Contatta l'amministratore.

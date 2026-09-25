@@ -45,8 +45,8 @@ from swiss_ai_hub.agent.agents.email_classification_agent.events.classify_mail_s
 from swiss_ai_hub.agent.agents.email_classification_agent.events.grounded_drafts_requested_event import (
     GroundedDraftsRequestedEvent,
 )
-from swiss_ai_hub.agent.agents.email_classification_agent.knowledge_namespace_resolver import (
-    KnowledgeNamespaceResolver,
+from swiss_ai_hub.agent.agents.email_classification_agent.knowledge_collection_validator import (
+    KnowledgeCollectionValidator,
 )
 from swiss_ai_hub.agent.agents.email_classification_agent.mail_classifier import (
     CategoryVerdict,
@@ -199,12 +199,12 @@ class EmailClassificationAgent(Agent):
             agent_config.knowledge_delegation,
         )
         # Separate from `_validate` because it reads the knowledge catalogue and the rest is pure config. Still runs
-        # before the first fetch: a collection named by a typo must fail the run here, not after the whole batch has
-        # been classified, filed and paid for, with the drafts unrecoverable because filing already consumed the mail.
-        # Gated on `enable_draft` for the same reason `_validate_grounding` is, and to keep a paused deployment from
-        # paying a catalogue round trip per run for a lookup nothing will use.
+        # before the first fetch: a collection deleted since the profile was saved must fail the run here, not after
+        # the whole batch has been classified, filed and paid for, with the drafts unrecoverable because filing
+        # already consumed the mail. Gated on `enable_draft` for the same reason `_validate_grounding` is, and to keep
+        # a paused deployment from paying a catalogue round trip per run for a lookup nothing will use.
         if draft.enable_draft:
-            await KnowledgeNamespaceResolver.validate(classification)
+            await KnowledgeCollectionValidator.validate(classification)
         lease = MailboxRunLease(redis)
 
         if not event.messages:
@@ -290,10 +290,12 @@ class EmailClassificationAgent(Agent):
         `collect_and_draft_step` waits on delegated answers, and with none due it could never fire.
         """
         to_draft = self._drafting_batch(event, classification, draft)
-        grounded, ungrounded = self._split_by_grounding(to_draft, classification)
+        grounded, ungrounded = self._split_by_grounding(to_draft, agent_config.knowledge_delegation)
 
         if not grounded:
-            await self._report_nothing_to_ground(event, to_draft, classification, draft, displayer)
+            await self._report_nothing_to_ground(
+                event, to_draft, classification, draft, agent_config.knowledge_delegation, displayer
+            )
             return await self._append_all_drafts(
                 classified=event,
                 grounded=[],
@@ -380,7 +382,7 @@ class EmailClassificationAgent(Agent):
         The agent still never sends. A draft is an IMAP `APPEND`; there is no SMTP path anywhere in the platform.
         """
         to_draft = self._drafting_batch(classified, classification, draft)
-        grounded, ungrounded = self._split_by_grounding(to_draft, classification)
+        grounded, ungrounded = self._split_by_grounding(to_draft, agent_config.knowledge_delegation)
         request_index: dict[str, str] = await run_context.get(GROUNDED_REQUEST_INDEX_KEY, {})
 
         bodies_by_message_id = await self._bodies_from_answers(answers, request_index, draft, displayer)
@@ -454,22 +456,18 @@ class EmailClassificationAgent(Agent):
     @staticmethod
     def _split_by_grounding(
         to_draft: list[MailClassificationRef],
-        classification: EmailClassificationSettings,
+        knowledge_delegation: KnowledgeDelegationConfig | None,
     ) -> tuple[list[MailClassificationRef], list[MailClassificationRef]]:
-        """Split the drafting batch into the messages answered from a collection and those answered from the mail
-        alone.
+        """Split the drafting batch into the messages answered from knowledge and those answered from the mail alone.
 
-        Grounding is per category rather than per agent so a customer can adopt it one category at a time: a
-        `support_request` has documentation behind it worth retrieving, while a `thanking` mail has none and would
-        only retrieve noise.
+        With a knowledge agent configured every drafted message is answered from it: a category naming collections is
+        narrowed to them, a category naming none is answered from everything the agent retrieves from. With no
+        knowledge agent there is nothing to delegate to, so the whole batch takes the local path, which is what keeps
+        a deployment with no RAG agent at all working.
         """
-        namespaces = {
-            category.category: category.knowledge_namespace
-            for category in classification.categories
-            if category.knowledge_namespace
-        }
-        grounded = [ref for ref in to_draft if ref.category in namespaces]
-        return grounded, [ref for ref in to_draft if ref.category not in namespaces]
+        if knowledge_delegation is None:
+            return [], to_draft
+        return to_draft, []
 
     async def _delegate_one(
         self,
@@ -482,11 +480,13 @@ class EmailClassificationAgent(Agent):
         t: LocaleHandler,
         user: UserIdentity | None,
     ) -> AgentInTheLoop.request:
-        """One delegated RAG run for one message, scoped to its category's collection and nothing else."""
+        """One delegated RAG run for one message, scoped to its category's collections.
+
+        A category that names none is sent an empty selection, which `narrow_retrievers` reads as the delegate's whole
+        scope. A selection switched on but left empty would read the same way while looking narrowed, so
+        `_validate_grounding` rejects that state up front rather than letting it reach a run.
+        """
         category = next(item for item in classification.categories if item.category == ref.category)
-        pairs = await KnowledgeNamespaceResolver.resolve(
-            classification.knowledge_databases, category.knowledge_namespace
-        )
         parsed = await self._reparse_archived(ref, agent_config.imap, topic)
         attachments = await self._extracted_attachments_for_delegation(ref, draft, topic)
 
@@ -503,7 +503,7 @@ class EmailClassificationAgent(Agent):
                 user=user,
                 locale=t.locale,
                 files=[],
-                selected_namespaces=pairs,
+                selected_namespaces=category.knowledge_namespaces or [],
             ),
             # `share_run_id=False` is the correctness constraint, not a preference: the response subscription is
             # keyed by the delegated run id, so sharing it would make every subscriber of this fan-out fire on every
@@ -699,10 +699,11 @@ class EmailClassificationAgent(Agent):
         to_draft: list[MailClassificationRef],
         classification: EmailClassificationSettings,
         draft: DraftEmailSettings,
+        knowledge_delegation: KnowledgeDelegationConfig | None,
         displayer: EventDisplayer,
     ) -> None:
         """Say why nothing was delegated, so a silent run is never ambiguous between 'off', 'nothing matched' and
-        'nothing grounded'."""
+        'no knowledge agent'."""
         if not draft.enable_draft:
             logger.info("[draft] enable_draft=False — filed %d message(s), drafting none", event.count)
             await displayer.display_thought("Reply drafting is disabled — no drafts were written.")
@@ -718,11 +719,14 @@ class EmailClassificationAgent(Agent):
             )
             return
 
-        logger.info("[draft] no message in this batch belongs to a grounded category — drafting from the mail alone")
-        await displayer.display_thought(
-            f"No category in this run is grounded in a knowledge collection — drafting {len(to_draft)} reply/replies "
-            "from the messages alone."
-        )
+        if knowledge_delegation is None:
+            logger.info(
+                "[draft] no knowledge agent is configured — drafting %d message(s) from the mail alone", len(to_draft)
+            )
+            await displayer.display_thought(
+                f"No knowledge agent is configured — drafting {len(to_draft)} reply/replies from the messages alone."
+            )
+            return
 
     async def _compose_all(
         self,
@@ -941,45 +945,45 @@ class EmailClassificationAgent(Agent):
 
         Skipped entirely when drafting is off, mirroring `_validate_drafting`: `_drafting_batch` returns nothing in
         that state, so grounding cannot execute and must not be able to fail a run either. Otherwise an admin who
-        configured grounding and later paused drafting — or whose collection was deleted while it was paused — would
-        have every classification run die on a feature that cannot run.
-
-        Beyond that, only reached when a category actually names a collection: grounding is opt-in per category, and a
-        deployment that drafts from the message alone must keep working with no knowledge agent configured at all.
+        configured grounding and later paused drafting would have every classification run die on a feature that
+        cannot run.
         """
         if not draft.enable_draft:
             return
 
-        grounded = [category for category in classification.categories if category.knowledge_namespace]
-        if not grounded:
-            return
+        # A category that is not drafted never retrieves, and the form hides its selection, so a selection left
+        # behind when drafting was switched off is inert and must not fail the run.
+        narrowed = [
+            category
+            for category in classification.categories
+            if category.draft_reply and category.knowledge_namespaces is not None
+        ]
 
         if knowledge_delegation is None:
-            raise ValueError(
-                f"categories {[category.category for category in grounded]} are grounded in a knowledge collection "
-                "but no knowledge agent is configured — their replies have nothing to retrieve from"
-            )
-        if not classification.knowledge_databases:
-            raise ValueError(
-                "a category names a knowledge collection but no knowledge database is configured — a collection "
-                "name alone does not identify anything to retrieve from"
-            )
+            if narrowed:
+                raise ValueError(
+                    f"categories {[category.category for category in narrowed]} narrow retrieval to a knowledge "
+                    "collection but no knowledge agent is configured — their replies have nothing to retrieve from"
+                )
+            return
 
         # Checked here rather than left to the form: a blank fallback would only be discovered by the message that
         # needed it, which is the one message nobody is watching for.
         if not draft.no_information_draft.strip() or not draft.grounding_failed_draft.strip():
             raise ValueError(
-                "both fallback draft texts must be set when a category is grounded — a message retrieval could not "
-                "answer must still get a draft, or it stays filed with no draft and is never looked at again"
+                "both fallback draft texts must be set when a knowledge agent is configured — a message retrieval "
+                "could not answer must still get a draft, or it stays filed with no draft and is never looked at "
+                "again"
             )
 
-        # `draft_reply` is what puts a message in the drafting batch at all, so a grounded category that is not
-        # opted in retrieves nothing and would have the admin looking for drafts that were never due.
-        not_opted_in = [category.category for category in grounded if not category.draft_reply]
-        if not_opted_in:
+        # An enabled selection holding nothing is not the same as no selection: it reads as "answer from knowledge"
+        # while naming none, and the delegated run would fall back to the delegate's whole scope.
+        empty = [category.category for category in narrowed if not category.knowledge_namespaces]
+        if empty:
             raise ValueError(
-                f"categories {not_opted_in} name a knowledge collection but are not set to get a drafted reply — "
-                "either tick their reply toggle or clear their collection"
+                f"categories {empty} have their collection selection switched on but name no collection — either "
+                "pick the collections their replies are answered from, or switch the selection off to answer them "
+                "from every collection the knowledge agent retrieves from"
             )
 
     async def _classify_all(

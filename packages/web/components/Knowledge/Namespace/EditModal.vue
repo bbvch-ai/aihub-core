@@ -81,6 +81,7 @@ import { useI18n } from '#i18n'
 
 const props = defineProps<{
   modelValue: boolean
+  database: string
   namespace: NamespaceDto | null
 }>()
 
@@ -106,16 +107,14 @@ const handleSave = async () => {
 
   error.value = ''
 
-  const namespaceId = props.namespace.id
-  const databaseId = props.namespace.database_id
   const updatePayload: UpdateNamespaceRequest = {
     display_name: displayName.value || props.namespace.name,
     description: description.value || null,
   }
 
   await updateNamespace({
-    namespace: namespaceId,
-    database: databaseId,
+    namespace: props.namespace.name,
+    database: props.database,
     payload: ref(updatePayload),
     tenantId: tenantId.value!,
   })

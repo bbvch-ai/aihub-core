@@ -17,6 +17,7 @@ from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_otp import InputOtp
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.knob import Knob
+from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
 from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
 from swiss_ai_hub.core.form.elements.listbox import Listbox
 from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
@@ -41,6 +42,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "cronInput": "CronInput",
     "group": "Group",
     "iconSelector": "IconSelector",
+    "knowledgeCollectionSelector": "KnowledgeCollectionSelector",
     "knowledgeDatabaseSelector": "KnowledgeDatabaseSelector",
     "localeInput": "LocaleInput",
     "modelSelect": "ModelSelect",
@@ -99,6 +101,7 @@ _FormElementUnion = (
     | Annotated[InputNumber, Tag("InputNumber")]
     | Annotated[InputOtp, Tag("InputOtp")]
     | Annotated[InputText, Tag("InputText")]
+    | Annotated[KnowledgeCollectionSelector, Tag("KnowledgeCollectionSelector")]
     | Annotated[KnowledgeDatabaseSelector, Tag("KnowledgeDatabaseSelector")]
     | Annotated[Knob, Tag("Knob")]
     | Annotated[Listbox, Tag("Listbox")]

@@ -16,6 +16,7 @@ from swiss_ai_hub.api.routes import (
     EventController,
     FileController,
     I18nController,
+    IncidentController,
     KnowledgeController,
     ModelController,
     MyAccountController,
@@ -48,7 +49,12 @@ runner.mount(
     AuthProviderController(auth=auth).get_auth_providers(),
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
-    MyAccountController(auth=auth).get_my_account().get_my_identity().get_my_dashboard().update_my_dashboard(),
+    MyAccountController(auth=auth)
+    .get_my_account()
+    .get_my_identity()
+    .get_my_dashboard()
+    .update_my_dashboard()
+    .update_my_locale(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth)
@@ -111,7 +117,9 @@ runner.mount(
         translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
     .get_ingestors()
+    .get_source_pipelines()
     .create_database()
+    .update_database_source()
     .create_namespace()
     .update_namespace()
     .get_databases()
@@ -129,6 +137,7 @@ runner.mount(
     .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
     UserMemoryController(auth=auth)
     .get_user_memories()
     .search_user_memories()

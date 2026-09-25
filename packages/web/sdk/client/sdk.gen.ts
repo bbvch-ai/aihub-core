@@ -46,6 +46,9 @@ import type {
   CreateDatasetData,
   CreateDatasetError,
   CreateDatasetResponse,
+  CreateIncidentData,
+  CreateIncidentError,
+  CreateIncidentResponse,
   CreateNamespaceData,
   CreateNamespaceError,
   CreateNamespaceResponse,
@@ -158,6 +161,10 @@ import type {
   GetFileUrlResponse,
   GetHealthData,
   GetHealthResponse,
+  GetIncidentAvailabilityData,
+  GetIncidentAvailabilityResponse,
+  GetIncidentFormData,
+  GetIncidentFormResponse,
   GetIngestorsData,
   GetIngestorsResponse,
   GetLitellmModelData,
@@ -231,6 +238,8 @@ import type {
   GetRoleResponse,
   GetRolesData,
   GetRolesResponse,
+  GetSourcePipelinesData,
+  GetSourcePipelinesResponse,
   GetSuiteData,
   GetSuiteResponse,
   GetSummaryNodesForDocumentData,
@@ -303,12 +312,18 @@ import type {
   UpdateAgentInstanceData,
   UpdateAgentInstanceError,
   UpdateAgentInstanceResponse,
+  UpdateDatabaseSourceData,
+  UpdateDatabaseSourceError,
+  UpdateDatabaseSourceResponse,
   UpdateDatasetData,
   UpdateDatasetError,
   UpdateDatasetResponse,
   UpdateMyDashboardData,
   UpdateMyDashboardError,
   UpdateMyDashboardResponse,
+  UpdateMyLocaleData,
+  UpdateMyLocaleError,
+  UpdateMyLocaleResponse,
   UpdateNamespaceData,
   UpdateNamespaceError,
   UpdateNamespaceResponse,
@@ -656,6 +671,40 @@ export const updateMyDashboard = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/my-account/dashboard",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Update My Locale
+ *
+ * Persists the user's preferred UI language so it survives logout.
+ */
+export const updateMyLocale = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateMyLocaleResponse = UpdateMyLocaleResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateMyLocaleData,
+    UpdateMyLocaleResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateMyLocaleResponse | DefaultT,
+    UpdateMyLocaleError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/my-account/locale",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -2769,6 +2818,36 @@ export const getIngestors = <
   });
 
 /**
+ * Get selectable source pipelines
+ *
+ * Returns the source pipelines a knowledge database can be filled from, with their configuration forms.
+ */
+export const getSourcePipelines = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetSourcePipelinesResponse = GetSourcePipelinesResponse,
+>(
+  options: Options<
+    TComposable,
+    GetSourcePipelinesData,
+    GetSourcePipelinesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetSourcePipelinesResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/source-pipelines",
+    ...options,
+  });
+
+/**
  * Delete a knowledge database
  *
  * Schedules asynchronous teardown of a whole knowledge database — its Milvus collection, doc-store
@@ -2821,6 +2900,41 @@ export const createDatabase = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/knowledge/databases/{database}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Set or clear a knowledge database's source
+ *
+ * Replaces the database's source and its configuration; secrets resubmitted as the mask keep their stored
+ * value. Takes effect on the source pipeline's next run.
+ */
+export const updateDatabaseSource = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UpdateDatabaseSourceResponse = UpdateDatabaseSourceResponse,
+>(
+  options: Options<
+    TComposable,
+    UpdateDatabaseSourceData,
+    UpdateDatabaseSourceResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).put<
+    TComposable,
+    UpdateDatabaseSourceResponse | DefaultT,
+    UpdateDatabaseSourceError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/databases/{database}/source",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -3447,6 +3561,105 @@ export const updateNotification = <
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get Incident Availability
+ *
+ * Says whether reporting is configured here, so the UI shows the button only where it leads somewhere.
+ */
+export const getIncidentAvailability = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentAvailabilityResponse =
+    GetIncidentAvailabilityResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentAvailabilityData,
+    GetIncidentAvailabilityResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentAvailabilityResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/availability",
+    ...options,
+  });
+
+/**
+ * Get Incident Form
+ *
+ * Returns the report form with everything the platform already knows filled in.
+ */
+export const getIncidentForm = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetIncidentFormResponse = GetIncidentFormResponse,
+>(
+  options: Options<
+    TComposable,
+    GetIncidentFormData,
+    GetIncidentFormResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetIncidentFormResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents/form",
+    ...options,
+  });
+
+/**
+ * Create Incident
+ *
+ * Files the report as an issue, with any attachments committed alongside it.
+ *
+ * Multipart rather than the presigned-PUT flow the other uploads use: those hand the
+ * browser an S3 URL, and the destination here is GitHub, which issues no such URL.
+ */
+export const createIncident = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateIncidentResponse = CreateIncidentResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateIncidentData,
+    CreateIncidentResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateIncidentResponse | DefaultT,
+    CreateIncidentError,
+    DefaultT
+  >({
+    ...formDataBodySerializer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/incidents",
+    ...options,
+    headers: {
+      "Content-Type": null,
       ...options.headers,
     },
   });

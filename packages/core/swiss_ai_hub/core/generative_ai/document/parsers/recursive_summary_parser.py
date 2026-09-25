@@ -24,7 +24,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default; Infomaniak serves gemma-4-31B-it at 100000
+DEFAULT_SUMMARIZATION_MAX_INPUT_TOKENS = 32768  # conservative default, below either provider's gemma-4-31B-it window
 
 # Absorbs the prompt-template overhead the budget check cannot measure until render time and the tokenizer
 # mismatch between our counter and the model actually enforcing the limit.
