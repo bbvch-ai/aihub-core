@@ -2415,7 +2415,7 @@ export const BatchDeleteDocumentsResponseSchema = {
   description: "Per-document results of a best-effort batch deletion.",
 } as const;
 
-export const Body_create_incident_incidents_postSchema = {
+export const Body_create_incidentSchema = {
   properties: {
     submission: {
       type: "string",
@@ -2435,96 +2435,94 @@ export const Body_create_incident_incidents_postSchema = {
   },
   type: "object",
   required: ["submission"],
-  title: "Body_create_incident_incidents_post",
+  title: "Body_create_incident",
 } as const;
 
-export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =
-  {
-    properties: {
-      file: {
-        type: "string",
-        contentMediaType: "application/octet-stream",
-        title: "File",
-        description: "The audio file to transcribe",
-      },
-      model: {
-        type: "string",
-        title: "Model",
-        description: "ID of the model to use",
-      },
-      language: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Language",
-        description: "ISO-639-1 language code",
-      },
-      prompt: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Prompt",
-        description: "Optional text prompt",
-      },
-      response_format: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Response Format",
-        description: "Format of the response",
-        default: "json",
-      },
-      temperature: {
-        anyOf: [
-          {
-            type: "number",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Temperature",
-        description: "Sampling temperature between 0 and 1",
-        default: 0,
-      },
-      timestamp_granularities: {
-        anyOf: [
-          {
-            items: {
-              type: "string",
-              enum: ["word", "segment"],
-            },
-            type: "array",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Timestamp Granularities",
-        description:
-          "Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
-      },
+export const Body_create_transcriptionSchema = {
+  properties: {
+    file: {
+      type: "string",
+      contentMediaType: "application/octet-stream",
+      title: "File",
+      description: "The audio file to transcribe",
     },
-    type: "object",
-    required: ["file", "model"],
-    title:
-      "Body_create_transcription__tenant_id__openai_audio_transcriptions_post",
-  } as const;
+    model: {
+      type: "string",
+      title: "Model",
+      description: "ID of the model to use",
+    },
+    language: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Language",
+      description: "ISO-639-1 language code",
+    },
+    prompt: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt",
+      description: "Optional text prompt",
+    },
+    response_format: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Response Format",
+      description: "Format of the response",
+      default: "json",
+    },
+    temperature: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Temperature",
+      description: "Sampling temperature between 0 and 1",
+      default: 0,
+    },
+    timestamp_granularities: {
+      anyOf: [
+        {
+          items: {
+            type: "string",
+            enum: ["word", "segment"],
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timestamp Granularities",
+      description:
+        "Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
+    },
+  },
+  type: "object",
+  required: ["file", "model"],
+  title: "Body_create_transcription",
+} as const;
 
 export const BucketMetadataFiltersSchema = {
   properties: {
@@ -3160,11 +3158,21 @@ export const ChatCompletionSchema = {
       const: "chat.completion",
       title: "Object",
     },
+    moderation: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/Moderation",
+        },
+        {
+          type: "null",
+        },
+      ],
+    },
     service_tier: {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default", "flex", "scale", "priority"],
+          enum: ["auto", "default", "flex", "scale", "priority", "fast"],
         },
         {
           type: "null",
@@ -3412,6 +3420,9 @@ export const ChatCompletionContentPartImageParamSchema = {
       const: "image_url",
       title: "Type",
     },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -3430,6 +3441,9 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
       type: "string",
       const: "input_audio",
       title: "Type",
+    },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
     },
   },
   additionalProperties: true,
@@ -3468,6 +3482,9 @@ export const ChatCompletionContentPartTextParamSchema = {
       type: "string",
       const: "text",
       title: "Type",
+    },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
     },
   },
   additionalProperties: true,
@@ -3866,6 +3883,10 @@ export const ChatCompletionRequestSchema = {
         {
           type: "string",
           enum: [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+            "gpt-5.5",
             "gpt-5.4",
             "gpt-5.4-mini",
             "gpt-5.4-nano",
@@ -4136,7 +4157,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["none", "minimal", "low", "medium", "high", "xhigh"],
+          enum: ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
         },
         {
           type: "null",
@@ -8755,6 +8776,9 @@ export const FileSchema = {
       const: "file",
       title: "Type",
     },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/FilePromptCacheBreakpoint",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -8782,6 +8806,22 @@ export const FileFileSchema = {
   additionalProperties: true,
   type: "object",
   title: "FileFile",
+} as const;
+
+export const FilePromptCacheBreakpointSchema = {
+  properties: {
+    mode: {
+      type: "string",
+      const: "explicit",
+      title: "Mode",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["mode"],
+  title: "FilePromptCacheBreakpoint",
+  description:
+    "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
 } as const;
 
 export const FollowUpQuestionsEventSchema = {
@@ -17908,6 +17948,249 @@ export const ModelTypeGroupDTOSchema = {
   title: "ModelTypeGroupDTO",
 } as const;
 
+export const ModerationSchema = {
+  properties: {
+    input: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ModerationInputModerationResults",
+        },
+        {
+          $ref: "#/components/schemas/ModerationInputError",
+        },
+      ],
+      title: "Input",
+    },
+    output: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ModerationOutputModerationResults",
+        },
+        {
+          $ref: "#/components/schemas/ModerationOutputError",
+        },
+      ],
+      title: "Output",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["input", "output"],
+  title: "Moderation",
+  description:
+    "Moderation results for the request input and generated output, if moderated\ncompletions were requested.",
+} as const;
+
+export const ModerationInputErrorSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+    message: {
+      type: "string",
+      title: "Message",
+    },
+    type: {
+      type: "string",
+      const: "error",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code", "message", "type"],
+  title: "ModerationInputError",
+  description: "An error produced while attempting moderation.",
+} as const;
+
+export const ModerationInputModerationResultsSchema = {
+  properties: {
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/ModerationInputModerationResultsResult",
+      },
+      type: "array",
+      title: "Results",
+    },
+    type: {
+      type: "string",
+      const: "moderation_results",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["model", "results", "type"],
+  title: "ModerationInputModerationResults",
+  description:
+    "Successful moderation results for the request input or generated output.",
+} as const;
+
+export const ModerationInputModerationResultsResultSchema = {
+  properties: {
+    categories: {
+      additionalProperties: {
+        type: "boolean",
+      },
+      type: "object",
+      title: "Categories",
+    },
+    category_applied_input_types: {
+      additionalProperties: {
+        items: {
+          type: "string",
+          enum: ["text", "image"],
+        },
+        type: "array",
+      },
+      type: "object",
+      title: "Category Applied Input Types",
+    },
+    category_scores: {
+      additionalProperties: {
+        type: "number",
+      },
+      type: "object",
+      title: "Category Scores",
+    },
+    flagged: {
+      type: "boolean",
+      title: "Flagged",
+    },
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    type: {
+      type: "string",
+      const: "moderation_result",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "categories",
+    "category_applied_input_types",
+    "category_scores",
+    "flagged",
+    "model",
+    "type",
+  ],
+  title: "ModerationInputModerationResultsResult",
+  description: "A moderation result produced for the response input or output.",
+} as const;
+
+export const ModerationOutputErrorSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+    message: {
+      type: "string",
+      title: "Message",
+    },
+    type: {
+      type: "string",
+      const: "error",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code", "message", "type"],
+  title: "ModerationOutputError",
+  description: "An error produced while attempting moderation.",
+} as const;
+
+export const ModerationOutputModerationResultsSchema = {
+  properties: {
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/ModerationOutputModerationResultsResult",
+      },
+      type: "array",
+      title: "Results",
+    },
+    type: {
+      type: "string",
+      const: "moderation_results",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["model", "results", "type"],
+  title: "ModerationOutputModerationResults",
+  description:
+    "Successful moderation results for the request input or generated output.",
+} as const;
+
+export const ModerationOutputModerationResultsResultSchema = {
+  properties: {
+    categories: {
+      additionalProperties: {
+        type: "boolean",
+      },
+      type: "object",
+      title: "Categories",
+    },
+    category_applied_input_types: {
+      additionalProperties: {
+        items: {
+          type: "string",
+          enum: ["text", "image"],
+        },
+        type: "array",
+      },
+      type: "object",
+      title: "Category Applied Input Types",
+    },
+    category_scores: {
+      additionalProperties: {
+        type: "number",
+      },
+      type: "object",
+      title: "Category Scores",
+    },
+    flagged: {
+      type: "boolean",
+      title: "Flagged",
+    },
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    type: {
+      type: "string",
+      const: "moderation_result",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "categories",
+    "category_applied_input_types",
+    "category_scores",
+    "flagged",
+    "model",
+    "type",
+  ],
+  title: "ModerationOutputModerationResultsResult",
+  description: "A moderation result produced for the response input or output.",
+} as const;
+
 export const MultiSelectSchema = {
   properties: {
     is_formkit_element: {
@@ -19799,6 +20082,22 @@ export const ProgramWorkResponseDTOSchema = {
     "DTO representing a program work response with specific program-related information.",
 } as const;
 
+export const PromptCacheBreakpointSchema = {
+  properties: {
+    mode: {
+      type: "string",
+      const: "explicit",
+      title: "Mode",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["mode"],
+  title: "PromptCacheBreakpoint",
+  description:
+    "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
+} as const;
+
 export const PromptTokensDetailsSchema = {
   properties: {
     audio_tokens: {
@@ -19811,6 +20110,17 @@ export const PromptTokensDetailsSchema = {
         },
       ],
       title: "Audio Tokens",
+    },
+    cache_write_tokens: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Cache Write Tokens",
     },
     cached_tokens: {
       anyOf: [
@@ -25313,6 +25623,20 @@ export const TranscriptionSchema = {
       type: "string",
       title: "Text",
     },
+    languages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/TranscriptionLanguage",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Languages",
+    },
     logprobs: {
       anyOf: [
         {
@@ -25348,6 +25672,20 @@ export const TranscriptionSchema = {
   title: "Transcription",
   description:
     "Represents a transcription response returned by model, based on the provided input.",
+} as const;
+
+export const TranscriptionLanguageSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code"],
+  title: "TranscriptionLanguage",
+  description: "A language detected in transcribed audio.",
 } as const;
 
 export const TranscriptionSegmentSchema = {

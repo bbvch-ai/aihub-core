@@ -5,13 +5,13 @@ from contextlib import AbstractAsyncContextManager
 from typing import Self
 
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
 from swiss_ai_hub.core.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.routes.controller import Controller
+from swiss_ai_hub.core.runners.openapi_schema_service import OpenApiSchemaService
 
 
 class Runner(abc.ABC):
@@ -93,6 +93,7 @@ class Runner(abc.ABC):
             version=AIHubSettings().VERSION,
             debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
+            generate_unique_id_function=OpenApiSchemaService.operation_id_from_route_name,
         )
 
         # Every runner mounts controllers that reach the model gateway through the OpenAI SDK, so
@@ -120,10 +121,5 @@ class Runner(abc.ABC):
         for controller in controllers:
             controller.mount(self._api_app, self)
             self.controllers.add(controller)
-
-        # Ensures that openapi docs are generated with the method name as the operation name
-        for route in self._api_app.routes:
-            if isinstance(route, APIRoute):
-                route.operation_id = route.name
 
         return self
