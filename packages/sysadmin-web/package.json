@@ -42,7 +42,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-sonarjs": "^4.0.3",
-    "nuxt": "3.21.0",
+    "nuxt": "3.21.10",
     "typescript": "^5.9.3",
     "vue": "3.5.17"
   }
