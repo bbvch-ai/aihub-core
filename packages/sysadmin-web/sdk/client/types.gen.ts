@@ -535,6 +535,74 @@ export type HealthResponse = {
 };
 
 /**
+ * LocaleString
+ *
+ * A multi-language string container supporting German, English, French, and Italian.
+ *
+ * LocaleString serves as a data container for translated strings. For form rendering,
+ * use the `LocaleInput` FormKit element with the duality pattern.
+ *
+ * ## Basic Usage (Data Mode)
+ *
+ * ```python
+ * greeting = LocaleString(
+ * de="Hallo",
+ * en="Hello",
+ * fr="Bonjour",
+ * it="Ciao",
+ * )
+ * print(greeting.in_locale("en"))  # "Hello"
+ * ```
+ *
+ * ## Form Duality Pattern
+ *
+ * For form fields that accept LocaleString values, use the union type pattern:
+ *
+ * ```python
+ * class MyConfig(Form):
+ * name: Annotated[LocaleString | LocaleInput, Field(description="Name")]
+ *
+ * # Form mode - for rendering:
+ * config = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))
+ * ```
+ *
+ * For convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:
+ *
+ * ```python
+ * config = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))
+ * ```
+ */
+export type LocaleString = {
+  /**
+   * De
+   *
+   * German
+   */
+  de?: string | null;
+  /**
+   * En
+   *
+   * English
+   */
+  en?: string | null;
+  /**
+   * Fr
+   *
+   * French
+   */
+  fr?: string | null;
+  /**
+   * It
+   *
+   * Italian
+   */
+  it?: string | null;
+};
+
+/**
  * PaginatedUsersResponse
  *
  * Represents a paginated response containing a list of users.
@@ -673,6 +741,10 @@ export type TenantResponse = {
    */
   access_rules: Array<string>;
   /**
+   * Chat disclaimer in each supported language.
+   */
+  chat_disclaimer: LocaleString;
+  /**
    * Whether the tenant also exists in Keycloak (active) or not (orphaned).
    */
   state: TenantState;
@@ -781,6 +853,10 @@ export type UpdateTenantMetadataRequest = {
    * Access rules granted to this tenant.
    */
   access_rules?: Array<string> | null;
+  /**
+   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
+   */
+  chat_disclaimer?: LocaleString | null;
 };
 
 /**

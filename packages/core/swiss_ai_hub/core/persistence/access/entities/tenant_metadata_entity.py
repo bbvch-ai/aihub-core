@@ -1,14 +1,16 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
+from mongoengine import DateTimeField, Document, EmbeddedDocumentField, ListField, NotUniqueError, StringField
 
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class TenantMetadataEntity(Document):
     """
-    Metadata (display name, description, access rules) for a tenant.
+    Metadata (display name, description, access rules, chat disclaimer) for a tenant.
 
     WARNING: This collection is NOT the source of truth for tenant existence.
     Keycloak owns that — the group ``/tenants/<tenant_id>`` is the only authoritative
@@ -35,6 +37,7 @@ class TenantMetadataEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
+    chat_disclaimer = EmbeddedDocumentField(LocaleStringEntity)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -76,6 +79,7 @@ class TenantMetadataEntity(Document):
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
+        chat_disclaimer: LocaleString | None = None,
     ) -> Self:
         """Stores metadata for an existing Keycloak tenant group.
 
@@ -87,6 +91,7 @@ class TenantMetadataEntity(Document):
             name=name,
             description=description,
             access_rules=access_rules or [],
+            chat_disclaimer=LocaleStringEntity.from_locale_string(chat_disclaimer) if chat_disclaimer else None,
         )
         tenant.save()
         return tenant
@@ -129,6 +134,7 @@ class TenantMetadataEntity(Document):
         name: str | None = None,
         description: str | None = None,
         access_rules: list[str] | None = None,
+        chat_disclaimer: LocaleString | None = None,
     ) -> Self | None:
         """
         Updates stored metadata for an existing tenant. Returns the updated entity or None if no metadata was stored.
@@ -146,6 +152,8 @@ class TenantMetadataEntity(Document):
             tenant.description = description
         if access_rules is not None:
             tenant.access_rules = access_rules
+        if chat_disclaimer is not None:
+            tenant.chat_disclaimer = LocaleStringEntity.from_locale_string(chat_disclaimer)
 
         tenant.updated_at = datetime.now(UTC)
         tenant.save()
@@ -200,7 +208,7 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def cascade_delete_tenant_data(cls, tenant_id: str) -> None:
-        """Deletes the tenant-scoped role and membership rows.
+        """Deletes tenant settings, roles and memberships.
 
         Must run only after ``delete_tenant_metadata`` has confirmed the row-delete
         does not violate the last-tenant invariant — this cascade is irreversible

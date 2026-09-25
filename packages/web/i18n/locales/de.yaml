@@ -976,6 +976,7 @@ memory:
       message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
         es erneut.
 openwebui:
+  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen

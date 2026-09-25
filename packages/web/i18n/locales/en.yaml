@@ -960,6 +960,7 @@ memory:
       title: Delete Failed
       message: Failed to delete all memories. Please try again.
 openwebui:
+  default_disclaimer: AI can make mistakes. Please verify answers.
   memories:
     title: Agent Memories
     select_agent: Select Agent

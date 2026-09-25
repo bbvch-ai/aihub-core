@@ -7,6 +7,7 @@ tenant_admin:
   create_new: Nouveau tenant
   cancel: Annuler
   save: Enregistrer
+  save_error: Impossible d'enregistrer le tenant. Veuillez réessayer.
   tenant_id: ID du tenant
   navigation:
     overview: Vue d'ensemble
@@ -32,6 +33,9 @@ tenant_admin:
       instance. Enregistrer maintenant créerait un locataire sans aucun accès — vérifiez
       que l'API de la plateforme et la passerelle de modèles sont accessibles.
   form:
+    chat_disclaimer: Avertissement du chat
+    chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères par langue.
+    chat_disclaimer_too_long: Utilisez au maximum 100 caractères par langue.
     name: Nom du tenant
     description: Description
   table:

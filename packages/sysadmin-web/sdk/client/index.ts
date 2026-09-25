@@ -118,6 +118,7 @@ export {
   type ListUnconfiguredTenantsData,
   type ListUnconfiguredTenantsResponse,
   type ListUnconfiguredTenantsResponses,
+  type LocaleString,
   type PaginatedUsersResponse,
   type ProcessHealthChecks,
   type RevokeRoleData,

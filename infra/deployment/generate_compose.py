@@ -115,6 +115,7 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # Static directories copied verbatim (no Jinja2 rendering).
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
+    ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
 ]

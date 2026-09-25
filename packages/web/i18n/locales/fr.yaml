@@ -975,6 +975,7 @@ memory:
       title: Suppression échouée
       message: Échec de la suppression de tous les souvenirs. Veuillez réessayer.
 openwebui:
+  default_disclaimer: L’IA peut faire des erreurs. Veuillez vérifier les réponses.
   memories:
     title: Souvenirs de l'Agent
     select_agent: Sélectionner l'Agent

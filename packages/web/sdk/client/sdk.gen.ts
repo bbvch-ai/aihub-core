@@ -135,6 +135,8 @@ import type {
   GetAnonymousFileUrlError,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
+  GetChatDisclaimerData,
+  GetChatDisclaimerResponse,
   GetDatabasesData,
   GetDatabasesResponse,
   GetDatasetData,
@@ -2439,6 +2441,36 @@ export const getDefaultTenantRules = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/access/default-tenant-rules",
+    ...options,
+  });
+
+/**
+ * Get Chat Disclaimer
+ *
+ * Read the current tenant's chat disclaimer in the user's requested language.
+ */
+export const getChatDisclaimer = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetChatDisclaimerResponse = GetChatDisclaimerResponse,
+>(
+  options: Options<
+    TComposable,
+    GetChatDisclaimerData,
+    GetChatDisclaimerResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetChatDisclaimerResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/openai/chat-disclaimer",
     ...options,
   });
 

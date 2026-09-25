@@ -30370,6 +30370,32 @@ export type GetDefaultTenantRulesResponses = {
 export type GetDefaultTenantRulesResponse =
   GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
 
+export type GetChatDisclaimerData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/chat-disclaimer";
+};
+
+export type GetChatDisclaimerResponses = {
+  /**
+   * Response Get Chat Disclaimer  Tenant Id  Openai Chat Disclaimer Get
+   *
+   * Successful Response
+   */
+  200: string;
+};
+
+export type GetChatDisclaimerResponse =
+  GetChatDisclaimerResponses[keyof GetChatDisclaimerResponses];
+
 export type GetModelsData = {
   body?: never;
   path: {
