@@ -1,4 +1,5 @@
 import pytest
+from dagster._core.storage.tags import MAX_RETRIES_TAG
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence import IngestorType
 
@@ -57,3 +58,11 @@ class TestRegistrationGate:
     def test_a_custom_source_without_labels_is_rejected_at_build_time(self):
         with pytest.raises(ValueError, match="display_name"):
             rclone_pipeline_definitions(source="acme_sync")
+
+
+class TestAutomationRunsCarryARetryBudget:
+    def test_the_automation_sensor_tags_its_runs_with_max_retries(self):
+        repo = rclone_pipeline_definitions().get_repository_def()
+        automation_sensor = next(sensor for sensor in repo.sensor_defs if sensor.name == "AutomaterializeSensor")
+
+        assert automation_sensor.run_tags == {MAX_RETRIES_TAG: "2"}

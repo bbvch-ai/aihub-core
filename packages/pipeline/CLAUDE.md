@@ -543,7 +543,10 @@ hard-code a partition definition name in a factory.
 Four triggering mechanisms work together:
 
 - **Eager automation**: `AutomationCondition.eager()` on downstream assets — materialize immediately when upstream
-  changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`.
+  changes. Enabled by `default_automation_sensor(assets, minimum_interval_seconds=60)`. `eager()` counts a failed
+  launch as handled, so the sensor tags its runs `dagster/max_retries: "2"` and the instance config enables
+  `run_retries` with a default of 0: only those runs are re-executed from failure, observation, removal and teardown
+  runs are not.
 - **NATS sensor**: `nats_document_uploaded_sensor` — polls JetStream for `SourceUpdatedEvent` via
   `PipelineTypeTopicManager`. Triggers the observe job when documents are uploaded externally (e.g., via API). **One
   stream per pipeline, not per database**: the subject is keyed on the ingestor
@@ -607,6 +610,8 @@ failure alerts without per-asset wiring.
   automatically when the env is configured — consumer code in `app/*/__init__.py` needs no change.
 - **Manual composition**: consumers that build their own `Definitions` can import the factory directly and narrow
   `monitored_jobs=[...]` to specific jobs.
+- **Final attempt only**: a failed run whose `dagster/retry_number` (default 0) is below its `dagster/max_retries`
+  (default 0) is skipped, because the run-retry daemon will re-execute it. An untagged run always notifies.
 
 ## Playground
 
