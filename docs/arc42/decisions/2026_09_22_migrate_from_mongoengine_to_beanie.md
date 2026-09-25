@@ -58,7 +58,8 @@ Eighteen checks against FerretDB 2.5.0 and Beanie 2.2.0 produced the evidence re
   Beanie and MongoEngine write **identical document shapes**, and a synchronous `MongoClient` coexists with an
   `AsyncMongoClient` on one collection in one process, each reading the other's writes. Entities can move one at a time.
 - **The migration surface is smaller than the issue implies**\
-  36 entity classes live in `packages/core` (29) and `packages/bot` (7) **only**. `packages/pipeline` holds **zero** —
+  40 classes — **21 collections** to port, 2 abstract bases, and 17 embedded documents that travel with whichever
+  collection owns them — all in `packages/core` and `packages/bot` (3 collections). `packages/pipeline` holds **zero** —
   its two `Document` classes are LlamaIndex's and its `connect_to_mongo_db` is dead code. There is no synchronous
   context to work around, and no need for Bunnet or a permanent two-ODM split.
 - **Beanie 2.x uses PyMongo's supported async driver**\
@@ -86,9 +87,10 @@ exception: it fails loudly, but on every newly provisioned tenant.
    Enforced in CI, not left to a comment.
 
 2. **Every entity ported from a `strict: False` document declares `extra="allow"`**, until its drift has been normalised
-   by a migration. Today that is 18 of the 36 classes being ported, so `extra="allow"` is the default posture of this
-   migration, not an exception. Without it, a single `replace()` deletes every undeclared field. The other write paths
-   survive only because `save()` uses `$set`-style semantics — an implementation property no test of ours asserts.
+   by a migration. Today that is 15 of the 21 collections and 3 of the 17 embedded documents, so `extra="allow"` is the
+   default posture of this migration, not an exception. Without it, a single `replace()` deletes every undeclared field.
+   The other write paths survive only because `save()` uses `$set`-style semantics — an implementation property no test
+   of ours asserts.
 
 3. **`switch_db` is never translated by re-initialising a Document per call.** That translation passed a sequential test
    20/20 and then **silently misrouted under concurrency**: a write intended for one tenant's database landed in
@@ -170,25 +172,67 @@ longer a rollback target. The rollback window for a lossy change is therefore on
 
 ### Order of work
 
-**Before the first entity moves.** These cannot be done incrementally:
+Five phases. The ordering carries one dependency that is easy to miss: **the datetime normalisation is itself a
+migration**, so it cannot precede the framework that runs it.
 
-- **The test-suite loop-scope change.** `AsyncMongoClient` is loop-bound. Widening pytest-asyncio's loop scope works but
-  **cannot be mixed** with the default per-test scope, so all 913 `@pytest.mark.asyncio` tests move together and lose
-  per-test loop isolation. The 183 `@async_test` uses cannot be rescued by loop scope at all, because `asyncio.run()`
-  always creates its own loop; `packages/core/swiss_ai_hub/core/testing/asyncio_utils/bdd.py` is rewritten to share one.
-  `db_isolation` is unaffected — it drops the test database with a synchronous client.
-- **The lazy per-database routing registry** (rule 3).
-- **The datetime normalisation.** Five naive-local fields in three collections: `AgentClassEntity.first_discovered` and
-  `.last_discovered`, `ProcessClassEntity.first_discovered` and `.last_discovered`, and `ThreadEntity.created_at`.
-  Measured on a UTC+7 host, mixing the two conventions in one collection makes a freshly written timestamp read as **7
-  hours old — OFFLINE** against a 5-minute threshold. `ThreadEntity.created_at` is the trap: it has no field default and
-  is naive only because of two assignment sites, so a migration written from a scan of defaults misses it.
+**Phase 0 — foundations.** Nothing can be validated without these, and neither can be done incrementally.
 
-**Then, entity by entity**, ordered by symptom relief: `AgentConfigEntityDocument` → `AgentClassEntity` → `ThreadEntity`
-→ the persisted-event entities → access entities → RAG datalake → `packages/bot`.
+- **The test-suite loop-scope change**, first, because no port can be verified until the suite runs async Beanie.
+  `AsyncMongoClient` is loop-bound. Widening pytest-asyncio's loop scope works but **cannot be mixed** with the default
+  per-test scope, so all 913 `@pytest.mark.asyncio` tests move together and lose per-test loop isolation. The 183
+  `@async_test` uses cannot be rescued by loop scope at all, because `asyncio.run()` always creates its own loop;
+  `packages/core/swiss_ai_hub/core/testing/asyncio_utils/bdd.py` is rewritten to share one. `db_isolation` is unaffected
+  — it drops the test database with a synchronous client.
+- **Add Beanie as a dependency.**
+
+**Phase 1 — the migration framework, before any data moves.** Wire the runner with a leader lease (rule 4) and strictly
+sequential multi-database runs (rule 5); add tenant-provisioning stamping (rule 9); add the CI gates for rules 1, 7 and
+8\. This precedes Phase 2 because Phase 2 *is* a data migration — running it first would mean doing the risky thing
+before the safety net exists.
+
+**Phase 2 — the one data migration that must precede entity ports.** Five naive-local fields in three collections:
+`AgentClassEntity.first_discovered` and `.last_discovered`, `ProcessClassEntity.first_discovered` and
+`.last_discovered`, and `ThreadEntity.created_at`. Measured on a UTC+7 host, mixing the two conventions in one
+collection makes a freshly written timestamp read as **7 hours old — OFFLINE** against a 5-minute threshold.
+`ThreadEntity.created_at` is the trap: it has no field default and is naive only because of two assignment sites, so a
+migration written from a scan of defaults misses it.
+
+**Phase 3 — routing, before the entities that need it.** The lazy per-database registry (rule 3), required by **seven**
+entities: both persisted-event entities, `RefDoc`, and the whole RAG datalake (`BucketEntity`, `IngestorEntity`,
+`NamespaceEntity`, `SourcePipelineEntity`). Not required by waves 1–3 below, so it can run in parallel with Phase 2
+rather than blocking it.
+
+**Phase 4 — entities, one at a time.** See the wave order below.
+
+**Phase 5 — the payoff, and #1152's second acceptance criterion.** Normalise the accumulated drift on the
+`strict: False` classes, then tighten the models. Only possible once the framework exists.
 
 **Not part of this migration**, tracked separately because they are true regardless of the ODM: the `NCRequester`
 single-shot no-retry budget, and the fragility of a 5-minute `last_discovered` window as the definition of liveness.
+
+### Entity migration order
+
+**21 collections** to port, in five waves, driven by dependency first and symptom relief second. Three properties decide
+where an entity sits: `strict: False` (needs `extra="allow"`, rule 2), `switch_db` routing (needs the registry, rule 3),
+and naive-local datetimes (needs Phase 2).
+
+| Wave | Entities                                                                                                                                          | Needs first           | Why here                                                                                                                                                                                 |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `AgentConfigEntityDocument`, `ProcessConfigEntityDocument`, `NotificationEntity`                                                                  | nothing               | Clean: no `strict: False`, no routing, no naive dates, no aggregations. `AgentConfigEntityDocument` is also the config-RPC symptom, so the simplest entity is also the highest-value one |
+| 2    | `AgentClassEntity`, `ProcessClassEntity`, `ThreadEntity`                                                                                          | Phase 2               | All three hold the five naive-local fields. `AgentClassEntity` is the discovery symptom; `ThreadEntity` also carries embedded documents                                                  |
+| 3    | `RoleEntity`, `BearerToken`, `TenantMetadataEntity`, `UserTenantRoleEntity`, `UserDashboardEntity`                                                | nothing beyond rule 2 | Access and user entities: all `strict: False`, none routed. No new machinery                                                                                                             |
+| 4    | `PersistedAgentEventEntity`, `PersistedProcessEventEntity`, `RefDoc`, `BucketEntity`, `IngestorEntity`, `NamespaceEntity`, `SourcePipelineEntity` | **Phase 3**           | All seven route across databases; three also run the aggregation pipelines. Highest complexity in `packages/core`                                                                        |
+| 5    | `ConversationEntity`, `ConversationTracker`, `PathEntity`                                                                                         | nothing               | `packages/bot`: 7 call sites, none `strict: False`, none routed. Nothing depends on it, so it can float                                                                                  |
+
+**Embedded documents are not ported separately.** The 17 of them become plain Pydantic models and travel with whichever
+collection owns them.
+
+**Wave 1 is deliberately the easy one.** It proves the pattern, the test-suite conversion and the `to_thread` removal on
+the lowest-risk surface available, while still resolving a production symptom. If wave 1 is painful, the estimate for
+the rest is wrong, and that is cheap to discover there rather than in wave 4.
+
+Each port applies `extra="allow"` where the source had `strict: False`, and deletes that entity's `asyncio.to_thread`
+wrapper on the line being rewritten.
 
 ### The interim fix stays
 
@@ -249,8 +293,8 @@ resume after its worker thread returns. The benefit comes from freeing the loop,
   offered.
 - **The per-database routing registry is new code** with concurrency requirements that did not exist under MongoEngine,
   replacing a mechanical translation that fails in a cross-tenant direction.
-- **Migration effort across 36 entity classes and 144 `.objects(` call sites**, and the surface grows while the decision
-  is deliberated — `SourcePipelineEntity` landed on `main` during this evaluation. Every repository classmethod becomes
+- **Migration effort across 21 collections and 144 `.objects(` call sites**, and the surface grows while the decision is
+  deliberated — `SourcePipelineEntity` landed on `main` during this evaluation. Every repository classmethod becomes
   `async`, cascading into every service and test that calls it.
 - **The evaluation ran on a development host**, not production: 20 cores, Windows, single-node FerretDB, a synthetic
   saturator, no LLM traffic, no agent runners and a warm corpus, exercising only the config RPC path. The 123-second
