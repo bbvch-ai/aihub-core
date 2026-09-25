@@ -26,7 +26,7 @@ runs:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}
     - name: Pytest coverage comment
-      uses: MishaKav/pytest-coverage-comment@dd5b80bde6d16941f336518e92929e89069d8451  # v1.7.2
+      uses: MishaKav/pytest-coverage-comment@432ac90e8d345c93e1d90ee0838b35913abc9c9b  # v1.12.2
       with:
         unique-id-for-comment: ${{ inputs.working_directory }}
         junitxml-path: ${{ inputs.working_directory }}/pytest.xml
