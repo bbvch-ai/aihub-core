@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "swiss-ai-hub-core==0.322.0",
-    "uvicorn[standard]>=0.34.0",
+    "uvicorn[standard]>=0.48.0",
     "httpx>=0.28.1",
 ]
 
