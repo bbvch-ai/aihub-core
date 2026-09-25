@@ -1,6 +1,6 @@
 import hashlib
 import logging
-from asyncio import sleep
+from asyncio import sleep, to_thread
 from functools import reduce
 from operator import or_
 from typing import Annotated, override
@@ -168,7 +168,11 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_class_dto = AgentClassDTO.from_discovery_event(response)
                 unique_agents_dict[unique_key] = agent_class_dto
 
-                AgentClassEntity.create_or_update(response)
+                # One blocking write per responding class would serialize on the loop that also serves
+                # every request in this process. Nothing else refreshes `last_discovered`, and
+                # `AgentClassEntity.is_online` is only a 5-minute window on it — so a round that stalls
+                # here marks *every* agent class offline at once, not just the slow one.
+                await to_thread(AgentClassEntity.create_or_update, response)
 
         return list(unique_agents_dict.values())
 
