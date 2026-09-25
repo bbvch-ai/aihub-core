@@ -29,6 +29,7 @@ dependencies = [
     "llama-index-llms-azure-openai>=0.4.2",
     "stringcase>=1.2.0",
     "imapclient>=3.0.1",
+    "azure-identity>=1.19.0",
 ]
 
 [dependency-groups]

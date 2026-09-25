@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -7,8 +7,12 @@ from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.password import Password
+from swiss_ai_hub.core.form.elements.select_button import SelectButton
 from swiss_ai_hub.core.form.elements.toggle_switch import ToggleSwitch
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+
+_PASSWORD_AUTH_SELECTED = "$get(imap_auth_method).value === 'password'"
+_OAUTH2_AUTH_SELECTED = "$get(imap_auth_method).value === 'oauth2_client_credentials'"
 
 
 class ImapClientConfig(StepConfig):
@@ -20,10 +24,48 @@ class ImapClientConfig(StepConfig):
         Field(default=993, description="IMAP server port — 993 for implicit TLS."),
         Gt(0),
     ]
-    username: Annotated[str | InputText, Field(description="Mailbox login, usually the full email address.")]
+    auth_method: Annotated[
+        Literal["password", "oauth2_client_credentials"] | SelectButton,
+        Field(
+            default="password",
+            description="How to log in to the mailbox: a username and password, or an app-only OAuth 2.0 token from "
+            "Microsoft Entra ID (client credentials) for Microsoft 365 tenants with basic authentication disabled.",
+        ),
+    ]
+    username: Annotated[
+        str | InputText,
+        Field(description="Mailbox login, usually the full email address. With OAuth 2.0 it names the mailbox."),
+    ]
     password: Annotated[
         str | Password,
-        Field(default="", description="Mailbox password or app-specific token."),
+        Field(default="", description="Mailbox password or app-specific token — used only with password auth."),
+    ]
+    tenant_id: Annotated[
+        str | InputText,
+        Field(default="", description="Microsoft Entra ID tenant (directory) id — used only with OAuth 2.0."),
+    ]
+    client_id: Annotated[
+        str | InputText,
+        Field(default="", description="Application (client) id of the Entra ID app registration."),
+    ]
+    client_secret: Annotated[
+        str | Password,
+        Field(default="", description="Client secret of the Entra ID app registration."),
+    ]
+    oauth_authority: Annotated[
+        str,
+        Field(
+            default="login.microsoftonline.com",
+            description="Deployment-fixed Entra ID authority host; differs only for sovereign clouds.",
+        ),
+    ]
+    oauth_scope: Annotated[
+        str,
+        Field(
+            default="https://outlook.office365.com/.default",
+            description="Deployment-fixed scope requested for the IMAP access token; differs only for sovereign "
+            "clouds.",
+        ),
     ]
     use_tls: Annotated[
         bool | ToggleSwitch,
@@ -96,6 +138,23 @@ class ImapClientConfig(StepConfig):
                 max=65535,
                 step=1,
             ),
+            auth_method=SelectButton(
+                label=LocaleString.from_i18n_path("lib.imap.config.auth_method.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.auth_method.help"),
+                options=[
+                    {
+                        "label": LocaleString.from_i18n_path("lib.imap.config.auth_method.password_label"),
+                        "value": "password",
+                    },
+                    {
+                        "label": LocaleString.from_i18n_path("lib.imap.config.auth_method.oauth2_label"),
+                        "value": "oauth2_client_credentials",
+                    },
+                ],
+                option_label="label",
+                option_value="value",
+                ref="imap_auth_method",
+            ),
             username=InputText(
                 label=LocaleString.from_i18n_path("lib.imap.config.username.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.username.help"),
@@ -103,6 +162,22 @@ class ImapClientConfig(StepConfig):
             password=Password(
                 label=LocaleString.from_i18n_path("lib.imap.config.password.label"),
                 help=LocaleString.from_i18n_path("lib.imap.config.password.help"),
+                condition_if=_PASSWORD_AUTH_SELECTED,
+            ),
+            tenant_id=InputText(
+                label=LocaleString.from_i18n_path("lib.imap.config.tenant_id.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.tenant_id.help"),
+                condition_if=_OAUTH2_AUTH_SELECTED,
+            ),
+            client_id=InputText(
+                label=LocaleString.from_i18n_path("lib.imap.config.client_id.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.client_id.help"),
+                condition_if=_OAUTH2_AUTH_SELECTED,
+            ),
+            client_secret=Password(
+                label=LocaleString.from_i18n_path("lib.imap.config.client_secret.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.client_secret.help"),
+                condition_if=_OAUTH2_AUTH_SELECTED,
             ),
             use_tls=ToggleSwitch(
                 label=LocaleString.from_i18n_path("lib.imap.config.use_tls.label"),

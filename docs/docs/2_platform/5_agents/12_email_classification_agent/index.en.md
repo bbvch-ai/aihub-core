@@ -74,9 +74,14 @@ Create a profile from the **Email Processing Agent** blueprint in the Admin UI.
 
 ### Mailbox connection
 
-The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, username, password, TLS, inbox
-folder, and **Max Unread Messages**. There is no "processed folder" here — the classifier decides where each message
-goes.
+The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, authentication, username and
+password or Entra ID credentials, TLS, inbox folder, and **Max Unread Messages**. There is no "processed folder" here —
+the classifier decides where each message goes.
+
+For a Microsoft 365 mailbox with basic authentication disabled, choose **Microsoft 365 (OAuth 2.0)** under
+**Authentication**. The tenant needs a one-time setup by an administrator — an app registration, the `IMAP.AccessAsApp`
+permission, and access granted per mailbox — described step by step in
+[Microsoft 365 with OAuth 2.0](../11_email_agent/#microsoft-365-with-oauth-2-0).
 
 ### Categories
 

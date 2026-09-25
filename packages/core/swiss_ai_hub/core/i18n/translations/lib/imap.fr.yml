@@ -6,12 +6,31 @@ config:
   port:
     label: Port IMAP
     help: Port du serveur IMAP. Utiliser 993 pour le TLS implicite.
+  auth_method:
+    label: Authentification
+    help: Comment l'agent se connecte à la boîte aux lettres. Choisir Microsoft 365
+      (OAuth 2.0) pour les boîtes Microsoft 365 dont l'authentification de base est
+      désactivée ; une inscription d'application dans Microsoft Entra ID est requise.
+    password_label: Nom d'utilisateur et mot de passe
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Nom d'utilisateur
     help: Identifiant de la boîte aux lettres, généralement l'adresse e-mail complète.
+      Avec Microsoft 365 (OAuth 2.0), l'adresse de la boîte aux lettres à traiter.
   password:
     label: Mot de passe
     help: Mot de passe de la boîte aux lettres ou jeton spécifique à l'application.
+  tenant_id:
+    label: ID de locataire
+    help: ID de l'annuaire (locataire) de votre locataire Microsoft Entra ID.
+  client_id:
+    label: ID client
+    help: ID d'application (client) de l'inscription d'application Entra ID autorisée
+      à accéder à cette boîte aux lettres via IMAP.
+  client_secret:
+    label: Secret client
+    help: Secret client de l'inscription d'application Entra ID. Les secrets expirent
+      ; le renouveler ici avant sa date d'expiration.
   use_tls:
     label: Utiliser TLS
     help: Se connecter via TLS implicite. À désactiver uniquement pour les serveurs
