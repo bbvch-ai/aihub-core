@@ -775,6 +775,7 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,api
     # Probes $(hostname), not localhost: the worker binds the container address only,
     # so a loopback probe is refused. Same form as langfuse-web below.
     healthcheck:
@@ -874,6 +875,7 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: 'false'
       AUTH_DISABLE_SIGNUP: 'false'
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,api
     healthcheck:
       test:
         - CMD-SHELL

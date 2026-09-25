@@ -538,7 +538,11 @@ services:
         condition: service_healthy
       langfuse-web:
         condition: service_healthy
-    ports: [127.0.0.1:3030:3030]
+    ports:
+      - 127.0.0.1:3030:3030
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts: [host.docker.internal:host-gateway]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -569,6 +573,7 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,host.docker.internal
     # Probes $(hostname), not localhost: the worker binds the container address only,
     # so a loopback probe is refused. Same form as langfuse-web below.
     healthcheck:
@@ -601,7 +606,11 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-    ports: [6006:3000]
+    ports:
+      - 6006:3000
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts: [host.docker.internal:host-gateway]
     environment:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: http://localhost:6006
@@ -659,6 +668,7 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: 'false'
       AUTH_DISABLE_SIGNUP: 'false'
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,host.docker.internal
     healthcheck:
       test:
         - CMD-SHELL

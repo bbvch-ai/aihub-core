@@ -60,6 +60,10 @@
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
+{#- Langfuse dials both LLM connections we register from its own containers, and since 3.167 it refuses any
+    baseURL resolving to a private address — when the connection is written and again on every call through it.
+    These are the hostnames of those two connections, allowlisted so the in-cluster routes keep working. #}
+{%- set LANGFUSE_LLM_WHITELISTED_HOSTS = "litellm,host.docker.internal" if stage == 'dev' else "litellm,api" %}
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
@@ -880,6 +884,12 @@ services:
     ports:
       - "127.0.0.1:3030:3030"
     {%- endif %}
+    {%- if stage == 'dev' %}
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    {%- endif %}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -910,6 +920,9 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      {#- See ADR 2026_09_22_langfuse_llm_connections_stay_in_cluster. Both -web (write time) and
+          -worker (every judge call) validate the baseURL, so both need this. #}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: {{ LANGFUSE_LLM_WHITELISTED_HOSTS }}
     # Probes $(hostname), not localhost: the worker binds the container address only,
     # so a loopback probe is refused. Same form as langfuse-web below.
     healthcheck:
@@ -924,6 +937,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
+      {#- Deliberately no `proxy` or `egress`: the worker reaches LiteLLM and the API over `backend`.
+          Both LLM connections are registered with in-cluster URLs because of this. #}
       - backend
       - data  # For PostgreSQL access
       - storage  # For SeaweedFS S3 access
@@ -943,6 +958,12 @@ services:
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6006:3000"
+    {%- endif %}
+    {%- if stage == 'dev' %}
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     {%- endif %}
     {%- if stage in ['local', 'build'] %}
     # auth.${DOMAIN} (nip.io) resolves to 127.0.0.1 — the container's own loopback;
@@ -1018,6 +1039,9 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: "{{ 'true' if stage in ['nightly', 'latest'] else 'false' }}"
       AUTH_DISABLE_SIGNUP: "false"
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      {#- See ADR 2026_09_22_langfuse_llm_connections_stay_in_cluster. Both -web (write time) and
+          -worker (every judge call) validate the baseURL, so both need this. #}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: {{ LANGFUSE_LLM_WHITELISTED_HOSTS }}
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://$(hostname):3000/api/public/health"]
       interval: 30s
@@ -2925,6 +2949,9 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: {{ 'http://localhost:6006' if stage == 'dev' else 'https://langfuse.${DOMAIN}' }}
       LANGFUSE_PROJECT_ID: "aihub-project"
+      {#- Langfuse dials this from its own container to run agent experiments; langfuse-worker shares the
+          `backend` network with `api`, so the in-cluster name is reachable. Its hostname is allowlisted on the
+          Langfuse containers. Server-to-server traffic uses AIHUB_INTERNAL_API_BASE_URL instead. #}
       AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
