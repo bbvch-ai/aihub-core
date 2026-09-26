@@ -8,9 +8,14 @@ from llama_index.core.vector_stores.types import FilterCondition, VectorStoreQue
 from llama_index.core.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE, TYPE
-from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import get_partition_name_for_namespace
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
+    DEFAULT_PARTITION_NAME,
+    get_partition_name_for_namespace,
+)
 from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
+    DOCUMENT_IDS_PER_DELETE_EXPRESSION,
     MILVUS_DYNAMIC_FIELD_MAX_BYTES,
+    NODE_IDS_PER_DELETE,
     PartitionAwareMilvusVectorStore,
 )
 
@@ -209,6 +214,123 @@ def test_drop_collection_is_idempotent_when_absent() -> None:
     store.drop_collection()
 
     client.drop_collection.assert_not_called()
+
+
+def _store_for_document_deletes(
+    client: MagicMock, has_manual_partitions: bool = True
+) -> PartitionAwareMilvusVectorStore:
+    store = _store_with_client(client, has_manual_partitions=has_manual_partitions)
+    store.doc_id_field = DOCUMENT_ID
+    client.delete.return_value = {"delete_count": 2}
+    return store
+
+
+def test_document_delete_loads_only_the_namespace_partitions_and_default() -> None:
+    """Loading the whole collection is ~54 GB on a partitioned store; a removal must never do it."""
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+
+    store.delete_documents(["doc1"], ["alpha", "beta", "alpha"])
+
+    expected_partitions = [
+        get_partition_name_for_namespace("alpha"),
+        get_partition_name_for_namespace("beta"),
+        DEFAULT_PARTITION_NAME,
+    ]
+    client.load_partitions.assert_called_once_with(collection_name="tenant_db", partition_names=expected_partitions)
+    client.load_collection.assert_not_called()
+    assert [call.kwargs["partition_name"] for call in client.delete.call_args_list] == expected_partitions
+
+
+def test_document_delete_is_a_filter_on_the_document_id_field() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+
+    deleted = store.delete_documents(["doc1", "doc2"], ["alpha"])
+
+    client.delete.assert_any_call(
+        collection_name="tenant_db",
+        filter=f'{DOCUMENT_ID} in ["doc1","doc2"]',
+        partition_name=get_partition_name_for_namespace("alpha"),
+    )
+    client.query.assert_not_called()
+    assert deleted == 4
+
+
+def test_document_delete_batches_the_id_expression() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client, has_manual_partitions=False)
+    ids = [f"doc{index}" for index in range(DOCUMENT_IDS_PER_DELETE_EXPRESSION + 1)]
+
+    store.delete_documents(ids, ["alpha"])
+
+    filters = [call.kwargs["filter"] for call in client.delete.call_args_list]
+    assert len(filters) == 2
+    assert filters[0].count('"doc') == DOCUMENT_IDS_PER_DELETE_EXPRESSION
+    assert filters[1] == f'{DOCUMENT_ID} in ["doc{DOCUMENT_IDS_PER_DELETE_EXPRESSION}"]'
+
+
+def test_document_delete_on_a_legacy_collection_targets_default_only() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client, has_manual_partitions=False)
+
+    store.delete_documents(["doc1"], ["alpha"])
+
+    client.load_partitions.assert_called_once_with(
+        collection_name="tenant_db", partition_names=[DEFAULT_PARTITION_NAME]
+    )
+    client.load_collection.assert_not_called()
+    assert [call.kwargs["partition_name"] for call in client.delete.call_args_list] == [DEFAULT_PARTITION_NAME]
+
+
+def test_document_delete_matching_nothing_succeeds() -> None:
+    """pymilvus omits a zero delete_count; a retried removal of already deleted nodes must still pass."""
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+    client.delete.return_value = {}
+
+    assert store.delete_documents(["doc1"], ["alpha"]) == 0
+
+
+def test_document_delete_without_ids_touches_nothing() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+
+    assert store.delete_documents([], ["alpha"]) == 0
+
+    client.load_partitions.assert_not_called()
+    client.delete.assert_not_called()
+
+
+def test_node_ids_are_grouped_by_document_while_paging_one_partition() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+    iterator = client.query_iterator.return_value
+    iterator.next.side_effect = [
+        [{"id": "n1", DOCUMENT_ID: "doc1"}, {"id": "n2", DOCUMENT_ID: "doc2"}],
+        [{"id": "n3", DOCUMENT_ID: "doc1"}],
+        [],
+    ]
+
+    node_ids = store.node_ids_by_document("partition_7")
+
+    assert node_ids == {"doc1": ["n1", "n3"], "doc2": ["n2"]}
+    client.load_partitions.assert_called_once_with(collection_name="tenant_db", partition_names=["partition_7"])
+    assert client.query_iterator.call_args.kwargs["partition_names"] == ["partition_7"]
+    iterator.close.assert_called_once()
+
+
+def test_nodes_are_deleted_by_primary_key_in_batches() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+    client.delete.side_effect = lambda **kwargs: kwargs["ids"]
+    node_ids = [f"n{index}" for index in range(NODE_IDS_PER_DELETE + 5)]
+
+    deleted = store.delete_nodes_in_partition(node_ids, DEFAULT_PARTITION_NAME)
+
+    assert deleted == len(node_ids)
+    assert [len(call.kwargs["ids"]) for call in client.delete.call_args_list] == [NODE_IDS_PER_DELETE, 5]
+    assert {call.kwargs["partition_name"] for call in client.delete.call_args_list} == {DEFAULT_PARTITION_NAME}
 
 
 def test_stripping_children_keeps_summary_node_under_the_dynamic_field_limit() -> None:

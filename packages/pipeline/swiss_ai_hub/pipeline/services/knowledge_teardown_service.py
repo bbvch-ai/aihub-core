@@ -47,14 +47,15 @@ class KnowledgeTeardownService:
     ) -> None:
         logger.info(f"Tearing down namespace '{namespace_name}' in database '{db_name}'")
 
+        # Vectors first, so a Milvus failure leaves the files and records that still point at them. Filtered
+        # delete, never a partition drop: namespaces share hashed Milvus partitions, so dropping the partition
+        # would also wipe any colliding namespace's vectors.
+        build_vector_store(db_name).delete_by_namespace(namespace_name)
+
         build_s3_file_access_service().delete_prefix(bucket_name, f"{folder_name}/")
 
         MongoConnectionRegistry.ensure_alias(db_name)
         RefDoc.delete_by_namespace(db_name, namespace_name)
-
-        # Filtered delete, never a partition drop: namespaces share hashed Milvus partitions, so dropping the
-        # partition would also wipe any colliding namespace's vectors.
-        build_vector_store(db_name).delete_by_namespace(namespace_name)
 
         NamespaceEntity.delete_namespace(namespace_id)
 

@@ -32,7 +32,9 @@ packages/pipeline/                        # SDK framework
 │   │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
 │   │   ├── nodes/                         # Chunking, embedding, vector insertion, summaries
 │   │   ├── rclone/                        # data_version_by_partition_for_rclone_files (composite keys)
-│   │   └── source/routed/                 # Source pipeline write/remove path: bucket-routed data lake ops + announce
+│   │   ├── source/routed/                 # Source pipeline write/remove path: bucket-routed data lake ops + announce
+│   │   ├── teardown/                      # knowledge_teardown_op (database / namespace teardown)
+│   │   └── repair/                        # repair_orphaned_nodes_op (manual cleanup of stranded vector nodes)
 │   ├── resources/                         # External dependencies (ConfigurableResource subclasses)
 │   │   ├── data_lake/base/                # AbstractDataLakeClient, AbstractDataLakeClientResource
 │   │   ├── data_lake/s3/                  # S3DataLakeClient, S3DataLakeFileSystemResource
@@ -66,9 +68,12 @@ packages/pipeline/                        # SDK framework
 │   ├── source_pipelines/
 │   │   └── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
 │   ├── services/
-│   │   └── knowledge_teardown_service.py  # Destroys a database/namespace across every store
+│   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
+│   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
+│   ├── jobs/knowledge_teardown_job.py     # {ingestor}_knowledge_teardown
+│   ├── jobs/repair_orphaned_nodes_job.py  # {ingestor}_repair_orphaned_nodes (manual, dry run by default)
 │   ├── executors/factory.py               # default_process_executor (in-process)
 │   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 │   ├── types/                             # Domain types (Pydantic models)
@@ -133,7 +138,11 @@ processing chain regardless of origin:
 - `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB, flagged `is_ingested=False`
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
-- `removed_documents_factory` → cleanup orphaned documents
+- `removed_documents_factory` → cleanup orphaned documents: vector nodes first, then figures, then the MongoDB record.
+  The record goes last because it is the only marker of pending work — the next removal run finds the documents to
+  remove by their record, so a run that fails at Milvus is retried in full. Every step tolerates an already deleted
+  target. Nodes stranded before this order existed (#1925) are cleaned by the `{ingestor}_repair_orphaned_nodes` job
+  (see [Repairing Orphaned Vector Nodes](#repairing-orphaned-vector-nodes)).
 
 A document is only reported as ingested — to the API, the UI, and RAG agents — once its nodes are in Milvus. A parsed
 document has markdown but no embeddings, so it is not retrievable yet and must not be shown as complete.
@@ -247,13 +256,13 @@ legacy corpus) plus `datalake`, which would collide with the legacy per-instance
 **The id is not just a label.** Every deployment-global name derives from it, because asset keys are unique per Dagster
 deployment and `DynamicPartitionsDefinition` names are global to the instance:
 
-| Derived name             | Shape                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| Asset keys               | `[{ingestor}_datalake_to_vectorstore, data_lake\|documents\|nodes\|…]`        |
-| Partition registry       | `{ingestor}_document_partitions`                                              |
-| Job names                | `{ingestor}_source_observation`, `…_remove_documents`, `…_knowledge_teardown` |
-| JetStream stream/subject | `pipeline_{ingestor}_stream` / `pipeline.{ingestor}.>`                        |
-| Dagster intermediates    | `s3://dagster/{ingestor}/`                                                    |
+| Derived name             | Shape                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Asset keys               | `[{ingestor}_datalake_to_vectorstore, data_lake\|documents\|nodes\|…]`                                   |
+| Partition registry       | `{ingestor}_document_partitions`                                                                         |
+| Job names                | `{ingestor}_source_observation`, `…_remove_documents`, `…_knowledge_teardown`, `…_repair_orphaned_nodes` |
+| JetStream stream/subject | `pipeline_{ingestor}_stream` / `pipeline.{ingestor}.>`                                                   |
+| Dagster intermediates    | `s3://dagster/{ingestor}/`                                                                               |
 
 That is what lets two pipeline *types* run side by side. It also means **changing the id later strands everything**:
 existing databases still carry the old value and stop being claimed, and the old stream, partitions and asset history
@@ -589,6 +598,20 @@ sensor's cursor, so the fact that the partition set has not converged travels ba
 on an unhandled truncation tag and records the run id it answered, chaining observations until one truncates nothing.
 Without this, single-flight would trade the run storm for partially observed batches above 1000 files.
 
+## Repairing Orphaned Vector Nodes
+
+`{ingestor}_repair_orphaned_nodes` (`jobs/repair_orphaned_nodes_job.py` → `ops/repair/repair_orphaned_nodes_op.py` →
+`services/orphaned_node_repair_service.py`) deletes the Milvus nodes of documents that have neither a doc store record
+nor a file in the data lake. It is never scheduled: it scans every partition the database's namespaces hash to, plus
+`_default`, which is too expensive to run after each removal. Launch it by hand from the Launchpad with the
+`aihub/bucket` run tag. It is a **dry run by default**; set
+`ops: {repair_orphaned_nodes_op: {config: {dry_run: false}}}` to delete. The step's output metadata lists orphaned
+documents, orphaned nodes, deleted nodes and a per-document table.
+
+Safety: the keep set includes data-lake files, so a document between landing and record creation is kept; each delete
+batch re-checks that no record was created since the scan; nodes are deleted by the scanned primary keys, so nodes
+written after the scan (fresh uuids) are never touched.
+
 ## Run-Failure Notifications
 
 A separate sensor fires on every **failed run** in the code location and dispatches via Apprise to any configured
@@ -617,10 +640,10 @@ failure alerts without per-asset wiring.
 
 Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3000 (Dagster UI)
 
-**Launching an observe or remove run by hand** (from the Dagster UI's Launchpad) requires the `aihub/bucket` run tag —
-`aihub/bucket: playground` in the playground. Those runs learn their target database from the tag, not from a partition
-key, so without it the run fails with a `ValueError` naming the missing tag. Sensor- and schedule-launched runs set it
-for you; only manual launches need it.
+**Launching an observe, remove or repair run by hand** (from the Dagster UI's Launchpad) requires the `aihub/bucket` run
+tag — `aihub/bucket: playground` in the playground. Those runs learn their target database from the tag, not from a
+partition key, so without it the run fails with a `ValueError` naming the missing tag. Sensor- and schedule-launched
+runs set it for you; only manual launches need it.
 
 ## Local Dagster Instance
 
