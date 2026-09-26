@@ -338,6 +338,15 @@ API uses for uploads), so the ingestion pipeline picks the change up within its 
 daily observation. `rclone_remove_source_files` is chained after the observation via `run_after_success_sensor` and
 announces each removal the same way.
 
+**Unlanded files.** `eager()` counts a failed data-lake write as handled, and an unchanged data version never re-fires
+it. `unlanded_partition_retry_sensor` (after each successful observation of a bucket) asks `util/unlanded_partitions.py`
+(`UnlandedPartitions.find`) which of that bucket's partitions failed or ended without landing, and requests each through
+the unprioritized `{source}_retry_unlanded_files` job, at most 200 per tick. Attempts are the retry job's runs since the
+partition's last success, capped at `RCLONE_PIPELINE_RETRY_MAX_ATTEMPTS` (default 3) with a backoff of
+`RETRY_BASE_DELAY_MINUTES * 2**(attempt-1)`; run keys count all retry runs, so a reset never reuses one. Never-attempted
+partitions are left to `eager()`. The observation metadata carries `Missing from data lake` and `Retries exhausted`,
+also for an empty remote. The helper is generic on purpose, for the ingestion assets (#1813).
+
 **Cleanup.** `SourceBucketCleanupSensorFor_{source}` (`sensors/source_bucket_cleanup_sensor.py`) drops the partitions
 and the daemon remote of every database that still has partitions but no live row pointing at this source. Storage
 teardown stays with the ingestion pipeline.
@@ -735,7 +744,8 @@ vector_store/, doc_store/, llm/, share_point/, rclone/ (client only), local_file
 **Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/` — `nats/nats_document_uploaded_sensor.py` (uploads),
 `knowledge_teardown_sensor.py` (deletions), `ingestor_registration_sensor.py` / `source_pipeline_registration_sensor.py`
 (labels + form announcement), `source_bucket_cleanup_sensor.py` (forget databases that left a source),
-`run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py` (alerting)
+`run_after_success_sensor.py` (job chaining), `run_failure_notification_sensor.py` (alerting),
+`unlanded_partition_retry_sensor.py` (re-request failed data-lake writes)
 
 **Route-per-run core** (read these before touching Stage 2 or the source pipeline): `util/run_routing.py` (how a run
 learns its bucket, `owned_by_ingestor` / `owned_by_source`), `util/store_builders.py` (bucket → stores),

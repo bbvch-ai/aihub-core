@@ -140,6 +140,11 @@ publishes a `SourceUpdatedEvent` on the owning ingestor's subject, the same even
 ingestion pipeline picks the change up within its sensor interval instead of at its next daily observation. The sync
 itself runs on a daily schedule.
 
+A file whose write to the data lake failed is requested again after each observation of its database, even when it has
+not changed at the source. After `RCLONE_PIPELINE_RETRY_MAX_ATTEMPTS` failed attempts it is left alone until it changes
+at the source. The observation metadata shows how many files are missing from the data lake (`Missing from data lake`)
+and how many reached that limit (`Retries exhausted`).
+
 ### Deployment
 
 The platform ships the pipeline as the `rclone_pipeline` compose service (Dagster workspace entry `rclone_pipeline`),
@@ -151,6 +156,8 @@ next to the `rclone` daemon it drives over the RC API. Nothing per source is dep
 | `RCLONE_URL`, `RCLONE_RC_USER`, `RCLONE_RC_PASS` | Reach and authenticate against the rclone daemon                                                       |
 | `RCLONE_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE`   | Time of the daily per-database sync                                                                    |
 | `RCLONE_PIPELINE_MAX_PARTITIONS`                 | Partitions added or removed per database per observation                                               |
+| `RCLONE_PIPELINE_RETRY_MAX_ATTEMPTS`             | Optional: retries of a file whose data-lake write failed (default 3, 0 disables them)                  |
+| `RCLONE_PIPELINE_RETRY_BASE_DELAY_MINUTES`       | Optional: wait after the first retry, doubling with each further one (default 10)                      |
 | `RCLONE_LOCAL_SOURCE_ROOT`                       | Optional: directory inside the rclone container that `local` sources may read; unset hides the backend |
 
 The `rclone` container keeps no configuration file: the pipeline re-creates each database's remote from the stored
