@@ -3,12 +3,15 @@ from collections.abc import Sequence
 
 from dagster import (
     DefaultSensorStatus,
+    DagsterInstance,
+    DagsterRun,
     GraphDefinition,
     JobDefinition,
     RunFailureSensorContext,
     SensorDefinition,
     run_failure_sensor,
 )
+from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG
 from dagster_apprise import AppriseConfig, AppriseResource
 from swiss_ai_hub.core.infrastructure import NotificationSettings
 from swiss_ai_hub.core.infrastructure.notification.notification_settings import (
@@ -57,6 +60,8 @@ def run_failure_notification_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: RunFailureSensorContext) -> None:
+        if _will_be_retried(context.instance, context.dagster_run):
+            return
         message = _format_failure_message(context)
         sent = resource.notify_run_status(
             run=context.dagster_run,
@@ -98,6 +103,19 @@ def run_failure_notification_sensors_from_settings(
             name=name,
         ),
     ]
+
+
+def _will_be_retried(instance: DagsterInstance, run: DagsterRun) -> bool:
+    """An attempt the run-retry daemon will re-execute is not the final word, so only the last one notifies.
+
+    The daemon copies the parent's tags onto a retry and numbers it by the size of its run group, so an untagged run
+    (budget 0) always notifies and a run with budget N notifies on retry number N. The tag alone is not enough: an
+    instance with run retries disabled (a stale ``dagster.yaml``) never re-executes the run, which would then fail
+    silently.
+    """
+    retry_number = int(run.tags.get(RETRY_NUMBER_TAG, "0"))
+    max_retries = int(run.tags.get(MAX_RETRIES_TAG, "0"))
+    return instance.run_retries_enabled and retry_number < max_retries
 
 
 def _format_failure_message(context: RunFailureSensorContext) -> str:
