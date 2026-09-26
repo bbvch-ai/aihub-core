@@ -698,15 +698,7 @@ class KnowledgeService:
         """
         bucket = BucketEntity.get_bucket_by_db_name(database)
         KnowledgeService._reject_if_sourced(bucket)
-
-        try:
-            NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
-            raise HTTPException(
-                status_code=409,
-                detail=f"Folder '{namespace}' already exists in database '{database}'.",
-            )
-        except DoesNotExist:
-            pass
+        KnowledgeService._reject_if_namespace_taken(bucket, database, namespace, request.folder_name)
 
         display_name_entity = await KnowledgeService._create_and_translate_locale_entity(
             text=request.display_name, t=t, llm_config=llm_config, user=user
@@ -715,13 +707,18 @@ class KnowledgeService:
             request.description, t, llm_config, user
         )
 
-        namespace_entity = NamespaceEntity.create_namespace(
-            bucket_id=str(bucket.id),
-            namespace_name=namespace,
-            folder_name=request.folder_name,
-            display_name=display_name_entity,
-            description=description_entity,
-        )
+        try:
+            namespace_entity = NamespaceEntity.create_namespace(
+                bucket_id=str(bucket.id),
+                namespace_name=namespace,
+                folder_name=request.folder_name,
+                display_name=display_name_entity,
+                description=description_entity,
+            )
+        except NotUniqueError:
+            raise HTTPException(
+                status_code=409, detail=f"Folder '{namespace}' already exists in database '{database}'."
+            ) from None
 
         if user.acting_within_tenant is not None:
             KnowledgeService._grant_knowledge_access(
@@ -741,6 +738,34 @@ class KnowledgeService:
             display_name=KnowledgeService._safe_extract_locale_string(namespace_entity.display_name, t),
             description=KnowledgeService._safe_extract_locale_string(namespace_entity.description, t),
         )
+
+    @staticmethod
+    def _reject_if_namespace_taken(bucket: BucketEntity, database: str, namespace: str, folder_name: str) -> None:
+        """The name is compared as it will be stored, sanitised, or ``hr docs`` would pass next to ``hr_docs`` and
+        hit the unique index. A folder may back only one namespace: the pipeline resolves a namespace by its folder,
+        and two rows for one folder fail that lookup for the whole database."""
+        bucket_id = str(bucket.id)
+        stored_name = NamespaceEntity.sanitize_namespace_name(namespace)
+        try:
+            NamespaceEntity.get_namespace_by_bucket_and_name(bucket_id, stored_name)
+        except DoesNotExist:
+            pass
+        else:
+            raise HTTPException(
+                status_code=409, detail=f"Folder '{namespace}' already exists in database '{database}'."
+            )
+        try:
+            owner = NamespaceEntity.get_namespace_by_bucket_and_folder(bucket_id, folder_name)
+        except DoesNotExist:
+            pass
+        else:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Folder name '{folder_name}' is already used by folder '{owner.namespace_name}' "
+                    f"in database '{database}'."
+                ),
+            )
 
     @staticmethod
     async def update_namespace(

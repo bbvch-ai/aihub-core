@@ -4,10 +4,14 @@ from dagster import build_op_context
 
 from swiss_ai_hub.pipeline.ops.source.routed.announce_removed_files import announce_removed_files
 from swiss_ai_hub.pipeline.ops.source.routed.build_data_lake_uri_for_bucket import build_data_lake_uri_for_bucket
+from swiss_ai_hub.pipeline.ops.source.routed.delete_data_lake_files_from_bucket import (
+    delete_data_lake_files_from_bucket,
+)
 from swiss_ai_hub.pipeline.ops.source.routed.fetch_bucket_files_to_remove import fetch_bucket_files_to_remove
 from swiss_ai_hub.pipeline.ops.source.routed.write_data_lake_file_to_bucket import write_data_lake_file_to_bucket
-from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
 from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
+from swiss_ai_hub.pipeline.util.namespace_collision_error import NamespaceCollisionError
 from swiss_ai_hub.pipeline.util.run_routing import BUCKET_RUN_TAG
 
 _ROUTED = "swiss_ai_hub.pipeline.ops.source.routed"
@@ -60,24 +64,61 @@ class TestFetchBucketFilesToRemove:
         context = build_op_context(run_tags={BUCKET_RUN_TAG: "hrdocs"})
         client = MagicMock()
         client.build_uri.side_effect = lambda file_path: f"s3://hrdocs/{file_path}"
-        client.get_all_files.return_value = [
-            DataLakeFile.from_content(uri="s3://hrdocs/Policies/keep.pdf", content=b"k"),
-            DataLakeFile.from_content(uri="s3://hrdocs/Policies/gone.pdf", content=b"g"),
-        ]
+        client.list_ingestible_uris.return_value = ["s3://hrdocs/Policies/keep.pdf", "s3://hrdocs/Policies/gone.pdf"]
         with patch(f"{_ROUTED}.fetch_bucket_files_to_remove.build_s3_data_lake_client", return_value=client):
             removed = fetch_bucket_files_to_remove(
                 context, [MinimalRcloneFile(name="keep.pdf", path="/Policies/keep.pdf", size=1, modified=1)]
             )
 
-        assert [file.uri for file in removed] == ["s3://hrdocs/Policies/gone.pdf"]
+        assert removed == ["s3://hrdocs/Policies/gone.pdf"]
+
+    def test_a_renamed_colliding_folder_is_removed_although_its_namespace_cannot_be_resolved(self):
+        """``hr docs`` collided with ``hr_docs`` and was renamed at the source. Its old keys must go, or the
+        database never heals (#1927); resolving their namespace would fail exactly as the observation did."""
+        context = build_op_context(run_tags={BUCKET_RUN_TAG: "hrdocs"})
+        s3_client = MagicMock()
+        s3_client.get_paginator.return_value.paginate.return_value = [
+            {"Contents": [{"Key": "hr docs/a.md"}, {"Key": "hr_docs/b.md"}, {"Key": "hr_policies/a.md"}]}
+        ]
+        client = S3DataLakeClient(container_name="hrdocs", s3_client=s3_client, ensure_bucket=False)
+        source_files = [
+            MinimalRcloneFile(name="b.md", path="/hr_docs/b.md", size=1, modified=1),
+            MinimalRcloneFile(name="a.md", path="/hr_policies/a.md", size=1, modified=1),
+        ]
+        with (
+            patch(f"{_ROUTED}.fetch_bucket_files_to_remove.build_s3_data_lake_client", return_value=client),
+            patch(
+                "swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client.get_or_create_namespace_for_directory",
+                side_effect=NamespaceCollisionError(
+                    directory="hr docs", existing_folder="hr_docs", namespace_name="hr_docs"
+                ),
+            ) as namespace,
+        ):
+            removed = fetch_bucket_files_to_remove(context, source_files)
+
+        assert removed == ["s3://hrdocs/hr docs/a.md"]
+        namespace.assert_not_called()
 
 
 class TestAnnounceRemovedFiles:
     def test_one_object_key_per_removed_file(self):
         context = build_op_context(run_tags={BUCKET_RUN_TAG: "hrdocs"})
-        removed = [DataLakeFile.from_content(uri="s3://hrdocs/Policies/gone.pdf", content=b"g")]
+        removed = ["s3://hrdocs/Policies/gone.pdf"]
         with patch(f"{_ROUTED}.announce_removed_files.notify_source_updated") as notify:
             output = announce_removed_files(context, removed)
 
         notify.assert_called_once_with("hrdocs", ["Policies/gone.pdf"])
         assert output.value == removed
+
+
+class TestDeleteDataLakeFilesFromBucket:
+    def test_deletes_each_object_and_its_figures(self):
+        context = build_op_context(run_tags={BUCKET_RUN_TAG: "hrdocs"})
+        client = MagicMock()
+        client.directory_exists.return_value = True
+        with patch(f"{_ROUTED}.delete_data_lake_files_from_bucket.build_s3_data_lake_client", return_value=client):
+            output = delete_data_lake_files_from_bucket(context, ["s3://hrdocs/hr docs/a.md"])
+
+        client.delete_file.assert_called_once_with(uri="s3://hrdocs/hr docs/a.md")
+        client.delete_directory.assert_called_once()
+        assert output.value == ["s3://hrdocs/hr docs/a.md"]

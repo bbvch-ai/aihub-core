@@ -4,7 +4,6 @@ from swiss_ai_hub.pipeline.ops.data_lake.delete_data_lake_files_from_data_lake i
     delete_data_lake_files_from_data_lake,
 )
 from swiss_ai_hub.pipeline.ops.source.fetch_data_lake_files_to_remove import fetch_data_lake_files_to_remove
-from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
@@ -28,7 +27,7 @@ def removed_data_lake_files_factory(key: AssetKey, source_key: str | AssetKey) -
         ins={"source_files": AssetIn(key=source_key)},
         description="Removes documents from the data lake that are no longer present in the source system.",
     )
-    def removed_datalake_files(source_files: list[MinimalSourceFile]) -> Output[list[DataLakeFile]]:
+    def removed_datalake_files(source_files: list[MinimalSourceFile]) -> Output[list[str]]:
         return delete_data_lake_files_from_data_lake(fetch_data_lake_files_to_remove(source_files))
 
     return removed_datalake_files
