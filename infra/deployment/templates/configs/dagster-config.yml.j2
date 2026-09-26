@@ -103,8 +103,9 @@ run_monitoring:
   poll_interval_seconds: 120     # Check run status every 2 min
 
 # Only runs tagged dagster/max_retries are re-executed (from failure). The
-# pipeline code locations tag their automation-launched asset runs, so a
-# transient outage no longer leaves a partition failed until its source changes.
+# rclone source pipeline tags its automation-launched data-lake writes, so a
+# transient outage no longer leaves a file failed until it changes at the
+# source. Ingestion runs stay untagged (#1813).
 run_retries:
   enabled: true
   max_retries: 0

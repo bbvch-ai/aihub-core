@@ -60,9 +60,14 @@ class TestRegistrationGate:
             rclone_pipeline_definitions(source="acme_sync")
 
 
-class TestAutomationRunsCarryARetryBudget:
-    def test_the_automation_sensor_tags_its_runs_with_max_retries(self):
-        repo = rclone_pipeline_definitions().get_repository_def()
-        automation_sensor = next(sensor for sensor in repo.sensor_defs if sensor.name == "AutomaterializeSensor")
+def _automation_sensor(definitions):
+    return definitions.get_repository_def().get_sensor_def("AutomaterializeSensor")
 
-        assert automation_sensor.run_tags == {MAX_RETRIES_TAG: "2"}
+
+class TestOnlyTheSourcePipelineRetriesAutomationRuns:
+    def test_the_rclone_automation_sensor_tags_its_runs_with_max_retries(self):
+        assert _automation_sensor(rclone_pipeline_definitions()).run_tags == {MAX_RETRIES_TAG: "2"}
+
+    def test_the_ingestion_automation_sensor_leaves_its_runs_untagged(self):
+        """A file that fails to parse fails every time; retrying the run would only parse it three times (#1813)."""
+        assert MAX_RETRIES_TAG not in _automation_sensor(document_ingestion_pipeline_definitions()).run_tags

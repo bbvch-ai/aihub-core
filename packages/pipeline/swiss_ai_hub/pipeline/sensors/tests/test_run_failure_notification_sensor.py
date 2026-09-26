@@ -125,13 +125,14 @@ class TestDispatchDelegatesToApprise:
 
 class TestNotifiesOnlyTheFinalAttempt:
     @staticmethod
-    def _notify_count_for_failed_run(tags: dict[str, str]) -> int:
+    def _notify_count_for_failed_run(tags: dict[str, str], *, run_retries_enabled: bool = True) -> int:
         with patch("swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor.AppriseResource") as resource_cls:
             resource_instance = resource_cls.return_value
             resource_instance.notify_run_status.return_value = True
             sensor = run_failure_notification_sensor(urls=["slack://a/b/c/#ops"])
 
-            with DagsterInstance.ephemeral() as instance:
+            settings = {"run_retries": {"enabled": run_retries_enabled}}
+            with DagsterInstance.ephemeral(settings=settings) as instance:
                 result = _failing_job.execute_in_process(instance=instance, raise_on_error=False, tags=tags)
                 run = instance.get_run_by_id(result.run_id)
                 failure_entry = next(
@@ -158,6 +159,10 @@ class TestNotifiesOnlyTheFinalAttempt:
 
     def test_run_without_retry_budget_notifies(self) -> None:
         assert self._notify_count_for_failed_run({}) == 1
+
+    def test_a_tagged_run_notifies_when_the_instance_does_not_retry(self) -> None:
+        """A stale instance config ignores the budget, so this first failure is also the last one."""
+        assert self._notify_count_for_failed_run({MAX_RETRIES_TAG: "2"}, run_retries_enabled=False) == 1
 
 
 class TestFromSettings:

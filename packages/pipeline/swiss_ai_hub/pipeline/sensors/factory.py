@@ -1,23 +1,25 @@
 from collections.abc import Sequence
+from typing import Annotated
 
 from dagster import AssetsDefinition, AutomationConditionSensorDefinition, DefaultSensorStatus
 from dagster._core.storage.tags import MAX_RETRIES_TAG
 
-AUTOMATION_RUN_MAX_RETRIES = 2
-
 
 def default_automation_sensor(
-    assets: Sequence[AssetsDefinition], minimum_interval_seconds=60
+    assets: Sequence[AssetsDefinition],
+    minimum_interval_seconds=60,
+    max_retries: Annotated[int, "Run re-executions per failed automation run; 0 leaves runs untagged"] = 0,
 ) -> AutomationConditionSensorDefinition:
     """Sensor required to enable auto asset materialization.
 
-    Its runs carry a retry budget because `eager()` treats a failed launch as handled: without a re-execution, a
-    partition that failed on a transient outage stays failed until its upstream data version changes.
+    A retry budget is opt-in because `eager()` treats a failed launch as handled: a pipeline whose failures are mostly
+    transient (the rclone data-lake write) wants its partitions re-executed, while one whose failures are mostly
+    deterministic (parsing) would only repeat the same expensive failure.
     """
     return AutomationConditionSensorDefinition(
         "AutomaterializeSensor",
         target=assets,
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=minimum_interval_seconds,
-        run_tags={MAX_RETRIES_TAG: str(AUTOMATION_RUN_MAX_RETRIES)},
+        run_tags={MAX_RETRIES_TAG: str(max_retries)} if max_retries else None,
     )
