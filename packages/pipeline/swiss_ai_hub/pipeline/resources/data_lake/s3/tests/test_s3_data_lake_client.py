@@ -2,7 +2,11 @@ import base64
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
+import pytest
+from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
+
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
+from swiss_ai_hub.pipeline.util.namespace_collision_error import NamespaceCollisionError
 
 PLAIN_MD5_ETAG = "33d0c38d07a0671842cffe80c9973b8c"
 CHUNKED_ETAG = "33d0c38d07a0671842cffe80c9973b8c-2"
@@ -195,3 +199,80 @@ class TestCreateDataLakeFilesFromUris:
 
         assert len(files) == 25
         assert namespace.call_count == 1
+
+
+def _collide_on_hr_docs(bucket_name: str, directory_name: str) -> str:
+    if directory_name == "hr docs":
+        raise NamespaceCollisionError(directory=directory_name, existing_folder="hr_docs", namespace_name="hr_docs")
+    return directory_name
+
+
+class TestListFiles:
+    """Two folders that sanitise to one namespace name must cost only the second folder's files (#1927)."""
+
+    @patch(NAMESPACE_PATCH_TARGET, side_effect=_collide_on_hr_docs)
+    def test_a_colliding_folder_is_skipped_and_every_other_file_listed(self, _namespace: MagicMock) -> None:
+        s3_client = _paginating(
+            _make_s3_client(PLAIN_MD5_ETAG),
+            [("hr_docs/b.md", PLAIN_MD5_ETAG), ("hr docs/a.md", PLAIN_MD5_ETAG), ("policies/c.md", PLAIN_MD5_ETAG)],
+        )
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        listing = client.list_files()
+
+        assert [file.uri for file in listing.files] == ["s3://bucket/hr_docs/b.md", "s3://bucket/policies/c.md"]
+        assert [file.uri for file in listing.skipped] == ["s3://bucket/hr docs/a.md"]
+        assert "'hr docs'" in listing.skipped[0].reason and "'hr_docs'" in listing.skipped[0].reason
+
+    @patch(NAMESPACE_PATCH_TARGET, side_effect=_collide_on_hr_docs)
+    def test_a_colliding_folder_is_looked_up_once(self, namespace: MagicMock) -> None:
+        s3_client = _paginating(
+            _make_s3_client(PLAIN_MD5_ETAG),
+            [(f"hr docs/file{index}.md", PLAIN_MD5_ETAG) for index in range(5)],
+        )
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        listing = client.list_files()
+
+        assert len(listing.skipped) == 5
+        assert namespace.call_count == 1
+
+    @patch(NAMESPACE_PATCH_TARGET, side_effect=RuntimeError("mongo unavailable"))
+    def test_any_other_lookup_failure_fails_the_listing(self, _namespace: MagicMock) -> None:
+        """Skipping on it would drop every partition of the database and let the removal job delete its files."""
+        s3_client = _paginating(_make_s3_client(PLAIN_MD5_ETAG), [("policies/c.md", PLAIN_MD5_ETAG)])
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        with pytest.raises(RuntimeError, match="mongo unavailable"):
+            client.list_files()
+
+    @patch(NAMESPACE_PATCH_TARGET, side_effect=_collide_on_hr_docs)
+    def test_get_all_files_returns_only_the_listed_files(self, _namespace: MagicMock) -> None:
+        s3_client = _paginating(
+            _make_s3_client(PLAIN_MD5_ETAG), [("hr_docs/b.md", PLAIN_MD5_ETAG), ("hr docs/a.md", PLAIN_MD5_ETAG)]
+        )
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        assert [file.uri for file in client.get_all_files()] == ["s3://bucket/hr_docs/b.md"]
+
+
+class TestListIngestibleUris:
+    @patch(NAMESPACE_PATCH_TARGET)
+    def test_lists_the_same_objects_as_the_listing_without_any_namespace_lookup(self, namespace: MagicMock) -> None:
+        s3_client = _paginating(
+            _make_s3_client(PLAIN_MD5_ETAG),
+            [
+                ("root.md", PLAIN_MD5_ETAG),
+                ("hr docs/", PLAIN_MD5_ETAG),
+                ("hr docs/a.md", PLAIN_MD5_ETAG),
+                ("hr_docs/b.md", PLAIN_MD5_ETAG),
+                (f"hr_docs/{FIGURES_DIRECTORY_NAME}/fig.png", PLAIN_MD5_ETAG),
+                ("x/.dagster/run.pkl", PLAIN_MD5_ETAG),
+            ],
+        )
+        client = S3DataLakeClient(container_name="bucket", s3_client=s3_client)
+
+        uris = client.list_ingestible_uris()
+
+        assert uris == ["s3://bucket/hr docs/a.md", "s3://bucket/hr_docs/b.md"]
+        namespace.assert_not_called()

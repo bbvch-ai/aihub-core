@@ -329,8 +329,10 @@ one bucket-tagged run per owned database daily (`owned_by_ingestor` is the Stage
 
 **Namespaces are generated.** Files land at `s3://{bucket}/{top-level folder}/…` and the ingestion pipeline maps the
 first path segment to a namespace. Files directly at the root of `root_path` are skipped and counted in the observation
-metadata. A sourced database refuses manual upload, hand-made namespaces and manual document deletion; it may be deleted
-as a whole.
+metadata. A folder whose name sanitises to a namespace another folder already owns (`hr docs` next to `hr_docs`) is
+skipped too (`NamespaceCollisionError`, listed in the ingestion observation's metadata); removal compares URIs only
+(`list_ingestible_uris`), so renaming that folder at the source repairs the database. A sourced database refuses manual
+upload, hand-made namespaces and manual document deletion; it may be deleted as a whole.
 
 **Reaching the ingestion pipeline.** After every written or removed file `util/source_updated_notifier.py` publishes a
 `SourceUpdatedEvent` on the owning ingestor's subject through the core `SourceUpdatedPublisher` (the same publisher the
