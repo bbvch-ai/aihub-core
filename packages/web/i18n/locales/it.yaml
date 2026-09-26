@@ -903,6 +903,8 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona almeno uno spazio dei nomi
       help: Vengono cercati solo gli spazi dei nomi selezionati
+      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli spazi
+        dei nomi». Altrimenti la configurazione non può essere salvata.
     allNamespaces:
       label: Cerca in tutti gli spazi dei nomi
       help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli

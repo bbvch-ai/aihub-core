@@ -347,6 +347,7 @@ class ProcessService:
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -398,6 +399,7 @@ class ProcessService:
             class_entity.process_config_specs.to_specs() if class_entity.process_config_specs else ConfigSpecs()
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

@@ -7,6 +7,7 @@ from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAut
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.persistence.rag.vectors.stores.namespace_scope_rule import NamespaceScopeRule
 
 
 class VectorStoreInput(PrimeVueElement):
@@ -106,7 +107,7 @@ class VectorStoreInput(PrimeVueElement):
     ) -> list[ConfigAuthorizationViolation]:
         """Named namespaces are checked one by one; ``all_namespaces`` needs a rule covering the whole database.
 
-        An empty list without the flag is left to model validation, which rejects it.
+        An empty list without the flag grants nothing, so it raises no violation here; `validate_value` rejects it.
         """
         if not isinstance(value, dict) or not isinstance(value.get("collection_name"), str):
             return []
@@ -137,3 +138,13 @@ class VectorStoreInput(PrimeVueElement):
             for namespace in namespaces
             if isinstance(namespace, str) and not access_checker.has_access_to_knowledge_namespace(database, namespace)
         ]
+
+    def validate_value(self, field_path: str, value: Any, t: LocaleHandler) -> list[str]:
+        """Applies the namespace-scope rule of `MilvusVectorStoreConfig`, whose validator the API never runs."""
+        if not isinstance(value, dict) or not isinstance(value.get("collection_name"), str):
+            return []
+        namespaces = value.get("index_namespaces") or []
+        if not isinstance(namespaces, list):
+            return []
+        scope_error = NamespaceScopeRule.error(namespaces, value.get("all_namespaces") is True)
+        return [scope_error] if scope_error else []

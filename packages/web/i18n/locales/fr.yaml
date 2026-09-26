@@ -905,6 +905,8 @@ lib:
       label: Espaces de noms
       placeholder: Sélectionner au moins un espace de noms
       help: Seuls les espaces de noms sélectionnés sont recherchés
+      required: Sélectionner au moins un espace de noms ou activer « Rechercher dans
+        tous les espaces de noms ». Sinon, la configuration ne peut pas être enregistrée.
     allNamespaces:
       label: Rechercher dans tous les espaces de noms
       help: Chaque espace de noms de cette base est recherché, y compris ceux ajoutés
