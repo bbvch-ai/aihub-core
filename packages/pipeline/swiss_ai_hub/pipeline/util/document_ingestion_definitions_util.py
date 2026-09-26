@@ -30,6 +30,7 @@ from swiss_ai_hub.pipeline.io.routed_s3_data_lake_io_manager import RoutedS3Data
 from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
 from swiss_ai_hub.pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from swiss_ai_hub.pipeline.jobs.knowledge_teardown_job import knowledge_teardown_job
+from swiss_ai_hub.pipeline.jobs.repair_orphaned_nodes_job import repair_orphaned_nodes_job
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
 from swiss_ai_hub.pipeline.resources.factory import default_io_manager_s3_datalake_resources
 from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
@@ -121,6 +122,7 @@ def document_ingestion_pipeline_definitions(
         asset_selection=AssetSelection.keys(removed_documents_key),
     )
     teardown_job = knowledge_teardown_job(source_location_name=ingestor)
+    repair_job = repair_orphaned_nodes_job(source_location_name=ingestor)
 
     announced_config = config or DocumentIngestionConfig.as_form(
         llm_model=settings.LLM_MODEL,
@@ -159,7 +161,7 @@ def document_ingestion_pipeline_definitions(
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
-        jobs=[observe_job, remove_job, teardown_job],
+        jobs=[observe_job, remove_job, teardown_job, repair_job],
         schedules=[
             per_bucket_observe_schedule(
                 observe_job,
