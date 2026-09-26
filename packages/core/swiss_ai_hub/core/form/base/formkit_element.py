@@ -73,3 +73,12 @@ class FormkitElement(BaseModel, abc.ABC):
         passed down for elements that reference tenants.
         """
         return []
+
+    def validate_value(self, field_path: str, value: Any, t: LocaleHandler) -> list[str]:
+        """Messages for a submitted value that the config model would reject when the runtime loads it.
+
+        Override in elements whose data type carries a cross-field rule: the API validates saves against a
+        model rebuilt from the JSON Schema, which drops Python validators, so without this such a value is
+        stored and then aborts every run. The default accepts every value.
+        """
+        return []

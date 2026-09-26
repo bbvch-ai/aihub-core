@@ -10,6 +10,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.stores.base_pydantic_vector_store
     BasePydanticVectorStoreConfig,
 )
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import create_milvus_vector_store
+from swiss_ai_hub.core.persistence.rag.vectors.stores.namespace_scope_rule import NamespaceScopeRule
 
 
 class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
@@ -56,10 +57,9 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
 
     @model_validator(mode="after")
     def _namespace_scope_is_explicit(self) -> "MilvusVectorStoreConfig":
-        if self.all_namespaces and self.index_namespaces:
-            raise ValueError("Either name the namespaces to search or enable all_namespaces, not both.")
-        if not self.all_namespaces and not self.index_namespaces:
-            raise ValueError("Select at least one namespace to search, or enable all_namespaces.")
+        scope_error = NamespaceScopeRule.error(self.index_namespaces, self.all_namespaces)
+        if scope_error:
+            raise ValueError(scope_error)
         return self
 
     @property

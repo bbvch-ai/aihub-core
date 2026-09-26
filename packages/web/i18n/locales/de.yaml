@@ -904,6 +904,8 @@ lib:
       label: Namensräume
       placeholder: Mindestens einen Namensraum auswählen
       help: Nur die ausgewählten Namensräume werden durchsucht
+      required: Mindestens einen Namensraum auswählen oder „Alle Namensräume durchsuchen“
+        aktivieren. Sonst kann die Konfiguration nicht gespeichert werden.
     allNamespaces:
       label: Alle Namensräume durchsuchen
       help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
