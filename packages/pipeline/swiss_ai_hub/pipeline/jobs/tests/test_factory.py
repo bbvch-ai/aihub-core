@@ -26,3 +26,14 @@ class TestOrchestrationRunPriority:
         )
 
         assert int(job.run_tags[PRIORITY_TAG]) > 0
+
+    def test_an_unprioritized_job_keeps_the_default(self) -> None:
+        """Retries of unlanded files are bulk work; they must not jump ahead of the observations that gate them."""
+        job = materialize_asset_job(
+            source_location_name="bucket",
+            job_name="retry_unlanded_files",
+            asset_selection=AssetSelection.keys(AssetKey(["files"])),
+            prioritized=False,
+        )
+
+        assert PRIORITY_TAG not in job.run_tags
