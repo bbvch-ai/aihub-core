@@ -92,8 +92,8 @@ switching a model to Native Function Calling was `OpenWebuiProvisioner`, which f
 
 The provisioner now takes the mode per model from the LiteLLM `model_info` key `aihub_openwebui_function_calling`.
 `text-generation/Kimi-K2.6` declares `native` so Open Terminal can chain several tool calls per turn. Every other LLM
-model and every agent model stays `legacy`. A mode changed by hand in the admin panel is still reverted on the next
-sync. The LiteLLM configuration is the place to change it.
+model and every agent model stays `legacy`. A mode changed by hand in the admin panel is still reverted, on the next API
+start for LLM models and on the next agent sync for agent models. The LiteLLM configuration is the place to change it.
 
 Related decisions: [Restrict Langfuse Access to AIHubSysAdmin](2026_06_11_langfuse_access_restricted_to_sysadmins.md),
 [AI-Hub Manages OpenWebUI Model Visibility](2026_03_05_aihub_manages_openwebui_model_visibility.md),
