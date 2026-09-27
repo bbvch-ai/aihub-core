@@ -84,6 +84,17 @@ hold a group grant. This is accepted as part of the same least-privilege positio
 - OpenWebUI admin remains a separate authorization axis from AI-Hub's `aihub.<tier>.<service>.<resource>` rules. Nothing
   in this decision changes what the AI-Hub API exposes.
 
+## Update 2026-09-28: Function Calling is set per model by the provisioner
+
+The flag stays `false`. After the upgrade to OpenWebUI 0.11.3, AI-Hub models are edited in Admin → Settings → Models,
+which reads the unfiltered base-model list and lets any admin save regardless of this flag. What kept a sysadmin from
+switching a model to Native Function Calling was `OpenWebuiProvisioner`, which forced `legacy` onto every managed row.
+
+The provisioner now takes the mode per model from the LiteLLM `model_info` key `aihub_openwebui_function_calling`.
+`text-generation/Kimi-K2.6` declares `native` so Open Terminal can chain several tool calls per turn. Every other LLM
+model and every agent model stays `legacy`. A mode changed by hand in the admin panel is still reverted on the next
+sync. The LiteLLM configuration is the place to change it.
+
 Related decisions: [Restrict Langfuse Access to AIHubSysAdmin](2026_06_11_langfuse_access_restricted_to_sysadmins.md),
 [AI-Hub Manages OpenWebUI Model Visibility](2026_03_05_aihub_manages_openwebui_model_visibility.md),
 [Sysadmin Implicit Admin Access](2026_04_15_sysadmin_implicit_admin_access.md).

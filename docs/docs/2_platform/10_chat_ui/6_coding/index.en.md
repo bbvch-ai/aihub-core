@@ -12,11 +12,13 @@ that user's own home directory inside the sandbox.
 ::: warning Requirements & current limitations
 - **Plain LLM models only, with Native Function Calling enabled.** OpenWebUI exposes the sandbox to the model as a set
   of tools (`run_command`, `write_file`, `display_file` and so on) resolved from its terminal-server integration — not
-  through the built-in `execute_code` tool. **Native Function Calling must be enabled** for the model (Admin → Settings
-  → Models → the model's advanced params): only then are those tools handed to the model as real function definitions,
-  which is what lets it run a step, read the result and continue. Left at the default, OpenWebUI falls back to a single
-  prompt-based tool-selection pass, which is not enough for a multi-step build. Models without function-calling support
-  cannot drive the sandbox at all.
+  through the built-in `execute_code` tool. **The model must use Native Function Calling**: only then are those tools
+  handed to the model as real function definitions, which is what lets it run a step, read the result and continue.
+  Under Legacy, OpenWebUI falls back to a single prompt-based tool-selection pass, which is not enough for a multi-step
+  build. **Kimi-K2.6 is set to Native by default**; every other model defaults to Legacy. To use another model, switch
+  Function Calling to Native for that conversation in the chat's Controls → Advanced Params. A change in Admin →
+  Settings → Models does not last: AI-Hub resets it on the next sync, and an operator changes a model's default in the
+  LiteLLM configuration instead. Models without function-calling support cannot drive the sandbox at all.
 - **The terminal has to be active for the conversation.** The tools are resolved only when a terminal is selected in the
   chat.
 - **AI-Hub agents are not supported yet.** Agent chats own their own generation and do not expose OpenWebUI's
