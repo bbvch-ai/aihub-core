@@ -374,6 +374,7 @@ export type AgentClassDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -509,6 +510,7 @@ export type AgentConfigDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6300,6 +6302,7 @@ export type FullProcessInstanceDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6500,6 +6503,7 @@ export type Group = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6869,6 +6873,7 @@ export type HumanInDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6951,6 +6956,7 @@ export type HumanInSpecs = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -8018,6 +8024,7 @@ export type IncidentFormDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -8289,6 +8296,7 @@ export type IngestorDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -13033,6 +13041,7 @@ export type ProcessClassDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -14097,6 +14106,7 @@ export type Repeater = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -14686,6 +14696,133 @@ export type SearchContextCostPerQueryDto = {
    * Cost per query with high search context size
    */
   search_context_size_high?: number | null;
+};
+
+/**
+ * SecretFileInput
+ *
+ * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
+ *
+ * The browser reads the file and submits its text contents, so the value is an ordinary string: it is
+ * encrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.
+ */
+export type SecretFileInput = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Secret file input element.
+   */
+  formkit?: "secretFileInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Accept
+   *
+   * File types the picker offers, e.g. '.json'
+   */
+  accept?: string | null;
+  /**
+   * Maxsizebytes
+   *
+   * Largest file accepted, checked before it is read
+   */
+  maxSizeBytes?: number;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -15468,6 +15605,7 @@ export type SourcePipelineDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -18416,6 +18554,7 @@ export type AgentClassDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -18551,6 +18690,7 @@ export type AgentConfigDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -21095,6 +21235,7 @@ export type FullProcessInstanceDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -21234,6 +21375,7 @@ export type GroupWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -21439,6 +21581,7 @@ export type HumanInDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -21521,6 +21664,7 @@ export type HumanInSpecsWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -22049,6 +22193,7 @@ export type IncidentFormDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -22125,6 +22270,7 @@ export type IngestorDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -24955,6 +25101,7 @@ export type ProcessClassDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -25664,6 +25811,7 @@ export type RepeaterWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -26030,6 +26178,129 @@ export type RunStatisticsWritable = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDtoWritable;
+};
+
+/**
+ * SecretFileInput
+ *
+ * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
+ *
+ * The browser reads the file and submits its text contents, so the value is an ordinary string: it is
+ * encrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.
+ */
+export type SecretFileInputWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Secret file input element.
+   */
+  formkit?: "secretFileInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Accept
+   *
+   * File types the picker offers, e.g. '.json'
+   */
+  accept?: string | null;
+  /**
+   * Maxsizebytes
+   *
+   * Largest file accepted, checked before it is read
+   */
+  maxSizeBytes?: number;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  [key: string]: unknown;
 };
 
 /**
@@ -26689,6 +26960,7 @@ export type SourcePipelineDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable

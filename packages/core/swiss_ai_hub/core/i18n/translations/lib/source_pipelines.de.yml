@@ -5,9 +5,8 @@ manual_upload:
     synchronisiert sie.
 rclone:
   display_name: Cloud-Speicher-Synchronisation (rclone)
-  description: Hält die Datenbank mit einer SharePoint-Site, OneDrive, Google Drive,
-    einem S3-Bucket, Azure-Blob-Container oder SFTP-Server synchron. Jeder Ordner
-    der obersten Ebene wird zu einem Namespace.
+  description: Hält die Datenbank mit einem Google-Drive-Ordner oder einem S3-Bucket
+    synchron. Jeder Ordner der obersten Ebene wird zu einem Namespace.
   config:
     backend_type:
       label: Speicher-Backend
@@ -59,9 +58,9 @@ rclone:
         label: OAuth-Token
         help: Vorab erzeugtes rclone-Token-JSON. Verschlüsselt gespeichert.
       service_account_credentials:
-        label: Dienstkonto-JSON
-        help: Inhalt der Dienstkonto-Schlüsseldatei als Alternative zu einem OAuth-Token.
-          Verschlüsselt gespeichert.
+        label: Dienstkonto-Schlüsseldatei
+        help: Aus der Google-Cloud-Konsole heruntergeladene JSON-Schlüsseldatei, als
+          Alternative zu einem OAuth-Token. Verschlüsselt gespeichert.
       root_folder_id:
         label: Stammordner-ID
         help: Drive-Ordner-ID, die als Stamm gilt; leer für das ganze Laufwerk.

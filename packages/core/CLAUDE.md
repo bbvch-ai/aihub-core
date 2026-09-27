@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
-│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password fields in an announced form
+│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 29 concrete form elements
+│   └── elements/                    # 30 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -79,7 +79,7 @@ packages/core/swiss_ai_hub/core/
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
-│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from Password elements
+│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
 │   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
@@ -277,12 +277,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput.
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
 
 ### Nested Forms
 
@@ -605,7 +605,7 @@ events report `None` for organization memory, which stores its text verbatim.
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 29 form elements
+- `core/form/elements/` — 30 form elements
 
 **Workflow engine**:
 

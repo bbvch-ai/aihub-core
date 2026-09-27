@@ -467,6 +467,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -699,6 +702,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/Repeater",
+              },
+              {
+                $ref: "#/components/schemas/SecretFileInput",
               },
               {
                 $ref: "#/components/schemas/Select",
@@ -9142,6 +9148,9 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -9473,6 +9482,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -10029,6 +10041,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -10179,6 +10194,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -11898,6 +11916,9 @@ export const IncidentFormDTOSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -12374,6 +12395,9 @@ export const IngestorDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -19574,6 +19598,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -21236,6 +21263,9 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/Repeater",
           },
           {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
             $ref: "#/components/schemas/Select",
           },
           {
@@ -22073,6 +22103,236 @@ export const SearchContextCostPerQueryDTOSchema = {
   title: "SearchContextCostPerQueryDTO",
   description:
     "LiteLLM reports search context cost per query broken down by context size, not as a single value.",
+} as const;
+
+export const SecretFileInputSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "secretFileInput",
+      title: "Formkit",
+      description: "Secret file input element.",
+      default: "secretFileInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    accept: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accept",
+      description: "File types the picker offers, e.g. '.json'",
+    },
+    maxSizeBytes: {
+      type: "integer",
+      title: "Maxsizebytes",
+      description: "Largest file accepted, checked before it is read",
+      default: 65536,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "SecretFileInput",
+  description:
+    "A secret that is handed out as a file, such as a service-account key, picked instead of pasted.\n\nThe browser reads the file and submits its text contents, so the value is an ordinary string: it is\nencrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.",
 } as const;
 
 export const SelectSchema = {
@@ -23328,6 +23588,9 @@ export const SourcePipelineDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -27564,6 +27827,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -27796,6 +28062,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/RepeaterWritable",
+              },
+              {
+                $ref: "#/components/schemas/SecretFileInputWritable",
               },
               {
                 $ref: "#/components/schemas/SelectWritable",
@@ -31654,6 +31923,9 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -31915,6 +32187,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -32222,6 +32497,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -32372,6 +32650,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -33252,6 +33533,9 @@ export const IncidentFormDTOWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -33416,6 +33700,9 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -38041,6 +38328,9 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -39256,6 +39546,9 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/RepeaterWritable",
           },
           {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
             $ref: "#/components/schemas/SelectWritable",
           },
           {
@@ -39815,6 +40108,231 @@ export const RunStatisticsWritableSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const SecretFileInputWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "secretFileInput",
+      title: "Formkit",
+      description: "Secret file input element.",
+      default: "secretFileInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    accept: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accept",
+      description: "File types the picker offers, e.g. '.json'",
+    },
+    maxSizeBytes: {
+      type: "integer",
+      title: "Maxsizebytes",
+      description: "Largest file accepted, checked before it is read",
+      default: 65536,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "SecretFileInput",
+  description:
+    "A secret that is handed out as a file, such as a service-account key, picked instead of pasted.\n\nThe browser reads the file and submits its text contents, so the value is an ordinary string: it is\nencrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.",
 } as const;
 
 export const SelectWritableSchema = {
@@ -40935,6 +41453,9 @@ export const SourcePipelineDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",

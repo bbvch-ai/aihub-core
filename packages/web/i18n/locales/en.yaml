@@ -845,6 +845,16 @@ process:
       done: Done
       steps: Progress
 form:
+  secret_file_input:
+    drop_hint: Drop the file here or click to choose it
+    limits: '{accept}, up to {size}'
+    selected: File selected
+    stored: Key file stored (encrypted)
+    client_email: 'Service account: {email}'
+    replace: Replace
+    remove: Remove
+    too_large: The file is larger than {size}.
+    invalid_json: The file is not valid JSON.
   locale_input:
     translate_tooltip: Translate to all languages
   warnings:
