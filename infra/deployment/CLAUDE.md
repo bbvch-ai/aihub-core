@@ -76,6 +76,11 @@ so LiteLLM fails to start loudly instead of silently falling back.
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
+`aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
+`model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
+Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
+multi-tool orchestration. An unknown value fails the LLM model sync, which logs the error without stopping the API.
+
 ## Generation Pipeline
 
 ```
