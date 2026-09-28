@@ -1,6 +1,8 @@
 import functools
-from typing import ClassVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, ClassVar
 
+from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
@@ -10,6 +12,9 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.workflow import DispatchableWorkflow
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+
+if TYPE_CHECKING:
+    from swiss_ai_hub.agent.capabilities.capability import Capability
 
 
 class Agent(DispatchableWorkflow):
@@ -55,11 +60,51 @@ class Agent(DispatchableWorkflow):
     # Admin UI. Non-discoverable agents still subscribe to and process their control events normally.
     discoverable: ClassVar[bool] = True
 
+    # Capabilities this blueprint installs. Each contributes steps to `get_steps()` next to the ones defined
+    # on the class, so the workflow graph, discovery and the meta-question summary all see one flat step set.
+    capabilities: ClassVar[tuple[type["Capability"], ...]] = ()
+
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
     STOP_ON_ERROR_ANNOTATION = "_stop_on_error"
     MAX_EXECUTION_PER_RUN_ANNOTATION = "_max_executions_per_run"
+
+    @classmethod
+    @functools.cache
+    def get_own_steps(cls) -> list[Callable]:
+        """The steps defined on the class itself, without what its capabilities contribute."""
+        return super().get_steps()
+
+    @classmethod
+    @functools.cache
+    def get_steps(cls) -> list[Callable]:
+        steps = list(cls.get_own_steps())
+        for capability in cls.capabilities:
+            steps.extend(capability.steps_for(cls))
+        cls._reject_duplicate_step_names(steps)
+        return steps
+
+    @classmethod
+    def _reject_duplicate_step_names(cls, steps: list[Callable]) -> None:
+        """Step identity is the function name everywhere downstream (step store, tracer, graph), so two
+        steps sharing one would silently dedupe each other's executions."""
+        seen: set[str] = set()
+        for step in steps:
+            if step.__name__ in seen:
+                raise ValueError(f"{cls.__name__} has two steps named '{step.__name__}'.")
+            seen.add(step.__name__)
+
+    @classmethod
+    def validate_capabilities(cls, agent_config_type: type[AgentConfig]) -> None:
+        """Fail at runner start when a capability's steps would ask the dispatcher for a config base the
+        blueprint's config does not derive from."""
+        for capability in cls.capabilities:
+            if not issubclass(agent_config_type, capability.required_config):
+                raise TypeError(
+                    f"{cls.__name__} installs {capability.__name__}, which needs a config deriving from "
+                    f"{capability.required_config.__name__}, but {agent_config_type.__name__} does not."
+                )
 
     @classmethod
     @functools.cache

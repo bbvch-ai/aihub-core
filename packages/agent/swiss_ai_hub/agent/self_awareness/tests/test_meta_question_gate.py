@@ -2,13 +2,13 @@
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    ConversationQueryEvent,
     LimitChatHistoryEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
-    StandaloneQuestionCondenserEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -39,27 +39,25 @@ def test_gate_lets_programmatic_starts_through():
 
 def test_detection_is_the_only_step_firing_on_a_raw_chat_message_among_entry_steps():
     """
-    The sole normal entry step must wait on NotAMetaQuestionEvent (the gate), so detection is the
-    sole gatekeeper of a raw chat message. This is the structural guard against the race condition.
-
-    Since #1753 the memory steps hang off the condenser instead of the start event, so
-    limit_chat_history_step is the only raw-chat entry left — everything else is gated transitively.
+    On the conversational spine the gate sits on `derive_query_step`, the first step past the entry point:
+    it is the only step waiting on NotAMetaQuestionEvent, and everything that could do work for the turn —
+    enrichers, retrieval, the answer — is downstream of it. Limiting the history runs ungated on purpose:
+    it is cheap and side-effect free, and gating it would only delay detection's own input.
     """
     gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(NotAMetaQuestionEvent)}
-    assert gated == {"limit_chat_history_step"}
+    assert gated == {"derive_query_step"}
 
 
-def test_memory_steps_are_gated_transitively_through_the_condenser():
+def test_memory_steps_are_gated_transitively_through_the_query():
     """
-    The memory steps dropped their explicit `_clear` dependency (#1753); what keeps them from racing
-    detection is that they require events only reachable through the gated limit_chat_history_step.
-    A refactor that re-anchors them on the start event alone must restore the explicit gate.
+    The memory enrichers hang off the spine's query event, which only exists past the gate, and the join
+    that feeds the answer pipeline waits for their blocks. A refactor that re-anchors them on the start
+    event alone must restore an explicit gate.
     """
-    condenser_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(StandaloneQuestionCondenserEvent)}
-    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= condenser_gated
-
+    query_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(ConversationQueryEvent)}
+    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= query_gated
     limit_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(LimitChatHistoryEvent)}
-    assert "add_memory_to_chat_history_step" in limit_gated
+    assert "assemble_context_step" in limit_gated
 
 
 def test_detect_step_does_not_run_on_programmatic_start():

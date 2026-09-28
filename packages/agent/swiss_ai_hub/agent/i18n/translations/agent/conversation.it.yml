@@ -1,0 +1,35 @@
+---
+config:
+  number_of_input_tokens:
+    label: Token di input max
+    help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione del
+      contesto per gestire i costi ed evitare di superare i limiti del modello.
+  condense_question:
+    label: Condensa la domanda
+    help: Riformula l'ultimo messaggio in una domanda autonoma a partire dalla conversazione,
+      prima di consultare la memoria, il retrieval e altro contesto. Disattivato, l'ultimo
+      messaggio viene usato così com'è.
+steps:
+  open_gate:
+    name: Apri il cancello
+    description: Inoltra il messaggio direttamente alla pipeline, poiché questo assistente
+      non risponde a domande su se stesso.
+  derive_query:
+    name: Deriva la query
+    description: Determina la domanda a cui questo turno risponde, l'ultimo messaggio così
+      com'è oppure condensato dalla conversazione.
+  assemble_context:
+    name: Assembla il contesto
+    description: Unisce ogni blocco di contesto recuperato, come le memorie, nella cronologia
+      della chat entro il budget di input del modello.
+  stop:
+    name: Stop
+    description: Completa l'esecuzione una volta che ogni passaggio successivo alla risposta,
+      come l'archiviazione della memoria, ha riferito.
+thoughts:
+  condensation_empty: Il condensatore non ha prodotto alcuna domanda autonoma, quindi questo
+    turno non ha una query utilizzabile. La richiesta viene rifiutata invece di usare il
+    messaggio grezzo.
+messages:
+  condensation_empty: Non sono riuscito a capire cosa cercare da questo messaggio. Riformula
+    la domanda e riprova.

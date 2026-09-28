@@ -18,9 +18,9 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 # that only resolves in the runtime (rag_agent-first) order; importing preconditions first would break.
 import swiss_ai_hub.agent.agents.rag_agent  # noqa: F401,E402  (import-order guard, not a direct dependency)
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import build_memory_storage_request
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.rag.preconditions import check_ready_for_stop
-from swiss_ai_hub.agent.rag.step_functions import build_memory_storage_request
 
 _MARKER = object()  # stand-in for a MemoryStorageRequestedEvent (check is identity/None only)
 

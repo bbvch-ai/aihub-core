@@ -594,15 +594,19 @@ class AgentDispatcher(BaseDispatcher):
             return step_configs[param.annotation]
 
         if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-            if param.annotation != self.agent_config_type:
+            # A shared step names the config base it needs; the run's concrete config satisfies it.
+            if not issubclass(self.agent_config_type, param.annotation):
                 raise ValueError(
-                    f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
-                    f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
+                    f"Expected a config deriving from '{param.annotation.__name__}' for parameter "
+                    f"'{param.name}', but this blueprint runs on '{self.agent_config_type.__name__}'."
                 )
             logger.debug(
                 f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
             )
             return agent_config
+
+        if param.annotation == type[Agent]:
+            return self.agent
 
         if param.annotation == RunContext:
             return run_context

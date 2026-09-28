@@ -10,7 +10,7 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 class UserMemoryConfig(Form):
     """
-    Configuration for user-scoped memory in RAG workflows.
+    Configuration for user-scoped memory, installed by `MemoryCapability`.
 
     Supports duality pattern for form rendering and data validation.
     """
@@ -42,23 +42,23 @@ class UserMemoryConfig(Form):
         """Factory method to create a form-mode UserMemoryConfig."""
         return cls(
             enable_user_memory_retrieval=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_retrieval.help"),
+                label=AgentLocaleString.from_i18n_path("agent.memory.config.enable_user_memory_retrieval.label"),
+                help=AgentLocaleString.from_i18n_path("agent.memory.config.enable_user_memory_retrieval.help"),
                 ref="check_user_memory_retrieval_enabled",
             ),
             rerank_user_memory=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_user_memory.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.rerank_user_memory.help"),
+                label=AgentLocaleString.from_i18n_path("agent.memory.config.rerank_user_memory.label"),
+                help=AgentLocaleString.from_i18n_path("agent.memory.config.rerank_user_memory.help"),
                 condition_if="$get(check_user_memory_retrieval_enabled).value",
             ),
             enable_user_memory_storage=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_user_memory_storage.help"),
+                label=AgentLocaleString.from_i18n_path("agent.memory.config.enable_user_memory_storage.label"),
+                help=AgentLocaleString.from_i18n_path("agent.memory.config.enable_user_memory_storage.help"),
                 ref="check_user_memory_storage_enabled",
             ),
             memory_llm=ModelSelect(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.memory_llm.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.memory_llm.help"),
+                label=AgentLocaleString.from_i18n_path("agent.memory.config.memory_llm.label"),
+                help=AgentLocaleString.from_i18n_path("agent.memory.config.memory_llm.help"),
                 mode="chat",
                 # The picker starts on the platform default, so enabling it is a starting point to move away
                 # from rather than an empty field. Its own toggle still defaults to off (the annotation is

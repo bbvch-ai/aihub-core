@@ -37,6 +37,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event import RAGSuccessStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
+    from swiss_ai_hub.core.events.agent.conversation.answer_post_processed_event import AnswerPostProcessedEvent
+    from swiss_ai_hub.core.events.agent.conversation.context_block_event import ContextBlockEvent
+    from swiss_ai_hub.core.events.agent.conversation.conversation_query_event import ConversationQueryEvent
+    from swiss_ai_hub.core.events.agent.conversation.enriched_chat_history_event import EnrichedChatHistoryEvent
     from swiss_ai_hub.core.events.agent.cost.cost_event import CostEvent
     from swiss_ai_hub.core.events.agent.cost.llm_cost_event import LLMCostEvent
     from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
@@ -137,6 +141,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
 __all__ = [
+    "AnswerPostProcessedEvent",
+    "ContextBlockEvent",
+    "ConversationQueryEvent",
+    "EnrichedChatHistoryEvent",
     "AddMemoryToChatHistoryEvent",
     "AddOrganizationMemoryToChatHistoryEvent",
     "AddUserMemoryToChatHistoryEvent",
@@ -237,6 +245,10 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AnswerPostProcessedEvent": "swiss_ai_hub.core.events.agent.conversation.answer_post_processed_event",
+    "ContextBlockEvent": "swiss_ai_hub.core.events.agent.conversation.context_block_event",
+    "ConversationQueryEvent": "swiss_ai_hub.core.events.agent.conversation.conversation_query_event",
+    "EnrichedChatHistoryEvent": "swiss_ai_hub.core.events.agent.conversation.enriched_chat_history_event",
     "AddMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_memory_to_chat_history_event",
     "AddOrganizationMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_organization_memory_to_chat_history_event",
     "AddUserMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event",

@@ -54,6 +54,11 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
     LimitChatHistoryWithContextEvent,
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
+from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import (
+    build_memory_storage_request,
+    do_retrieve_organization_memory,
+    do_retrieve_user_memory,
+)
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
@@ -76,7 +81,6 @@ from swiss_ai_hub.agent.rag.preconditions import (
 )
 from swiss_ai_hub.agent.rag.step_functions import (
     build_memory_conversation,
-    build_memory_storage_request,
     do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
@@ -87,8 +91,6 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_rerank_nodes,
     do_respond_with_llm,
     do_retrieve,
-    do_retrieve_organization_memory,
-    do_retrieve_user_memory,
     effective_input_token_limit,
 )
 from swiss_ai_hub.agent.self_awareness.meta_question_gate import check_passed_meta_question_gate

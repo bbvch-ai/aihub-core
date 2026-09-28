@@ -116,36 +116,60 @@ class MyAgent(Agent):
 `Agent` (extends `DispatchableWorkflow`) provides introspection: `get_start_events()`, `get_stop_events()`,
 `get_hitl_request_events()`, `get_hitl_response_events()` — all cached classmethods that scan `@step()` signatures.
 
-### Built-in Self-Awareness (meta questions)
+### Capabilities: sharing steps across blueprints (spike)
 
-Conversational blueprints can answer meta questions about themselves ("what can you do?", "why did you do X?") instead
-of running their normal pipeline. The detection/answer logic is shared as free functions (`do_detect_meta_question`,
-`do_answer_meta_question`, `summarize_workflow_for_meta_answer` in `self_awareness/`); the **steps are defined
-explicitly in each self-aware agent** — there is no base-class mixin and no `get_steps()` filtering. An agent is
-self-aware iff it defines the steps. Non-conversational blueprints (e.g. `RetrievalAgent`) simply don't.
+What every chat blueprint has in common — the meta-question gate, the turn's query, memory, the context join, the
+title, follow-ups and the stop — is packaged as **capabilities** in `capabilities/`. A blueprint installs them by
+listing them on the class; `Agent.get_steps()` returns the class's own `@step` methods plus every step the installed
+capabilities contribute, as one flat set. The workflow graph, discovery and the meta-question summary read that set,
+so a contributed step is as visible as a defined one.
 
-Adopting it has two parts (see ADR `2026_06_04_self_awareness_as_explicit_per_agent_steps` and `RAGAgent` as the
-reference):
+```python
+class LLMWrappingAgent(Agent):
+    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
-1. **Define the two thin `@step` methods** on the agent: `detect_meta_question_step` (on `UserMessageEvent`) and
-   `answer_meta_question_step` (returns `LLMStopEvent` directly). Each delegates to the shared free functions, passing
-   `agent_config.task_llm` — both detection and the answer are auxiliary work, and `task_llm` falls back to the main
-   `llm` when no task model is configured. (There is no separate stop step: once the consumer drains trailing display
-   events before teardown — ADR `2026_06_09_drain_display_event_streams_before_consumer_teardown` — the answer step can
-   emit the terminal `LLMStopEvent` itself without its chunks being raced.)
+    @step()
+    async def limit_chat_history_step(self, event: UserMessageEvent, ...) -> LimitChatHistoryEvent | LLMStopEvent: ...
 
-2. **Gate every raw `UserMessageEvent` entry step** so detection can't be raced. Two equivalent forms depending on the
-   agent's start events:
+    @step()
+    async def respond_step(self, event: EnrichedChatHistoryEvent, ...) -> LLMEvent: ...
+```
 
-   - **Entry accepts only `UserMessageEvent`** (e.g. `LLMWrappingAgent`, `FewShotAgent`): add a **required**
-     `_clear: NotAMetaQuestionEvent` parameter. The dependency alone gates the step — no precondition.
-   - **Entry also accepts a programmatic start** (e.g. `RAGAgent`, `ExpertRAGAgent` accept
-     `UserMessageEvent | RAGStartEvent`): keep `_clear: NotAMetaQuestionEvent | None = None` and combine the step's
-     precondition with `check_passed_meta_question_gate(start_event, clear)`, so programmatic starts skip detection.
+A capability's steps are `@staticmethod`s decorated with `@step`, taking the blueprint instance as their first
+parameter, so the dispatcher calls them exactly like a method. Each capability names the config base its steps are
+annotated with (`required_config`); the blueprint's config derives from it, and `AgentRunner` refuses to start
+otherwise. The dispatcher injects the run's concrete config into any parameter annotated with one of its bases.
 
-   The gate falls out of event dependencies — the entry step can't fire on a chat message until detection emits
-   `NotAMetaQuestionEvent`. Gating cannot be automated; a self-aware blueprint that forgets it (or defines a partial
-   step set) fails `self_awareness/tests/test_self_awareness_wiring.py`.
+**The conversational spine** (`ConversationCapability`, needs `ConversationalAgentConfig`) runs from the
+`LimitChatHistoryEvent` a blueprint's entry step emits to the stop event:
+
+- `derive_query_step` — the first step past the entry point and **the meta-question gate**: it depends on
+  `NotAMetaQuestionEvent`, so nothing downstream starts before detection clears the message. Emits
+  `ConversationQueryEvent` (the last user message as is, or condensed when `condense_question` is on, in which case the
+  display-facing `StandaloneQuestionCondenserEvent` is emitted too).
+- `assemble_context_step` — **the enrichment join**: every installed enricher emits one `ContextBlockEvent` per turn,
+  empty or not, and the join waits for as many blocks as there are enrichers on the blueprint, merges them behind the
+  leading system messages within the input budget, and emits `EnrichedChatHistoryEvent`, which the blueprint's answer
+  pipeline consumes.
+- `generate_conversation_title_step` — anchored on the query event, so it runs past the gate and before the answer.
+- Two **defaults, withheld when the blueprint provides them**: `open_gate_step` (emits `NotAMetaQuestionEvent` when
+  no detection is installed) and `stop_step` (turns the `LLMEvent` into `LLMStopEvent` with follow-ups inline, once
+  every post-answer hook has reported an `AnswerPostProcessedEvent`). `RAGAgent` keeps its own stop step because its
+  stop event carries the outcome; it reuses the spine's `all_post_answer_hooks_reported` precondition.
+
+**Enrichers and hooks** are what other capabilities plug into the spine: `MemoryCapability` (needs
+`MemoryEnabledAgentConfig`) contributes two enrichers (user and organization memory, each emitting a `ContextBlockEvent`
+plus the existing display event when it found something) and one post-answer hook (the delegated user-memory write).
+Web fetch, attached files and web search are meant to arrive the same way. A programmatic start that narrows the
+organization-memory scope hands the requested namespaces over through `MemoryCapability.REQUESTED_ORG_NAMESPACES_KEY`
+on the `RunContext`, since the capability cannot name the blueprint's start event.
+
+**Self-awareness** (`SelfAwarenessCapability`) contributes detection, the meta answer and the parallel meta title. The
+shared logic still lives as free functions in `self_awareness/`; `ExpertRAGAgent`, `FewShotAgent` and
+`McpReactAgent` still wire those steps explicitly per ADR `2026_06_04` and gate their entry steps themselves.
+
+Preconditions on the spine take `blueprint: type[Agent]`, which the dispatcher injects, to count the installed
+enrichers and hooks. `capabilities/tests/test_capability_composition.py` pins the composition contract.
 
 ## The @step Decorator
 
@@ -457,11 +481,10 @@ config seeder needed.
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
-7. (Conversational agents) Add self-awareness: define `detect_meta_question_step` / `answer_meta_question_step`
-   (delegating to the shared free functions) and gate raw `UserMessageEvent` entry steps with `NotAMetaQuestionEvent` —
-   a required dependency for `UserMessageEvent`-only agents, or `_clear: NotAMetaQuestionEvent | None = None` +
-   `check_passed_meta_question_gate` for agents that also accept a programmatic start (see the Built-in Self-Awareness
-   section above)
+7. (Conversational agents) Install the capabilities: `capabilities = (ConversationCapability,
+   SelfAwarenessCapability, MemoryCapability)`, derive the config from `MemoryEnabledAgentConfig`, emit a
+   `LimitChatHistoryEvent` from the entry step and answer from `EnrichedChatHistoryEvent` with a non-terminal
+   `LLMEvent` (see the Capabilities section above)
 8. Write BDD tests with `AgentTestRunner`
 9. Run `make test`
 

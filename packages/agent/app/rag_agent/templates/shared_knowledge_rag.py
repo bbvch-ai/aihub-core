@@ -9,7 +9,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.agents.rag_agent import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )

@@ -1,32 +1,25 @@
-from typing import Annotated, Self, override
+from typing import Annotated, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import InputNumber, LocaleInput
-from swiss_ai_hub.core.generative_ai import (
-    FewShotGuardExample,
-    KnowledgeRetrieverConfig,
-    LLMConfig,
-    OrgMemoryReadConfig,
-)
+from swiss_ai_hub.core.form import Checkbox, LocaleInput
+from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config import MemoryEnabledAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
 
 
-class RAGAgentConfig(AgentConfig):
+class RAGAgentConfig(MemoryEnabledAgentConfig):
     """
     Configuration for a RAGAgent with multiple retrieval sources.
 
-    Supports:
-    - Multiple retrievers (knowledge base)
-    - Organization memory (expert knowledge shared across users)
-    - User memory (personalized context for individual users)
+    The conversational and memory fields come from the capability config bases; what is declared here is
+    retrieval: sources, reranking, the guards and the prompts that frame retrieved context.
 
     Note: For expert escalation functionality, use ExpertRAGAgentConfig instead.
 
@@ -44,27 +37,10 @@ class RAGAgentConfig(AgentConfig):
             title="Context Prompt",
         ),
     ] = AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.default")
-    llm: Annotated[
-        LLMConfig,
-        Field(description="The LLM configuration for the agent."),
-    ]
-    task_llm: Annotated[
-        LLMConfig | None,
-        Field(
-            default=None,
-            description=(
-                "Model for this agent's auxiliary steps: meta-question detection and answering, "
-                "standalone-question condensation, the few-shot and context-sufficiency guards, and "
-                "conversation title plus follow-up question generation. Generation parameters are inherited "
-                "from the main model. Falls back to the main model when disabled."
-            ),
-            title="Task LLM",
-        ),
-    ] = None
-    number_of_input_tokens: Annotated[
-        int | InputNumber,
-        Field(description="Maximum tokens allowed in input to manage context size or cost."),
-    ] = 128000
+    condense_question: Annotated[
+        bool | Checkbox,
+        Field(description="Retrieval embeds one standalone question, so RAG condenses by default."),
+    ] = True
     context_sufficient_guard: Annotated[
         ContextSufficientGuardStepConfig,
         Field(
@@ -87,38 +63,6 @@ class RAGAgentConfig(AgentConfig):
             title="Few-Shot Guard Examples",
         ),
     ] = []
-    user_memory: Annotated[
-        UserMemoryConfig,
-        Field(description="Configuration for user-scoped memory.", title="User Memory"),
-    ] = UserMemoryConfig()
-    org_memory: Annotated[
-        OrgMemoryReadConfig | None,
-        Field(
-            description="Scoping for the organization memory the agent may read. Disable to skip organization memory.",
-            title="Organization Memory",
-        ),
-    ] = OrgMemoryReadConfig()
-
-    @property
-    @override
-    def memory_llm_model_name(self) -> str | None:
-        """Point the platform's memory hook at this blueprint's own picker (issue #1590).
-
-        Guarded rather than returned raw: in form mode the value is a `ModelSelect`, and a picker submitted
-        blank arrives as an empty string — neither is a model name, and both mean "use the platform default".
-        """
-        memory_llm = self.user_memory.memory_llm
-        return memory_llm if isinstance(memory_llm, str) and memory_llm else None
-
-    @model_validator(mode="after")
-    def derive_task_llm_from_main_llm(self) -> Self:
-        """Only the task model is configurable: its generation parameters always mirror the main llm, and
-        an unset or blank picker falls back to the main model."""
-        if not isinstance(self.llm.model_name, str):
-            return self
-        task_model_name = self.task_llm.model_name if self.task_llm else None
-        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
-        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -130,17 +74,9 @@ class RAGAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            llm=LLMConfig.as_form(),
-            task_llm=LLMConfig.as_form(include_default_parameter=False),
+            **cls.conversational_form_elements(),
+            **cls.memory_form_elements(),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
-            number_of_input_tokens=InputNumber(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.help"),
-                min=1024,
-                # Matches the other agents; `effective_input_token_limit` still clamps to the model's window.
-                max=200000,
-                step=1024,
-            ),
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
             reranking_config=RerankingConfig.as_form(),
             few_shot_guard_examples=[FewShotGuardExample.as_form()],
@@ -154,6 +90,4 @@ class RAGAgentConfig(AgentConfig):
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.help"),
                 input_type="textarea",
             ),
-            user_memory=UserMemoryConfig.as_form(),
-            org_memory=OrgMemoryReadConfig.as_form(),
         )

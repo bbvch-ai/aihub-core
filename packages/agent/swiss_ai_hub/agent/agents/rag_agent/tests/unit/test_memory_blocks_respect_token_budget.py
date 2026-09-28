@@ -16,11 +16,17 @@ from unittest.mock import patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    ContextBlockEvent,
     LimitChatHistoryEvent,
     RetrieveUserMemoryEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import EmbeddingModelConfig, KnowledgeRetrieverConfig, LLMConfig
+from swiss_ai_hub.core.generative_ai import (
+    EmbeddingModelConfig,
+    KnowledgeRetrieverConfig,
+    LLMConfig,
+    extend_chat_history_with_user_memory,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_metadata import MemoryMetadata
@@ -30,8 +36,9 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 _MODEL = "text-generation/gemma-4-31B-it"
 
@@ -98,6 +105,8 @@ async def _run_step(
     """
     model_info = {"model_info": {} if window is None else {"max_input_tokens": window}}
     with patch.object(LLMConfig, "get_model_info", return_value=model_info):
+        if agent_type is RAGAgent:
+            return await _run_spine_join(config, history, memories)
         return await agent_type().add_memory_to_chat_history_step(
             chat_history_event=LimitChatHistoryEvent(limited_history=history),
             start_event=UserMessageEvent(
@@ -109,6 +118,20 @@ async def _run_step(
             agent_config=config,
             t=LocaleHandler(),
         )
+
+
+async def _run_spine_join(config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
+    """RAGAgent runs on the conversational spine: the user-memory block arrives as a `ContextBlockEvent`
+    and the spine's join merges it, so the budget invariant is asserted on `assemble_context_step`."""
+    block = extend_chat_history_with_user_memory(
+        chat_history=[], memories=memories, relations=[], user=fake_user(), t=LocaleHandler()
+    )
+    return await ConversationCapability.assemble_context_step(
+        RAGAgent(),
+        history=LimitChatHistoryEvent(limited_history=history),
+        agent_config=config,
+        blocks=[ContextBlockEvent(source="user_memory", messages=block)],
+    )
 
 
 def _token_count(config: RAGAgentConfig, messages: list[ChatMessage]) -> int:

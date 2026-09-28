@@ -14,7 +14,6 @@ from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRol
 from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMStopEvent,
-    NotAMetaQuestionEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
@@ -71,7 +70,6 @@ async def _run(
             agent_config=_config(number_of_input_tokens),
             displayer=displayer,
             t=LocaleHandler(locale="en"),
-            _clear=NotAMetaQuestionEvent(reasoning="not a meta question"),
         )
 
 
@@ -257,7 +255,6 @@ class TestAnUnknownWindowLeavesTheRunAlone:
                 agent_config=_config(),
                 displayer=displayer,
                 t=LocaleHandler(locale="en"),
-                _clear=NotAMetaQuestionEvent(reasoning="not a meta question"),
             )
 
         assert isinstance(result, LimitChatHistoryEvent)

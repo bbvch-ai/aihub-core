@@ -1,14 +1,15 @@
 """
 Self-awareness wiring contract.
 
-A blueprint becomes self-aware by defining the self-awareness steps explicitly (detect/answer).
-Two invariants protect that design:
+A blueprint becomes self-aware by defining the self-awareness steps explicitly (detect/answer) or by
+installing `SelfAwarenessCapability`. Two invariants protect that design:
 
 1. The self-awareness steps are defined together or not at all — a partial set is a wiring bug.
-2. A self-aware blueprint must gate every raw `UserMessageEvent` entry step with `NotAMetaQuestionEvent`,
-   otherwise detection would race the normal pipeline (the §4 race condition). This gating cannot be
-   automated, so this test is the guardrail that forces every present and future self-aware blueprint
-   to wire it.
+2. Detection must not race the normal pipeline (the §4 race condition). A blueprint on the conversational
+   spine gets this for free: the spine's `derive_query_step` is the first step past the entry point and it
+   depends on `NotAMetaQuestionEvent`, so nothing downstream can start before detection clears the
+   message. A blueprint that wires its steps explicitly must instead gate every raw `UserMessageEvent`
+   entry step itself, and this test is the guardrail that forces it to.
 """
 
 from collections.abc import Callable
@@ -26,6 +27,7 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAg
 from swiss_ai_hub.agent.agents.namespace_selection_agent.namespace_selection_agent import NamespaceSelectionAgent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
+from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
 from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import SELF_AWARENESS_STEP_NAMES
 
 PRODUCTION_AGENTS: list[type[Agent]] = [
@@ -45,8 +47,12 @@ def _step_names(agent: type[Agent]) -> set[str]:
 
 
 def _is_self_aware(agent: type[Agent]) -> bool:
-    """A blueprint is self-aware when it defines the detection step explicitly."""
+    """A blueprint is self-aware when its step set carries the detection step, defined or contributed."""
     return "detect_meta_question_step" in _step_names(agent)
+
+
+def _runs_on_the_spine(agent: type[Agent]) -> bool:
+    return ConversationCapability in agent.capabilities
 
 
 def _is_raw_chat_entry_step(step: Callable) -> bool:
@@ -84,6 +90,13 @@ def test_self_aware_agents_gate_their_chat_entry_steps(agent: type[Agent]):
     """A self-aware blueprint must gate every raw chat entry step with NotAMetaQuestionEvent."""
     if not _is_self_aware(agent):
         pytest.skip(f"{agent.__name__} does not define the self-awareness steps")
+    if _runs_on_the_spine(agent):
+        query_step = next(step for step in agent.get_steps() if step.__name__ == "derive_query_step")
+        assert NotAMetaQuestionEvent in getattr(query_step, DispatchableWorkflow.INPUT_EVENTS_ANNOTATION), (
+            "The spine's derive_query_step must depend on NotAMetaQuestionEvent — it is the gate for every "
+            "blueprint on the spine"
+        )
+        return
 
     for step in agent.get_steps():
         if step.__name__ in SELF_AWARENESS_STEP_NAMES:

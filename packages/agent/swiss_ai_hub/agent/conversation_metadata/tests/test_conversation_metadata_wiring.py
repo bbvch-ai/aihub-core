@@ -65,8 +65,11 @@ PLACEHOLDER = object()
 META_ANSWER_STEP = "answer_meta_question_step"
 META_TITLE_STEP = "generate_meta_question_title_step"
 
-SPLIT_AGENTS = [RAGAgent, ExpertRAGAgent]
-INLINE_AGENTS = [LLMWrappingAgent, FewShotAgent, McpReactAgent]
+# Blueprints on the conversational spine: the spine contributes the early title step and generates the
+# follow-ups inline in whichever stop step the blueprint ends up with (its own, or the spine's default).
+SPINE_AGENTS = [RAGAgent, LLMWrappingAgent]
+SPLIT_AGENTS = [ExpertRAGAgent]
+INLINE_AGENTS = [FewShotAgent, McpReactAgent]
 
 # Self-aware agents that also adopt conversation metadata — every self-aware agent today, minus
 # McpReactAgent (not self-aware at all, so it has no meta-question branch to wire metadata into).
@@ -115,6 +118,22 @@ def test_split_agents_title_is_early_fan_out_and_follow_ups_are_inline():
             f"{agent_type.__name__} must generate follow-ups inline before the stop event, not as a fan-out "
             "@step (a fan-out follow-up step races the stop-event teardown)"
         )
+
+
+def test_spine_agents_get_the_title_step_from_the_spine_and_follow_ups_in_their_stop_step():
+    for agent_type in SPINE_AGENTS:
+        step_names = _step_names(agent_type)
+        assert TITLE_STEP in step_names, f"{agent_type.__name__} must carry the spine's {TITLE_STEP}"
+        assert TITLE_STEP not in {step.__name__ for step in agent_type.get_own_steps()}, (
+            f"{agent_type.__name__} runs on the spine and must not define its own {TITLE_STEP}"
+        )
+        title_inputs = _input_event_names(_step_by_name(agent_type, TITLE_STEP))
+        assert "LLMEvent" not in title_inputs
+        assert "ConversationQueryEvent" in title_inputs, "the title is anchored just past the meta-question gate"
+
+        stop_source = _step_source(agent_type, "stop_step")
+        assert FOLLOW_UP_GENERATOR in stop_source, f"{agent_type.__name__}.stop_step must call {FOLLOW_UP_GENERATOR}"
+        assert FOLLOW_UP_STEP not in step_names
 
 
 def test_inline_agents_call_helper_without_step_wrappers():

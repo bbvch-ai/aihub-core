@@ -8,6 +8,7 @@ extraction never sees the USER-role RAG context or the augmented message).
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    ConversationQueryEvent,
     LimitChatHistoryEvent,
     LLMEvent,
     StandaloneQuestionCondenserEvent,
@@ -29,15 +30,20 @@ def _steps_waiting_for(agent_class: type, event_class: type) -> set[str]:
 
 
 def test_memory_retrieval_is_wired_off_the_condenser_in_both_agents():
-    for agent_class in (RAGAgent, ExpertRAGAgent):
-        on_condensed = _steps_waiting_for(agent_class, StandaloneQuestionCondenserEvent)
-        assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= on_condensed
-        assert "add_memory_to_chat_history_step" in _steps_waiting_for(agent_class, LimitChatHistoryEvent)
+    """RAGAgent runs on the spine, whose query event carries the condensed question; ExpertRAGAgent
+    still wires the condenser event explicitly."""
+    on_query = _steps_waiting_for(RAGAgent, ConversationQueryEvent)
+    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= on_query
+    assert "assemble_context_step" in _steps_waiting_for(RAGAgent, LimitChatHistoryEvent)
+
+    on_condensed = _steps_waiting_for(ExpertRAGAgent, StandaloneQuestionCondenserEvent)
+    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= on_condensed
+    assert "add_memory_to_chat_history_step" in _steps_waiting_for(ExpertRAGAgent, LimitChatHistoryEvent)
 
 
 def test_memory_storage_is_wired_off_the_condenser_in_both_agents():
-    for agent_class in (RAGAgent, ExpertRAGAgent):
-        assert "store_user_memory_step" in _steps_waiting_for(agent_class, StandaloneQuestionCondenserEvent)
+    assert "store_user_memory_step" in _steps_waiting_for(RAGAgent, ConversationQueryEvent)
+    assert "store_user_memory_step" in _steps_waiting_for(ExpertRAGAgent, StandaloneQuestionCondenserEvent)
 
 
 def test_build_memory_conversation_carries_only_the_condensed_question_and_the_answer():

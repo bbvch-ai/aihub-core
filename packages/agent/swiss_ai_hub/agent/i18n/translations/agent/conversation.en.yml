@@ -1,0 +1,35 @@
+---
+config:
+  number_of_input_tokens:
+    label: Max input tokens
+    help: Maximum number of tokens allowed in the LLM input. Limits context size to
+      manage costs and avoid exceeding model limits.
+  condense_question:
+    label: Condense the question
+    help: Rewrite the latest message into one standalone question using the conversation
+      so far, before memory, retrieval and other context is looked up. Off means the
+      latest message is used as is.
+steps:
+  open_gate:
+    name: Open Gate
+    description: Releases the message straight into the pipeline, as this assistant does
+      not answer questions about itself.
+  derive_query:
+    name: Derive Query
+    description: Determines the question this turn is answered for, either the latest
+      message as is or condensed from the conversation.
+  assemble_context:
+    name: Assemble Context
+    description: Merges every retrieved context block, such as memories, into the chat
+      history within the model's input budget.
+  stop:
+    name: Stop
+    description: Completes the run once every post-answer step, such as memory storage,
+      has reported.
+thoughts:
+  condensation_empty: The condenser returned an empty standalone question, so this turn
+    has no usable query to retrieve or remember with. Refusing instead of answering from
+    the raw message.
+messages:
+  condensation_empty: I could not work out what to search for from that message. Please
+    rephrase your question and try again.

@@ -20,9 +20,12 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.generative_ai import OrgMemoryReadConfig
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 
-from swiss_ai_hub.agent.rag import step_functions
+from swiss_ai_hub.agent.capabilities.memory import memory_step_functions
+from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import (
+    do_retrieve_organization_memory,
+    do_retrieve_user_memory,
+)
 from swiss_ai_hub.agent.rag.preconditions import check_memory_ready_for_chat_history
-from swiss_ai_hub.agent.rag.step_functions import do_retrieve_organization_memory, do_retrieve_user_memory
 
 CONDENSED_QUESTION = "what is the vacation policy?"
 
@@ -81,7 +84,7 @@ async def test_organization_memory_failure_yields_empty_event():
 @pytest.mark.asyncio
 async def test_hung_backend_degrades_rather_than_stalling_the_turn(monkeypatch):
     """A stall blocks the chat turn as surely as a raise ends it, so the timeout takes the same path."""
-    monkeypatch.setattr(step_functions, "MEMORY_RETRIEVAL_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr(memory_step_functions, "MEMORY_RETRIEVAL_TIMEOUT_SECONDS", 0.01)
 
     async def _never_returns(**_kwargs):
         await asyncio.sleep(30)

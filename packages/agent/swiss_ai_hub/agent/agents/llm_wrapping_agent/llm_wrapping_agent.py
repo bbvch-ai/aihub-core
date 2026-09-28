@@ -4,11 +4,11 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
+    EnrichedChatHistoryEvent,
     LimitChatHistoryEvent,
+    LLMEvent,
     LLMStopEvent,
     Message,
-    MetaQuestionDetectedEvent,
-    NotAMetaQuestionEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -22,23 +22,20 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-    generate_follow_up_questions,
-    generate_title,
-)
+from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
+from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
-from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
-    do_answer_meta_question,
-    do_detect_meta_question,
-)
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class LLMWrappingAgent(Agent):
-    """A simple agent that wraps an LLM and streams responses to user messages."""
+    """A simple agent that wraps an LLM and streams responses to user messages.
+
+    The blueprint owns two steps: turning the chat message into a limited history that leads with its
+    system prompt, and answering from the enriched history. The gate, the query, memory, the context join,
+    the title, the follow-ups and the stop all come from the installed capabilities.
+    """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
@@ -46,91 +43,7 @@ class LLMWrappingAgent(Agent):
     )
     icon: ClassVar[str] = "mage:message"
 
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
-        return await do_detect_meta_question(
-            user_query=event.user_query,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        stop_event = await do_answer_meta_question(
-            event=event,
-            agent_name=t.extract(agent_config.name),
-            agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
-            chat_history=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-        # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
-        # only needs the topic and doesn't need to wait for this answer to finish.
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
-        return stop_event
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-        icon="mdi:format-title",
-        stop_on_error=False,
-    )
-    async def generate_meta_question_title_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        thread_context: ThreadContext,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> None:
-        """Generate the thread's title in parallel with the meta answer.
-
-        Triggered by the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so the
-        dispatcher runs both concurrently — the title only needs the user's question, not the meta
-        answer, so it must not wait for it (that would add post-answer latency for no reason: the answer
-        is already fully streamed to the user by the time the step returns, but the client's
-        "generation done" signal — and thus the stop event — would still be held back).
-        """
-        await generate_title(
-            chat_messages=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            t=t,
-            thread_context=thread_context,
-            user=user,
-        )
+    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.limit_chat_history.name"),
@@ -143,7 +56,6 @@ class LLMWrappingAgent(Agent):
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        _clear: NotAMetaQuestionEvent,
     ) -> LimitChatHistoryEvent | LLMStopEvent:
         """Truncate the history to the model's own window, refusing a turn that cannot fit it.
 
@@ -240,22 +152,13 @@ class LLMWrappingAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.description"),
         icon="mage:message",
     )
-    async def start_step(
+    async def respond_step(
         self,
-        event: LimitChatHistoryEvent,
+        event: EnrichedChatHistoryEvent,
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
-        t: LocaleHandler,
-        thread_context: ThreadContext,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
+        user: UserIdentity | None = None,
+    ) -> LLMEvent:
+        """Stream the answer as a non-terminal `LLMEvent`; the spine's stop step ends the run."""
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            stop_event = await displayer.display_llm_stream(
-                agent_config.llm, llm, event.limited_history, as_stop_step=True
-            )
-
-        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        await generate_conversation_metadata(
-            stop_event.chat_messages, agent_config.task_llm, displayer, t, thread_context, user
-        )
-        return stop_event
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.extended_history, as_stop_step=False)

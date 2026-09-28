@@ -1,0 +1,35 @@
+---
+config:
+  number_of_input_tokens:
+    label: Tokens d'entrée max
+    help: Nombre maximum de tokens autorisés dans l'entrée du LLM. Limite la taille du
+      contexte pour gérer les coûts et éviter de dépasser les limites du modèle.
+  condense_question:
+    label: Condenser la question
+    help: Reformule le dernier message en une question autonome à partir de la conversation,
+      avant la recherche en mémoire, la récupération et tout autre contexte. Désactivé,
+      le dernier message est utilisé tel quel.
+steps:
+  open_gate:
+    name: Ouvrir la porte
+    description: Transmet directement le message au pipeline, car cet assistant ne répond
+      pas aux questions sur lui-même.
+  derive_query:
+    name: Déterminer la requête
+    description: Détermine la question à laquelle ce tour répond, soit le dernier message
+      tel quel, soit condensé à partir de la conversation.
+  assemble_context:
+    name: Assembler le contexte
+    description: Fusionne chaque bloc de contexte récupéré, comme les mémoires, dans l'historique
+      du chat dans les limites du budget d'entrée du modèle.
+  stop:
+    name: Arrêt
+    description: Termine l'exécution une fois que chaque étape postérieure à la réponse,
+      comme le stockage en mémoire, a rendu compte.
+thoughts:
+  condensation_empty: Le condenseur n'a produit aucune question autonome ; ce tour n'a
+    donc pas de requête exploitable. L'appel est refusé plutôt que d'utiliser le message
+    brut.
+messages:
+  condensation_empty: Je n'ai pas réussi à déterminer ce qu'il fallait rechercher à partir
+    de ce message. Veuillez reformuler votre question et réessayer.
