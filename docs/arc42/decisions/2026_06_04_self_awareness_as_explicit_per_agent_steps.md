@@ -1,5 +1,8 @@
 # Implement Agent Self-Awareness as Explicit Per-Agent Steps
 
+> **Superseded by `2026_09_28_capabilities_and_the_conversational_spine`:** the per-agent step copies this ADR accepted
+> are gone; every conversational blueprint now installs the shared steps as capabilities.
+
 ## Context
 
 Issue #556 added "self-awareness": an agent detects a meta question about itself ("what can you do?", "why did you do

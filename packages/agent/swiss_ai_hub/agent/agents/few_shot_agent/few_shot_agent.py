@@ -6,17 +6,18 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
+    ConversationQueryEvent,
+    EnrichedChatHistoryEvent,
     LimitChatHistoryEvent,
-    LLMStopEvent,
+    LLMEvent,
     Message,
-    MetaQuestionDetectedEvent,
-    NotAMetaQuestionEvent,
+    RefusalReason,
+    RefusalStopEvent,
     StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     agent_description_guard,
-    condense_standalone_question,
     create_few_shot_messages,
     estimate_prompt_tokens,
     limit_chat_history,
@@ -27,22 +28,12 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewShotEvent
-from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_question_condenser_event import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-    generate_follow_up_questions,
-    generate_title,
-)
+from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
+from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
+from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
-from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
-    do_answer_meta_question,
-    do_detect_meta_question,
-)
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
@@ -50,14 +41,10 @@ class FewShotAgent(Agent):
     """
     Implements a Few Shot Agent.
 
-    The FewShotAgent orchestrates steps to safeguard the request against the agent description,
-    and then produce an output based on fewShotExamples.
-
-    ### Features
-    - Guard the request against the agent description.
-    - Create Message History with Few Shot Examples and Condensed User Question.
-    - Generate responses using an LLM based on the context (Few Shot Examples).
-    ...
+    The blueprint guards the request against its own description, then answers from its few-shot examples
+    and the turn's query rather than from the conversation itself. The gate, the condensed query, memory,
+    the context join, the title, the follow-ups and the stop come from the installed capabilities; the
+    enriched history only contributes its system messages, since the examples stand in for the history.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.few_shot_agent.metadata.name")
@@ -66,91 +53,7 @@ class FewShotAgent(Agent):
     )
     icon: ClassVar[str] = "mage:book"
 
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: FewShotAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
-        return await do_detect_meta_question(
-            user_query=event.user_query,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: FewShotAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        stop_event = await do_answer_meta_question(
-            event=event,
-            agent_name=t.extract(agent_config.name),
-            agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
-            chat_history=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-        # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
-        # only needs the topic and doesn't need to wait for this answer to finish.
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
-        return stop_event
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-        icon="mdi:format-title",
-        stop_on_error=False,
-    )
-    async def generate_meta_question_title_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: FewShotAgentConfig,
-        thread_context: ThreadContext,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> None:
-        """Generate the thread's title in parallel with the meta answer.
-
-        Triggered by the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so the
-        dispatcher runs both concurrently — the title only needs the user's question, not the meta
-        answer, so it must not wait for it (that would add post-answer latency for no reason: the answer
-        is already fully streamed to the user by the time the step returns, but the client's
-        "generation done" signal — and thus the stop event — would still be held back).
-        """
-        await generate_title(
-            chat_messages=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            t=t,
-            thread_context=thread_context,
-            user=user,
-        )
+    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
@@ -163,8 +66,7 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        _clear: NotAMetaQuestionEvent,
-    ) -> LimitChatHistoryEvent | LLMStopEvent:
+    ) -> LimitChatHistoryEvent | RefusalStopEvent:
         """Truncate the chat history to the token limit, and refuse the run when it still cannot be sent.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when a
@@ -208,7 +110,7 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMStopEvent:
+    ) -> RefusalStopEvent:
         """Stop the run with a reply rather than an error, keeping the token arithmetic to the thought.
 
         The wording differs from the other blueprints on purpose: this agent answers from its examples and a condensed
@@ -220,7 +122,8 @@ class FewShotAgent(Agent):
         refusal = t("agent.few_shot_agent.messages.input_too_large")
         model_name = agent_config.llm.model_name
         await displayer.display_chunk(refusal, model_name=model_name)
-        return LLMStopEvent(
+        return RefusalStopEvent(
+            reason=RefusalReason.INPUT_TOO_LARGE,
             output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
             chat_model_name=model_name,
         )
@@ -232,21 +135,22 @@ class FewShotAgent(Agent):
     )
     async def right_agent_guard(
         self,
-        event: LimitChatHistoryEvent,
+        _query: ConversationQueryEvent,
+        history: LimitChatHistoryEvent,
         start_event: UserMessageEvent,
         t: LocaleHandler,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent:
-        messages = event.limited_history
+        """Anchored on the query event so the guard sits past the meta-question gate; it judges the raw request."""
         async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             guard_result = await agent_description_guard(
                 agent_description=agent_config.description,
                 llm=llm,
                 t=t,
                 user_query=start_event.user_query,
-                messages=messages,
+                messages=history.limited_history,
             )
         if not guard_result.success:
             return AgentSuitabilityRejectEvent(reason=guard_result.reasoning)
@@ -255,58 +159,28 @@ class FewShotAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.condense_standalone_question.name"),
-        description=AgentLocaleString.from_i18n_path(
-            "agent.few_shot_agent.steps.condense_standalone_question.description"
-        ),
-        icon="mage:archive",
-    )
-    async def condense_standalone_question_step(
-        self,
-        _: AgentSuitabilityAcceptEvent,
-        start_event: UserMessageEvent,
-        chat_history_event: LimitChatHistoryEvent,
-        agent_config: FewShotAgentConfig,
-        t: LocaleHandler,
-        displayer: EventDisplayer,
-        user: UserIdentity,
-    ) -> FewShotStandaloneQuestionCondenserEvent:
-        """
-        Condenses the chat history and user query into a standalone question.
-        """
-        await displayer.display_thought(t("agent.thought.condense_question"))
-
-        async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
-            condensed_question = await condense_standalone_question(
-                chat_history=chat_history_event.limited_history,
-                message=start_event.last_user_message,
-                t=t,
-                llm=llm,
-            )
-            return FewShotStandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
-
-    @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.create_few_shot_examples.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.create_few_shot_examples.description"),
         icon="mage:checklist",
     )
     async def create_few_shot_examples(
         self,
-        event: FewShotStandaloneQuestionCondenserEvent,
+        query: ConversationQueryEvent,
+        _: AgentSuitabilityAcceptEvent,
         start_event: UserMessageEvent,
-        chat_history_event: LimitChatHistoryEvent,
+        history: EnrichedChatHistoryEvent,
         agent_config: FewShotAgentConfig,
     ) -> FewShotEvent:
         """
-        Creates a few shot examples from the agent configuration and creates the context for the llm call
-        including the system messages, the few shot examples and the condensed user Message.
-        Important: The normal chat history is not used directly (only regarded in the condensed question),
-        as the few shot examples are used instead. Same applies to the original user message
+        Creates the few-shot examples from the configuration and the context for the LLM call: the system
+        messages of the enriched history (the client's, plus any memory the enrichers contributed), the agent's
+        own system prompt, the examples and the turn's query.
+        Important: the conversation turns are not used directly (only through the query), as the few-shot
+        examples are used instead. Same applies to the original user message.
         """
         locale = start_event.locale
         few_shot_messages = create_few_shot_messages(agent_config.few_shot.few_shot_examples, locale)
-        chat_history = chat_history_event.limited_history
-        system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
+        system_messages = [msg for msg in history.extended_history if msg.role == MessageRole.SYSTEM]
         system_prompt = ChatMessage(
             role=MessageRole.SYSTEM, content=agent_config.few_shot.system_prompt.in_locale(locale)
         )
@@ -319,7 +193,7 @@ class FewShotAgent(Agent):
                 *system_messages,
                 system_prompt,
                 *few_shot_messages,
-                event.condensed_chat_message,
+                ChatMessage(role=MessageRole.USER, content=query.query),
             ]
         )
         return FewShotEvent(
@@ -339,51 +213,36 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        thread_context: ThreadContext,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
-        """
-        Generates a response using the configured LLM.
-        """
+        user: UserIdentity | None = None,
+    ) -> LLMEvent:
+        """Stream the answer as a non-terminal `LLMEvent`; the spine's stop step ends the run."""
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            stop_event = await displayer.display_llm_stream(
-                agent_config.llm, llm, event.full_context, as_stop_step=True
-            )
-
-        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        await generate_conversation_metadata(
-            stop_event.chat_messages, agent_config.task_llm, displayer, t, thread_context, user
-        )
-        return stop_event
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=False)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.description"),
         icon="mage:cancel",
     )
-    async def stop_step(
+    async def reject_unsuitable_request_step(
         self,
         event: AgentSuitabilityRejectEvent,
         start_event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        thread_context: ThreadContext,
-        user: UserIdentity,
+        user: UserIdentity | None = None,
     ) -> StopEvent:
-        # Without a chunk this path produces no assistant text at all: the admin UI renders the reject
-        # event itself (GuardRejectionEvent.vue), but OpenAI-compatible clients build the answer from the
-        # streamed chunks plus the stop event's output, so a bare StopEvent reaches OpenWebUI and the bots
-        # as an empty message. Stream the refusal like ExpertRAGAgent's decline/error paths do. The guard's
-        # `reason` carries the specific mismatch and comes back in the run's locale (the whole guard prompt
-        # is localized), but it is third-person justification, so a first-person sentence leads it.
+        """End a rejected request with a streamed refusal, since a bare stop event reaches chat clients as an
+        empty message.
+
+        The guard's `reason` carries the specific mismatch in the run's locale, but it is third-person
+        justification, so a first-person sentence leads it. The spine's title step already fired on the query
+        event; only the follow-ups are missing, grounded on the refusal the user actually read.
+        """
         refusal = t("agent.few_shot_agent.messages.unsuitable_request", reason=event.reason)
         await displayer.display_chunk(refusal, model_name=FewShotAgent.__name__)
-
-        # Neither title nor follow-ups have fired on this path yet — the guard rejected the request
-        # before the agent produced anything, so both are missing (unlike the meta-question branch,
-        # which already has an early title step). Ground them on the refusal the user actually read.
         chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=refusal)]
-        await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context, user)
+        await generate_follow_up_questions(chat_messages, agent_config.task_llm, displayer, t, user)
         return StopEvent()

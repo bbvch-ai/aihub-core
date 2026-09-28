@@ -26,6 +26,10 @@ steps:
     name: Arrêt
     description: Termine l'exécution une fois que chaque étape postérieure à la réponse,
       comme le stockage en mémoire, a rendu compte.
+  limit_chat_history:
+    name: Limiter l'historique du chat
+    description: Tronque les messages de chat entrants pour respecter la limite de
+      tokens configurée.
 thoughts:
   condensation_empty: Le condenseur n'a produit aucune question autonome ; ce tour
     n'a donc pas de requête exploitable. L'appel est refusé plutôt que d'utiliser

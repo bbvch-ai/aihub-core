@@ -4,22 +4,24 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    LLMStopEvent,
+    EnrichedChatHistoryEvent,
+    LimitChatHistoryEvent,
+    LLMEvent,
     Message,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import limit_chat_history
-from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.generative_ai import limit_chat_history, merge_consecutive_messages
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
+from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
 from swiss_ai_hub.agent.context.run.run_context import RunContext
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_conversation_metadata
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
 from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
@@ -51,13 +53,38 @@ async def all_tool_calls_emitted(tool_events: list[ToolEvent], run_context: RunC
 
 
 class McpReactAgent(Agent):
-    """ReAct agent that discovers and calls tools on an external MCP server."""
+    """ReAct agent that discovers and calls tools on an external MCP server.
+
+    The loop is the blueprint's answer pipeline: it starts from the enriched history the spine hands over and
+    ends in a non-terminal `LLMEvent`, so memory, the title, the follow-ups and the stop come from the
+    installed capabilities like on every other chat blueprint.
+    """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.mcp_react_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
         "agent.mcp_react_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:plug"
+
+    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.limit_chat_history.description"),
+        icon="mage:edit",
+    )
+    async def limit_chat_history_step(
+        self,
+        event: UserMessageEvent,
+        config: McpReactAgentConfig,
+    ) -> LimitChatHistoryEvent:
+        """The entry step: the chat message becomes the limited history the spine picks up from."""
+        return LimitChatHistoryEvent(
+            limited_history=limit_chat_history(
+                chat_history=event.messages,
+                number_of_input_tokens=config.number_of_input_tokens,
+            )
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
@@ -66,12 +93,18 @@ class McpReactAgent(Agent):
     )
     async def init_step(
         self,
-        event: UserMessageEvent,
+        event: EnrichedChatHistoryEvent,
+        start_event: UserMessageEvent,
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
     ) -> McpReasoningEvent:
-        """Discover MCP tools and resources, seed conversation with system prompt, trigger first reasoning iteration."""
+        """Discover MCP tools and resources, seed the conversation with the system prompt, trigger the first
+        reasoning iteration.
+
+        The enriched history keeps its system messages: the client's, and whatever the enrichers contributed.
+        Merged so strict providers see one leading system message.
+        """
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
             tools = await mcp_client.list_tools()
@@ -91,7 +124,7 @@ class McpReactAgent(Agent):
 
         messages: list[ChatMessage] = []
         if config.system_prompt:
-            locale = event.locale
+            locale = start_event.locale
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=config.system_prompt.in_locale(locale)))
 
         if server_instructions:
@@ -100,10 +133,10 @@ class McpReactAgent(Agent):
         if resource_context:
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=resource_context))
 
-        messages.extend(msg for msg in event.messages if msg.role != MessageRole.SYSTEM)
+        messages.extend(event.extended_history)
 
         limited = limit_chat_history(
-            chat_history=messages,
+            chat_history=merge_consecutive_messages(messages),
             number_of_input_tokens=config.number_of_input_tokens,
         )
 
@@ -123,11 +156,9 @@ class McpReactAgent(Agent):
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
-        thread_context: ThreadContext,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> list[ToolEvent] | StopEvent:
-        """Ask the LLM what to do next — call a tool or respond to the user."""
+        user: UserIdentity | None = None,
+    ) -> list[ToolEvent] | LLMEvent:
+        """Ask the LLM what to do next — call a tool, or answer the user with a non-terminal `LLMEvent`."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
@@ -138,16 +169,11 @@ class McpReactAgent(Agent):
 
         if not assistant.tool_calls:
             await displayer.display_chunk(assistant.content, config.llm.model_name)
-            stop_event = LLMStopEvent(
+            return LLMEvent(
                 input_messages=event.input_messages,
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
-            # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-            await generate_conversation_metadata(
-                stop_event.chat_messages, config.task_llm, displayer, t, thread_context, user
-            )
-            return stop_event
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
 

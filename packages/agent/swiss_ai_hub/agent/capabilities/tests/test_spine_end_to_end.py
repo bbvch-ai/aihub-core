@@ -29,7 +29,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -37,6 +37,8 @@ from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
+from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
+from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
@@ -44,6 +46,7 @@ from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgen
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
 
 pytestmark = pytest.mark.self_hosted
 
@@ -71,6 +74,18 @@ def _rag_config() -> RAGAgentConfig:
     return RAGAgentConfig(agent_id="spine_end_to_end_rag", retrievers=[], condense_question=False, **_SHARED)
 
 
+def _few_shot_config() -> FewShotAgentConfig:
+    return FewShotAgentConfig(
+        agent_id="spine_end_to_end_few_shot",
+        condense_question=False,
+        few_shot=FewShotStepConfig(
+            few_shot_examples=[FewShotExample(user=LocaleString(en="hi"), agent=LocaleString(en="hello"))],
+            system_prompt=LocaleString(en="Respond briefly."),
+        ),
+        **_SHARED,
+    )
+
+
 def _expert_rag_config() -> ExpertRAGAgentConfig:
     return ExpertRAGAgentConfig(
         agent_id="spine_end_to_end_expert",
@@ -87,8 +102,9 @@ def _expert_rag_config() -> ExpertRAGAgentConfig:
         (LLMWrappingAgent, _llm_wrapping_config(), LLMStopEvent),
         (RAGAgent, _rag_config(), RAGSuccessStopEvent),
         (ExpertRAGAgent, _expert_rag_config(), RAGSuccessStopEvent),
+        (FewShotAgent, _few_shot_config(), LLMStopEvent),
     ],
-    ids=["llm-wrapping", "rag", "expert-rag"],
+    ids=["llm-wrapping", "rag", "expert-rag", "few-shot"],
 )
 @async_test
 async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, agent_type, config, stop_event_type):
@@ -105,7 +121,11 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, a
     async def no_metadata(*_args, **_kwargs):
         pass
 
+    async def fake_guard(**_):
+        return MagicMock(success=True, reasoning="fits")
+
     monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr("swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent.agent_description_guard", fake_guard)
     monkeypatch.setattr(f"{SPINE_MODULE}.generate_title", no_metadata)
     monkeypatch.setattr(f"{SPINE_MODULE}.generate_follow_up_questions", no_metadata)
     monkeypatch.setattr(EventDisplayer, "display_llm_stream", fake_stream)

@@ -6,6 +6,7 @@ from swiss_ai_hub.core.events.agent import (
     GuardRejectionEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    StandaloneQuestionCondenserEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
@@ -15,9 +16,6 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewShotEvent
-from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_question_condenser_event import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
@@ -142,12 +140,12 @@ def then_guard_or_rejection_event(agent_runner: AgentTestRunner):
     )
 
 
-@then("a FewShotStandaloneQuestionCondenserEvent is present with condensed question")
+@then("a StandaloneQuestionCondenserEvent is present with condensed question")
 def then_few_shot_condenser_event(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_class(FewShotStandaloneQuestionCondenserEvent), (
-        "FewShotStandaloneQuestionCondenserEvent was not emitted"
+    assert agent_runner.has_event_of_class(StandaloneQuestionCondenserEvent), (
+        "StandaloneQuestionCondenserEvent was not emitted"
     )
-    condenser_event = agent_runner.get_event_of_class(FewShotStandaloneQuestionCondenserEvent)
+    condenser_event = agent_runner.get_event_of_class(StandaloneQuestionCondenserEvent)
     assert condenser_event.condensed_chat_message.content, "Condensed question content was empty"
 
 

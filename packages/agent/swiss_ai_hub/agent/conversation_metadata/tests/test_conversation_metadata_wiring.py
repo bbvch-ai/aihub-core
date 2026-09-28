@@ -67,15 +67,15 @@ META_TITLE_STEP = "generate_meta_question_title_step"
 
 # Blueprints on the conversational spine: the spine contributes the early title step and generates the
 # follow-ups inline in whichever stop step the blueprint ends up with (its own, or the spine's default).
-SPINE_AGENTS = [RAGAgent, ExpertRAGAgent, LLMWrappingAgent]
-# No blueprint wires the split form explicitly any more; the spine took it over. Kept as the list the
-# split test reads so the form is re-checked the moment a blueprint returns to it.
+SPINE_AGENTS = [RAGAgent, ExpertRAGAgent, LLMWrappingAgent, FewShotAgent, McpReactAgent]
+# No blueprint wires the split or inline form explicitly any more; the spine took both over. Kept as the
+# lists those tests read so the forms are re-checked the moment a blueprint returns to them.
 SPLIT_AGENTS: list[type] = []
-INLINE_AGENTS = [FewShotAgent, McpReactAgent]
+INLINE_AGENTS: list[type] = []
 
 # Self-aware agents that also adopt conversation metadata — every self-aware agent today, minus
 # McpReactAgent (not self-aware at all, so it has no meta-question branch to wire metadata into).
-META_QUESTION_METADATA_AGENTS = [RAGAgent, ExpertRAGAgent, FewShotAgent, LLMWrappingAgent]
+META_QUESTION_METADATA_AGENTS = [RAGAgent, ExpertRAGAgent, FewShotAgent, LLMWrappingAgent, McpReactAgent]
 
 # Non-answer-owning or non-conversational agents that must never generate conversation metadata.
 EXCLUDED_AGENTS = [RetrievalAgent, NamespaceSelectionAgent, ExpertAskingAgent]
@@ -197,12 +197,6 @@ def test_meta_question_answer_step_generates_follow_ups_only():
         )
 
 
-def test_mcp_react_agent_has_no_meta_question_branch():
-    """McpReactAgent isn't self-aware, so it has no meta-question flow to wire metadata into."""
-    assert META_ANSWER_STEP not in _step_names(McpReactAgent)
-    assert META_TITLE_STEP not in _step_names(McpReactAgent)
-
-
 def test_expert_rag_agent_decline_and_error_paths_generate_follow_ups():
     """Title already fires early (fan-out step, unaffected by this branching); only follow-ups are
     missing on the expert-decline/expert-error exit paths, grounded on the canned decline/error message
@@ -216,12 +210,12 @@ def test_expert_rag_agent_decline_and_error_paths_generate_follow_ups():
         )
 
 
-def test_few_shot_agent_guard_reject_generates_title_and_follow_ups():
-    """Neither title nor follow-ups have fired yet when the suitability guard rejects the request, so
-    both are needed here — unlike ExpertRAGAgent's decline/error paths, which already have an early title
-    step."""
-    source = _step_source(FewShotAgent, "stop_step")
-    assert INLINE_HELPER in source, f"FewShotAgent.stop_step (guard-reject) must call {INLINE_HELPER}"
+def test_few_shot_agent_guard_reject_generates_follow_ups():
+    """The spine's title step already fired on the query event when the suitability guard rejects the
+    request, so only the follow-ups are missing on this path, like ExpertRAGAgent's decline/error paths."""
+    source = _step_source(FewShotAgent, "reject_unsuitable_request_step")
+    assert FOLLOW_UP_GENERATOR in source, f"FewShotAgent.reject_unsuitable_request_step must call {FOLLOW_UP_GENERATOR}"
+    assert TITLE_GENERATOR not in source
 
 
 def test_mcp_react_agent_max_iterations_generates_no_metadata():

@@ -26,6 +26,9 @@ steps:
     name: Stopp
     description: Beendet den Lauf, sobald jeder Schritt nach der Antwort, etwa die
       Gedächtnisspeicherung, gemeldet hat.
+  limit_chat_history:
+    name: Chat-Verlauf begrenzen
+    description: Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit.
 thoughts:
   condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher
     gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt,

@@ -1,63 +1,28 @@
 from typing import Annotated, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
-from swiss_ai_hub.core.generative_ai import LLMConfig
-from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class McpReactAgentConfig(AgentConfig):
-    """Configuration for the MCP ReAct Agent — connects to an external MCP server and reasons over its tools."""
+class McpReactAgentConfig(MemoryFields, ConversationFields, AgentConfig):
+    """Configuration for the MCP ReAct Agent: the capability mixins plus the MCP server and the loop bound."""
 
     mcp: Annotated[
         McpClientConfig,
         Field(description="MCP server connection configuration."),
     ]
-    llm: Annotated[
-        LLMConfig,
-        Field(description="LLM used for reasoning and tool selection."),
-    ]
-    task_llm: Annotated[
-        LLMConfig | None,
-        Field(
-            default=None,
-            description=(
-                "Model for this agent's auxiliary steps: conversation title and follow-up question "
-                "generation. The ReAct reasoning loop always uses the main model. Generation parameters are "
-                "inherited from the main model. Falls back to the main model when disabled."
-            ),
-            title="Task LLM",
-        ),
-    ] = None
-    system_prompt: Annotated[
-        LocaleString | LocaleInput | None,
-        Field(description="System prompt defining the agent's behavior when reasoning about tool use."),
-    ] = None
     max_iterations: Annotated[
         int | InputNumber,
         Field(default=10, description="Maximum number of reasoning iterations before graceful termination."),
         Gt(0),
     ]
-    number_of_input_tokens: Annotated[
-        int | InputNumber,
-        Field(default=128000, description="Maximum tokens allowed in input to manage context size or cost."),
-        Gt(0),
-    ]
-
-    @model_validator(mode="after")
-    def derive_task_llm_from_main_llm(self) -> Self:
-        """Only the task model is configurable: its generation parameters always mirror the main llm, and
-        an unset or blank picker falls back to the main model."""
-        if not isinstance(self.llm.model_name, str):
-            return self
-        task_model_name = self.task_llm.model_name if self.task_llm else None
-        self.task_llm = self.llm.as_task_llm(task_model_name or self.llm.model_name)
-        return self
 
     @classmethod
     def as_form(cls) -> Self:
@@ -68,8 +33,8 @@ class McpReactAgentConfig(AgentConfig):
             description=base.description,
             icon=base.icon,
             mcp=McpClientConfig.as_form(),
-            llm=LLMConfig.as_form(),
-            task_llm=LLMConfig.as_form(include_default_parameter=False),
+            **cls.conversation_form_elements(),
+            **cls.memory_form_elements(),
             system_prompt=LocaleInput(
                 label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.label"),
                 help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.help"),
@@ -82,12 +47,5 @@ class McpReactAgentConfig(AgentConfig):
                 min=1,
                 max=100,
                 step=1,
-            ),
-            number_of_input_tokens=InputNumber(
-                label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.number_of_input_tokens.label"),
-                help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.number_of_input_tokens.help"),
-                min=1000,
-                max=200000,
-                step=1000,
             ),
         )

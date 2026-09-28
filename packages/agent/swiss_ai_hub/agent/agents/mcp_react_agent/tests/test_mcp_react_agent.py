@@ -6,7 +6,7 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import ToolEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import NotAMetaQuestionEvent, ToolEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
@@ -15,7 +15,11 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.mcp_react_agent import McpReactAgent, McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.runners import AgentTestRunner
+
+SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation_capability"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
 
 scenarios("./features/mcp_react_agent.feature")
 
@@ -76,6 +80,8 @@ def _():
             description=LocaleString(en="Test agent"),
             mcp=McpClientConfig(name="mock", url="http://mock-server/mcp"),
             llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
+            user_memory=UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
+            org_memory=None,
         ),
     )
 
@@ -90,9 +96,18 @@ async def _(agent_runner: AgentTestRunner):
     async def fake_cost_reporting_llm(self, displayer, user=None) -> AsyncIterator[AsyncMock]:  # noqa: ARG001
         yield mock_llm
 
+    async def fake_detect(*, user_query, **_):
+        return NotAMetaQuestionEvent(reasoning="normal task")
+
+    async def no_metadata(*_args, **_kwargs):
+        pass
+
     with (
         patch("swiss_ai_hub.agent.mcp.mcp_client_factory.McpClientFactory.create", side_effect=_fake_mcp_create),
         patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
+        patch(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect),
+        patch(f"{SPINE_MODULE}.generate_title", no_metadata),
+        patch(f"{SPINE_MODULE}.generate_follow_up_questions", no_metadata),
     ):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(

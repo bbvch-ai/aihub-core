@@ -26,6 +26,10 @@ steps:
     name: Stop
     description: Completa l'esecuzione una volta che ogni passaggio successivo alla
       risposta, come l'archiviazione della memoria, ha riferito.
+  limit_chat_history:
+    name: Limita cronologia chat
+    description: Tronca i messaggi di chat in arrivo per rispettare il limite di token
+      configurato.
 thoughts:
   condensation_empty: Il condensatore non ha prodotto alcuna domanda autonoma, quindi
     questo turno non ha una query utilizzabile. La richiesta viene rifiutata invece

@@ -26,6 +26,10 @@ steps:
     name: Stop
     description: Completes the run once every post-answer step, such as memory storage,
       has reported.
+  limit_chat_history:
+    name: Limit Chat History
+    description: Truncates incoming chat messages to fit within the configured token
+      limit.
 thoughts:
   condensation_empty: The condenser returned an empty standalone question, so this
     turn has no usable query to retrieve or remember with. Refusing instead of answering
