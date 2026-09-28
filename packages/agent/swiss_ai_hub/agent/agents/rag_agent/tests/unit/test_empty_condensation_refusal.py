@@ -3,7 +3,7 @@
 `condense_standalone_question` raises `EmptyCondensationError` (#1753), and `stop_on_error` defaults to True,
 so an uncaught raise reaches the dispatcher as an `ExceptionEvent` whose message the chat UI renders — the
 raw English sentence from the error class. `do_condense_standalone_question` catches it and returns the same
-`RAGFailureStopEvent` shape `_refuse_oversized_input` uses, so both "we cannot serve this turn" cases look
+`RefusalStopEvent` shape `_refuse_oversized_input` uses, so both "we cannot serve this turn" cases look
 alike to the user.
 """
 
@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import RAGFailureReason, RAGFailureStopEvent, StandaloneQuestionCondenserEvent
+from swiss_ai_hub.core.events.agent import RefusalReason, RefusalStopEvent, StandaloneQuestionCondenserEvent
 from swiss_ai_hub.core.generative_ai import EmptyCondensationError, LLMConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
@@ -52,8 +52,8 @@ async def test_a_blank_condensation_becomes_a_failure_stop_event():
     with patch(CONDENSE_PATH, side_effect=EmptyCondensationError("nothing came back")):
         result = await _run(displayer)
 
-    assert isinstance(result, RAGFailureStopEvent)
-    assert result.reason == RAGFailureReason.CONDENSATION_EMPTY
+    assert isinstance(result, RefusalStopEvent)
+    assert result.reason == RefusalReason.CONDENSATION_EMPTY
 
 
 @pytest.mark.asyncio
@@ -65,7 +65,7 @@ async def test_the_refusal_is_rendered_to_the_user_and_carries_the_same_text():
         result = await _run(displayer)
 
     displayer.display_chunk.assert_awaited_once()
-    assert displayer.display_chunk.await_args.args[0] == result.answer
+    assert displayer.display_chunk.await_args.args[0] == result.output_messages[-1].content
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ async def test_the_refusal_is_localized_not_the_exception_text():
         displayer = _displayer()
         with patch(CONDENSE_PATH, side_effect=EmptyCondensationError("nothing came back")):
             result = await _run(displayer, locale=locale)
-        rendered[locale] = result.answer
+        rendered[locale] = result.output_messages[-1].content
 
     assert "nothing came back" not in rendered.values()
     assert all(text for text in rendered.values())

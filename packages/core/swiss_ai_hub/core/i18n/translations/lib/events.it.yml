@@ -256,3 +256,9 @@ mail_batch_drafted_event:
   name: Lotto Redatto
   description: L'agente ha redatto risposte per un lotto di messaggi e le ha aggiunte
     alla cartella delle bozze affinché una persona le revisioni e le invii.
+enriched_chat_history_event:
+  name: Contesto arricchito
+  description: La cronologia della chat che il modello riceve, con tutti i blocchi di contesto recuperati
+refusal_stop_event:
+  name: Turno rifiutato
+  description: L'assistente ha rifiutato questo turno a causa dell'input e ne ha spiegato il motivo all'utente.

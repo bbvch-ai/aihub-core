@@ -23,8 +23,8 @@ from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMW
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_wiring import ConversationWiring
-from swiss_ai_hub.agent.capabilities.conversation.conversational_agent_config import ConversationalAgentConfig
 from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
 from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -106,7 +106,7 @@ def test_a_step_name_collision_is_refused():
 
 def test_a_config_that_misses_a_capability_base_is_refused_at_start():
     with pytest.raises(TypeError, match="MemoryCapability"):
-        RAGAgent.validate_capabilities(ConversationalAgentConfig)
+        RAGAgent.validate_capabilities(ConversationFields)
     with pytest.raises(TypeError, match="ConversationCapability"):
         BareChatAgent.validate_capabilities(AgentConfig)
 

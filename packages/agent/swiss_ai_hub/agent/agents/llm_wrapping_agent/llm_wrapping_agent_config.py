@@ -5,13 +5,14 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import LocaleInput
 from swiss_ai_hub.core.i18n import LocaleString
 
-from swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config import MemoryEnabledAgentConfig
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class LLMWrappingAgentConfig(MemoryEnabledAgentConfig):
+class LLMWrappingAgentConfig(MemoryFields, ConversationFields, AgentConfig):
     """
-    Configuration for LLMWrappingAgent: the capability bases plus a mandatory system prompt.
+    Configuration for LLMWrappingAgent: the capability mixins plus a mandatory system prompt.
 
     Supports duality pattern for form rendering and data validation.
     """
@@ -36,6 +37,6 @@ class LLMWrappingAgentConfig(MemoryEnabledAgentConfig):
                 input_type="textarea",
                 rows=3,
             ),
-            **cls.conversational_form_elements(),
+            **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
         )

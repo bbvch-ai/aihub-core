@@ -15,6 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
+    RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
     UserMessageEvent,
@@ -102,7 +103,7 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         run_context: RunContext,
-    ) -> LimitChatHistoryEvent | RAGFailureStopEvent:
+    ) -> LimitChatHistoryEvent | RefusalStopEvent:
         """The entry step: both start events become the limited history the spine picks up from.
 
         Not gated on meta-question detection: limiting is cheap and side-effect free, and the spine holds

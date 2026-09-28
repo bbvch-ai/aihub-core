@@ -1,23 +1,23 @@
 from typing import Annotated, Any, Self
 
 from pydantic import Field, model_validator
-from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox, InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class ConversationalAgentConfig(AgentConfig):
+class ConversationFields(Form):
     """
     What every chat blueprint configures: the answering model, the auxiliary model, the input budget and
     whether the turn's query is condensed out of the history.
 
-    `ConversationCapability` and `SelfAwarenessCapability` annotate their steps with this class, so a
-    blueprint installs them by deriving its config from here. Subclasses that need other defaults override
-    the field.
+    A form mixin, not a config: a blueprint's `AgentConfig` lists it as a base next to the fields of the
+    other capabilities it installs, and the dispatcher injects the concrete config into any step parameter
+    annotated with it. Subclasses that need other defaults override the field.
     """
 
     system_prompt: Annotated[
@@ -67,7 +67,7 @@ class ConversationalAgentConfig(AgentConfig):
         return self
 
     @classmethod
-    def conversational_form_elements(cls) -> dict[str, Any]:
+    def conversation_form_elements(cls) -> dict[str, Any]:
         """The form elements for this class's own fields, for a subclass's `as_form()` to spread."""
         return {
             "llm": LLMConfig.as_form(),

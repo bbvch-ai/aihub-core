@@ -4,8 +4,8 @@ import inspect
 from collections.abc import Callable
 from typing import ClassVar
 
-from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.base_event import BaseEvent
+from swiss_ai_hub.core.form.form import Form
 
 from swiss_ai_hub.agent.agents.agent import Agent
 
@@ -20,11 +20,11 @@ class Capability(abc.ABC):
     and can withhold a step the blueprint already provides itself, which is how the spine offers defaults
     without a blueprint having to opt out of them.
 
-    `required_config` names the config base the capability's steps are annotated with. A blueprint whose
-    config does not derive from it fails at runner start, not on its first run.
+    `required_config` names the form mixin the capability's steps are annotated with. A blueprint whose
+    config does not list it as a base fails at runner start, not on its first run.
     """
 
-    required_config: ClassVar[type[AgentConfig]] = AgentConfig
+    required_config: ClassVar[type[Form]] = Form
 
     @classmethod
     def steps_for(cls, blueprint: type[Agent]) -> list[Callable]:

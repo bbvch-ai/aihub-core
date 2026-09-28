@@ -22,6 +22,7 @@ from swiss_ai_hub.core.events.agent import (
     CronStartEvent,
     DisplayEvent,
     EmbeddingEvent,
+    EnrichedChatHistoryEvent,
     ExceptionEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
@@ -49,6 +50,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
+    RefusalStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -86,6 +88,7 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
+    | Annotated[EnrichedChatHistoryEvent, Tag("EnrichedChatHistoryEvent")]
     | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
     | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
@@ -103,6 +106,7 @@ DisplayEvents = (
     | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
     | Annotated[LLMEvent, Tag("LLMEvent")]
     | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
+    | Annotated[RefusalStopEvent, Tag("RefusalStopEvent")]
     | Annotated[MetaQuestionDetectedEvent, Tag("MetaQuestionDetectedEvent")]
     | Annotated[RerankerEvent, Tag("RerankerEvent")]
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]

@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import (
     AnswerPostProcessedEvent,
@@ -20,7 +21,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
-from swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config import MemoryEnabledAgentConfig
+from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import (
     build_agent_memory,
     build_memory_storage_request,
@@ -45,7 +46,7 @@ class MemoryCapability(Capability):
     barriers count reports instead of re-deriving the memory switches.
     """
 
-    required_config: ClassVar[type[MemoryEnabledAgentConfig]] = MemoryEnabledAgentConfig
+    required_config: ClassVar[type[MemoryFields]] = MemoryFields
 
     # A programmatic start that narrows the organization-memory scope writes the requested namespaces here
     # in its entry step. The capability cannot name that start event, so the run context is the handover.
@@ -60,18 +61,19 @@ class MemoryCapability(Capability):
     async def retrieve_user_memory_step(
         agent: Agent,
         query: ConversationQueryEvent,
-        agent_config: MemoryEnabledAgentConfig,
+        agent_config: AgentConfig,
+        memory: MemoryFields,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[ContextBlockEvent | RetrieveUserMemoryEvent]:
         """Contribute the user's memories as a context block, empty when memory is off or there is no identity."""
-        if user is None or query.is_blank or not agent_config.user_memory.enable_user_memory_retrieval:
+        if user is None or query.is_blank or not memory.user_memory.enable_user_memory_retrieval:
             return [ContextBlockEvent.empty(USER_MEMORY)]
         retrieved = await do_retrieve_user_memory(
             query=query.query,
             user_id=user.id,
-            memory=build_agent_memory(agent, agent_config, t),
-            rerank=agent_config.user_memory.rerank_user_memory,
+            memory=build_agent_memory(agent, agent_config, memory, t),
+            rerank=memory.user_memory.rerank_user_memory,
         )
         block = extend_chat_history_with_user_memory(
             chat_history=[], memories=retrieved.memories, relations=retrieved.relations, user=user, t=t
@@ -87,21 +89,22 @@ class MemoryCapability(Capability):
     async def retrieve_organization_memory_step(
         agent: Agent,
         query: ConversationQueryEvent,
-        agent_config: MemoryEnabledAgentConfig,
+        agent_config: AgentConfig,
+        memory: MemoryFields,
         t: LocaleHandler,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> list[ContextBlockEvent | RetrieveOrganizationMemoryEvent]:
         """Contribute the organization's memories as a context block, empty when the profile reads none."""
-        if agent_config.org_memory is None or query.is_blank:
+        if memory.org_memory is None or query.is_blank:
             return [ContextBlockEvent.empty(ORGANIZATION_MEMORY)]
         requested = await run_context.get(MemoryCapability.REQUESTED_ORG_NAMESPACES_KEY, [])
         retrieved = await do_retrieve_organization_memory(
             query=query.query,
             requested_namespaces=requested,
             user_id=user.id if user else None,
-            org_memory=agent_config.org_memory,
-            memory=build_agent_memory(agent, agent_config, t),
+            org_memory=memory.org_memory,
+            memory=build_agent_memory(agent, agent_config, memory, t),
         )
         block = extend_chat_history_with_organization_memory(chat_history=[], memories=retrieved.memories, t=t)
         return [retrieved, ContextBlockEvent(source=ORGANIZATION_MEMORY, messages=block)]
@@ -116,7 +119,8 @@ class MemoryCapability(Capability):
         agent: Agent,
         llm_event: LLMEvent,
         query: ConversationQueryEvent,
-        agent_config: MemoryEnabledAgentConfig,
+        agent_config: AgentConfig,
+        memory: MemoryFields,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -129,7 +133,7 @@ class MemoryCapability(Capability):
         delegation request goes out ahead of the marker, so the stop step can never overtake it.
         """
         done = AnswerPostProcessedEvent(source=USER_MEMORY)
-        if user is None or query.is_blank or not agent_config.user_memory.enable_user_memory_storage:
+        if user is None or query.is_blank or not memory.user_memory.enable_user_memory_storage:
             return [done]
         conversation = [
             ChatMessage(role=MessageRole.USER, content=query.query),

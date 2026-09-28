@@ -7,18 +7,19 @@ from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrie
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
-from swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config import MemoryEnabledAgentConfig
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
 
 
-class RAGAgentConfig(MemoryEnabledAgentConfig):
+class RAGAgentConfig(MemoryFields, ConversationFields, AgentConfig):
     """
     Configuration for a RAGAgent with multiple retrieval sources.
 
-    The conversational and memory fields come from the capability config bases; what is declared here is
+    The conversational and memory fields come from the capability mixins; what is declared here is
     retrieval: sources, reranking, the guards and the prompts that frame retrieved context.
 
     Note: For expert escalation functionality, use ExpertRAGAgentConfig instead.
@@ -74,7 +75,7 @@ class RAGAgentConfig(MemoryEnabledAgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            **cls.conversational_form_elements(),
+            **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),

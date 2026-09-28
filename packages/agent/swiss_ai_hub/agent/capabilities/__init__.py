@@ -5,18 +5,18 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.capability import Capability
     from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
-    from swiss_ai_hub.agent.capabilities.conversation.conversational_agent_config import ConversationalAgentConfig
+    from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
     from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
-    from swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config import MemoryEnabledAgentConfig
+    from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
     from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
     from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
 
 __all__ = [
     "Capability",
     "ConversationCapability",
-    "ConversationalAgentConfig",
+    "ConversationFields",
     "MemoryCapability",
-    "MemoryEnabledAgentConfig",
+    "MemoryFields",
     "SelfAwarenessCapability",
     "UserMemoryConfig",
 ]
@@ -24,9 +24,9 @@ __all__ = [
 _LAZY_IMPORTS: dict[str, str] = {
     "Capability": "swiss_ai_hub.agent.capabilities.capability",
     "ConversationCapability": "swiss_ai_hub.agent.capabilities.conversation.conversation_capability",
-    "ConversationalAgentConfig": "swiss_ai_hub.agent.capabilities.conversation.conversational_agent_config",
+    "ConversationFields": "swiss_ai_hub.agent.capabilities.conversation.conversation_fields",
     "MemoryCapability": "swiss_ai_hub.agent.capabilities.memory.memory_capability",
-    "MemoryEnabledAgentConfig": "swiss_ai_hub.agent.capabilities.memory.memory_enabled_agent_config",
+    "MemoryFields": "swiss_ai_hub.agent.capabilities.memory.memory_fields",
     "SelfAwarenessCapability": "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability",
     "UserMemoryConfig": "swiss_ai_hub.agent.capabilities.memory.user_memory_config",
 }

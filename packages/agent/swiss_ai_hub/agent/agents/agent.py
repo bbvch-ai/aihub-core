@@ -97,13 +97,13 @@ class Agent(DispatchableWorkflow):
 
     @classmethod
     def validate_capabilities(cls, agent_config_type: type[AgentConfig]) -> None:
-        """Fail at runner start when a capability's steps would ask the dispatcher for a config base the
-        blueprint's config does not derive from."""
+        """Fail at runner start when a capability's steps would ask the dispatcher for a form mixin the
+        blueprint's config does not list as a base."""
         for capability in cls.capabilities:
             if not issubclass(agent_config_type, capability.required_config):
                 raise TypeError(
-                    f"{cls.__name__} installs {capability.__name__}, which needs a config deriving from "
-                    f"{capability.required_config.__name__}, but {agent_config_type.__name__} does not."
+                    f"{cls.__name__} installs {capability.__name__}, which needs a config with the "
+                    f"{capability.required_config.__name__} mixin, but {agent_config_type.__name__} lacks it."
                 )
 
     @classmethod

@@ -129,7 +129,7 @@ async def _run_spine_join(config: RAGAgentConfig, history: list[ChatMessage], me
     return await ConversationCapability.assemble_context_step(
         RAGAgent(),
         history=LimitChatHistoryEvent(limited_history=history),
-        agent_config=config,
+        conversation=config,
         blocks=[ContextBlockEvent(source="user_memory", messages=block)],
     )
 

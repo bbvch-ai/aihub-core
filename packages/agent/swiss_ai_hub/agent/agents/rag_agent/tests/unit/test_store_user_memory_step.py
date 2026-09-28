@@ -67,6 +67,7 @@ async def test_the_step_delegates_to_the_memory_writer():
         query=ConversationQueryEvent(query="what is the vacation policy?", condensed=True),
         topic=_topic(),
         agent_config=_config(),
+        memory=_config(),
         t=locale_handler,
         user=fake_user(),
     )

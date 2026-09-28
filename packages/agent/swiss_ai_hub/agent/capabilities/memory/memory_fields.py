@@ -1,19 +1,18 @@
-from typing import Annotated, Any, override
+from typing import Annotated, Any
 
 from pydantic import Field
+from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import OrgMemoryReadConfig
 
-from swiss_ai_hub.agent.capabilities.conversation.conversational_agent_config import ConversationalAgentConfig
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 
-class MemoryEnabledAgentConfig(ConversationalAgentConfig):
+class MemoryFields(Form):
     """
-    A conversational config that also scopes user and organization memory.
+    The user and organization memory scoping a blueprint's config gains by listing this mixin as a base.
 
-    `MemoryCapability` annotates its steps with this class. It sits on the conversational base because
-    memory presupposes a conversation: retrieval searches with the turn's query and storage persists the
-    turn's answer.
+    `MemoryCapability` annotates its steps with this class. List it before `AgentConfig` so its
+    `memory_llm_model_name` wins over the platform default the base config reports.
     """
 
     user_memory: Annotated[
@@ -29,7 +28,6 @@ class MemoryEnabledAgentConfig(ConversationalAgentConfig):
     ] = OrgMemoryReadConfig()
 
     @property
-    @override
     def memory_llm_model_name(self) -> str | None:
         """Point the platform's memory hook at the profile's own picker (issue #1590).
 

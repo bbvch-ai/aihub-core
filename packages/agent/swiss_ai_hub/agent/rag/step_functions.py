@@ -14,9 +14,12 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    Message,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
+    RefusalReason,
+    RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
@@ -78,7 +81,7 @@ async def do_limit_chat_history(
     llm_configs: list[LLMConfig | None],
     displayer: EventDisplayer,
     t: LocaleHandler,
-) -> LimitChatHistoryEvent | RAGFailureStopEvent:
+) -> LimitChatHistoryEvent | RefusalStopEvent:
     """Truncate chat messages to the configured token limit, and refuse the run if the result still cannot be sent.
 
     Truncation alone cannot bound the prompt. `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when even
@@ -128,15 +131,19 @@ async def _refuse_oversized_input(
     model_name: str,
     displayer: EventDisplayer,
     t: LocaleHandler,
-) -> RAGFailureStopEvent:
+) -> RefusalStopEvent:
     """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
 
-    The chunk is what the chat renders; `answer` carries the same text for non-streaming consumers.
+    The chunk is what the chat renders; `output_messages` carries the same text for non-streaming consumers.
     """
-    await displayer.display_thought(t("agent.rag_agent.thoughts.input_too_large", tokens=needed, budget=budget))
-    refusal = t("agent.rag_agent.messages.input_too_large")
+    await displayer.display_thought(t("agent.conversation.thoughts.input_too_large", tokens=needed, budget=budget))
+    refusal = t("agent.conversation.messages.input_too_large")
     await displayer.display_chunk(refusal, model_name=model_name)
-    return RAGFailureStopEvent(reason=RAGFailureReason.INPUT_TOO_LARGE, answer=refusal)
+    return RefusalStopEvent(
+        reason=RefusalReason.INPUT_TOO_LARGE,
+        output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
+        chat_model_name=model_name,
+    )
 
 
 async def do_condense_standalone_question(
@@ -146,7 +153,7 @@ async def do_condense_standalone_question(
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity | None,
-) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
+) -> StandaloneQuestionCondenserEvent | RefusalStopEvent:
     """Condense chat history and user query into standalone question.
 
     A blank condensation refuses the turn rather than escaping as an `ExceptionEvent`. The raise in
@@ -169,16 +176,20 @@ async def _refuse_empty_condensation(
     model_name: str,
     displayer: EventDisplayer,
     t: LocaleHandler,
-) -> RAGFailureStopEvent:
+) -> RefusalStopEvent:
     """Stop the run with a message the user can act on, keeping the mechanism to the thought.
 
     Retrying is pointless (identical re-issue at `temperature=0.1` returns the same nothing) and there is
     no fallback question to answer with, so asking the user to rephrase is the only useful move left.
     """
-    await displayer.display_thought(t("agent.rag_agent.thoughts.condensation_empty"))
-    refusal = t("agent.rag_agent.messages.condensation_empty")
+    await displayer.display_thought(t("agent.conversation.thoughts.condensation_empty"))
+    refusal = t("agent.conversation.messages.condensation_empty")
     await displayer.display_chunk(refusal, model_name=model_name)
-    return RAGFailureStopEvent(reason=RAGFailureReason.CONDENSATION_EMPTY, answer=refusal)
+    return RefusalStopEvent(
+        reason=RefusalReason.CONDENSATION_EMPTY,
+        output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
+        chat_model_name=model_name,
+    )
 
 
 async def do_respond_with_llm(

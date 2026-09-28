@@ -69,7 +69,7 @@ async def test_the_query_is_the_last_message_verbatim_unless_condensation_is_on(
         ]
     )
     events = await ConversationCapability.derive_query_step(
-        LLMWrappingAgent(), history=history, agent_config=_config(), displayer=MagicMock(), t=MagicMock()
+        LLMWrappingAgent(), history=history, conversation=_config(), displayer=MagicMock(), t=MagicMock()
     )
 
     assert [type(event) for event in events] == [ConversationQueryEvent]
@@ -95,7 +95,7 @@ async def test_condensation_emits_the_display_event_and_the_query_together():
         events = await ConversationCapability.derive_query_step(
             LLMWrappingAgent(),
             history=history,
-            agent_config=_config(condense=True),
+            conversation=_config(condense=True),
             displayer=MagicMock(display_thought=AsyncMock()),
             t=MagicMock(),
         )
@@ -123,7 +123,7 @@ async def test_the_join_puts_blocks_behind_the_system_head_and_trims_them_first(
         enriched = await ConversationCapability.assemble_context_step(
             LLMWrappingAgent(),
             history=LimitChatHistoryEvent(limited_history=[system, turn]),
-            agent_config=_config(number_of_input_tokens=1_000),
+            conversation=_config(number_of_input_tokens=1_000),
             blocks=[block],
         )
         assert enriched.extended_history == [system, block.messages[0], turn]
@@ -131,7 +131,7 @@ async def test_the_join_puts_blocks_behind_the_system_head_and_trims_them_first(
         trimmed = await ConversationCapability.assemble_context_step(
             LLMWrappingAgent(),
             history=LimitChatHistoryEvent(limited_history=[system, turn]),
-            agent_config=_config(number_of_input_tokens=60),
+            conversation=_config(number_of_input_tokens=60),
             blocks=[block],
         )
         assert trimmed.extended_history == [system, turn], "the block gives way, never the turn or the head"
@@ -143,7 +143,7 @@ async def test_the_join_passes_the_history_through_when_no_block_has_content():
     enriched = await ConversationCapability.assemble_context_step(
         LLMWrappingAgent(),
         history=LimitChatHistoryEvent(limited_history=history),
-        agent_config=_config(),
+        conversation=_config(),
         blocks=[ContextBlockEvent.empty("user_memory"), ContextBlockEvent.empty("organization_memory")],
     )
     assert enriched.extended_history == history
@@ -161,7 +161,7 @@ async def test_the_stop_waits_for_every_post_answer_hook_then_carries_the_answer
         new=AsyncMock(),
     ) as follow_ups:
         stop = await ConversationCapability.stop_step(
-            LLMWrappingAgent(), llm_event=answer, agent_config=_config(), displayer=MagicMock(), t=MagicMock()
+            LLMWrappingAgent(), llm_event=answer, conversation=_config(), displayer=MagicMock(), t=MagicMock()
         )
 
     assert isinstance(stop, LLMStopEvent)

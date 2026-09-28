@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
@@ -12,7 +13,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
-from swiss_ai_hub.agent.capabilities.conversation.conversational_agent_config import ConversationalAgentConfig
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
     generate_follow_up_questions,
@@ -36,7 +37,7 @@ class SelfAwarenessCapability(Capability):
     `NotAMetaQuestionEvent`, so a blueprint that installs this capability needs no gating of its own.
     """
 
-    required_config: ClassVar[type[ConversationalAgentConfig]] = ConversationalAgentConfig
+    required_config: ClassVar[type[ConversationFields]] = ConversationFields
 
     @staticmethod
     @step(
@@ -47,7 +48,7 @@ class SelfAwarenessCapability(Capability):
     async def detect_meta_question_step(
         agent: Agent,
         event: UserMessageEvent,
-        agent_config: ConversationalAgentConfig,
+        conversation: ConversationFields,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -55,7 +56,7 @@ class SelfAwarenessCapability(Capability):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
-            llm_config=agent_config.task_llm,
+            llm_config=conversation.task_llm,
             displayer=displayer,
             user=user,
             t=t,
@@ -71,7 +72,8 @@ class SelfAwarenessCapability(Capability):
         agent: Agent,
         event: MetaQuestionDetectedEvent,
         user_message_event: UserMessageEvent,
-        agent_config: ConversationalAgentConfig,
+        agent_config: AgentConfig,
+        conversation: ConversationFields,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -87,12 +89,12 @@ class SelfAwarenessCapability(Capability):
             agent_description=t.extract(agent_config.description),
             workflow_summary=summarize_workflow_for_meta_answer(type(agent), t),
             chat_history=user_message_event.messages,
-            llm_config=agent_config.task_llm,
+            llm_config=conversation.task_llm,
             displayer=displayer,
             user=user,
             t=t,
         )
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
+        await generate_follow_up_questions(stop_event.chat_messages, conversation.task_llm, displayer, t, user)
         return stop_event
 
     @staticmethod
@@ -106,7 +108,7 @@ class SelfAwarenessCapability(Capability):
         agent: Agent,
         event: MetaQuestionDetectedEvent,
         user_message_event: UserMessageEvent,
-        agent_config: ConversationalAgentConfig,
+        conversation: ConversationFields,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -115,7 +117,7 @@ class SelfAwarenessCapability(Capability):
         """Generate the thread's title in parallel with the meta answer, which it must not wait for."""
         await generate_title(
             chat_messages=user_message_event.messages,
-            llm_config=agent_config.task_llm,
+            llm_config=conversation.task_llm,
             displayer=displayer,
             t=t,
             thread_context=thread_context,

@@ -16,6 +16,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
+from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 MEMORY_RETRIEVAL_TIMEOUT_SECONDS = 15.0
 
 
-def build_agent_memory(agent: Agent, agent_config: AgentConfig, t: LocaleHandler) -> AgentMemory:
+def build_agent_memory(agent: Agent, agent_config: AgentConfig, memory: MemoryFields, t: LocaleHandler) -> AgentMemory:
     """The same `AgentMemory` the dispatcher would inject, built only on the turns that actually read memory.
 
     Constructing it here rather than declaring it as a step parameter keeps a profile with memory switched off
@@ -33,7 +34,7 @@ def build_agent_memory(agent: Agent, agent_config: AgentConfig, t: LocaleHandler
         agent_config=agent_config,
         agent_class=type(agent).__name__,
         t=t,
-        llm_model_name=agent_config.memory_llm_model_name,
+        llm_model_name=memory.memory_llm_model_name,
     )
 
 

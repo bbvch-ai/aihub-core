@@ -35,6 +35,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event import RAGFailureStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event import RAGSuccessStopEvent
+    from swiss_ai_hub.core.events.agent.control.stop.refusal_reason import RefusalReason
+    from swiss_ai_hub.core.events.agent.control.stop.refusal_stop_event import RefusalStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
     from swiss_ai_hub.core.events.agent.conversation.answer_post_processed_event import AnswerPostProcessedEvent
@@ -213,6 +215,8 @@ __all__ = [
     "MetaQuestionDetectedEvent",
     "NotAMetaQuestionEvent",
     "RAGFailureReason",
+    "RefusalReason",
+    "RefusalStopEvent",
     "RAGFailureStopEvent",
     "RAGStartEvent",
     "RAGStopEvent",
@@ -317,6 +321,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",
     "NotAMetaQuestionEvent": "swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event",
     "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
+    "RefusalReason": "swiss_ai_hub.core.events.agent.control.stop.refusal_reason",
+    "RefusalStopEvent": "swiss_ai_hub.core.events.agent.control.stop.refusal_stop_event",
     "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
     "RAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_stop_event",

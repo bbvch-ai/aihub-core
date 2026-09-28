@@ -7,8 +7,9 @@ from swiss_ai_hub.core.events.agent import (
     EnrichedChatHistoryEvent,
     LimitChatHistoryEvent,
     LLMEvent,
-    LLMStopEvent,
     Message,
+    RefusalReason,
+    RefusalStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -56,7 +57,7 @@ class LLMWrappingAgent(Agent):
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LimitChatHistoryEvent | LLMStopEvent:
+    ) -> LimitChatHistoryEvent | RefusalStopEvent:
         """Truncate the history to the model's own window, refusing a turn that cannot fit it.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]`
@@ -131,18 +132,17 @@ class LLMWrappingAgent(Agent):
         llm_config: LLMConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMStopEvent:
+    ) -> RefusalStopEvent:
         """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
 
         Shaped exactly like the stop event `display_llm_stream` returns for a real answer, so the refusal reaches
         non-streaming consumers too -- `OpenaiService` reads the terminal text off `output_messages`.
         """
-        await displayer.display_thought(
-            t("agent.llm_wrapping_agent.thoughts.input_too_large", tokens=needed, budget=budget)
-        )
-        refusal = t("agent.llm_wrapping_agent.messages.input_too_large")
+        await displayer.display_thought(t("agent.conversation.thoughts.input_too_large", tokens=needed, budget=budget))
+        refusal = t("agent.conversation.messages.input_too_large")
         await displayer.display_chunk(refusal, model_name=llm_config.model_name)
-        return LLMStopEvent(
+        return RefusalStopEvent(
+            reason=RefusalReason.INPUT_TOO_LARGE,
             output_messages=[Message.from_string(role="assistant", content=refusal, name=llm_config.model_name)],
             chat_model_name=llm_config.model_name,
         )

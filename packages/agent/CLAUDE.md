@@ -136,21 +136,28 @@ class LLMWrappingAgent(Agent):
 ```
 
 A capability's steps are `@staticmethod`s decorated with `@step`, taking the blueprint instance as their first
-parameter, so the dispatcher calls them exactly like a method. Each capability names the config base its steps are
-annotated with (`required_config`); the blueprint's config derives from it, and `AgentRunner` refuses to start
-otherwise. The dispatcher injects the run's concrete config into any parameter annotated with one of its bases.
+parameter, so the dispatcher calls them exactly like a method. Each capability ships its config as a **form mixin**
+(`ConversationFields`, `MemoryFields`) and names it as `required_config`; a blueprint's config lists the mixins of
+the capabilities it installs as bases before `AgentConfig`, e.g.
+`class LLMWrappingAgentConfig(MemoryFields, ConversationFields, AgentConfig)`. The dispatcher injects the run's
+concrete config into any step parameter annotated with one of its bases, so a step asks for `AgentConfig` when it
+needs the identity and for the mixin when it needs the capability's fields. `AgentRunner` refuses to start a
+blueprint whose config lacks a required mixin.
 
-**The conversational spine** (`ConversationCapability`, needs `ConversationalAgentConfig`) runs from the
+**The conversational spine** (`ConversationCapability`, needs `ConversationFields`) runs from the
 `LimitChatHistoryEvent` a blueprint's entry step emits to the stop event:
 
 - `derive_query_step` — the first step past the entry point and **the meta-question gate**: it depends on
   `NotAMetaQuestionEvent`, so nothing downstream starts before detection clears the message. Emits
   `ConversationQueryEvent` (the last user message as is, or condensed when `condense_question` is on, in which case the
-  display-facing `StandaloneQuestionCondenserEvent` is emitted too).
+  display-facing `StandaloneQuestionCondenserEvent` is emitted too). An input the turn cannot be answered for — too
+  large for the model, or a blank condensation — ends in a `RefusalStopEvent` with a `RefusalReason`, the one stop
+  type every conversational blueprint shares for input refusals; `RAGFailureStopEvent` keeps the retrieval outcomes.
 - `assemble_context_step` — **the enrichment join**: every installed enricher emits one `ContextBlockEvent` per turn,
   empty or not, and the join waits for as many blocks as there are enrichers on the blueprint, merges them behind the
   leading system messages within the input budget, and emits `EnrichedChatHistoryEvent`, which the blueprint's answer
-  pipeline consumes.
+  pipeline consumes. It is displayed in the chat, since it is exactly what the model saw; the blocks themselves are
+  control-only and each enricher's own display event carries its transparency.
 - `generate_conversation_title_step` — anchored on the query event, so it runs past the gate and before the answer.
 - Two **defaults, withheld when the blueprint provides them**: `open_gate_step` (emits `NotAMetaQuestionEvent` when
   no detection is installed) and `stop_step` (turns the `LLMEvent` into `LLMStopEvent` with follow-ups inline, once
@@ -158,7 +165,7 @@ otherwise. The dispatcher injects the run's concrete config into any parameter a
   stop event carries the outcome; it reuses the spine's `all_post_answer_hooks_reported` precondition.
 
 **Enrichers and hooks** are what other capabilities plug into the spine: `MemoryCapability` (needs
-`MemoryEnabledAgentConfig`) contributes two enrichers (user and organization memory, each emitting a `ContextBlockEvent`
+`MemoryFields`) contributes two enrichers (user and organization memory, each emitting a `ContextBlockEvent`
 plus the existing display event when it found something) and one post-answer hook (the delegated user-memory write).
 Web fetch, attached files and web search are meant to arrive the same way. A programmatic start that narrows the
 organization-memory scope hands the requested namespaces over through `MemoryCapability.REQUESTED_ORG_NAMESPACES_KEY`
@@ -482,7 +489,7 @@ config seeder needed.
 5. Add i18n translations in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
 7. (Conversational agents) Install the capabilities: `capabilities = (ConversationCapability,
-   SelfAwarenessCapability, MemoryCapability)`, derive the config from `MemoryEnabledAgentConfig`, emit a
+   SelfAwarenessCapability, MemoryCapability)`, list `MemoryFields` and `ConversationFields` as config bases, emit a
    `LimitChatHistoryEvent` from the entry step and answer from `EnrichedChatHistoryEvent` with a non-terminal
    `LLMEvent` (see the Capabilities section above)
 8. Write BDD tests with `AgentTestRunner`

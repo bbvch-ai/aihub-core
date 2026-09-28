@@ -22,6 +22,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
+    RefusalStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -453,7 +454,7 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> LimitChatHistoryEvent | RAGFailureStopEvent:
+    ) -> LimitChatHistoryEvent | RefusalStopEvent:
         return await do_limit_chat_history(
             user_event.messages,
             agent_config.number_of_input_tokens,
@@ -476,7 +477,7 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
         displayer: EventDisplayer,
         user: UserIdentity,
-    ) -> StandaloneQuestionCondenserEvent | RAGFailureStopEvent:
+    ) -> StandaloneQuestionCondenserEvent | RefusalStopEvent:
         return await do_condense_standalone_question(
             event.limited_history, start_event.last_user_message, agent_config.task_llm, displayer, t, user
         )

@@ -236,6 +236,12 @@ event:
     assistant: Assistant
     system: System
     user: User
+  enrichedChatHistory:
+    summary: Context assembled for the model: {count} message | Context assembled for the model: {count} messages
+    description: The chat history the model received, with every retrieved context block merged in
+    assistant: Assistant
+    system: System
+    user: User
   reranker:
     topDocuments: 'Top {count} most relevant documents:'
     query: Search Query
