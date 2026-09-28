@@ -4,8 +4,7 @@
 
 The mailbox agents (`EmailClassificationAgent`, `ImapAgent`) logged in with a username and password only. Microsoft 365
 tenants increasingly disable basic authentication, and once they do, no password — not even an app password — logs in
-over IMAP. Request [aihub-requests#8](https://github.com/bbvch-ai/aihub-requests/issues/8) asks for OAuth 2.0 support so
-these agents keep working against such tenants.
+over IMAP. The agents need OAuth 2.0 support to keep working against such tenants.
 
 Both blueprints authenticate through a single point, `ImapClientFactory.create`, and every mailbox step opens its
 connection there. The connection config is the shared `ImapClientConfig` in `packages/core/imap/` (see
