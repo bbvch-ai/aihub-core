@@ -221,8 +221,8 @@ class FewShotAgent(Agent):
             return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=False)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.reject_unsuitable_request.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.reject_unsuitable_request.description"),
         icon="mage:cancel",
     )
     async def reject_unsuitable_request_step(
