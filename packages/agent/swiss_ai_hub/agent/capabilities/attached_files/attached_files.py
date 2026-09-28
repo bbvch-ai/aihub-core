@@ -2,7 +2,6 @@ import asyncio
 from collections.abc import Sequence
 from typing import ClassVar
 
-from jinja2 import Template
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     AttachedFileEvent,
@@ -94,14 +93,12 @@ class AttachedFiles(Capability):
         t: LocaleHandler,
     ) -> str:
         if document is None:
-            return Template(t("agent.attached_files.prompt.unreadable")).render(
-                filename=event.filename, error=event.error
-            )
+            return t("agent.attached_files.prompt.unreadable", filename=event.filename, error=event.error)
         text, truncated = fitted[event.file_id]
         pages = f' pages="{event.number_of_pages}"' if event.number_of_pages else ""
         section = f'<attached_file name="{event.filename}"{pages}>\n{text}\n</attached_file>'
         if truncated:
-            section += "\n" + Template(t("agent.attached_files.prompt.truncated")).render(filename=event.filename)
+            section += "\n" + t("agent.attached_files.prompt.truncated", filename=event.filename)
         return section
 
     @staticmethod
