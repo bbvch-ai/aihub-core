@@ -28,7 +28,8 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
         str | None,
         Field(
             default=None,
-            description="LiteLLM model name used for figure descriptions; the text model when unset.",
+            description="LiteLLM model name used for figure descriptions; the text model when unset. Set it whenever "
+            "the text model cannot read images, or figures are sent to a model that cannot describe them.",
         ),
     ]
     WITH_SUMMARY_NODES: Annotated[
