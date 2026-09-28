@@ -4,6 +4,7 @@
       ref="fileInput"
       type="file"
       class="hidden"
+      :aria-label="context.label"
       :accept="accept"
       @change="onFileChosen"
     >
@@ -89,6 +90,7 @@
 interface SecretFileInputProps {
   context: {
     id: string
+    label?: string
     node: { input: (value: string) => void }
     value?: string | null
     accept?: string
