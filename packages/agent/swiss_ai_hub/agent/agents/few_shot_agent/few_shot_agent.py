@@ -214,7 +214,9 @@ class FewShotAgent(Agent):
         The wording differs from the other blueprints on purpose: this agent answers from its examples and a condensed
         question, never from the document itself, so advising a smaller file would promise something it cannot do.
         """
-        await displayer.display_thought(t("agent.few_shot_agent.thoughts.input_too_large", tokens=needed, budget=budget))
+        await displayer.display_thought(
+            t("agent.few_shot_agent.thoughts.input_too_large", tokens=needed, budget=budget)
+        )
         refusal = t("agent.few_shot_agent.messages.input_too_large")
         model_name = agent_config.llm.model_name
         await displayer.display_chunk(refusal, model_name=model_name)
