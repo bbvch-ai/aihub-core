@@ -1,5 +1,5 @@
 import logging
-from asyncio import sleep
+from asyncio import sleep, to_thread
 from typing import Annotated, override
 
 from bson import ObjectId
@@ -131,8 +131,12 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_class_dto = ProcessClassDTO.from_discovery_event(response)
                 unique_classes_dict[unique_key] = process_class_dto
 
-                # Persist the process class entity in database (updates last_discovered timestamp)
-                ProcessClassEntity.create_or_update(
+                # Persist the process class entity in database (updates last_discovered timestamp).
+                # Off the loop for the same reason as the agent discovery round: `ProcessClassEntity`
+                # carries the identical 5-minute `last_discovered` window, so a stalled round here
+                # marks every process class offline at once.
+                await to_thread(
+                    ProcessClassEntity.create_or_update,
                     process_class=process_class_dto.process_class,
                     name=process_class_dto.name,
                     description=process_class_dto.description,
