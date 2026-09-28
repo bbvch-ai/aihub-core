@@ -66,6 +66,58 @@ class TestNamespaceNarrowing:
         )
         assert runtime_configs == []
 
+    def test_several_pairs_on_one_bucket_narrow_to_all_of_them(self):
+        """The multi-select emits one pair per collection, so the same bucket arrives repeatedly — keeping only the
+        last would silently answer from one collection when the admin picked several."""
+        retrievers = [_retriever("bucket_a", ["ns1", "ns2", "ns3"])]
+        runtime_configs = narrow_retrievers(
+            retrievers,
+            [
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1"),
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns3"),
+            ],
+        )
+        assert len(runtime_configs) == 1
+        assert runtime_configs[0].config.vector_store.index_namespaces == ["ns1", "ns3"]
+
+    def test_out_of_scope_namespace_is_dropped_without_dropping_its_bucket(self):
+        """A selection half inside the agent's scope narrows to the half that is inside — dropping the whole
+        retriever would answer from nothing instead of from the collections that are still valid."""
+        retrievers = [_retriever("bucket_a", ["ns1"])]
+        runtime_configs = narrow_retrievers(
+            retrievers,
+            [
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1"),
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="outside"),
+            ],
+        )
+        assert len(runtime_configs) == 1
+        assert runtime_configs[0].config.vector_store.index_namespaces == ["ns1"]
+
+    def test_repeated_pair_reaches_the_filter_once(self):
+        retrievers = [_retriever("bucket_a", ["ns1", "ns2"])]
+        runtime_configs = narrow_retrievers(
+            retrievers,
+            [
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1"),
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1"),
+            ],
+        )
+        assert runtime_configs[0].config.vector_store.index_namespaces == ["ns1"]
+
+    def test_all_namespaces_retriever_keeps_every_selected_namespace(self):
+        retrievers = [_retriever("bucket_a")]
+        runtime_configs = narrow_retrievers(
+            retrievers,
+            [
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="one"),
+                BucketNamespacePair(bucket_name="bucket_a", namespace_name="two"),
+            ],
+        )
+        narrowed = runtime_configs[0].config.vector_store
+        assert narrowed.index_namespaces == ["one", "two"]
+        assert narrowed.all_namespaces is False
+
 
 class TestAdditionalFiltersThreading:
     def test_filters_attached_to_matching_runtime_config(self):

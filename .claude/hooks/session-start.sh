@@ -19,7 +19,19 @@ if command -v docker &>/dev/null; then
   running=$(docker compose -f infra/docker-compose.dev.yml ps --format json 2>/dev/null | head -1)
   if [[ -z "$running" ]]; then
     echo "Docker dev stack is not running. Start with: make up-dev" >&2
+    echo "  MCP servers connect only at session start, so milvus/nats/langfuse/redis/mongodb/postgres" >&2
+    echo "  will report CONNECTION_CLOSED until the stack is up and the session is restarted." >&2
   fi
+fi
+
+# Warn about host tools the MCP launchers need. Missing ones surface only as an opaque
+# CONNECTION_CLOSED for the affected server, so name them here instead.
+missing_mcp_tools=()
+command -v pipx &>/dev/null || missing_mcp_tools+=("pipx (milvus)")
+command -v unzip &>/dev/null || missing_mcp_tools+=("unzip (nats, to extract its CLI)")
+if [[ ${#missing_mcp_tools[@]} -gt 0 ]]; then
+  echo "Missing host tools for MCP servers: ${missing_mcp_tools[*]}" >&2
+  echo "  Install with: sudo apt-get install -y pipx unzip" >&2
 fi
 
 if [[ -z "$CLAUDE_CODE_REMOTE" ]]; then

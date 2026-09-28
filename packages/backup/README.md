@@ -74,7 +74,7 @@ The backup plane is a Dagster code location built by `backup_definitions()`:
 # my_backup/__init__.py
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
-defs = backup_definitions()   # 26 assets, 4 jobs: backup, restore, cleanup, repack
+defs = backup_definitions()  # 26 assets, 4 jobs: backup, restore, cleanup, repack
 ```
 
 Inspect and run it with the Dagster UI (it keeps its own state in `DAGSTER_HOME`):
@@ -119,11 +119,10 @@ asset wiring picks it up automatically (handlers are synchronous by design):
 ```python
 from swiss_ai_hub.backup.services.base import BackupHandler
 
+
 class MyServiceHandler(BackupHandler):
-    def backup(self, context) -> ...:
-        ...   # dump your service's state to S3
-    def restore(self, context) -> ...:
-        ...   # restore it from a backup
+    def backup(self, context) -> ...: ...  # dump your service's state to S3
+    def restore(self, context) -> ...: ...  # restore it from a backup
 ```
 
 If the handler needs Docker access, type-hint a `DockerManager` parameter in `__init__` and the factory injects it. The

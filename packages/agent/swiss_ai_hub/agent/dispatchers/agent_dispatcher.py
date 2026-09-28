@@ -636,7 +636,10 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation == AgentMemory:
             locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
             return AgentMemory(
-                agent_config=agent_config, agent_class=self.agent.__name__, t=self.locale_handler.in_locale(locale)
+                agent_config=agent_config,
+                agent_class=self.agent.__name__,
+                t=self.locale_handler.in_locale(locale),
+                llm_model_name=agent_config.memory_llm_model_name,
             )
 
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:

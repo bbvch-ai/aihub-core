@@ -33,11 +33,15 @@ aihub_*/.idea/
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/mcp.local.json
+.claude/launch.json
 .claude/mcp/bin/*
 .claude/.deps-fingerprint
 .claude/statusline.sh
 .claude/worktrees/*
 .claude/*.lock
+
+# Page snapshots the Playwright MCP server writes into the repo root on every run
+.playwright-mcp/
 
 # E2E (Playwright)
 /e2e/node_modules

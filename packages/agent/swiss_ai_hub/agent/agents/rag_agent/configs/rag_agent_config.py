@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Self, override
 
 from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
@@ -99,6 +99,17 @@ class RAGAgentConfig(AgentConfig):
         ),
     ] = OrgMemoryReadConfig()
 
+    @property
+    @override
+    def memory_llm_model_name(self) -> str | None:
+        """Point the platform's memory hook at this blueprint's own picker (issue #1590).
+
+        Guarded rather than returned raw: in form mode the value is a `ModelSelect`, and a picker submitted
+        blank arrives as an empty string — neither is a model name, and both mean "use the platform default".
+        """
+        memory_llm = self.user_memory.memory_llm
+        return memory_llm if isinstance(memory_llm, str) and memory_llm else None
+
     @model_validator(mode="after")
     def derive_task_llm_from_main_llm(self) -> Self:
         """Only the task model is configurable: its generation parameters always mirror the main llm, and
@@ -126,7 +137,8 @@ class RAGAgentConfig(AgentConfig):
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.label"),
                 help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.number_of_input_tokens.help"),
                 min=1024,
-                max=128000,
+                # Matches the other agents; `effective_input_token_limit` still clamps to the model's window.
+                max=200000,
                 step=1024,
             ),
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),

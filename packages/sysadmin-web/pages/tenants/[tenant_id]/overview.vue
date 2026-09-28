@@ -15,18 +15,31 @@
         </p>
         <span class="font-mono text-sm">{{ tenantId }}</span>
       </div>
-      <TenantAdminEdit
-        v-model="clonedTenant"
-      />
-      <div class="flex justify-end">
-        <Button
-          type="button"
-          :label="t('tenant_admin.save')"
-          icon="pi pi-save"
-          :disabled="!clonedTenant.name"
-          @click="saveTenant"
-        />
-      </div>
+      <FormKit
+        :key="tenantId"
+        type="form"
+        :actions="false"
+        @submit="saveTenant"
+      >
+        <TenantAdminEdit v-model="clonedTenant" />
+        <Message
+          v-if="saveFailed"
+          severity="error"
+          :closable="false"
+          class="mt-4"
+        >
+          {{ t('tenant_admin.save_error') }}
+        </Message>
+        <div class="mt-4 flex justify-end">
+          <Button
+            type="submit"
+            :label="t('tenant_admin.save')"
+            icon="pi pi-save"
+            :loading="isSaving"
+            :disabled="!clonedTenant.name || isSaving"
+          />
+        </div>
+      </FormKit>
     </div>
   </StructuralColumn>
 </template>
@@ -45,7 +58,7 @@ const { t } = useI18n()
 const toast = useToast()
 
 const { tenants, tenantsAreLoading } = useTenantAdminList()
-const { updateTenantMetadata } = useUpdateTenantMetadata()
+const { updateTenantMetadata, isSaving } = useUpdateTenantMetadata()
 
 const tenantId = computed(() => route.params.tenant_id as string)
 
@@ -54,6 +67,7 @@ const tenant = computed(() =>
 )
 
 const clonedTenant = ref<UpdateTenantMetadataRequest | null>(null)
+const saveFailed = ref(false)
 
 // Redirect if tenant is missing or orphaned (edit view is not allowed for orphans).
 watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
@@ -66,12 +80,20 @@ watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
     name: newTenant.name,
     description: newTenant.description,
     access_rules: newTenant.access_rules,
+    chat_disclaimer: newTenant.chat_disclaimer,
   })
+  saveFailed.value = false
 }, { immediate: true })
 
 const saveTenant = async () => {
-  if (!clonedTenant.value) return
-  await updateTenantMetadata({ tenantId: tenantId.value, data: clonedTenant.value })
-  toast.add({ severity: 'success', summary: t('tenant_admin.tenant_saved.summary'), detail: t('tenant_admin.tenant_saved.detail'), life: 3000 })
+  if (!clonedTenant.value || isSaving.value) return
+  saveFailed.value = false
+  try {
+    await updateTenantMetadata({ tenantId: tenantId.value, data: clonedTenant.value })
+    toast.add({ severity: 'success', summary: t('tenant_admin.tenant_saved.summary'), detail: t('tenant_admin.tenant_saved.detail'), life: 3000 })
+  }
+  catch {
+    saveFailed.value = true
+  }
 }
 </script>

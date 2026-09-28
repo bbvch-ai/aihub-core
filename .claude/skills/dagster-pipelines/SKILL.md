@@ -93,19 +93,31 @@ defs = default_local_filesystem_to_datalake_definitions(
 )
 ```
 
-### `default_rclone_to_datalake_definitions()` — Stage 1 (Rclone to S3)
+### `rclone_pipeline_definitions()` — Stage 1 (Rclone source pipeline, configured per database)
+
+Defined in `util/rclone_pipeline_definitions_util.py`. Carries no bucket, remote or credential: one deployment syncs
+every knowledge database whose `BucketEntity.source` matches, reading backend, credentials, root path and patterns from
+`BucketEntity.source_configuration` per run (`aihub/bucket` run tag on observe/remove, composite
+`{bucket}|{remote path}` partition key on write). The `source` token namespaces every global Dagster name and reserves
+itself against ingestor tokens.
 
 ```python
-from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure import RclonePipelineSettings
+from swiss_ai_hub.pipeline.util.rclone_pipeline_definitions_util import rclone_pipeline_definitions
 
-defs = default_rclone_to_datalake_definitions(
-    datalake_container_name="onedrive-docs",
-    source_remote="onedrive:Documents",           # Any rclone remote
-    include_patterns=["*.pdf", "*.docx"],         # Rclone glob syntax
-    exclude_patterns=["**/archive/**"],
-    observe_job_hour=0,
+defs = rclone_pipeline_definitions(
+    source="rclone",                              # routing key; defaulted, labels come from lib.source_pipelines.rclone
+    display_name=None,                            # required for a custom source token
+    description=None,
+    config=None,                                  # announced form; defaults to RcloneSyncConfig.as_form()
+    settings=RclonePipelineSettings(),            # RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE, MAX_PARTITIONS
 )
 ```
+
+Per-run resolution lives in `util/source_builders.py` (`source_config_for_bucket`, `rclone_remote_for_bucket`,
+`build_rclone_client`); the remote `rclone_{bucket}` is upserted in the daemon on every run. Every written or removed
+file is announced to the ingestion pipeline with a `SourceUpdatedEvent` (`util/source_updated_notifier.py`). See the
+`rclone-guide` skill for the form, backends and troubleshooting.
 
 ______________________________________________________________________
 
@@ -264,9 +276,11 @@ Resources are external dependencies injected into ops. All use Dagster's `Config
 | `MilvusVectorStoreResource`            | Milvus vector store             | `vector_store`             |
 | `SharePointResource`                   | SharePoint connector            | `share_point_client`       |
 | `LocalFileSystemResource`              | Local/network FS                | `local_file_system_client` |
-| `RcloneResource`                       | Universal cloud storage         | `rclone_client`            |
 | `DataLakeResource`                     | Container/directory config      | `data_lake_resource`       |
 | `DocStoreResource`                     | Doc store name config           | `doc_store_resource`       |
+
+Rclone has no resource: the remote and credentials differ per database, so the source pipeline resolves them per run
+through `util/source_builders.py` (`rclone_remote_for_bucket`, stateless `RcloneClient` via `build_rclone_client`).
 
 ### Resource Factory Pattern
 
@@ -304,7 +318,8 @@ Resources read connection details from `packages/core` settings (Pydantic `BaseS
 | ----------------------------------- | ------------------------------ | ---------------------- |
 | `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection    |
 | `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB       |
-| `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API          |
+| `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API (`URL`, `RC_USER/PASS`) |
+| `RclonePipelineSettings`            | `RCLONE_PIPELINE_`             | Source pipeline schedule + `MAX_PARTITIONS` |
 | `MineruSettings`                    | `MINERU_`                      | MinerU parser          |
 | `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence |
 
@@ -323,10 +338,12 @@ IO managers control how assets are stored and retrieved. Each storage system has
 | `VectorStoreIOManager`     | `vector_store_io_manager`      | Milvus       | Read + Write  | Partition key = document URI/ID |
 | `SharePointIOManager`      | `sharepoint_io_manager`        | SharePoint   | **Read-only** | Partition key = SP file path    |
 | `LocalFileSystemIOManager` | `local_file_system_io_manager` | Local FS     | **Read-only** | Partition key = file path       |
-| `RcloneIOManager`          | `rclone_io_manager`            | Rclone (70+) | **Read-only** | Partition key = file path       |
+| `RoutedRcloneIOManager`    | `rclone_io_manager`            | Rclone       | **Read-only** | Key = `{bucket}\|{remote path}`, remote per run |
 | `S3PickleIOManager`        | `io_manager` (default)         | S3/MinIO     | Read + Write  | Pickled Python objects          |
 
 **Read-only IO managers**: Source connectors (SharePoint, LocalFS, Rclone) never write back to sources.
+`RoutedRcloneIOManager` resolves the database from the composite key (partitioned read) or the `aihub/bucket` run tag
+(non-partitioned read, metadata only) and rebuilds that database's remote before touching it.
 
 ### Partitioned vs Non-Partitioned Loading
 
@@ -389,7 +406,9 @@ def replace_partition_keys(context, partition_name, keys, max_partitions):
         context.instance.delete_dynamic_partition(partition_name, key)
 ```
 
-**Partition key = document URI** (e.g., `s3://bucket/path/to/doc.pdf`).
+**Partition key = document URI** (e.g., `s3://bucket/path/to/doc.pdf`) for the deploy-time builders; the route-per-run
+pipelines prefix it with the bucket (`{bucket}|{uri}`, `{bucket}|{remote path}`) and keep one registry per pipeline
+token (`{ingestor}_document_partitions`, `{source}_source_partitions`), reconciled per bucket.
 
 **Truncation is signalled, not silent**: additions and deletions are capped at `max_partitions` per run. When the cap
 bites, `replace_partition_keys` logs a warning and tags its own run with `PARTITIONS_TRUNCATED_TAG` — a run cannot write

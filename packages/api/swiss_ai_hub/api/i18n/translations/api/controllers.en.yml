@@ -26,6 +26,9 @@ knowledge:
 model:
   name: AI Models
   description: View available AI models
+incident:
+  name: Report a problem
+  description: File a report when something in AI Hub goes wrong
 notification:
   name: Notifications
   description: View and manage your notifications

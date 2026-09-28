@@ -27,3 +27,12 @@ steps:
   stop:
     name: Stop
     description: Stops the agent when request is rejected by suitability guard.
+thoughts:
+  input_too_large: 'The input does not fit the model context window: about %{tokens}
+    tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
+messages:
+  input_too_large: This message is too long for me to process. I answer from my configured
+    examples and do not read attached documents. For questions about a file, please
+    use an assistant built for documents.
+  unsuitable_request: I am not the right assistant for this request, so I cannot answer
+    it. %{reason}

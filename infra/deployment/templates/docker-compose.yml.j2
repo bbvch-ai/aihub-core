@@ -60,6 +60,10 @@
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
+{#- Langfuse dials both LLM connections we register from its own containers, and since 3.167 it refuses any
+    baseURL resolving to a private address — when the connection is written and again on every call through it.
+    These are the hostnames of those two connections, allowlisted so the in-cluster routes keep working. #}
+{%- set LANGFUSE_LLM_WHITELISTED_HOSTS = "litellm,host.docker.internal" if stage == 'dev' else "litellm,api" %}
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
@@ -880,6 +884,12 @@ services:
     ports:
       - "127.0.0.1:3030:3030"
     {%- endif %}
+    {%- if stage == 'dev' %}
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    {%- endif %}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -910,12 +920,25 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      {#- See ADR 2026_09_22_langfuse_llm_connections_stay_in_cluster. Both -web (write time) and
+          -worker (every judge call) validate the baseURL, so both need this. #}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: {{ LANGFUSE_LLM_WHITELISTED_HOSTS }}
+    # Probes $(hostname), not localhost: the worker binds the container address only,
+    # so a loopback probe is refused. Same form as langfuse-web below.
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://$(hostname):3030/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
     networks:
+      {#- Deliberately no `proxy` or `egress`: the worker reaches LiteLLM and the API over `backend`.
+          Both LLM connections are registered with in-cluster URLs because of this. #}
       - backend
       - data  # For PostgreSQL access
       - storage  # For SeaweedFS S3 access
@@ -935,6 +958,12 @@ services:
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6006:3000"
+    {%- endif %}
+    {%- if stage == 'dev' %}
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     {%- endif %}
     {%- if stage in ['local', 'build'] %}
     # auth.${DOMAIN} (nip.io) resolves to 127.0.0.1 — the container's own loopback;
@@ -1010,6 +1039,9 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: "{{ 'true' if stage in ['nightly', 'latest'] else 'false' }}"
       AUTH_DISABLE_SIGNUP: "false"
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      {#- See ADR 2026_09_22_langfuse_llm_connections_stay_in_cluster. Both -web (write time) and
+          -worker (every judge call) validate the baseURL, so both need this. #}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: {{ LANGFUSE_LLM_WHITELISTED_HOSTS }}
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://$(hostname):3000/api/public/health"]
       interval: 30s
@@ -1295,13 +1327,14 @@ services:
       - "--rc-pass=${RCLONE_RC_PASS}"
       {%- endif %}
       - "--log-level=INFO"
-      - "--config=/dev/null"  # Disable config file, use environment variables only
+      - "--config=/dev/null"  # No config file: the rclone pipeline re-creates every remote from the database per run
     {%- if stage == 'dev' %}
     ports:
       - "5572:5572"
     {%- endif %}
     networks:
-      - default
+      - backend  # reached by the rclone pipeline
+      - egress  # reaches the cloud providers it syncs from
     healthcheck:
       {%- if stage == 'dev' %}
       test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
@@ -1816,6 +1849,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      STONEY_CLOUD_API_BASE_URL: ${STONEY_CLOUD_API_BASE_URL}
+      STONEY_CLOUD_API_KEY: ${STONEY_CLOUD_API_KEY}
       SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
       SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
@@ -1839,9 +1874,12 @@ services:
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
-      - ./configs/litellm/litellm-config{{ config_variant_suffix }}.yml:/app/config.yml
+      # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
+      {%- for litellm_variant in litellm_variants %}
+      - ./configs/litellm/litellm-config.{{ litellm_variant }}{{ config_variant_suffix }}.yml:/app/config.{{ litellm_variant }}.yml
+      {%- endfor %}
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
-    command: --config /app/config.yml
+    command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
@@ -2163,6 +2201,10 @@ services:
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -2366,7 +2408,8 @@ services:
       RAG_FULL_CONTEXT: True
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: True
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
@@ -2910,6 +2953,9 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: {{ 'http://localhost:6006' if stage == 'dev' else 'https://langfuse.${DOMAIN}' }}
       LANGFUSE_PROJECT_ID: "aihub-project"
+      {#- Langfuse dials this from its own container to run agent experiments; langfuse-worker shares the
+          `backend` network with `api`, so the in-cluster name is reachable. Its hostname is allowlisted on the
+          Langfuse containers. Server-to-server traffic uses AIHUB_INTERNAL_API_BASE_URL instead. #}
       AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
@@ -2975,6 +3021,12 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('api') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+      # Incident reporting. Unset, the feature is off and its endpoints answer 404.
+      INCIDENT_GITHUB_REPOSITORY: ${INCIDENT_GITHUB_REPOSITORY}
+      INCIDENT_GITHUB_APP_ID: ${INCIDENT_GITHUB_APP_ID}
+      INCIDENT_GITHUB_INSTALLATION_ID: ${INCIDENT_GITHUB_INSTALLATION_ID}
+      INCIDENT_GITHUB_PRIVATE_KEY: ${INCIDENT_GITHUB_PRIVATE_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -4296,6 +4348,85 @@ services:
       - storage
   {%- endif %}
 
+  {%- if image_tags.rclone_pipeline[stage] %}
+  # ===================================================================
+  # Rclone Source Pipeline (Stage 1: cloud sources -> data lake, configured per knowledge database)
+  # ===================================================================
+
+  {{ service_license('rclone_pipeline') }}
+  rclone_pipeline:
+    container_name: rclone-pipeline
+    restart: always
+    {%- if image_tags.rclone_pipeline[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/pipeline/app/rclone_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.rclone_pipeline[stage] }}
+    {%- endif %}
+    depends_on:
+      rclone:
+        condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_CONFIG_ENCRYPTION_KEY: ${AIHUB_CONFIG_ENCRYPTION_KEY}
+
+      # NATS (notifies the ingestion pipeline after each synced file)
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # rclone daemon
+      RCLONE_URL: http://rclone:5572
+      {%- if stage != 'dev' %}
+      RCLONE_RC_USER: ${RCLONE_RC_USER}
+      RCLONE_RC_PASS: ${RCLONE_RC_PASS}
+      {%- endif %}
+
+      # Rclone Source Pipeline schedule
+      RCLONE_PIPELINE_OBSERVE_JOB_HOUR: ${RCLONE_PIPELINE_OBSERVE_JOB_HOUR}
+      RCLONE_PIPELINE_OBSERVE_JOB_MINUTE: ${RCLONE_PIPELINE_OBSERVE_JOB_MINUTE}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+      DAGSTER_MAX_CONCURRENT_RUNS: ${DAGSTER_MAX_CONCURRENT_RUNS}
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Pipeline run-failure notifications (Apprise)
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS}
+      NOTIFICATION_DAGSTER_UI_BASE_URL: "{{ NOTIFICATION_DAGSTER_UI_BASE_URL }}"
+      NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
+      NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
   {%- if image_tags.bot[stage] %}
   # ===================================================================
   # Bot Service (MS Teams Integration)
@@ -4449,3 +4580,8 @@ volumes:
   {{ service_license('clickhouse-logs') }}
   clickhouse-logs:
 {%- endif %}
+
+configs:
+  openwebui-disclaimer:
+    content: |
+      {"parentOrigin": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}"}

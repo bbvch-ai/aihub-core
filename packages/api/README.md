@@ -82,16 +82,20 @@ from swiss_ai_hub.api.routes import ApiHealthController, AgentController, Thread
 from swiss_ai_hub.core.auth import TokenAndOauth2Handler
 
 runner = ApiRunner()
-auth = TokenAndOauth2Handler.from_auth_settings()   # Keycloak/OIDC + static-token auth from env
+auth = TokenAndOauth2Handler.from_auth_settings()  # Keycloak/OIDC + static-token auth from env
 
 runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
-    AgentController(auth=auth).get_agent_classes().get_agent_class().get_agent_class_instances().create_agent_instance(),
+    AgentController(auth=auth)
+    .get_agent_classes()
+    .get_agent_class()
+    .get_agent_class_instances()
+    .create_agent_instance(),
     ThreadController(auth=auth).get_user_threads().create_thread().get_thread(),
     EventController(auth=auth).ws().get_agent_events_in_thread(),  # WebSocket + event history
 )
 
-app = runner.create_app()   # ASGI app — also mounts the MCP server at /mcp
+app = runner.create_app()  # ASGI app — also mounts the MCP server at /mcp
 ```
 
 Serve it like any ASGI app:

@@ -159,7 +159,13 @@ def _created_bucket(
     configuration: dict | None = None, ingestor: str = IngestorType.DOCUMENT_INGESTION.value
 ) -> MagicMock:
     return MagicMock(
-        db_name=DATABASE, bucket_name=DATABASE, id="abc123", ingestor=ingestor, configuration=configuration or {}
+        db_name=DATABASE,
+        bucket_name=DATABASE,
+        id="abc123",
+        ingestor=ingestor,
+        configuration=configuration or {},
+        source=None,
+        source_configuration={},
     )
 
 
@@ -702,8 +708,12 @@ def _tenant_user() -> MagicMock:
 class TestCreateGrantsAccess:
     @pytest.mark.asyncio
     async def test_grants_the_creator_and_the_tenant_admin_on_the_new_database(self, locale_handler, s3_service):
-        """Without this the creator cannot see the database they just made: only a holder of the global
-        ``aihub.admin.knowledge.>`` wildcard could."""
+        """The tenant ceiling carries no knowledge wildcard, so without this grant nobody — the creator
+        included — could reach the database (aihub-core-private#269).
+
+        The subtree is granted with the root because a rule matches only its own depth: the root alone would
+        leave out every namespace, and the ones a pipeline creates are granted to no one when they appear.
+        """
         user = _tenant_user()
         with (
             patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
@@ -717,13 +727,18 @@ class TestCreateGrantsAccess:
 
             await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
 
-        tenant_cls.grant_access_rule.assert_called_once_with("tenant-1", f"aihub.admin.knowledge.{DATABASE}")
+        database_rules = [f"aihub.admin.knowledge.{DATABASE}", f"aihub.admin.knowledge.{DATABASE}.>"]
+        assert [call.args for call in tenant_cls.grant_access_rule.call_args_list] == [
+            ("tenant-1", rule) for rule in database_rules
+        ]
         role_cls.create_tenant_role.assert_called_once()
-        assert role_cls.create_tenant_role.call_args.kwargs["access_rules"] == [f"aihub.admin.knowledge.{DATABASE}"]
+        assert role_cls.create_tenant_role.call_args.kwargs["access_rules"] == database_rules
         user_role_cls.add_roles.assert_called_once_with("user-1", "tenant-1", ["KnowledgeResearchdocsAdmin"])
 
     @pytest.mark.asyncio
     async def test_skips_the_tenant_rule_when_a_broader_one_already_covers_it(self, locale_handler, s3_service):
+        """A tenant configured before the ceiling dropped its knowledge wildcard still holds it, and the
+        grant must not pile concrete rules on top of it."""
         user = _tenant_user()
         user.acting_within_tenant.access_rules = ["aihub.admin.knowledge.>"]
         with (
@@ -761,6 +776,60 @@ class TestCreateGrantsAccess:
         assert exc_info.value.status_code == 500
         s3_service.delete_container.assert_called_once_with(DATABASE)
         bucket_cls.delete_bucket.assert_called_once_with("abc123")
+
+    @pytest.mark.asyncio
+    async def test_a_failed_grant_revokes_only_the_rules_it_had_already_added(self, locale_handler, s3_service):
+        """Revoking runs across every tenant, so it must name only what this create added — never a rule the
+        tenant held before, which would strip it from tenants that have nothing to do with this database."""
+        user = _tenant_user()
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity"),
+            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+        ):
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.return_value = _created_bucket()
+            role_cls.objects.return_value.first.return_value = None
+            tenant_cls.grant_access_rule.side_effect = [None, RuntimeError("tenant store unavailable")]
+
+            with pytest.raises(HTTPException):
+                await KnowledgeService.create_database(DATABASE, _rag_request(), locale_handler, s3_service, user)
+
+        tenant_cls.revoke_access_rule_from_all_tenants.assert_called_once_with([f"aihub.admin.knowledge.{DATABASE}"])
+        role_cls.delete_role_from_all_tenants.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_namespace_under_a_granted_database_adds_only_its_role(self, locale_handler):
+        """The database's subtree already covers the namespace, so the ceiling is left alone; the per-folder
+        role is still created, since it is what a tenant admin hands out to share just that folder."""
+        from swiss_ai_hub.api.routes.knowledge.dto.create_namespace_request import CreateNamespaceRequest
+
+        user = _tenant_user()
+        user.acting_within_tenant.access_rules = KnowledgeService._database_admin_rules(DATABASE)
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+            patch(f"{_SERVICE_MODULE}.TenantMetadataEntity") as tenant_cls,
+            patch(f"{_SERVICE_MODULE}.UserTenantRoleEntity") as user_role_cls,
+            patch(f"{_SERVICE_MODULE}.RoleEntity") as role_cls,
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = MagicMock(id="abc123", source=None)
+            namespace_cls.get_namespace_by_bucket_and_name.side_effect = DoesNotExist
+            namespace_cls.create_namespace.return_value = MagicMock(
+                id="ns1", bucket_id="abc123", namespace_name="policies", folder_name="policies"
+            )
+            role_cls.objects.return_value.first.return_value = None
+
+            await KnowledgeService.create_namespace(
+                DATABASE, "policies", CreateNamespaceRequest(folder_name="policies"), locale_handler, user
+            )
+
+        tenant_cls.grant_access_rule.assert_not_called()
+        assert role_cls.create_tenant_role.call_args.kwargs["access_rules"] == [
+            f"aihub.admin.knowledge.{DATABASE}.policies"
+        ]
+        user_role_cls.add_roles.assert_called_once_with("user-1", "tenant-1", ["KnowledgeResearchdocsPoliciesAdmin"])
 
     @pytest.mark.asyncio
     async def test_a_sysadmin_without_tenant_context_creates_without_a_grant(self, locale_handler, s3_service):

@@ -2,14 +2,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.secrets.secret_encryption_service import SecretEncryptionService
-    from swiss_ai_hub.core.secrets.secret_masker import SecretMasker
     from swiss_ai_hub.core.secrets.secret_path_transformer import SecretPathTransformer
 
-__all__ = ["SecretEncryptionService", "SecretMasker", "SecretPathTransformer"]
+__all__ = ["SecretEncryptionService", "SecretPathTransformer"]
 
 _LAZY_IMPORTS = {
     "SecretEncryptionService": "swiss_ai_hub.core.secrets.secret_encryption_service",
-    "SecretMasker": "swiss_ai_hub.core.secrets.secret_masker",
     "SecretPathTransformer": "swiss_ai_hub.core.secrets.secret_path_transformer",
 }
 

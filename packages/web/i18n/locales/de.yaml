@@ -212,6 +212,8 @@ event:
     no_filters: Keine zusätzlichen Filter
   rag_stop:
     failure_reason:
+      condensation_empty: Die Frage konnte nicht in eine durchsuchbare Form verdichtet
+        werden – dieser Lauf wurde vor dem Retrieval gestoppt.
       context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort
         ist eine Notlösung und nicht in Ihren Wissensquellen verankert.
       expert_declined: Der menschliche Experte konnte keine Antwort liefern – dieser
@@ -220,6 +222,8 @@ event:
         – dieser Lauf hat keine fundierte Antwort produziert.
       few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
         die Antwort ohne Retrieval erzeugt.
+      input_too_large: Die Nachricht oder die angehängte Datei überschritt das Kontextfenster
+        des Modells, daher wurde dieser Lauf vor dem Modellaufruf gestoppt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent
@@ -513,9 +517,9 @@ knowledge:
   add_database:
     title: Wissensdatenbank hinzufügen
     description: Eine neue Self-Service-Wissensdatenbank erstellen
-  auto_sync:
-    title: Automatisch synchronisiert
-    description: Sammlungen werden automatisch verwaltet
+  source:
+    description: 'Synchronisiert aus {name}'
+    edit: 'Quelle bearbeiten'
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -555,6 +559,16 @@ knowledge:
         eine Pipeline läuft.
       steps:
         basic_info: Grundinformationen
+        source: 'Quelle'
+    edit_source:
+      title: 'Quelle von {name}'
+      success: 'Quelle aktualisiert'
+      error: 'Quelle konnte nicht aktualisiert werden'
+      switch_to_manual: 'Auf manuellen Upload umstellen'
+      replace_documents:
+        header: 'Inhalt an die Quelle übergeben?'
+        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e). Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation jede Datei entfernt, die die Quelle nicht hat.'
+        accept: 'Bestehende Dokumente ersetzen'
     edit:
       title: Sammlung bearbeiten
     database:
@@ -567,6 +581,13 @@ knowledge:
         3 bis 63 Zeichen. Der Name kann später nicht geändert werden.
       validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
         und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
+    source:
+      label: 'Quelle'
+      placeholder: 'Wählen Sie, woher die Dokumente kommen'
+      help: 'Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron; jeder Ordner der obersten Ebene wird zu einem Namespace.'
+      manual_upload:
+        label: 'Manueller Upload'
+        description: 'Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.'
     ingestor:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen
@@ -837,6 +858,16 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  secret_file_input:
+    drop_hint: Datei hier ablegen oder zum Auswählen klicken
+    limits: '{accept}, bis {size}'
+    selected: Datei ausgewählt
+    stored: Schlüsseldatei gespeichert (verschlüsselt)
+    client_email: 'Dienstkonto: {email}'
+    replace: Ersetzen
+    remove: Entfernen
+    too_large: Die Datei ist grösser als {size}.
+    invalid_json: Die Datei ist kein gültiges JSON.
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
   warnings:
@@ -866,6 +897,14 @@ lib:
       placeholder: Zeitzone auswählen
       help: Die Cron-Positionen werden in dieser Zeitzone interpretiert, damit ein
         täglicher Zeitplan über Zeitumstellungen hinweg dieselbe Uhrzeit behält.
+  knowledgeCollections:
+    placeholder: Sammlungen auswählen
+    help: Nur die ausgewählten Sammlungen werden durchsucht.
+    noAgent: Zuerst einen Wissensagenten wählen — auswählbar sind dessen Sammlungen.
+    noSource: Diesem Feld ist kein Wissensagent zugeordnet, daher können keine Sammlungen
+      angeboten werden.
+    empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
+    unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen
@@ -947,6 +986,7 @@ memory:
       message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
         es erneut.
 openwebui:
+  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
@@ -968,3 +1008,15 @@ tenant:
   mismatch_switch_action: Mandant wechseln
   administration_title: Tenant-Verwaltung
   administration_description: Tenants plattformweit verwalten
+support:
+  report_bug: Fehler melden
+  dialog_title: Problem melden
+  choose_files: Dateien auswählen
+  submit: Meldung senden
+  submitting: Wird gesendet…
+  sent: Meldung gesendet
+  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per E-Mail.'
+  send_failed: Meldung nicht gesendet
+  send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
+  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte wenden Sie
+    sich an Ihre Administration.

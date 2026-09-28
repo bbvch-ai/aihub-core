@@ -939,6 +939,24 @@ class TestNullableFlag:
         # Required must still be False since the field is optional
         assert count_elem.required is False
 
+    def test_nullable_leaf_keeps_an_explicit_element_value(self) -> None:
+        """An element may pre-fill the input its toggle gates without that toggle starting on.
+
+        The two are independent on purpose: `default_enabled` comes from the field's *data* default (None
+        here, so off) while `value` is what the input offers once enabled. A blueprint uses this to start a
+        picker on a deployment-wide default — e.g. the RAG memory model — without pinning profiles to it.
+        """
+        form = FormWithNullableLeaf(
+            name=InputText(label=LocaleString(en="Name")),
+            count=InputNumber(label=LocaleString(en="Count"), value=7),
+        )
+
+        count_elem = next(e for e in form.to_formkit_form() if e.name == "count")
+
+        assert count_elem.value == 7
+        assert count_elem.nullable is True
+        assert count_elem.default_enabled is False
+
     def test_non_nullable_field_not_marked(self) -> None:
         form = SimpleForm(
             name=InputText(label=LocaleString(en="Name")),

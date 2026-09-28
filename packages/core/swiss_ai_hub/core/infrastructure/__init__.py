@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
     from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+    from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
@@ -41,14 +42,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
-    from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
-        azure_blob_source,
-        google_drive_source,
-        onedrive_source,
-        s3_source,
-        sftp_source,
-        sharepoint_source,
-    )
+    from swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings import RclonePipelineSettings
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
     from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
@@ -62,16 +56,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings import SharePointSettings
 
 __all__ = [
-    "sharepoint_source",
-    "sftp_source",
-    "s3_source",
-    "onedrive_source",
-    "google_drive_source",
-    "azure_blob_source",
     "SharePointSettings",
     "OpenTelemetrySettings",
     "MemoryRelation",
     "Memory",
+    "Mem0Settings",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
     "AccessGrant",
@@ -95,6 +84,7 @@ __all__ = [
     "OpenWebuiSettings",
     "OpenWebuiTokenService",
     "ParsingSettings",
+    "RclonePipelineSettings",
     "RedisSettings",
     "ConfigEncryptionSettings",
     "DocumentIngestionPipelineSettings",
@@ -116,16 +106,11 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
-    "sharepoint_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "sftp_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "s3_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "onedrive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "google_drive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "azure_blob_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
+    "Mem0Settings": "swiss_ai_hub.core.infrastructure.mem0.mem0_settings",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
@@ -149,6 +134,7 @@ _LAZY_IMPORTS = {
     "OpenWebuiSettings": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings",
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
+    "RclonePipelineSettings": "swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
     "ConfigEncryptionSettings": "swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings",
     "DocumentIngestionPipelineSettings": "swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings",

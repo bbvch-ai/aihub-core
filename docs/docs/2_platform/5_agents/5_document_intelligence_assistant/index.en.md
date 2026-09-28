@@ -188,11 +188,14 @@ accept/reject; leave the list empty to accept everything.
 Lets the assistant remember context about the individual user across conversations (e.g. their role or preferences) and
 use it to personalize answers. On by default.
 
-| Field                            | Type   | Default | Description                                                                                |
-| -------------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------ |
-| **Enable user memory retrieval** | Toggle | On      | Pull personal memories into context to personalize answers.                                |
-| **Rerank user memory**           | Toggle | On      | Rerank retrieved memories for relevance (shown only when retrieval is enabled). Adds cost. |
-| **Enable user memory storage**   | Toggle | On      | Save new learnings from the conversation for future personalization.                       |
+| Field                            | Type         | Default          | Description                                                                                                                                |
+| -------------------------------- | ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Enable user memory retrieval** | Toggle       | On               | Pull personal memories into context to personalize answers.                                                                                |
+| **Rerank user memory**           | Toggle       | On               | Rerank retrieved memories for relevance (shown only when retrieval is enabled). Adds cost.                                                 |
+| **Enable user memory storage**   | Toggle       | On               | Save new learnings from the conversation for future personalization.                                                                       |
+| **Memory model**                 | Model picker | Platform default | Model that distils and reconciles those learnings. Off = the platform-wide model; enabling it starts from that same one. Needs storage on. |
+
+Saving happens in the background once the answer has been delivered, so none of it adds to the wait.
 
 ### Organization memory *(optional)*
 

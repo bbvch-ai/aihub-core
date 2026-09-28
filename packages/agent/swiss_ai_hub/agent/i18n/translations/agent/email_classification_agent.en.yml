@@ -1,10 +1,8 @@
 ---
 metadata:
-  name: Email Classification Agent
-  description: Reads every unread message in a mailbox, decides which category it
-    belongs to, and files it into that category's folder. Mail it is unsure about
-    goes to a fallback folder. It never sends. Replies are drafted for the categories
-    that ask for one and left in the drafts folder.
+  name: Email Processing Agent
+  description: Sorts unread mail into category folders and drafts replies for a human
+    to send.
 steps:
   list_unread:
     name: List unread mail

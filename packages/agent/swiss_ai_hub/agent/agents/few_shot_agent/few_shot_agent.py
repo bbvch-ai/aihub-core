@@ -8,6 +8,7 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityRejectEvent,
     LimitChatHistoryEvent,
     LLMStopEvent,
+    Message,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     StopEvent,
@@ -17,8 +18,10 @@ from swiss_ai_hub.core.generative_ai import (
     agent_description_guard,
     condense_standalone_question,
     create_few_shot_messages,
+    estimate_prompt_tokens,
     limit_chat_history,
     merge_consecutive_messages,
+    usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
@@ -158,16 +161,69 @@ class FewShotAgent(Agent):
         self,
         event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
         _clear: NotAMetaQuestionEvent,
-    ) -> LimitChatHistoryEvent:
+    ) -> LimitChatHistoryEvent | LLMStopEvent:
+        """Truncate the chat history to the token limit, and refuse the run when it still cannot be sent.
+
+        Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when a
+        single message exceeds the limit, and OpenWebUI under `RAG_FULL_CONTEXT` pastes a whole uploaded file into the
+        chat. The suitability guard and the condenser send that text to the task model, whose 400 would otherwise
+        surface as an error banner instead of an answer.
+
+        Client system messages are irreducible alongside the last turn: every step forwards them, and OpenWebUI can
+        place file text there too.
         """
-        Truncates incoming chat messages to fit within the configured token limit
-        """
-        limited_chat_history = limit_chat_history(
-            chat_history=event.messages,
-            number_of_input_tokens=agent_config.number_of_input_tokens,
+        budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
+        if budget is None:
+            return LimitChatHistoryEvent(
+                limited_history=limit_chat_history(
+                    chat_history=event.messages,
+                    number_of_input_tokens=agent_config.number_of_input_tokens,
+                )
+            )
+
+        system_messages = [msg for msg in event.messages if msg.role == MessageRole.SYSTEM]
+        conversation = [msg for msg in event.messages if msg.role != MessageRole.SYSTEM]
+        irreducible = [*system_messages, *conversation[-1:]]
+        irreducible_tokens = estimate_prompt_tokens(irreducible, agent_config.llm.token_counter)
+        if irreducible_tokens > budget:
+            return await self._refuse_oversized_input(irreducible_tokens, budget, agent_config, displayer, t)
+
+        # Trim only what precedes the last turn: handing the trimmer a list that still holds it charges it twice, and
+        # `ChatMemoryBuffer` then drops the whole earlier conversation.
+        older_limit = min(agent_config.number_of_input_tokens, budget - irreducible_tokens)
+        older = (
+            limit_chat_history(chat_history=conversation[:-1], number_of_input_tokens=older_limit)
+            if older_limit > 0
+            else []
         )
-        return LimitChatHistoryEvent(limited_history=limited_chat_history)
+        return LimitChatHistoryEvent(limited_history=[*system_messages, *older, *conversation[-1:]])
+
+    @staticmethod
+    async def _refuse_oversized_input(
+        needed: int,
+        budget: int,
+        agent_config: FewShotAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> LLMStopEvent:
+        """Stop the run with a reply rather than an error, keeping the token arithmetic to the thought.
+
+        The wording differs from the other blueprints on purpose: this agent answers from its examples and a condensed
+        question, never from the document itself, so advising a smaller file would promise something it cannot do.
+        """
+        await displayer.display_thought(
+            t("agent.few_shot_agent.thoughts.input_too_large", tokens=needed, budget=budget)
+        )
+        refusal = t("agent.few_shot_agent.messages.input_too_large")
+        model_name = agent_config.llm.model_name
+        await displayer.display_chunk(refusal, model_name=model_name)
+        return LLMStopEvent(
+            output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
+            chat_model_name=model_name,
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.name"),
@@ -316,11 +372,18 @@ class FewShotAgent(Agent):
         thread_context: ThreadContext,
         user: UserIdentity,
     ) -> StopEvent:
+        # Without a chunk this path produces no assistant text at all: the admin UI renders the reject
+        # event itself (GuardRejectionEvent.vue), but OpenAI-compatible clients build the answer from the
+        # streamed chunks plus the stop event's output, so a bare StopEvent reaches OpenWebUI and the bots
+        # as an empty message. Stream the refusal like ExpertRAGAgent's decline/error paths do. The guard's
+        # `reason` carries the specific mismatch and comes back in the run's locale (the whole guard prompt
+        # is localized), but it is third-person justification, so a first-person sentence leads it.
+        refusal = t("agent.few_shot_agent.messages.unsuitable_request", reason=event.reason)
+        await displayer.display_chunk(refusal, model_name=FewShotAgent.__name__)
+
         # Neither title nor follow-ups have fired on this path yet — the guard rejected the request
         # before the agent produced anything, so both are missing (unlike the meta-question branch,
-        # which already has an early title step). The guard's `reason` is shown to the user
-        # (GuardRejectionEvent.vue), so treat it as the answer text to ground follow-ups on, same as
-        # ExpertRAGAgent's canned decline/error messages.
-        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=event.reason)]
+        # which already has an early title step). Ground them on the refusal the user actually read.
+        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=refusal)]
         await generate_conversation_metadata(chat_messages, agent_config.task_llm, displayer, t, thread_context, user)
         return StopEvent()

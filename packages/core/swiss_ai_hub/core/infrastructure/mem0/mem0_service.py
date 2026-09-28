@@ -186,6 +186,8 @@ class Mem0Service:
                 "_tenant_id": tenant_id,
                 "_tenant_namespace": tenant_namespace,
                 "_type": memory_type.value,
+                # Only an inferring write runs the LLM; a verbatim write reports no model because none ran.
+                "llm_model_name": self._config.llm.config["model"] if infer else None,
             }
         )
 

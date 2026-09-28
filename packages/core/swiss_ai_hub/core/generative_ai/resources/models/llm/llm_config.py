@@ -142,6 +142,16 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             },
         )
 
+    @property
+    def max_input_tokens(self) -> int | None:
+        """The model's context window as LiteLLM declares it, or None when it declares none.
+
+        Callers that bound a prompt need this number before building one, not after the provider rejects it.
+        `None` rather than a raise: a guard must not turn a model with an incomplete LiteLLM entry into a
+        failing run. `to_llama_index` keeps its own strict lookup, where a missing window is a real defect.
+        """
+        return self.get_model_info()["model_info"].get("max_input_tokens")
+
     def to_llama_index(
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
     ) -> tuple[OpenAILike, LLMCostTracker]:

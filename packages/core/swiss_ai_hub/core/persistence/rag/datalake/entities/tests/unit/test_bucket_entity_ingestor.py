@@ -137,20 +137,14 @@ class TestCarryOverRetiredModelColumns:
 
 
 class TestUpdateBucket:
-    def test_auto_sync_can_be_toggled_off(self):
-        """A truthy check would swallow ``auto_sync=False`` and make the flag impossible to turn off."""
-        bucket = BucketEntity.create_bucket(bucket_name="syncingdb", auto_sync=True)
-
-        updated = BucketEntity.update_bucket(str(bucket.id), auto_sync=False)
-
-        assert updated.auto_sync is False
-
-    def test_omitting_auto_sync_leaves_it_unchanged(self):
-        bucket = BucketEntity.create_bucket(bucket_name="syncingdb", auto_sync=True)
+    def test_updating_the_ingestor_leaves_the_source_axis_untouched(self):
+        """The two axes are edited through different paths; a change to one must never reset the other."""
+        bucket = BucketEntity.create_bucket(bucket_name="syncingdb", source="rclone", source_configuration={"a": 1})
 
         updated = BucketEntity.update_bucket(str(bucket.id), ingestor=IngestorType.DOCUMENT_INGESTION.value)
 
-        assert updated.auto_sync is True
+        assert updated.source == "rclone"
+        assert updated.source_configuration == {"a": 1}
 
 
 class TestBucketNameValidation:

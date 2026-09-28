@@ -24,12 +24,11 @@ from swiss_ai_hub.agent.rag.preconditions import (
 )
 
 
-def _config(*, retrieval=True, storage=True, async_storage=False, org_memory=None) -> SimpleNamespace:
+def _config(*, retrieval=True, storage=True, org_memory=None) -> SimpleNamespace:
     return SimpleNamespace(
         user_memory=SimpleNamespace(
             enable_user_memory_retrieval=retrieval,
             enable_user_memory_storage=storage,
-            enable_async_memory_storage=async_storage,
         ),
         org_memory=org_memory,
     )
@@ -72,11 +71,5 @@ def test_history_limiting_is_not_blocked_on_a_skipped_memory_step():
 
 def test_the_run_still_terminates_when_the_memory_write_was_skipped():
     """The gate that would otherwise hang the run at its terminal step, having already produced the answer."""
-    assert check_ready_for_stop(_config(), True, None, None) is False
-    assert check_ready_for_stop(_config(), False, None, None) is True
-
-
-def test_an_identity_less_run_terminates_in_async_storage_mode_too():
-    config = _config(async_storage=True)
-    assert check_ready_for_stop(config, True, None, None) is False
-    assert check_ready_for_stop(config, False, None, None) is True
+    assert check_ready_for_stop(_config(), True, None) is False
+    assert check_ready_for_stop(_config(), False, None) is True

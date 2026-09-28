@@ -67,6 +67,16 @@ class ModelGatewayErrorHandler:
             "The speech-to-text provider produced no transcript for this recording: it found no "
             "speech it could align in the audio.",
         ),
+        # An overlong prompt is the one 400 a chat user can act on, but the provider's wording buries
+        # the number under its own token arithmetic, and LiteLLM then appends its fallback bookkeeping
+        # ("No fallback model group found ... Fallbacks=[{'embedding/bge-m3': []}, ...]") on the stages
+        # that configure fallbacks. Only the limit is worth keeping. Matched loosely on the limit alone
+        # because the sentence that follows it varies with the requested output tokens.
+        (
+            re.compile(r"maximum context length is (?P<limit>[\d,]+) tokens"),
+            "This request is too long for the model: it reads at most {limit} tokens at once. "
+            "Send a smaller file or a shorter message, or use a model with a larger context window.",
+        ),
     )
 
     @staticmethod

@@ -53,13 +53,7 @@ CONFIG_TEMPLATES_DIR = Path(__file__).parent.resolve() / "templates" / "configs"
 
 _SETTINGS_GLOBS = ["**/settings.py", "**/*_settings.py"]
 
-# `rclone_source_factory.py` defines `RcloneSourceSettings`, whose env_prefix is
-# set DYNAMICALLY at call time (`RcloneSourceSettings.load("AZUREBLOB")` builds
-# a per-source subclass with prefix `RCLONE_AZUREBLOB_`). Static introspection
-# sees only the parent class — which has no prefix — so its fields would be
-# indexed as bare names like `NAME` and `TYPE`. Those don't correspond to real
-# env vars and would collide with anything else named that way. Skip the file.
-_SKIP_FILES = {"rclone_source_factory.py"}
+_SKIP_FILES: set[str] = set()
 
 _ENV_KEY_RE = re.compile(r"^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=")
 # Captures: var name + the operator (`-`, `:-`, `+`, `:+`, `?`, `:?`) if any.

@@ -1,9 +1,11 @@
 """Provisions Langfuse with LLM connections, model pricing, and a default prompt on API startup."""
 
+import ipaddress
 import logging
 import re
 from collections.abc import Coroutine
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -16,6 +18,13 @@ logger = logging.getLogger(__name__)
 
 AIHUB_CONNECTION_NAME = "AI-Hub Agents"
 LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
+
+OCR_MODEL_NAME_PREFIXES: tuple[str, ...] = ("mineru", "olmocr", "lightonocr")
+
+LOOPBACK_HOSTNAMES: frozenset[str] = frozenset({"localhost", "0.0.0.0", "::", "[::]"})
+
+ALLOWLIST_SETTING = "LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST"
+LANGFUSE_SERVICES = "langfuse-web and langfuse-worker"
 
 
 class LangfuseProvisioner:
@@ -64,7 +73,7 @@ class LangfuseProvisioner:
         try:
             return await coro
         except Exception as e:
-            logger.warning(f"Langfuse provisioning: '{name}' failed — {e}")
+            logger.exception(f"Langfuse provisioning: '{name}' failed — {e}")
             return None
 
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
@@ -74,34 +83,58 @@ class LangfuseProvisioner:
     async def _register_litellm_connection(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (not configured)")
-            return
+        litellm_settings = LiteLLMProxySettings()
 
         if not litellm_settings.API_KEY:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no API key)")
-            return
+            raise ValueError("LITE_LLM_PROXY_API_KEY is required to register the Langfuse evaluator connection")
 
-        chat_models = [
-            entry["model_name"]
-            for entry in litellm_models
-            if "model_name" in entry and entry.get("model_info", {}).get("mode") == "chat"
-        ]
+        base_url = litellm_settings.get_internal_base_url()
+        self._assert_dialable_from_langfuse(base_url, "LITE_LLM_PROXY_INTERNAL_BASE_URL")
+
+        chat_models = self._judge_models(litellm_models)
 
         connection_data = {
             "provider": "ai-hub-litellm",
             "adapter": "openai",
             "secretKey": litellm_settings.API_KEY.get_secret_value(),
-            "baseURL": litellm_settings.BASE_URL,
+            "baseURL": base_url,
             "customModels": chat_models,
             "withDefaultModels": False,
             "extraHeaders": {},
         }
 
         await self._upsert_llm_connection(client, connection_data, LITELLM_CONNECTION_NAME)
-        logger.info(f"Langfuse provisioning: Discovered {len(chat_models)} chat models from LiteLLM: {chat_models}")
+        logger.info(f"Langfuse provisioning: Registered {len(chat_models)} judge models from LiteLLM: {chat_models}")
+
+    @staticmethod
+    def _assert_dialable_from_langfuse(url: str, setting_name: str) -> None:
+        """Langfuse dials this URL from its own container, so a loopback address can only ever reach Langfuse itself."""
+        hostname = urlparse(url).hostname or ""
+
+        is_loopback = hostname.lower() in LOOPBACK_HOSTNAMES
+        if not is_loopback:
+            try:
+                is_loopback = ipaddress.ip_address(hostname).is_loopback
+            except ValueError:
+                is_loopback = False
+
+        if is_loopback:
+            raise ValueError(
+                f"{setting_name} is '{url}', which resolves to the loopback interface. Langfuse dials this "
+                f"connection from its own container, where loopback is Langfuse itself, so every call would fail. "
+                f"Set it to an address {LANGFUSE_SERVICES} can reach."
+            )
+
+    @staticmethod
+    def _judge_models(litellm_models: list[dict[str, Any]]) -> list[str]:
+        """OCR/VLM models are served as ``mode: chat`` but cannot grade text, so they must not reach the judge list."""
+        return [
+            entry["model_name"]
+            for entry in litellm_models
+            if "model_name" in entry
+            and entry.get("model_info", {}).get("mode") == "chat"
+            and not entry["model_name"].rsplit("/", maxsplit=1)[-1].lower().startswith(OCR_MODEL_NAME_PREFIXES)
+        ]
 
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
@@ -142,22 +175,15 @@ class LangfuseProvisioner:
 
     @staticmethod
     async def _fetch_litellm_models(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: LiteLLM not configured, skipping model discovery")
-            return []
+        """Discovery stays on the in-cluster URL; only the connection Langfuse dials needs the public one."""
+        litellm_settings = LiteLLMProxySettings()
 
         url = f"{litellm_settings.BASE_URL}/v1/model/info"
         api_key = litellm_settings.API_KEY.get_secret_value() if litellm_settings.API_KEY else ""
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        try:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-        except httpx.HTTPError:
-            logger.warning("Langfuse provisioning: Failed to fetch models from LiteLLM")
-            return []
+        response = await client.get(url, headers=headers)
+        response.raise_for_status()
 
         return response.json().get("data", [])
 
@@ -166,11 +192,14 @@ class LangfuseProvisioner:
     # ------------------------------------------------------------------
 
     def _build_aihub_connection_data(self, *, custom_models: list[str]) -> dict[str, Any]:
+        base_url = AIHubSettings().OPENAI_API_BASE_URL
+        self._assert_dialable_from_langfuse(base_url, "AIHUB_OPENAI_API_BASE_URL")
+
         return {
             "provider": "ai-hub-agents",
             "adapter": "openai",
             "secretKey": SuperuserSettings().TOKEN.get_secret_value(),
-            "baseURL": AIHubSettings().OPENAI_API_BASE_URL,
+            "baseURL": base_url,
             "customModels": custom_models,
             "withDefaultModels": False,
             "extraHeaders": {},
@@ -182,8 +211,17 @@ class LangfuseProvisioner:
 
         if response.status_code in (200, 201):
             logger.info(f"Langfuse LLM connection upserted: {display_name}")
-        else:
-            response.raise_for_status()
+            return
+
+        if response.status_code == 400 and "blocked ip address" in response.text.lower():
+            hostname = urlparse(data["baseURL"]).hostname or data["baseURL"]
+            raise ValueError(
+                f"Langfuse rejected the '{display_name}' baseURL '{data['baseURL']}' as a private address. "
+                f"Add '{hostname}' to {ALLOWLIST_SETTING} on {LANGFUSE_SERVICES} — Langfuse validates the "
+                f"hostname both when the connection is written and on every call it makes through it."
+            )
+
+        response.raise_for_status()
 
     async def _create_model_definition(
         self,

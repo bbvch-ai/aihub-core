@@ -4,8 +4,13 @@ set -e
 # Enables visual inspection, screenshot capture, DOM/CSS analysis, JavaScript execution,
 # and automated UI interaction in a real browser (Chromium, headless by default).
 #
-# Official Microsoft Playwright MCP server. Browser binaries are auto-installed on first use.
+# Official Microsoft Playwright MCP server.
+# --browser chromium selects the bundled Chrome-for-Testing build over the branded Chrome
+# channel the server defaults to (which expects a system-wide /opt/google/chrome install),
+# matching the ghcr.io/bbvch-ai/aihub-core/playwright image used by the dev stack.
+# Install the build this server version pins with:
+#   npx @playwright/mcp@0.0.80 install-browser chrome-for-testing
 # Use for: debugging frontend issues, verifying UI changes, running visual checks,
 # inspecting network requests, and testing OpenWebUI/Admin UI interactions.
 cd "$(dirname "$0")/../.."
-exec npx -y @playwright/mcp@latest --headless
+exec npx -y @playwright/mcp@0.0.80 --headless --browser chromium

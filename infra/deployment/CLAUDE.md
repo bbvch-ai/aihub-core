@@ -41,6 +41,7 @@ deployment/
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
     ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
+    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -51,7 +52,41 @@ deployment/
 
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
+- `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
 - `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+
+### LiteLLM provider variants
+
+The LiteLLM config carries a **third axis** on top of stage x hardware: `LITELLM_VARIANTS` in `generate_compose.py`
+(`infomaniak`, `stoney`). Any spec whose name pattern contains `{variant}` is rendered once per entry; everything else
+keeps the two-axis shape.
+
+Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
+at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
+the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token window
+on `stoney`, Infomaniak with 100000 on `infomaniak`. Every other model is identical.
+
+This is deliberately **not** a stage or channel conditional. Every release bundle renders as `stage='latest'`
+(`generate_release`), and all customers deploy the same `latest` artifact, so which provider serves a model is a
+per-deployment property — not something the build can decide. It also makes switching or rolling back an env change plus
+a `litellm` restart rather than a rebuild. An unset or misspelled value points `--config` at a file that does not exist,
+so LiteLLM fails to start loudly instead of silently falling back.
+
+`max_input_tokens` and the cost fields must stay **literal numbers** in the template. LiteLLM does resolve `os.environ/`
+inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
+and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
+
+`aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
+`model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
+Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
+multi-tool orchestration.
+
+At runtime, an unknown value aborts that API start's **whole** OpenWebUI provisioning run, not just that model's sync.
+No LLM model is created, renamed or updated, so a model newly added to LiteLLM never appears. Access grants are not
+refreshed either, until the next agent sync. The only sign is one logged exception, because startup provisioning is
+non-fatal. To keep that from reaching a VM, `generate_compose.py` rejects any value other than `native` or `legacy`, so
+`make generate-compose`, and with it CI's Env / Compose Consistency job, fails on a typo. Keep its
+`OPENWEBUI_FUNCTION_CALLING_MODES` in sync with `AvailableModel.function_calling` in `packages/core`.
 
 ## Generation Pipeline
 

@@ -13,9 +13,9 @@
           <div class="flex items-center gap-2 pb-2 pl-2">
             <span class="text-sm font-medium">{{ database.display_name || capitalCase(database.name) }}</span>
             <i
-              v-if="database.auto_sync"
-              class="pi pi-lock text-surface-400 dark:text-surface-500"
-              :title="t('knowledge.auto_sync.description')"
+              v-if="database.source"
+              class="pi pi-sync text-surface-400 dark:text-surface-500"
+              :title="t('knowledge.source.description', { name: capitalCase(database.source) })"
             />
             <i
               v-else
@@ -25,6 +25,16 @@
             <span class="text-xs text-surface-500 dark:text-surface-400">
               {{ t('knowledge.pipeline', { name: capitalCase(database.ingestor) }) }}
             </span>
+            <Button
+              v-if="database.deletable"
+              v-tooltip.top="t('knowledge.source.edit')"
+              icon="pi pi-cloud-download"
+              rounded
+              text
+              size="small"
+              severity="secondary"
+              @click="openSourceModal(database)"
+            />
             <Button
               v-if="database.deletable"
               v-tooltip.top="t('knowledge.delete_database')"
@@ -41,14 +51,14 @@
               v-for="namespace in database.namespaces"
               :key="namespace.name"
               :namespace="namespace"
-              :auto-sync="database.auto_sync"
+              :sourced="!!database.source"
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"
-              @edit="openEditNamespaceModal(namespace)"
+              @edit="openEditNamespaceModal(database, namespace)"
               @delete="openDeleteNamespaceModal(database, namespace)"
             />
             <KnowledgeNamespaceEmptyCard
-              v-if="!database.auto_sync"
+              v-if="!database.source"
               @add="openNewNamespaceModal(database.name)"
             />
           </div>
@@ -75,6 +85,7 @@
 
     <KnowledgeNamespaceEditModal
       v-model="editNamespaceModalVisible"
+      :database="editingDatabase"
       :namespace="editingNamespace"
       @success="handleUpdateSuccess"
     />
@@ -82,6 +93,11 @@
     <KnowledgeDatabaseCreateModal
       v-model="newDatabaseModalVisible"
       @success="handleDatabaseCreationSuccess"
+    />
+
+    <KnowledgeDatabaseSourceModal
+      v-model="sourceModalVisible"
+      :database="selectedDatabaseForSource"
     />
 
     <KnowledgeDeleteConfirmModal
@@ -100,6 +116,7 @@ import { capitalCase } from 'change-case'
 
 import type { DatabaseDto, NamespaceDto } from '@core/sdk/client'
 
+const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
 const { t } = useI18n()
@@ -121,9 +138,18 @@ const newNamespaceModalVisible = ref(false)
 const selectedDatabaseForNewNamespace = ref('')
 
 const editNamespaceModalVisible = ref(false)
+const editingDatabase = ref('')
 const editingNamespace = ref<NamespaceDto | null>(null)
 
 const newDatabaseModalVisible = ref(false)
+
+const sourceModalVisible = ref(false)
+const selectedDatabaseForSource = ref<DatabaseDto | null>(null)
+
+const openSourceModal = (database: DatabaseDto) => {
+  selectedDatabaseForSource.value = database
+  sourceModalVisible.value = true
+}
 
 const toNamespace = (database_name: string, namespace: NamespaceDto) => {
   router.push(tenantPath(`/service/knowledge/${database_name}/${namespace.name}`))
@@ -151,7 +177,8 @@ const handleCreationSuccess = (data: { database: string, namespace: string }) =>
   router.push(tenantPath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
-const openEditNamespaceModal = (namespace: NamespaceDto) => {
+const openEditNamespaceModal = (database: DatabaseDto, namespace: NamespaceDto) => {
+  editingDatabase.value = database.name
   editingNamespace.value = namespace
   editNamespaceModalVisible.value = true
 }
@@ -218,11 +245,24 @@ const openDeleteNamespaceModal = (database: DatabaseDto, namespace: NamespaceDto
   deleteModalVisible.value = true
 }
 
+// The nested document route renders inside this page, so deleting what it points at leaves it mounted on a
+// dead URL. Leave for the nearest surviving ancestor first: navigating deactivates the child's queries, so the
+// delete's invalidation only marks them stale instead of refetching a resource the teardown job is purging.
+// Both cases land on the database list — there is no /service/knowledge/[db] route.
+const isViewingPendingDeletion = (pending: PendingDeletion) => {
+  if (route.params.db !== pending.database) return false
+  return pending.type === 'database' || route.params.namespace === pending.namespace
+}
+
 const handleConfirmDelete = async () => {
   const pending = pendingDeletion.value
   if (!pending) return
 
   try {
+    if (isViewingPendingDeletion(pending)) {
+      await router.push(tenantPath('/service/knowledge'))
+    }
+
     if (pending.type === 'database') {
       await deleteDatabase({ tenantId: tenantId.value!, database: pending.database })
     }

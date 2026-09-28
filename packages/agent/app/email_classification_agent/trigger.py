@@ -22,17 +22,17 @@ run over mixed mail should leave drafts for the information and support mail and
 `IMAP_INCLUDE_ATTACHMENTS=1` to also feed attachment text to the drafter — that needs MinerU reachable for PDFs and
 images; Word and other Office files go through MarkItDown in-process.
 
-Grounded drafting (issue #1720) — answers each drafted message from its category's collection instead of from the
+Grounded drafting (issue #1720) — answers each drafted message from the RAG agent's knowledge instead of from the
 message alone. Needs a RAG agent actually running (`uv run --package swiss-ai-hub-agent python -m app.rag_agent.main`)
-and the collections populated, or every draft comes back as the no-information text:
+and its collections populated, or every draft comes back as the no-information text:
 
-    IMAP_KNOWLEDGE_DB=support-kb \
-    IMAP_NS_INFORMATION=information IMAP_NS_SUPPORT=support \
     IMAP_RAG_AGENT_ID=rag-agent \
+    IMAP_KNOWLEDGE_DB=support-kb IMAP_NS_SUPPORT=support \
         uv run --package swiss-ai-hub-agent python -m app.email_classification_agent.trigger
 
-Leave `IMAP_KNOWLEDGE_DB` unset and the run drafts from the message alone, exactly as before — grounding is opt-in
-per category, so this script exercises both paths from one taxonomy.
+Leave `IMAP_RAG_AGENT_ID` unset and the run drafts from the message alone, with no retrieval at all. With it set,
+`support_request` narrows to the one collection named above while `information_request` answers from everything that
+agent retrieves from, so one run exercises both scopes.
 
 Nothing is ever sent. Check the Sent folder afterwards: it must be untouched.
 """
@@ -48,7 +48,7 @@ from datetime import UTC, datetime  # noqa: E402
 
 from swiss_ai_hub.core.agents import AgentRef  # noqa: E402
 from swiss_ai_hub.core.events.agent import CronStartEvent  # noqa: E402
-from swiss_ai_hub.core.generative_ai import LLMConfig  # noqa: E402
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, LLMConfig  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.imap import (  # noqa: E402
     DraftEmailSettings,
@@ -72,14 +72,17 @@ from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa
 
 enable_logging()
 
-# Set per category, so one run can show a grounded draft and an ungrounded one side by side. Empty means the reply
-# is written from the message alone, which is what every category does when IMAP_KNOWLEDGE_DB is unset.
+# The RAG agent is what makes drafting grounded at all; per-category collections only narrow it further.
+_RAG_AGENT_ID = os.environ.get("IMAP_RAG_AGENT_ID", "")
 _KNOWLEDGE_DB = os.environ.get("IMAP_KNOWLEDGE_DB", "")
 
 
-def _collection(variable: str) -> str:
-    """The collection for a category, or none at all when no knowledge database is configured."""
-    return os.environ.get(variable, "") if _KNOWLEDGE_DB else ""
+def _collections(variable: str) -> list[BucketNamespacePair] | None:
+    """The collections a category narrows to, or None to answer from everything the RAG agent retrieves from."""
+    namespace = os.environ.get(variable, "")
+    if not _KNOWLEDGE_DB or not namespace:
+        return None
+    return [BucketNamespacePair(bucket_name=_KNOWLEDGE_DB, namespace_name=namespace)]
 
 
 _CATEGORIES = [
@@ -89,7 +92,8 @@ _CATEGORIES = [
         description="The sender is asking for information we can simply provide — pricing, opening hours, "
         "documentation, where to find something. Answering needs no action beyond telling them.",
         draft_reply=True,
-        knowledge_namespace=_collection("IMAP_NS_INFORMATION"),
+        # Left unnarrowed on purpose: with a RAG agent configured this category answers from all of its knowledge.
+        knowledge_namespaces=None,
     ),
     MailCategory(
         category="support_request",
@@ -97,7 +101,7 @@ _CATEGORIES = [
         description="Something is broken or blocked for the sender and resolving it requires an action from our "
         "team, not just an explanation.",
         draft_reply=True,
-        knowledge_namespace=_collection("IMAP_NS_SUPPORT"),
+        knowledge_namespaces=_collections("IMAP_NS_SUPPORT"),
     ),
     MailCategory(
         category="invoice",
@@ -130,7 +134,6 @@ async def main():
             classification=EmailClassificationSettings(
                 categories=_CATEGORIES,
                 fallback_folder=os.environ.get("IMAP_FALLBACK", "Triage/Uncategorised"),
-                knowledge_databases=[_KNOWLEDGE_DB] if _KNOWLEDGE_DB else [],
             ),
             draft=DraftEmailSettings(
                 enable_draft=os.environ.get("IMAP_ENABLE_DRAFT", "1") == "1",
@@ -141,16 +144,16 @@ async def main():
                 # ten-minute default — the whole point of exercising this by hand is to see the outcome.
                 grounding_timeout_seconds=int(os.environ.get("IMAP_GROUNDING_TIMEOUT", "60")),
             ),
-            # Left unset without a knowledge database, which is what keeps the ungrounded path runnable with no RAG
+            # Left unset without a RAG agent id, which is what keeps the ungrounded path runnable with no RAG
             # agent deployed at all.
             knowledge_delegation=(
                 KnowledgeDelegationConfig(
                     rag_agent=AgentRef(
                         agent_class=os.environ.get("IMAP_RAG_AGENT_CLASS", "RAGAgent"),
-                        agent_id=os.environ.get("IMAP_RAG_AGENT_ID", "rag-agent"),
+                        agent_id=_RAG_AGENT_ID,
                     )
                 )
-                if _KNOWLEDGE_DB
+                if _RAG_AGENT_ID
                 else None
             ),
         ),

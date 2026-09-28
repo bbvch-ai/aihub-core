@@ -19,9 +19,29 @@ class CreateDatabaseRequest(BaseModel):
     configuration: Annotated[
         dict[str, Any],
         Field(
+            default_factory=dict,
             description=(
                 "The database's configuration as submitted through the ingestor's announced form: its multilingual "
                 "name and description plus every knob the pipeline declares. Validated against the ingestor's schema."
+            ),
+        ),
+    ]
+    source: Annotated[
+        str | None,
+        Field(
+            description=(
+                "The deployed source pipeline that fills this database's data lake, as served by "
+                "GET /knowledge/source-pipelines. Omit for manual upload."
             )
         ),
-    ] = {}
+    ] = None
+    source_configuration: Annotated[
+        dict[str, Any],
+        Field(
+            default_factory=dict,
+            description=(
+                "The source's settings as submitted through its announced form (backend, credentials, root folder, "
+                "patterns). Validated against the source's schema; secret fields are stored encrypted."
+            ),
+        ),
+    ]

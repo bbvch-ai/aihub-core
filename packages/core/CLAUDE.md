@@ -55,19 +55,19 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
-│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password fields in an announced form
+│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 29 concrete form elements
+│   └── elements/                    # 30 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
-│   ├── chat_history/                # Chat history management + memory extension
+│   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
 │   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
-│   ├── memory/                      # AgentMemory (user + org scoped via mem0)
+│   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
 │   ├── rerank/                      # Reranking via LiteLLM (provider-agnostic)
@@ -78,10 +78,11 @@ packages/core/swiss_ai_hub/core/
 │   └── utils/                       # Shared AI utilities
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
+├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
+│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
-├── secrets/                         # Secret configuration fields at rest
-│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, plaintext passes through, fail-closed
-│   ├── secret_masker.py              # SecretMasker: MASK in responses, restore-on-resubmit
+├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
@@ -114,11 +115,11 @@ packages/core/swiss_ai_hub/core/
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
 │   ├── form/                        # ConfigSpecsEntity (announced schema, stored as a JSON string)
 │   ├── i18n/                        # LocaleStringEntity
-│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, NamespaceEntity, …)
+│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, SourcePipelineEntity, NamespaceEntity, …)
 │   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)
-├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral)
+├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral) + SourceUpdatedPublisher (data lake changed → owning ingestor)
 ├── records/                         # Record types
 ├── requester/                       # RPC request side (AbstractRequester, NCRequester)
 ├── responder/                       # RPC response side (AbstractResponder, NCResponder)
@@ -276,12 +277,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput.
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
 
 ### Nested Forms
 
@@ -521,19 +522,27 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                                                                                                  |
-| --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                           |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                              |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                             |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                    |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                             |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                           |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                       |
-| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser` |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                              |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`                |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                      |
+| Module          | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                                          |
+| --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
+| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
+| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
+| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
+| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
+| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
+| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
+| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                                                         |
+| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
+| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
+| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+
+`AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
+(issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
+on the config: an unconfigured profile reports `None` and `Mem0Settings.get_config(llm_name=...)` supplies the default.
+`AgentConfig.memory_llm_model_name` is the platform-owned hook the dispatcher reads — it returns `None` on the base and
+a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
+model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
+events report `None` for organization memory, which stores its text verbatim.
 
 ## FastAPI Controllers
 
@@ -596,7 +605,7 @@ Real-time event emission for streaming LLM output to the UI:
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 29 form elements
+- `core/form/elements/` — 30 form elements
 
 **Workflow engine**:
 

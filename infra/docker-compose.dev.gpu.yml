@@ -527,7 +527,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
     restart: always
     depends_on:
       postgres:
@@ -538,7 +538,11 @@ services:
         condition: service_healthy
       langfuse-web:
         condition: service_healthy
-    ports: [127.0.0.1:3030:3030]
+    ports:
+      - 127.0.0.1:3030:3030
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts: [host.docker.internal:host-gateway]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -569,6 +573,17 @@ services:
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_AUTH: ${REDIS_TOKEN}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,host.docker.internal
+    # Probes $(hostname), not localhost: the worker binds the container address only,
+    # so a loopback probe is refused. Same form as langfuse-web below.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget --no-verbose --tries=1 --spider http://$(hostname):3030/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     logging:
       driver: json-file
       options:
@@ -582,7 +597,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
     restart: always
     depends_on:
       postgres:
@@ -591,7 +606,11 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-    ports: [6006:3000]
+    ports:
+      - 6006:3000
+    # The API runs on the host in dev, so AIHUB_OPENAI_API_BASE_URL points at host.docker.internal.
+    # Docker Desktop/WSL2 resolve it automatically; plain Docker Engine needs this mapping.
+    extra_hosts: [host.docker.internal:host-gateway]
     environment:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: http://localhost:6006
@@ -649,6 +668,7 @@ services:
       AUTH_DISABLE_USERNAME_PASSWORD: 'false'
       AUTH_DISABLE_SIGNUP: 'false'
       LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST: litellm,host.docker.internal
     healthcheck:
       test:
         - CMD-SHELL
@@ -871,9 +891,11 @@ services:
       - --rc-serve
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
-      - --config=/dev/null  # Disable config file, use environment variables only
+      - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
     ports: [5572:5572]
-    networks: [default]
+    networks:
+      - backend  # reached by the rclone pipeline
+      - egress  # reaches the cloud providers it syncs from
     healthcheck:
       test: [CMD, rclone, rc, --rc-addr=localhost:5572, core/version]
       interval: 30s
@@ -1302,6 +1324,8 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      STONEY_CLOUD_API_BASE_URL: ${STONEY_CLOUD_API_BASE_URL}
+      STONEY_CLOUD_API_KEY: ${STONEY_CLOUD_API_KEY}
       SWISS_LLM_CLOUD_IMAGE_API_BASE_URL: ${SWISS_LLM_CLOUD_IMAGE_API_BASE_URL}
       SWISS_LLM_CLOUD_IMAGE_API_KEY: ${SWISS_LLM_CLOUD_IMAGE_API_KEY}
       SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
@@ -1325,9 +1349,11 @@ services:
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
     volumes:
-      - ./configs/litellm/litellm-config.dev.gpu.yml:/app/config.yml
+      # LITELLM_CONFIG_VARIANT picks one mounted variant; an unknown value makes LiteLLM fail to start.
+      - ./configs/litellm/litellm-config.infomaniak.dev.gpu.yml:/app/config.infomaniak.yml
+      - ./configs/litellm/litellm-config.stoney.dev.gpu.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
-    command: --config /app/config.yml
+    command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
@@ -1615,7 +1641,12 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
     restart: always
     network_mode: host
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -1788,7 +1819,8 @@ services:
       RAG_FULL_CONTEXT: true
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: true
-      RAG_FILE_MAX_COUNT: 4
+      RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE}
       CONTENT_EXTRACTION_ENGINE: external
       EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
@@ -1933,3 +1965,7 @@ volumes:
   clickhouse-data:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   clickhouse-logs:
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "http://localhost:3333"}

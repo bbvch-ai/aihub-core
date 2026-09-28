@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
+    ChunkEvent,
     ConversationTitleEvent,
     FollowUpQuestionsEvent,
     NotAMetaQuestionEvent,
@@ -77,3 +78,10 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     assert runner.has_event_of_class(ConversationTitleEvent), "guard-reject path did not generate a title"
     assert runner.has_event_of_class(FollowUpQuestionsEvent), "guard-reject path did not generate follow-ups"
     assert not runner.has_exception_event
+
+    # Without a chunk the refusal never reaches OpenAI-compatible clients, which build the answer from
+    # the streamed chunks plus the stop event's output — the admin UI's reject-event rendering is not
+    # visible to OpenWebUI or the bots, so they would show an empty assistant message.
+    chunks = runner.get_events_of_class(ChunkEvent, exact=True)
+    assert chunks, "guard-reject path streamed no assistant text"
+    assert "".join(chunk.content for chunk in chunks).strip(), "guard-reject path streamed empty content"

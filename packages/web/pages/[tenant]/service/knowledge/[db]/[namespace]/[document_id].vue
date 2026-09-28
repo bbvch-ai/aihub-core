@@ -82,20 +82,27 @@ const confirmDelete = () => {
 }
 
 const handleDelete = async () => {
+  const database = route.params.db as string
+  const namespace = route.params.namespace as string
+  const documentId = route.params.document_id as string
+
   try {
+    // Leave before deleting: the delete invalidates a key that is a prefix of this document's own query, so a
+    // still-mounted page refetches the document it just removed.
+    await router.push(tenantPath(`/service/knowledge/${database}/${namespace}`))
+
     await deleteDocument({
       tenantId: tenantId.value!,
-      database: route.params.db as string,
-      namespace: route.params.namespace as string,
-      documentId: route.params.document_id as string,
+      database,
+      namespace,
+      documentId,
     })
-    schedule([route.params.document_id as string])
+    schedule([documentId])
     toast.add({
       severity: 'success',
       summary: t('document.delete.success'),
       life: 3000,
     })
-    router.push(tenantPath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
   }
   catch (error) {
     toast.add({

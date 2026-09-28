@@ -7,7 +7,6 @@ from swiss_ai_hub.core.events.agent import (
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
-    StoreUserMemoryEvent,
 )
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event import AnswerStopEvent
@@ -128,17 +127,15 @@ def check_memory_added_to_chat_history(
 def check_ready_for_stop(
     config: RAGAgentConfig,
     has_user: bool,
-    store_memory_event: StoreUserMemoryEvent | None,
-    memory_storage_request: MemoryStorageRequestedEvent | None = None,
+    memory_storage_request: MemoryStorageRequestedEvent | None,
 ) -> bool:
     """
     Check if all required steps are complete before stopping.
 
-    When memory storage is enabled, gate the stop until the storage step has produced its event so the
-    stop cannot race the store step (both trigger off the LLMEvent). In async mode
-    (`enable_async_memory_storage`) the store step returns a `MemoryStorageRequestedEvent` — a
-    millisecond-cheap delegation marker, NOT storage completion — so the run finalizes as soon as the answer
-    is ready (issue #1179). In inline mode it returns a `StoreUserMemoryEvent` only after the write finishes.
+    When memory storage is enabled, gate the stop until the storage step has produced its event so the stop
+    cannot race the store step (both trigger off the LLMEvent). That event is a `MemoryStorageRequestedEvent`
+    — a millisecond-cheap delegation marker, NOT storage completion — so the run finalizes as soon as the
+    answer is ready (issue #1179) while the `MemoryWriterAgent` persists on its own run.
 
     This is the gate that makes the identity check load-bearing rather than cosmetic: without agreeing with
     `check_user_memory_storage_enabled` about `has_user`, an identity-less run would answer correctly and then
@@ -146,6 +143,4 @@ def check_ready_for_stop(
     """
     if not check_user_memory_storage_enabled(config, has_user):
         return True
-    if config.user_memory.enable_async_memory_storage:
-        return memory_storage_request is not None
-    return store_memory_event is not None
+    return memory_storage_request is not None

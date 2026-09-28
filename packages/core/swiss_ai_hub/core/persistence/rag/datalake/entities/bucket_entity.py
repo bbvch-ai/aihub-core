@@ -15,8 +15,8 @@ _NEW_DATABASE_NAME_PATTERN = r"^[a-z][a-z0-9]{2,62}$"
 class BucketEntity(Document):
     """
     Represents the metadata of a data lake bucket/container.
-    Each bucket is associated with a unique name and a corresponding database name for storage.
-    Auto-sync indicates that the bucket automatically loads files into the data lake and does not allow manual uploads.
+    Each bucket is associated with a unique name and a corresponding database name for storage. A bucket with a
+    ``source`` is filled by that source pipeline and does not allow manual uploads.
     """
 
     meta = {
@@ -31,13 +31,18 @@ class BucketEntity(Document):
     db_name = StringField(required=True)
     name = EmbeddedDocumentField(LocaleStringEntity, required=True)
     description = EmbeddedDocumentField(LocaleStringEntity, required=True)
-    auto_sync = BooleanField(default=False)
     datalake_type = StringField(default="s3", choices=["s3", "azure"])
     ingestor = StringField(required=True, default=IngestorType.UNASSIGNED.value)
     # The ingestor's own settings for this database, shaped by the form the ingestor announced and validated
     # against its schema by the API. The pipeline reads it per run; a key it does not find falls back to the
     # deployment default, which is what rows created before a knob existed keep using.
     configuration = DictField(default=dict)
+    # Which deployed source pipeline fills this database's data lake; None means manual upload. The second
+    # axis next to ``ingestor``: the ingestor says how files are processed, the source says where they come from.
+    source = StringField(required=False, default=None)
+    # The source pipeline's own settings for this database, shaped by the form it announced. Secret fields
+    # are stored encrypted by the API; the pipeline decrypts them per run.
+    source_configuration = DictField(default=dict)
     # Soft-delete: excluded from every enumeration path, and hard-deleted last, by the teardown job.
     deleting = BooleanField(default=False)
 
@@ -69,10 +74,11 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        auto_sync: bool = False,
         datalake_type: str = "s3",
         ingestor: str = IngestorType.UNASSIGNED.value,
         configuration: dict | None = None,
+        source: str | None = None,
+        source_configuration: dict | None = None,
         db_alias: str = "default",
     ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
@@ -85,10 +91,11 @@ class BucketEntity(Document):
                 db_name=db_name or bucket_name,
                 name=name or LocaleStringEntity(en=bucket_name, de=bucket_name, fr=bucket_name, it=bucket_name),
                 description=description or LocaleStringEntity(),
-                auto_sync=auto_sync,
                 datalake_type=datalake_type,
                 ingestor=ingestor,
                 configuration=configuration or {},
+                source=source,
+                source_configuration=source_configuration or {},
             )
             bucket.save()
             return bucket
@@ -114,6 +121,12 @@ class BucketEntity(Document):
             return SwitchedBucket.objects().order_by("bucket_name")
 
     @classmethod
+    def get_buckets_by_source(cls, source: str, db_alias: str = "default") -> list["BucketEntity"]:
+        """Databases a source pipeline fills, excluding those being torn down — its runtime fan-out."""
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects(source=source, deleting=False).order_by("bucket_name")
+
+    @classmethod
     def get_deleting_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
         """Buckets flagged for teardown — the durable work queue the teardown sensor reads."""
         with switch_db(cls, db_alias) as SwitchedBucket:
@@ -127,7 +140,6 @@ class BucketEntity(Document):
         db_name: str | None = None,
         name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
-        auto_sync: bool | None = None,
         datalake_type: str | None = None,
         ingestor: str | None = None,
         db_alias: str = "default",
@@ -141,12 +153,26 @@ class BucketEntity(Document):
             bucket.name = name
         if description:
             bucket.description = description
-        if auto_sync is not None:
-            bucket.auto_sync = auto_sync
         if datalake_type:
             bucket.datalake_type = datalake_type
         if ingestor is not None:
             bucket.ingestor = ingestor
+        bucket.save()
+        return bucket
+
+    @classmethod
+    def update_source(
+        cls,
+        bucket_name: str,
+        source: str | None,
+        source_configuration: dict | None,
+        db_alias: str = "default",
+    ) -> Self:
+        """Replaces the source axis wholesale: credentials rotate, patterns change, or the database goes back to
+        manual upload. Kept apart from ``update_bucket`` because the ingestor configuration is create-time only."""
+        bucket = cls.get_bucket_by_bucket_name(bucket_name, db_alias=db_alias)
+        bucket.source = source
+        bucket.source_configuration = source_configuration or {}
         bucket.save()
         return bucket
 
