@@ -28,7 +28,6 @@ from swiss_ai_hub.core.generative_ai import (
     condense_standalone_question,
     estimate_prompt_tokens,
     limit_chat_history,
-    usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
@@ -267,7 +266,7 @@ class Conversation(Capability):
         if not block_messages:
             return ContextComposedEvent(history=request.history)
 
-        budget = _input_budget(conversation) - estimate_prompt_tokens(system_head, conversation.llm.token_counter)
+        budget = conversation.input_budget() - estimate_prompt_tokens(system_head, conversation.llm.token_counter)
         limited = limit_chat_history(chat_history=[*block_messages, *turns], number_of_input_tokens=max(budget, 1))
         return ContextComposedEvent(history=[*system_head, *limited])
 
@@ -303,12 +302,6 @@ def _split_system_head(messages: list[ChatMessage]) -> tuple[list[ChatMessage], 
             break
         head_length += 1
     return messages[:head_length], messages[head_length:]
-
-
-def _input_budget(conversation: ConversationFields) -> int:
-    """The admin's cost ceiling capped by the narrowest model window that could receive the prompt."""
-    budget = usable_input_budget([conversation.llm, conversation.task_llm])
-    return conversation.number_of_input_tokens if budget is None else min(conversation.number_of_input_tokens, budget)
 
 
 async def _refuse_empty_condensation(

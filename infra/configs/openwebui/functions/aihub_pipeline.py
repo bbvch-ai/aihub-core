@@ -57,6 +57,10 @@ AIHUB_TITLE_REDIS_TTL_SECONDS = 600
 # under this key before OpenWebUI would act on them.
 REQUESTED_FEATURES_METADATA_KEY = "aihub_requested_features"
 
+# OpenWebUI file meta key under which the pipe remembers each agent's upload of that file, keyed "{class}/{id}", so
+# a file forwarded again on a later turn is not copied into the agent bucket a second time.
+AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
+
 # OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
 # ``metadata["task"]`` by its ``/api/v1/tasks/moa/completions`` route when a user presses "Merge
 # Responses". Unlike every other task value this one is user-initiated — see the two predicates below.
@@ -549,7 +553,9 @@ class EventContext:
         chat_id: Annotated[Optional[str], "OpenWebUI chat id, for persisting title/follow-ups"] = None,
         message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
+        owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
     ):
+        self.owui_file_ids = owui_file_ids or {}
         self.state_manager = state_manager
         self.emitter = emitter
         self.caller = caller
@@ -924,6 +930,51 @@ class RetrieverEventHandler(EventHandler):
         return source_data
 
 
+class AttachedFileEventHandler(EventHandler):
+    """Shows each attached file the agent read as a source on the answer, or reports one it could not read.
+
+    The source links to the user's original upload in Open WebUI, which is why the agent's file id is mapped back
+    to the Open WebUI file it was copied from.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if attached file event"]:
+        return "AttachedFileEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Attached file event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        filename = event.get("filename", "")
+        if event.get("status") == "failed":
+            await context.emitter(
+                {
+                    "type": "status",
+                    "data": {"description": f"{filename}: {event.get('error') or ''}", "done": True, "error": True},
+                }
+            )
+            return True
+
+        owui_file_id = context.owui_file_ids.get(event.get("file_id", ""))
+        name = f"{filename} (partial)" if event.get("status") == "truncated" else filename
+        metadata: dict[str, Any] = {"source": owui_file_id or filename, "name": name}
+        if owui_file_id:
+            metadata["file_id"] = owui_file_id
+        await context.emitter(
+            {
+                "type": "source",
+                "data": {
+                    "source": {"id": owui_file_id or event.get("file_id", ""), "name": name},
+                    "document": [event.get("excerpt", "")],
+                    "metadata": [metadata],
+                },
+            }
+        )
+        return True
+
+
 class RetrieveUserMemoryEventHandler(EventHandler):
     """Handler for user memory retrieval events"""
 
@@ -1185,6 +1236,7 @@ class EventProcessorFactory:
             ExceptionEventHandler(),
             EmbeddingEventHandler(),
             RetrieverEventHandler(),
+            AttachedFileEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
             ConversationTitleEventHandler(),
@@ -1245,6 +1297,7 @@ class StreamingService:
         message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1264,6 +1317,7 @@ class StreamingService:
             chat_id=chat_id,
             message_id=message_id,
             redis=redis,
+            owui_file_ids=owui_file_ids,
         )
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -1469,6 +1523,7 @@ class StreamingService:
             chat_id=context.chat_id,
             message_id=context.message_id,
             redis=context.redis,
+            owui_file_ids=context.owui_file_ids,
         )
 
 
@@ -1573,26 +1628,30 @@ class FileProcessingService:
 
     async def prepare_files_for_event(
         self,
-        files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"],
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
-    ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
-        """Upload Open WebUI files to the agent's bucket and return file references."""
-        if not files:
-            return []
-
+    ) -> Annotated[
+        tuple[list[dict[str, str]], dict[str, str]],
+        "Prepared files for AI-Hub, and each agent file id mapped to the Open WebUI file id it came from",
+    ]:
+        """Hand every file of the branch to the agent's bucket, reusing an upload the bucket still holds."""
         prepared_files: list[dict[str, str]] = []
+        owui_file_ids: dict[str, str] = {}
 
-        for file in files:
+        for file in files or []:
             try:
                 prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
-                if prepared_file:
-                    prepared_files.append(prepared_file)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
+                continue
+            if prepared_file:
+                prepared_files.append(prepared_file)
+                if file.get("type", "file") == "file" and file.get("id"):
+                    owui_file_ids[prepared_file["file_id"]] = file["id"]
 
-        return prepared_files
+        return prepared_files, owui_file_ids
 
     async def _process_single_file(
         self,
@@ -1601,66 +1660,97 @@ class FileProcessingService:
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
-        """Upload a single file to the agent's bucket via initiate → PUT → validate."""
+        """Upload a single file to the agent's bucket via initiate → PUT → validate, unless it is already there.
+
+        A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead, so that text
+        is uploaded as a plain-text file for the agent to read like any other attachment.
+        """
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
-        owui_file_id = file.get("id", "")
-        file_obj = Files.get_file_by_id(owui_file_id)
+        if file.get("type") == "text" and file.get("content") is not None:
+            name = file.get("name") or "attachment"
+            filename = name if name.lower().endswith(".txt") else f"{name}.txt"
+            return await self._upload(file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers)
 
+        owui_file_id = file.get("id", "")
+        file_obj = await Files.get_file_by_id(owui_file_id)
         if not file_obj:
             logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
             return None
 
-        file_meta = file_obj.meta
+        file_meta = file_obj.meta or {}
         filename = file_meta.get("name", "unnamed_file")
         content_type = file_meta.get("content_type", "application/octet-stream")
+        agent_key = f"{agent_class}/{agent_id}"
+        known_uploads = file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}
 
-        # Read file content from OpenWebUI's S3 storage (blocking I/O offloaded to thread)
+        known_file_id = known_uploads.get(agent_key)
+        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers):
+            return {"filename": filename, "file_type": content_type, "file_id": known_file_id}
+
         file_content = await asyncio.to_thread(self._read_file_content, file_obj)
+        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers)
+        if prepared:
+            await Files.update_file_metadata_by_id(
+                owui_file_id, {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: prepared["file_id"]}}
+            )
+        return prepared
 
+    def _files_url(self, agent_class: str, agent_id: str, action: str) -> str:
+        return f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/{action}"
+
+    async def _is_stored(
+        self,
+        file_id: Annotated[str, "Agent file id of an earlier upload"],
+        filename: Annotated[str, "Name it was uploaded under"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
+    ) -> Annotated[bool, "Whether the agent bucket still holds it; uploads expire after 7 days"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Step 1: Initiate upload — get presigned URL + file_id
-            initiate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
+            response = await client.post(
+                self._files_url(agent_class, agent_id, "validate"),
+                headers=headers,
+                json={"file_id": file_id, "filename": filename},
+            )
+        return response.status_code == 200 and bool(response.json().get("exists"))
+
+    async def _upload(
+        self,
+        content: Annotated[bytes, "File bytes"],
+        filename: Annotated[str, "File name"],
+        content_type: Annotated[str, "MIME type"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
+    ) -> Annotated[Optional[dict[str, str]], "The uploaded file reference, or None when validation failed"]:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             initiate_resp = await client.post(
-                initiate_url,
+                self._files_url(agent_class, agent_id, "initiate"),
                 headers=headers,
                 json={"filename": filename, "content_type": content_type},
             )
             initiate_resp.raise_for_status()
             initiate_data = initiate_resp.json()
-
-            upload_url = initiate_data["upload_url"]
             agent_file_id = initiate_data["file_id"]
 
-            # Step 2: PUT file content to presigned URL
             put_resp = await client.put(
-                upload_url,
-                content=file_content,
-                headers={"Content-Type": content_type},
+                initiate_data["upload_url"], content=content, headers={"Content-Type": content_type}
             )
             put_resp.raise_for_status()
 
-            # Step 3: Validate upload
-            validate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
             validate_resp = await client.post(
-                validate_url,
+                self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
                 json={"file_id": agent_file_id, "filename": filename},
             )
             validate_resp.raise_for_status()
-            validate_data = validate_resp.json()
-
-            if not validate_data.get("exists"):
+            if not validate_resp.json().get("exists"):
                 logger.warning(f"File validation failed for {filename} (file_id={agent_file_id})")
                 return None
 
         logger.debug(f"Successfully uploaded file: {filename} -> file_id={agent_file_id}")
-
-        return {
-            "filename": filename,
-            "file_type": content_type,
-            "file_id": agent_file_id,
-        }
+        return {"filename": filename, "file_type": content_type, "file_id": agent_file_id}
 
     def _read_file_content(self, file_obj: Any) -> bytes:
         """Read file content from OpenWebUI's S3 storage."""
@@ -2191,7 +2281,9 @@ class Pipe:
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
                 # Process files — upload to agent's dedicated bucket
-                files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
+                files, owui_file_ids = await self._file_service.prepare_files_for_event(
+                    __files__, agent_class, agent_id, headers
+                )
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -2273,6 +2365,7 @@ class Pipe:
                     message_id=__metadata__.get("message_id"),
                     redis=getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None),
                     stream_start_callback=stream_start_callback,
+                    owui_file_ids=owui_file_ids,
                 )
 
                 # Emit completion status

@@ -399,13 +399,14 @@ class OpenWebuiProvisioner:
 
         Every native toggle is written, on or off, because OpenWebUI treats a missing capability as enabled.
         Memory is off because OpenWebUI would otherwise inject its own memories into the prompt next to the
-        ones our agents recall themselves.
+        ones our agents recall themselves, and file context is off because our agents read the attached files
+        themselves instead of receiving OpenWebUI's injected copy.
         """
         capabilities = {feature.openwebui_capability: False for feature in ChatFeature if feature.openwebui_capability}
         for feature in agent.supported_features:
             if feature.openwebui_capability:
                 capabilities[feature.openwebui_capability] = True
-        return {**capabilities, "memory": False}
+        return {**capabilities, "memory": False, "file_context": False}
 
     @staticmethod
     def _agent_filter_ids(agent: OnlineAgent) -> list[str]:

@@ -3,6 +3,9 @@ display_event:
   name: Display Event
   description: An event that displays information to the user without affecting the
     workflow.
+attached_file_event:
+  name: Attached File
+  description: The agent read a file the user attached to the conversation.
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.

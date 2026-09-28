@@ -1,0 +1,15 @@
+---
+steps:
+  read_attached_files:
+    name: Lire les fichiers joints
+    description: Lit les fichiers que l'utilisateur a joints à la conversation et
+      ajoute leur texte au contexte du modèle
+prompt:
+  preamble: L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque
+    la question s'y rapporte, réponds à partir de leur contenu et nomme le fichier
+    utilisé.
+  truncated: Seul le début de « {{ filename }} » a tenu dans ton contexte. Indique
+    à l'utilisateur que ta réponse repose sur une partie de ce fichier.
+  unreadable: L'utilisateur a joint « {{ filename }} », mais ce fichier n'a pas pu
+    être lu ({{ error }}). Indique-lui que ce fichier n'a pas pu être lu et propose
+    de le joindre dans un autre format ou d'en coller le texte.

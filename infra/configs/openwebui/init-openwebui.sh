@@ -22,6 +22,9 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Functions that shipped once and were removed; see the end of main.
+RETIRED_FUNCTION_IDS="aihub-turn-scope-filter"
+
 run_sql() {
     psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAq "$@"
 }
@@ -269,6 +272,12 @@ main() {
     done
 
     log "Function registration complete: $registered registered, $failed failed"
+
+    # Registration only upserts, so a function whose file was removed from the repo would keep running from the
+    # database. Ids listed here are deleted on every run.
+    for retired_id in $RETIRED_FUNCTION_IDS; do
+        run_sql -c "DELETE FROM function WHERE id = '${retired_id}';" && log "Removed retired function: $retired_id"
+    done
 }
 
 main "$@"

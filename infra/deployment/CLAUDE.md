@@ -42,7 +42,6 @@ deployment/
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
     ├── aihub_feature_filter.py         # Inlet filter (agent models only): chat toggles → requested features for the pipe
     ├── aihub_title_filter.py           # Outlet filter (agent models only): restores agent title after OpenWebUI's first-turn fallback
-    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -109,7 +108,8 @@ stays reviewable.
 
 ### Global and per-model OpenWebUI functions
 
-`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`. A non-global filter
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes
+the ids listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter
 runs only on the models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent
 filters (`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 

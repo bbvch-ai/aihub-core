@@ -175,6 +175,13 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
 scope; `remember(...)` builds the memory-storage delegation directly, no step behind it, so returning it ahead of the
 completion is what guarantees it is published before the run tears down (ADR `2026_09_11`).
 
+**`AttachedFiles`** (needs `ConversationFields`): `read(files, history)` → `AttachedFilesReadEvent` with one block
+holding every attached document's full text, trimmed to fit next to `history` and shared fairly between files, empty
+when nothing readable is attached (images stay image content). It emits an `AttachedFileEvent` per file, which chat
+clients show as a source; an unreadable file is reported in the block so the answer says so. Blueprints call it from
+their `gather_context_step` next to `Memory.recall` and compose the block after the memories. Chat clients send every
+file of the current message branch on each turn, so no file state is kept across turns.
+
 **Capability steps** are `@staticmethod`s decorated with `@step` taking the blueprint instance first, so the dispatcher
 calls them like methods. A capability declares `calls` (request → every outcome the call can end in: one or several
 events, and the stop events that end the run there) and `required_config`; `CapabilityCatalog` composes only the steps a
