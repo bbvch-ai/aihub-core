@@ -46,7 +46,7 @@ Feature: RAG Agent
     * organization memories are pre-seeded in the system
     When the start event is sent with a user query "What is machine learning?"
     Then a RetrieveOrganizationMemoryEvent is present
-    * an AddOrganizationMemoryToChatHistoryEvent is present
+    * an organization memory context block is present
     * a RetrieverEvent is present with retrieved nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present

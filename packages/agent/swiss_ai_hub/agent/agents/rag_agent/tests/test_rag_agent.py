@@ -14,7 +14,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 from swiss_ai_hub.core.events.agent import (
-    AddMemoryToChatHistoryEvent,
+    ContextBlockEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     LimitChatHistoryEvent,
@@ -51,6 +51,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
     LimitChatHistoryWithContextEvent,
 )
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.memory.memory_capability import ORGANIZATION_MEMORY
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
@@ -573,9 +574,13 @@ def _(agent_runner: AgentTestRunner):
     assert event is not None, "RetrieveOrganizationMemoryEvent was not emitted"
 
 
-@then("an AddOrganizationMemoryToChatHistoryEvent is present")
+@then("an organization memory context block is present")
 def _(agent_runner: AgentTestRunner):
-    """Assert that organization memories were added to chat history."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent was not emitted"
-    assert event.extended_history, "Chat history was not extended with organization memory"
+    """Organization memories reach the answer as the memory capability's context block for the spine's join."""
+    blocks = [
+        observed.event
+        for observed in agent_runner.observed_events
+        if isinstance(observed.event, ContextBlockEvent) and observed.event.source == ORGANIZATION_MEMORY
+    ]
+    assert blocks, "No organization memory context block was emitted"
+    assert blocks[0].messages, "The organization memory context block was empty"
