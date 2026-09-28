@@ -391,6 +391,7 @@ class OpenaiService:
                 primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -404,6 +405,7 @@ class OpenaiService:
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
+            requested_features=requested_features,
             locale=locale,
             aihub_headers=aihub_headers,
         )
@@ -460,6 +462,7 @@ class OpenaiService:
                 primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -473,6 +476,7 @@ class OpenaiService:
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
+            requested_features=requested_features,
             locale=locale,
             aihub_headers=aihub_headers,
         )

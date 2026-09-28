@@ -1,11 +1,13 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
+from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
+    AGENT_FILTER_IDS,
     AIHUB_MANAGED_META_KEY,
     OpenWebuiProvisioner,
 )
@@ -40,12 +42,13 @@ _RAG_MODEL_ID = "aihub-pipeline.rag.default"
 # A row already synced by a prior run of *this* provisioner — every field it manages carries its
 # current desired value, so a diff against it must find nothing to update unless a test deliberately
 # perturbs one field.
-_SYNCED_META = {AIHUB_MANAGED_META_KEY: True, "capabilities": {"web_search": False}}
+_NO_FEATURES = {"web_search": False, "code_interpreter": False, "image_generation": False, "memory": False}
+_SYNCED_META = {AIHUB_MANAGED_META_KEY: True, "capabilities": _NO_FEATURES, "filterIds": list(AGENT_FILTER_IDS)}
 _SYNCED_PARAMS = {"function_calling": "legacy"}
 
 # A row the workspace has its own opinions about: a human-set profile image, an unmanaged
 # capability (vision), an unmanaged param (temperature), and a stale value for the one capability
-# AI-Hub does manage (web_search) — everything here except web_search must survive an update.
+# AI-Hub does manage (web_search). Everything except the managed capabilities must survive an update.
 _WORKSPACE_OWNED = {
     "id": _RAG_MODEL_ID,
     "name": "RAG Agent",
@@ -72,22 +75,51 @@ def _managed_row(model_id: str, name: str, **overrides: object) -> dict:
 
 
 class TestAgentCapabilities:
-    def test_web_search_is_off_for_agents(self) -> None:
-        """OpenWebUI drops web-search hits before they reach the pipe, so the toggle must not render."""
-        assert OpenWebuiProvisioner._agent_capabilities()["web_search"] is False
+    def test_agent_without_features_shows_no_native_toggle(self) -> None:
+        """OpenWebUI treats a missing capability as enabled, so every native toggle is written explicitly."""
+        assert OpenWebuiProvisioner._agent_capabilities(_RAG_AGENT) == _NO_FEATURES
 
-    def test_agent_model_carries_the_capabilities(self, provisioner: OpenWebuiProvisioner) -> None:
+    def test_supported_feature_shows_its_native_toggle(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": [ChatFeature.WEB_SEARCH]})
+
+        capabilities = OpenWebuiProvisioner._agent_capabilities(agent)
+
+        assert capabilities["web_search"] is True
+        assert capabilities["code_interpreter"] is False
+        assert capabilities["image_generation"] is False
+
+    def test_openwebui_memory_is_always_off_for_agents(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": list(ChatFeature)})
+
+        assert OpenWebuiProvisioner._agent_capabilities(agent)["memory"] is False
+
+    def test_agent_model_carries_capabilities_and_agent_filters(self, provisioner: OpenWebuiProvisioner) -> None:
         model_data = provisioner._build_model_data(_RAG_AGENT)
 
-        assert model_data["meta"]["capabilities"] == {"web_search": False}
+        assert model_data["meta"]["capabilities"] == _NO_FEATURES
+        assert model_data["meta"]["filterIds"] == list(AGENT_FILTER_IDS)
 
-    def test_llm_model_keeps_web_search(self, provisioner: OpenWebuiProvisioner) -> None:
+    def test_native_features_add_no_toggle_filter(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": list(ChatFeature)})
+
+        assert OpenWebuiProvisioner._agent_filter_ids(agent) == list(AGENT_FILTER_IDS)
+
+    def test_feature_without_native_toggle_gets_a_toggle_filter(self) -> None:
+        custom = MagicMock(openwebui_capability=None, openwebui_toggle_filter_id="aihub-feature-deep-research")
+        agent = OnlineAgent.model_construct(
+            agent_class="rag", agent_id="default", display_name="RAG Agent", supported_features=[custom]
+        )
+
+        assert OpenWebuiProvisioner._agent_filter_ids(agent) == [*AGENT_FILTER_IDS, "aihub-feature-deep-research"]
+
+    def test_llm_model_keeps_openwebui_builtins(self, provisioner: OpenWebuiProvisioner) -> None:
         """Plain LLM models bypass the pipe, so OpenWebUI's own web search works for them."""
         model_data = provisioner._build_llm_model_data(
             AvailableModel(capability="text-generation", name="gemma", display_name="gemma")
         )
 
         assert "capabilities" not in model_data["meta"]
+        assert "filterIds" not in model_data["meta"]
 
 
 class TestComputeModelDiff:
@@ -159,11 +191,26 @@ class TestComputeModelDiff:
 
     def test_compute_models_to_update_when_capability_flipped(self) -> None:
         online = [_RAG_AGENT]
-        existing = {
-            _RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent", meta={"capabilities": {"web_search": True}})
-        }
+        flipped = {**_SYNCED_META, "capabilities": {**_NO_FEATURES, "web_search": True}}
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent", meta=flipped)}
 
         to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
+
+        assert to_update == [_RAG_AGENT]
+
+    def test_compute_models_to_update_when_blueprint_gains_a_feature(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": [ChatFeature.CODE_INTERPRETER]})
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent")}
+
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff([agent], existing)
+
+        assert to_update == [agent]
+
+    def test_compute_models_to_update_when_filters_drifted(self) -> None:
+        stale = {**_SYNCED_META, "filterIds": []}
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent", meta=stale)}
+
+        to_create, to_update, to_delete = OpenWebuiProvisioner._compute_model_diff([_RAG_AGENT], existing)
 
         assert to_update == [_RAG_AGENT]
 
@@ -172,7 +219,7 @@ class TestComputeModelDiff:
         online = [_RAG_AGENT]
         existing = {
             _RAG_MODEL_ID: _managed_row(
-                _RAG_MODEL_ID, "RAG Agent", meta={"capabilities": {"web_search": False, "vision": True}}
+                _RAG_MODEL_ID, "RAG Agent", meta={**_SYNCED_META, "capabilities": {**_NO_FEATURES, "vision": True}}
             )
         }
 
@@ -200,7 +247,7 @@ class TestSyncWorkspaceModels:
             assert "base_model_id" not in create_data
             assert create_data["name"] == "RAG Agent"
             assert create_data["meta"][AIHUB_MANAGED_META_KEY] is True
-            assert create_data["meta"]["capabilities"] == {"web_search": False}
+            assert create_data["meta"]["capabilities"] == _NO_FEATURES
             assert create_data["params"]["function_calling"] == "legacy"
             mock_delete.assert_not_called()
 
@@ -287,13 +334,13 @@ class TestSyncWorkspaceModels:
             await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
 
             mock_update.assert_called_once()
-            assert mock_update.call_args[0][1]["meta"]["capabilities"] == {"web_search": False}
+            assert mock_update.call_args[0][1]["meta"]["capabilities"] == _NO_FEATURES
 
     @pytest.mark.asyncio
     async def test_sync_keeps_what_the_workspace_owns(self, provisioner: OpenWebuiProvisioner) -> None:
         """``/models/model/update`` writes every column, so an update must carry the stored fields
         back — a human-set profile image, an unmanaged capability, an unmanaged param — while still
-        overriding the one capability (web_search) this provisioner does manage."""
+        overriding the capabilities this provisioner does manage."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
@@ -307,7 +354,7 @@ class TestSyncWorkspaceModels:
             assert update_data["meta"]["profile_image_url"] == "/cache/image/rag.png"
             assert update_data["params"]["temperature"] == 0.2
             assert update_data["params"]["function_calling"] == "legacy"
-            assert update_data["meta"]["capabilities"] == {"web_search": False, "vision": True}
+            assert update_data["meta"]["capabilities"] == {**_NO_FEATURES, "vision": True}
 
     @pytest.mark.asyncio
     async def test_sync_does_not_update_when_nothing_drifted(self, provisioner: OpenWebuiProvisioner) -> None:

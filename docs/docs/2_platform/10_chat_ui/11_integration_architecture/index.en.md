@@ -78,6 +78,21 @@ changes propagate immediately.
 
 `BYPASS_MODEL_ACCESS_CONTROL=False` must be set on Open WebUI to enforce these access controls.
 
+## Chat toggles for agents
+
+For an agent, Open WebUI's Web Search, Code Interpreter and Image Generation toggles are a request to the agent, not
+something Open WebUI runs itself. The agent decides what to do and runs it as a traced, cost-attributed step.
+
+- **Which toggles appear**: an agent shows a toggle only when its blueprint supports that feature. Support comes from
+  the capabilities the blueprint installs, and the provisioner writes it onto the agent's model in Open WebUI. Plain LLM
+  models keep all of Open WebUI's own toggles.
+- **What happens when a toggle is on**: an AI-Hub filter attached to agent models takes the toggles out of the request
+  before Open WebUI acts on them, and hands the supported ones to the agent. Open WebUI runs none of its own search,
+  image generation or code interpreter for agents, and does not change the prompt the agent receives.
+- **Stale toggles**: Open WebUI sends a toggle's state even after the user switched to a model that hides it. The filter
+  forwards only features the selected agent supports, and the agent ignores any other feature an API caller sends.
+- **Memory**: Open WebUI's own memory injection is off for agents, which recall user and organization memory themselves.
+
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the

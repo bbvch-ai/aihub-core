@@ -3085,6 +3085,32 @@ export type ChatCompletionUserMessageParam = {
 };
 
 /**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export const ChatFeature = {
+  WEB_SEARCH: "web_search",
+  CODE_INTERPRETER: "code_interpreter",
+  IMAGE_GENERATION: "image_generation",
+} as const;
+
+/**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export type ChatFeature = (typeof ChatFeature)[keyof typeof ChatFeature];
+
+/**
  * ChatMessage
  *
  * Chat message.
@@ -11308,6 +11334,12 @@ export type Metadata = {
    * List of files to attach to the request, if supported by the model.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Features
+   *
+   * Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.
+   */
+  features?: Array<ChatFeature>;
 };
 
 /**
@@ -18064,6 +18096,12 @@ export type UserMessageEvent = {
    * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
   /**
    * Event Name
    *
@@ -28483,6 +28521,12 @@ export type UserMessageEventWritable = {
    * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
   [key: string]: unknown;
 };
 
