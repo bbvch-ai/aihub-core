@@ -86,6 +86,8 @@ const {
   refetch,
 } = useDocuments()
 
+useDocumentIngestionPolling(documents, refetch)
+
 const uploadModalVisible = ref(false)
 const searchInput = ref(searchQuery.value ?? '')
 
