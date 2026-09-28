@@ -118,9 +118,10 @@ async def test_non_model_families_stay_reachable(monkeypatch: pytest.MonkeyPatch
     assert checker.has_access_to_agent_class(_STANDARD_CLASS)
     assert checker.has_access_to_process("SomeProcess", "some-id")
     assert checker.has_access_to_service("model")
-    # The knowledge root, not the subtree: creating a database is guarded on the bare rule, which
-    # ``aihub.admin.knowledge.>`` cannot satisfy.
+    # The knowledge root: creating a database is guarded on the bare rule, and it is also what keeps the
+    # knowledge page reachable while the tenant has no database of its own yet.
     assert checker.has_access("aihub.admin.knowledge")
+    assert checker.has_access("aihub.user.knowledge.?>")
 
 
 @pytest.mark.asyncio
@@ -196,11 +197,16 @@ async def test_the_derived_ceiling_permits_every_route_guard(monkeypatch: pytest
         for route in controller.router.routes
         if isinstance(route, APIRoute) and (template := AccessCapabilityService._route_template(route)) is not None
     }
-    # Per-profile agent guards are the one depth the ceiling deliberately does not reach. A profile that
-    # does not exist yet cannot be named by a rule, and naming the whole subtree would hand the tenant every
-    # profile of the class in the deployment. ``AgentService._grant_instance_access`` grants each profile's
-    # rule to the tenant that creates it, which is what covers this depth afterwards.
-    guards = {template.format_map(_DummyPathParams()) for template in templates if "{agent_id}" not in template}
+    # Per-profile agent guards and per-database knowledge guards are the depths the ceiling deliberately does
+    # not reach. Neither collection has a tenant column, so naming the whole subtree would hand the tenant
+    # every profile or database in the deployment. ``AgentService._grant_instance_access`` and
+    # ``KnowledgeService._grant_knowledge_access`` grant each resource to the tenant that creates it, which
+    # is what covers these depths afterwards.
+    guards = {
+        template.format_map(_DummyPathParams())
+        for template in templates
+        if "{agent_id}" not in template and "{database}" not in template
+    }
 
     assert guards, "no route guards discovered — the closure walk broke, not the ceiling"
     for guard in sorted(guards):
@@ -252,6 +258,46 @@ async def test_a_profile_the_tenant_creates_becomes_reachable(monkeypatch: pytes
 
     assert checker.has_access_to_agent(_STANDARD_CLASS, "our-own-profile")
     assert not checker.has_access_to_agent(_STANDARD_CLASS, "someone-elses-profile")
+
+
+@pytest.mark.asyncio
+async def test_a_new_tenant_carries_no_existing_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The regression guard for aihub-core-private#269.
+
+    Databases live in one global collection with no tenant column, so ``aihub.admin.knowledge.>`` would not
+    mean "this tenant's databases" — it would mean every database in the deployment. Admin access also
+    implies use, so a new tenant's users could read and search what other tenants had ingested.
+    """
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    checker = _checker(rules)
+
+    assert "aihub.admin.knowledge.>" not in rules
+    assert not checker.has_access("aihub.user.knowledge.other-tenants-db.policies")
+    assert not checker.has_access("aihub.admin.knowledge.other-tenants-db")
+    # Creating one is still permitted — that is the whole point of keeping the bare root.
+    assert checker.has_access("aihub.admin.knowledge")
+
+
+@pytest.mark.asyncio
+async def test_a_database_the_tenant_creates_becomes_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The other half of the contract: ``KnowledgeService._grant_knowledge_access`` grants the new
+    database's root and subtree to the creating tenant. The subtree is what reaches a namespace a pipeline
+    creates later, which is granted to no one when it appears."""
+    from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
+
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    rules.extend(KnowledgeService._database_admin_rules("our-own-db"))
+    checker = _checker(rules)
+
+    assert checker.has_access("aihub.admin.knowledge.our-own-db")
+    assert checker.has_access("aihub.admin.knowledge.our-own-db.synced-folder")
+    assert checker.has_access_to_knowledge_namespace("our-own-db", "synced-folder")
+    assert checker.has_access_to_all_knowledge_namespaces("our-own-db")
+    assert not checker.has_access_to_knowledge_namespace("other-tenants-db", "policies")
 
 
 @pytest.mark.asyncio

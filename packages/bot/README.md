@@ -76,13 +76,13 @@ from swiss_ai_hub.bot.routes import AgentChatController, OpenaiChatController, B
 from swiss_ai_hub.bot.runners import BotRunner
 
 runner = BotRunner()
-auth = KeycloakAuthHandler()   # a fail-closed safety net; channel authenticity is verified per-endpoint (see below)
+auth = KeycloakAuthHandler()  # a fail-closed safety net; channel authenticity is verified per-endpoint (see below)
 
 runner.mount(
     HealthController(auth=auth).get_health(),
-    AgentChatController(auth=auth).completions_json().completions_stream(),     # chat → agent (NATS)
+    AgentChatController(auth=auth).completions_json().completions_stream(),  # chat → agent (NATS)
     OpenaiChatController(auth=auth).json_chat_completion().stream_chat_completion(),  # chat → LLM (direct)
-    BotInTheLoopController(auth=auth).bot_in_the_loop_response(),               # human replies → agent
+    BotInTheLoopController(auth=auth).bot_in_the_loop_response(),  # human replies → agent
 )
 
 app = runner.create_app()

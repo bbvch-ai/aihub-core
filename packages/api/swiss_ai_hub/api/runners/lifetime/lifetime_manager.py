@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
+from swiss_ai_hub.core.incident import IncidentSettings
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
@@ -29,6 +30,7 @@ from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
 from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTitlePersister
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClient
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
@@ -219,6 +221,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         agent_file_upload_service.ensure_bucket_exists()
         app.state.agent_file_upload_service = agent_file_upload_service
+        # Absent unless the deployment configured an incident repository. The client caches its
+        # installation token, so it has to outlive a request; the endpoints answer 404 while it is None.
+        incident_settings = IncidentSettings()
+        app.state.incident_client = GitHubIssueClient(incident_settings) if incident_settings.enabled else None
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor

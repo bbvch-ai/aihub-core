@@ -58,6 +58,10 @@ each controller's routes at runtime**:
 - Path-parameter guards (`{agent_class}`, `{agent_id}`, `{database}`, `{namespace}`, …) are enumerated across the
   concrete agents/processes/knowledge namespaces; the implicit service gate (`aihub.user.service.<name>`) is synthesized
   from the controller's `service_name`, with "Administer" surfaced when an `aihub.admin.service.<name>` endpoint exists.
+  A row exists only at a depth where some route carries the annotation, so moving a guard moves its row: when
+  `create_namespace` was re-guarded on its parent database, knowledge lost its per-namespace "Manage" row until
+  `initiate_document_upload` — guarded per namespace like every other namespace-level admin route — was annotated
+  (aihub-core-private#269).
 
 Each capability's `granted` flag is evaluated by calling **the subject's own `AccessChecker.has_access` — the same call
 the endpoint's guard makes at request time** — so the table matches enforcement exactly, the sysadmin short-circuit and

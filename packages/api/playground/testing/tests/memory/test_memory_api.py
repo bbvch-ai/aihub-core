@@ -688,7 +688,7 @@ class TestUserMemoryIntegration:
         agent_memory = AgentMemory(agent_config=agent_config, agent_class="TestAgent", t=locale_handler)
 
         # Clean up leftover memories from previous test runs to avoid deduplication
-        await agent_memory.mem0service.delete_all(owner_id=user_id)
+        await agent_memory._memory_service.delete_all(owner_id=user_id)
 
         memory_added = await agent_memory.add_user_memory(
             messages=[

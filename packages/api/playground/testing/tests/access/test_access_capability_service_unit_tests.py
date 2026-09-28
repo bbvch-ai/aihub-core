@@ -76,9 +76,10 @@ _ROLE_ROUTES = [("aihub.admin.service.role", None)]
 _OPENAI_ROUTES = [("aihub.user.?>", None)]
 # Guards mirror the real Process/Knowledge controllers, which cannot be instantiated here — both open
 # infrastructure connections in ``__init__``. Process "Create" is a class-level read-only guard
-# (`{process_class}.?>`), so process has no grantable class row at all. Knowledge "Manage" is the
-# class-level guard over a whole database (`aihub.admin.knowledge.{database}`, knowledge_controller.py
-# :278/:285) and "Create" is resource-wide; knowledge has no annotated admin guard at namespace level.
+# (`{process_class}.?>`), so process has no grantable class row at all. Knowledge has a "Manage" row at both
+# depths: over a whole database (`aihub.admin.knowledge.{database}`, on ``update_database_source`` and
+# ``create_namespace``) and over one folder (`aihub.admin.knowledge.{database}.{namespace}`, on
+# ``initiate_document_upload``); "Create" is resource-wide.
 _PROCESS_ROUTES = [
     ("aihub.user.process.?>", f"{_OPS}.process.see"),
     ("aihub.admin.process.{process_class}.?>", f"{_OPS}.process.create"),
@@ -88,8 +89,9 @@ _PROCESS_ROUTES = [
 _KNOWLEDGE_ROUTES = [
     ("aihub.user.knowledge.?>", f"{_OPS}.knowledge.see"),
     ("aihub.admin.knowledge", f"{_OPS}.knowledge.create"),
-    ("aihub.admin.knowledge.{database}", f"{_OPS}.knowledge.manage"),
+    ("aihub.admin.knowledge.{database}", f"{_OPS}.knowledge.manage_database"),
     ("aihub.user.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.use"),
+    ("aihub.admin.knowledge.{database}.{namespace}", f"{_OPS}.knowledge.manage"),
 ]
 
 
@@ -427,7 +429,10 @@ async def test_knowledge_resolver_nests_namespaces_under_databases():
 
     namespace = _group_by_key(database.groups, "knowledge:corp:hr")
     assert namespace.label == "HR Policies"
-    assert {cap.rule for cap in namespace.capabilities} == {"aihub.user.knowledge.corp.hr"}
+    assert {cap.rule for cap in namespace.capabilities} == {
+        "aihub.user.knowledge.corp.hr",
+        "aihub.admin.knowledge.corp.hr",
+    }
 
 
 @pytest.mark.asyncio
@@ -565,6 +570,37 @@ async def test_a_knowledge_namespace_row_carries_no_companions():
     namespace = _by_rule(caps, "aihub.user.knowledge.corp.hr")
     assert namespace.companion_rules == []
     assert namespace.revoked_rules == []
+
+
+@pytest.mark.asyncio
+async def test_a_folder_manage_row_writes_only_that_folder():
+    """The row #1603 lost when ``create_namespace`` moved its guard up to the database: without it a role
+    could manage a whole database or nothing, never hand one folder to someone."""
+    caps = await _knowledge_capabilities([])
+
+    folder = _by_rule(caps, "aihub.admin.knowledge.corp.hr")
+    assert folder.toggleable and not folder.granted
+    assert folder.companion_rules == []
+    assert folder.revoked_rules == []
+
+
+@pytest.mark.asyncio
+async def test_managing_the_database_locks_its_folder_rows():
+    """The database's subtree already covers each folder, so the folder row is reported granted but cannot
+    be unticked from there — the same way its "Use" row already behaves."""
+    caps = await _knowledge_capabilities(["aihub.admin.knowledge.corp", "aihub.admin.knowledge.corp.>"])
+
+    folder = _by_rule(caps, "aihub.admin.knowledge.corp.hr")
+    assert folder.granted and folder.locked
+
+
+@pytest.mark.asyncio
+async def test_a_folder_manage_grant_does_not_manage_the_database():
+    caps = await _knowledge_capabilities(["aihub.admin.knowledge.corp.hr"])
+
+    folder = _by_rule(caps, "aihub.admin.knowledge.corp.hr")
+    assert folder.granted and not folder.locked
+    assert not _by_rule(caps, "aihub.admin.knowledge.corp").granted
 
 
 @pytest.mark.asyncio

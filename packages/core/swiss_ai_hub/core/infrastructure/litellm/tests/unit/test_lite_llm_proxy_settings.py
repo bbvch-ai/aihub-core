@@ -19,6 +19,32 @@ def _release_pools() -> None:
     asyncio.run(LiteLLMProxySettings.aclose_pooled_clients())
 
 
+def test_internal_base_url_falls_back_to_base_url() -> None:
+    """Wherever the API and Langfuse share a network, BASE_URL is already the URL Langfuse can dial."""
+    assert _settings().get_internal_base_url() == "http://litellm:4000"
+
+
+def test_internal_base_url_prefers_the_override() -> None:
+    settings = LiteLLMProxySettings(
+        BASE_URL="http://localhost:4000", API_KEY="sk-master", INTERNAL_BASE_URL="http://litellm:4000"
+    )
+
+    assert settings.get_internal_base_url() == "http://litellm:4000"
+    assert settings.BASE_URL == "http://localhost:4000"
+
+
+def test_the_internal_override_does_not_split_the_client_pools() -> None:
+    """Nothing in this process connects to the override — it is only ever handed to Langfuse."""
+    plain = _settings()
+    overridden = LiteLLMProxySettings(
+        BASE_URL="http://litellm:4000", API_KEY="sk-master", INTERNAL_BASE_URL="http://elsewhere:4000"
+    )
+
+    assert plain.httpx_client is overridden.httpx_client
+
+    _release_pools()
+
+
 def test_sync_client_is_reused_across_accesses_and_instances() -> None:
     first_instance, second_instance = _settings(), _settings()
 

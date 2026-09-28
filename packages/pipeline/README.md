@@ -69,8 +69,8 @@ from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
 from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 
 defs = document_ingestion_pipeline_definitions(
-    ingestor="my_rag",                                  # this pipeline owns every database assigned to it
-    display_name=LocaleString(en="My RAG"),             # how users see it when creating a database
+    ingestor="my_rag",  # this pipeline owns every database assigned to it
+    display_name=LocaleString(en="My RAG"),  # how users see it when creating a database
     description=LocaleString(en="Tuned for my documents"),
     # Models, enrichment steps and the observation schedule this deployment defaults to, from
     # DOCUMENT_INGESTION_*; every database overrides them in the form the pipeline announces from them.
@@ -271,6 +271,7 @@ from pydantic import Field
 from swiss_ai_hub.core.form import InputNumber
 from swiss_ai_hub.pipeline.ingestors import DocumentIngestionConfig
 
+
 class AcmeConfig(DocumentIngestionConfig):
     crawl_depth: Annotated[int | InputNumber, Field(description="How deep to follow links")] = 2
 
@@ -279,8 +280,11 @@ class AcmeConfig(DocumentIngestionConfig):
         base = DocumentIngestionConfig.as_form(**defaults)
         return cls(**dict(base), crawl_depth=InputNumber(label=LocaleString(en="Crawl depth"), value=2))
 
+
 defs = document_ingestion_pipeline_definitions(
-    ingestor="acme_rag", display_name=..., description=...,
+    ingestor="acme_rag",
+    display_name=...,
+    description=...,
     config=AcmeConfig.as_form(llm_model="text-generation/gemma-4-31B-it", embedding_model="embedding/bge-m3"),
 )
 ```

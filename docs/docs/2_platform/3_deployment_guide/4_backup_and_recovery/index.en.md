@@ -135,6 +135,19 @@ the failure and decide whether to retry or restore from a different backup. This
 automatic restart after a partial restore could leave the system in an inconsistent state.
 :::
 
+::: warning A backup taken before a Langfuse upgrade is not a rollback target
+The restore validates only that the expected artifacts are **present**. It carries no schema-version stamp, so it will
+happily restore a backup taken under an older Langfuse into a stack running a newer one.
+
+Langfuse spans two stores that are restored by independent handlers: its Postgres database (`langfuse.dump`) and its
+ClickHouse tables (`clickhouse/`). ClickHouse is captured with a native `BACKUP DATABASE`, so the restore reinstates the
+**table definitions** as well as the data. Nothing checks that the two stores agree with each other, and no migration
+step runs afterwards — the schema only moves forward again when the Langfuse containers next start.
+
+Treat a Langfuse version bump as a one-way door: take a backup beforehand for data recovery, but plan forward recovery
+rather than downgrade.
+:::
+
 ______________________________________________________________________
 
 ## VM snapshots

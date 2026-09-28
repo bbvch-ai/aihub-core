@@ -69,9 +69,12 @@ def test_resolves_thread_owned_by_user(api_client):
     assert response.json()["thread_id"] == thread_id
 
 
-def test_returns_404_for_unknown_display(api_client):
+def test_returns_an_empty_thread_for_an_unowned_display(api_client):
+    """Not an error: a plain-LLM turn owns no AI-Hub thread, and both callers treat that as normal."""
     response = api_client.get(f"{EVENTS_BASE}/agents/displays/{str(ObjectId())}/thread")
-    assert response.status_code == 404, response.text
+
+    assert response.status_code == 200, response.text
+    assert response.json()["thread_id"] == ""
 
 
 # Note: the endpoint enforces thread access with the same guard as `get_agent_events_in_thread`

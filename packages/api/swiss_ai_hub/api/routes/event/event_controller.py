@@ -105,7 +105,10 @@ class EventController(TenantScopedController):
             """
             thread_id = EventService.thread_id_for_display(display_id=display_id)
             if thread_id is None:
-                raise HTTPException(status_code=404, detail="No thread found for the given display.")
+                # Not an error: a plain-LLM turn owns no AI-Hub thread, and both callers — the side
+                # panel and the bug report — treat that as "nothing to open" rather than a failure.
+                # Answering 404 made the shell's global handler toast at a user who did nothing wrong.
+                return ThreadReference(thread_id="")
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
             user_in_thread = user.id in [u.id for u in thread.users]

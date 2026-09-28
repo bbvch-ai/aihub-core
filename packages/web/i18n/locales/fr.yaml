@@ -858,6 +858,16 @@ process:
       done: Terminé
       steps: Progression
 form:
+  secret_file_input:
+    drop_hint: Déposez le fichier ici ou cliquez pour le choisir
+    limits: "{accept}, jusqu'à {size}"
+    selected: Fichier sélectionné
+    stored: Fichier de clé enregistré (chiffré)
+    client_email: 'Compte de service : {email}'
+    replace: Remplacer
+    remove: Supprimer
+    too_large: Le fichier dépasse {size}.
+    invalid_json: Le fichier n'est pas un JSON valide.
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
   warnings:
@@ -887,6 +897,15 @@ lib:
       placeholder: Sélectionner un fuseau horaire
       help: Les positions cron sont interprétées dans ce fuseau horaire, afin qu'une
         planification quotidienne conserve la même heure lors des changements d'heure.
+  knowledgeCollections:
+    placeholder: Sélectionner des collections
+    help: Seules les collections sélectionnées sont recherchées.
+    noAgent: Choisissez d'abord un agent de connaissances — ce sont ses collections
+      qui peuvent être sélectionnées ici.
+    noSource: Aucun agent de connaissances n'est associé à ce champ, aucune collection
+      ne peut donc être proposée.
+    empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
+    unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
@@ -987,3 +1006,14 @@ tenant:
   mismatch_switch_action: Changer de locataire
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
+support:
+  report_bug: Signaler un problème
+  dialog_title: Signaler un problème
+  choose_files: Choisir des fichiers
+  submit: Envoyer le signalement
+  submitting: Envoi…
+  sent: Signalement envoyé
+  sent_detail: 'Référence {reference}, signalement #{number}. Le support vous répondra par e-mail.'
+  send_failed: Signalement non envoyé
+  send_failed_detail: Vos réponses sont toujours là — réessayez.
+  unavailable: Le signalement n'est pas configuré sur cette installation. Contactez votre administrateur.

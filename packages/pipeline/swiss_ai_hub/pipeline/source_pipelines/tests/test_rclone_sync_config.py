@@ -2,6 +2,7 @@ import pytest
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.group import Group
+from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.infrastructure.rclone import RcloneBackendType
 
@@ -14,7 +15,7 @@ class TestAnnouncedForm:
         elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
 
         assert isinstance(elements["backend_type"], Select)
-        assert elements["backend_type"].options == [backend.value for backend in RcloneBackendType]
+        assert elements["backend_type"].options == ["drive", "s3", "local"]
         groups = {name: element for name, element in elements.items() if isinstance(element, Group)}
         assert set(groups) == {"onedrive", "drive", "s3", "azureblob", "sftp"}, "local has no options and no group"
         for name, group in groups.items():
@@ -25,8 +26,28 @@ class TestAnnouncedForm:
         monkeypatch.delenv("RCLONE_LOCAL_SOURCE_ROOT", raising=False)
         elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
 
-        assert "local" not in elements["backend_type"].options
-        assert len(elements["backend_type"].options) == len(RcloneBackendType) - 1
+        assert elements["backend_type"].options == ["drive", "s3"]
+
+    def test_backends_not_yet_verified_end_to_end_are_not_offered_but_still_run(self, monkeypatch):
+        monkeypatch.setenv("RCLONE_LOCAL_SOURCE_ROOT", "/data")
+        elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
+        offered = elements["backend_type"].options
+
+        for untested in ("onedrive", "azureblob", "sftp"):
+            assert untested not in offered
+        config = RcloneSyncConfig.model_validate(
+            {"backend_type": "sftp", "sftp": {"host": "files.acme", "user": "u", "password": "p"}}
+        )
+        assert config.to_rclone_source_config("r").backend_type is RcloneBackendType.SFTP
+
+    def test_the_drive_service_account_is_picked_as_a_json_key_file(self):
+        elements = {element.name: element for element in RcloneSyncConfig.as_form().to_formkit_form()}
+        drive_fields = {child.name: child for child in elements["drive"].children}
+
+        key_file = drive_fields["service_account_credentials"]
+        assert isinstance(key_file, SecretFileInput)
+        assert key_file.accept == ".json"
+        assert key_file.condition_if == "$get(rclone_backend_type).value === 'drive'"
 
     def test_every_credential_is_a_secret_path_derived_from_the_form(self):
         assert RcloneSyncConfig.secret_field_paths() == {

@@ -5,9 +5,8 @@ manual_upload:
     synchronises them.
 rclone:
   display_name: Cloud storage sync (rclone)
-  description: Keeps the database in sync with a SharePoint site, OneDrive, Google
-    Drive, S3 bucket, Azure Blob container or SFTP server. Each top-level folder becomes
-    a namespace.
+  description: Keeps the database in sync with a Google Drive folder or an S3 bucket.
+    Each top-level folder becomes a namespace.
   config:
     backend_type:
       label: Storage backend
@@ -57,9 +56,9 @@ rclone:
         label: OAuth token
         help: Pre-obtained rclone token JSON. Stored encrypted.
       service_account_credentials:
-        label: Service account JSON
-        help: Service account key file contents, as an alternative to an OAuth token.
-          Stored encrypted.
+        label: Service account key file
+        help: JSON key file downloaded from the Google Cloud console, as an alternative
+          to an OAuth token. Stored encrypted.
       root_folder_id:
         label: Root folder ID
         help: Drive folder ID to treat as the root; empty for the whole drive.

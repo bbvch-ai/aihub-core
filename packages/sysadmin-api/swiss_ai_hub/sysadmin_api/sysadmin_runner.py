@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from typing import Self
 
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from mongoengine import connect, disconnect
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -60,6 +59,9 @@ class SysadminApiRunner:
             version=AIHubSettings().VERSION,
             debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
+            # Match ApiRunner: operation_id == route name so the generated SDK uses
+            # readable method names.
+            generate_unique_id_function=OpenApiSchemaService.operation_id_from_route_name,
         )
 
         cors_origins = list(origins or [])
@@ -107,11 +109,6 @@ class SysadminApiRunner:
         for controller in controllers:
             controller.mount(self._api_app, self)
             self.controllers.add(controller)
-        # Match ApiRunner: operation_id == route name so the generated SDK uses
-        # readable method names.
-        for route in self._api_app.routes:
-            if isinstance(route, APIRoute):
-                route.operation_id = route.name
         return self
 
     def create_app(self) -> Starlette:

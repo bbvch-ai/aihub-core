@@ -150,13 +150,13 @@ compose service, or env var.
 
 ```python
 defs = document_ingestion_pipeline_definitions(
-    ingestor="document_ingestion",                                    # routing key; namespaces every global Dagster name
-    display_name=LocaleString(en="My Pipeline"),       # required for a custom ingestor, defaulted for the platform one
+    ingestor="document_ingestion",  # routing key; namespaces every global Dagster name
+    display_name=LocaleString(en="My Pipeline"),  # required for a custom ingestor, defaulted for the platform one
     description=LocaleString(en="What it does"),
-    config=None,                                       # announced form; defaults to DocumentIngestionConfig.as_form(...)
-    settings=DocumentIngestionPipelineSettings(),       # per-database DEFAULTS + the observation schedule (see below)
-    document_parser_loader_type=LoaderType.MINERU,     # MinerU (default) or DocumentIntelligence
-    max_partitions=1000,                               # Max partitions added/deleted per tick
+    config=None,  # announced form; defaults to DocumentIngestionConfig.as_form(...)
+    settings=DocumentIngestionPipelineSettings(),  # per-database DEFAULTS + the observation schedule (see below)
+    document_parser_loader_type=LoaderType.MINERU,  # MinerU (default) or DocumentIntelligence
+    max_partitions=1000,  # Max partitions added/deleted per tick
 )
 ```
 
@@ -204,10 +204,10 @@ an ingestor never expires: a decommissioned pipeline keeps being offered until i
 
 ```python
 defs = document_ingestion_pipeline_definitions(
-    ingestor="acme_ocr",                                  # your routing id, globally unique
+    ingestor="acme_ocr",  # your routing id, globally unique
     display_name=LocaleString(en="ACME OCR", de="ACME OCR"),
     description=LocaleString(en="OCR-heavy ingestion for scanned contracts"),
-    config=AcmeConfig.as_form(llm_model=..., embedding_model=...),   # optional; DocumentIngestionConfig otherwise
+    config=AcmeConfig.as_form(llm_model=..., embedding_model=...),  # optional; DocumentIngestionConfig otherwise
 )
 ```
 
@@ -282,11 +282,11 @@ and is resolved per run exactly like an ingestion pipeline. See ADR
 
 ```python
 defs = rclone_pipeline_definitions(
-    source="rclone",                                   # routing key; namespaces every global Dagster name (default)
-    display_name=LocaleString(en="…"),                # required for a custom source, defaulted for `rclone`
+    source="rclone",  # routing key; namespaces every global Dagster name (default)
+    display_name=LocaleString(en="…"),  # required for a custom source, defaulted for `rclone`
     description=LocaleString(en="…"),
-    config=None,                                       # announced form; defaults to RcloneSyncConfig.as_form()
-    settings=RclonePipelineSettings(),                 # RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE, MAX_PARTITIONS
+    config=None,  # announced form; defaults to RcloneSyncConfig.as_form()
+    settings=RclonePipelineSettings(),  # RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE, MAX_PARTITIONS
 )
 ```
 
@@ -397,6 +397,7 @@ def my_factory(key: AssetKey, upstream_key: str | AssetKey, partitions: DynamicP
     def my_asset(upstream: InputType) -> Output[OutputType]:
         result = op1(upstream)
         return op2(result)
+
     return my_asset
 ```
 
@@ -658,8 +659,9 @@ where it sits, including inside the pipeline images that `COPY packages/pipeline
 - `rclone_pipeline/` — **the** rclone source pipeline (Stage 1). One deployment syncs *every* knowledge database whose
   `BucketEntity.source` is `rclone`, from the backend and credentials stored on that database. Built by
   `rclone_pipeline_definitions()` in `util/rclone_pipeline_definitions_util.py`. Compose service `rclone_pipeline`
-  (built from `app/rclone_pipeline/Dockerfile`, a copy of the ingestion one whose `PIPELINE` default is `rclone_pipeline`, because the release workflow builds `app/<name>/Dockerfile` with `VERSION` as its only build arg), workspace entry
-  `rclone_pipeline:4000`, env `AIHUB_CONFIG_ENCRYPTION_KEY`, `RCLONE_URL`, `RCLONE_RC_USER/PASS`,
+  (built from `app/rclone_pipeline/Dockerfile`, a copy of the ingestion one whose `PIPELINE` default is
+  `rclone_pipeline`, because the release workflow builds `app/<name>/Dockerfile` with `VERSION` as its only build arg),
+  workspace entry `rclone_pipeline:4000`, env `AIHUB_CONFIG_ENCRYPTION_KEY`, `RCLONE_URL`, `RCLONE_RC_USER/PASS`,
   `RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`. See
   [Rclone Source Pipeline](#rclone-source-pipeline-stage-1-configured-per-database).
 

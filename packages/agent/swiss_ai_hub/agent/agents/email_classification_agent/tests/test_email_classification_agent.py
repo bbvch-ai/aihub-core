@@ -19,7 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.imap import DraftEmailSettings, EmailClassificationSettings, ImapClientConfig, MailCategory
 from swiss_ai_hub.core.infrastructure import RedisSettings
@@ -84,7 +84,6 @@ _NAMESPACE_LOOKUP = (
 def _config(
     categories: list[MailCategory] | None = None,
     draft: DraftEmailSettings | None = None,
-    knowledge_databases: list[str] | None = None,
     knowledge_delegation: KnowledgeDelegationConfig | None = None,
 ) -> EmailClassificationAgentConfig:
     return EmailClassificationAgentConfig(
@@ -98,7 +97,6 @@ def _config(
         classification=EmailClassificationSettings(
             categories=[_SUPPORT, _INVOICE] if categories is None else categories,
             fallback_folder=_FALLBACK_FOLDER,
-            knowledge_databases=knowledge_databases or [],
         ),
         draft=draft or DraftEmailSettings(drafts_folder=_DRAFTS_FOLDER),
         knowledge_delegation=knowledge_delegation,
@@ -113,7 +111,11 @@ _KNOWLEDGE_DB = "support-kb"
 _SUPPORT_COLLECTION = "support"
 _NO_INFORMATION_DRAFT = "We found nothing on file that answers this."
 _LOOKUP_FAILED_DRAFT = "The knowledge lookup broke."
-_GROUNDED_SUPPORT = _SUPPORT_DRAFTING.model_copy(update={"knowledge_namespace": _SUPPORT_COLLECTION})
+_GROUNDED_SUPPORT = _SUPPORT_DRAFTING.model_copy(
+    update={
+        "knowledge_namespaces": [BucketNamespacePair(bucket_name=_KNOWLEDGE_DB, namespace_name=_SUPPORT_COLLECTION)]
+    }
+)
 
 
 def _grounded_drafting(**overrides) -> DraftEmailSettings:
@@ -313,7 +315,6 @@ def _grounding_support() -> dict:
         "verdicts": [_verdict(_GROUNDED_SUPPORT)],
         "categories": [_GROUNDED_SUPPORT, _INVOICE_NOT_DRAFTING],
         "draft": _grounded_drafting(),
-        "knowledge_databases": [_KNOWLEDGE_DB],
         "knowledge_delegation": _delegation(),
         "collections": [_SUPPORT_COLLECTION],
         "expected_delegations": 1,
@@ -332,26 +333,31 @@ def _grounding_three() -> dict:
         "verdicts": [_verdict(_GROUNDED_SUPPORT)] * 3,
         "categories": [_GROUNDED_SUPPORT, _INVOICE_NOT_DRAFTING],
         "draft": _grounded_drafting(),
-        "knowledge_databases": [_KNOWLEDGE_DB],
         "knowledge_delegation": _delegation(),
         "collections": [_SUPPORT_COLLECTION],
         "expected_delegations": 3,
     }
 
 
-@given("an EmailClassificationAgent runner grounding support_request but not invoice", target_fixture="scenario")
+@given(
+    "an EmailClassificationAgent runner grounding support_request in its collection and invoice in all",
+    target_fixture="scenario",
+)
 def _grounding_mixed() -> dict:
-    """One category answered from the knowledge base, one from the mail alone — grounding is opt-in per category."""
+    """One category narrowed to a collection, the other naming none, in the same run.
+
+    With a knowledge agent configured both are delegated: naming collections narrows the lookup, naming none leaves
+    it at everything the knowledge agent retrieves from.
+    """
     invoice_drafting = _INVOICE.model_copy(update={"draft_reply": True})
     return {
         "unread": [summary("1"), summary("2")],
         "verdicts": [_verdict(_GROUNDED_SUPPORT), _verdict(invoice_drafting)],
         "categories": [_GROUNDED_SUPPORT, invoice_drafting],
         "draft": _grounded_drafting(),
-        "knowledge_databases": [_KNOWLEDGE_DB],
         "knowledge_delegation": _delegation(),
         "collections": [_SUPPORT_COLLECTION],
-        "expected_delegations": 1,
+        "expected_delegations": 2,
     }
 
 
@@ -370,7 +376,6 @@ def _grounding_missing_collection() -> dict:
         "verdicts": [_verdict(_GROUNDED_SUPPORT)],
         "categories": [_GROUNDED_SUPPORT, _INVOICE_NOT_DRAFTING],
         "draft": _grounded_drafting(),
-        "knowledge_databases": [_KNOWLEDGE_DB],
         "knowledge_delegation": _delegation(),
         "collections": ["something-else"],
         "expected_delegations": 1,
@@ -393,7 +398,6 @@ def _grounding_with_drafting_off() -> dict:
         "verdicts": [_verdict(_GROUNDED_SUPPORT)],
         "categories": [_GROUNDED_SUPPORT, _INVOICE_NOT_DRAFTING],
         "draft": DraftEmailSettings(enable_draft=False, drafts_folder=_DRAFTS_FOLDER),
-        "knowledge_databases": [],
         "knowledge_delegation": None,
         "collections": [],
     }
@@ -493,7 +497,6 @@ async def _drive(scenario: dict, start_event: BaseEvent, answers=None) -> AgentT
         agent_config=_config(
             scenario.get("categories"),
             scenario.get("draft"),
-            knowledge_databases=scenario.get("knowledge_databases"),
             knowledge_delegation=scenario.get("knowledge_delegation"),
         ),
     )
@@ -847,15 +850,17 @@ def _(agent_runner: AgentTestRunner):
     assert _NO_INFORMATION_DRAFT not in bodies[0], "reporting an outage as an absence of knowledge hides the outage"
 
 
-@then("only the support_request draft came from the knowledge agent")
+@then("support_request was scoped to its collection and invoice to every collection")
 def _(agent_runner: AgentTestRunner):
-    """Grounding is opt-in per category, so a mixed batch must delegate once and draft twice."""
-    assert len(_delegations(agent_runner)) == 1
+    """An unchecked selection is sent as an empty one, which `narrow_retrievers` reads as the delegate's whole scope."""
+    scopes = sorted(
+        [(pair.bucket_name, pair.namespace_name) for pair in request.start_event.selected_namespaces]
+        for request in _delegations(agent_runner)
+    )
+    assert scopes == [[], [(_KNOWLEDGE_DB, _SUPPORT_COLLECTION)]]
 
     bodies = _appended_bodies(agent_runner)
     assert len(bodies) == 2
-    grounded = [body for body in bodies if _answer_text(0) in body]
-    assert len(grounded) == 1, "exactly one draft should have come from retrieval"
 
 
 @then("the delegated run carried no user")

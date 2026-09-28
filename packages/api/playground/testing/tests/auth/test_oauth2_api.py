@@ -133,6 +133,7 @@ def expected_user_data():
         "profile_image": None,
         "roles": TEST_USER_ROLES,
         "is_sys_admin": False,
+        "preferred_locale": None,
     }
 
 

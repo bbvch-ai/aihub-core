@@ -115,12 +115,15 @@ steps:
     name: Stopp
     description: Beendet den Workflow nach Abschluss aller erforderlichen Schritte
 thoughts:
-  condensation_empty: "Der Condenser hat keine eigenständige Frage geliefert, daher gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt, statt die Rohnachricht zu verwenden."
+  condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher
+    gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt,
+    statt die Rohnachricht zu verwenden.
   input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
     %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
     Modells wird abgelehnt.'
 messages:
-  condensation_empty: "Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut."
+  condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
+    soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
   input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
     Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
     zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.

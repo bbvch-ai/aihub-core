@@ -16,8 +16,9 @@ class SourcePipelineConfig(Form):
     Unlike ``IngestorConfig`` there are no identity fields here — the database's name and description belong
     to the ingestor form, and the source form renders as a second section of the same dialog.
 
-    Credentials are declared as ``str | Password``; ``secret_field_paths`` derives their paths from the announced
-    form so the API can encrypt them and the pipeline can decrypt them without either side naming a field.
+    Credentials are declared as ``str | Password`` (or ``str | SecretFileInput`` for a key file);
+    ``secret_field_paths`` derives their paths from the announced form so the API can encrypt them and the pipeline
+    can decrypt them without either side naming a field.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")

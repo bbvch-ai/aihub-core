@@ -109,15 +109,13 @@ config:
   attachment_char_limit:
     label: Limite di caratteri per allegato
     help: Caratteri conservati dal testo estratto di un singolo allegato.
-  category_knowledge_namespace:
-    label: Raccolta di conoscenze
-    help: Raccolta su cui si basano le risposte di questa categoria. Se impostata,
-      la risposta proviene solo dai documenti di quella raccolta. Se vuota, la risposta
-      è scritta unicamente dal messaggio, senza ricerca.
-  knowledge_databases:
-    label: Basi di conoscenza
-    help: Basi in cui vengono cercate le raccolte delle categorie. Necessarie solo
-      quando una categoria indica una raccolta.
+  category_knowledge_namespaces:
+    label: Raccolte di conoscenze
+    help: Raccolte da cui vengono scritte le risposte di questa categoria. Vengono
+      offerte solo le raccolte per cui è configurato l'agente di conoscenza del profilo.
+    placeholder: Seleziona raccolte
+    toggle_label: Seleziona raccolte di conoscenze
+    toggle_help: Deseleziona per cercare in tutte le raccolte.
   no_information_draft:
     label: Bozza quando non è stato trovato nulla
     help: Testo della bozza quando la ricerca non ha trovato nulla che risponda al

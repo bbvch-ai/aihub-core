@@ -6,7 +6,7 @@ from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from mongoengine import DoesNotExist
 from pydantic import Field
-from swiss_ai_hub.core.form import ChipsInput, Form, InputText, Password
+from swiss_ai_hub.core.form import ChipsInput, Form, InputText, Password, SecretFileInput
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.ingestors import IngestorConfig
 from swiss_ai_hub.core.persistence import ConfigSpecsEntity
@@ -31,10 +31,19 @@ class _Sftp(Form):
         return cls(host=InputText(label=LocaleString(en="Host")), password=Password(label=LocaleString(en="Password")))
 
 
+class _Drive(Form):
+    service_account_credentials: Annotated[str | SecretFileInput, Field(description="Key file")] = ""
+
+    @classmethod
+    def as_form(cls) -> Self:
+        return cls(service_account_credentials=SecretFileInput(label=LocaleString(en="Key file"), accept=".json"))
+
+
 class _SyncConfig(SourcePipelineConfig):
     root_path: Annotated[str | InputText, Field(description="Root")] = ""
     include_patterns: Annotated[list[str] | ChipsInput, Field(description="Include")] = Field(default_factory=list)
     sftp: Annotated[_Sftp, Field(description="SFTP")] = Field(default_factory=_Sftp)
+    drive: Annotated[_Drive, Field(description="Drive")] = Field(default_factory=_Drive)
 
     @classmethod
     def as_form(cls) -> Self:
@@ -42,6 +51,7 @@ class _SyncConfig(SourcePipelineConfig):
             root_path=InputText(label=LocaleString(en="Root")),
             include_patterns=ChipsInput(label=LocaleString(en="Include")),
             sftp=_Sftp.as_form(),
+            drive=_Drive.as_form(),
         )
 
 
@@ -121,6 +131,14 @@ def _sftp_configuration(password: str) -> dict:
     }
 
 
+KEY_FILE_A = '{\n  "type": "service_account",\n  "client_email": "a@acme.iam.gserviceaccount.com"\n}\n'
+KEY_FILE_B = '{\n  "type": "service_account",\n  "client_email": "b@acme.iam.gserviceaccount.com"\n}\n'
+
+
+def _drive_configuration(key_file: str) -> dict:
+    return {"root_path": "", "drive": {"service_account_credentials": key_file}}
+
+
 class TestCreateWithSource:
     @pytest.mark.asyncio
     async def test_a_sourced_database_stores_its_encrypted_source_configuration_and_masks_it_in_the_response(
@@ -152,6 +170,34 @@ class TestCreateWithSource:
         assert response.source_configuration["sftp"]["host"] == "files.acme"
         assert encryption.is_masked(response.source_configuration["sftp"]["password"])
         assert "pw" not in response.source_configuration["sftp"]["password"]
+
+    @pytest.mark.asyncio
+    async def test_an_uploaded_key_file_is_stored_encrypted_and_masked_in_the_response(
+        self, locale_handler, encryption
+    ):
+        s3_service = MagicMock()
+        s3_service.container_exists.return_value = False
+        request = CreateDatabaseRequest(
+            ingestor=INGESTOR.id,
+            configuration={"name": {"en": "HR Docs"}, "description": {"en": "Policies"}},
+            source=RCLONE.id,
+            source_configuration=_drive_configuration(KEY_FILE_A),
+        )
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            bucket_cls.create_bucket.side_effect = lambda **kwargs: _bucket(
+                source=kwargs["source"], source_configuration=kwargs["source_configuration"]
+            )
+            response = await KnowledgeService.create_database(DATABASE, request, locale_handler, s3_service, _user())
+
+        stored_key = bucket_cls.create_bucket.call_args.kwargs["source_configuration"]["drive"][
+            "service_account_credentials"
+        ]
+        assert encryption.is_encrypted(stored_key)
+        assert encryption.decrypt(stored_key) == KEY_FILE_A
+        returned_key = response.source_configuration["drive"]["service_account_credentials"]
+        assert encryption.is_masked(returned_key)
+        assert "client_email" not in returned_key
 
     @pytest.mark.asyncio
     async def test_an_empty_source_configuration_validates_as_the_forms_defaults(self, locale_handler):
@@ -228,6 +274,41 @@ class TestUpdateSource:
             await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
 
         assert encryption.decrypt(bucket_cls.update_source.call_args.args[2]["sftp"]["password"]) == "new-pw"
+
+    @pytest.mark.asyncio
+    async def test_a_replaced_key_file_overwrites_the_stored_one(self, locale_handler, encryption):
+        stored = _drive_configuration(encryption.encrypt(KEY_FILE_A))
+        request = UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=_drive_configuration(KEY_FILE_B))
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
+            bucket_cls.update_source.side_effect = lambda name, source, configuration: _bucket(
+                source=source, source_configuration=configuration
+            )
+            response = await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        written_key = bucket_cls.update_source.call_args.args[2]["drive"]["service_account_credentials"]
+        assert encryption.decrypt(written_key) == KEY_FILE_B
+        assert encryption.is_masked(response.source_configuration["drive"]["service_account_credentials"])
+
+    @pytest.mark.asyncio
+    async def test_an_untouched_key_file_keeps_the_stored_one(self, locale_handler, encryption):
+        stored = _drive_configuration(encryption.encrypt(KEY_FILE_A))
+        mask = encryption.mask_paths(stored, {"drive.service_account_credentials"})["drive"][
+            "service_account_credentials"
+        ]
+        request = UpdateDatabaseSourceRequest(
+            source=RCLONE.id, source_configuration={**_drive_configuration(mask), "root_path": "policies"}
+        )
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
+            bucket_cls.update_source.side_effect = lambda name, source, configuration: _bucket(
+                source=source, source_configuration=configuration
+            )
+            await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        written = bucket_cls.update_source.call_args.args[2]
+        assert written["root_path"] == "policies"
+        assert encryption.decrypt(written["drive"]["service_account_credentials"]) == KEY_FILE_A
 
     @pytest.mark.asyncio
     async def test_giving_a_manually_filled_database_a_source_needs_an_acknowledgement(self, locale_handler):
@@ -322,4 +403,4 @@ class TestSourcePipelines:
         pipelines = KnowledgeService.get_source_pipelines(locale_handler)
 
         assert [pipeline.name for pipeline in pipelines] == ["rclone"]
-        assert {element.name for element in pipelines[0].form} == {"root_path", "include_patterns", "sftp"}
+        assert {element.name for element in pipelines[0].form} == {"root_path", "include_patterns", "sftp", "drive"}

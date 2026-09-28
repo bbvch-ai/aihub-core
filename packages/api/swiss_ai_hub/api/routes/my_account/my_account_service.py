@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
+from fastapi import HTTPException
 from nats.aio.client import Client as NATS
+from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import Dashboard, DashboardItem, UserDashboardEntity
@@ -60,3 +62,13 @@ class MyAccountService:
 
         dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
         UserDashboardEntity.set_dashboard(user.id, dashboard)
+
+    @staticmethod
+    async def update_user_locale(user: UserIdentity, locale: str) -> None:
+        """Persists the user's preferred UI language as a Keycloak attribute."""
+        if locale not in LocaleHandler.LOCALE_WHITE_LIST:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unsupported locale '{locale}'. Allowed: {', '.join(LocaleHandler.LOCALE_WHITE_LIST)}.",
+            )
+        await KeycloakAdminService.set_preferred_locale(user.id, locale)
