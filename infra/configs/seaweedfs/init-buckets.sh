@@ -14,7 +14,7 @@ DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
 SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
 
 # Always create core infrastructure buckets
-BUCKETS="open-webui milvus langfuse backups dagster"
+BUCKETS="open-webui milvus langfuse backups dagster parse-cache"
 
 # Conditionally add knowledge buckets
 if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then
@@ -87,3 +87,24 @@ aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
 echo "Verifying lifecycle configuration for dagster:"
 aws --endpoint-url $ENDPOINT s3api get-bucket-lifecycle-configuration --bucket dagster 2>/dev/null \
   || echo "No lifecycle configuration found"
+
+# Apply lifecycle expiration to the parse-cache bucket.
+# MinerU conversions keyed by document bytes (MineruParseCache). An expired entry is
+# simply parsed again, so expiry bounds storage without losing anything.
+echo "Configuring lifecycle expiration for parse-cache bucket..."
+cat > /tmp/lifecycle-parse-cache.json <<EOF
+{
+  "Rules": [
+    {
+      "ID": "expire-parse-cache",
+      "Status": "Enabled",
+      "Filter": {},
+      "Expiration": { "Days": 7 }
+    }
+  ]
+}
+EOF
+aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
+  --bucket parse-cache \
+  --lifecycle-configuration file:///tmp/lifecycle-parse-cache.json \
+  || echo "Lifecycle configuration failed for parse-cache bucket (verify SeaweedFS lifecycle support)"
