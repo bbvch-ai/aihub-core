@@ -48,29 +48,36 @@ async def test_get_token_requests_the_configured_scope_from_the_configured_autho
 async def test_get_token_closes_the_credential_even_when_entra_refuses():
     credential = _credential()
     credential.get_token.side_effect = ClientAuthenticationError("AADSTS7000215: Invalid client secret provided.")
+    provider = EntraTokenProvider.from_config(_oauth_config())
 
     with patch(_CREDENTIAL_PATH, return_value=credential):
         with pytest.raises(ClientAuthenticationError, match="AADSTS7000215"):
-            await EntraTokenProvider.from_config(_oauth_config()).get_token()
+            await provider.get_token()
 
     credential.close.assert_called_once()
 
 
 @pytest.mark.parametrize("field", ["tenant_id", "client_id", "client_secret"])
 def test_from_config_names_the_empty_field(field: str):
+    config = _oauth_config(**{field: ""})
+
     with pytest.raises(ValueError, match=field):
-        EntraTokenProvider.from_config(_oauth_config(**{field: ""}))
+        EntraTokenProvider.from_config(config)
 
 
 def test_from_config_names_every_empty_field_at_once():
+    config = _oauth_config(tenant_id="", client_secret="")
+
     with pytest.raises(ValueError, match="tenant_id, client_secret"):
-        EntraTokenProvider.from_config(_oauth_config(tenant_id="", client_secret=""))
+        EntraTokenProvider.from_config(config)
 
 
 def test_from_config_never_puts_a_credential_value_in_the_message():
     """The message reaches the user's chat through the step's exception event."""
+    config = _oauth_config(tenant_id="")
+
     with pytest.raises(ValueError) as raised:
-        EntraTokenProvider.from_config(_oauth_config(tenant_id=""))
+        EntraTokenProvider.from_config(config)
 
     assert _SECRET not in str(raised.value)
     assert "client-guid" not in str(raised.value)

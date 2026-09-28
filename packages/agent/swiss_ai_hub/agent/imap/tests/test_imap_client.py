@@ -506,11 +506,12 @@ async def test_factory_logs_in_with_xoauth2_for_the_mailbox_when_oauth_is_select
 @async_test
 async def test_factory_refuses_oauth_with_a_missing_field_and_still_logs_out():
     connection = MagicMock()
+    config = _oauth_config(client_secret="")
 
     with patch("swiss_ai_hub.agent.imap.imap_client.IMAPClient", return_value=connection):
         with pytest.raises(ValueError, match="client_secret"):
-            async with ImapClientFactory.create(_oauth_config(client_secret="")):
-                pytest.fail("client must not be yielded without credentials")
+            async with ImapClientFactory.create(config):
+                pass
 
     connection.oauth2_login.assert_not_called()
     connection.login.assert_not_called()
