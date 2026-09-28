@@ -8,9 +8,9 @@ prompt:
   preamble: Der Benutzer hat die folgenden Dateien an diese Unterhaltung angehängt.
     Wenn sich die Frage auf sie bezieht, antworte anhand ihres Inhalts und nenne die
     verwendete Datei.
-  truncated: Nur der Anfang von "{{ filename }}" hat in deinen Kontext gepasst. Teile
+  truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Teile
     dem Benutzer mit, dass deine Antwort auf einem Teil dieser Datei beruht.
-  unreadable: Der Benutzer hat "{{ filename }}" angehängt, die Datei konnte aber nicht
-    gelesen werden ({{ error }}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
+  unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
+    gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
     werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren
     Text einzufügen.
