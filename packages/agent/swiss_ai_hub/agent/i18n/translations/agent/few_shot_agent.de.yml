@@ -31,6 +31,9 @@ steps:
     name: Stoppen
     description: Stoppt den Agenten, wenn die Anfrage von der Eignungsprüfung abgelehnt
       wird.
+thoughts:
+  input_too_large: "Die Eingabe passt nicht in das Kontextfenster des Modells: rund %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des Modells wird abgelehnt."
 messages:
+  input_too_large: "Diese Nachricht ist zu lang, als dass ich sie verarbeiten könnte. Ich antworte anhand meiner konfigurierten Beispiele und lese keine angehängten Dokumente. Für Fragen zu einer Datei verwenden Sie bitte einen Assistenten, der für Dokumente ausgelegt ist."
   unsuitable_request: Ich bin nicht der richtige Assistent für diese Anfrage und kann
     sie daher nicht beantworten. %{reason}
