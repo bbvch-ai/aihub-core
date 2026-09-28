@@ -1,7 +1,7 @@
 ---
 title: E-Mail-Agent
 description: Ein Postfach-Agent, der ungelesene E-Mails aus einem IMAP-Posteingang liest, sie ablegt und Antworten zur Prüfung durch einen Menschen entwirft — versendet wird nie.
-source_sha: ef5c5065f60701bd4e7a2a24d9f6941c0854b6f975bed5b793ea4167e9b3c43d
+source_sha: cde114ae1a4e60079fef584776be1c241e71285cc493851a5ce6e593d03af0a6
 ---
 
 # E-Mail-Agent
@@ -150,22 +150,35 @@ Benutzername mit Passwort — nicht einmal ein App-Passwort — mehr über IMAP 
 Microsoft Entra ID und meldet sich damit an (SASL `XOAUTH2`). Niemand muss sich interaktiv anmelden — genau das braucht
 ein zeitgesteuerter Agent.
 
-Setzen Sie die Verbindung auf Host `outlook.office365.com`, Port `993`, TLS an, und **Benutzername** auf die Adresse des
-Postfachs, das der Agent verarbeiten soll — ein freigegebenes Postfach funktioniert.
+Die Einrichtung ist auf zwei Rollen verteilt. Die Microsoft-365-Administration bereitet den Tenant einmalig vor und
+übergibt vier Werte; wer den Agent konfiguriert, trägt sie anschliessend im Profil ein. Die Person, die den Agent
+konfiguriert, braucht weder Administratorrechte in Microsoft 365 noch PowerShell.
 
-Eine Administratorin oder ein Administrator muss den Tenant einmalig von Hand vorbereiten. Jeder Schritt ist
-erforderlich; fehlt einer, schlägt die Anmeldung fehl.
+#### Für die Microsoft-365-Administration (einmalig)
+
+Einmal pro Tenant, dazu Schritt 4 für jedes weitere Postfach. Die Schritte 1 und 2 erfolgen im Microsoft Entra Admin
+Center. Die Schritte 3 bis 5 brauchen Exchange Online PowerShell, weil Exchange keine Seite im Admin Center hat, über
+die man einer App Zugriff auf ein Postfach gewährt. Jeder Schritt ist erforderlich; fehlt einer, schlägt die Anmeldung
+fehl.
 
 1. **Registrieren Sie eine Anwendung** im Microsoft Entra Admin Center (**App-Registrierungen → Neue Registrierung**,
    nur Konten in diesem Organisationsverzeichnis). Notieren Sie **Verzeichnis-ID (Tenant)** und **Anwendungs-ID
-   (Client)** von der Übersichtsseite, und erstellen Sie unter **Zertifikate & Geheimnisse** ein Client Secret. Das sind
-   die drei Werte, die das Agent-Profil abfragt.
+   (Client)** von der Übersichtsseite, und erstellen Sie unter **Zertifikate & Geheimnisse** ein Client Secret —
+   kopieren Sie dessen **Wert**, nicht die Geheimnis-ID; der Wert wird nur einmal angezeigt.
 
 2. **Fügen Sie die IMAP-Berechtigung hinzu.** Wählen Sie unter **API-Berechtigungen → Berechtigung hinzufügen → Von
    meiner Organisation verwendete APIs** den Eintrag **Office 365 Exchange Online → Anwendungsberechtigungen →
    `IMAP.AccessAsApp`**, und klicken Sie dann auf **Administratorzustimmung erteilen**.
 
-3. **Registrieren Sie den Service Principal in Exchange Online** (Exchange Online PowerShell, `Connect-ExchangeOnline`):
+3. **Registrieren Sie den Service Principal in Exchange Online.** Verbinden Sie sich zuerst mit dem Modul
+   `ExchangeOnlineManagement`:
+
+   ```powershell
+   Connect-ExchangeOnline -UserPrincipalName <admin@contoso.com>
+   ```
+
+   Meldet PowerShell, dass das Modul nicht geladen werden konnte, blockiert die Ausführungsrichtlinie es;
+   `Set-ExecutionPolicy Bypass -Scope Process` hebt das nur für das aktuelle Fenster auf. Registrieren Sie dann die App:
 
    ```powershell
    New-ServicePrincipal -AppId <client-id> -ObjectId <enterprise-app-object-id>
@@ -188,6 +201,10 @@ erforderlich; fehlt einer, schlägt die Anmeldung fehl.
    Set-CASMailbox -Identity "support@contoso.com" -ImapEnabled $true
    ```
 
+6. **Übergeben Sie vier Werte** an die Person, die den Agent konfiguriert, über einen Kanal, dem Sie auch ein Passwort
+   anvertrauen würden: die Tenant-ID, die Client-ID, den Wert des Client Secrets und die Adresse jedes in Schritt 4
+   freigegebenen Postfachs. Nennen Sie auch das Ablaufdatum des Secrets.
+
 ::: warning Schritt 4 ist die Zugriffsgrenze
 Die App kann genau die in Schritt 4 freigegebenen Postfächer öffnen und keine anderen. Geben Sie nur die Postfächer
 frei, die der Agent verarbeiten soll, und gehen Sie davon aus, dass jede Person, die `Add-MailboxPermission` ausführen —
@@ -196,25 +213,45 @@ Das Client Secret hat dasselbe Gewicht wie ein Postfach-Passwort: Wer es besitzt
 lesen.
 :::
 
+#### Für die Person, die den Agent konfiguriert
+
+Sie brauchen die vier Werte von Ihrer Microsoft-365-Administration. Setzen Sie im Agent-Profil:
+
+| Feld                         | Wert                                                     |
+| ---------------------------- | -------------------------------------------------------- |
+| **IMAP-Host**                | `outlook.office365.com`                                  |
+| **IMAP-Port**                | `993`                                                    |
+| **TLS verwenden**            | An                                                       |
+| **Authentifizierung**        | **Microsoft 365 (OAuth 2.0)**                            |
+| **Benutzername**             | Eine von der Administration freigegebene Postfachadresse |
+| **Tenant-ID**                | Die Tenant-ID, die Sie erhalten haben                    |
+| **Client-ID**                | Die Client-ID, die Sie erhalten haben                    |
+| **Geheimer Clientschlüssel** | Der Wert des Client Secrets, den Sie erhalten haben      |
+
+Ein freigegebenes Postfach funktioniert als **Benutzername**. Ein Postfach, das die Administration nicht freigegeben
+hat, lässt sich nicht öffnen, so korrekt die übrigen Werte auch sind — lassen Sie es freigeben, statt etwas anderes zu
+ändern.
+
 ::: tip Client Secrets laufen ab
-Client Secrets in Entra ID werden für höchstens zwei Jahre ausgestellt. Tragen Sie das Ablaufdatum in Ihren Kalender ein
-und hinterlegen Sie das erneuerte Secret im Agent-Profil, bevor es abläuft — ein abgelaufenes Secret lässt jeden Lauf
-mit `AADSTS7000222` fehlschlagen.
+Client Secrets in Entra ID werden für höchstens zwei Jahre ausgestellt, und ein abgelaufenes Secret lässt jeden Lauf mit
+`AADSTS7000222` fehlschlagen. Tragen Sie das Ablaufdatum in Ihren Kalender ein: Bevor es abläuft, erstellt die
+Administration ein neues Secret, und Sie hinterlegen es im Profil.
 :::
 
 #### Wenn die Anmeldung fehlschlägt
 
-Der Fehler in der Event-Timeline des Laufs zeigt, welche Seite abgelehnt hat:
+Der Fehler in der Event-Timeline des Laufs zeigt, welche Seite abgelehnt hat — und damit, wer es beheben kann:
 
-| Fehler                            | Ursache                                                                                                                                          |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `... these fields are empty: ...` | **Tenant-ID**, **Client-ID** oder **Geheimer Clientschlüssel** ist im Profil nicht ausgefüllt.                                                   |
-| `AADSTS90002` / `AADSTS700016`    | Die Tenant-ID ist falsch, oder die Client-ID gehört zu keiner App in diesem Tenant.                                                              |
-| `AADSTS7000215` / `AADSTS7000222` | Das Client Secret ist falsch oder abgelaufen.                                                                                                    |
-| `NO AUTHENTICATE failed`          | Entra hat ein Token ausgestellt, aber Exchange hat es abgelehnt — Schritt 3, 4 oder 5 fehlt, oder Schritt 3 hat die falsche Objekt-ID verwendet. |
+| Fehler                            | Ursache                                                                                                                                                                                            | Behoben durch                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `... these fields are empty: ...` | **Tenant-ID**, **Client-ID** oder **Geheimer Clientschlüssel** ist im Profil nicht ausgefüllt.                                                                                                     | Die Person, die den Agent konfiguriert.                                                        |
+| `AADSTS90002` / `AADSTS700016`    | Die Tenant-ID ist falsch, oder die Client-ID gehört zu keiner App in diesem Tenant.                                                                                                                | Die Person, die den Agent konfiguriert, durch Vergleich mit den übergebenen Werten.            |
+| `AADSTS7000215` / `AADSTS7000222` | Das Client Secret ist falsch — oft wurde die Geheimnis-ID statt des Werts eingefügt — oder abgelaufen.                                                                                             | Falsch: die Person, die den Agent konfiguriert. Abgelaufen: die Administration (neues Secret). |
+| `NO AUTHENTICATE failed`          | Entra hat ein Token ausgestellt, aber Exchange hat es abgelehnt — Schritt 3, 4 oder 5 fehlt, Schritt 3 hat die falsche Objekt-ID verwendet, oder **Benutzername** ist kein freigegebenes Postfach. | Die Administration, Schritte 3 bis 5.                                                          |
 
-Exchange antwortet auf alle drei seiner Ursachen gleichermassen mit `NO AUTHENTICATE failed`, prüfen Sie die Schritte 3
-bis 5 also der Reihe nach.
+Exchange antwortet auf alle seine Ursachen gleichermassen mit `NO AUTHENTICATE failed`. Prüfen Sie zuerst, ob
+**Benutzername** genau ein freigegebenes Postfach ist; wenn ja, geht die Administration die Schritte 3 bis 5 der Reihe
+nach durch.
 
 ### Entwurfs-Einstellungen
 

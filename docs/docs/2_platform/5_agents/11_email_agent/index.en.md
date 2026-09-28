@@ -142,20 +142,32 @@ an app password — will log in over IMAP. For those mailboxes choose **Microsof
 fetches an app-only access token from Microsoft Entra ID with the client credentials flow and logs in with it (SASL
 `XOAUTH2`). No user has to sign in interactively, which is what a scheduled agent needs.
 
-Set the connection to host `outlook.office365.com`, port `993`, TLS on, and **Username** to the address of the mailbox
-the agent should process — a shared mailbox works.
+Setting it up is split between two roles. A Microsoft 365 administrator prepares the tenant once and hands over four
+values; whoever configures the agent then enters them on the profile. The person configuring the agent needs neither
+admin rights in Microsoft 365 nor PowerShell.
 
-An administrator has to prepare the tenant once, by hand. Every step is required; a missing one fails the login.
+#### For the Microsoft 365 administrator (once)
+
+Done once per tenant, plus step 4 for every further mailbox. Steps 1 and 2 happen in the Microsoft Entra admin center.
+Steps 3 to 5 need Exchange Online PowerShell, because Exchange has no admin-center page for granting an app access to a
+mailbox. Every step is required; a missing one fails the login.
 
 1. **Register an application** in the Microsoft Entra admin center (**App registrations → New registration**, accounts
    in this organizational directory only). Note the **Directory (tenant) ID** and **Application (client) ID** from its
-   overview page, and create a client secret under **Certificates & secrets**. These are the three values the agent
-   profile asks for.
+   overview page, and create a client secret under **Certificates & secrets** — copy its **Value**, not its Secret ID;
+   the value is shown only once.
 
 2. **Add the IMAP permission.** Under **API permissions → Add a permission → APIs my organization uses**, pick **Office
    365 Exchange Online → Application permissions → `IMAP.AccessAsApp`**, then **Grant admin consent**.
 
-3. **Register the service principal in Exchange Online** (Exchange Online PowerShell, `Connect-ExchangeOnline`):
+3. **Register the service principal in Exchange Online.** Connect with the `ExchangeOnlineManagement` module first:
+
+   ```powershell
+   Connect-ExchangeOnline -UserPrincipalName <admin@contoso.com>
+   ```
+
+   If PowerShell reports that the module could not be loaded, the execution policy is blocking it;
+   `Set-ExecutionPolicy Bypass -Scope Process` lifts that for the current window only. Then register the app:
 
    ```powershell
    New-ServicePrincipal -AppId <client-id> -ObjectId <enterprise-app-object-id>
@@ -178,6 +190,10 @@ An administrator has to prepare the tenant once, by hand. Every step is required
    Set-CASMailbox -Identity "support@contoso.com" -ImapEnabled $true
    ```
 
+6. **Hand over four values** to the person configuring the agent, over a channel you would trust with a password: the
+   tenant ID, the client ID, the client secret value, and the address of each mailbox granted in step 4. Tell them when
+   the secret expires, too.
+
 ::: warning Step 4 is the access boundary
 The app can open exactly the mailboxes granted in step 4 and no others. Grant only the mailboxes the agent is meant to
 process, and treat anyone who can run `Add-MailboxPermission` — or edit the agent profile's **Username** — as able to
@@ -185,23 +201,43 @@ point the agent at any mailbox that has been granted. The client secret carries 
 anyone holding it can read every granted mailbox.
 :::
 
+#### For the person configuring the agent
+
+You need the four values from your Microsoft 365 administrator. On the agent profile, set:
+
+| Field              | Value                                       |
+| ------------------ | ------------------------------------------- |
+| **IMAP Host**      | `outlook.office365.com`                     |
+| **IMAP Port**      | `993`                                       |
+| **Use TLS**        | On                                          |
+| **Authentication** | **Microsoft 365 (OAuth 2.0)**               |
+| **Username**       | A mailbox address the administrator granted |
+| **Tenant ID**      | The tenant ID you were given                |
+| **Client ID**      | The client ID you were given                |
+| **Client Secret**  | The client secret value you were given      |
+
+A shared mailbox works as **Username**. A mailbox the administrator did not grant cannot be opened, however correct the
+other values are — ask for it to be granted instead of changing anything else.
+
 ::: tip Client secrets expire
-Entra ID client secrets are issued for at most two years. Put the expiry date in your calendar and paste the renewed
-secret into the agent profile before it runs out — an expired secret fails every run with `AADSTS7000222`.
+Entra ID client secrets are issued for at most two years, and an expired secret fails every run with `AADSTS7000222`.
+Put the expiry date in your calendar: before it runs out, the administrator creates a new secret and you paste it into
+the profile.
 :::
 
 #### When the login fails
 
-The error in the run's event timeline tells you which side refused:
+The error in the run's event timeline tells you which side refused, and so who can fix it:
 
-| Error                             | Cause                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `... these fields are empty: ...` | **Tenant ID**, **Client ID** or **Client Secret** is not filled in on the profile.                            |
-| `AADSTS90002` / `AADSTS700016`    | The tenant ID is wrong, or the client ID does not belong to an app in that tenant.                            |
-| `AADSTS7000215` / `AADSTS7000222` | The client secret is wrong, or it has expired.                                                                |
-| `NO AUTHENTICATE failed`          | Entra issued a token but Exchange refused it — step 3, 4 or 5 is missing, or step 3 used the wrong object ID. |
+| Error                             | Cause                                                                                                                                                | Fixed by                                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `... these fields are empty: ...` | **Tenant ID**, **Client ID** or **Client Secret** is not filled in on the profile.                                                                   | The person configuring the agent.                                                 |
+| `AADSTS90002` / `AADSTS700016`    | The tenant ID is wrong, or the client ID does not belong to an app in that tenant.                                                                   | The person configuring the agent, by comparing with the values handed over.       |
+| `AADSTS7000215` / `AADSTS7000222` | The client secret is wrong — often the Secret ID pasted instead of the value — or it has expired.                                                    | Wrong: the person configuring the agent. Expired: the administrator (new secret). |
+| `NO AUTHENTICATE failed`          | Entra issued a token but Exchange refused it — step 3, 4 or 5 is missing, step 3 used the wrong object ID, or **Username** is not a granted mailbox. | The administrator, steps 3 to 5.                                                  |
 
-Exchange answers `NO AUTHENTICATE failed` for all three of its causes alike, so check steps 3 to 5 in order.
+Exchange answers `NO AUTHENTICATE failed` for all of its causes alike. Check first that **Username** is exactly a
+mailbox that was granted; if it is, the administrator goes through steps 3 to 5 in order.
 
 ### Draft email settings
 
