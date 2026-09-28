@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class FormkitElement(BaseModel, abc.ABC):
@@ -36,6 +37,18 @@ class FormkitElement(BaseModel, abc.ABC):
             "form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
             alias="defaultEnabled",
         ),
+    ] = None
+    toggle_label: Annotated[
+        LocaleString | str | None,
+        Field(
+            description="For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', "
+            "which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+            alias="toggleLabel",
+        ),
+    ] = None
+    toggle_help: Annotated[
+        LocaleString | str | None,
+        Field(description="For a nullable element, the help text shown under its toggle.", alias="toggleHelp"),
     ] = None
 
     @abc.abstractmethod

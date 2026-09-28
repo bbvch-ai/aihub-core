@@ -148,13 +148,22 @@ parent, its collections (namespaces) are the children, and a rule on one level n
 | `aihub.user.knowledge.>`              | Browse every database and every collection                                                  |
 
 The seeded `AIHubKnowledgeUser` and `AIHubKnowledgeAdmin` roles bundle the last row and the first two rows respectively,
-and the role editor offers the same three rules as presets. Admin rules imply the matching user rule.
+and the role editor offers the same three rules as presets. Admin rules imply the matching user rule. Per resource, the
+role and tenant editors offer **Manage** on each database (`<db>` together with `<db>.>`) and **Use** and **Manage** on
+each collection (`<db>.<ns>`), so one collection can be handed to someone without the rest of its database.
 `aihub.admin.knowledge.>` covers every existing database and collection but not the bare `aihub.admin.knowledge` root,
 so a role that should create databases needs the root rule explicitly.
 
 Creating a resource grants access to it automatically, mirroring agent instances: the creator receives a per-resource
-admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rule
-unless a broader rule already covers it. Deleting a database or collection revokes those rules and roles again.
+admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rules
+unless a broader rule already covers them. A database is granted as `aihub.admin.knowledge.<db>` plus
+`aihub.admin.knowledge.<db>.>`, so its admin role and its tenant also reach every collection in it — including the ones
+a sync or ingestion pipeline creates, which are granted to no one when they appear. Deleting a database or collection
+revokes those rules and roles again.
+
+A new tenant's ceiling holds only `aihub.admin.knowledge`, never `aihub.admin.knowledge.>`. Databases are stored
+deployment-wide, so that wildcard would show a tenant every other tenant's knowledge; a tenant sees only the databases
+it created, plus any a sysadmin ticks for it in the tenant editor.
 
 ## Agent integration
 

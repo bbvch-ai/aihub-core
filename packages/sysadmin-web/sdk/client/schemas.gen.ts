@@ -1123,6 +1123,19 @@ export const UserWithAccessDTOSchema = {
       description:
         "The user's resolved access rules (union of their roles), to drive the capability view.",
     },
+    preferred_locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Preferred Locale",
+      description:
+        "The user's persisted UI language, or null if they have never chosen one.",
+    },
   },
   type: "object",
   required: ["id", "name", "email", "access", "access_rules"],

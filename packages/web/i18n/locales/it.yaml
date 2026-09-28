@@ -856,6 +856,16 @@ process:
       done: Completato
       steps: Progresso
 form:
+  secret_file_input:
+    drop_hint: Trascina qui il file o fai clic per sceglierlo
+    limits: '{accept}, fino a {size}'
+    selected: File selezionato
+    stored: File chiave salvato (cifrato)
+    client_email: 'Account di servizio: {email}'
+    replace: Sostituisci
+    remove: Rimuovi
+    too_large: Il file supera {size}.
+    invalid_json: Il file non è un JSON valido.
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
   warnings:
@@ -885,6 +895,15 @@ lib:
       placeholder: Seleziona un fuso orario
       help: Le posizioni cron sono interpretate in questo fuso orario, così una pianificazione
         giornaliera mantiene la stessa ora durante i cambi di orario.
+  knowledgeCollections:
+    placeholder: Seleziona raccolte
+    help: Vengono cercate solo le raccolte selezionate.
+    noAgent: Scegli prima un agente di conoscenza — qui si possono selezionare le
+      sue raccolte.
+    noSource: A questo campo non è associato alcun agente di conoscenza, quindi non
+      è possibile offrire raccolte.
+    empty: L'agente selezionato non è configurato per alcuna raccolta.
+    unavailable: Salvata, ma non consultata dall'agente selezionato
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -984,3 +1003,14 @@ tenant:
   mismatch_switch_action: Cambia tenant
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
+support:
+  report_bug: Segnala un problema
+  dialog_title: Segnala un problema
+  choose_files: Scegli i file
+  submit: Invia segnalazione
+  submitting: Invio…
+  sent: Segnalazione inviata
+  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà via e-mail.'
+  send_failed: Segnalazione non inviata
+  send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
+  unavailable: La segnalazione non è configurata su questa installazione. Contatta l'amministratore.

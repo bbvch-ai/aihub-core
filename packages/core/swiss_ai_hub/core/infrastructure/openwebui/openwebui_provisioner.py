@@ -44,12 +44,17 @@ AIHUB_LLM_MODEL_PREFIX = "aihub-model-"
 # _build_model_data / _build_llm_model_data.
 AIHUB_MANAGED_META_KEY = "aihub_managed"
 
-# The function-calling mode _build_model_data / _build_llm_model_data provision onto every managed
-# row (see their docstrings for why). Shared with _compute_model_diff and _sync_llm_workspace_models
-# so a row already synced under a prior value of this constant is treated as drifted and updated —
-# without that check, only brand-new rows would ever pick up a changed default, since name is
-# otherwise the sole field either diff reconciles for an already-existing row.
-_MANAGED_FUNCTION_CALLING = "legacy"
+# The function-calling mode provisioned onto every agent row and onto every LLM row whose LiteLLM
+# model_info doesn't declare FUNCTION_CALLING_MODEL_INFO_KEY (see _build_model_data /
+# _build_llm_model_data for why legacy). The diffs compare stored rows against the provisioned value,
+# so a changed value — or an admin's manual edit — is reconciled on the next sync; without that
+# check only brand-new rows would pick it up, since name is otherwise the sole field either diff
+# reconciles for an already-existing row.
+_DEFAULT_FUNCTION_CALLING = "legacy"
+
+# LiteLLM model_info key through which a model opts out of _DEFAULT_FUNCTION_CALLING (e.g. Kimi-K2.6
+# declares "native"). LiteLLM passes custom model_info keys through /v1/model/info unchanged.
+FUNCTION_CALLING_MODEL_INFO_KEY = "aihub_openwebui_function_calling"
 
 # Prefix of an agent's own base-registry id (e.g. "aihub-pipeline.RAGAgent.picasso-2"), as opposed
 # to an LLM model's (e.g. "text-generation/Kimi-K2.6") — the two managed-row shapes base-row syncs
@@ -198,12 +203,20 @@ class OpenWebuiProvisioner:
 
         models: list[AvailableModel] = []
         for entry in data:
-            if entry.get("model_info", {}).get("mode") != "chat":
+            model_info = entry.get("model_info", {})
+            if model_info.get("mode") != "chat":
                 continue
             capability, _, name = entry["model_name"].partition("/")
             if not name:
                 continue
-            models.append(AvailableModel(capability=capability, name=name, display_name=name))
+            models.append(
+                AvailableModel(
+                    capability=capability,
+                    name=name,
+                    display_name=name,
+                    function_calling=model_info.get(FUNCTION_CALLING_MODEL_INFO_KEY, _DEFAULT_FUNCTION_CALLING),
+                )
+            )
         return models
 
     # ------------------------------------------------------------------
@@ -353,7 +366,7 @@ class OpenWebuiProvisioner:
                 AIHUB_MANAGED_META_KEY: True,
                 "capabilities": self._agent_capabilities(),
             },
-            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
+            "params": {"function_calling": _DEFAULT_FUNCTION_CALLING},
         }
 
     async def _build_update_data(self, http: httpx.AsyncClient, agent: OnlineAgent) -> dict[str, Any]:
@@ -388,7 +401,7 @@ class OpenWebuiProvisioner:
 
         An agent is updated when its workspace model exists but the stored name drifted from the
         current agent name (e.g. after a rename), its stored function-calling mode drifted from
-        ``_MANAGED_FUNCTION_CALLING``, or the capabilities we push (``_agent_capabilities``) drifted
+        ``_DEFAULT_FUNCTION_CALLING``, or the capabilities we push (``_agent_capabilities``) drifted
         from the stored ones — three fields this diff reconciles, all for the same reason: a
         provisioner default that changes after a row was already synced must still reach that row,
         since name is otherwise the only thing that would ever trigger an update to an existing
@@ -409,7 +422,7 @@ class OpenWebuiProvisioner:
             capabilities_drifted = any(
                 stored_capabilities.get(name) != value for name, value in desired_capabilities.items()
             )
-            function_calling_drifted = existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+            function_calling_drifted = existing.get("params", {}).get("function_calling") != _DEFAULT_FUNCTION_CALLING
             if existing.get("name") != agent.display_name or capabilities_drifted or function_calling_drifted:
                 to_update.append(agent)
         to_delete = set(existing_models) - desired_ids
@@ -462,19 +475,17 @@ class OpenWebuiProvisioner:
         See ``_build_model_data`` for why: 0.11.3 denies non-admins through any unregistered
         ``base_model_id``, so the raw id itself must carry the grant now instead of a preset above it.
 
-        ``function_calling: "legacy"`` — 0.11.3 defaults every row to Native, where OpenWebUI's
-        built-in image generation/web search/code interpreter stop running server-side and instead
-        get offered to the model as a ``generate_image``/``search_web``/``execute_code`` tool, on the
-        hope it chooses to call it. That hope doesn't hold reliably: verified against this deployment's
-        own chat history that the same model (gemma) both succeeded and failed at spontaneously calling
-        ``generate_image`` across otherwise-identical requests, with zero code-side difference between
-        the two — see issue aihub-core-private#240. Legacy restores the pre-0.11.3 behavior where
-        OpenWebUI performs the action itself rather than trusting the model's tool-calling judgment.
-        Costs Open Terminal (registered as a direct tool server) its native ``tool_calls`` fidelity,
-        falling back to single-tool-per-turn, task-model-JSON-parsed invocation instead — the one
-        capability this deployment's own history shows is actually exercised via native mode today.
-        A user who needs native tool orchestration for one conversation can still override this in
-        that chat's own Advanced Params, which takes precedence over this row-level default.
+        ``function_calling`` comes from the model's LiteLLM ``model_info``
+        (``FUNCTION_CALLING_MODEL_INFO_KEY``) and defaults to ``"legacy"``. 0.11.3 defaults every row to
+        Native, where OpenWebUI's built-in image generation/web search/code interpreter stop running
+        server-side and instead get offered to the model as a ``generate_image``/``search_web``/
+        ``execute_code`` tool, on the hope it chooses to call it. That hope doesn't hold reliably: the
+        same model (gemma) both succeeded and failed at spontaneously calling ``generate_image`` across
+        otherwise-identical requests — see issue aihub-core-private#240. Legacy restores the pre-0.11.3
+        behavior where OpenWebUI performs the action itself. It costs Open Terminal (a direct tool
+        server) its native ``tool_calls``, falling back to one task-model-parsed tool per turn — which is
+        why a model reliable at tool calling (Kimi-K2.6) declares ``"native"`` instead. A user can still
+        override the mode for one conversation in that chat's Advanced Params.
         """
         return {
             "id": model.litellm_name,
@@ -483,7 +494,7 @@ class OpenWebuiProvisioner:
                 "description": f"AI-Hub model: {model.litellm_name}",
                 AIHUB_MANAGED_META_KEY: True,
             },
-            "params": {"function_calling": _MANAGED_FUNCTION_CALLING},
+            "params": {"function_calling": model.function_calling},
         }
 
     async def _sync_llm_workspace_models(self, http: httpx.AsyncClient, models: list[AvailableModel]) -> None:
@@ -491,9 +502,11 @@ class OpenWebuiProvisioner:
 
         Reads ``list_base_models`` rather than ``list_models`` — see ``_sync_workspace_models``.
 
-        A row is updated when its stored name drifted, or its stored function-calling mode drifted
-        from ``_MANAGED_FUNCTION_CALLING`` — see ``_compute_model_diff``'s docstring for why the
-        latter check exists (a changed default here would otherwise never reach an already-synced row).
+        A row is updated when its stored name drifted, or its stored function-calling mode differs
+        from the model's own ``function_calling`` — see ``_compute_model_diff``'s docstring for why the
+        latter check exists (a changed value would otherwise never reach an already-synced row). This
+        also reverts a mode an admin set by hand in the OpenWebUI admin panel; the LiteLLM model_info
+        is the place to change it.
         """
         existing_rows = await self._openwebui.list_base_models(http)
         existing_aihub = {
@@ -511,7 +524,7 @@ class OpenWebuiProvisioner:
                 logger.info(f"OpenWebUI: Created LLM workspace model '{model_id}'")
             elif (
                 existing.get("name") != model.display_name
-                or existing.get("params", {}).get("function_calling") != _MANAGED_FUNCTION_CALLING
+                or existing.get("params", {}).get("function_calling") != model.function_calling
             ):
                 await self._openwebui.update_model(http, self._build_llm_model_data(model))
                 logger.info(f"OpenWebUI: Updated LLM workspace model '{model_id}'")

@@ -114,12 +114,15 @@ steps:
     name: Arrêt
     description: Termine le workflow après l'achèvement de toutes les étapes requises
 thoughts:
-  condensation_empty: "Le condenseur n'a produit aucune question autonome ; ce tour n'a donc pas de requête exploitable. L'appel est refusé plutôt que d'utiliser le message brut."
+  condensation_empty: Le condenseur n'a produit aucune question autonome ; ce tour
+    n'a donc pas de requête exploitable. L'appel est refusé plutôt que d'utiliser
+    le message brut.
   input_too_large: "L'entrée ne tient pas dans la fenêtre de contexte du modèle :\
     \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
     \ modèle est refusé."
 messages:
-  condensation_empty: "Je n'ai pas réussi à déterminer ce qu'il fallait rechercher à partir de ce message. Veuillez reformuler votre question et réessayer."
+  condensation_empty: Je n'ai pas réussi à déterminer ce qu'il fallait rechercher
+    à partir de ce message. Veuillez reformuler votre question et réessayer.
   input_too_large: Ce fichier est trop volumineux pour que je le lise en une seule
     fois. Veuillez téléverser un fichier plus petit, le diviser en parties, ou utiliser
     un assistant dont le modèle dispose d'une fenêtre de contexte plus grande.

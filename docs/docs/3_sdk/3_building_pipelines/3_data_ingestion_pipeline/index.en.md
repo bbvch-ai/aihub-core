@@ -89,7 +89,9 @@ rotate; a change takes effect on the pipeline's next run.
 
 1. In the create-database dialog, pick a **Source**. The selector offers every source pipeline that is currently
    deployed and has announced its form (`GET /knowledge/source-pipelines`).
-2. Choose the **Storage backend** and fill in the backend's options; only the fields of the selected backend are shown.
+2. Choose the **Storage backend** (`s3` or `drive`) and fill in the backend's options; only the fields of the selected
+   backend are shown. For a Google Drive service account, upload the JSON key file downloaded from the Google Cloud
+   console, and share the Drive folder with the `client_email` the dialog shows for it.
 3. Set the **Root folder** inside the source and, optionally, include/exclude patterns in
    [rclone filter syntax](https://rclone.org/filtering/) (for example `*.pdf`, `**/~$*`).
 4. Save. The database is synced daily; the first observation creates a partition per file and the next one downloads
@@ -101,19 +103,24 @@ the sync; the files already in the data lake stay until the database is deleted.
 ### What a Database Stores
 
 `source_configuration` holds the `backend_type`, `root_path`, `include_patterns`, `exclude_patterns`, and one option
-group per backend:
+group per backend. The dialog offers only the backends verified end to end (`s3`, `drive`, and `local` where enabled);
+the others remain configured and synced for databases that already use them, and through the API:
 
-| `backend_type` | Source                           | Options                                                                                    |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
-| `onedrive`     | OneDrive, SharePoint             | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`   |
-| `drive`        | Google Drive                     | `client_id`, `client_secret`, `token` or `service_account_credentials`, `root_folder_id`   |
-| `s3`           | AWS S3, MinIO, S3-compatible     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                     |
-| `azureblob`    | Azure Blob Storage               | `account`, `key` or `sas_url`, `endpoint`                                                  |
-| `sftp`         | SFTP servers                     | `host`, `port`, `user`, `password` or `key_pem`                                            |
-| `local`        | Path inside the rclone container | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory |
+| `backend_type` | Source                                           | Options                                                                                                      |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `onedrive`     | OneDrive, SharePoint (not offered in the dialog) | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
+| `drive`        | Google Drive                                     | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
+| `s3`           | AWS S3, MinIO, S3-compatible                     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
+| `azureblob`    | Azure Blob Storage (not offered in the dialog)   | `account`, `key` or `sas_url`, `endpoint`                                                                    |
+| `sftp`         | SFTP servers (not offered in the dialog)         | `host`, `port`, `user`, `password` or `key_pem`                                                              |
+| `local`        | Path inside the rclone container                 | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
 
 A SharePoint document library is `onedrive` with `drive_type=documentLibrary`. OAuth backends accept a pre-obtained
 rclone `token` JSON instead of client credentials; OneDrive without a token uses client credentials.
+
+Replacing a Drive key is safe while the new service account sees the same folder. A valid key whose account sees a
+different or empty tree (for example no `root_folder_id` and only a shared folder) makes the next sync remove every
+document it no longer lists.
 
 Credentials are secrets: the API encrypts them with the platform's `AIHUB_CONFIG_ENCRYPTION_KEY` before storing them,
 returns them masked, and keeps the stored value when a form is resubmitted with the mask. The pipeline decrypts them per
@@ -166,10 +173,11 @@ values in production deployments.
 ### Extending the Source Pipeline
 
 **Adding a backend** rclone supports but the form does not yet offer is a change in `packages/pipeline` and
-`packages/core` only: one `Form` subclass with the backend's options (credentials as `Password` fields) and one field on
-`RcloneSyncConfig` in `source_pipelines/rclone_sync_config.py`, the backend in `RcloneBackendType`, and labels in the
-`lib/source_pipelines.*.yml` translations. The registration sensor re-announces the form; the API and the UI need no
-change.
+`packages/core` only: one `Form` subclass with the backend's options (credentials as `Password` fields, or
+`SecretFileInput` where the provider hands out a key file) and one field on `RcloneSyncConfig` in
+`source_pipelines/rclone_sync_config.py`, the backend in `RcloneBackendType`, and labels in the
+`lib/source_pipelines.*.yml` translations. Once verified end to end, add it to `_TESTED_BACKENDS` so the dialog offers
+it. The registration sensor re-announces the form; the API and the UI need no change.
 
 **A second source pipeline type** registers the way the rclone one does: a `SourcePipelineConfig` subclass declares its
 form, and a `rclone_pipeline_definitions`-style factory with its own `source` token, display name and description wires

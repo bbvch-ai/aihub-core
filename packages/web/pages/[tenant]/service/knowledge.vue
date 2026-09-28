@@ -54,7 +54,7 @@
               :sourced="!!database.source"
               @click="toNamespace(database.name, namespace)"
               @upload="openUploadModal(database, namespace)"
-              @edit="openEditNamespaceModal(namespace)"
+              @edit="openEditNamespaceModal(database, namespace)"
               @delete="openDeleteNamespaceModal(database, namespace)"
             />
             <KnowledgeNamespaceEmptyCard
@@ -85,6 +85,7 @@
 
     <KnowledgeNamespaceEditModal
       v-model="editNamespaceModalVisible"
+      :database="editingDatabase"
       :namespace="editingNamespace"
       @success="handleUpdateSuccess"
     />
@@ -137,6 +138,7 @@ const newNamespaceModalVisible = ref(false)
 const selectedDatabaseForNewNamespace = ref('')
 
 const editNamespaceModalVisible = ref(false)
+const editingDatabase = ref('')
 const editingNamespace = ref<NamespaceDto | null>(null)
 
 const newDatabaseModalVisible = ref(false)
@@ -175,7 +177,8 @@ const handleCreationSuccess = (data: { database: string, namespace: string }) =>
   router.push(tenantPath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
-const openEditNamespaceModal = (namespace: NamespaceDto) => {
+const openEditNamespaceModal = (database: DatabaseDto, namespace: NamespaceDto) => {
+  editingDatabase.value = database.name
   editingNamespace.value = namespace
   editNamespaceModalVisible.value = true
 }

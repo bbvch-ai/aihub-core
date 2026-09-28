@@ -4,7 +4,7 @@
       id="form"
       v-model="data"
       type="form"
-      :submit-label="t('common.actions.save')"
+      :submit-label="props.submitLabel ?? t('common.actions.save')"
       :submit-attrs="{
         inputClass: 'p-button p-component w-full',
       }"
@@ -32,6 +32,9 @@
         :max="rep.max"
         @update:model-value="setRepeaterData(rep.path, $event)"
       />
+
+      <!-- Inside the form so it lands above the submit button, which FormKit renders last. -->
+      <slot name="before-submit" />
     </FormKit>
   </div>
 </template>
@@ -64,6 +67,8 @@ const FIELD_WARNING_KEYS: Record<string, string> = {
 const props = defineProps<{
   form: FormkitElement[]
   initialData?: Record<string, unknown>
+  // Every caller so far is saving a configuration; the incident form is sending a report.
+  submitLabel?: string
 }>()
 
 // Clone so the form model never shares references with the Pinia-Colada cache: otherwise

@@ -29,6 +29,15 @@ DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 STAGES = ["dev", "local", "latest", "nightly", "build"]
 GPU_MODES = {False: "", True: ".gpu"}
 
+# Configs with `{variant}` in their name render once per entry; LITELLM_CONFIG_VARIANT picks one at runtime.
+LITELLM_VARIANTS = ["infomaniak", "stoney"]
+
+LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
+# The OpenWebUI provisioner rejects any other value at API startup, which aborts that whole provisioning run.
+# Keep in sync with AvailableModel.function_calling in packages/core (not importable here, see the note below).
+OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
+OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
+
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
@@ -40,7 +49,11 @@ CONFIG_SPECS = [
     # KEYCLOAK_BOOTSTRAP_TEMPLATES). Bootstrap changes stay reviewable via the
     # diff of the merged aihub-realm.{stage}.json output.
     # Keycloak managed configs - reconciled on every start by keycloak-config-cli.
-    ("templates/configs/keycloak/managed/10-roles.json.j2", "configs/keycloak/managed", "10-roles.{stage}{hardware}.json"),
+    (
+        "templates/configs/keycloak/managed/10-roles.json.j2",
+        "configs/keycloak/managed",
+        "10-roles.{stage}{hardware}.json",
+    ),
     (
         "templates/configs/keycloak/managed/20-client-scopes.json.j2",
         "configs/keycloak/managed",
@@ -62,7 +75,7 @@ CONFIG_SPECS = [
         "60-service-accounts.{stage}{hardware}.json",
     ),
     # Service configs - optional, skipped if template missing
-    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
+    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{variant}.{stage}{hardware}.yml"),
     ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
     ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
     ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
@@ -242,7 +255,20 @@ def generate_config(template, context, output_path):
     """Render template and write to file"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = template.render(context)
+    if template.name == LITELLM_TEMPLATE:
+        _validate_openwebui_function_calling(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
+
+
+def _validate_openwebui_function_calling(rendered, output_path):
+    """Fail generation (and CI's compose-consistency job) on a mode the OpenWebUI provisioner would reject at runtime."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        mode = (entry.get("model_info") or {}).get(OPENWEBUI_FUNCTION_CALLING_KEY)
+        if mode is not None and mode not in OPENWEBUI_FUNCTION_CALLING_MODES:
+            raise ValueError(
+                f"{entry.get('model_name')}: {OPENWEBUI_FUNCTION_CALLING_KEY} is {mode!r} in {output_path.name}, "
+                f"expected one of {sorted(OPENWEBUI_FUNCTION_CALLING_MODES)}"
+            )
 
 
 def generate_keycloak_realm(env, context, output_path):
@@ -262,6 +288,11 @@ def generate_keycloak_realm(env, context, output_path):
                 raise ValueError(f"Conflicting values for realm key '{key}' in {template_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+
+
+def _config_variants_for(name_pattern):
+    """Provider variants a config is rendered for — one unnamed pass unless it opts in via `{variant}`."""
+    return LITELLM_VARIANTS if "{variant}" in name_pattern else [""]
 
 
 def _strip_stage_hardware(name_pattern):
@@ -323,12 +354,13 @@ def generate_default(env, config_data):
         if needs_stage_hardware:
             for gpu_enabled, hardware in GPU_MODES.items():
                 for stage in STAGES:
-                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
-                    filename = name_pattern.format(hardware=hardware, stage=stage)
-                    output_path = out_dir / filename
+                    for config_variant in _config_variants_for(name_pattern):
+                        context = {"stage": stage, "gpu_enabled": gpu_enabled, "variant": config_variant, **config_data}
+                        filename = name_pattern.format(hardware=hardware, stage=stage, variant=config_variant)
+                        output_path = out_dir / filename
 
-                    generate_config(template, context, output_path)
-                    stats[config_name] += 1
+                        generate_config(template, context, output_path)
+                        stats[config_name] += 1
         else:
             context = {"stage": "default", "gpu_enabled": False, **config_data}
             output_path = out_dir / name_pattern
@@ -462,31 +494,33 @@ def generate_release(env, config_data, version, output_dir, project):
 
             needs_stage_hardware = "{stage}" in name_pattern or "{hardware}" in name_pattern
 
-            if needs_stage_hardware:
-                context = {
-                    "stage": "latest",
-                    "gpu_enabled": gpu_enabled,
-                    "config_file_suffix": "",
-                    **config_data,
-                }
-                # Inject release header for docker-compose template only
-                if "docker-compose" in template_path:
-                    context["release_header"] = _release_compose_header(project, version, gpu_enabled)
-                filename = _strip_stage_hardware(name_pattern)
-            else:
-                context = {"stage": "default", "gpu_enabled": False, **config_data}
-                filename = name_pattern
+            for config_variant in _config_variants_for(name_pattern):
+                if needs_stage_hardware:
+                    context = {
+                        "stage": "latest",
+                        "gpu_enabled": gpu_enabled,
+                        "variant": config_variant,
+                        "config_file_suffix": "",
+                        **config_data,
+                    }
+                    # Inject release header for docker-compose template only
+                    if "docker-compose" in template_path:
+                        context["release_header"] = _release_compose_header(project, version, gpu_enabled)
+                    filename = _strip_stage_hardware(name_pattern).format(variant=config_variant)
+                else:
+                    context = {"stage": "default", "gpu_enabled": False, **config_data}
+                    filename = name_pattern
 
-            # Output into variant subdirectory, preserving config subpath
-            if isinstance(rel_output_dir, str):
-                out_dir = variant_dir / rel_output_dir
-            else:
-                # ROOT_DIR case (docker-compose.yml) -> root of variant dir
-                out_dir = variant_dir
+                # Output into variant subdirectory, preserving config subpath
+                if isinstance(rel_output_dir, str):
+                    out_dir = variant_dir / rel_output_dir
+                else:
+                    # ROOT_DIR case (docker-compose.yml) -> root of variant dir
+                    out_dir = variant_dir
 
-            output_path = out_dir / filename
-            generate_config(template, context, output_path)
-            stats[config_name] += 1
+                output_path = out_dir / filename
+                generate_config(template, context, output_path)
+                stats[config_name] += 1
 
         realm_context = {"stage": "latest", "gpu_enabled": gpu_enabled, "config_file_suffix": "", **config_data}
         generate_keycloak_realm(env, realm_context, variant_dir / "configs/keycloak/aihub-realm.json")
@@ -564,6 +598,8 @@ def main():
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
     env.globals["service_license"] = _make_service_license_fn(_load_license_config())
+    # Shared with the compose template so every rendered variant is also mounted.
+    env.globals["litellm_variants"] = LITELLM_VARIANTS
 
     if args.check_env:
         from env_check import check_env_vs_compose

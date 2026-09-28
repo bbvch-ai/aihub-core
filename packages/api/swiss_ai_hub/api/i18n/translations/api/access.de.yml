@@ -94,6 +94,9 @@ capabilities:
       manage:
         label: Verwalten
         description: Dokumente in diesen Namespace konfigurieren und einspeisen.
+      manage_database:
+        label: Verwalten
+        description: Diese Wissensdatenbank konfigurieren, Ordner hinzufügen und sie löschen.
     model:
       use:
         description: Dieses Modell nutzen.

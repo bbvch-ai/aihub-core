@@ -69,6 +69,10 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `EXPERT_ASKING_CHANNEL_TYPE` |  | `expert_asking_agent` |  |
 | `GEMINI_API_KEY` |  | `litellm` |  |
 | `HUGGINGFACE_API_KEY` |  | `litellm`, `vllm`, `vllm-bge-m3`, `vllm-bge-reranker` |  |
+| `INCIDENT_GITHUB_APP_ID` | `IncidentSettings.GITHUB_APP_ID` | `api` | GitHub App id. The App needs Issues: write and Contents: write. |
+| `INCIDENT_GITHUB_INSTALLATION_ID` | `IncidentSettings.GITHUB_INSTALLATION_ID` | `api` | Installation id of the App on the target repository. |
+| `INCIDENT_GITHUB_PRIVATE_KEY` | `IncidentSettings.GITHUB_PRIVATE_KEY` | `api` | PEM private key of the GitHub App, used to sign the JWT that buys an installation token. Supply it as a Docker secret mounted at /run/secrets/incident_github_private_key (a compose override adding a `secrets:` entry to the api service) or from a vault, never in a committed env file. An empty INCIDENT_GITHUB_PRIVATE_KEY in the environment does not shadow the secret. |
+| `INCIDENT_GITHUB_REPOSITORY` | `IncidentSettings.GITHUB_REPOSITORY` | `api` | Repository issues are filed in, as 'owner/name'. Must be private — reports carry customer data, and a public repository would publish it irreversibly. |
 | `KEYCLOAK_ADMIN_PASSWORD` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_ADMIN_USER` |  | `keycloak`, `keycloak-config` |  |
 | `KEYCLOAK_API_SERVICE_CLIENT_SECRET` | `KeycloakSettings.API_SERVICE_CLIENT_SECRET` | `api`, `bot`, `keycloak`, `keycloak-config`, `sysadmin-api` | Client secret for the API service account |
@@ -91,6 +95,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `LANGFUSE_PUBLIC_KEY` | `LangfuseSettings.PUBLIC_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse public API key |
 | `LANGFUSE_SALT` |  | `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_SECRET_KEY` | `LangfuseSettings.SECRET_KEY` | `api`, `langfuse-web`, `otel-collector` | Langfuse secret API key |
+| `LITELLM_CONFIG_VARIANT` |  | `litellm` |  |
 | `LITELLM_MASTER_KEY` | `litellm-config.yml` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `litellm`, `llm_wrapping_agent`, `memory_writer_agent`, `mineru-api`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` |  |
 | `LITELLM_UI_PASSWORD` |  | `litellm` |  |
 | `LITELLM_UI_USERNAME` |  | `litellm` |  |
@@ -167,6 +172,8 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SEAWEEDFS_TOKEN` |  | `seaweedfs-filer`, `seaweedfs-master`, `seaweedfs-s3`, `seaweedfs-volume` |  |
 | `SLACK_CHANNEL_ID` |  | `expert_asking_agent` |  |
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
+| `STONEY_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
+| `STONEY_CLOUD_API_KEY` | `litellm-config.yml` | `litellm` |  |
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |
 | `SUPERUSER_FIRSTNAME` | `users-superuser.json` | `keycloak` |  |
 | `SUPERUSER_LASTNAME` | `users-superuser.json` | `keycloak` |  |
@@ -251,6 +258,8 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `BACKUP_VALKEY_CONTAINER` | `BackupSettings.VALKEY_CONTAINER` | `'valkey'` | `backup-code` |  |
 | `BACKUP_VALKEY_HOST` | `BackupSettings.VALKEY_HOST` | `'valkey'` |  |  |
 | `BACKUP_VALKEY_PORT` | `BackupSettings.VALKEY_PORT` | `6379` |  |  |
+| `INCIDENT_MAX_ATTACHMENTS` | `IncidentSettings.MAX_ATTACHMENTS` | `5` |  | How many files one report may carry. Attachments are committed to the repository and cannot meaningfully be removed from its history afterwards, which is why this is deliberately small. |
+| `INCIDENT_MAX_ATTACHMENT_BYTES` | `IncidentSettings.MAX_ATTACHMENT_BYTES` | `5242880` |  | Largest single attachment accepted, in bytes. |
 | `KEYCLOAK_API_SERVICE_CLIENT_ID` | `KeycloakSettings.API_SERVICE_CLIENT_ID` | `'aihub-api-service'` |  | Client ID for the API service account |
 | `KEYCLOAK_EXTERNAL_URL` | `KeycloakSettings.EXTERNAL_URL` | `None` | `api`, `bot`, `sysadmin-api` | Keycloak external URL as seen by browsers, used for issuer validation |
 | `KEYCLOAK_REALM` | `KeycloakSettings.REALM` | `'aihub'` | `api`, `bot`, `sysadmin-api` | Keycloak realm name |
@@ -261,6 +270,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LANGFUSE_TIMEOUT` | `LangfuseSettings.TIMEOUT` | `60` |  | Timeout in seconds for Langfuse API requests |
 | `LITE_LLM_PROXY_API_KEY` | `LiteLLMProxySettings.API_KEY` | `None` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | API key for authentication. If not provided, other authentication methods will be used. |
 | `LITE_LLM_PROXY_BASE_URL` | `LiteLLMProxySettings.BASE_URL` | _(supplied by compose)_ | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline` | The base URL of the model. |
+| `LITE_LLM_PROXY_INTERNAL_BASE_URL` | `LiteLLMProxySettings.INTERNAL_BASE_URL` | `None` |  | In-cluster LiteLLM URL that Langfuse dials from its own containers when running managed evaluators. Falls back to BASE_URL, which is already correct wherever the API and Langfuse share a network; set it only where they do not, as in local development where the API runs on the host. Its hostname must appear in LANGFUSE_LLM_CONNECTION_WHITELISTED_HOST on langfuse-web and langfuse-worker. |
 | `LITE_LLM_PROXY_USER_BUDGET_DURATION` | `LiteLLMProxySettings.USER_BUDGET_DURATION` | `None` |  | Budget is reset at the end of specified duration. If not set, budget is never reset. You can set duration as seconds ("30s"), minutes ("30m"), hours ("30h"), days ("30d"), months ("1mo"). |
 | `LITE_LLM_PROXY_USER_MAX_BUDGET` | `LiteLLMProxySettings.USER_MAX_BUDGET` | `None` |  | Budget available to a user in one period |
 | `LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS` | `LiteLLMProxySettings.USER_MAX_PARALLEL_REQUESTS` | `None` |  | Rate limit a user based on the number of parallel requests. Raises 429 error, if user's parallel requests > x. |
