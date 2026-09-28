@@ -1552,6 +1552,103 @@ export type AssignRoleRequest = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its
+ * own record.
+ */
+export type AttachedFileEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Excerpt
+   *
+   * The start of the extracted text, for a source preview.
+   */
+  excerpt?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export const AttachedFileStatus = {
+  READ: "read",
+  TRUNCATED: "truncated",
+  FAILED: "failed",
+} as const;
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export type AttachedFileStatus =
+  (typeof AttachedFileStatus)[keyof typeof AttachedFileStatus];
+
+/**
  * Audio
  *
  * Data about a previous audio response from the model.
@@ -4046,6 +4143,7 @@ export type ContextualizedAgentEvent = {
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | AttachedFileEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -19572,6 +19670,71 @@ export type AgentWorkResponseDtoWritable = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its
+ * own record.
+ */
+export type AttachedFileEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Excerpt
+   *
+   * The start of the extracted text, for a source preview.
+   */
+  excerpt?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * BaseRetrieveMemoryEvent
  *
  * A control and display event emitted when an agent retrieves memories from long-term storage.
@@ -20544,6 +20707,7 @@ export type ContextualizedAgentEventWritable = {
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | AttachedFileEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable

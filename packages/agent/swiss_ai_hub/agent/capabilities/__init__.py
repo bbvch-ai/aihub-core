@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
     from swiss_ai_hub.agent.capabilities.capability import Capability
     from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
     from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
 
 __all__ = [
+    "AttachedFiles",
     "Capability",
     "CapabilityCatalog",
     "Conversation",
@@ -24,6 +26,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "AttachedFiles": "swiss_ai_hub.agent.capabilities.attached_files.attached_files",
     "Capability": "swiss_ai_hub.agent.capabilities.capability",
     "CapabilityCatalog": "swiss_ai_hub.agent.capabilities.catalog",
     "Conversation": "swiss_ai_hub.agent.capabilities.conversation.conversation",

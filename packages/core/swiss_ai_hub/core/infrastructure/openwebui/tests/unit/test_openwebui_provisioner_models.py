@@ -42,7 +42,13 @@ _RAG_MODEL_ID = "aihub-pipeline.rag.default"
 # A row already synced by a prior run of *this* provisioner — every field it manages carries its
 # current desired value, so a diff against it must find nothing to update unless a test deliberately
 # perturbs one field.
-_NO_FEATURES = {"web_search": False, "code_interpreter": False, "image_generation": False, "memory": False}
+_NO_FEATURES = {
+    "web_search": False,
+    "code_interpreter": False,
+    "image_generation": False,
+    "memory": False,
+    "file_context": False,
+}
 _SYNCED_META = {AIHUB_MANAGED_META_KEY: True, "capabilities": _NO_FEATURES, "filterIds": list(AGENT_FILTER_IDS)}
 _SYNCED_PARAMS = {"function_calling": "legacy"}
 

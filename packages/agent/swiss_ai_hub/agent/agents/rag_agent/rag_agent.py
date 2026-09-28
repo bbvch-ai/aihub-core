@@ -29,6 +29,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event imp
 from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
     LimitChatHistoryWithContextEvent,
 )
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
@@ -113,16 +114,16 @@ class RAGAgent(Agent):
         return Conversation.contextualize(history=limited.limited_history, message=message)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(
+    async def gather_context_step(
         self, ctx: Conversation.Contextualized, start_event: UserMessageEvent | RAGStartEvent
-    ) -> Memory.RecallRequest:
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
-        return Memory.recall(ctx.query, namespaces)
+        return [Memory.recall(ctx.query, namespaces), AttachedFiles.read(start_event.files, ctx.history)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
@@ -130,9 +131,9 @@ class RAGAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled
+        self, ctx: Conversation.Contextualized, memories: Memory.Recalled, files: AttachedFiles.Contents
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=memories.blocks)
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),

@@ -1,0 +1,170 @@
+"""The attached-files capability's contract: `read` always answers, and every attached document the user asked
+about ends up either in the block or reported as unreadable.
+
+Files arrive on every turn for the whole message branch, so a turn without attachments answers with an empty block
+and a waiting step never hangs. Images are left out, since they already reach the model as image content.
+"""
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.events.agent import (
+    AttachedFileEvent,
+    AttachedFilesReadEvent,
+    AttachedFileStatus,
+    UserUploadedFile,
+)
+from swiss_ai_hub.core.generative_ai import ExtractedDocument, LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
+
+from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
+from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+
+READER_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader"
+HISTORY = [ChatMessage(role=MessageRole.USER, content="Summarise section 4.")]
+
+
+def _config() -> LLMWrappingAgentConfig:
+    return LLMWrappingAgentConfig(
+        agent_id="files-test",
+        name=LocaleString(en="Files"),
+        description=LocaleString(en="Files fixture"),
+        system_prompt=LocaleString(en="You are helpful."),
+        llm=LLMConfig(model_name="text-generation/dummy"),
+    )
+
+
+def _file(name: str, file_type: str = "application/pdf", file_id: str = "7f1c6a8e-3b2d-4c5e-9f10-2a3b4c5d6e7f"):
+    return UserUploadedFile(filename=name, file_type=file_type, file_id=file_id)
+
+
+def _document(content: str, pages: int | None = 3) -> ExtractedDocument:
+    return ExtractedDocument(
+        title="Handbook",
+        content=content,
+        content_type="application/pdf",
+        source_filename="handbook.pdf",
+        document_parser="MineruLoader",
+        number_of_pages=pages,
+    )
+
+
+async def _read(files: list[UserUploadedFile], budget: int = 100_000) -> list:
+    config = _config()
+    with patch.object(ConversationFields, "input_budget", return_value=budget):
+        return await AttachedFiles.read_step(
+            LLMWrappingAgent(),
+            request=AttachedFiles.read(files, HISTORY),
+            topic=AgentInstanceTopic(
+                agent_class="LLMWrappingAgent",
+                agent_id="files-test",
+                thread_id="t1",
+                display_id="d1",
+                run_id="r1",
+                event_type="control_event",
+                event_name="X",
+                event_id="e1",
+            ),
+            conversation=config,
+            t=LocaleHandler(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_no_attachment_answers_an_empty_block():
+    events = await _read([])
+
+    assert [type(event) for event in events] == [AttachedFilesReadEvent]
+    assert events[0].block == []
+
+
+@pytest.mark.asyncio
+async def test_images_are_not_read_as_documents():
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock()) as extract:
+        events = await _read([_file("photo.png", file_type="image/png")])
+
+    extract.assert_not_awaited()
+    assert events[-1].block == []
+
+
+@pytest.mark.asyncio
+async def test_the_full_text_reaches_the_block_with_a_source_event():
+    text = "Section 4: vacation is 25 days."
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(text))):
+        events = await _read([_file("handbook.pdf")])
+
+    source, read = events
+    assert isinstance(source, AttachedFileEvent)
+    assert source.status == AttachedFileStatus.READ
+    assert source.number_of_pages == 3
+    assert text in (read.block[0].content or "")
+    assert read.block[0].role == MessageRole.SYSTEM
+
+
+@pytest.mark.asyncio
+async def test_the_file_is_read_from_the_agents_own_upload_location():
+    extract = AsyncMock(return_value=_document("text"))
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract):
+        await _read([_file("handbook.pdf")])
+
+    bucket, key = extract.await_args.args
+    assert bucket == UserUploadedFile.AGENT_FILES_BUCKET
+    assert key == "LLMWrappingAgent/files-test/7f1c6a8e-3b2d-4c5e-9f10-2a3b4c5d6e7f/handbook.pdf"
+
+
+@pytest.mark.asyncio
+async def test_an_unreadable_file_is_reported_not_dropped():
+    with patch(
+        f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(side_effect=ValueError("corrupt PDF"))
+    ):
+        events = await _read([_file("broken.pdf")])
+
+    source, read = events
+    assert source.status == AttachedFileStatus.FAILED
+    assert source.error == "corrupt PDF"
+    assert "broken.pdf" in (read.block[0].content or "")
+    assert "corrupt PDF" in (read.block[0].content or "")
+
+
+@pytest.mark.asyncio
+async def test_a_file_too_large_for_the_prompt_is_trimmed_and_the_model_told_so():
+    long_text = " ".join(f"Sentence number {index} of the handbook." for index in range(4000))
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(long_text))):
+        events = await _read([_file("handbook.pdf")], budget=2_000)
+
+    source, read = events
+    content = read.block[0].content or ""
+    assert source.status == AttachedFileStatus.TRUNCATED
+    assert len(content) < len(long_text)
+    assert "handbook.pdf" in content.split("</attached_file>")[-1]
+
+
+class TestAttachedFilesBudget:
+    @staticmethod
+    def _counter(text: str) -> list[int]:
+        return [0] * len(text.split())
+
+    def test_small_files_fit_whole_next_to_a_large_one(self):
+        small = "one two three"
+        large = " ".join(["word."] * 5000)
+
+        fitted = AttachedFilesBudget(1_000, self._counter).fit({"small": small, "large": large})
+
+        assert fitted["small"] == (small, False)
+        assert fitted["large"][1] is True
+
+    def test_everything_fits_when_there_is_room(self):
+        fitted = AttachedFilesBudget(10_000, self._counter).fit({"a": "alpha beta", "b": "gamma"})
+
+        assert fitted == {"a": ("alpha beta", False), "b": ("gamma", False)}
+
+    def test_no_room_left_trims_to_the_marker(self):
+        fitted = AttachedFilesBudget(0, self._counter).fit({"a": "alpha beta"})
+
+        assert fitted["a"][1] is True

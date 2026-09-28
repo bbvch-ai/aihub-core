@@ -1,0 +1,14 @@
+---
+steps:
+  read_attached_files:
+    name: Read Attached Files
+    description: Reads the files the user attached to the conversation and adds their
+      text to the model's context
+prompt:
+  preamble: The user attached the following files to this conversation. When the question
+    refers to them, answer from their content and name the file you used.
+  truncated: Only the beginning of "{{ filename }}" fit into your context. Tell the
+    user that your answer is based on part of this file.
+  unreadable: The user attached "{{ filename }}", but it could not be read ({{ error }}).
+    Tell the user that this file could not be read, and suggest attaching it in another
+    format or pasting its text.
