@@ -11,7 +11,7 @@ class MemoryFields(Form):
     """
     The user and organization memory scoping a blueprint's config gains by listing this mixin as a base.
 
-    `MemoryCapability` annotates its steps with this class. List it before `AgentConfig` so its
+    `Memory` annotates its steps with this class. List it before `AgentConfig` so its
     `memory_llm_model_name` wins over the platform default the base config reports.
     """
 

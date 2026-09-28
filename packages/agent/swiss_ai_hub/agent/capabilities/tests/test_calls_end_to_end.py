@@ -1,10 +1,10 @@
 """
-Drives a spine blueprint through the real dispatcher (NATS + Valkey) with every model call stubbed.
+Drives every conversational blueprint through the real dispatcher (NATS + Valkey) with every model call stubbed.
 
-What this proves that the infra-free tests cannot: the dispatcher calls a contributed static step with the
-blueprint instance in first position, injects the concrete config into a parameter annotated with a capability's
-config base, injects `type[Agent]` into the spine's preconditions, fans the list results of the enrichers out as
-separate events, and the two barriers (context blocks, post-answer hooks) release exactly once.
+What this proves that the infra-free tests cannot: returning a capability's request event from a step really
+triggers the capability's step on the next dispatch, the result arrives at the step that declared it, the
+dispatcher calls a contributed static step with the blueprint instance in first position, and returning the
+memory delegation ahead of the completion publishes it before the run tears down.
 Marked self_hosted: needs the dev stack's NATS and Valkey, nothing else.
 """
 
@@ -16,16 +16,17 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    AnswerPostProcessedEvent,
-    ContextBlockEvent,
-    ConversationQueryEvent,
-    EnrichedChatHistoryEvent,
-    LimitChatHistoryEvent,
+    CompleteConversationEvent,
+    ContextComposedEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     LLMEvent,
     LLMStopEvent,
+    MemoryRecalledEvent,
     Message,
     NotAMetaQuestionEvent,
     RAGSuccessStopEvent,
+    RecallMemoryEvent,
     StopEvent,
     UserMessageEvent,
 )
@@ -50,13 +51,11 @@ from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config impor
 
 pytestmark = pytest.mark.self_hosted
 
-SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation_capability"
-SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
-
+CONVERSATION_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 _SHARED = {
-    "name": LocaleString(en="Spine"),
-    "description": LocaleString(en="Spine end-to-end fixture"),
+    "name": LocaleString(en="Calls"),
+    "description": LocaleString(en="Calls end-to-end fixture"),
     "llm": LLMConfig(model_name="text-generation/dummy"),
     "number_of_input_tokens": 8192,
     "user_memory": UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
@@ -66,17 +65,17 @@ _SHARED = {
 
 def _llm_wrapping_config() -> LLMWrappingAgentConfig:
     return LLMWrappingAgentConfig(
-        agent_id="spine_end_to_end_llm", system_prompt=LocaleString(en="You are helpful."), **_SHARED
+        agent_id="calls_end_to_end_llm", system_prompt=LocaleString(en="You are helpful."), **_SHARED
     )
 
 
 def _rag_config() -> RAGAgentConfig:
-    return RAGAgentConfig(agent_id="spine_end_to_end_rag", retrievers=[], condense_question=False, **_SHARED)
+    return RAGAgentConfig(agent_id="calls_end_to_end_rag", retrievers=[], condense_question=False, **_SHARED)
 
 
 def _few_shot_config() -> FewShotAgentConfig:
     return FewShotAgentConfig(
-        agent_id="spine_end_to_end_few_shot",
+        agent_id="calls_end_to_end_few_shot",
         condense_question=False,
         few_shot=FewShotStepConfig(
             few_shot_examples=[FewShotExample(user=LocaleString(en="hi"), agent=LocaleString(en="hello"))],
@@ -88,7 +87,7 @@ def _few_shot_config() -> FewShotAgentConfig:
 
 def _expert_rag_config() -> ExpertRAGAgentConfig:
     return ExpertRAGAgentConfig(
-        agent_id="spine_end_to_end_expert",
+        agent_id="calls_end_to_end_expert",
         retrievers=[],
         condense_question=False,
         expert_escalation=ExpertEscalationConfig(agent=AgentRef(agent_class="ExpertAskingAgent", agent_id="expert")),
@@ -97,17 +96,19 @@ def _expert_rag_config() -> ExpertRAGAgentConfig:
 
 
 @pytest.mark.parametrize(
-    ("agent_type", "config", "stop_event_type"),
+    ("agent_type", "config", "stop_event_type", "composes"),
     [
-        (LLMWrappingAgent, _llm_wrapping_config(), LLMStopEvent),
-        (RAGAgent, _rag_config(), RAGSuccessStopEvent),
-        (ExpertRAGAgent, _expert_rag_config(), RAGSuccessStopEvent),
-        (FewShotAgent, _few_shot_config(), LLMStopEvent),
+        (LLMWrappingAgent, _llm_wrapping_config(), LLMStopEvent, True),
+        (RAGAgent, _rag_config(), RAGSuccessStopEvent, True),
+        (ExpertRAGAgent, _expert_rag_config(), RAGSuccessStopEvent, True),
+        (FewShotAgent, _few_shot_config(), LLMStopEvent, False),
     ],
     ids=["llm-wrapping", "rag", "expert-rag", "few-shot"],
 )
 @async_test
-async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, agent_type, config, stop_event_type):
+async def test_a_turn_runs_every_call_through_the_dispatcher(
+    monkeypatch, agent_type, config, stop_event_type, composes
+):
     async def fake_detect(*, user_query, **_):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
@@ -124,10 +125,10 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, a
     async def fake_guard(**_):
         return MagicMock(success=True, reasoning="fits")
 
-    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{CONVERSATION_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{CONVERSATION_MODULE}.generate_title", no_metadata)
+    monkeypatch.setattr(f"{CONVERSATION_MODULE}.generate_follow_up_questions", no_metadata)
     monkeypatch.setattr("swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent.agent_description_guard", fake_guard)
-    monkeypatch.setattr(f"{SPINE_MODULE}.generate_title", no_metadata)
-    monkeypatch.setattr(f"{SPINE_MODULE}.generate_follow_up_questions", no_metadata)
     monkeypatch.setattr(EventDisplayer, "display_llm_stream", fake_stream)
     monkeypatch.setattr(LLMConfig, "cost_reporting_llm", fake_cost_reporting)
     monkeypatch.setattr(LLMConfig, "get_model_info", lambda self: {"model_info": {}})
@@ -145,21 +146,23 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, a
 
     assert not runner.has_exception_event
     for event_class in (
+        ContextualizeConversationEvent,
         NotAMetaQuestionEvent,
-        LimitChatHistoryEvent,
-        ConversationQueryEvent,
-        EnrichedChatHistoryEvent,
-        LLMEvent,
-        AnswerPostProcessedEvent,
+        ConversationContextualizedEvent,
+        RecallMemoryEvent,
+        MemoryRecalledEvent,
+        CompleteConversationEvent,
         stop_event_type,
     ):
-        assert runner.has_event_of_class(event_class), f"{event_class.__name__} never happened"
+        assert runner.has_event_of_class(event_class), f"{event_class.__name__} never happened, saw {_seen(runner)}"
+    assert runner.has_event_of_class(ContextComposedEvent) is composes
+    completion = _control_events(runner, CompleteConversationEvent)[0]
+    assert completion.answer.output_messages[-1].content == "25 days", "the answer must travel inside the completion"
+    assert len(_control_events(runner, StopEvent)) == 1, "the completion must end the run exactly once"
 
-    blocks = _control_events(runner, ContextBlockEvent)
-    assert {block.source for block in blocks} == {"user_memory", "organization_memory"}
-    assert all(block.is_empty for block in blocks)
-    assert len(_control_events(runner, EnrichedChatHistoryEvent)) == 1
-    assert len(_control_events(runner, StopEvent)) == 1, "the stop barrier must release exactly once"
+
+def _seen(runner: AgentTestRunner) -> list[str]:
+    return [type(observed.event).__name__ for observed in runner.observed_events]
 
 
 def _control_events(runner: AgentTestRunner, event_class: type) -> list:

@@ -76,7 +76,7 @@ class AgentRunner(HealthCheckProvider):
         self.published_config = agent_config.for_discovery(is_schedulable=self.is_schedulable)
         self.templates = templates or []
         self.agent_config_type = agent_config.__class__
-        agent_type.validate_capabilities(self.agent_config_type)
+        agent_type.validate_workflow(self.agent_config_type)
 
         self.name = agent_type.name
         self.description = agent_type.description

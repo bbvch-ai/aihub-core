@@ -6,11 +6,14 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
-    ConversationQueryEvent,
-    EnrichedChatHistoryEvent,
-    LimitChatHistoryEvent,
+    CompleteConversationEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     LLMEvent,
+    MemoryRecalledEvent,
+    MemoryStorageRequestedEvent,
     Message,
+    RecallMemoryEvent,
     RefusalReason,
     RefusalStopEvent,
     StopEvent,
@@ -25,14 +28,13 @@ from swiss_ai_hub.core.generative_ai import (
     usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewShotEvent
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
-from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
-from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -42,9 +44,9 @@ class FewShotAgent(Agent):
     Implements a Few Shot Agent.
 
     The blueprint guards the request against its own description, then answers from its few-shot examples
-    and the turn's query rather than from the conversation itself. The gate, the condensed query, memory,
-    the context join, the title, the follow-ups and the stop come from the installed capabilities; the
-    enriched history only contributes its system messages, since the examples stand in for the history.
+    and the turn's query rather than from the conversation itself. It hands the conversation to the
+    conversation capability and asks the memory capability for what it remembers; the memories join the
+    prompt as system messages next to the client's, since the examples stand in for the history.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.few_shot_agent.metadata.name")
@@ -52,8 +54,6 @@ class FewShotAgent(Agent):
         "agent.few_shot_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:book"
-
-    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
@@ -66,7 +66,7 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LimitChatHistoryEvent | RefusalStopEvent:
+    ) -> ContextualizeConversationEvent | RefusalStopEvent:
         """Truncate the chat history to the token limit, and refuse the run when it still cannot be sent.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when a
@@ -79,12 +79,10 @@ class FewShotAgent(Agent):
         """
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            return LimitChatHistoryEvent(
-                limited_history=limit_chat_history(
-                    chat_history=event.messages,
-                    number_of_input_tokens=agent_config.number_of_input_tokens,
-                )
+            limited = limit_chat_history(
+                chat_history=event.messages, number_of_input_tokens=agent_config.number_of_input_tokens
             )
+            return Conversation.contextualize(history=limited, message=event)
 
         system_messages = [msg for msg in event.messages if msg.role == MessageRole.SYSTEM]
         conversation = [msg for msg in event.messages if msg.role != MessageRole.SYSTEM]
@@ -101,7 +99,7 @@ class FewShotAgent(Agent):
             if older_limit > 0
             else []
         )
-        return LimitChatHistoryEvent(limited_history=[*system_messages, *older, *conversation[-1:]])
+        return Conversation.contextualize(history=[*system_messages, *older, *conversation[-1:]], message=event)
 
     @staticmethod
     async def _refuse_oversized_input(
@@ -129,28 +127,35 @@ class FewShotAgent(Agent):
         )
 
     @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        icon="mdi:brain",
+    )
+    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+        return Memory.recall(ctx.query)
+
+    @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.name"),
         description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.description"),
         icon="mage:shield-check",
     )
     async def right_agent_guard(
         self,
-        _query: ConversationQueryEvent,
-        history: LimitChatHistoryEvent,
+        ctx: ConversationContextualizedEvent,
         start_event: UserMessageEvent,
         t: LocaleHandler,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         user: UserIdentity | None = None,
     ) -> AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent:
-        """Anchored on the query event so the guard sits past the meta-question gate; it judges the raw request."""
+        """Judges the raw request once the conversation has cleared it."""
         async with agent_config.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             guard_result = await agent_description_guard(
                 agent_description=agent_config.description,
                 llm=llm,
                 t=t,
                 user_query=start_event.user_query,
-                messages=history.limited_history,
+                messages=ctx.history,
             )
         if not guard_result.success:
             return AgentSuitabilityRejectEvent(reason=guard_result.reasoning)
@@ -165,22 +170,21 @@ class FewShotAgent(Agent):
     )
     async def create_few_shot_examples(
         self,
-        query: ConversationQueryEvent,
+        ctx: ConversationContextualizedEvent,
         _: AgentSuitabilityAcceptEvent,
+        memories: MemoryRecalledEvent,
         start_event: UserMessageEvent,
-        history: EnrichedChatHistoryEvent,
         agent_config: FewShotAgentConfig,
     ) -> FewShotEvent:
         """
-        Creates the few-shot examples from the configuration and the context for the LLM call: the system
-        messages of the enriched history (the client's, plus any memory the enrichers contributed), the agent's
-        own system prompt, the examples and the turn's query.
+        Creates the few-shot examples from the configuration and the context for the LLM call: the client's
+        system messages, the agent's own system prompt, the recalled memories, the examples and the turn's query.
         Important: the conversation turns are not used directly (only through the query), as the few-shot
         examples are used instead. Same applies to the original user message.
         """
         locale = start_event.locale
         few_shot_messages = create_few_shot_messages(agent_config.few_shot.few_shot_examples, locale)
-        system_messages = [msg for msg in history.extended_history if msg.role == MessageRole.SYSTEM]
+        system_messages = [msg for msg in ctx.history if msg.role == MessageRole.SYSTEM]
         system_prompt = ChatMessage(
             role=MessageRole.SYSTEM, content=agent_config.few_shot.system_prompt.in_locale(locale)
         )
@@ -192,8 +196,9 @@ class FewShotAgent(Agent):
             [
                 *system_messages,
                 system_prompt,
+                *[message for block in memories.blocks for message in block],
                 *few_shot_messages,
-                ChatMessage(role=MessageRole.USER, content=query.query),
+                ChatMessage(role=MessageRole.USER, content=ctx.query),
             ]
         )
         return FewShotEvent(
@@ -210,39 +215,53 @@ class FewShotAgent(Agent):
     async def respond_with_llm_step(
         self,
         event: FewShotEvent,
+        ctx: ConversationContextualizedEvent,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
+        topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> LLMEvent:
-        """Stream the answer as a non-terminal `LLMEvent`; the spine's stop step ends the run."""
+    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+        """Stream the answer, then hand the turn back: the memory delegation first, the completion last."""
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=False)
+            answer = await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=False)
+        remember = Memory.remember(
+            query=ctx.query,
+            answer=answer,
+            user=user,
+            topic=topic,
+            agent_config=agent_config,
+            memory=agent_config,
+            locale=t.locale,
+        )
+        return [*([remember] if remember else []), Conversation.complete(answer=answer)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.reject_unsuitable_request.name"),
-        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.reject_unsuitable_request.description"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.few_shot_agent.steps.reject_unsuitable_request.description"
+        ),
         icon="mage:cancel",
     )
     async def reject_unsuitable_request_step(
         self,
         event: AgentSuitabilityRejectEvent,
-        start_event: UserMessageEvent,
-        agent_config: FewShotAgentConfig,
+        ctx: ConversationContextualizedEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        user: UserIdentity | None = None,
-    ) -> StopEvent:
+    ) -> CompleteConversationEvent:
         """End a rejected request with a streamed refusal, since a bare stop event reaches chat clients as an
         empty message.
 
         The guard's `reason` carries the specific mismatch in the run's locale, but it is third-person
-        justification, so a first-person sentence leads it. The spine's title step already fired on the query
-        event; only the follow-ups are missing, grounded on the refusal the user actually read.
+        justification, so a first-person sentence leads it. The completion grounds the follow-ups on the
+        refusal the user actually read.
         """
         refusal = t("agent.few_shot_agent.messages.unsuitable_request", reason=event.reason)
         await displayer.display_chunk(refusal, model_name=FewShotAgent.__name__)
-        chat_messages = [*start_event.messages, ChatMessage(role=MessageRole.ASSISTANT, content=refusal)]
-        await generate_follow_up_questions(chat_messages, agent_config.task_llm, displayer, t, user)
-        return StopEvent()
+        answer = LLMEvent(
+            input_messages=[Message.from_llama_index(message) for message in ctx.history],
+            output_messages=[Message.from_string(role="assistant", content=refusal, name=FewShotAgent.__name__)],
+        )
+        return Conversation.complete(answer=answer, stop=StopEvent())

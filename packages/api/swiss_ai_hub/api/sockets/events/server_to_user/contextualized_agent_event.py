@@ -16,13 +16,13 @@ from swiss_ai_hub.core.events.agent import (
     BaseStoreMemoryEvent,
     ChainEvent,
     ChunkEvent,
+    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
     ConversationTitleEvent,
     CronStartEvent,
     DisplayEvent,
     EmbeddingEvent,
-    EnrichedChatHistoryEvent,
     ExceptionEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
@@ -88,7 +88,7 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
-    | Annotated[EnrichedChatHistoryEvent, Tag("EnrichedChatHistoryEvent")]
+    | Annotated[ContextComposedEvent, Tag("ContextComposedEvent")]
     | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
     | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]

@@ -236,7 +236,7 @@ event:
     assistant: Assistant
     system: System
     user: User
-  enrichedChatHistory:
+  contextComposed:
     summary: 'Context assembled for the model: {count} message | Context assembled
       for the model: {count} messages'
     description: The chat history the model received, with every retrieved context

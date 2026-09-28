@@ -5,23 +5,23 @@ from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
-    AnswerPostProcessedEvent,
+    CompleteConversationEvent,
+    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
-    ConversationQueryEvent,
-    EnrichedChatHistoryEvent,
+    ConversationContextualizedEvent,
     ExpertRejectEvent,
     FewShotRejectEvent,
     HumanInTheLoop,
-    LLMEvent,
+    MemoryStorageRequestedEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGStartEvent,
-    RAGSuccessStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import OrgMemoryReadConfig, format_expert_conversation
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.ask_expert_start_event import AskExpertStartEvent
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
@@ -32,7 +32,6 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.conversation.conversation_preconditions import all_post_answer_hooks_reported
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
@@ -102,14 +101,14 @@ class ExpertRAGAgent(RAGAgent):
     async def limit_chat_history_with_context_step(  # type: ignore[override]
         self,
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
-        history: EnrichedChatHistoryEvent,
+        composed: ContextComposedEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         _: ContextSufficientAcceptEvent | None = None,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(
             context_event.context_message,
-            history.extended_history,
+            composed.history,
             start_event.last_user_message,
             agent_config.llm.token_counter,
             agent_config.number_of_input_tokens,
@@ -175,7 +174,7 @@ class ExpertRAGAgent(RAGAgent):
     async def forward_to_expert_asking_agent_step(
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
-        query: ConversationQueryEvent,
+        ctx: ConversationContextualizedEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -198,7 +197,7 @@ class ExpertRAGAgent(RAGAgent):
             agent_class=agent_config.expert_escalation.agent.agent_class,
             agent_id=agent_config.expert_escalation.agent.agent_id,
             start_event=AskExpertStartEvent(
-                question_to_expert=query.query,
+                question_to_expert=ctx.query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
                 org_memory_namespace=ExpertRAGAgent._resolve_expert_write_namespace(
@@ -315,17 +314,22 @@ class ExpertRAGAgent(RAGAgent):
     async def respond_with_llm_step(  # type: ignore[override]
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
-        history: EnrichedChatHistoryEvent,
+        composed: ContextComposedEvent,
+        ctx: ConversationContextualizedEvent,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
+        topic: AgentInstanceTopic,
         t: LocaleHandler,
+        expert_answer_context: ExpertAnswerContextEvent | None = None,
+        context_insufficient_reject: ContextInsufficientRejectEvent | None = None,
         user: UserIdentity | None = None,
-    ) -> LLMEvent:
-        """Answer from context or a guard rejection; an insufficient-context verdict goes to the expert instead."""
-        return await do_respond_with_llm(
+    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+        """Answer from context or a guard rejection; an insufficient-context verdict goes to the expert instead,
+        and an expert's answer counts as a successful grounding while a declined escalation keeps the verdict."""
+        answer = await do_respond_with_llm(
             event,
-            history.extended_history,
+            composed.history,
             guard_config.context_insufficient_prompt,
             agent_config.system_prompt,
             agent_config.llm,
@@ -334,35 +338,10 @@ class ExpertRAGAgent(RAGAgent):
             user,
             as_stop_step=False,
         )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.description"),
-        precondition=all_post_answer_hooks_reported,
-    )
-    async def stop_step(  # type: ignore[override]
-        self,
-        llm_event: LLMEvent,
-        expert_answer_context: ExpertAnswerContextEvent | None,
-        few_shot_reject: FewShotRejectEvent | None,
-        context_insufficient_reject: ContextInsufficientRejectEvent | None,
-        agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity | None = None,
-        _hooks: list[AnswerPostProcessedEvent] | None = None,
-    ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
-        """Like `RAGAgent.stop_step`, with the expert's answer counted as a successful grounding."""
-        await generate_follow_up_questions(
-            chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-        return do_finalize_rag_stop(
-            llm_event=llm_event,
+        stop = do_finalize_rag_stop(
+            llm_event=answer,
             expert_answer_context=expert_answer_context,
-            few_shot_reject=few_shot_reject,
+            few_shot_reject=event if isinstance(event, FewShotRejectEvent) else None,
             context_insufficient_reject=context_insufficient_reject,
         )
+        return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)

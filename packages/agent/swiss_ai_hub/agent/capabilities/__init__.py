@@ -4,30 +4,30 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.capability import Capability
-    from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+    from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
+    from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
     from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
-    from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
+    from swiss_ai_hub.agent.capabilities.memory.memory import Memory
     from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
     from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
-    from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
 
 __all__ = [
     "Capability",
-    "ConversationCapability",
+    "CapabilityCatalog",
+    "Conversation",
     "ConversationFields",
-    "MemoryCapability",
+    "Memory",
     "MemoryFields",
-    "SelfAwarenessCapability",
     "UserMemoryConfig",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "Capability": "swiss_ai_hub.agent.capabilities.capability",
-    "ConversationCapability": "swiss_ai_hub.agent.capabilities.conversation.conversation_capability",
+    "CapabilityCatalog": "swiss_ai_hub.agent.capabilities.catalog",
+    "Conversation": "swiss_ai_hub.agent.capabilities.conversation.conversation",
     "ConversationFields": "swiss_ai_hub.agent.capabilities.conversation.conversation_fields",
-    "MemoryCapability": "swiss_ai_hub.agent.capabilities.memory.memory_capability",
+    "Memory": "swiss_ai_hub.agent.capabilities.memory.memory",
     "MemoryFields": "swiss_ai_hub.agent.capabilities.memory.memory_fields",
-    "SelfAwarenessCapability": "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability",
     "UserMemoryConfig": "swiss_ai_hub.agent.capabilities.memory.user_memory_config",
 }
 

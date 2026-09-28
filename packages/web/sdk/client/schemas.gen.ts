@@ -5642,6 +5642,75 @@ export const ConfigSpecsSchema = {
     "Validation specification for a form-duality configuration, as announced by the service that owns it.\n\nCarries only the JSON schema the API validates submissions against, so a configuration class defined in\nan agent, process or pipeline container can be enforced by the API without that class being installed there.",
 } as const;
 
+export const ContextComposedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "Chat history with the context blocks merged in, within the input budget.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "_event_name", "_parent_event_names"],
+  title: "ContextComposedEvent",
+  description:
+    "The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind\nthe leading system messages, re-limited to the model's input budget.\n\nDisplayed because it is exactly what the model receives, which the per-capability display events cannot\nshow on their own.",
+} as const;
+
 export const ContextInsufficientRejectEventSchema = {
   properties: {
     event_id: {
@@ -5879,7 +5948,7 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/AddMemoryToChatHistoryEvent",
         },
         {
-          $ref: "#/components/schemas/EnrichedChatHistoryEvent",
+          $ref: "#/components/schemas/ContextComposedEvent",
         },
         {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEvent",
@@ -8419,75 +8488,6 @@ export const EmbeddingsResponseSchema = {
   type: "object",
   required: ["model", "data"],
   title: "EmbeddingsResponse",
-} as const;
-
-export const EnrichedChatHistoryEventSchema = {
-  properties: {
-    event_id: {
-      type: "string",
-      title: "Event Id",
-    },
-    created_at: {
-      type: "integer",
-      title: "Created At",
-      description:
-        "The time (in ns since epoch) the event was stored in the event store",
-    },
-    display_name: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display name for the event",
-    },
-    display_description: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display description for the event",
-    },
-    extended_history: {
-      items: {
-        $ref: "#/components/schemas/ChatMessage",
-      },
-      type: "array",
-      title: "Extended History",
-      description:
-        "Limited chat history extended with the context blocks of every enricher.",
-    },
-    _event_name: {
-      type: "string",
-      title: "Event Name",
-      description:
-        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
-      readOnly: true,
-    },
-    _parent_event_names: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Parent Event Names",
-      description:
-        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
-      readOnly: true,
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["extended_history", "_event_name", "_parent_event_names"],
-  title: "EnrichedChatHistoryEvent",
-  description:
-    "The limited chat history with every installed enricher's context blocks merged in, re-limited to the\nmodel's input budget.\n\nThis is the history a blueprint's answer pipeline consumes. It is emitted once per turn, also when no\nenricher contributed anything, so the answer pipeline never has to fall back to the bare limited history.\nDisplayed because it is exactly what the model saw, which is the transparency the per-enricher display\nevents cannot give on their own.",
 } as const;
 
 export const EventBucketSchema = {
@@ -30566,6 +30566,58 @@ export const ColorPickerWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/ColorPicker",
 } as const;
 
+export const ContextComposedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "Chat history with the context blocks merged in, within the input budget.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history"],
+  title: "ContextComposedEvent",
+  description:
+    "The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind\nthe leading system messages, re-limited to the model's input budget.\n\nDisplayed because it is exactly what the model receives, which the per-capability display events cannot\nshow on their own.",
+} as const;
+
 export const ContextInsufficientRejectEventWritableSchema = {
   properties: {
     event_id: {
@@ -30769,7 +30821,7 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/AddMemoryToChatHistoryEventWritable",
         },
         {
-          $ref: "#/components/schemas/EnrichedChatHistoryEventWritable",
+          $ref: "#/components/schemas/ContextComposedEventWritable",
         },
         {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEventWritable",
@@ -31792,58 +31844,6 @@ export const EmbeddingEventWritableSchema = {
   additionalProperties: true,
   type: "object",
   title: "EmbeddingEvent",
-} as const;
-
-export const EnrichedChatHistoryEventWritableSchema = {
-  properties: {
-    event_id: {
-      type: "string",
-      title: "Event Id",
-    },
-    created_at: {
-      type: "integer",
-      title: "Created At",
-      description:
-        "The time (in ns since epoch) the event was stored in the event store",
-    },
-    display_name: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display name for the event",
-    },
-    display_description: {
-      anyOf: [
-        {
-          $ref: "#/components/schemas/LocaleString",
-        },
-        {
-          type: "null",
-        },
-      ],
-      description: "Display description for the event",
-    },
-    extended_history: {
-      items: {
-        $ref: "#/components/schemas/ChatMessage",
-      },
-      type: "array",
-      title: "Extended History",
-      description:
-        "Limited chat history extended with the context blocks of every enricher.",
-    },
-  },
-  additionalProperties: true,
-  type: "object",
-  required: ["extended_history"],
-  title: "EnrichedChatHistoryEvent",
-  description:
-    "The limited chat history with every installed enricher's context blocks merged in, re-limited to the\nmodel's input budget.\n\nThis is the history a blueprint's answer pipeline consumes. It is emitted once per turn, also when no\nenricher contributed anything, so the answer pipeline never has to fall back to the bare limited history.\nDisplayed because it is exactly what the model saw, which is the transparency the per-enricher display\nevents cannot give on their own.",
 } as const;
 
 export const ExceptionEventWritableSchema = {

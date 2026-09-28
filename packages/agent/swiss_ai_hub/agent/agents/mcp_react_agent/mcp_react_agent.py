@@ -4,23 +4,28 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    EnrichedChatHistoryEvent,
-    LimitChatHistoryEvent,
+    CompleteConversationEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     LLMEvent,
+    MemoryRecalledEvent,
+    MemoryStorageRequestedEvent,
     Message,
+    RecallMemoryEvent,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import limit_chat_history, merge_consecutive_messages
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
-from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
-from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.mcp.mcp_auth_resolver import McpAuthResolver
@@ -55,9 +60,9 @@ async def all_tool_calls_emitted(tool_events: list[ToolEvent], run_context: RunC
 class McpReactAgent(Agent):
     """ReAct agent that discovers and calls tools on an external MCP server.
 
-    The loop is the blueprint's answer pipeline: it starts from the enriched history the spine hands over and
-    ends in a non-terminal `LLMEvent`, so memory, the title, the follow-ups and the stop come from the
-    installed capabilities like on every other chat blueprint.
+    The loop is the blueprint's answer pipeline: it starts once the conversation capability has cleared the
+    message and memory has answered, and it hands the final answer back to the conversation for the
+    follow-ups and the stop.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.mcp_react_agent.metadata.name")
@@ -65,8 +70,6 @@ class McpReactAgent(Agent):
         "agent.mcp_react_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:plug"
-
-    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.limit_chat_history.name"),
@@ -77,14 +80,18 @@ class McpReactAgent(Agent):
         self,
         event: UserMessageEvent,
         config: McpReactAgentConfig,
-    ) -> LimitChatHistoryEvent:
-        """The entry step: the chat message becomes the limited history the spine picks up from."""
-        return LimitChatHistoryEvent(
-            limited_history=limit_chat_history(
-                chat_history=event.messages,
-                number_of_input_tokens=config.number_of_input_tokens,
-            )
-        )
+    ) -> ContextualizeConversationEvent:
+        """The entry step: the chat message becomes the limited history the conversation picks up from."""
+        limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.number_of_input_tokens)
+        return Conversation.contextualize(history=limited, message=event)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        icon="mdi:brain",
+    )
+    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+        return Memory.recall(ctx.query)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
@@ -93,17 +100,17 @@ class McpReactAgent(Agent):
     )
     async def init_step(
         self,
-        event: EnrichedChatHistoryEvent,
+        ctx: ConversationContextualizedEvent,
+        memories: MemoryRecalledEvent,
         start_event: UserMessageEvent,
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         run_context: RunContext,
     ) -> McpReasoningEvent:
-        """Discover MCP tools and resources, seed the conversation with the system prompt, trigger the first
-        reasoning iteration.
+        """Discover MCP tools and resources, seed the conversation with the system prompt and the recalled
+        memories, trigger the first reasoning iteration.
 
-        The enriched history keeps its system messages: the client's, and whatever the enrichers contributed.
-        Merged so strict providers see one leading system message.
+        The history keeps the client's system messages. Merged so strict providers see one leading system message.
         """
         user_token = await McpAuthResolver.resolve_user_token(run_context)
         async with McpClientFactory.create(mcp_config, user_token=user_token) as mcp_client:
@@ -133,7 +140,8 @@ class McpReactAgent(Agent):
         if resource_context:
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=resource_context))
 
-        messages.extend(event.extended_history)
+        messages.extend(message for block in memories.blocks for message in block)
+        messages.extend(ctx.history)
 
         limited = limit_chat_history(
             chat_history=merge_consecutive_messages(messages),
@@ -153,12 +161,15 @@ class McpReactAgent(Agent):
     async def reasoning_step(
         self,
         event: McpReasoningEvent,
+        ctx: ConversationContextualizedEvent,
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
+        topic: AgentInstanceTopic,
+        t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[ToolEvent] | LLMEvent:
-        """Ask the LLM what to do next — call a tool, or answer the user with a non-terminal `LLMEvent`."""
+    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+        """Ask the LLM what to do next — call a tool, or answer the user and hand the turn back."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
@@ -169,11 +180,21 @@ class McpReactAgent(Agent):
 
         if not assistant.tool_calls:
             await displayer.display_chunk(assistant.content, config.llm.model_name)
-            return LLMEvent(
+            answer = LLMEvent(
                 input_messages=event.input_messages,
                 output_messages=[assistant],
                 chat_model_name=config.llm.model_name,
             )
+            remember = Memory.remember(
+                query=ctx.query,
+                answer=answer,
+                user=user,
+                topic=topic,
+                agent_config=config,
+                memory=config,
+                locale=t.locale,
+            )
+            return [*([remember] if remember else []), Conversation.complete(answer=answer)]
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
 

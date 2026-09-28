@@ -46,7 +46,7 @@ async def _limited_history(chat_history: list[ChatMessage]) -> list[ChatMessage]
             displayer=_displayer(),
             t=LocaleHandler(locale="en"),
         )
-    return event.limited_history
+    return event.history
 
 
 @async_test

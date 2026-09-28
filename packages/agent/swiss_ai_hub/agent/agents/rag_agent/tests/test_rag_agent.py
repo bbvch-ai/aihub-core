@@ -14,11 +14,12 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 from swiss_ai_hub.core.events.agent import (
-    ContextBlockEvent,
+    CompleteConversationEvent,
+    ContextualizeConversationEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    LimitChatHistoryEvent,
-    LLMEvent,
+    LLMStopEvent,
+    MemoryRecalledEvent,
     MetaQuestionDetectedEvent,
     RAGSuccessStopEvent,
     RerankerEvent,
@@ -51,7 +52,6 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
     LimitChatHistoryWithContextEvent,
 )
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.memory.memory_capability import ORGANIZATION_MEMORY
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
@@ -292,9 +292,16 @@ def _(agent_runner: AgentTestRunner, payload: str):
     assert agent_runner.has_start_event, "Agent did not receive start event"
 
 
-@then("a LimitChatHistoryEvent is present")
+@then("a ContextualizeConversationEvent is present")
 def _(agent_runner: AgentTestRunner):
-    assert agent_runner.get_event_of_class(LimitChatHistoryEvent), "Agent did not produce LimitChatHistoryEvent"
+    assert agent_runner.get_event_of_class(ContextualizeConversationEvent).history, "the turn was not contextualized"
+
+
+@then("the meta answer ends the run directly")
+def _(agent_runner: AgentTestRunner):
+    """The meta branch answers inside `Conversation.contextualize`; nothing is handed to the completion."""
+    assert not agent_runner.has_event_of_class(CompleteConversationEvent), "a meta answer must not reach the completion"
+    assert agent_runner.get_event_of_class(LLMStopEvent).chat_messages[-1].content, "the meta answer is empty"
 
 
 @then(parsers.parse("a StandaloneQuestionCondenserEvent is present with condensed question"))
@@ -348,15 +355,15 @@ def _(agent_runner: AgentTestRunner):
     assert history_event.limited_history_with_context, "LimitChatHistoryWithContextEvent missing data"
 
 
-@then("an LLMEvent is present with a generated response")
+@then("the answer is handed to the completion")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
-    assert llm_event, "LLMEvent not produced"
+    llm_event = agent_runner.get_event_of_class(CompleteConversationEvent).answer
+    assert llm_event.output_messages[0].content, "no answer was handed to the completion"
 
 
 @then("the response contains a detailed explanation")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(CompleteConversationEvent).answer
     assert "detailed" in llm_event.response.content.lower(), "Response does not contain a detailed explanation"
 
 
@@ -417,7 +424,7 @@ def _(agent_runner: AgentTestRunner):
 
 @then("respond to the user with the reasoning for the rejection")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(CompleteConversationEvent).answer
     input_messages = llm_event.input_messages
     for msg in input_messages:
         if msg.role == MessageRole.SYSTEM:
@@ -428,7 +435,7 @@ def _(agent_runner: AgentTestRunner):
 
 @then("respond to the user with a generated response")
 def _(agent_runner: AgentTestRunner):
-    llm_event = agent_runner.get_event_of_class(LLMEvent)
+    llm_event = agent_runner.get_event_of_class(CompleteConversationEvent).answer
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned for a valid user query"
 
@@ -576,13 +583,11 @@ def _(agent_runner: AgentTestRunner):
 
 @then("an organization memory context block is present")
 def _(agent_runner: AgentTestRunner):
-    """The organization-memory enricher reported its block to the spine's join.
+    """The memory capability answered the recall with an organization block.
 
-    Empty until the seeding step above actually stores memories; it only proves the enricher ran for the turn.
+    Empty until the seeding step above actually stores memories; it only proves the recall ran for the turn.
     """
-    blocks = [
-        observed.event
-        for observed in agent_runner.observed_events
-        if isinstance(observed.event, ContextBlockEvent) and observed.event.source == ORGANIZATION_MEMORY
+    recalled = [
+        observed.event for observed in agent_runner.observed_events if isinstance(observed.event, MemoryRecalledEvent)
     ]
-    assert blocks, "No organization memory context block was emitted"
+    assert recalled, "Memory never answered the recall"

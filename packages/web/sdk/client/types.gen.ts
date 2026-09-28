@@ -3767,6 +3767,56 @@ export type ConfigSpecs = {
 };
 
 /**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3963,7 +4013,7 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopResponseEvent
     | LimitChatHistoryEvent
     | AddMemoryToChatHistoryEvent
-    | EnrichedChatHistoryEvent
+    | ContextComposedEvent
     | AddUserMemoryToChatHistoryEvent
     | AddOrganizationMemoryToChatHistoryEvent
     | StandaloneQuestionCondenserEvent
@@ -5747,58 +5797,6 @@ export type EmbeddingsResponse = {
    * The list of embeddings.
    */
   data: Array<Embeddings>;
-};
-
-/**
- * EnrichedChatHistoryEvent
- *
- * The limited chat history with every installed enricher's context blocks merged in, re-limited to the
- * model's input budget.
- *
- * This is the history a blueprint's answer pipeline consumes. It is emitted once per turn, also when no
- * enricher contributed anything, so the answer pipeline never has to fall back to the bare limited history.
- * Displayed because it is exactly what the model saw, which is the transparency the per-enricher display
- * events cannot give on their own.
- */
-export type EnrichedChatHistoryEvent = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Extended History
-   *
-   * Limited chat history extended with the context blocks of every enricher.
-   */
-  extended_history: Array<ChatMessage>;
-  /**
-   * Event Name
-   *
-   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-   * Used during deserialization to decide which subclass to instantiate.
-   */
-  readonly _event_name: string;
-  /**
-   * Parent Event Names
-   *
-   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-   */
-  readonly _parent_event_names: Array<string>;
-  [key: string]: unknown;
 };
 
 /**
@@ -20293,6 +20291,43 @@ export type ColorPickerWritable = {
 };
 
 /**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -20463,7 +20498,7 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopResponseEventWritable
     | LimitChatHistoryEventWritable
     | AddMemoryToChatHistoryEventWritable
-    | EnrichedChatHistoryEventWritable
+    | ContextComposedEventWritable
     | AddUserMemoryToChatHistoryEventWritable
     | AddOrganizationMemoryToChatHistoryEventWritable
     | StandaloneQuestionCondenserEventWritable
@@ -21101,45 +21136,6 @@ export type EmbeddingEventWritable = {
    * A list of embedding objects containing text and vector data.
    */
   embeddings?: Array<Embedding> | null;
-  [key: string]: unknown;
-};
-
-/**
- * EnrichedChatHistoryEvent
- *
- * The limited chat history with every installed enricher's context blocks merged in, re-limited to the
- * model's input budget.
- *
- * This is the history a blueprint's answer pipeline consumes. It is emitted once per turn, also when no
- * enricher contributed anything, so the answer pipeline never has to fall back to the bare limited history.
- * Displayed because it is exactly what the model saw, which is the transparency the per-enricher display
- * events cannot give on their own.
- */
-export type EnrichedChatHistoryEventWritable = {
-  /**
-   * Event Id
-   */
-  event_id?: string;
-  /**
-   * Created At
-   *
-   * The time (in ns since epoch) the event was stored in the event store
-   */
-  created_at?: number;
-  /**
-   * Display name for the event
-   */
-  display_name?: LocaleString | null;
-  /**
-   * Display description for the event
-   */
-  display_description?: LocaleString | null;
-  /**
-   * Extended History
-   *
-   * Limited chat history extended with the context blocks of every enricher.
-   */
-  extended_history: Array<ChatMessage>;
   [key: string]: unknown;
 };
 

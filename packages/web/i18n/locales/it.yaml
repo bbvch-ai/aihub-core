@@ -272,7 +272,7 @@ event:
     assistant: Assistente
     system: Sistema
     user: Utente
-  enrichedChatHistory:
+  contextComposed:
     summary: 'Contesto assemblato per il modello: {count} messaggio | Contesto assemblato
       per il modello: {count} messaggi'
     description: La cronologia della chat ricevuta dal modello, con tutti i blocchi

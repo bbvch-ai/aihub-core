@@ -60,10 +60,6 @@ class Agent(DispatchableWorkflow):
     # Admin UI. Non-discoverable agents still subscribe to and process their control events normally.
     discoverable: ClassVar[bool] = True
 
-    # Capabilities this blueprint installs. Each contributes steps to `get_steps()` next to the ones defined
-    # on the class, so the workflow graph, discovery and the meta-question summary all see one flat step set.
-    capabilities: ClassVar[tuple[type["Capability"], ...]] = ()
-
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
@@ -73,38 +69,35 @@ class Agent(DispatchableWorkflow):
     @classmethod
     @functools.cache
     def get_own_steps(cls) -> list[Callable]:
-        """The steps defined on the class itself, without what its capabilities contribute."""
+        """The steps defined on the class itself, without the capabilities its calls pull in."""
         return super().get_steps()
 
     @classmethod
     @functools.cache
+    def installed_capabilities(cls) -> list["type[Capability]"]:
+        """Derived, never declared: returning a capability's request event from a step is what installs it."""
+        from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
+
+        return CapabilityCatalog.called_by(cls.get_own_steps())
+
+    @classmethod
+    @functools.cache
     def get_steps(cls) -> list[Callable]:
-        steps = list(cls.get_own_steps())
-        for capability in cls.capabilities:
-            steps.extend(capability.steps_for(cls))
-        cls._reject_duplicate_step_names(steps)
-        return steps
+        """The blueprint's own steps plus the capability steps its calls can trigger, as one flat set."""
+        from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
+
+        return [*cls.get_own_steps(), *CapabilityCatalog.reachable_steps(cls.get_own_steps())]
 
     @classmethod
-    def _reject_duplicate_step_names(cls, steps: list[Callable]) -> None:
-        """Step identity is the function name everywhere downstream (step store, tracer, graph), so two
-        steps sharing one would silently dedupe each other's executions."""
-        seen: set[str] = set()
-        for step in steps:
-            if step.__name__ in seen:
-                raise ValueError(f"{cls.__name__} has two steps named '{step.__name__}'.")
-            seen.add(step.__name__)
+    def validate_workflow(cls, agent_config_type: type[AgentConfig]) -> None:
+        """Refuse a blueprint whose composed workflow would stall or crash before it runs.
 
-    @classmethod
-    def validate_capabilities(cls, agent_config_type: type[AgentConfig]) -> None:
-        """Fail at runner start when a capability's steps would ask the dispatcher for a form mixin the
-        blueprint's config does not list as a base."""
-        for capability in cls.capabilities:
-            if not issubclass(agent_config_type, capability.required_config):
-                raise TypeError(
-                    f"{cls.__name__} installs {capability.__name__}, which needs a config with the "
-                    f"{capability.required_config.__name__} mixin, but {agent_config_type.__name__} lacks it."
-                )
+        Called by the runner with the config it was handed. Collects every problem at once: a step waiting for
+        an event nothing produces, two steps sharing a name, and a capability whose form mixin the config lacks.
+        """
+        from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
+
+        WorkflowValidation.for_blueprint(cls, agent_config_type).raise_for_problems()
 
     @classmethod
     @functools.cache

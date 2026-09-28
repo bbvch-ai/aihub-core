@@ -243,7 +243,7 @@ mail_batch_drafted_event:
   name: Batch Drafted
   description: The agent drafted replies for a batch of messages and appended them
     to the drafts folder for a human to review and send.
-enriched_chat_history_event:
+context_composed_event:
   name: Enriched Context
   description: The chat history the model receives, with every retrieved context block
     merged in

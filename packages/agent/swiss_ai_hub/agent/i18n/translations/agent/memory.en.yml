@@ -1,29 +1,25 @@
 ---
 steps:
-  retrieve_user_memory:
-    name: Retrieve User Memory
-    description: Retrieves relevant user-specific memories for personalized context
-  retrieve_organization_memory:
-    name: Retrieve Organization Memory
-    description: Retrieves relevant organization memories (expert knowledge) based
-      on user query
+  recall:
+    name: Recall Memory
+    description: Searches the user's and the organization's memories for the turn's query
+      and hands them over as context blocks.
   store_user_memory:
     name: Store User Memory
-    description: Persists conversation learnings to long-term user memory for future
-      interactions
+    description: Persists conversation learnings to long-term user memory for future interactions
 config:
   enable_user_memory_retrieval:
     label: Enable user memory retrieval
     help: Whether to retrieve user-specific memories for personalized context.
   rerank_user_memory:
     label: Rerank user memory
-    help: Rerank user memory search results using the configured reranker for higher
-      relevance. Adds latency and cost.
+    help: Rerank user memory search results using the configured reranker for higher relevance.
+      Adds latency and cost.
   enable_user_memory_storage:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.
   memory_llm:
     label: Memory model
-    help: Model that extracts and reconciles user memories. Extraction is short and
-      mechanical, so a smaller model is usually enough. Leave it disabled to use the
-      platform default; enabling starts from that same model.
+    help: Model that extracts and reconciles user memories. Extraction is short and mechanical,
+      so a smaller model is usually enough. Leave it disabled to use the platform default;
+      enabling starts from that same model.

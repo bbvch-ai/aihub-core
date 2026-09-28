@@ -258,7 +258,7 @@ mail_batch_drafted_event:
   description: Der Agent hat Antworten für einen Stapel von Nachrichten entworfen
     und sie in den Entwürfe-Ordner angehängt, damit ein Mensch sie prüfen und senden
     kann.
-enriched_chat_history_event:
+context_composed_event:
   name: Angereicherter Kontext
   description: Der Chat-Verlauf, den das Modell erhält, mit allen abgerufenen Kontextblöcken
 refusal_stop_event:

@@ -34,7 +34,7 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
 
 pytestmark = pytest.mark.self_hosted
 
-SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 
 def _config(agent_id: str) -> RAGAgentConfig:
@@ -52,6 +52,7 @@ def _config(agent_id: str) -> RAGAgentConfig:
         description=LocaleString(en="A test RAG agent."),
         llm=LLMConfig(model_name="text-generation/dummy"),
         retrievers=[],
+        condense_question=False,
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
     )
@@ -149,7 +150,7 @@ async def test_normal_question_opens_the_gate(monkeypatch):
 
     assert runner.has_event_of_class(NotAMetaQuestionEvent)
     # The gate opened: the condense step (first step past the gated entry steps) ran.
-    from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent
+    from swiss_ai_hub.core.events.agent import ConversationContextualizedEvent
 
-    assert runner.has_event_of_class(LimitChatHistoryEvent), "gate did not release the normal pipeline"
+    assert runner.has_event_of_class(ConversationContextualizedEvent), "gate did not release the normal pipeline"
     assert not runner.has_event_of_class(MetaQuestionDetectedEvent)

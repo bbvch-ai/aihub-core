@@ -2,7 +2,7 @@
 
 `condense_standalone_question` raises `EmptyCondensationError` (#1753), and `stop_on_error` defaults to True,
 so an uncaught raise reaches the dispatcher as an `ExceptionEvent` whose message the chat UI renders — the
-raw English sentence from the error class. The spine's `derive_query_step` catches it and returns the same
+raw English sentence from the error class. The conversation's `derive_query_step` catches it and returns the same
 `RefusalStopEvent` shape the input-size guards use, so every "we cannot serve this turn" case looks alike.
 """
 
@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
-    ConversationQueryEvent,
-    LimitChatHistoryEvent,
+    ConversationContextualizedEvent,
+    NotAMetaQuestionEvent,
     RefusalReason,
     RefusalStopEvent,
     StandaloneQuestionCondenserEvent,
@@ -23,9 +23,9 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 
-CONDENSE_PATH = "swiss_ai_hub.agent.capabilities.conversation.conversation_capability.condense_standalone_question"
+CONDENSE_PATH = "swiss_ai_hub.agent.capabilities.conversation.conversation.condense_standalone_question"
 
 
 def _displayer() -> MagicMock:
@@ -46,8 +46,8 @@ def _config() -> RAGAgentConfig:
 
 
 async def _run(displayer: MagicMock, locale: str = "en"):
-    history = LimitChatHistoryEvent(
-        limited_history=[
+    request = Conversation.contextualize(
+        history=[
             ChatMessage(role=MessageRole.USER, content="Do we offer a discount?"),
             ChatMessage(role=MessageRole.USER, content="what about part-timers?"),
         ]
@@ -55,8 +55,13 @@ async def _run(displayer: MagicMock, locale: str = "en"):
     with patch.object(LLMConfig, "cost_reporting_llm") as cost_reporting_llm:
         cost_reporting_llm.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
         cost_reporting_llm.return_value.__aexit__ = AsyncMock(return_value=False)
-        return await ConversationCapability.derive_query_step(
-            RAGAgent(), history=history, conversation=_config(), displayer=displayer, t=LocaleHandler(locale=locale)
+        return await Conversation.derive_query_step(
+            RAGAgent(),
+            request=request,
+            _cleared=NotAMetaQuestionEvent(reasoning="cleared"),
+            conversation=_config(),
+            displayer=displayer,
+            t=LocaleHandler(locale=locale),
         )
 
 
@@ -107,5 +112,5 @@ async def test_a_usable_condensation_still_returns_the_query_and_the_condenser_e
     with patch(CONDENSE_PATH, new=AsyncMock(return_value=condensed)):
         result = await _run(displayer)
 
-    assert [type(event) for event in result] == [StandaloneQuestionCondenserEvent, ConversationQueryEvent]
+    assert [type(event) for event in result] == [StandaloneQuestionCondenserEvent, ConversationContextualizedEvent]
     assert result[1].query == condensed.content

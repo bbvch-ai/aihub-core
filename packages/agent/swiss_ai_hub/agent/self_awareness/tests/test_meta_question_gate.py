@@ -2,8 +2,8 @@
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
-    ConversationQueryEvent,
-    LimitChatHistoryEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     MetaQuestionDetectedEvent,
     NotAMetaQuestionEvent,
     RetrieveOrganizationMemoryEvent,
@@ -37,36 +37,29 @@ def test_gate_lets_programmatic_starts_through():
     assert check_passed_meta_question_gate(programmatic_start, clear=None) is True
 
 
-def test_detection_is_the_only_step_firing_on_a_raw_chat_message_among_entry_steps():
+def test_detection_is_the_only_gate_between_the_call_and_the_query():
     """
-    On the conversational spine the gate sits on `derive_query_step`, the first step past the entry point:
-    it is the only step waiting on NotAMetaQuestionEvent, and everything that could do work for the turn —
-    enrichers, retrieval, the answer — is downstream of it. Limiting the history runs ungated on purpose:
-    it is cheap and side-effect free, and gating it would only delay detection's own input.
+    `derive_query_step` is the only step waiting on NotAMetaQuestionEvent, and it is the only producer of the
+    contextualized turn every other step hangs off, so nothing that does work for the turn can start before
+    inspection clears the message. The blueprint's entry step runs ungated on purpose: it only limits the
+    history and makes the call.
     """
     gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(NotAMetaQuestionEvent)}
     assert gated == {"derive_query_step"}
 
 
-def test_memory_steps_are_gated_transitively_through_the_query():
-    """
-    The memory enrichers hang off the spine's query event, which only exists past the gate, and the join
-    that feeds the answer pipeline waits for their blocks. A refactor that re-anchors them on the start
-    event alone must restore an explicit gate.
-    """
-    query_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(ConversationQueryEvent)}
-    assert {"retrieve_user_memory_step", "retrieve_organization_memory_step"} <= query_gated
-    limit_gated = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(LimitChatHistoryEvent)}
-    assert "assemble_context_step" in limit_gated
+def test_memory_and_retrieval_hang_off_the_contextualized_turn():
+    """Recall and retrieval consume the call's result, which only exists past the gate. A refactor that
+    re-anchors them on the start event alone must restore an explicit gate."""
+    on_turn = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(ConversationContextualizedEvent)}
+    assert {"recall_memory_step", "few_shot_guard_step", "retrieve_step", "assemble_prompt_step"} <= on_turn
 
 
-def test_detect_step_does_not_run_on_programmatic_start():
-    """detect_meta_question_step consumes only UserMessageEvent, so RAGStartEvent skips detection."""
-    detect_inputs = next(s._input_events for s in RAGAgent.get_steps() if s.__name__ == "detect_meta_question_step")
-    assert UserMessageEvent in detect_inputs
-    from swiss_ai_hub.core.events.agent import RAGStartEvent
-
-    assert RAGStartEvent not in detect_inputs
+def test_inspection_reads_the_call_never_a_start_event():
+    """Inspection consumes the contextualize request, so a programmatic start (no user query on it) is cleared
+    without a detection call and a chat message is inspected — the blueprint decides by what it hands over."""
+    inspect_inputs = next(s._input_events for s in RAGAgent.get_steps() if s.__name__ == "inspect_message_step")
+    assert inspect_inputs == {ContextualizeConversationEvent}
 
 
 def test_answer_step_terminates_and_skips_retrieval():

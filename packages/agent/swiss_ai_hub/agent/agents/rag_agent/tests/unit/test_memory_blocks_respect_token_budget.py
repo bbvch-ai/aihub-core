@@ -15,10 +15,6 @@ from unittest.mock import patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import (
-    ContextBlockEvent,
-    LimitChatHistoryEvent,
-)
 from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
     KnowledgeRetrieverConfig,
@@ -35,7 +31,7 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 _MODEL = "text-generation/gemma-4-31B-it"
@@ -107,17 +103,16 @@ async def _run_step(
 
 
 async def _run_spine_join(agent_type, config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
-    """Both RAG blueprints run on the conversational spine: the user-memory block arrives as a
-    `ContextBlockEvent` and the spine's join merges it, so the budget invariant is asserted on
-    `assemble_context_step`."""
+    """Both RAG blueprints ask the conversation to compose the prompt: the user-memory block arrives as a
+    block on the request and the capability merges it, so the budget invariant is asserted on
+    `compose_context_step`."""
     block = extend_chat_history_with_user_memory(
         chat_history=[], memories=memories, relations=[], user=fake_user(), t=LocaleHandler()
     )
-    return await ConversationCapability.assemble_context_step(
+    return await Conversation.compose_context_step(
         agent_type(),
-        history=LimitChatHistoryEvent(limited_history=history),
+        request=Conversation.compose(history, blocks=[block]),
         conversation=config,
-        blocks=[ContextBlockEvent(source="user_memory", messages=block)],
     )
 
 
@@ -134,7 +129,7 @@ async def test_extended_history_stays_within_the_configured_budget(agent_type):
 
     event = await _run_step(agent_type, config, _turns(12), _memories(10, "The user prefers a very specific thing"))
 
-    assert _token_count(config, event.extended_history) <= config.number_of_input_tokens
+    assert _token_count(config, event.history) <= config.number_of_input_tokens
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -145,7 +140,7 @@ async def test_memory_block_survives_when_the_budget_is_ample(agent_type):
 
     event = await _run_step(agent_type, config, _turns(4), _memories(3, "The user is based in Bern"))
 
-    system_messages = [m for m in event.extended_history if m.role == MessageRole.SYSTEM]
+    system_messages = [m for m in event.history if m.role == MessageRole.SYSTEM]
     assert system_messages, "the memory block was dropped despite a 128k budget"
     assert "Bern" in "\n".join(m.content or "" for m in system_messages)
 
@@ -164,8 +159,8 @@ async def test_the_memory_block_is_what_gives_way_not_the_latest_turn(agent_type
 
     event = await _run_step(agent_type, config, history, _memories(10, "A long remembered fact about the user"))
 
-    assert event.extended_history, "limiting must never empty the history"
-    assert event.extended_history[-1].content == history[-1].content
+    assert event.history, "limiting must never empty the history"
+    assert event.history[-1].content == history[-1].content
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -187,7 +182,7 @@ async def test_the_model_window_wins_over_a_higher_cost_ceiling(agent_type):
         window=600,
     )
 
-    assert _token_count(config, event.extended_history) <= 600
+    assert _token_count(config, event.history) <= 600
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -204,5 +199,5 @@ async def test_an_undeclared_window_falls_back_to_the_configured_ceiling(agent_t
         window=None,
     )
 
-    assert event.extended_history
-    assert _token_count(config, event.extended_history) <= config.number_of_input_tokens
+    assert event.history
+    assert _token_count(config, event.history) <= config.number_of_input_tokens

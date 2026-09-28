@@ -34,8 +34,8 @@ from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config impor
 pytestmark = pytest.mark.self_hosted
 
 FEW_SHOT_MODULE = "swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent"
-SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation_capability"
-SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
+SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 
 def _config() -> FewShotAgentConfig:
@@ -86,7 +86,7 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     # autospec, not monkeypatch.setattr: a bare stub silently accepts whatever the step passes, so when
     # the real helper gained its `user` parameter this test kept passing while production raised
     # TypeError on every guard rejection. autospec binds the call against the real signature instead.
-    with patch(f"{FEW_SHOT_MODULE}.generate_follow_up_questions", autospec=True, side_effect=fake_generate_follow_ups):
+    with patch(f"{SPINE_MODULE}.generate_follow_up_questions", autospec=True, side_effect=fake_generate_follow_ups):
         async with runner.test_run(delay_before_stop=20) as topic:
             await runner.send_event_from_topic(topic=topic, start_event=_user_message("Fight Club"))
 

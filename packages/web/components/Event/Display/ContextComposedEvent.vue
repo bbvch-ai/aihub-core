@@ -10,11 +10,11 @@
           name="lucide:layers"
           class="size-4"
         />
-        <span>{{ t('event.enrichedChatHistory.summary', { count: event.event.extended_history.length }) }}</span>
+        <span>{{ t('event.contextComposed.summary', { count: event.event.history.length }) }}</span>
       </div>
 
       <div
-        v-for="(message, index) in event.event.extended_history"
+        v-for="(message, index) in event.event.history"
         :key="index"
         class="flex flex-col gap-2"
       >
@@ -32,13 +32,13 @@
 
 <script setup lang="ts">
 import type {
-  EnrichedChatHistoryEvent,
+  ContextComposedEvent,
   ThreadDto,
   AgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: EnrichedChatHistoryEvent }
+  event: AgentEventReadable & { event: ContextComposedEvent }
   thread: ThreadDto
 }>()
 
@@ -48,13 +48,13 @@ const agentIcon = useAgentIconFromThread(props.event, props.thread)
 const getMessageName = (role: string) => {
   switch (role) {
     case 'user':
-      return t('event.enrichedChatHistory.user')
+      return t('event.contextComposed.user')
     case 'system':
-      return t('event.enrichedChatHistory.system')
+      return t('event.contextComposed.system')
     case 'assistant':
-      return t('event.enrichedChatHistory.assistant')
+      return t('event.contextComposed.assistant')
     default:
-      return t('event.enrichedChatHistory.assistant')
+      return t('event.contextComposed.assistant')
   }
 }
 </script>

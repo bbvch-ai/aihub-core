@@ -3,8 +3,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
+    ContextualizeConversationEvent,
     GuardRejectionEvent,
-    LimitChatHistoryEvent,
     LLMEvent,
     StandaloneQuestionCondenserEvent,
     UserMessageEvent,
@@ -128,9 +128,9 @@ def then_start_event_present(agent_runner: AgentTestRunner, payload: str):
     assert any(payload in m.content for m in user_messages), "No user message payload found in StartEvent"
 
 
-@then("a LimitChatHistoryEvent is present")
-def then_limit_chat_history_event(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_class(LimitChatHistoryEvent), "Agent did not produce a LimitChatHistoryEvent"
+@then("a ContextualizeConversationEvent is present")
+def then_contextualize_event(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_class(ContextualizeConversationEvent), "the turn was not contextualized"
 
 
 @then("a RightAgentEvent is present")

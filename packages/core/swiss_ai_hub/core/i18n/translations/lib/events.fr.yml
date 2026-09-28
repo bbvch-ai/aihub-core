@@ -255,7 +255,7 @@ mail_batch_drafted_event:
   name: Lot Rédigé
   description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
     au dossier des brouillons pour qu'un humain les révise et les envoie.
-enriched_chat_history_event:
+context_composed_event:
   name: Contexte enrichi
   description: L'historique de chat que le modèle reçoit, avec tous les blocs de contexte
     récupérés

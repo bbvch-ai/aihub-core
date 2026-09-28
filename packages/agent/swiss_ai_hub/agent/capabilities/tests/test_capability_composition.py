@@ -1,58 +1,64 @@
-"""The composition contract: what a blueprint gets from listing capabilities, and what stops it early.
+"""The composition contract: what returning a capability's request pulls in, and what refuses to run.
 
-Pinned on a throwaway blueprint rather than a production one so the assertions stay about the mechanism —
-own steps plus contributed steps in one flat set, defaults withheld when the blueprint provides them, name
-collisions and config mismatches refused before a run exists.
+Pinned on throwaway blueprints so the assertions stay about the mechanism — a call composes the capability's
+reachable steps, an unused call is pruned, and a blueprint that would stall, clash or run on the wrong config
+is refused before a run exists.
 """
-
-from typing import ClassVar
 
 import pytest
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
-    EnrichedChatHistoryEvent,
-    LimitChatHistoryEvent,
+    CompleteConversationEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     LLMEvent,
-    LLMStopEvent,
-    NotAMetaQuestionEvent,
     UserMessageEvent,
 )
 
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
+from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
+from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
+from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
+from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
+from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAgent
+from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.capabilities.capability import Capability
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
-from swiss_ai_hub.agent.capabilities.conversation.conversation_wiring import ConversationWiring
-from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
-from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
-class BareChatAgent(Agent):
-    """A spine-only blueprint: no detection, nothing that stops after the answer."""
+class EchoAgentConfig(ConversationFields, AgentConfig):
+    pass
 
-    capabilities: ClassVar[tuple[type[Capability], ...]] = (ConversationCapability,)
 
-    @step()
-    async def limit_chat_history_step(self, event: UserMessageEvent) -> LimitChatHistoryEvent:
-        return LimitChatHistoryEvent(limited_history=event.messages)
+class EchoAgent(Agent):
+    """Calls the conversation twice and nothing else."""
 
     @step()
-    async def respond_step(self, event: EnrichedChatHistoryEvent) -> LLMEvent:
-        return LLMEvent()
+    async def open_step(self, event: UserMessageEvent) -> ContextualizeConversationEvent:
+        return Conversation.contextualize(history=event.messages, message=event)
 
-
-class OwnStopAgent(BareChatAgent):
     @step()
-    async def stop_step(self, event: LLMEvent) -> LLMStopEvent:
-        return LLMStopEvent()
+    async def respond_step(self, ctx: ConversationContextualizedEvent) -> CompleteConversationEvent:
+        return Conversation.complete(answer=LLMEvent())
 
 
-class CollidingAgent(BareChatAgent):
+class ForgetfulAgent(Agent):
+    """Calls the conversation but never picks the result up."""
+
     @step()
-    async def derive_query_step(self, event: LimitChatHistoryEvent) -> None:
+    async def open_step(self, event: UserMessageEvent) -> ContextualizeConversationEvent:
+        return Conversation.contextualize(history=event.messages, message=event)
+
+
+class ClashingAgent(EchoAgent):
+    @step()
+    async def derive_query_step(self, ctx: ConversationContextualizedEvent) -> None:
         return None
 
 
@@ -60,57 +66,46 @@ def _names(agent: type[Agent]) -> set[str]:
     return {step.__name__ for step in agent.get_steps()}
 
 
-def test_contributed_steps_join_the_blueprints_own_in_one_flat_set():
-    assert {step.__name__ for step in BareChatAgent.get_own_steps()} == {"limit_chat_history_step", "respond_step"}
-    assert _names(BareChatAgent) == {
-        "limit_chat_history_step",
-        "respond_step",
-        "open_gate_step",
-        "derive_query_step",
-        "assemble_context_step",
-        "generate_conversation_title_step",
-        "stop_step",
-    }
-    assert BareChatAgent.get_start_events() == {UserMessageEvent}
-    assert LLMStopEvent in BareChatAgent.get_stop_events()
+def test_returning_a_request_installs_the_capability_it_belongs_to():
+    assert EchoAgent.installed_capabilities() == [Conversation]
+    assert {step.__name__ for step in EchoAgent.get_own_steps()} == {"open_step", "respond_step"}
+    assert {"inspect_message_step", "derive_query_step", "complete_conversation_step"} <= _names(EchoAgent)
+    assert not any(step in EchoAgent.get_steps() for step in Memory.own_steps())
 
 
-def test_the_gate_opener_is_withheld_when_detection_is_installed():
-    assert "open_gate_step" in _names(BareChatAgent)
-    for agent in (RAGAgent, LLMWrappingAgent):
-        assert "open_gate_step" not in _names(agent)
-        assert NotAMetaQuestionEvent in agent.get_output_events()
+def test_a_call_the_blueprint_never_makes_is_pruned_with_everything_behind_it():
+    assert "compose_context_step" not in _names(EchoAgent)
+    assert "compose_context_step" not in _names(FewShotAgent)
+    assert "compose_context_step" in _names(RAGAgent)
 
 
-def test_the_default_stop_is_withheld_when_the_blueprint_stops_itself():
-    spine_stop = ConversationCapability.stop_step
-    assert spine_stop in BareChatAgent.get_steps()
-    assert spine_stop in LLMWrappingAgent.get_steps()
-    assert spine_stop not in OwnStopAgent.get_steps()
-    assert spine_stop not in RAGAgent.get_steps()
-    assert "stop_step" in _names(RAGAgent)
+def test_a_result_nobody_consumes_is_refused():
+    with pytest.raises(ValueError, match="no step consumes its result ConversationContextualizedEvent"):
+        ForgetfulAgent.validate_workflow(EchoAgentConfig)
 
 
-def test_barrier_counts_follow_the_installed_capabilities():
-    assert ConversationWiring.count_enrichers(BareChatAgent) == 0
-    assert ConversationWiring.count_post_answer_hooks(BareChatAgent) == 0
-    for agent in (RAGAgent, LLMWrappingAgent):
-        assert ConversationWiring.count_enrichers(agent) == 2
-        assert ConversationWiring.count_post_answer_hooks(agent) == 1
+def test_a_config_without_the_mixin_is_refused():
+    with pytest.raises(ValueError, match="AgentConfig must list ConversationFields as a base"):
+        EchoAgent.validate_workflow(AgentConfig)
+    EchoAgent.validate_workflow(EchoAgentConfig)
 
 
 def test_a_step_name_collision_is_refused():
-    with pytest.raises(ValueError, match="two steps named 'derive_query_step'"):
-        CollidingAgent.get_steps()
+    with pytest.raises(ValueError, match="two steps are named 'derive_query_step'"):
+        ClashingAgent.validate_workflow(EchoAgentConfig)
 
 
-def test_a_config_that_misses_a_capability_base_is_refused_at_start():
-    with pytest.raises(TypeError, match="MemoryCapability"):
-        RAGAgent.validate_capabilities(ConversationFields)
-    with pytest.raises(TypeError, match="ConversationCapability"):
-        BareChatAgent.validate_capabilities(AgentConfig)
-
-
-def test_production_blueprints_install_the_same_three_capabilities():
-    for agent in (RAGAgent, LLMWrappingAgent):
-        assert agent.capabilities == (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
+@pytest.mark.parametrize(
+    ("agent", "config"),
+    [
+        (RAGAgent, RAGAgentConfig),
+        (ExpertRAGAgent, ExpertRAGAgentConfig),
+        (LLMWrappingAgent, LLMWrappingAgentConfig),
+        (FewShotAgent, FewShotAgentConfig),
+        (McpReactAgent, McpReactAgentConfig),
+    ],
+    ids=lambda value: getattr(value, "__name__", value),
+)
+def test_every_conversational_blueprint_validates(agent: type[Agent], config: type[AgentConfig]):
+    agent.validate_workflow(config)
+    assert {capability.__name__ for capability in agent.installed_capabilities()} == {"Conversation", "Memory"}

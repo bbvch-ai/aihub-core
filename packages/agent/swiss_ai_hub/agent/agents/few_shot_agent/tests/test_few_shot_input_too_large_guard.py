@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
-    LimitChatHistoryEvent,
+    ContextualizeConversationEvent,
     LLMStopEvent,
     UserMessageEvent,
 )
@@ -68,7 +68,7 @@ async def _run(
     displayer: MagicMock,
     windows: tuple[int | None, ...] = (MODEL_WINDOW, MODEL_WINDOW),
     number_of_input_tokens: int = 100_000,
-) -> LimitChatHistoryEvent | LLMStopEvent:
+) -> ContextualizeConversationEvent | LLMStopEvent:
     with _with_window(*windows):
         return await FewShotAgent().limit_chat_history_step(
             event=UserMessageEvent(user=fake_user(), messages=messages),
@@ -86,8 +86,8 @@ class TestAnInputThatFitsIsUntouched:
 
         result = await _run(messages, displayer)
 
-        assert isinstance(result, LimitChatHistoryEvent)
-        assert [msg.content for msg in result.limited_history] == [msg.content for msg in messages]
+        assert isinstance(result, ContextualizeConversationEvent)
+        assert [msg.content for msg in result.history] == [msg.content for msg in messages]
         displayer.display_chunk.assert_not_called()
 
     @pytest.mark.asyncio
@@ -97,9 +97,9 @@ class TestAnInputThatFitsIsUntouched:
 
         result = await _run([*turns, final], _displayer())
 
-        assert isinstance(result, LimitChatHistoryEvent)
-        assert len(result.limited_history) < len(turns)
-        assert result.limited_history[-1].content == final.content
+        assert isinstance(result, ContextualizeConversationEvent)
+        assert len(result.history) < len(turns)
+        assert result.history[-1].content == final.content
 
     @pytest.mark.asyncio
     async def test_client_system_messages_survive_trimming(self):
@@ -107,8 +107,8 @@ class TestAnInputThatFitsIsUntouched:
 
         result = await _run([system, *_alternating_turns(60, 2_000), _message(10)], _displayer())
 
-        assert isinstance(result, LimitChatHistoryEvent)
-        assert result.limited_history[0].content == "Client instructions."
+        assert isinstance(result, ContextualizeConversationEvent)
+        assert result.history[0].content == "Client instructions."
 
     @pytest.mark.asyncio
     async def test_a_large_turn_does_not_cost_the_earlier_conversation(self):
@@ -116,9 +116,9 @@ class TestAnInputThatFitsIsUntouched:
 
         result = await _run([_message(5_000), _message(5_000, MessageRole.ASSISTANT), turn], _displayer())
 
-        assert isinstance(result, LimitChatHistoryEvent)
-        assert result.limited_history[-1].content == turn.content
-        assert len(result.limited_history) > 1
+        assert isinstance(result, ContextualizeConversationEvent)
+        assert result.history[-1].content == turn.content
+        assert len(result.history) > 1
 
 
 class TestAnInputTooLargeForTheModelIsRefused:
@@ -164,7 +164,9 @@ class TestAnInputTooLargeForTheModelIsRefused:
     async def test_the_narrower_of_the_answer_and_task_model_windows_decides(self):
         turn = [_message(30_000)]
 
-        assert isinstance(await _run(turn, _displayer(), windows=(MODEL_WINDOW, MODEL_WINDOW)), LimitChatHistoryEvent)
+        assert isinstance(
+            await _run(turn, _displayer(), windows=(MODEL_WINDOW, MODEL_WINDOW)), ContextualizeConversationEvent
+        )
         assert isinstance(await _run(turn, _displayer(), windows=(MODEL_WINDOW, 8_192)), LLMStopEvent)
 
     @pytest.mark.asyncio
@@ -181,5 +183,5 @@ class TestAnUnknownWindowLeavesTheRunAlone:
 
         result = await _run([_message(200_000)], displayer, windows=(None, None))
 
-        assert isinstance(result, LimitChatHistoryEvent)
+        assert isinstance(result, ContextualizeConversationEvent)
         displayer.display_chunk.assert_not_called()

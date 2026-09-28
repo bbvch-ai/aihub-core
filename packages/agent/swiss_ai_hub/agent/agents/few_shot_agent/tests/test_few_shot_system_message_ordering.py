@@ -10,8 +10,8 @@ Pure unit test — create_few_shot_examples touches no infrastructure.
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
-    ConversationQueryEvent,
-    EnrichedChatHistoryEvent,
+    ConversationContextualizedEvent,
+    MemoryRecalledEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
@@ -39,10 +39,10 @@ def _config() -> FewShotAgentConfig:
 
 async def _build_context(chat_history: list[ChatMessage]) -> list[ChatMessage]:
     event = await FewShotAgent().create_few_shot_examples(
-        query=ConversationQueryEvent(query="What is Fight Club about?", condensed=True),
+        ctx=ConversationContextualizedEvent(history=chat_history, query="What is Fight Club about?", condensed=True),
         _=AgentSuitabilityAcceptEvent(reason="fits"),
+        memories=MemoryRecalledEvent(),
         start_event=UserMessageEvent(messages=chat_history, user=fake_user(), locale="en"),
-        history=EnrichedChatHistoryEvent(extended_history=chat_history),
         agent_config=_config(),
     )
     return event.full_context

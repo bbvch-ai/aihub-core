@@ -7,7 +7,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
-    ConversationQueryEvent,
+    ConversationContextualizedEvent,
     ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
@@ -211,13 +211,13 @@ async def do_few_shot_guard(
 
 
 async def do_retrieve(
-    event: ConversationQueryEvent | StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
+    event: ConversationContextualizedEvent | StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
     user: UserIdentity | None,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
-    if isinstance(event, ConversationQueryEvent):
+    if isinstance(event, ConversationContextualizedEvent):
         query = event.query
     elif isinstance(event, StandaloneQuestionCondenserEvent):
         query = event.condensed_question

@@ -1,21 +1,18 @@
 from typing import Annotated
 
+from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 
 
-class ConversationQueryEvent(ControlEvent):
+class ConversationContextualizedEvent(ControlEvent):
     """
-    The one query a conversational turn is answered for, released once the meta-question gate has cleared
-    the message.
-
-    Control-only: it exists so every step downstream of the entry point — enrichers, retrieval, memory
-    storage — reads the same question, whether the spine condensed it out of the history or took the last
-    user message as is. A blueprint that condenses also emits the display-facing
-    `StandaloneQuestionCondenserEvent`, which is what the chat renders.
+    The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query
+    every capability and the blueprint answer it for.
     """
 
+    history: Annotated[list[ChatMessage], Field(description="The limited chat history the request carried.")]
     query: Annotated[
         str,
         Field(description="The question this turn is answered for. Blank when the message carried no text."),

@@ -10,7 +10,7 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 class UserMemoryConfig(Form):
     """
-    Configuration for user-scoped memory, installed by `MemoryCapability`.
+    Configuration for user-scoped memory, read by the `Memory` capability.
 
     Supports duality pattern for form rendering and data validation.
     """

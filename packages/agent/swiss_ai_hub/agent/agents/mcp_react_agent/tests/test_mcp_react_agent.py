@@ -18,8 +18,8 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.runners import AgentTestRunner
 
-SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation_capability"
-SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
+SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 scenarios("./features/mcp_react_agent.feature")
 

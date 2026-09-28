@@ -3,25 +3,29 @@ from typing import ClassVar
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    AnswerPostProcessedEvent,
+    CompleteConversationEvent,
+    ComposeContextEvent,
+    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
-    ConversationQueryEvent,
-    EnrichedChatHistoryEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    LimitChatHistoryEvent,
     LLMEvent,
-    RAGFailureStopEvent,
+    MemoryRecalledEvent,
+    MemoryStorageRequestedEvent,
     RAGStartEvent,
-    RAGSuccessStopEvent,
+    RecallMemoryEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
+    StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, narrow_retrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
@@ -32,13 +36,10 @@ from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event imp
 from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
     LimitChatHistoryWithContextEvent,
 )
-from swiss_ai_hub.agent.capabilities.conversation.conversation_capability import ConversationCapability
-from swiss_ai_hub.agent.capabilities.conversation.conversation_preconditions import all_post_answer_hooks_reported
-from swiss_ai_hub.agent.capabilities.memory.memory_capability import MemoryCapability
-from swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability import SelfAwarenessCapability
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
@@ -77,10 +78,10 @@ class RAGAgent(Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
 
-    The blueprint itself is retrieval: it takes the enriched conversation, guards it, retrieves and orders
-    grounding documents, and answers from them. Everything a chat agent shares — the meta-question gate,
-    the turn's query, memory, the context join, the title and follow-ups — comes from the installed
-    capabilities, and the RAG-specific stop event is why the blueprint keeps its own stop step.
+    The blueprint is retrieval: it guards the query, retrieves and orders grounding documents, and answers
+    from them. It hands the conversation to the conversation capability (meta-question gate, query, title,
+    follow-ups, stop), asks the memory capability for what it remembers, and asks for the prompt with those
+    memories merged in. The outcome events are its own, passed to the completion as the stop.
 
     Note: For expert escalation functionality, use ExpertRAGAgent instead.
     """
@@ -88,8 +89,6 @@ class RAGAgent(Agent):
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.description")
     icon: ClassVar[str] = "mage:file"
-
-    capabilities = (ConversationCapability, SelfAwarenessCapability, MemoryCapability)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
@@ -102,17 +101,12 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        run_context: RunContext,
-    ) -> LimitChatHistoryEvent | RefusalStopEvent:
-        """The entry step: both start events become the limited history the spine picks up from.
+    ) -> ContextualizeConversationEvent | RefusalStopEvent:
+        """The entry step: both start events become the limited history the conversation picks up from.
 
-        Not gated on meta-question detection: limiting is cheap and side-effect free, and the spine holds
-        everything after it. A programmatic start hands its organization-memory scope to the memory
-        capability through the run context, since the capability cannot name this blueprint's start event.
+        A programmatic start carries no user message, so the conversation skips meta-question inspection.
         """
-        if isinstance(user_event, RAGStartEvent):
-            await run_context.set(MemoryCapability.REQUESTED_ORG_NAMESPACES_KEY, user_event.org_memory_namespaces)
-        return await do_limit_chat_history(
+        limited = await do_limit_chat_history(
             user_event.messages,
             agent_config.number_of_input_tokens,
             user_event.last_user_message,
@@ -120,6 +114,32 @@ class RAGAgent(Agent):
             displayer,
             t,
         )
+        if isinstance(limited, RefusalStopEvent):
+            return limited
+        message = user_event if isinstance(user_event, UserMessageEvent) else None
+        return Conversation.contextualize(history=limited.limited_history, message=message)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        icon="mdi:brain",
+    )
+    async def recall_memory_step(
+        self, ctx: ConversationContextualizedEvent, start_event: UserMessageEvent | RAGStartEvent
+    ) -> RecallMemoryEvent:
+        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
+        namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
+        return Memory.recall(ctx.query, namespaces)
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.description"),
+        icon="mdi:database-plus",
+    )
+    async def assemble_prompt_step(
+        self, ctx: ConversationContextualizedEvent, memories: MemoryRecalledEvent
+    ) -> ComposeContextEvent:
+        return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
@@ -128,14 +148,14 @@ class RAGAgent(Agent):
     )
     async def few_shot_guard_step(
         self,
-        event: ConversationQueryEvent,
+        ctx: ConversationContextualizedEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.query,
+            ctx.query,
             agent_config.few_shot_guard_examples,
             agent_config.task_llm,
             displayer,
@@ -150,7 +170,7 @@ class RAGAgent(Agent):
     )
     async def retrieve_step(
         self,
-        event: ConversationQueryEvent | ContextInsufficientWithQueryEvent,
+        event: ConversationContextualizedEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
@@ -177,7 +197,7 @@ class RAGAgent(Agent):
     async def rerank_nodes_step(
         self,
         event: RetrieverEvent,
-        query: ConversationQueryEvent,
+        ctx: ConversationContextualizedEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -185,7 +205,7 @@ class RAGAgent(Agent):
     ) -> RerankerEvent:
         return await do_rerank_nodes(
             event.nodes,
-            query.query,
+            ctx.query,
             agent_config.reranking_config,
             displayer,
             t,
@@ -223,13 +243,13 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
-        query: ConversationQueryEvent,
-        history: EnrichedChatHistoryEvent,
+        ctx: ConversationContextualizedEvent,
+        composed: ContextComposedEvent,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
-            query.query,
+            ctx.query,
             event.context_message,
             guard_config.check_context_sufficiency,
             guard_config.max_hops,
@@ -237,7 +257,7 @@ class RAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
-            chat_history=history.extended_history,
+            chat_history=composed.history,
             user=user,
         )
 
@@ -270,14 +290,14 @@ class RAGAgent(Agent):
     async def limit_chat_history_with_context_step(
         self,
         context_event: InOrderNodeCombinerEvent,
-        history: EnrichedChatHistoryEvent,
+        composed: ContextComposedEvent,
         _: ContextSufficientAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(
             context_event.context_message,
-            history.extended_history,
+            composed.history,
             start_event.last_user_message,
             agent_config.llm.token_counter,
             agent_config.number_of_input_tokens,
@@ -291,17 +311,19 @@ class RAGAgent(Agent):
     async def respond_with_llm_step(
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
-        history: EnrichedChatHistoryEvent,
+        composed: ContextComposedEvent,
+        ctx: ConversationContextualizedEvent,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
+        topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> LLMEvent:
-        """Answer as a non-terminal `LLMEvent` so the post-answer hooks run before the stop step."""
-        return await do_respond_with_llm(
+    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+        """Answer from the grounded context or a guard rejection, then hand the turn back with its outcome."""
+        answer = await do_respond_with_llm(
             event,
-            history.extended_history,
+            composed.history,
             guard_config.context_insufficient_prompt,
             agent_config.system_prompt,
             agent_config.llm,
@@ -310,39 +332,32 @@ class RAGAgent(Agent):
             user,
             as_stop_step=False,
         )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.description"),
-        precondition=all_post_answer_hooks_reported,
-    )
-    async def stop_step(
-        self,
-        llm_event: LLMEvent,
-        few_shot_reject: FewShotRejectEvent | None,
-        context_insufficient_reject: ContextInsufficientRejectEvent | None,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity | None = None,
-        _hooks: list[AnswerPostProcessedEvent] | None = None,
-    ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
-        """The blueprint's own stop, kept because its stop event tells a caller how the run ended.
-
-        Waits on the spine's post-answer barrier like the default stop would, and generates the follow-up
-        questions inline for the same reason: they are grounded on the answer and must be on the wire
-        before teardown.
-        """
-        await generate_follow_up_questions(
-            chat_messages=llm_event.chat_messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-        return do_finalize_rag_stop(
-            llm_event=llm_event,
+        stop = do_finalize_rag_stop(
+            llm_event=answer,
             expert_answer_context=None,
-            few_shot_reject=few_shot_reject,
-            context_insufficient_reject=context_insufficient_reject,
+            few_shot_reject=event if isinstance(event, FewShotRejectEvent) else None,
+            context_insufficient_reject=event if isinstance(event, ContextInsufficientRejectEvent) else None,
         )
+        return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)
+
+    @staticmethod
+    def hand_back(
+        ctx: ConversationContextualizedEvent,
+        answer: LLMEvent,
+        stop: StopEvent,
+        agent_config: RAGAgentConfig,
+        topic: AgentInstanceTopic,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+        """The memory delegation first, so it is published before the run tears down, and the completion last."""
+        remember = Memory.remember(
+            query=ctx.query,
+            answer=answer,
+            user=user,
+            topic=topic,
+            agent_config=agent_config,
+            memory=agent_config,
+            locale=t.locale,
+        )
+        return [*([remember] if remember else []), Conversation.complete(answer=answer, stop=stop)]

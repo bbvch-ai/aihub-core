@@ -271,7 +271,7 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
-  enrichedChatHistory:
+  contextComposed:
     summary: 'Contexte assemblé pour le modèle : {count} message | Contexte assemblé
       pour le modèle : {count} messages'
     description: L'historique de chat reçu par le modèle, avec tous les blocs de contexte
