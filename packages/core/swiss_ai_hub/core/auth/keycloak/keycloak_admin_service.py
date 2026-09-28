@@ -314,6 +314,33 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_preferred_locale(user_id: str) -> str | None:
+        """Reads the preferred_locale custom attribute from the Keycloak user."""
+        admin = _create_admin()
+        data = await admin.a_get_user(user_id)
+        user = KeycloakUser.model_validate(data)
+        preferred_locale = user.attributes.get("preferred_locale", [])
+        return preferred_locale[0] if preferred_locale else None
+
+    @staticmethod
+    @trace_fn
+    async def set_preferred_locale(user_id: str, locale: str) -> None:
+        """Writes the preferred_locale custom attribute on the Keycloak user.
+
+        Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
+        user profile validation. Callers validate the locale against
+        ``LocaleHandler.LOCALE_WHITE_LIST`` first; unlike the active tenant this
+        grants no access, so ``AccessChangeHook`` is deliberately not notified.
+        """
+        admin = _create_admin()
+        user = await admin.a_get_user(user_id)
+        attributes = user.get("attributes", {})
+        attributes["preferred_locale"] = [locale]
+        user["attributes"] = attributes
+        await admin.a_update_user(user_id, user)
+
+    @staticmethod
+    @trace_fn
     async def ensure_active_tenant(user_id: str) -> None:
         """Ensures the user has a valid active tenant, auto-selecting one if needed.
 

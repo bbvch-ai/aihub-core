@@ -61,17 +61,24 @@ You control what gets uploaded and where it lives. Uploading a document notifies
 normally begins within a minute or two rather than waiting for a scheduled run. A daily run still sweeps every database
 as a safety net, catching anything a missed notification would otherwise have left behind.
 
-### Auto-sync from external sources
+### Syncing from an external source
 
-Mark a database as auto-sync to connect it to external content sources like SharePoint. The system then:
+Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
+database. Pick the storage system (SharePoint or OneDrive, Google Drive, S3, Azure Blob, SFTP), enter its credentials,
+the folder to sync and optional include/exclude patterns. Credentials are stored encrypted and shown masked afterwards;
+re-saving the dialog without retyping them keeps the stored ones, so a rotation is a matter of editing the source. The
+system then:
 
-- Syncs files from the external source on a schedule (typically nightly)
-- Creates collections automatically from folder structure
-- Processes new content during the scheduled pipeline run
-- Disables manual uploads through the UI
+- Syncs files from the source on a daily schedule
+- Creates collections automatically from the top-level folders of the synced root (files directly in the root are
+  skipped and counted in the run)
+- Processes each synced file within a minute or two, like an upload
+- Disables manual uploads, hand-made collections and manual document deletion for that database
 
-The external system becomes the source of truth. Your team continues working in SharePoint, and the sync pipeline brings
-changes into the Swiss AI Hub on the configured schedule.
+The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
+including deletions, into the Swiss AI Hub. Giving a database that already holds uploaded documents a source asks for
+confirmation first, because the first sync removes everything the source does not have. Clearing the source turns the
+database back into a manually managed one; its files stay until you delete them.
 
 ### Deleting databases and collections
 
@@ -90,8 +97,9 @@ Deletion runs in the background. The moment you confirm, the item disappears fro
 uploads, while the platform frees the underlying storage shortly afterwards. If you later re-upload a document that was
 deleted, it is ingested again normally.
 
-Auto-synced databases cannot be deleted from the UI — their content is owned by the external source, which would simply
-re-sync it. Remove the external connection instead.
+A database with a source can be deleted as a whole, which also stops its sync and forgets its credentials. Its
+individual documents and collections cannot be deleted by hand, because the next sync would bring them back; remove them
+at the source instead.
 
 ## Document processing
 
@@ -140,13 +148,22 @@ parent, its collections (namespaces) are the children, and a rule on one level n
 | `aihub.user.knowledge.>`              | Browse every database and every collection                                                  |
 
 The seeded `AIHubKnowledgeUser` and `AIHubKnowledgeAdmin` roles bundle the last row and the first two rows respectively,
-and the role editor offers the same three rules as presets. Admin rules imply the matching user rule.
+and the role editor offers the same three rules as presets. Admin rules imply the matching user rule. Per resource, the
+role and tenant editors offer **Manage** on each database (`<db>` together with `<db>.>`) and **Use** and **Manage** on
+each collection (`<db>.<ns>`), so one collection can be handed to someone without the rest of its database.
 `aihub.admin.knowledge.>` covers every existing database and collection but not the bare `aihub.admin.knowledge` root,
 so a role that should create databases needs the root rule explicitly.
 
 Creating a resource grants access to it automatically, mirroring agent instances: the creator receives a per-resource
-admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rule
-unless a broader rule already covers it. Deleting a database or collection revokes those rules and roles again.
+admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rules
+unless a broader rule already covers them. A database is granted as `aihub.admin.knowledge.<db>` plus
+`aihub.admin.knowledge.<db>.>`, so its admin role and its tenant also reach every collection in it — including the ones
+a sync or ingestion pipeline creates, which are granted to no one when they appear. Deleting a database or collection
+revokes those rules and roles again.
+
+A new tenant's ceiling holds only `aihub.admin.knowledge`, never `aihub.admin.knowledge.>`. Databases are stored
+deployment-wide, so that wildcard would show a tenant every other tenant's knowledge; a tenant sees only the databases
+it created, plus any a sysadmin ticks for it in the tenant editor.
 
 ## Agent integration
 
@@ -183,8 +200,8 @@ each component for its specific task.
 
 ## Limitations
 
-No mixed modes: A database is either manually managed or auto-synced, not both. This prevents ambiguity about content
-sources.
+No mixed modes: A database is either manually managed or synced from one source, not both. This prevents ambiguity about
+who owns its content.
 
 No manual chunk editing: The system generates chunks automatically from source documents. To fix incorrect chunks,
 update the source document and reprocess.

@@ -2079,6 +2079,8 @@ class Pipe:
         self,
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID"],
+        agent_class: Annotated[str, "Agent type behind this answer"],
+        agent_id: Annotated[str, "Agent instance behind this answer"],
         event_emitter: Annotated[EventEmitter, "Event emitter function (one-way; do NOT use event_caller)"],
     ) -> None:
         """Post a `set-context` message to the parent window so its tracing/sources/memories side
@@ -2091,12 +2093,16 @@ class Pipe:
         unreliable when the session-pool cleanup lock is lost ("Unable to renew session cleanup
         lock. Exiting."). One-way emit doesn't depend on the ack path.
         """
+        # json.dumps rather than quoted interpolation: these values end up inside a script the
+        # browser executes, and a model name is not ours to trust with that.
         code = f"""
         window.parent.postMessage({{
             type: 'set-context',
-            thread_id: '{thread_id}',
-            display_id: '{display_id}',
-        }}, '{self.valves.AIHUB_FRONTEND_URL}');
+            thread_id: {json.dumps(thread_id)},
+            display_id: {json.dumps(display_id)},
+            agent_class: {json.dumps(agent_class)},
+            agent_name: {json.dumps(agent_id)},
+        }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
         """
 
         await event_emitter({"type": "execute", "data": {"code": code}})
@@ -2240,7 +2246,9 @@ class Pipe:
                     logger.warning(f"Failed to set conversation tags: {tag_error}")
 
                 async def stream_start_callback():
-                    await self._set_ui_context(thread_id, hitl_display_id, __event_emitter__)
+                    await self._set_ui_context(
+                        thread_id, hitl_display_id, agent_class, agent_id, __event_emitter__
+                    )
 
                 # Stream the conversation
                 await self._streaming_service.stream_response(

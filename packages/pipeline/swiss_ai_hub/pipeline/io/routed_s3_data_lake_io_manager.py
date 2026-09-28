@@ -17,7 +17,7 @@ class RoutedS3DataLakeIOManager(ConfigurableIOManager):
     bucket comes from the ``aihub/bucket`` run tag and the upstream keys are filtered to that bucket.
 
     Stage 2 never writes to the data lake (the observable source asset only reads), so ``handle_output`` is
-    intentionally unsupported.
+    intentionally unsupported; the source pipelines write through an explicit op instead.
     """
 
     encode_partition_keys: bool = True

@@ -47,8 +47,8 @@ Reorder the workflow in both agents so every memory operation consumes the conde
   the budget plus the blocks. `context_sufficient_guard_step`, `limit_chat_history_with_context_step`, and
   `respond_with_llm_step` consume the extended history when a memory source is enabled
   (`check_memory_added_to_chat_history` precondition), falling back to the plain limited history otherwise.
-- `store_user_memory_step` persists `build_memory_conversation(...)` = the condensed question plus the answer. The
-  final LLM input never reaches fact extraction again. The write is always the delegated one
+- `store_user_memory_step` persists `build_memory_conversation(...)` = the condensed question plus the answer. The final
+  LLM input never reaches fact extraction again. The write is always the delegated one
   (`2026_09_11_async_user_memory_storage_as_the_only_mode` retired the inline path); the payload contract toward
   `MemoryWriterAgent` (#1179) is unchanged.
 - `forward_to_expert_asking_agent_step` (ExpertRAG) sends the condensed question as `question_to_expert`, so a
@@ -74,21 +74,21 @@ prompt reconciles duplicates — re-feeding history only multiplies embedding co
   `limited_history` does. The limit is `effective_input_token_limit`, the configured ceiling capped by the narrowest
   model window: since #1880 the entry limiter trims against the window, and `number_of_input_tokens` is a cost ceiling
   that may sit above it, so re-limiting to the ceiling alone would let the blocks push a window-sized history back over
-  the window. Without that, three consumers would read an over-budget history unchecked:
-  `context_sufficient_guard` formats it straight into a prompt, `do_respond_with_llm`'s reject paths prepend a system
-  message and send it, and `limit_chat_history_with_context` *reserves* system messages rather than trimming them, so an
-  oversized block raises `ValueError` there instead of being cut. The blocks are ~450 (user) + ~375 (organization)
-  tokens at their retrieval caps.
+  the window. Without that, three consumers would read an over-budget history unchecked: `context_sufficient_guard`
+  formats it straight into a prompt, `do_respond_with_llm`'s reject paths prepend a system message and send it, and
+  `limit_chat_history_with_context` *reserves* system messages rather than trimming them, so an oversized block raises
+  `ValueError` there instead of being cut. The blocks are ~450 (user) + ~375 (organization) tokens at their retrieval
+  caps.
 - **(−)** When history plus blocks do not fit, the blocks are what is dropped: `ChatMemoryBuffer` keeps the most recent
   messages and the blocks sit at the front. That matches the pre-reorder order, where memory was added before the only
   limiter, and it is the right loser — the alternative is discarding the turn the user asked about, and the template
   presents memories as optional context. Pinned by `test_memory_blocks_respect_token_budget.py`.
 - **(−)** A personal statement fused into a question survives storage only as well as the condenser preserves it. The
-  condenser prompt (`lib.prompt.condenser.standalone_question`, all four locales) now instructs keeping short self-stated
-  facts in the standalone question — covering stated facts about the user only, and deliberately **not** verbatim code
-  blocks or logs: the same string is embedded for retrieval, so carrying unbounded pasted content back into it
-  reintroduces the embedder-window failure this decision exists to remove. Prompt compliance is probabilistic, so the
-  mitigation belongs in a Langfuse evaluation set rather than a CI assertion that would flake.
+  condenser prompt (`lib.prompt.condenser.standalone_question`, all four locales) now instructs keeping short
+  self-stated facts in the standalone question — covering stated facts about the user only, and deliberately **not**
+  verbatim code blocks or logs: the same string is embedded for retrieval, so carrying unbounded pasted content back
+  into it reintroduces the embedder-window failure this decision exists to remove. Prompt compliance is probabilistic,
+  so the mitigation belongs in a Langfuse evaluation set rather than a CI assertion that would flake.
 - Making the condensed question load-bearing everywhere makes an empty one fatal, so `condense_standalone_question`
   raises `EmptyCondensationError` on a blank answer and both condenser events reject blank content with a
   `field_validator` — on the field, because JetStream replay and redelivery deserialize events with no step body to

@@ -29,6 +29,13 @@ steps:
     name: Ferma
     description: Ferma l'agente quando la richiesta viene rifiutata dalla verifica
       di idoneità.
+thoughts:
+  input_too_large: "L'input non rientra nella finestra di contesto del modello: circa\
+    \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\
+    \ al modello viene rifiutata."
 messages:
+  input_too_large: Questo messaggio è troppo lungo perché io possa elaborarlo. Rispondo
+    in base ai miei esempi configurati e non leggo i documenti allegati. Per domande
+    su un file, usa un assistente pensato per i documenti.
   unsuitable_request: Non sono l'assistente giusto per questa richiesta, quindi non
     posso rispondere. %{reason}

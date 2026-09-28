@@ -237,10 +237,14 @@ process step methods do not need to handle routing details.
 
 #### Two-stage architecture
 
-Stage 1 is source-specific. Observable source assets monitor external storage systems (SharePoint, OneDrive, Google
-Drive, S3, SFTP via Rclone, or a local filesystem) for changes. Each file is assigned a dynamic partition key and a
-DataVersion (a hash-timestamp pair) that detects both content changes and metadata updates. When changes are detected,
-the pipeline downloads the file and writes it to the SeaweedFS data lake as a DataLakeFile.
+Stage 1 brings files into the data lake. The rclone source pipeline is configured per knowledge database from the UI: a
+database carries a `source` and an encrypted `source_configuration` (backend, credentials, root folder, patterns), and
+one deployed code location syncs every database whose source names it, resolving the target per run. Observable source
+assets monitor the external storage system (SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP via Rclone, or a
+local filesystem) for changes. Each file is assigned a dynamic partition key and a DataVersion (a hash-timestamp pair)
+that detects both content changes and metadata updates. When changes are detected, the pipeline downloads the file,
+writes it to the SeaweedFS data lake as a DataLakeFile under `{database}/{top-level folder}/` and announces the change
+to the ingestion pipeline with a SourceUpdatedEvent.
 
 Stage 2 is unified across all sources. An observable data lake asset monitors the SeaweedFS bucket for new or modified
 files. Downstream assets process each file through parsing (MinerU for OCR and structural extraction, with fallbacks for
@@ -256,22 +260,25 @@ parsing, refinement, and document store insertion into a single graph asset. `no
 embedding, and vector store insertion. `observable_rclone_factory`, `observable_share_point_factory`, and
 `observable_local_file_system_factory` create the Stage 1 source monitoring assets. The
 `document_ingestion_pipeline_definitions` function wires all Stage 2 factories, resources, sensors, and schedules into a
-complete Dagster Definitions object; the `default_*_to_datalake_definitions` builders do the same for Stage 1. A Stage 2
-pipeline names no bucket — it serves every knowledge database whose `BucketEntity.ingestor` matches, resolving the
-target per run.
+complete Dagster Definitions object; `rclone_pipeline_definitions` does the same for the rclone source pipeline, and the
+`default_*_to_datalake_definitions` builders for the deploy-time SharePoint and local-filesystem sources. Neither
+route-per-run pipeline names a bucket — the Stage 2 pipeline serves every knowledge database whose
+`BucketEntity.ingestor` matches, the source pipeline every database whose `BucketEntity.source` matches, both resolving
+the target per run.
 
 #### Resources and I/O managers
 
 Resources abstract external dependencies for Dagster's dependency injection. DocumentParserResource routes files to the
 appropriate parser by type. EmbeddingModelResource and LanguageModelResource wrap LiteLLM model names. Data lake clients
-(S3DataLakeClient, AzureDataLakeClient) provide cloud-agnostic storage access. SharePointResource, RcloneResource, and
-LocalFileSystemResource configure source connectors.
+(S3DataLakeClient, AzureDataLakeClient) provide cloud-agnostic storage access. SharePointResource and
+LocalFileSystemResource configure the deploy-time source connectors; the rclone source pipeline has no resource and
+instead rebuilds each database's remote in the rclone daemon per run from the stored configuration.
 
 I/O managers handle asset persistence. S3DataLakeIOManager reads and writes DataLakeFile objects to SeaweedFS with
 metadata stored as S3 object tags. DocStoreIOManager persists RefDocDocument objects to MongoDB via LlamaIndex's
 KVDocumentStore. VectorStoreIOManager upserts TextNode objects to Milvus with retry logic for eventual consistency.
-Source-specific I/O managers (SharePointIOManager, RcloneIOManager, LocalFileSystemIOManager) provide read-only access
-to external sources.
+Source-specific I/O managers (SharePointIOManager, RoutedRcloneIOManager, LocalFileSystemIOManager) provide read-only
+access to external sources.
 
 ### swiss_ai_hub.bot (packages/bot)
 

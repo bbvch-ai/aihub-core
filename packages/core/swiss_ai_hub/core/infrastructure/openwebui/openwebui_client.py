@@ -301,7 +301,10 @@ class OpenWebuiClient:
             "name": model["name"],
             "meta": model.get("meta", {}),
             "params": model.get("params", {}),
-            "access_grants": [g.model_dump() for g in access_grants] if access_grants else None,
+            # An explicit [] is required to clear access — OpenWebUI's update endpoint treats a
+            # null access_grants as "leave untouched", so sending None here would let a revoked
+            # grant silently survive instead of being cleared.
+            "access_grants": [g.model_dump() for g in access_grants],
         }
         if model.get("base_model_id"):
             form["base_model_id"] = model["base_model_id"]

@@ -341,8 +341,13 @@ class AgentService:
         """
         Retrieve the current configuration data for a specific agent.
         Returns empty dict if no configuration has been saved.
+
+        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
+        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
+        other coroutine in this process, so a loop busy with event persistence can burn that budget
+        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
         """
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}

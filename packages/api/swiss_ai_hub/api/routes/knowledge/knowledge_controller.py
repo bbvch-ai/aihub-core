@@ -39,6 +39,8 @@ from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.paginated_documents_response import PaginatedDocumentsResponse
+from swiss_ai_hub.api.routes.knowledge.dto.source_pipeline_dto import SourcePipelineDTO
+from swiss_ai_hub.api.routes.knowledge.dto.update_database_source_request import UpdateDatabaseSourceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
 
@@ -91,11 +93,15 @@ class KnowledgeController(TenantScopedController):
                         for ns in db.namespaces
                         if access_checker.has_access(f"aihub.user.knowledge.{db.name}.{ns.name}")
                     ]
+                    # Secrets are masked, but hosts, endpoints, tenant ids and folder paths are still the
+                    # administrator's business: only the source editor needs them, and it is admin-gated.
+                    manages_database = access_checker.has_access(f"aihub.admin.knowledge.{db.name}")
                     accessible_databases.append(
                         DatabaseDTO(
                             name=db.name,
                             display_name=db.display_name,
-                            auto_sync=db.auto_sync,
+                            source=db.source,
+                            source_configuration=db.source_configuration if manages_database else {},
                             deletable=db.deletable,
                             ingestor=db.ingestor,
                             namespaces=accessible_namespaces,
@@ -244,6 +250,38 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
+    def get_source_pipelines(self, route: str = "/source-pipelines") -> Self:
+        @self.router.get(route, tags=self.tags, summary="Get selectable source pipelines")
+        async def get_source_pipelines(
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[SourcePipelineDTO]:
+            """
+            Returns the source pipelines a knowledge database can be filled from, with their configuration forms.
+            """
+            return KnowledgeService.get_source_pipelines(t)
+
+        return self
+
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage_database")
+    def update_database_source(self, route: str = "/databases/{database}/source") -> Self:
+        @self.router.put(route, tags=self.tags, summary="Set or clear a knowledge database's source")
+        async def update_database_source(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            request: UpdateDatabaseSourceRequest,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> DatabaseResponse:
+            """
+            Replaces the database's source and its configuration; secrets resubmitted as the mask keep their stored
+            value. Takes effect on the source pipeline's next run.
+            """
+            if database in self._non_browsable_database_names:
+                raise HTTPException(status_code=403, detail=self._NOT_AUTHORIZED_TO_VIEW_DATABASE_DETAIL)
+            return await KnowledgeService.update_database_source(database, request, t, user)
+
+        return self
+
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.create")
     def create_database(self, route: str = "/databases/{database}") -> Self:
         @self.router.post(route, tags=self.tags)
@@ -275,7 +313,7 @@ class KnowledgeController(TenantScopedController):
 
         return self
 
-    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage_database")
     def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_namespace(
@@ -308,10 +346,15 @@ class KnowledgeController(TenantScopedController):
             """
             Updates display name and description for an existing namespace.
             """
-            return await KnowledgeService.update_namespace(namespace, request, t, user, self.translation_llm_config)
+            return await KnowledgeService.update_namespace(
+                database, namespace, request, t, user, self.translation_llm_config
+            )
 
         return self
 
+    # The one annotated admin guard at namespace depth, and so what gives each folder its own "Manage" row in the
+    # role and tenant editors. Every folder-level admin route shares this guard, so one entry covers them all.
+    @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.manage")
     def initiate_document_upload(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/upload/initiate"
     ) -> Self:

@@ -434,6 +434,9 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -462,6 +465,9 @@ export const AgentClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -665,6 +671,9 @@ export const AgentConfigDTOSchema = {
                 $ref: "#/components/schemas/InputText",
               },
               {
+                $ref: "#/components/schemas/KnowledgeCollectionSelector",
+              },
+              {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelector",
               },
               {
@@ -693,6 +702,9 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/Repeater",
+              },
+              {
+                $ref: "#/components/schemas/SecretFileInput",
               },
               {
                 $ref: "#/components/schemas/Select",
@@ -1400,6 +1412,38 @@ export const AgentSelectorSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -2377,93 +2421,114 @@ export const BatchDeleteDocumentsResponseSchema = {
   description: "Per-document results of a best-effort batch deletion.",
 } as const;
 
-export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema =
-  {
-    properties: {
-      file: {
+export const Body_create_incidentSchema = {
+  properties: {
+    submission: {
+      type: "string",
+      title: "Submission",
+      description: "Answers to the form, as a JSON object",
+    },
+    attachments: {
+      items: {
         type: "string",
         contentMediaType: "application/octet-stream",
-        title: "File",
-        description: "The audio file to transcribe",
       },
-      model: {
-        type: "string",
-        title: "Model",
-        description: "ID of the model to use",
-      },
-      language: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Language",
-        description: "ISO-639-1 language code",
-      },
-      prompt: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Prompt",
-        description: "Optional text prompt",
-      },
-      response_format: {
-        anyOf: [
-          {
-            type: "string",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Response Format",
-        description: "Format of the response",
-        default: "json",
-      },
-      temperature: {
-        anyOf: [
-          {
-            type: "number",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Temperature",
-        description: "Sampling temperature between 0 and 1",
-        default: 0,
-      },
-      timestamp_granularities: {
-        anyOf: [
-          {
-            items: {
-              type: "string",
-              enum: ["word", "segment"],
-            },
-            type: "array",
-          },
-          {
-            type: "null",
-          },
-        ],
-        title: "Timestamp Granularities",
-        description:
-          "Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
-      },
+      type: "array",
+      title: "Attachments",
+      description: "Files to file with the report",
+      default: [],
     },
-    type: "object",
-    required: ["file", "model"],
-    title:
-      "Body_create_transcription__tenant_id__openai_audio_transcriptions_post",
-  } as const;
+  },
+  type: "object",
+  required: ["submission"],
+  title: "Body_create_incident",
+} as const;
+
+export const Body_create_transcriptionSchema = {
+  properties: {
+    file: {
+      type: "string",
+      contentMediaType: "application/octet-stream",
+      title: "File",
+      description: "The audio file to transcribe",
+    },
+    model: {
+      type: "string",
+      title: "Model",
+      description: "ID of the model to use",
+    },
+    language: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Language",
+      description: "ISO-639-1 language code",
+    },
+    prompt: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt",
+      description: "Optional text prompt",
+    },
+    response_format: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Response Format",
+      description: "Format of the response",
+      default: "json",
+    },
+    temperature: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Temperature",
+      description: "Sampling temperature between 0 and 1",
+      default: 0,
+    },
+    timestamp_granularities: {
+      anyOf: [
+        {
+          items: {
+            type: "string",
+            enum: ["word", "segment"],
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Timestamp Granularities",
+      description:
+        "Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format",
+    },
+  },
+  type: "object",
+  required: ["file", "model"],
+  title: "Body_create_transcription",
+} as const;
 
 export const BucketMetadataFiltersSchema = {
   properties: {
@@ -2749,6 +2814,38 @@ export const CascadeSelectSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -3067,11 +3164,21 @@ export const ChatCompletionSchema = {
       const: "chat.completion",
       title: "Object",
     },
+    moderation: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/Moderation",
+        },
+        {
+          type: "null",
+        },
+      ],
+    },
     service_tier: {
       anyOf: [
         {
           type: "string",
-          enum: ["auto", "default", "flex", "scale", "priority"],
+          enum: ["auto", "default", "flex", "scale", "priority", "fast"],
         },
         {
           type: "null",
@@ -3319,6 +3426,9 @@ export const ChatCompletionContentPartImageParamSchema = {
       const: "image_url",
       title: "Type",
     },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -3337,6 +3447,9 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
       type: "string",
       const: "input_audio",
       title: "Type",
+    },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
     },
   },
   additionalProperties: true,
@@ -3375,6 +3488,9 @@ export const ChatCompletionContentPartTextParamSchema = {
       type: "string",
       const: "text",
       title: "Type",
+    },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/PromptCacheBreakpoint",
     },
   },
   additionalProperties: true,
@@ -3773,6 +3889,10 @@ export const ChatCompletionRequestSchema = {
         {
           type: "string",
           enum: [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+            "gpt-5.5",
             "gpt-5.4",
             "gpt-5.4-mini",
             "gpt-5.4-nano",
@@ -4043,7 +4163,7 @@ export const ChatCompletionRequestSchema = {
       anyOf: [
         {
           type: "string",
-          enum: ["none", "minimal", "low", "medium", "high", "xhigh"],
+          enum: ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
         },
         {
           type: "null",
@@ -4495,6 +4615,38 @@ export const CheckboxSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeCheckbox",
@@ -4750,6 +4902,38 @@ export const ChipsInputSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -5167,6 +5351,38 @@ export const ColorPickerSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -5977,7 +6193,26 @@ export const CreateDatabaseRequestSchema = {
       title: "Configuration",
       description:
         "The database's configuration as submitted through the ingestor's announced form: its multilingual name and description plus every knob the pipeline declares. Validated against the ingestor's schema.",
-      default: {},
+    },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.",
     },
   },
   type: "object",
@@ -6173,6 +6408,33 @@ export const CreateTokenResponseSchema = {
   title: "CreateTokenResponse",
 } as const;
 
+export const CreatedIncidentDTOSchema = {
+  properties: {
+    number: {
+      type: "integer",
+      title: "Number",
+      description: "Issue number in the incident repository",
+    },
+    reference: {
+      type: "string",
+      title: "Reference",
+      description:
+        "Reference shown to the reporter and used in attachment paths",
+    },
+    attachments: {
+      type: "integer",
+      title: "Attachments",
+      description: "How many files were filed with the report",
+      default: 0,
+    },
+  },
+  type: "object",
+  required: ["number", "reference"],
+  title: "CreatedIncidentDTO",
+  description:
+    "What the reporter is shown after submitting.\n\nCarries the issue number so support and reporter can name the same report, but no issue\nURL: the reporter has no GitHub account and a link they cannot open reads as a broken\npromise rather than a receipt.",
+} as const;
+
 export const CronInputSchema = {
   properties: {
     is_formkit_element: {
@@ -6226,6 +6488,38 @@ export const CronInputSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -6622,16 +6916,31 @@ export const DatabaseDTOSchema = {
       title: "Display Name",
       description: "Localized display name of database",
     },
-    auto_sync: {
-      type: "boolean",
-      title: "Auto Sync",
-      description: "Whether this database auto-syncs namespaces",
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked; empty for manual upload.",
     },
     deletable: {
       type: "boolean",
       title: "Deletable",
       description:
-        "Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.",
+        "Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.",
     },
     ingestor: {
       type: "string",
@@ -6652,7 +6961,7 @@ export const DatabaseDTOSchema = {
   required: [
     "name",
     "display_name",
-    "auto_sync",
+    "source",
     "deletable",
     "ingestor",
     "namespaces",
@@ -6684,7 +6993,26 @@ export const DatabaseResponseSchema = {
       title: "Configuration",
       description:
         "The ingestor's settings for this database, as validated against its announced schema.",
-      default: {},
+    },
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database; null for manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings for this database, secret fields masked.",
     },
     display_name: {
       anyOf: [
@@ -6944,6 +7272,38 @@ export const DatePickerSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -8422,6 +8782,9 @@ export const FileSchema = {
       const: "file",
       title: "Type",
     },
+    prompt_cache_breakpoint: {
+      $ref: "#/components/schemas/FilePromptCacheBreakpoint",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -8449,6 +8812,22 @@ export const FileFileSchema = {
   additionalProperties: true,
   type: "object",
   title: "FileFile",
+} as const;
+
+export const FilePromptCacheBreakpointSchema = {
+  properties: {
+    mode: {
+      type: "string",
+      const: "explicit",
+      title: "Mode",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["mode"],
+  title: "FilePromptCacheBreakpoint",
+  description:
+    "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
 } as const;
 
 export const FollowUpQuestionsEventSchema = {
@@ -8736,6 +9115,9 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -8764,6 +9146,9 @@ export const FullProcessInstanceDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -8945,6 +9330,38 @@ export const GroupSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     $formkit: {
       type: "string",
       const: "group",
@@ -9034,6 +9451,9 @@ export const GroupSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9062,6 +9482,9 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -9420,6 +9843,38 @@ export const HtmlElementSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     $el: {
       type: "string",
       title: "$El",
@@ -9553,6 +10008,9 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9581,6 +10039,9 @@ export const HumanInDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -9702,6 +10163,9 @@ export const HumanInSpecsSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -9730,6 +10194,9 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -10730,6 +11197,38 @@ export const IconSelectorSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "iconSelector",
@@ -11264,6 +11763,217 @@ export const ImagesResponseSchema = {
   description: "The response from the image generation endpoint.",
 } as const;
 
+export const IncidentAttachmentsDTOSchema = {
+  properties: {
+    label: {
+      type: "string",
+      title: "Label",
+      description: "Heading shown above the picker",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Guidance shown under the label",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether at least one file must be attached",
+    },
+    accept: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Accept",
+      description: "Accepted extensions, each with its leading dot",
+    },
+    max_files: {
+      type: "integer",
+      title: "Max Files",
+      description: "How many files one report may carry",
+    },
+    max_bytes: {
+      type: "integer",
+      title: "Max Bytes",
+      description: "Largest single attachment accepted, in bytes",
+    },
+  },
+  type: "object",
+  required: [
+    "label",
+    "description",
+    "required",
+    "accept",
+    "max_files",
+    "max_bytes",
+  ],
+  title: "IncidentAttachmentsDTO",
+  description:
+    "How the reporter's file picker should be configured.\n\nWording and accepted types come from the form definition, the two limits from the\ndeployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also\nhave to hunt down a translated string that repeats the old number.",
+} as const;
+
+export const IncidentAvailabilityDTOSchema = {
+  properties: {
+    enabled: {
+      type: "boolean",
+      title: "Enabled",
+      description: "True when an incident repository is configured",
+    },
+  },
+  type: "object",
+  required: ["enabled"],
+  title: "IncidentAvailabilityDTO",
+  description:
+    "Whether this deployment files reports at all.\n\nAnswered with 200 on every deployment, unlike the form and submit endpoints, so the UI can\ndecide whether to draw the report button without a 404 that the shell's global error handler\nwould toast at a user who has not done anything yet.",
+} as const;
+
+export const IncidentFormDTOSchema = {
+  properties: {
+    elements: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Elements",
+      description: "Form elements to render, with known values prefilled",
+    },
+    submission_specs: {
+      additionalProperties: true,
+      type: "object",
+      title: "Submission Specs",
+      description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
+    },
+  },
+  type: "object",
+  required: ["elements", "submission_specs"],
+  title: "IncidentFormDTO",
+  description:
+    "The report form, already carrying what the platform knows about this reporter.",
+} as const;
+
 export const IngestedNodeSchema = {
   properties: {
     source: {
@@ -11654,6 +12364,9 @@ export const IngestorDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -11682,6 +12395,9 @@ export const IngestorDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -11792,6 +12508,38 @@ export const InputMaskSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -12045,6 +12793,38 @@ export const InputNumberSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -12377,6 +13157,38 @@ export const InputOtpSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeInputOtp",
@@ -12582,6 +13394,38 @@ export const InputTextSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -12865,6 +13709,38 @@ export const KnobSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeKnob",
@@ -13101,6 +13977,237 @@ export const KnobSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
 } as const;
 
+export const KnowledgeCollectionSelectorSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
+} as const;
+
 export const KnowledgeDatabaseSelectorSchema = {
   properties: {
     is_formkit_element: {
@@ -13154,6 +14261,38 @@ export const KnowledgeDatabaseSelectorSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -14063,6 +15202,38 @@ export const ListboxSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeListbox",
@@ -14298,6 +15469,38 @@ export const LocaleInputSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -16564,6 +17767,38 @@ export const ModelSelectSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "modelSelect",
@@ -16737,6 +17972,249 @@ export const ModelTypeGroupDTOSchema = {
   title: "ModelTypeGroupDTO",
 } as const;
 
+export const ModerationSchema = {
+  properties: {
+    input: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ModerationInputModerationResults",
+        },
+        {
+          $ref: "#/components/schemas/ModerationInputError",
+        },
+      ],
+      title: "Input",
+    },
+    output: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ModerationOutputModerationResults",
+        },
+        {
+          $ref: "#/components/schemas/ModerationOutputError",
+        },
+      ],
+      title: "Output",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["input", "output"],
+  title: "Moderation",
+  description:
+    "Moderation results for the request input and generated output, if moderated\ncompletions were requested.",
+} as const;
+
+export const ModerationInputErrorSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+    message: {
+      type: "string",
+      title: "Message",
+    },
+    type: {
+      type: "string",
+      const: "error",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code", "message", "type"],
+  title: "ModerationInputError",
+  description: "An error produced while attempting moderation.",
+} as const;
+
+export const ModerationInputModerationResultsSchema = {
+  properties: {
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/ModerationInputModerationResultsResult",
+      },
+      type: "array",
+      title: "Results",
+    },
+    type: {
+      type: "string",
+      const: "moderation_results",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["model", "results", "type"],
+  title: "ModerationInputModerationResults",
+  description:
+    "Successful moderation results for the request input or generated output.",
+} as const;
+
+export const ModerationInputModerationResultsResultSchema = {
+  properties: {
+    categories: {
+      additionalProperties: {
+        type: "boolean",
+      },
+      type: "object",
+      title: "Categories",
+    },
+    category_applied_input_types: {
+      additionalProperties: {
+        items: {
+          type: "string",
+          enum: ["text", "image"],
+        },
+        type: "array",
+      },
+      type: "object",
+      title: "Category Applied Input Types",
+    },
+    category_scores: {
+      additionalProperties: {
+        type: "number",
+      },
+      type: "object",
+      title: "Category Scores",
+    },
+    flagged: {
+      type: "boolean",
+      title: "Flagged",
+    },
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    type: {
+      type: "string",
+      const: "moderation_result",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "categories",
+    "category_applied_input_types",
+    "category_scores",
+    "flagged",
+    "model",
+    "type",
+  ],
+  title: "ModerationInputModerationResultsResult",
+  description: "A moderation result produced for the response input or output.",
+} as const;
+
+export const ModerationOutputErrorSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+    message: {
+      type: "string",
+      title: "Message",
+    },
+    type: {
+      type: "string",
+      const: "error",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code", "message", "type"],
+  title: "ModerationOutputError",
+  description: "An error produced while attempting moderation.",
+} as const;
+
+export const ModerationOutputModerationResultsSchema = {
+  properties: {
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    results: {
+      items: {
+        $ref: "#/components/schemas/ModerationOutputModerationResultsResult",
+      },
+      type: "array",
+      title: "Results",
+    },
+    type: {
+      type: "string",
+      const: "moderation_results",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["model", "results", "type"],
+  title: "ModerationOutputModerationResults",
+  description:
+    "Successful moderation results for the request input or generated output.",
+} as const;
+
+export const ModerationOutputModerationResultsResultSchema = {
+  properties: {
+    categories: {
+      additionalProperties: {
+        type: "boolean",
+      },
+      type: "object",
+      title: "Categories",
+    },
+    category_applied_input_types: {
+      additionalProperties: {
+        items: {
+          type: "string",
+          enum: ["text", "image"],
+        },
+        type: "array",
+      },
+      type: "object",
+      title: "Category Applied Input Types",
+    },
+    category_scores: {
+      additionalProperties: {
+        type: "number",
+      },
+      type: "object",
+      title: "Category Scores",
+    },
+    flagged: {
+      type: "boolean",
+      title: "Flagged",
+    },
+    model: {
+      type: "string",
+      title: "Model",
+    },
+    type: {
+      type: "string",
+      const: "moderation_result",
+      title: "Type",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "categories",
+    "category_applied_input_types",
+    "category_scores",
+    "flagged",
+    "model",
+    "type",
+  ],
+  title: "ModerationOutputModerationResultsResult",
+  description: "A moderation result produced for the response input or output.",
+} as const;
+
 export const MultiSelectSchema = {
   properties: {
     is_formkit_element: {
@@ -16790,6 +18268,38 @@ export const MultiSelectSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -16965,6 +18475,22 @@ export const MultiSelectSchema = {
   required: ["label", "options", "validation"],
   title: "MultiSelect",
   description: "https://formkit-primevue.netlify.app/inputs/MultiSelect",
+} as const;
+
+export const MyLocaleDTOSchema = {
+  properties: {
+    locale: {
+      type: "string",
+      title: "Locale",
+      description: "ISO 639-1 language code, one of: de, en, fr, it.",
+      examples: ["en"],
+    },
+  },
+  type: "object",
+  required: ["locale"],
+  title: "MyLocaleDTO",
+  description:
+    "The UI language the user wants persisted against their account.",
 } as const;
 
 export const MyTenantsResponseSchema = {
@@ -17707,6 +19233,38 @@ export const PasswordSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primePassword",
@@ -18007,6 +19565,9 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -18035,6 +19596,9 @@ export const ProcessClassDTOSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -18545,6 +20109,22 @@ export const ProgramWorkResponseDTOSchema = {
     "DTO representing a program work response with specific program-related information.",
 } as const;
 
+export const PromptCacheBreakpointSchema = {
+  properties: {
+    mode: {
+      type: "string",
+      const: "explicit",
+      title: "Mode",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["mode"],
+  title: "PromptCacheBreakpoint",
+  description:
+    "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
+} as const;
+
 export const PromptTokensDetailsSchema = {
   properties: {
     audio_tokens: {
@@ -18557,6 +20137,17 @@ export const PromptTokensDetailsSchema = {
         },
       ],
       title: "Audio Tokens",
+    },
+    cache_write_tokens: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Cache Write Tokens",
     },
     cached_tokens: {
       anyOf: [
@@ -18932,6 +20523,38 @@ export const RadioButtonSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeRadioButton",
@@ -19152,6 +20775,38 @@ export const RatingSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -19380,6 +21035,38 @@ export const RepeaterSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     $formkit: {
       type: "string",
       const: "repeater",
@@ -19543,6 +21230,9 @@ export const RepeaterSchema = {
             $ref: "#/components/schemas/InputText",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelector",
           },
           {
@@ -19571,6 +21261,9 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
           },
           {
             $ref: "#/components/schemas/Select",
@@ -20412,6 +22105,236 @@ export const SearchContextCostPerQueryDTOSchema = {
     "LiteLLM reports search context cost per query broken down by context size, not as a single value.",
 } as const;
 
+export const SecretFileInputSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "secretFileInput",
+      title: "Formkit",
+      description: "Secret file input element.",
+      default: "secretFileInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    accept: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accept",
+      description: "File types the picker offers, e.g. '.json'",
+    },
+    maxSizeBytes: {
+      type: "integer",
+      title: "Maxsizebytes",
+      description: "Largest file accepted, checked before it is read",
+      default: 65536,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "validation"],
+  title: "SecretFileInput",
+  description:
+    "A secret that is handed out as a file, such as a service-account key, picked instead of pasted.\n\nThe browser reads the file and submits its text contents, so the value is an ordinary string: it is\nencrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.",
+} as const;
+
 export const SelectSchema = {
   properties: {
     is_formkit_element: {
@@ -20465,6 +22388,38 @@ export const SelectSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -20745,6 +22700,38 @@ export const SelectButtonSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -21277,6 +23264,38 @@ export const SliderSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeSlider",
@@ -21458,6 +23477,157 @@ export const SortOrderSchema = {
   type: "integer",
   enum: [1, -1],
   title: "SortOrder",
+} as const;
+
+export const SourcePipelineDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelector",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelect",
+          },
+          {
+            $ref: "#/components/schemas/Checkbox",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInput",
+          },
+          {
+            $ref: "#/components/schemas/ColorPicker",
+          },
+          {
+            $ref: "#/components/schemas/CronInput",
+          },
+          {
+            $ref: "#/components/schemas/DatePicker",
+          },
+          {
+            $ref: "#/components/schemas/Group",
+          },
+          {
+            $ref: "#/components/schemas/IconSelector",
+          },
+          {
+            $ref: "#/components/schemas/InputMask",
+          },
+          {
+            $ref: "#/components/schemas/InputNumber",
+          },
+          {
+            $ref: "#/components/schemas/InputOtp",
+          },
+          {
+            $ref: "#/components/schemas/InputText",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelector",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelector",
+          },
+          {
+            $ref: "#/components/schemas/Knob",
+          },
+          {
+            $ref: "#/components/schemas/Listbox",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelect",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelect",
+          },
+          {
+            $ref: "#/components/schemas/Password",
+          },
+          {
+            $ref: "#/components/schemas/RadioButton",
+          },
+          {
+            $ref: "#/components/schemas/Rating",
+          },
+          {
+            $ref: "#/components/schemas/Repeater",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInput",
+          },
+          {
+            $ref: "#/components/schemas/Select",
+          },
+          {
+            $ref: "#/components/schemas/SelectButton",
+          },
+          {
+            $ref: "#/components/schemas/Slider",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelect",
+          },
+          {
+            $ref: "#/components/schemas/Textarea",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButton",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitch",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInput",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
 } as const;
 
 export const StandaloneQuestionCondenserEventSchema = {
@@ -22062,6 +24232,38 @@ export const TenantSelectSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "tenantSelect",
@@ -22356,6 +24558,38 @@ export const TextareaSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -22849,7 +25083,8 @@ export const ThreadReferenceSchema = {
     thread_id: {
       type: "string",
       title: "Thread Id",
-      description: "The thread ID that owns the requested display",
+      description:
+        "The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.",
     },
   },
   type: "object",
@@ -22918,6 +25153,38 @@ export const ToggleButtonSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -23163,6 +25430,38 @@ export const ToggleSwitchSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -23587,6 +25886,20 @@ export const TranscriptionSchema = {
       type: "string",
       title: "Text",
     },
+    languages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/TranscriptionLanguage",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Languages",
+    },
     logprobs: {
       anyOf: [
         {
@@ -23622,6 +25935,20 @@ export const TranscriptionSchema = {
   title: "Transcription",
   description:
     "Represents a transcription response returned by model, based on the provided input.",
+} as const;
+
+export const TranscriptionLanguageSchema = {
+  properties: {
+    code: {
+      type: "string",
+      title: "Code",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["code"],
+  title: "TranscriptionLanguage",
+  description: "A language detected in transcribed audio.",
 } as const;
 
 export const TranscriptionSegmentSchema = {
@@ -23946,6 +26273,40 @@ export const UpdateAgentInstanceDTOSchema = {
   required: ["configuration"],
   title: "UpdateAgentInstanceDTO",
   description: "Request body for updating an agent instance configuration.",
+} as const;
+
+export const UpdateDatabaseSourceRequestSchema = {
+  properties: {
+    source: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source",
+      description:
+        "The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.",
+    },
+    source_configuration: {
+      additionalProperties: true,
+      type: "object",
+      title: "Source Configuration",
+      description:
+        "The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.",
+    },
+    replace_existing_documents: {
+      type: "boolean",
+      title: "Replace Existing Documents",
+      description:
+        "Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.",
+      default: false,
+    },
+  },
+  type: "object",
+  title: "UpdateDatabaseSourceRequest",
 } as const;
 
 export const UpdateMemoryRequestSchema = {
@@ -24620,6 +26981,19 @@ export const UserWithAccessDTOSchema = {
       description:
         "The user's resolved access rules (union of their roles), to drive the capability view.",
     },
+    preferred_locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Preferred Locale",
+      description:
+        "The user's persisted UI language, or null if they have never chosen one.",
+    },
   },
   type: "object",
   required: ["id", "name", "email", "access", "access_rules"],
@@ -24716,6 +27090,38 @@ export const VectorStoreInputSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -25388,6 +27794,9 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -25416,6 +27825,9 @@ export const AgentClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -25619,6 +28031,9 @@ export const AgentConfigDTOWritableSchema = {
                 $ref: "#/components/schemas/InputTextWritable",
               },
               {
+                $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+              },
+              {
                 $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
               },
               {
@@ -25647,6 +28062,9 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/RepeaterWritable",
+              },
+              {
+                $ref: "#/components/schemas/SecretFileInputWritable",
               },
               {
                 $ref: "#/components/schemas/SelectWritable",
@@ -26051,6 +28469,38 @@ export const AgentSelectorWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -26733,6 +29183,38 @@ export const CascadeSelectWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeCascadeSelect",
@@ -27055,6 +29537,38 @@ export const CheckboxWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeCheckbox",
@@ -27306,6 +29820,38 @@ export const ChipsInputWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "chipsInput",
@@ -27534,6 +30080,38 @@ export const ColorPickerWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -28165,6 +30743,38 @@ export const CronInputWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "cronInput",
@@ -28414,6 +31024,38 @@ export const DatePickerWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -29248,6 +31890,9 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29276,6 +31921,9 @@ export const FullProcessInstanceDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -29387,6 +32035,38 @@ export const GroupWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     $formkit: {
       type: "string",
       const: "group",
@@ -29476,6 +32156,9 @@ export const GroupWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29504,6 +32187,9 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -29778,6 +32464,9 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29806,6 +32495,9 @@ export const HumanInDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -29927,6 +32619,9 @@ export const HumanInSpecsWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -29955,6 +32650,9 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -30541,6 +33239,38 @@ export const IconSelectorWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "iconSelector",
@@ -30722,6 +33452,145 @@ export const IconSelectorWritableSchema = {
     'A FormKit element for selecting or entering an Iconify icon name.\n\nThis element renders as an editable select with icon preview capability.\nUsers can either select from preset icon options or enter any valid Iconify icon name.\nThe selected/entered icon is displayed live in the input field.\n\n### Features\n- Dropdown with preset icon options (each showing the icon preview)\n- Editable input for entering custom Iconify icon names\n- Live icon preview in the input field\n- Supports any valid Iconify icon (e.g., \'lucide:bot\', \'meteor-icons:robot\')\n\n### Example Usage\n```python\nclass MyAgentConfig(AgentConfig):\n    icon: Annotated[\n        str | IconSelector,\n        Field(description="Icon for the agent"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyAgentConfig(\n    ...,\n    icon=IconSelector(label=LocaleString(en="Icon", de="Symbol")),\n)\n\n# Data mode - from submission:\nconfig = MyAgentConfig(\n    ...,\n    icon="mage:robot",\n)\n```',
 } as const;
 
+export const IncidentFormDTOWritableSchema = {
+  properties: {
+    elements: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Elements",
+      description: "Form elements to render, with known values prefilled",
+    },
+    submission_specs: {
+      additionalProperties: true,
+      type: "object",
+      title: "Submission Specs",
+      description: "JSON Schema a submission to this form is validated against",
+    },
+    attachments: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/IncidentAttachmentsDTO",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Picker configuration, when the definition declares an upload field",
+    },
+  },
+  type: "object",
+  required: ["elements", "submission_specs"],
+  title: "IncidentFormDTO",
+  description:
+    "The report form, already carrying what the platform knows about this reporter.",
+} as const;
+
 export const IngestorDTOWritableSchema = {
   properties: {
     name: {
@@ -30800,6 +33669,9 @@ export const IngestorDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -30828,6 +33700,9 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -30920,6 +33795,38 @@ export const InputMaskWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -31168,6 +34075,38 @@ export const InputNumberWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -31495,6 +34434,38 @@ export const InputOtpWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeInputOtp",
@@ -31695,6 +34666,38 @@ export const InputTextWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -31938,6 +34941,38 @@ export const KnobWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeKnob",
@@ -32169,6 +35204,232 @@ export const KnobWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Knob",
 } as const;
 
+export const KnowledgeCollectionSelectorWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "knowledgeCollectionSelector",
+      title: "Formkit",
+      description: "Knowledge collection selector element.",
+      default: "knowledgeCollectionSelector",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    agentRef: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Agentref",
+      description:
+        "Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.",
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder for the multi-select",
+    },
+    filter: {
+      type: "boolean",
+      title: "Filter",
+      description: "Whether to enable filtering/search",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "KnowledgeCollectionSelector",
+  description:
+    'A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves\nfrom.\n\nRenders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to\nretrieve from, grouped by knowledge database. The options come from that agent rather than from the whole\ncatalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection\noutside the agent\'s own configuration drops the retriever entirely and answers from nothing, which a check\nagainst the catalogue alone cannot catch.\n\nThe output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated\nrun unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_namespaces: Annotated[\n        list[BucketNamespacePair] | KnowledgeCollectionSelector | None,\n        Field(default=None, description="Collections replies are grounded in"),\n    ] = None\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_namespaces=KnowledgeCollectionSelector(\n                label=LocaleString(en="Knowledge Collections"),\n                agent_ref="knowledge_delegation.rag_agent",\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])\n```\n\nPair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and\n`None` then means "every collection the agent retrieves from" while a list means "these and no others".',
+} as const;
+
 export const KnowledgeDatabaseSelectorWritableSchema = {
   properties: {
     is_formkit_element: {
@@ -32222,6 +35483,38 @@ export const KnowledgeDatabaseSelectorWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -32991,6 +36284,38 @@ export const ListboxWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeListbox",
@@ -33221,6 +36546,38 @@ export const LocaleInputWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -33998,6 +37355,38 @@ export const ModelSelectWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "modelSelect",
@@ -34219,6 +37608,38 @@ export const MultiSelectWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -34547,6 +37968,38 @@ export const PasswordWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primePassword",
@@ -34842,6 +38295,9 @@ export const ProcessClassDTOWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -34870,6 +38326,9 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -35357,6 +38816,38 @@ export const RadioButtonWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeRadioButton",
@@ -35572,6 +39063,38 @@ export const RatingWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -35795,6 +39318,38 @@ export const RepeaterWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     $formkit: {
       type: "string",
       const: "repeater",
@@ -35958,6 +39513,9 @@ export const RepeaterWritableSchema = {
             $ref: "#/components/schemas/InputTextWritable",
           },
           {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
             $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
           },
           {
@@ -35986,6 +39544,9 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
           },
           {
             $ref: "#/components/schemas/SelectWritable",
@@ -36549,6 +40110,231 @@ export const RunStatisticsWritableSchema = {
   description: "Statistics for a single run, intended for API response.",
 } as const;
 
+export const SecretFileInputWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "secretFileInput",
+      title: "Formkit",
+      description: "Secret file input element.",
+      default: "secretFileInput",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    accept: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Accept",
+      description: "File types the picker offers, e.g. '.json'",
+    },
+    maxSizeBytes: {
+      type: "integer",
+      title: "Maxsizebytes",
+      description: "Largest file accepted, checked before it is read",
+      default: 65536,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label"],
+  title: "SecretFileInput",
+  description:
+    "A secret that is handed out as a file, such as a service-account key, picked instead of pasted.\n\nThe browser reads the file and submits its text contents, so the value is an ordinary string: it is\nencrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.",
+} as const;
+
 export const SelectWritableSchema = {
   properties: {
     is_formkit_element: {
@@ -36602,6 +40388,38 @@ export const SelectWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -36877,6 +40695,38 @@ export const SelectButtonWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -37290,6 +41140,38 @@ export const SliderWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeSlider",
@@ -37460,6 +41342,157 @@ export const SliderWritableSchema = {
   required: ["label"],
   title: "Slider",
   description: "https://formkit-primevue.netlify.app/inputs/Slider",
+} as const;
+
+export const SourcePipelineDTOWritableSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description:
+        "Source pipeline identifier, as served by GET /knowledge/source-pipelines.",
+    },
+    display_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Display Name",
+      description: "Localized name of the source pipeline.",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+      description: "Localized description of where the files come from.",
+    },
+    form: {
+      items: {
+        oneOf: [
+          {
+            $ref: "#/components/schemas/HtmlElement",
+          },
+          {
+            $ref: "#/components/schemas/AgentSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/CascadeSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/CheckboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/ChipsInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ColorPickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/CronInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/DatePickerWritable",
+          },
+          {
+            $ref: "#/components/schemas/GroupWritable",
+          },
+          {
+            $ref: "#/components/schemas/IconSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputMaskWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputOtpWritable",
+          },
+          {
+            $ref: "#/components/schemas/InputTextWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeCollectionSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnowledgeDatabaseSelectorWritable",
+          },
+          {
+            $ref: "#/components/schemas/KnobWritable",
+          },
+          {
+            $ref: "#/components/schemas/ListboxWritable",
+          },
+          {
+            $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/MultiSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/PasswordWritable",
+          },
+          {
+            $ref: "#/components/schemas/RadioButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/RatingWritable",
+          },
+          {
+            $ref: "#/components/schemas/RepeaterWritable",
+          },
+          {
+            $ref: "#/components/schemas/SecretFileInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/SelectButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/SliderWritable",
+          },
+          {
+            $ref: "#/components/schemas/TenantSelectWritable",
+          },
+          {
+            $ref: "#/components/schemas/TextareaWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleButtonWritable",
+          },
+          {
+            $ref: "#/components/schemas/ToggleSwitchWritable",
+          },
+          {
+            $ref: "#/components/schemas/VectorStoreInputWritable",
+          },
+        ],
+      },
+      type: "array",
+      title: "Form",
+      description:
+        "FormKit elements a database's source is configured through, localized.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["name", "display_name", "description"],
+  title: "SourcePipelineDTO",
 } as const;
 
 export const StandaloneQuestionCondenserEventWritableSchema = {
@@ -37852,6 +41885,38 @@ export const TenantSelectWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "tenantSelect",
@@ -38032,6 +42097,38 @@ export const TextareaWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -38489,6 +42586,38 @@ export const ToggleButtonWritableSchema = {
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
     },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
     formkit: {
       type: "string",
       const: "primeToggleButton",
@@ -38728,6 +42857,38 @@ export const ToggleSwitchWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",
@@ -39197,6 +43358,38 @@ export const VectorStoreInputWritableSchema = {
       title: "Defaultenabled",
       description:
         "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
     },
     formkit: {
       type: "string",

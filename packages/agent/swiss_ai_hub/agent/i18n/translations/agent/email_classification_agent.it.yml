@@ -1,10 +1,8 @@
 ---
 metadata:
-  name: Agente di classificazione e-mail
-  description: Legge ogni messaggio non letto in una casella, decide a quale categoria
-    appartiene e lo archivia nella cartella di quella categoria. La posta di cui non
-    è sicuro va in una cartella di riserva. Non invia mai. Per le categorie che lo
-    richiedono, le risposte vengono redatte e lasciate nella cartella Bozze.
+  name: Agente di elaborazione e-mail
+  description: Smista la posta non letta in cartelle per categoria e redige risposte
+    che una persona invia.
 steps:
   list_unread:
     name: Elenca e-mail non lette

@@ -362,31 +362,23 @@ processes them through MinerU parsing, chunking, embedding, and Milvus vector st
 — observable assets detect changes, dynamic partitions track individual files, and eager automation propagates updates
 through the entire chain.
 
-This pipeline connects to a legacy SFTP server, syncs documents into the data lake, then parses, chunks, embeds, and
-indexes them for RAG — with hierarchical summaries and LLM-powered table refinement:
+Stage 1 needs no code of its own: the platform's `rclone_pipeline` code location syncs every knowledge database that
+picks a **Source** in the create dialog. The backend (SharePoint or OneDrive, Google Drive, S3, Azure Blob, SFTP), its
+credentials, root folder and include/exclude patterns are stored encrypted on the database itself, and one deployment
+serves all such databases, resolving the target per run. Each top-level folder of the synced root becomes a namespace,
+and every synced or removed file is announced to the ingestion pipeline the way an upload is.
+
+Stage 2 is where a deployment adds its own processing. This ingestor parses, chunks, embeds and indexes documents for
+RAG, with hierarchical summaries and LLM-powered table refinement, for every database that selects it:
 
 ```python
-from swiss_ai_hub.pipeline.util import default_rclone_to_datalake_definitions, document_ingestion_pipeline_definitions
+from swiss_ai_hub.pipeline.util import document_ingestion_pipeline_definitions
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import DocumentIngestionPipelineSettings
-from swiss_ai_hub.core.rclone import sftp_source
-
-# Stage 1: SFTP → Data Lake
-# sftp_source() reads RCLONE_SFTP_* env vars (host, user, key file)
-sftp = sftp_source()
-
-stage_1 = default_rclone_to_datalake_definitions(
-    datalake_container_name="acme-knowledge-base",
-    datalake_directory_name="contracts",             # namespace in the vector store
-    rclone_config=sftp,
-    source_remote=f"{sftp.name}:/legal/contracts",   # path on the SFTP server
-    include_patterns=["*.pdf", "*.docx"],            # only sync documents
-    observe_job_hour=1,                              # check for changes daily at 01:00
-)
 
 # Stage 2: Data Lake → Vector Store
 # Serves every knowledge database assigned to this ingestor, resolving the target per run
-stage_2 = document_ingestion_pipeline_definitions(
+defs = document_ingestion_pipeline_definitions(
     ingestor="acme_rag",
     display_name=LocaleString(en="Acme RAG"),
     description=LocaleString(en="Contracts and legal documents"),
@@ -396,13 +388,9 @@ stage_2 = document_ingestion_pipeline_definitions(
 )
 ```
 
-Stage 1 runs as a Dagster code location that observes the SFTP server on a daily schedule. When files change, Rclone
-syncs them into SeaweedFS. Stage 2 runs as a separate code location that watches the same S3 bucket — when new files
-land, eager automation triggers MinerU parsing, structural chunking, embedding, and Milvus upsert. Deleted source files
-cascade through both stages automatically.
-
-Source connectors for SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP, and local filesystems ship as templates
-with ready-to-use configuration.
+The source pipeline observes each database's remote on a daily schedule and writes changed files into SeaweedFS. The
+ingestion pipeline runs as a separate code location: when a file lands, eager automation triggers MinerU parsing,
+structural chunking, embedding, and Milvus upsert. Deleted source files cascade through both stages automatically.
 
 ______________________________________________________________________
 

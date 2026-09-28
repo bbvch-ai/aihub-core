@@ -148,6 +148,19 @@ docker compose up -d
 Core and customer code can be rolled back independently if they were updated separately. If both were updated together,
 roll back core first, then customer code.
 
+::: warning Services with forward-only migrations cannot be rolled back this way
+"If data remains compatible" is the operative condition, and it does not hold for every service. Langfuse applies
+forward-only Postgres and ClickHouse migrations on startup, so once an update has run them, downloading the previous
+bundle restores the older **binaries** against the newer **schema**. There is no supported downgrade path.
+
+Restoring a pre-update backup is not a rollback either: the restore validates only that the expected artifacts are
+present, carries no schema-version stamp, and reverts Postgres and ClickHouse independently with no cross-consistency
+check and no post-restore migration step.
+
+Before updating a release that bumps Langfuse, take a backup you are willing to treat as one-way, and plan forward
+recovery rather than rollback.
+:::
+
 ______________________________________________________________________
 
 ## Compatibility

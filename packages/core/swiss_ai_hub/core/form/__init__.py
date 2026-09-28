@@ -15,10 +15,13 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.group import Group
     from swiss_ai_hub.core.form.elements.input_number import InputNumber
     from swiss_ai_hub.core.form.elements.input_text import InputText
+    from swiss_ai_hub.core.form.elements.knowledge_collection_selector import KnowledgeCollectionSelector
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
+    from swiss_ai_hub.core.form.elements.password import Password
     from swiss_ai_hub.core.form.elements.repeater import Repeater
+    from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
     from swiss_ai_hub.core.form.elements.slider import Slider
@@ -49,12 +52,15 @@ __all__ = [
     "Group",
     "InputNumber",
     "InputText",
+    "KnowledgeCollectionSelector",
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
+    "Password",
     "PrimeVueElement",
     "Repeater",
     "SecretFieldWalker",
+    "SecretFileInput",
     "Select",
     "SelectButton",
     "Slider",
@@ -82,12 +88,15 @@ _LAZY_IMPORTS = {
     "Group": "swiss_ai_hub.core.form.elements.group",
     "InputNumber": "swiss_ai_hub.core.form.elements.input_number",
     "InputText": "swiss_ai_hub.core.form.elements.input_text",
+    "KnowledgeCollectionSelector": "swiss_ai_hub.core.form.elements.knowledge_collection_selector",
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
+    "Password": "swiss_ai_hub.core.form.elements.password",
     "PrimeVueElement": "swiss_ai_hub.core.form.base.prime_vue_element",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
+    "SecretFileInput": "swiss_ai_hub.core.form.elements.secret_file_input",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

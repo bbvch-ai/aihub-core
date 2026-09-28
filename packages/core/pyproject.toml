@@ -152,6 +152,7 @@ markers = [
     "slow: mark a test as slow",
     "unit: hermetic test using fakes; safe to run anywhere",
     "integration: requires real external services; opt-in",
+    "flaky: mark a test as flaky (may fail intermittently)",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]
