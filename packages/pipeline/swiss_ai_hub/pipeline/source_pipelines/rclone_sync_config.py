@@ -4,7 +4,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator
-from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, Select
+from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, SecretFileInput, Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure.rclone import RcloneBackendType, RcloneSettings, RcloneSourceConfig
@@ -12,6 +12,8 @@ from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
+_TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE)
+_KEY_FILE_MAX_BYTES = 65536
 
 
 def _when(backend: RcloneBackendType) -> str:
@@ -33,6 +35,16 @@ def _secret(backend: RcloneBackendType, key: str) -> Password:
         help=LocaleString.from_i18n_path(f"{_I18N}.{backend.value}.{key}.help"),
         feedback=False,
         toggle_mask=True,
+        condition_if=_when(backend),
+    )
+
+
+def _secret_file(backend: RcloneBackendType, key: str, accept: str) -> SecretFileInput:
+    return SecretFileInput(
+        label=LocaleString.from_i18n_path(f"{_I18N}.{backend.value}.{key}.label"),
+        help=LocaleString.from_i18n_path(f"{_I18N}.{backend.value}.{key}.help"),
+        accept=accept,
+        max_size_bytes=_KEY_FILE_MAX_BYTES,
         condition_if=_when(backend),
     )
 
@@ -78,13 +90,13 @@ class GoogleDriveOptions(Form):
     client_secret: Annotated[str | Password, Field(description="OAuth client secret.")] = ""
     token: Annotated[str | Password, Field(description="Pre-obtained OAuth token JSON.")] = ""
     service_account_credentials: Annotated[
-        str | Password, Field(description="Service account JSON, instead of an OAuth token.")
+        str | SecretFileInput, Field(description="Service account key file JSON, instead of an OAuth token.")
     ] = ""
     root_folder_id: Annotated[str | InputText, Field(description="Folder id to treat as the root.")] = ""
 
     @field_validator("token", "service_account_credentials", mode="after")
     @classmethod
-    def _single_line_json(cls, value: str | Password) -> str | Password:
+    def _single_line_json(cls, value: str | Password | SecretFileInput) -> str | Password | SecretFileInput:
         """rclone's config store refuses values with line breaks, and Google hands out pretty-printed key files:
         re-serialize the blob on one line so what the user pasted is what rclone accepts."""
         if not isinstance(value, str) or not value.strip():
@@ -101,7 +113,7 @@ class GoogleDriveOptions(Form):
             client_id=_text(backend, "client_id"),
             client_secret=_secret(backend, "client_secret"),
             token=_secret(backend, "token"),
-            service_account_credentials=_secret(backend, "service_account_credentials"),
+            service_account_credentials=_secret_file(backend, "service_account_credentials", accept=".json"),
             root_folder_id=_text(backend, "root_folder_id"),
         )
 
@@ -225,9 +237,14 @@ class RcloneSyncConfig(SourcePipelineConfig):
 
     @classmethod
     def offered_backends(cls) -> list[RcloneBackendType]:
-        """Every backend but ``local`` unless the deployment names a directory the daemon may serve from."""
+        """Only the backends verified end to end, plus ``local`` where the deployment names a directory the daemon
+        may serve from. The other backends stay configurable so databases already set up with them keep syncing."""
         allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
-        return [b for b in RcloneBackendType if b is not RcloneBackendType.LOCAL or allowed_root]
+        return [
+            backend
+            for backend in RcloneBackendType
+            if backend in _TESTED_BACKENDS or (backend is RcloneBackendType.LOCAL and allowed_root)
+        ]
 
     @classmethod
     def as_form(cls) -> Self:

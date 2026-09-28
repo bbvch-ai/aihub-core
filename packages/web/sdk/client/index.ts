@@ -980,6 +980,8 @@ export {
   type SearchUserMemoriesErrors,
   type SearchUserMemoriesResponse,
   type SearchUserMemoriesResponses,
+  type SecretFileInput,
+  type SecretFileInputWritable,
   type Select,
   type SelectButton,
   type SelectButtonWritable,

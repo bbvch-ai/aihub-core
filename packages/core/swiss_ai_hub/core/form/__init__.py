@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
     from swiss_ai_hub.core.form.elements.password import Password
     from swiss_ai_hub.core.form.elements.repeater import Repeater
+    from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
     from swiss_ai_hub.core.form.elements.slider import Slider
@@ -57,6 +58,7 @@ __all__ = [
     "Password",
     "Repeater",
     "SecretFieldWalker",
+    "SecretFileInput",
     "Select",
     "SelectButton",
     "Slider",
@@ -91,6 +93,7 @@ _LAZY_IMPORTS = {
     "Password": "swiss_ai_hub.core.form.elements.password",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
+    "SecretFileInput": "swiss_ai_hub.core.form.elements.secret_file_input",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

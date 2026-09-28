@@ -858,6 +858,16 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  secret_file_input:
+    drop_hint: Datei hier ablegen oder zum Auswählen klicken
+    limits: '{accept}, bis {size}'
+    selected: Datei ausgewählt
+    stored: Schlüsseldatei gespeichert (verschlüsselt)
+    client_email: 'Dienstkonto: {email}'
+    replace: Ersetzen
+    remove: Entfernen
+    too_large: Die Datei ist grösser als {size}.
+    invalid_json: Die Datei ist kein gültiges JSON.
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
   warnings:
