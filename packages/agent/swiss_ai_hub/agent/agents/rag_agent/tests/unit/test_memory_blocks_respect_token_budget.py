@@ -18,8 +18,6 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     ContextBlockEvent,
     LimitChatHistoryEvent,
-    RetrieveUserMemoryEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
@@ -105,29 +103,18 @@ async def _run_step(
     """
     model_info = {"model_info": {} if window is None else {"max_input_tokens": window}}
     with patch.object(LLMConfig, "get_model_info", return_value=model_info):
-        if agent_type is RAGAgent:
-            return await _run_spine_join(config, history, memories)
-        return await agent_type().add_memory_to_chat_history_step(
-            chat_history_event=LimitChatHistoryEvent(limited_history=history),
-            start_event=UserMessageEvent(
-                messages=history,
-                user=fake_user(),
-            ),
-            user_memory_event=RetrieveUserMemoryEvent(memories=memories, relations=[]),
-            org_memory_event=None,
-            agent_config=config,
-            t=LocaleHandler(),
-        )
+        return await _run_spine_join(agent_type, config, history, memories)
 
 
-async def _run_spine_join(config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
-    """RAGAgent runs on the conversational spine: the user-memory block arrives as a `ContextBlockEvent`
-    and the spine's join merges it, so the budget invariant is asserted on `assemble_context_step`."""
+async def _run_spine_join(agent_type, config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
+    """Both RAG blueprints run on the conversational spine: the user-memory block arrives as a
+    `ContextBlockEvent` and the spine's join merges it, so the budget invariant is asserted on
+    `assemble_context_step`."""
     block = extend_chat_history_with_user_memory(
         chat_history=[], memories=memories, relations=[], user=fake_user(), t=LocaleHandler()
     )
     return await ConversationCapability.assemble_context_step(
-        RAGAgent(),
+        agent_type(),
         history=LimitChatHistoryEvent(limited_history=history),
         conversation=config,
         blocks=[ContextBlockEvent(source="user_memory", messages=block)],

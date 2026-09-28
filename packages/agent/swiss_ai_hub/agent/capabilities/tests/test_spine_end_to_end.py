@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AnswerPostProcessedEvent,
@@ -24,6 +25,8 @@ from swiss_ai_hub.core.events.agent import (
     LLMStopEvent,
     Message,
     NotAMetaQuestionEvent,
+    RAGSuccessStopEvent,
+    StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
@@ -32,8 +35,13 @@ from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
+from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
+from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
@@ -43,21 +51,47 @@ SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation_capabi
 SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.self_awareness.self_awareness_capability"
 
 
-def _config() -> LLMWrappingAgentConfig:
+_SHARED = {
+    "name": LocaleString(en="Spine"),
+    "description": LocaleString(en="Spine end-to-end fixture"),
+    "llm": LLMConfig(model_name="text-generation/dummy"),
+    "number_of_input_tokens": 8192,
+    "user_memory": UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
+    "org_memory": None,
+}
+
+
+def _llm_wrapping_config() -> LLMWrappingAgentConfig:
     return LLMWrappingAgentConfig(
-        agent_id="spine_end_to_end",
-        name=LocaleString(en="Spine"),
-        description=LocaleString(en="Spine end-to-end fixture"),
-        system_prompt=LocaleString(en="You are helpful."),
-        llm=LLMConfig(model_name="text-generation/dummy"),
-        number_of_input_tokens=8192,
-        user_memory=UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
-        org_memory=None,
+        agent_id="spine_end_to_end_llm", system_prompt=LocaleString(en="You are helpful."), **_SHARED
     )
 
 
+def _rag_config() -> RAGAgentConfig:
+    return RAGAgentConfig(agent_id="spine_end_to_end_rag", retrievers=[], condense_question=False, **_SHARED)
+
+
+def _expert_rag_config() -> ExpertRAGAgentConfig:
+    return ExpertRAGAgentConfig(
+        agent_id="spine_end_to_end_expert",
+        retrievers=[],
+        condense_question=False,
+        expert_escalation=ExpertEscalationConfig(agent=AgentRef(agent_class="ExpertAskingAgent", agent_id="expert")),
+        **_SHARED,
+    )
+
+
+@pytest.mark.parametrize(
+    ("agent_type", "config", "stop_event_type"),
+    [
+        (LLMWrappingAgent, _llm_wrapping_config(), LLMStopEvent),
+        (RAGAgent, _rag_config(), RAGSuccessStopEvent),
+        (ExpertRAGAgent, _expert_rag_config(), RAGSuccessStopEvent),
+    ],
+    ids=["llm-wrapping", "rag", "expert-rag"],
+)
 @async_test
-async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch):
+async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch, agent_type, config, stop_event_type):
     async def fake_detect(*, user_query, **_):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
@@ -78,7 +112,7 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch):
     monkeypatch.setattr(LLMConfig, "cost_reporting_llm", fake_cost_reporting)
     monkeypatch.setattr(LLMConfig, "get_model_info", lambda self: {"model_info": {}})
 
-    runner = AgentTestRunner(agent_type=LLMWrappingAgent, agent_config=_config())
+    runner = AgentTestRunner(agent_type=agent_type, agent_config=config)
     async with runner.test_run(delay_before_stop=20) as topic:
         await runner.send_event_from_topic(
             topic=topic,
@@ -97,7 +131,7 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch):
         EnrichedChatHistoryEvent,
         LLMEvent,
         AnswerPostProcessedEvent,
-        LLMStopEvent,
+        stop_event_type,
     ):
         assert runner.has_event_of_class(event_class), f"{event_class.__name__} never happened"
 
@@ -105,7 +139,7 @@ async def test_a_turn_runs_the_whole_spine_through_the_dispatcher(monkeypatch):
     assert {block.source for block in blocks} == {"user_memory", "organization_memory"}
     assert all(block.is_empty for block in blocks)
     assert len(_control_events(runner, EnrichedChatHistoryEvent)) == 1
-    assert len(_control_events(runner, LLMStopEvent)) == 1, "the stop barrier must release exactly once"
+    assert len(_control_events(runner, StopEvent)) == 1, "the stop barrier must release exactly once"
 
 
 def _control_events(runner: AgentTestRunner, event_class: type) -> list:

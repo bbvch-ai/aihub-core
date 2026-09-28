@@ -2,39 +2,40 @@
 config:
   number_of_input_tokens:
     label: Maximale Eingabe-Tokens
-    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse zur Kostenkontrolle
-      und Vermeidung von Modellgrenzen.
+    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
+      zur Kostenkontrolle und Vermeidung von Modellgrenzen.
   condense_question:
     label: Frage kondensieren
-    help: Formuliert die letzte Nachricht anhand des bisherigen Gesprächs in eine eigenständige
-      Frage um, bevor Gedächtnis, Retrieval und weiterer Kontext nachgeschlagen werden. Deaktiviert
-      wird die letzte Nachricht unverändert verwendet.
+    help: Formuliert die letzte Nachricht anhand des bisherigen Gesprächs in eine
+      eigenständige Frage um, bevor Gedächtnis, Retrieval und weiterer Kontext nachgeschlagen
+      werden. Deaktiviert wird die letzte Nachricht unverändert verwendet.
 steps:
   open_gate:
     name: Tor öffnen
-    description: Gibt die Nachricht direkt an die Pipeline weiter, da dieser Assistent keine
-      Fragen über sich selbst beantwortet.
+    description: Gibt die Nachricht direkt an die Pipeline weiter, da dieser Assistent
+      keine Fragen über sich selbst beantwortet.
   derive_query:
     name: Anfrage ableiten
-    description: Bestimmt die Frage, die in diesem Zug beantwortet wird, entweder die letzte
-      Nachricht unverändert oder aus dem Gespräch kondensiert.
+    description: Bestimmt die Frage, die in diesem Zug beantwortet wird, entweder
+      die letzte Nachricht unverändert oder aus dem Gespräch kondensiert.
   assemble_context:
     name: Kontext zusammenstellen
-    description: Fügt jeden abgerufenen Kontextblock, etwa Erinnerungen, innerhalb des Eingabebudgets
-      des Modells in den Chat-Verlauf ein.
+    description: Fügt jeden abgerufenen Kontextblock, etwa Erinnerungen, innerhalb
+      des Eingabebudgets des Modells in den Chat-Verlauf ein.
   stop:
     name: Stopp
-    description: Beendet den Lauf, sobald jeder Schritt nach der Antwort, etwa die Gedächtnisspeicherung,
-      gemeldet hat.
+    description: Beendet den Lauf, sobald jeder Schritt nach der Antwort, etwa die
+      Gedächtnisspeicherung, gemeldet hat.
 thoughts:
-  condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher gibt es
-    für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt, statt die Rohnachricht
-    zu verwenden.
-  input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund %{tokens}
-    Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des Modells wird abgelehnt.'
+  condensation_empty: Der Condenser hat keine eigenständige Frage geliefert, daher
+    gibt es für diesen Zug keine nutzbare Suchanfrage. Die Anfrage wird abgelehnt,
+    statt die Rohnachricht zu verwenden.
+  input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
+    %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
+    Modells wird abgelehnt.'
 messages:
-  condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen soll.
-    Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
-  input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte. Bitte
-    laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie zu einem Assistenten
-    mit einem Modell mit grösserem Kontextfenster.
+  condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
+    soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
+  input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.
+    Bitte laden Sie eine kleinere Datei hoch, teilen Sie sie auf, oder wechseln Sie
+    zu einem Assistenten mit einem Modell mit grösserem Kontextfenster.

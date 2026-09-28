@@ -67,8 +67,10 @@ META_TITLE_STEP = "generate_meta_question_title_step"
 
 # Blueprints on the conversational spine: the spine contributes the early title step and generates the
 # follow-ups inline in whichever stop step the blueprint ends up with (its own, or the spine's default).
-SPINE_AGENTS = [RAGAgent, LLMWrappingAgent]
-SPLIT_AGENTS = [ExpertRAGAgent]
+SPINE_AGENTS = [RAGAgent, ExpertRAGAgent, LLMWrappingAgent]
+# No blueprint wires the split form explicitly any more; the spine took it over. Kept as the list the
+# split test reads so the form is re-checked the moment a blueprint returns to it.
+SPLIT_AGENTS: list[type] = []
 INLINE_AGENTS = [FewShotAgent, McpReactAgent]
 
 # Self-aware agents that also adopt conversation metadata — every self-aware agent today, minus
@@ -265,7 +267,7 @@ def test_every_metadata_call_site_matches_its_helper_signature():
     """
     mismatches = [
         f"{agent_type.__name__} line {call.lineno}: {mismatch}"
-        for agent_type in SPLIT_AGENTS + INLINE_AGENTS
+        for agent_type in SPINE_AGENTS + SPLIT_AGENTS + INLINE_AGENTS
         for call in _metadata_calls(agent_type)
         if (mismatch := _signature_mismatch(call))
     ]

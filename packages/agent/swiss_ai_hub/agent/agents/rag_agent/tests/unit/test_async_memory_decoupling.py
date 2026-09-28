@@ -1,11 +1,8 @@
-"""Unit tests for decoupled memory storage wiring (issue #1179).
+"""Unit tests for the delegation-event builder behind decoupled memory storage (issue #1179).
 
-Covers the stop-gate precondition (`check_ready_for_stop`) and the delegation-event builder
-(`build_memory_storage_request`). Delegation is the only storage mode — see ADR
-`2026_09_11_async_user_memory_storage_as_the_only_mode`.
+Delegation is the only storage mode — see ADR `2026_09_11_async_user_memory_storage_as_the_only_mode`. The
+stop-gate itself is the spine's post-answer barrier, covered in `capabilities/tests`.
 """
-
-from types import SimpleNamespace
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.agents import AgentConfig
@@ -20,29 +17,6 @@ import swiss_ai_hub.agent.agents.rag_agent  # noqa: F401,E402  (import-order gua
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import build_memory_storage_request
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
-from swiss_ai_hub.agent.rag.preconditions import check_ready_for_stop
-
-_MARKER = object()  # stand-in for a MemoryStorageRequestedEvent (check is identity/None only)
-
-
-def _config(storage_enabled: bool) -> SimpleNamespace:
-    return SimpleNamespace(user_memory=SimpleNamespace(enable_user_memory_storage=storage_enabled))
-
-
-def test_storage_disabled_never_gates():
-    assert check_ready_for_stop(_config(storage_enabled=False), True, None) is True
-
-
-def test_an_identity_less_run_never_gates_on_a_write_it_will_not_perform():
-    """A delegated run with no user skips the storage step, so gating the stop on its event would hang the run."""
-    assert check_ready_for_stop(_config(storage_enabled=True), False, None) is True
-
-
-def test_storage_gates_on_the_delegation_marker():
-    """The run finalizes on the millisecond-cheap marker, never on the write it delegated."""
-    config = _config(storage_enabled=True)
-    assert check_ready_for_stop(config, True, None) is False
-    assert check_ready_for_stop(config, True, _MARKER) is True
 
 
 def test_build_memory_storage_request_targets_writer_and_carries_origin():

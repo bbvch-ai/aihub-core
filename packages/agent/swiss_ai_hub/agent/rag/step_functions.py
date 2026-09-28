@@ -25,12 +25,10 @@ from swiss_ai_hub.core.events.agent import (
     StandaloneQuestionCondenserEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
-    EmptyCondensationError,
     IngestedNode,
     LLMConfig,
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
-    condense_standalone_question,
     context_sufficient_guard,
     estimate_prompt_tokens,
     few_shot_guard,
@@ -141,52 +139,6 @@ async def _refuse_oversized_input(
     await displayer.display_chunk(refusal, model_name=model_name)
     return RefusalStopEvent(
         reason=RefusalReason.INPUT_TOO_LARGE,
-        output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
-        chat_model_name=model_name,
-    )
-
-
-async def do_condense_standalone_question(
-    limited_history: list[ChatMessage],
-    last_user_message: ChatMessage,
-    llm_config: LLMConfig,
-    displayer: EventDisplayer,
-    t: LocaleHandler,
-    user: UserIdentity | None,
-) -> StandaloneQuestionCondenserEvent | RefusalStopEvent:
-    """Condense chat history and user query into standalone question.
-
-    A blank condensation refuses the turn rather than escaping as an `ExceptionEvent`. The raise in
-    `condense_standalone_question` is the right call at that layer — no caller can use an empty question —
-    but letting it reach the dispatcher renders its English message straight into the chat. This is the
-    same refusal shape `_refuse_oversized_input` uses for the other "we cannot serve this turn" case.
-    """
-    await displayer.display_thought(t("agent.thought.condense_question"))
-    async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        try:
-            condensed = await condense_standalone_question(
-                chat_history=limited_history, message=last_user_message, t=t, llm=llm
-            )
-        except EmptyCondensationError:
-            return await _refuse_empty_condensation(llm_config.model_name, displayer, t)
-        return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
-
-
-async def _refuse_empty_condensation(
-    model_name: str,
-    displayer: EventDisplayer,
-    t: LocaleHandler,
-) -> RefusalStopEvent:
-    """Stop the run with a message the user can act on, keeping the mechanism to the thought.
-
-    Retrying is pointless (identical re-issue at `temperature=0.1` returns the same nothing) and there is
-    no fallback question to answer with, so asking the user to rephrase is the only useful move left.
-    """
-    await displayer.display_thought(t("agent.conversation.thoughts.condensation_empty"))
-    refusal = t("agent.conversation.messages.condensation_empty")
-    await displayer.display_chunk(refusal, model_name=model_name)
-    return RefusalStopEvent(
-        reason=RefusalReason.CONDENSATION_EMPTY,
         output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
         chat_model_name=model_name,
     )
@@ -430,19 +382,3 @@ def do_finalize_rag_stop(
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
     return RAGSuccessStopEvent(answer=answer)
-
-
-def build_memory_conversation(
-    condense_event: StandaloneQuestionCondenserEvent,
-    llm_event: LLMEvent,
-) -> list[ChatMessage]:
-    """
-    Build the mem0 fact-extraction payload: the condensed standalone question plus the answer.
-
-    Never the final LLM input — that carries the client-augmented user message and the USER-role RAG
-    context message, both of which feed document text into stored "user facts" (issue #1753). The
-    condensed question is the turn's only doc-free representation; prior turns were already extracted
-    by their own runs' store steps.
-    """
-    output_messages = llm_event.output_messages or []
-    return [condense_event.condensed_chat_message, *(message.to_llama_index() for message in output_messages)]

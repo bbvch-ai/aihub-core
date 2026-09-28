@@ -59,8 +59,8 @@ rclone:
         help: JSON de jeton rclone préobtenu. Stocké chiffré.
       service_account_credentials:
         label: Fichier de clé du compte de service
-        help: Fichier de clé JSON téléchargé depuis la console Google Cloud, en
-          alternative à un jeton OAuth. Stocké chiffré.
+        help: Fichier de clé JSON téléchargé depuis la console Google Cloud, en alternative
+          à un jeton OAuth. Stocké chiffré.
       root_folder_id:
         label: ID du dossier racine
         help: ID du dossier Drive à traiter comme racine ; vide pour tout le lecteur.

@@ -263,4 +263,5 @@ enriched_chat_history_event:
   description: Der Chat-Verlauf, den das Modell erhält, mit allen abgerufenen Kontextblöcken
 refusal_stop_event:
   name: Zug abgelehnt
-  description: Der Assistent hat diesen Zug wegen der Eingabe abgelehnt und dem Benutzer den Grund genannt.
+  description: Der Assistent hat diesen Zug wegen der Eingabe abgelehnt und dem Benutzer
+    den Grund genannt.
