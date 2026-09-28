@@ -160,17 +160,16 @@ class InstanceConfigHelper:
         """Reject a submission that left a field blank which the announced form marks required.
 
         The generated model cannot do this reliably. `required` on a form element carries FormKit's
-        meaning — the user must put something here — while the JSON schema only carries Pydantic's,
-        which is that the key is present, and `{"type": "string"}` is satisfied by `""` just as much as
-        by a real value. A field with no Pydantic default (e.g. `ImapClientConfig.host`) happens to
-        reject a missing/`None` submission too, via `str`'s own type check — but that is an accident of
-        the annotation, not a required-field rule: it rejects `None` and accepts `""` identically,
-        neither one because it is "blank". A required field carrying a default (`password`, which
-        defaults to `""` so its login can stay optional at the class level) is not even in the schema's
-        `required` list, so the accidental protection does not apply to it at all.
+        meaning — the user must put something here — while the JSON schema only carries Pydantic's: the
+        key is present, and `{"type": "string"}` accepts `""` as readily as a real value. A field with no
+        Pydantic default (e.g. `ImapClientConfig.host`) does reject `None`, but only through `str`'s type
+        check, an accident of the annotation rather than a required-field rule — the same field accepts
+        `""`. Which of the two a blank field arrives as depends on how it was left empty: a fresh form
+        seeds an untouched field to `None`, a template ships `""` placeholders (the shared-mailbox
+        template leaves the whole mailbox connection blank on purpose), so both are rejected here.
 
         Read from the announced elements rather than the schema, because they are the only place holding
-        the form's own answer, independent of whether a Pydantic default happens to mask it.
+        the form's own answer.
 
         Runs before the generated model so a blank field is named as itself. The model, when it does
         reject a leaf, reports either a missing key or a type mismatch and says nothing about a

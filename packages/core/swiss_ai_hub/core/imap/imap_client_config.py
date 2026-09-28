@@ -21,10 +21,9 @@ class ImapClientConfig(StepConfig):
         Gt(0),
     ]
     username: Annotated[str | InputText, Field(description="Mailbox login, usually the full email address.")]
-    password: Annotated[
-        str | Password,
-        Field(default="", description="Mailbox password or app-specific token."),
-    ]
+    # No `default=""`: a blank default marks a field optional (it means "one of two alternative credentials"), and
+    # a mailbox has no alternative to its password.
+    password: Annotated[str | Password, Field(description="Mailbox password or app-specific token.")]
     use_tls: Annotated[
         bool | ToggleSwitch,
         Field(default=True, description="Connect over implicit TLS. Disable only for plaintext test servers."),

@@ -325,38 +325,28 @@ class TestBlankRequiredFields:
             InstanceConfigHelper.reject_blank_required_fields(elements, config)
         return exc_info.value.detail
 
-    def test_a_model_that_inherits_when_unset_is_not_required(self):
-        """`classification.model_name` and a category's `knowledge_namespace` both mean "use the default"
-        when unset, so the guard must not demand them — they are optional, not blank. Fixed on the
-        blueprint side (str | None, default None) alongside this guard."""
+    def test_the_optional_classification_settings_are_not_demanded(self):
+        """Against the real announced form: a blank classifier model falls back to the agent's main model, and
+        a category with no knowledge collections is answered from all of them, so the guard must leave both
+        alone — while still reaching into the category rows for the fields that are required."""
         elements = EmailClassificationSettings.as_form().to_formkit_form()
+        category = {
+            "category": "support_request",
+            "imap_folder": "Triage/Support",
+            "description": "d",
+            "draft_reply": False,
+            "knowledge_namespaces": None,
+        }
+        settings = {
+            "categories": [category],
+            "fallback_folder": "a",
+            "failure_folder": "b",
+            "number_of_input_tokens": 8192,
+            "model_name": "",
+            "classification_prompt": "p",
+        }
 
-        # Deliberately partial: the point is which paths the walk does *not* name, so the settings the
-        # blueprint genuinely requires are left out rather than filled in with noise.
-        with pytest.raises(HTTPException) as exc_info:
-            InstanceConfigHelper.reject_blank_required_fields(
-                elements, {"model_name": None, "categories": [{"knowledge_namespace": None}]}
-            )
+        InstanceConfigHelper.reject_blank_required_fields(elements, settings)
 
-        detail = exc_info.value.detail
-        assert "model_name" not in detail
-        assert "knowledge_namespace" not in detail
-
-    def test_knowledge_databases_left_unset_is_not_required(self):
-        """Only needed when a category names a collection — genuinely optional, unlike
-        `NamespaceSelectionAgentConfig.bucket_names`, which reuses the same `KnowledgeDatabaseSelector`
-        element but carries `MinLen(1)` and must stay required. The distinction is per field
-        (`str | None` on this one), not per element type — the shared element cannot make both true."""
-        elements = EmailClassificationSettings.as_form().to_formkit_form()
-
-        InstanceConfigHelper.reject_blank_required_fields(
-            elements,
-            {
-                "categories": [],
-                "knowledge_databases": None,
-                "fallback_folder": "a",
-                "failure_folder": "b",
-                "number_of_input_tokens": 8192,
-                "classification_prompt": "p",
-            },
-        )
+        blank_category = {**settings, "categories": [{**category, "category": ""}]}
+        assert "categories.0.category: required field is empty" in self._detail_of(elements, blank_category)
