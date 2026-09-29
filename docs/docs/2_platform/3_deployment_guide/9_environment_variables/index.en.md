@@ -55,7 +55,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` |  | `backup-code` |  |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` |  | `backup-code` |  |
 | `DOCUMENT_INGESTION_EMBEDDING_MODEL` | `DocumentIngestionPipelineSettings.EMBEDDING_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used to embed chunks. |
-| `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for summaries, table refinement and figure descriptions. |
+| `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for summaries and table refinement, and for figure descriptions when no vision model is set. Must support response schemas, which table refinement relies on. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_HOUR` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_HOUR` | `document_ingestion_pipeline` | Hour of the daily per-bucket observation schedule. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_MINUTE` | `document_ingestion_pipeline` | Minute of the daily per-bucket observation schedule. |
 | `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `document_ingestion_pipeline` | LiteLLM model name used for figure descriptions; the text model when unset. Set it whenever the text model cannot read images, or figures are sent to a model that cannot describe them. |
