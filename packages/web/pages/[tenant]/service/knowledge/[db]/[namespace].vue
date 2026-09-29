@@ -6,14 +6,14 @@
   >
     <div class="mb-4 flex items-center gap-4">
       <IconField class="flex-1">
-        <InputIcon :class="isFetching ? 'pi pi-spinner pi-spin' : 'pi pi-search'" />
+        <InputIcon :class="isSearching ? 'pi pi-spinner pi-spin' : 'pi pi-search'" />
         <InputText
           v-model="searchInput"
           :placeholder="t('knowledge.documents.search.placeholder')"
           class="w-full"
         />
         <InputIcon
-          v-if="searchInput && !isFetching"
+          v-if="searchInput && !isSearching"
           class="pi pi-times cursor-pointer"
           @click="searchInput = ''"
         />
@@ -53,7 +53,6 @@
     :namespace="route.params.namespace as string"
     :database-display-name="databaseDisplayName"
     :namespace-display-name="namespaceDisplayName"
-    @success="handleUpload"
   />
 </template>
 
@@ -74,6 +73,7 @@ const {
   documents,
   isLoading,
   isFetching,
+  isSearching,
   pagination,
   currentPage,
   pageSize,
@@ -85,6 +85,8 @@ const {
   setSort,
   refetch,
 } = useDocuments()
+
+useDocumentIngestionPolling(documents, refetch, isFetching)
 
 const uploadModalVisible = ref(false)
 const searchInput = ref(searchQuery.value ?? '')
@@ -137,10 +139,6 @@ const handleSort = (field: string | null, order: 1 | -1) => {
 
 const openUploadModal = () => {
   uploadModalVisible.value = true
-}
-
-const handleUpload = () => {
-  refetch()
 }
 
 const handleDeleted = (documentIds: string[]) => {

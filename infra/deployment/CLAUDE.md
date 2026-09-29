@@ -76,6 +76,18 @@ so LiteLLM fails to start loudly instead of silently falling back.
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
+`aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
+`model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
+Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
+multi-tool orchestration.
+
+At runtime, an unknown value aborts that API start's **whole** OpenWebUI provisioning run, not just that model's sync.
+No LLM model is created, renamed or updated, so a model newly added to LiteLLM never appears. Access grants are not
+refreshed either, until the next agent sync. The only sign is one logged exception, because startup provisioning is
+non-fatal. To keep that from reaching a VM, `generate_compose.py` rejects any value other than `native` or `legacy`, so
+`make generate-compose`, and with it CI's Env / Compose Consistency job, fails on a typo. Keep its
+`OPENWEBUI_FUNCTION_CALLING_MODES` in sync with `AvailableModel.function_calling` in `packages/core`.
+
 ## Generation Pipeline
 
 ```
