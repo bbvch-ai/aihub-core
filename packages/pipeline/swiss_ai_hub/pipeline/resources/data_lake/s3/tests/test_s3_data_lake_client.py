@@ -222,7 +222,8 @@ class TestListFiles:
 
         assert [file.uri for file in listing.files] == ["s3://bucket/hr_docs/b.md", "s3://bucket/policies/c.md"]
         assert [file.uri for file in listing.skipped] == ["s3://bucket/hr docs/a.md"]
-        assert "'hr docs'" in listing.skipped[0].reason and "'hr_docs'" in listing.skipped[0].reason
+        assert "'hr docs'" in listing.skipped[0].reason
+        assert "'hr_docs'" in listing.skipped[0].reason
 
     @patch(NAMESPACE_PATCH_TARGET, side_effect=_collide_on_hr_docs)
     def test_a_colliding_folder_is_looked_up_once(self, namespace: MagicMock) -> None:

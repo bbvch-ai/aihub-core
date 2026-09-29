@@ -50,7 +50,8 @@ def test_a_folder_whose_name_another_folder_owns_is_refused_without_an_insert(na
 
     assert (collision.value.directory, collision.value.existing_folder) == ("hr docs", "hr_docs")
     assert collision.value.namespace_name == "hr_docs"
-    assert "'hr docs'" in str(collision.value) and "'hr_docs'" in str(collision.value)
+    assert "'hr docs'" in str(collision.value)
+    assert "'hr_docs'" in str(collision.value)
     namespaces.get_namespace_by_bucket_and_name.assert_called_once_with(
         bucket_id=BUCKET_ID, namespace_name="hr_docs", db_alias="default"
     )

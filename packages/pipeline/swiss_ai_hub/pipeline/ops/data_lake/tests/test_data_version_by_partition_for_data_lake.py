@@ -66,7 +66,9 @@ def test_skipped_files_get_no_partition_and_are_reported_with_both_folders(repla
     assert event.partition == kept_key
     assert event.metadata[SKIPPED_COUNT_METADATA_KEY].value == 1
     table = event.metadata[SKIPPED_TABLE_METADATA_KEY].value
-    assert _SKIPPED in table and "'hr docs'" in table and "'hr_docs'" in table
+    assert _SKIPPED in table
+    assert "'hr docs'" in table
+    assert "'hr_docs'" in table
     warnings = [call.args[0] for call in context.log.warning.call_args_list]
     assert any("'hr docs'" in warning and "'hr_docs'" in warning for warning in warnings)
 
