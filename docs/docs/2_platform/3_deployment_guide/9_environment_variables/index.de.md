@@ -53,9 +53,10 @@ Diese Variablen werden als `${VAR}` (ohne einen `${VAR:-default}` Fallback) irge
 | `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS` | | `backup-code` | |
 | `DAGSTER_WARNING_LOG_RETENTION_DAYS` | | `backup-code` | |
 | `DOCUMENT_INGESTION_EMBEDDING_MODEL` | `DocumentIngestionPipelineSettings.EMBEDDING_MODEL` | `document_ingestion_pipeline` | LiteLLM-Modellname, der zum Einbetten von Chunks verwendet wird. |
-| `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM-Modellname, der für Zusammenfassungen, Tabellenverfeinerung und Abbildungsbeschreibungen verwendet wird. |
+| `DOCUMENT_INGESTION_LLM_MODEL` | `DocumentIngestionPipelineSettings.LLM_MODEL` | `document_ingestion_pipeline` | LiteLLM-Modellname, der für Zusammenfassungen und Tabellenverfeinerung verwendet wird, sowie für Abbildungsbeschreibungen, wenn kein Vision-Modell gesetzt ist. Muss Response Schemas unterstützen, auf die die Tabellenverfeinerung angewiesen ist. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_HOUR` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_HOUR` | `document_ingestion_pipeline` | Stunde des täglichen Beobachtungsplans pro Bucket. |
 | `DOCUMENT_INGESTION_OBSERVE_JOB_MINUTE` | `DocumentIngestionPipelineSettings.OBSERVE_JOB_MINUTE` | `document_ingestion_pipeline` | Minute des täglichen Beobachtungsplans pro Bucket. |
+| `DOCUMENT_INGESTION_VISION_MODEL` | `DocumentIngestionPipelineSettings.VISION_MODEL` | `document_ingestion_pipeline` | LiteLLM-Modellname, der für Abbildungsbeschreibungen verwendet wird; ohne Angabe das Textmodell. Setzen Sie ihn immer dann, wenn das Textmodell keine Bilder lesen kann, da Abbildungen sonst an ein Modell gesendet werden, das sie nicht beschreiben kann. |
 | `DOCUMENT_INGESTION_WITH_FIGURE_DESCRIPTIONS` | `DocumentIngestionPipelineSettings.WITH_FIGURE_DESCRIPTIONS` | `document_ingestion_pipeline` | Generiert Abbildungsbeschreibungen mit einem Vision LLM. |
 | `DOCUMENT_INGESTION_WITH_SUMMARY_NODES` | `DocumentIngestionPipelineSettings.WITH_SUMMARY_NODES` | `document_ingestion_pipeline` | Generiert rekursive Zusammenfassungen für hierarchisches RAG. |
 | `DOCUMENT_INGESTION_WITH_TABLE_REFINEMENT` | `DocumentIngestionPipelineSettings.WITH_TABLE_REFINEMENT` | `document_ingestion_pipeline` | Verfeinert Tabellen mit dem LLM, um Struktur zu erkennen und sie aufzuteilen. |

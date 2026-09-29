@@ -30899,7 +30899,7 @@ export type GetChatDisclaimerData = {
 
 export type GetChatDisclaimerResponses = {
   /**
-   * Response Get Chat Disclaimer  Tenant Id  Openai Chat Disclaimer Get
+   * Response Get Chat Disclaimer
    *
    * Successful Response
    */
