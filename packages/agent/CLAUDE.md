@@ -153,10 +153,9 @@ the answer. Fan-out is returning a list; waiting is declaring parameters. A disa
 `RecallMemoryEvent`), results are past participles (`ConversationContextualizedEvent`, `MemoryRecalledEvent`), and the
 capability class carries both the call helpers (lowercase: `Conversation.compose(...)`) and the event types under their
 scoped names (CamelCase: `Conversation.ComposeRequest`, `Conversation.Composed`, `Memory.Recalled`), the way
-`AgentInTheLoop.request`/`.response` do. A request's scoped name carries a `Request` suffix
-(`Conversation.ComposeRequest`, `Memory.RecallRequest`), so it never differs from its helper only in case, which Sonar
-rejects as a blocker (S1845). Annotate steps with the scoped names so a reader sees which sub-workflow an event belongs
-to; the composed workflow itself is flat, and the graph, discovery and the event store show the core event names.
+`AgentInTheLoop.request`/`.response` do. Annotate steps with the scoped names so a reader sees which sub-workflow an
+event belongs to; the composed workflow itself is flat, and the graph, discovery and the event store show the core event
+names.
 
 **`Conversation`** (needs `ConversationFields` on the config) exposes three calls:
 
@@ -186,9 +185,19 @@ file cut down, or unreadable) follow in a second message. The files share the ro
 (embedding shortlist, then core's `rerank_nodes`, back in document order), and its first sections when there is no query
 or the models fail. RAG reserves room for its retrieved nodes (`RAGAgentConfig.retrieved_context_reserve()`), because
 the final prompt keeps every system message whole and fails when they do not fit. It emits an `AttachedFileEvent` per
-file, which chat clients show as a source. Blueprints call it from their `gather_context_step` next to `Memory.recall`
-and compose the block after the memories. Chat clients send every file of the current message branch on each turn, so no
-file state is kept across turns. The query used for knowledge retrieval does not consider the files.
+file, carrying the text the model received and its citation id, which chat clients show as a source. Blueprints call it
+from their `gather_context_step` next to `Memory.recall` and compose the block after the memories. Chat clients send
+every file of the current message branch on each turn, so no file state is kept across turns. The query used for
+knowledge retrieval does not consider the files.
+
+**Inline citations**: every document an agent hands the model carries a short stable id (`CitationId` in core: `s` + six
+hex digits, from the node's document id: the knowledge document, or the attached file's upload id) on its
+`REFERENCE_DOCUMENT` tag, and the prompt (`lib.prompt.citations.instruction`) asks the model to cite it as `[s3f9a1c]`.
+The display events that list those documents carry the same id: `AttachedFileEvent.citation_id`, and
+`IngestedNode.citation_id` on `InOrderNodeCombinerEvent.grounding_nodes`, which is displayed for exactly that reason.
+The OpenWebUI pipe rewrites the ids into the numbers Open WebUI links; other surfaces show the raw ids for now. A caller
+rendering the answer where no source list exists switches citations off (`RAGStartEvent.cite_sources=False`, as the
+e-mail drafts do).
 
 **Capability steps** are `@staticmethod`s decorated with `@step` taking the blueprint instance first, so the dispatcher
 calls them like methods. A capability declares `calls` (request → every outcome the call can end in: one or several

@@ -161,6 +161,7 @@ class AttachedFiles(Capability):
                     chosen, t, AgentLocaleString.from_i18n_path("agent.attached_files.prompt.context")
                 )
             )
+            block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
         notes = [AttachedFiles._note(event, fitted, t) for _, event in outcomes]
         if any(notes):
             block.append(ChatMessage(role=MessageRole.SYSTEM, content="\n".join(note for note in notes if note)))
@@ -181,6 +182,11 @@ class AttachedFiles(Capability):
     def _with_status(
         event: AttachedFileEvent, fitted: dict[str, tuple[list[IngestedNode], FitMode]]
     ) -> AttachedFileEvent:
-        if event.file_id in fitted and fitted[event.file_id][1] != FitMode.WHOLE:
-            return event.model_copy(update={"status": AttachedFileStatus.TRUNCATED})
-        return event
+        """The text the model received, and whether it was all of the file."""
+        if event.file_id not in fitted:
+            return event
+        sections, mode = fitted[event.file_id]
+        status = AttachedFileStatus.READ if mode == FitMode.WHOLE else AttachedFileStatus.TRUNCATED
+        return event.model_copy(
+            update={"status": status, "content": "\n\n".join(section.content for section in sections)}
+        )

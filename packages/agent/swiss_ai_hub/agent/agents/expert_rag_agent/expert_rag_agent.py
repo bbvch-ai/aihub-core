@@ -314,6 +314,7 @@ class ExpertRAGAgent(RAGAgent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -335,6 +336,7 @@ class ExpertRAGAgent(RAGAgent):
             t,
             user,
             as_stop_step=False,
+            cite_sources=not isinstance(start_event, RAGStartEvent) or start_event.cite_sources,
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,

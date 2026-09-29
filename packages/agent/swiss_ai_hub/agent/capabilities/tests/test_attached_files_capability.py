@@ -15,7 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     AttachedFileStatus,
     UserUploadedFile,
 )
-from swiss_ai_hub.core.generative_ai import ExtractedDocument, LLMConfig
+from swiss_ai_hub.core.generative_ai import CitationId, ExtractedDocument, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -108,6 +108,19 @@ async def test_the_full_text_reaches_the_block_with_a_source_event():
     assert source.number_of_pages == 3
     assert text in (read.block[0].content or "")
     assert read.block[0].role == MessageRole.SYSTEM
+
+
+@pytest.mark.asyncio
+async def test_the_file_is_citable_by_the_id_its_event_carries():
+    text = "Section 4: vacation is 25 days."
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(text))):
+        source, read = await _read([_file("handbook.pdf")])
+
+    content = read.block[0].content or ""
+    assert source.citation_id == CitationId.of(source.file_id)
+    assert f"<REFERENCE_DOCUMENT id='{source.citation_id}' source='handbook.pdf'" in content
+    assert "[sbcd9ab]" in (read.block[1].content or "")
+    assert source.content == text
 
 
 @pytest.mark.asyncio

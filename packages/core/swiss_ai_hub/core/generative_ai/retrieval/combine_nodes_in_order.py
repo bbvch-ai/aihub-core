@@ -65,6 +65,7 @@ def combine_nodes_in_order(
         node: IngestedNode = nodes[0]
 
         metadata_fields = {
+            "id": node.citation_id,
             SOURCE: key,
             DOCUMENT_TITLE: node.document_title,
             LANGUAGE: node.language,

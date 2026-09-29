@@ -12,8 +12,8 @@ class AttachedFileEvent(DisplayEvent):
     One file the user attached to the conversation, as the agent read it for this turn.
 
     Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
-    all of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its
-    own record.
+    all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+    client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.attached_file_event.name")
@@ -25,5 +25,8 @@ class AttachedFileEvent(DisplayEvent):
     filename: Annotated[str, Field(description="The file's name as the user uploaded it.")]
     status: Annotated[AttachedFileStatus, Field(description="Whether the file was read whole, in part, or not.")]
     number_of_pages: Annotated[int | None, Field(description="Pages in the document, when the parser knows.")] = None
-    excerpt: Annotated[str, Field(description="The start of the extracted text, for a source preview.")] = ""
+    citation_id: Annotated[str, Field(description="The id the answer cites this file by, as [id].")] = ""
+    content: Annotated[
+        str, Field(description="The text of the file as the model received it: whole, excerpts, or its beginning.")
+    ] = ""
     error: Annotated[str | None, Field(description="Why the file could not be read, for a failed file.")] = None

@@ -153,6 +153,7 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
             event=_event(),
             composed=_event(history=[]),
             ctx=TURN,
+            start_event=_event(),
             agent_config=config_with_task_llm,
             guard_config=MagicMock(),
             displayer=MagicMock(),

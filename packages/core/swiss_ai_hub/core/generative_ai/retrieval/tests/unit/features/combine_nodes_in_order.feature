@@ -19,7 +19,7 @@ Feature: Combine nodes in order
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT source='doc1' document_title='Doc 1 Title' language='en' version='1' created_at='2024-01-10T10:00:00Z' updated_at='2024-01-11T10:00:00Z' inserted_at='2024-01-12T10:00:00Z'>
+      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Doc 1 Title' language='en' version='1' created_at='2024-01-10T10:00:00Z' updated_at='2024-01-11T10:00:00Z' inserted_at='2024-01-12T10:00:00Z'>
 
       <h1>Main Title 1</h1>
 
@@ -31,7 +31,7 @@ Feature: Combine nodes in order
 
       ---
 
-      <REFERENCE_DOCUMENT source='doc2' document_title='Doc 2 Title' language='fr' version='2' created_at='2024-02-15T09:00:00Z' updated_at='2024-02-16T09:00:00Z' inserted_at='2024-02-17T09:00:00Z'>
+      <REFERENCE_DOCUMENT id='s7897a2' source='doc2' document_title='Doc 2 Title' language='fr' version='2' created_at='2024-02-15T09:00:00Z' updated_at='2024-02-16T09:00:00Z' inserted_at='2024-02-17T09:00:00Z'>
 
       <h1>Legal Doc Main</h1>
 
@@ -67,7 +67,7 @@ Feature: Combine nodes in order
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT source='doc1' document_title='Hierarchical' language='de' version='1' created_at='2024-03-01T09:00:00Z' updated_at='2024-03-01T10:00:00Z' inserted_at='2024-03-01T11:00:00Z'>
+      <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='Hierarchical' language='de' version='1' created_at='2024-03-01T09:00:00Z' updated_at='2024-03-01T10:00:00Z' inserted_at='2024-03-01T11:00:00Z'>
 
       <summary>This is the overall summary of the document.</summary>
 
@@ -124,7 +124,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT source='doc1' document_title='research_paper.docx' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
+      Custom prompt: <REFERENCE_DOCUMENT id='sc63ebd' source='doc1' document_title='research_paper.docx' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       <content>Doc1 line10 content</content>
 
@@ -134,7 +134,7 @@ Feature: Combine nodes in order
 
       ---
 
-      <REFERENCE_DOCUMENT source='doc2' document_title='legal_document.docx' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
+      <REFERENCE_DOCUMENT id='s7897a2' source='doc2' document_title='legal_document.docx' language='fr' version='2' created_at='2023-07-22T04:26:40Z' updated_at='2023-07-22T05:50:00Z' inserted_at='2023-07-22T07:13:20Z'>
 
       <content>Doc2 line15 content</content>
 
@@ -155,7 +155,7 @@ Feature: Combine nodes in order
     When the combine_nodes_in_order function is called
     Then it should return:
       """
-      Custom prompt: <REFERENCE_DOCUMENT source='docA' document_title='research_paper' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
+      Custom prompt: <REFERENCE_DOCUMENT id='sd1f11d' source='docA' document_title='research_paper' language='en' version='1' created_at='2023-11-14T22:13:20Z' updated_at='2023-11-14T23:36:40Z' inserted_at='2023-11-15T01:00:00Z'>
 
       <content>Node docA line=5</content>
 
@@ -185,7 +185,7 @@ Feature: Combine nodes in order
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT source='doc3' document_title='Special Chars' language='de' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
+      <REFERENCE_DOCUMENT id='scc5ba4' source='doc3' document_title='Special Chars' language='de' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
 
       <h1>&lt;HTML&gt; &amp; 'Tags'</h1>
 
@@ -226,7 +226,7 @@ Feature: Combine nodes in order
       within these documents provides crucial insights relevant to the given context.
       Below are the relevant documents:
       <context_documents>
-      <REFERENCE_DOCUMENT source='doc4' document_title='Skipped Levels' language='de' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
+      <REFERENCE_DOCUMENT id='s48eea1' source='doc4' document_title='Skipped Levels' language='de' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
 
       <summary>Summary with no position.</summary>
 

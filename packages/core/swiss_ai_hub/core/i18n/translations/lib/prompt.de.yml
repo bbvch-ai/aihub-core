@@ -16,6 +16,12 @@ condenser:
     4. **Persönliche Aussagen beibehalten**: Wenn die Nachricht des Benutzers eine Tatsache über ihn selbst enthält (z.B. "Ich bin Vegetarier — was steht auf der Speisekarte?"), behalte diese Tatsache in der eigenständigen Frage bei (z.B. "Was steht für einen Vegetarier auf der Speisekarte?"). Dies gilt nur für kurze persönliche Aussagen — übernimm niemals umfangreiche Inhalte wie eingefügte Dokumente, Logs oder Code in die Frage.
     5. **Output**: Gib NUR den neuen Satz aus.
     </instructions>
+citations:
+  instruction: Jedes Dokument, das du erhältst, trägt ein id-Attribut. Zitiere die
+    verwendeten Dokumente im Text, mit ihrer id in eckigen Klammern direkt nach der
+    Aussage, die sie stützen, zum Beispiel [sbcd9ab] oder [sbcd9ab][s547946]. Zitiere
+    nur ids von Dokumenten, die du erhalten hast, und schreibe nie nummerierte Verweise
+    wie [1].
 rag:
   context_prompt: |
     {% chat role="user" %}

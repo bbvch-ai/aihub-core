@@ -313,6 +313,7 @@ class RAGAgent(Agent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -331,6 +332,7 @@ class RAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
+            cite_sources=not isinstance(start_event, RAGStartEvent) or start_event.cite_sources,
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,
