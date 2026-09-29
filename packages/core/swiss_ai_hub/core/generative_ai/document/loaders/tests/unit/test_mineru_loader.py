@@ -22,6 +22,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NUMBER_OF_PA
 
 FILENAME = "document.pdf"
 STEM = "document"
+READ_OBJECT_FROM_S3 = MineruParseCache._read_object
 
 
 def make_pdf(num_pages: int) -> bytes:
@@ -456,3 +457,33 @@ class TestParseCache:
             await loader.aload_data_from_bytes(make_pdf(1), FILENAME, embed_base64=True)
 
         assert in_memory_parse_cache == {}
+
+    def test_the_s3_body_is_closed_after_a_hit(self, monkeypatch: pytest.MonkeyPatch):
+        body = MagicMock()
+        body.read.return_value = b"cached"
+        client = MagicMock()
+        client.get_object.return_value = {"Body": body}
+        cache = MineruLoader().parse_cache
+        monkeypatch.setattr(cache, "_client", lambda: client)
+
+        assert READ_OBJECT_FROM_S3(cache, "mineru/key") == b"cached"
+        body.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_the_span_carries_the_key_not_the_document(
+        self, loader: MineruLoader, monkeypatch: pytest.MonkeyPatch
+    ):
+        span = MagicMock()
+        tracer = MagicMock()
+        tracer.start_as_current_span.return_value.__enter__.return_value = span
+        monkeypatch.setattr(
+            "swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache.get_tracer", lambda name: tracer
+        )
+        result = MineruFileResult(backend="b", version="v", md_content="secret text", num_pages=1, images={})
+        await loader.parse_cache.put(b"bytes", FILENAME, True, result)
+
+        await loader.parse_cache.get(b"bytes", FILENAME, True)
+
+        recorded = str(tracer.start_as_current_span.call_args_list) + str(span.mock_calls)
+        assert "secret text" not in recorded
+        span.set_attributes.assert_called_once()

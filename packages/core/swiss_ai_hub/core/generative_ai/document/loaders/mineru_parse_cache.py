@@ -6,11 +6,10 @@ import os
 from typing import TYPE_CHECKING, ClassVar
 
 from botocore.exceptions import ClientError
-from opentelemetry import trace
 
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
 from swiss_ai_hub.core.infrastructure.mineru.mineru_settings import MineruSettings
-from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
 from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_client
 
 if TYPE_CHECKING:
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 PARSE_CACHE_HIT_ATTRIBUTE = "aihub.mineru.parse_cache.hit"
+PARSE_CACHE_KEY_ATTRIBUTE = "aihub.mineru.parse_cache.key"
 
 
 class MineruParseCache:
@@ -39,23 +39,29 @@ class MineruParseCache:
         self._settings = settings
         self._s3_client: S3Client | None = None
 
-    @trace_fn
     async def get(self, file_bytes: bytes, filename: str, include_images: bool) -> MineruFileResult | None:
-        """A conversion with images also serves a caller that asked for none."""
-        variants = [self.WITH_IMAGES] if include_images else [self.TEXT_ONLY, self.WITH_IMAGES]
-        for variant in variants:
-            content = await asyncio.to_thread(self._read_object, self.object_key(file_bytes, filename, variant))
-            if content is not None:
-                trace.get_current_span().set_attribute(PARSE_CACHE_HIT_ATTRIBUTE, True)
-                return MineruFileResult.model_validate_json(content)
-        trace.get_current_span().set_attribute(PARSE_CACHE_HIT_ATTRIBUTE, False)
-        return None
+        """A conversion with images also serves a caller that asked for none.
 
-    @trace_fn
+        Traced by hand rather than with `trace_fn`, which would record the document's bytes and its converted text.
+        """
+        variants = [self.WITH_IMAGES] if include_images else [self.TEXT_ONLY, self.WITH_IMAGES]
+        with get_tracer(__name__).start_as_current_span("MineruParseCache.get") as span:
+            for variant in variants:
+                key = self.object_key(file_bytes, filename, variant)
+                content = await asyncio.to_thread(self._read_object, key)
+                if content is not None:
+                    span.set_attributes({PARSE_CACHE_HIT_ATTRIBUTE: True, PARSE_CACHE_KEY_ATTRIBUTE: key})
+                    return MineruFileResult.model_validate_json(content)
+            span.set_attribute(PARSE_CACHE_HIT_ATTRIBUTE, False)
+            return None
+
     async def put(self, file_bytes: bytes, filename: str, include_images: bool, result: MineruFileResult) -> None:
         variant = self.WITH_IMAGES if include_images else self.TEXT_ONLY
         key = self.object_key(file_bytes, filename, variant)
-        await asyncio.to_thread(self._write_object, key, result.model_dump_json().encode())
+        with get_tracer(__name__).start_as_current_span(
+            "MineruParseCache.put", attributes={PARSE_CACHE_KEY_ATTRIBUTE: key}
+        ):
+            await asyncio.to_thread(self._write_object, key, result.model_dump_json().encode())
         logger.debug(f"[MineruParseCache] Stored {filename} as {key}")
 
     def object_key(self, file_bytes: bytes, filename: str, variant: str) -> str:
@@ -81,7 +87,11 @@ class MineruParseCache:
             if error.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
                 return None
             raise
-        return response["Body"].read()
+        body = response["Body"]
+        try:
+            return body.read()
+        finally:
+            body.close()
 
     def _write_object(self, key: str, content: bytes) -> None:
         self._client().put_object(Bucket=self.BUCKET_NAME, Key=key, Body=content, ContentType="application/json")
