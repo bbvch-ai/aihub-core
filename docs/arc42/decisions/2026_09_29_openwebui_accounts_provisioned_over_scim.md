@@ -3,7 +3,7 @@
 ## Context
 
 A user created in Keycloak and given `AIHubAccess` could open the chat and find the model picker empty ("No results
-found") until an administrator happened to change something access-related (issue `bbvch-ai/aihub-core-private#213`).
+found") until an administrator happened to change something access-related.
 
 OpenWebUI only shows a user the models their groups are granted, and `OpenWebuiProvisioner` puts a user into the
 `aihub:{tenant}:{role}` groups by matching their Keycloak email against the accounts OpenWebUI lists over SCIM. Before
@@ -14,7 +14,7 @@ this decision OpenWebUI created that account itself, on the user's first chat lo
 2. The sync that `WebhookController` ran when OpenWebUI posted its signup webhook.
 
 When the chat login came after sync 1 had listed the accounts — the user lands on another Admin UI page first, or the
-iframe's OAuth round-trip is simply slower than two seconds — only sync 2 could place them. OpenWebUI 0.11.3 (#1886)
+iframe's OAuth round-trip is simply slower than two seconds — only sync 2 could place them. OpenWebUI 0.11.3
 silently removed that path, which was verified against the running image:
 
 - `utils/webhook.py::post_webhook` now runs `validate_url`, which rejects every non-global address unless
