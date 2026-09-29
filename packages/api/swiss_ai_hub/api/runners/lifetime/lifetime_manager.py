@@ -266,7 +266,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
-        await finalize_role_setup()
+        await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
         strip_retired_agent_config_keys()

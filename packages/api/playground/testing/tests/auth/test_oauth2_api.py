@@ -137,7 +137,7 @@ def expected_user_data():
     }
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def keycloak_api_client():
     """Return a TestClient with KeycloakAuthHandler and MyAccountController mounted."""
     runner = ApiTestRunner()
@@ -149,7 +149,7 @@ async def keycloak_api_client():
             yield client
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 async def test_get_user_with_valid_keycloak_token(
     keycloak_api_client, valid_keycloak_token, expected_user_data, setup_test_user
 ):
@@ -171,7 +171,7 @@ async def test_get_user_with_valid_keycloak_token(
     assert user_data == expected_user_data
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 async def test_get_user_with_invalid_keycloak_token(keycloak_api_client):
     """Test GET /my-account returns an error for an invalid Keycloak token."""
     headers = {
