@@ -40,7 +40,8 @@ packages/web/
 ├── plugins/                 # 0.runtime-config.client.ts (config), api-client.client.ts (SDK), oidc-client.ts, apexcharts.client.ts
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
-└── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
+├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
+└── utils/                   # apiResponseGuard (rejects SPA-shell responses at the SDK boundary)
 ```
 
 ## Nuxt Layer Architecture
