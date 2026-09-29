@@ -30,7 +30,8 @@
     "plugins/",
     "sdk/",
     "themes/",
-    "types/"
+    "types/",
+    "utils/"
   ],
   "scripts": {
     "dev": "nuxi prepare && nuxi dev .app --port 3333 --dotenv ../../../.env",
