@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import inspect
 import uuid
@@ -7,9 +8,11 @@ import pytest
 import pytest_asyncio
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakDeleteError, KeycloakGetError
+from redis.asyncio import Redis
 
 from swiss_ai_hub.core.auth.keycloak import keycloak_admin_service as kas_module
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
 from swiss_ai_hub.core.testing.auth_utils.keycloak_utils import create_real_keycloak_admin
 
 pytestmark = pytest.mark.usefixtures("_fresh_keycloak_admin_per_test")
@@ -297,6 +300,59 @@ class TestActiveTenantAttribute:
         fresh_tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
         result = await KeycloakAdminService.get_user_ids_with_active_tenant(fresh_tenant_id)
         assert result == set()
+
+
+@pytest_asyncio.fixture
+async def redis() -> AsyncIterator[Redis]:
+    """Function-scoped: pytest-asyncio gives each test a fresh event loop to bind the pool to."""
+    client = RedisSettings.create_client()
+    yield client
+    await client.aclose()
+
+
+async def _write_active_tenant_concurrently(admin: KeycloakAdmin, user_id: str, tenant_id: str) -> None:
+    """The unguarded GET-merge-PUT burst that left nightly users with duplicated values."""
+
+    async def write() -> None:
+        user = await admin.a_get_user(user_id)
+        user["attributes"] = {**user.get("attributes", {}), "active_tenant_id": [tenant_id]}
+        await admin.a_update_user(user_id, user)
+
+    await asyncio.gather(*(write() for _ in range(8)))
+
+
+class TestConcurrentActiveTenantWrites:
+    @pytest.mark.asyncio
+    async def test_duplicated_active_tenant_no_longer_blocks_locale_write(
+        self, admin: KeycloakAdmin, seeded_user: tuple[str, str]
+    ) -> None:
+        user_id, _ = seeded_user
+        tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
+        for _ in range(10):
+            await _write_active_tenant_concurrently(admin, user_id, tenant_id)
+            if len((await admin.a_get_user(user_id))["attributes"]["active_tenant_id"]) > 1:
+                break
+        assert len((await admin.a_get_user(user_id))["attributes"]["active_tenant_id"]) > 1, (
+            "Keycloak no longer stores duplicates under concurrent writes; this test lost its precondition."
+        )
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "en")
+
+        assert await KeycloakAdminService.get_preferred_locale(user_id) == "en"
+        assert await KeycloakAdminService.get_active_tenant_id(user_id) == tenant_id
+
+    @pytest.mark.asyncio
+    async def test_parallel_ensure_active_tenant_stores_one_value(
+        self, admin: KeycloakAdmin, redis: Redis, seeded_user: tuple[str, str], seeded_tenant_group: str
+    ) -> None:
+        user_id, _ = seeded_user
+        group = await admin.a_get_group_by_path(f"/tenants/{seeded_tenant_group}")
+        await admin.a_group_user_add(user_id, group["id"])
+
+        await asyncio.gather(*(KeycloakAdminService.ensure_active_tenant(user_id, redis) for _ in range(8)))
+
+        raw = await admin.a_get_user(user_id)
+        assert len(raw["attributes"]["active_tenant_id"]) == 1
 
 
 class TestAccessChangeHookNotified:

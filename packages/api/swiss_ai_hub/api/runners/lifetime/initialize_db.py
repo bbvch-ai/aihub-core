@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
@@ -194,10 +195,10 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
 
 
 @no_trace
-async def finalize_role_setup() -> None:
+async def finalize_role_setup(redis: Redis) -> None:
     """Runs post-tenant-initialization role checks and superuser bookkeeping."""
     await _validate_signup_roles()
-    await initialize_superuser_token()
+    await initialize_superuser_token(redis)
 
 
 async def _validate_signup_roles() -> None:
@@ -223,7 +224,7 @@ _SUPERUSER_TOKEN_NAME = "superuser-static-token"
 _SUPERUSER_TOKEN_TTL = timedelta(days=365 * 100)
 
 
-async def initialize_superuser_token() -> None:
+async def initialize_superuser_token(redis: Redis) -> None:
     """
     Ensures the superuser Keycloak user exists with the AIHubSysAdmin realm role,
     then upserts a ``BearerToken`` row holding the static ``SUPERUSER_TOKEN`` env
@@ -264,7 +265,7 @@ async def initialize_superuser_token() -> None:
     )
     logger.info(f"Superuser bearer token seeded for Keycloak user '{settings.USERNAME}' (id={keycloak_user.id})")
 
-    await KeycloakAdminService.ensure_active_tenant(keycloak_user.id)
+    await KeycloakAdminService.ensure_active_tenant(keycloak_user.id, redis)
 
 
 @no_trace
