@@ -22,6 +22,7 @@ from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import Ag
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
+from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
 
 logger = logging.getLogger(__name__)
 
@@ -323,6 +324,17 @@ def strip_retired_agent_config_keys() -> None:
         stripped = AgentConfigEntityDocument.unset_config_key(config_key)
         if stripped:
             logger.info(f"Stripped the retired '{config_key}' config key from {stripped} agent profile(s)")
+
+
+# Transitional: since #1603 a retriever must name its namespaces or set `all_namespaces`, and an empty list,
+# which used to search everything, aborts every run (#1836). Saves now reject it, so no new one appears; this
+# rewrites the ones stored before. Delete it, `EmptyNamespaceScopeMigration` and the entities'
+# `replace_config_data_if_unchanged`, once deployments have upgraded past it.
+def widen_empty_retriever_namespace_scopes() -> None:
+    """Gives every stored retriever with an empty namespace scope the all-namespaces scope it used to mean."""
+    migrated = EmptyNamespaceScopeMigration.run()
+    if migrated:
+        logger.info(f"Widened an empty retriever namespace scope to all namespaces in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

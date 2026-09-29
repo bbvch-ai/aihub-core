@@ -119,17 +119,125 @@ and the drafting settings.
 
 ### Mailbox connection
 
-| Field                   | Type     | Default     | Description                                                                                             |
-| ----------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------- |
-| **IMAP Host**           | Text     | —           | Hostname of the IMAP server, e.g. `imap.example.com`. Required.                                         |
-| **IMAP Port**           | Number   | `993`       | Server port. `993` is the standard for implicit TLS. Range 1–65535.                                     |
-| **Username**            | Text     | —           | Mailbox login, usually the full email address. Required.                                                |
-| **Password**            | Password | *(empty)*   | Mailbox password or, preferably, an app-specific token. Stored with the agent profile.                  |
-| **Use TLS**             | Toggle   | On          | Connect over implicit TLS. Turn off only for a plaintext test server.                                   |
-| **Inbox Folder**        | Text     | `INBOX`     | The folder incoming mail is read from.                                                                  |
-| **Max Unread Messages** | Number   | `50`        | How many unread summaries a single run lists. Keeps the run small when the inbox is overflowing. 1–500. |
-| **Move Fetched Mail**   | Toggle   | Off         | When on, the fetched message is moved to the processed folder. When off, the move step is skipped.      |
-| **Processed Folder**    | Text     | `Processed` | Where a processed message is filed. Only shown — and required — when **Move Fetched Mail** is on.       |
+| Field                   | Type     | Default               | Description                                                                                                                                                                             |
+| ----------------------- | -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **IMAP Host**           | Text     | —                     | Hostname of the IMAP server, e.g. `imap.example.com`. Required.                                                                                                                         |
+| **IMAP Port**           | Number   | `993`                 | Server port. `993` is the standard for implicit TLS. Range 1–65535.                                                                                                                     |
+| **Authentication**      | Choice   | Username and password | **Username and password**, or **Microsoft 365 (OAuth 2.0)** for Microsoft 365 mailboxes where basic authentication is disabled. Decides which of the credential fields below are shown. |
+| **Username**            | Text     | —                     | Mailbox login, usually the full email address. With Microsoft 365 (OAuth 2.0), the address of the mailbox to process. Required.                                                         |
+| **Password**            | Password | *(empty)*             | Mailbox password or, preferably, an app-specific token. Stored with the agent profile. Only shown for username and password.                                                            |
+| **Tenant ID**           | Text     | *(empty)*             | Directory (tenant) ID of your Microsoft Entra ID tenant. Only shown — and required — for Microsoft 365 (OAuth 2.0).                                                                     |
+| **Client ID**           | Text     | *(empty)*             | Application (client) ID of the Entra ID app registration. Only shown — and required — for Microsoft 365 (OAuth 2.0).                                                                    |
+| **Client Secret**       | Password | *(empty)*             | Client secret of the Entra ID app registration. Stored with the agent profile. Only shown — and required — for Microsoft 365 (OAuth 2.0).                                               |
+| **Use TLS**             | Toggle   | On                    | Connect over implicit TLS. Turn off only for a plaintext test server.                                                                                                                   |
+| **Inbox Folder**        | Text     | `INBOX`               | The folder incoming mail is read from.                                                                                                                                                  |
+| **Max Unread Messages** | Number   | `50`                  | How many unread summaries a single run lists. Keeps the run small when the inbox is overflowing. 1–500.                                                                                 |
+| **Move Fetched Mail**   | Toggle   | Off                   | When on, the fetched message is moved to the processed folder. When off, the move step is skipped.                                                                                      |
+| **Processed Folder**    | Text     | `Processed`           | Where a processed message is filed. Only shown — and required — when **Move Fetched Mail** is on.                                                                                       |
+
+### Microsoft 365 with OAuth 2.0
+
+Microsoft 365 tenants increasingly have basic authentication switched off, and then no username and password — not even
+an app password — will log in over IMAP. For those mailboxes choose **Microsoft 365 (OAuth 2.0)**. The agent then
+fetches an app-only access token from Microsoft Entra ID with the client credentials flow and logs in with it (SASL
+`XOAUTH2`). No user has to sign in interactively, which is what a scheduled agent needs.
+
+Setting it up is split between two roles. A Microsoft 365 administrator prepares the tenant once and hands over four
+values; whoever configures the agent then enters them on the profile. The person configuring the agent needs neither
+admin rights in Microsoft 365 nor PowerShell.
+
+#### For the Microsoft 365 administrator (once)
+
+Done once per tenant, plus step 4 for every further mailbox. Steps 1 and 2 happen in the Microsoft Entra admin center.
+Steps 3 to 5 need Exchange Online PowerShell, because Exchange has no admin-center page for granting an app access to a
+mailbox. Every step is required; a missing one fails the login.
+
+1. **Register an application** in the Microsoft Entra admin center (**App registrations → New registration**, accounts
+   in this organizational directory only). Note the **Directory (tenant) ID** and **Application (client) ID** from its
+   overview page, and create a client secret under **Certificates & secrets** — copy its **Value**, not its Secret ID;
+   the value is shown only once.
+
+2. **Add the IMAP permission.** Under **API permissions → Add a permission → APIs my organization uses**, pick **Office
+   365 Exchange Online → Application permissions → `IMAP.AccessAsApp`**, then **Grant admin consent**.
+
+3. **Register the service principal in Exchange Online.** Connect with the `ExchangeOnlineManagement` module first:
+
+   ```powershell
+   Connect-ExchangeOnline -UserPrincipalName <admin@contoso.com>
+   ```
+
+   If PowerShell reports that the module could not be loaded, the execution policy is blocking it;
+   `Set-ExecutionPolicy Bypass -Scope Process` lifts that for the current window only. Then register the app:
+
+   ```powershell
+   New-ServicePrincipal -AppId <client-id> -ObjectId <enterprise-app-object-id>
+   ```
+
+   The object ID is the one on the **Enterprise applications** overview page of the app, **not** the one on its App
+   registrations page. The wrong one is the most common cause of a failed login.
+
+4. **Grant the service principal access to each mailbox** the agent processes:
+
+   ```powershell
+   Add-MailboxPermission -Identity "support@contoso.com" -User <service-principal-id> -AccessRights FullAccess
+   ```
+
+   `Get-ServicePrincipal | Format-List` shows the service principal's identity.
+
+5. **Make sure IMAP is enabled on those mailboxes**:
+
+   ```powershell
+   Set-CASMailbox -Identity "support@contoso.com" -ImapEnabled $true
+   ```
+
+6. **Hand over four values** to the person configuring the agent, over a channel you would trust with a password: the
+   tenant ID, the client ID, the client secret value, and the address of each mailbox granted in step 4. Tell them when
+   the secret expires, too.
+
+::: warning Step 4 is the access boundary
+The app can open exactly the mailboxes granted in step 4 and no others. Grant only the mailboxes the agent is meant to
+process, and treat anyone who can run `Add-MailboxPermission` — or edit the agent profile's **Username** — as able to
+point the agent at any mailbox that has been granted. The client secret carries the same weight as a mailbox password:
+anyone holding it can read every granted mailbox.
+:::
+
+#### For the person configuring the agent
+
+You need the four values from your Microsoft 365 administrator. On the agent profile, set:
+
+| Field              | Value                                       |
+| ------------------ | ------------------------------------------- |
+| **IMAP Host**      | `outlook.office365.com`                     |
+| **IMAP Port**      | `993`                                       |
+| **Use TLS**        | On                                          |
+| **Authentication** | **Microsoft 365 (OAuth 2.0)**               |
+| **Username**       | A mailbox address the administrator granted |
+| **Tenant ID**      | The tenant ID you were given                |
+| **Client ID**      | The client ID you were given                |
+| **Client Secret**  | The client secret value you were given      |
+
+A shared mailbox works as **Username**. A mailbox the administrator did not grant cannot be opened, however correct the
+other values are — ask for it to be granted instead of changing anything else.
+
+::: tip Client secrets expire
+Entra ID client secrets are issued for at most two years, and an expired secret fails every run with `AADSTS7000222`.
+Put the expiry date in your calendar: before it runs out, the administrator creates a new secret and you paste it into
+the profile.
+:::
+
+#### When the login fails
+
+The error in the run's event timeline tells you which side refused, and so who can fix it:
+
+| Error                             | Cause                                                                                                                                                | Fixed by                                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `... these fields are empty: ...` | **Tenant ID**, **Client ID** or **Client Secret** is not filled in on the profile.                                                                   | The person configuring the agent.                                                 |
+| `AADSTS90002` / `AADSTS700016`    | The tenant ID is wrong, or the client ID does not belong to an app in that tenant.                                                                   | The person configuring the agent, by comparing with the values handed over.       |
+| `AADSTS7000215` / `AADSTS7000222` | The client secret is wrong — often the Secret ID pasted instead of the value — or it has expired.                                                    | Wrong: the person configuring the agent. Expired: the administrator (new secret). |
+| `NO AUTHENTICATE failed`          | Entra issued a token but Exchange refused it — step 3, 4 or 5 is missing, step 3 used the wrong object ID, or **Username** is not a granted mailbox. | The administrator, steps 3 to 5.                                                  |
+
+Exchange answers `NO AUTHENTICATE failed` for all of its causes alike. Check first that **Username** is exactly a
+mailbox that was granted; if it is, the administrator goes through steps 3 to 5 in order.
 
 ### Draft email settings
 
@@ -183,9 +291,10 @@ The two jobs never contend for the same message.
 
 ## Best practices
 
-**Use an app-specific password.** Most providers (Gmail, Microsoft 365, and others) issue per-application credentials
-that can be revoked on their own. Use one instead of the account's real password, and give the agent a mailbox that
-holds only what it needs to see.
+**Use an app-specific password — or OAuth 2.0 on Microsoft 365.** Most providers (Gmail and others) issue
+per-application credentials that can be revoked on their own. Use one instead of the account's real password, and give
+the agent a mailbox that holds only what it needs to see. On Microsoft 365, use
+[OAuth 2.0](#microsoft-365-with-oauth-2-0) instead: app passwords stop working once basic authentication is disabled.
 
 **Start with moving and drafting off.** Both are off by default for a reason. Run the agent read-only first, confirm in
 the event timeline that it connects and picks up the right messages, then switch on one capability at a time.
