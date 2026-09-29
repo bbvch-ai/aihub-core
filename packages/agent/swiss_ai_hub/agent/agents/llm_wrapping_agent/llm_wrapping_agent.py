@@ -147,7 +147,7 @@ class LLMWrappingAgent(Agent):
     async def gather_context_step(
         self, ctx: Conversation.Contextualized, event: UserMessageEvent
     ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        return [Memory.recall(ctx.query), AttachedFiles.read(event.files, ctx.history)]
+        return [Memory.recall(ctx.query), AttachedFiles.read(event.files, ctx.history, ctx.query)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),

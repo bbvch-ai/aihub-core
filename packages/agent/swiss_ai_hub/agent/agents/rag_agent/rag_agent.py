@@ -119,11 +119,17 @@ class RAGAgent(Agent):
         icon="mdi:brain",
     )
     async def gather_context_step(
-        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent | RAGStartEvent
+        self,
+        ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
+        agent_config: RAGAgentConfig,
     ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
-        return [Memory.recall(ctx.query, namespaces), AttachedFiles.read(start_event.files, ctx.history)]
+        files = AttachedFiles.read(
+            start_event.files, ctx.history, ctx.query, reserve_tokens=agent_config.retrieved_context_reserve()
+        )
+        return [Memory.recall(ctx.query, namespaces), files]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),

@@ -7,6 +7,7 @@ steps:
 prompt:
   preamble: The user attached the following files to this conversation. When the question
     refers to them, answer from their content and name the file you used.
+  excerpted: "Only the parts of \"%{filename}\" most relevant to the question fit into your context; they are separated by […]. Tell the user that your answer is based on excerpts of this file."
   truncated: Only the beginning of "%{filename}" fit into your context. Tell the
     user that your answer is based on part of this file.
   unreadable: The user attached "%{filename}", but it could not be read (%{error}).
