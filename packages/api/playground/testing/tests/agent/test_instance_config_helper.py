@@ -321,6 +321,18 @@ class TestBlankRequiredFields:
         assert "host: required field is empty" in detail
         assert "username: required field is empty" in detail
 
+    def test_an_empty_submission_is_rejected_rather_than_crashing(self):
+        """`normalize_form_configuration` turns `{}` into `None`; that must be a 400 naming what is missing, not a
+        500 from the walk."""
+        detail = self._reject(InstanceConfigHelper.normalize_form_configuration({}))
+        assert "title: required field is empty" in detail
+
+    def test_a_repeater_in_formkit_numbered_dict_shape_is_walked(self):
+        """FormKit can submit a repeater as `{"0": {...}, "1": {...}}`; the runtime turns that back into a list
+        before validating, so a blank field in it must not slip past as an unrecognised shape."""
+        config = {**self._filled(), "sources": {"0": {"model": "m"}, "1": {"model": ""}}}
+        assert "sources.1.model" in self._reject(config)
+
     @staticmethod
     def _detail_of(elements: list[FormkitElement], config: dict) -> str:
         with pytest.raises(HTTPException) as exc_info:

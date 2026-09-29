@@ -157,7 +157,7 @@ class InstanceConfigHelper:
         return undeclared
 
     @staticmethod
-    def reject_blank_required_fields(elements: list[FormkitElement], config: dict[str, Any]) -> None:
+    def reject_blank_required_fields(elements: list[FormkitElement], config: dict[str, Any] | None) -> None:
         """Reject a submission that left a field blank which the announced form marks required.
 
         The generated model cannot do this reliably. `required` on a form element carries FormKit's
@@ -174,9 +174,11 @@ class InstanceConfigHelper:
 
         Runs before the generated model so a blank field is named as itself. The model, when it does
         reject a leaf, reports either a missing key or a type mismatch and says nothing about a
-        present-and-empty value, which is the case that actually reaches here.
+        present-and-empty value, which is the case that actually reaches here. An empty submission
+        arrives as `None` from `normalize_form_configuration`, and repeaters are read in FormKit's
+        numbered-dict shape too, both as in `reject_invalid_values`.
         """
-        blank = InstanceConfigHelper._blank_required_fields(elements, config, prefix="")
+        blank = InstanceConfigHelper._blank_required_fields(elements, transform_formkit_arrays(config or {}), prefix="")
         if not blank:
             return
 
