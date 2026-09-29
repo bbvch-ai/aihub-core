@@ -9,8 +9,9 @@ from swiss_ai_hub.core.form import (
     Repeater,
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
+    transform_formkit_arrays,
 )
-from swiss_ai_hub.core.i18n import LOCALES, LocaleString
+from swiss_ai_hub.core.i18n import LOCALES, LocaleHandler, LocaleString
 from swiss_ai_hub.core.persistence import AgentInstanceRef
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.scheduling import CronSchedule, ScheduleAdmission
@@ -153,6 +154,51 @@ class InstanceConfigHelper:
             if isinstance(entry, dict):
                 undeclared.extend(InstanceConfigHelper._undeclared_fields(children, entry, f"{field_path}.{index}."))
         return undeclared
+
+    @staticmethod
+    def reject_invalid_values(elements: list[FormkitElement], config: dict[str, Any] | None, t: LocaleHandler) -> None:
+        """Reject a submission holding a value its form element knows the config model would refuse.
+
+        Same jambo gap as `validate_cron_field`: a cross-field rule lives in a `model_validator`, which the
+        generated model does not carry, so the value is stored and then aborts every run when the runtime
+        validates the real config. The element owns the rule, so this only walks the announced form.
+
+        Repeaters are read in FormKit's numbered-dict shape too, because the runtime converts that shape
+        back to a list before validating and would reject what it finds there.
+        """
+        invalid = InstanceConfigHelper._invalid_values(elements, transform_formkit_arrays(config or {}), "", t)
+        if not invalid:
+            return
+
+        raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(invalid)}")
+
+    @staticmethod
+    def _invalid_values(
+        elements: list[FormkitElement], config: dict[str, Any], prefix: str, t: LocaleHandler
+    ) -> list[str]:
+        """Every rejected value under these elements, as `field: message`, `repeater.0.field: message`."""
+        invalid: list[str] = []
+        for element in elements:
+            name = getattr(element, "name", None)
+            if name:
+                invalid.extend(
+                    InstanceConfigHelper._invalid_in_element(element, config.get(name), f"{prefix}{name}", t)
+                )
+        return invalid
+
+    @staticmethod
+    def _invalid_in_element(element: FormkitElement, value: Any, field_path: str, t: LocaleHandler) -> list[str]:
+        """One element's own verdict, plus its children's when it is a group or a repeater."""
+        invalid = [f"{field_path}: {message}" for message in element.validate_value(field_path, value, t)]
+        if isinstance(element, Group) and isinstance(value, dict):
+            invalid.extend(InstanceConfigHelper._invalid_values(element.children, value, f"{field_path}.", t))
+        if isinstance(element, Repeater) and isinstance(value, list):
+            for index, entry in enumerate(value):
+                if isinstance(entry, dict):
+                    invalid.extend(
+                        InstanceConfigHelper._invalid_values(element.children, entry, f"{field_path}.{index}.", t)
+                    )
+        return invalid
 
     @staticmethod
     def validate_cron_field(config: dict[str, Any], agent: AgentInstanceRef | None = None) -> None:

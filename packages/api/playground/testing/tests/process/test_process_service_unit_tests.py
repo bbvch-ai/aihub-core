@@ -1,18 +1,22 @@
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.form import ConfigSpecs, Repeater, VectorStoreInput
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes import ProcessConfig
 
+from swiss_ai_hub.api.routes.process.dto.create_process_instance_request import CreateProcessInstanceRequest
 from swiss_ai_hub.api.routes.process.dto.full_process_instance_dto import FullProcessInstanceDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
 from swiss_ai_hub.api.routes.process.process_service import ProcessService
 from swiss_ai_hub.api.runners.simulation.process.events.human_start_work import HumanStartEvent
+from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 enable_logging()
 
@@ -208,3 +212,71 @@ class TestProcessServiceUnit:
         assert result.process_class == "TestProcess"
         assert result.process_id == "test_process_1"
         assert result.event == event
+
+
+_PROCESS_MODULE = "swiss_ai_hub.api.routes.process.process_service"
+_EMPTY_SCOPE_CONFIG = {
+    "retrievers": [{"vector_store": {"collection_name": "handbook", "index_namespaces": [], "all_namespaces": False}}]
+}
+
+
+class TestProcessSaveRejectsEmptyNamespaceScope:
+    """#1836: no process blueprint embeds a retriever today, but the process save path must not become the bypass."""
+
+    @staticmethod
+    def _mock_save_dependencies(stack: ExitStack) -> tuple[Mock, AsyncMock]:
+        class_entity = Mock()
+        class_entity.is_online = True
+        class_entity.process_config_specs.to_specs.return_value = ConfigSpecs(config_class="ReviewProcess")
+        class_entity.form_elements = [
+            Repeater(name="retrievers", children=[VectorStoreInput(label="Vector store", name="vector_store")])
+        ]
+        stack.enter_context(
+            patch(f"{_PROCESS_MODULE}.ProcessClassEntity.get_by_process_class", return_value=class_entity)
+        )
+        stack.enter_context(patch(f"{_PROCESS_MODULE}.ModelCreationService"))
+        stack.enter_context(patch.object(InstanceConfigHelper, "validate_config_for_create"))
+        stack.enter_context(patch.object(InstanceConfigHelper, "validate_config_for_update"))
+        config_auth = stack.enter_context(patch(f"{_PROCESS_MODULE}.ConfigAuthorizationService"))
+        config_auth.validate_for_user_or_raise = AsyncMock()
+        config_doc = stack.enter_context(patch(f"{_PROCESS_MODULE}.ProcessConfigEntityDocument"))
+        config_doc.find_for_class_and_id.return_value = None
+        return config_doc, config_auth.validate_for_user_or_raise
+
+    @staticmethod
+    def _assert_rejected(raised: pytest.ExceptionInfo[HTTPException]) -> None:
+        assert raised.value.status_code == 400
+        assert raised.value.detail == (
+            "Configuration validation failed: retrievers.0.vector_store: "
+            "Select at least one namespace to search, or enable all_namespaces."
+        )
+
+    @pytest.mark.asyncio
+    async def test_create_is_rejected(self):
+        request = CreateProcessInstanceRequest(process_id="review", configuration=_EMPTY_SCOPE_CONFIG)
+
+        with ExitStack() as stack:
+            config_doc, authorize = self._mock_save_dependencies(stack)
+            with pytest.raises(HTTPException) as raised:
+                await ProcessService.create_process_instance(
+                    "ReviewProcess", request, LocaleHandler(locale="en"), user=Mock()
+                )
+
+        self._assert_rejected(raised)
+        authorize.assert_not_awaited()
+        config_doc.return_value.save.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_update_is_rejected(self):
+        with ExitStack() as stack:
+            config_doc, authorize = self._mock_save_dependencies(stack)
+            stored = Mock()
+            config_doc.find_for_class_and_id.return_value = stored
+            with pytest.raises(HTTPException) as raised:
+                await ProcessService.update_process_instance(
+                    "ReviewProcess", "review", dict(_EMPTY_SCOPE_CONFIG), LocaleHandler(locale="en"), user=Mock()
+                )
+
+        self._assert_rejected(raised)
+        authorize.assert_not_awaited()
+        stored.save.assert_not_called()
