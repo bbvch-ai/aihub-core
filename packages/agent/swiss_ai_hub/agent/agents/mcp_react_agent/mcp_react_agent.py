@@ -4,14 +4,9 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    CompleteConversationEvent,
-    ContextualizeConversationEvent,
-    ConversationContextualizedEvent,
     LLMEvent,
-    MemoryRecalledEvent,
     MemoryStorageRequestedEvent,
     Message,
-    RecallMemoryEvent,
     StopEvent,
     ToolEvent,
     UserMessageEvent,
@@ -80,7 +75,7 @@ class McpReactAgent(Agent):
         self,
         event: UserMessageEvent,
         config: McpReactAgentConfig,
-    ) -> ContextualizeConversationEvent:
+    ) -> Conversation.Contextualize:
         """The entry step: the chat message becomes the limited history the conversation picks up from."""
         limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.number_of_input_tokens)
         return Conversation.contextualize(history=limited, message=event)
@@ -90,7 +85,7 @@ class McpReactAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
         return Memory.recall(ctx.query)
 
     @step(
@@ -100,8 +95,8 @@ class McpReactAgent(Agent):
     )
     async def init_step(
         self,
-        ctx: ConversationContextualizedEvent,
-        memories: MemoryRecalledEvent,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
         start_event: UserMessageEvent,
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
@@ -161,14 +156,14 @@ class McpReactAgent(Agent):
     async def reasoning_step(
         self,
         event: McpReasoningEvent,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """Ask the LLM what to do next — call a tool, or answer the user and hand the turn back."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)

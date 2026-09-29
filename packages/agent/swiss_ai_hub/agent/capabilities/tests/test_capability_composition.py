@@ -8,9 +8,6 @@ is refused before a run exists.
 import pytest
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
-    CompleteConversationEvent,
-    ContextualizeConversationEvent,
-    ConversationContextualizedEvent,
     LLMEvent,
     UserMessageEvent,
 )
@@ -40,11 +37,11 @@ class EchoAgent(Agent):
     """Calls the conversation twice and nothing else."""
 
     @step()
-    async def open_step(self, event: UserMessageEvent) -> ContextualizeConversationEvent:
+    async def open_step(self, event: UserMessageEvent) -> Conversation.Contextualize:
         return Conversation.contextualize(history=event.messages, message=event)
 
     @step()
-    async def respond_step(self, ctx: ConversationContextualizedEvent) -> CompleteConversationEvent:
+    async def respond_step(self, ctx: Conversation.Contextualized) -> Conversation.Complete:
         return Conversation.complete(answer=LLMEvent())
 
 
@@ -52,13 +49,13 @@ class ForgetfulAgent(Agent):
     """Calls the conversation but never picks the result up."""
 
     @step()
-    async def open_step(self, event: UserMessageEvent) -> ContextualizeConversationEvent:
+    async def open_step(self, event: UserMessageEvent) -> Conversation.Contextualize:
         return Conversation.contextualize(history=event.messages, message=event)
 
 
 class ClashingAgent(EchoAgent):
     @step()
-    async def derive_query_step(self, ctx: ConversationContextualizedEvent) -> None:
+    async def derive_query_step(self, ctx: Conversation.Contextualized) -> None:
         return None
 
 

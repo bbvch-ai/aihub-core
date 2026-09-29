@@ -4,15 +4,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    CompleteConversationEvent,
-    ComposeContextEvent,
-    ContextComposedEvent,
-    ContextualizeConversationEvent,
-    ConversationContextualizedEvent,
-    MemoryRecalledEvent,
     MemoryStorageRequestedEvent,
     Message,
-    RecallMemoryEvent,
     RefusalReason,
     RefusalStopEvent,
     UserMessageEvent,
@@ -60,7 +53,7 @@ class LLMWrappingAgent(Agent):
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> ContextualizeConversationEvent | RefusalStopEvent:
+    ) -> Conversation.Contextualize | RefusalStopEvent:
         """Truncate the history to the model's own window, refusing a turn that cannot fit it.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]`
@@ -150,7 +143,7 @@ class LLMWrappingAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
         return Memory.recall(ctx.query)
 
     @step(
@@ -159,8 +152,8 @@ class LLMWrappingAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: ConversationContextualizedEvent, memories: MemoryRecalledEvent
-    ) -> ComposeContextEvent:
+        self, ctx: Conversation.Contextualized, memories: Memory.Recalled
+    ) -> Conversation.Compose:
         return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step(
@@ -170,14 +163,14 @@ class LLMWrappingAgent(Agent):
     )
     async def respond_step(
         self,
-        event: ContextComposedEvent,
-        ctx: ConversationContextualizedEvent,
+        event: Conversation.Composed,
+        ctx: Conversation.Contextualized,
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """Stream the answer, then hand the turn back: the memory delegation first, so it is published before
         the run tears down, and the completion last."""
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:

@@ -5,11 +5,8 @@ from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
-    CompleteConversationEvent,
-    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
-    ConversationContextualizedEvent,
     ExpertRejectEvent,
     FewShotRejectEvent,
     HumanInTheLoop,
@@ -32,6 +29,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.preconditions import (
@@ -101,7 +99,7 @@ class ExpertRAGAgent(RAGAgent):
     async def limit_chat_history_with_context_step(  # type: ignore[override]
         self,
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
-        composed: ContextComposedEvent,
+        composed: Conversation.Composed,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         _: ContextSufficientAcceptEvent | None = None,
@@ -174,7 +172,7 @@ class ExpertRAGAgent(RAGAgent):
     async def forward_to_expert_asking_agent_step(
         self,
         user_message_event: UserMessageEvent | RAGStartEvent,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -314,8 +312,8 @@ class ExpertRAGAgent(RAGAgent):
     async def respond_with_llm_step(  # type: ignore[override]
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
-        composed: ContextComposedEvent,
-        ctx: ConversationContextualizedEvent,
+        composed: Conversation.Composed,
+        ctx: Conversation.Contextualized,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -324,7 +322,7 @@ class ExpertRAGAgent(RAGAgent):
         expert_answer_context: ExpertAnswerContextEvent | None = None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None = None,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """Answer from context or a guard rejection; an insufficient-context verdict goes to the expert instead,
         and an expert's answer counts as a successful grounding while a declined escalation keeps the verdict."""
         answer = await do_respond_with_llm(

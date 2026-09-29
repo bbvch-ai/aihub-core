@@ -6,14 +6,9 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
-    CompleteConversationEvent,
-    ContextualizeConversationEvent,
-    ConversationContextualizedEvent,
     LLMEvent,
-    MemoryRecalledEvent,
     MemoryStorageRequestedEvent,
     Message,
-    RecallMemoryEvent,
     RefusalReason,
     RefusalStopEvent,
     StopEvent,
@@ -66,7 +61,7 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> ContextualizeConversationEvent | RefusalStopEvent:
+    ) -> Conversation.Contextualize | RefusalStopEvent:
         """Truncate the chat history to the token limit, and refuse the run when it still cannot be sent.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when a
@@ -131,7 +126,7 @@ class FewShotAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
         return Memory.recall(ctx.query)
 
     @step(
@@ -141,7 +136,7 @@ class FewShotAgent(Agent):
     )
     async def right_agent_guard(
         self,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         start_event: UserMessageEvent,
         t: LocaleHandler,
         agent_config: FewShotAgentConfig,
@@ -170,9 +165,9 @@ class FewShotAgent(Agent):
     )
     async def create_few_shot_examples(
         self,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         _: AgentSuitabilityAcceptEvent,
-        memories: MemoryRecalledEvent,
+        memories: Memory.Recalled,
         start_event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
     ) -> FewShotEvent:
@@ -215,13 +210,13 @@ class FewShotAgent(Agent):
     async def respond_with_llm_step(
         self,
         event: FewShotEvent,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """Stream the answer, then hand the turn back: the memory delegation first, the completion last."""
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
@@ -247,10 +242,10 @@ class FewShotAgent(Agent):
     async def reject_unsuitable_request_step(
         self,
         event: AgentSuitabilityRejectEvent,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> CompleteConversationEvent:
+    ) -> Conversation.Complete:
         """End a rejected request with a streamed refusal, since a bare stop event reaches chat clients as an
         empty message.
 

@@ -25,7 +25,10 @@ a config parameter annotated with the blueprint's exact config class, so nothing
 today. A step returns the capability's request event, built with a typed helper on the capability class; a later step
 picks the result up by declaring the result event as a parameter. Fan-out is returning a list of requests; waiting is
 declaring parameters. Requests are named in the imperative (`ContextualizeConversationEvent`, `RecallMemoryEvent`) and
-results in the past participle (`ConversationContextualizedEvent`, `MemoryRecalledEvent`). A capability's steps are
+results in the past participle (`ConversationContextualizedEvent`, `MemoryRecalledEvent`), and the capability class
+exposes them under scoped names (`Conversation.Contextualized`, `Memory.Recalled`) next to the lowercase call helpers,
+so a blueprint's annotations say which sub-workflow an event belongs to even though the composed workflow is flat. A
+capability's steps are
 `@staticmethod`s decorated with `@step` that take the blueprint instance first, so the dispatcher invokes them exactly
 as it invokes a method.
 

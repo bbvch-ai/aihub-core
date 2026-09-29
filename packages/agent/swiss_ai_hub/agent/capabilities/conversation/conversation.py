@@ -73,6 +73,12 @@ class Conversation(Capability):
     }
     required_config: ClassVar[type[ConversationFields]] = ConversationFields
 
+    Contextualize = ContextualizeConversationEvent
+    Contextualized = ConversationContextualizedEvent
+    Compose = ComposeContextEvent
+    Composed = ContextComposedEvent
+    Complete = CompleteConversationEvent
+
     @staticmethod
     def contextualize(
         history: list[ChatMessage], message: UserMessageEvent | None = None

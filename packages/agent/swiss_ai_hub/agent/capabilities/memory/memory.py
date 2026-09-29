@@ -46,6 +46,9 @@ class Memory(Capability):
     calls: ClassVar[dict] = {RecallMemoryEvent: MemoryRecalledEvent}
     required_config: ClassVar[type[MemoryFields]] = MemoryFields
 
+    Recall = RecallMemoryEvent
+    Recalled = MemoryRecalledEvent
+
     @staticmethod
     def recall(query: str, org_memory_namespaces: Sequence[str] = ()) -> RecallMemoryEvent:
         return RecallMemoryEvent(query=query, org_memory_namespaces=list(org_memory_namespaces))

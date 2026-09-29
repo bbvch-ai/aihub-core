@@ -3,20 +3,13 @@ from typing import ClassVar
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    CompleteConversationEvent,
-    ComposeContextEvent,
-    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
-    ContextualizeConversationEvent,
-    ConversationContextualizedEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     LLMEvent,
-    MemoryRecalledEvent,
     MemoryStorageRequestedEvent,
     RAGStartEvent,
-    RecallMemoryEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
@@ -101,7 +94,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> ContextualizeConversationEvent | RefusalStopEvent:
+    ) -> Conversation.Contextualize | RefusalStopEvent:
         """The entry step: both start events become the limited history the conversation picks up from.
 
         A programmatic start carries no user message, so the conversation skips meta-question inspection.
@@ -125,8 +118,8 @@ class RAGAgent(Agent):
         icon="mdi:brain",
     )
     async def recall_memory_step(
-        self, ctx: ConversationContextualizedEvent, start_event: UserMessageEvent | RAGStartEvent
-    ) -> RecallMemoryEvent:
+        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent | RAGStartEvent
+    ) -> Memory.Recall:
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         return Memory.recall(ctx.query, namespaces)
@@ -137,8 +130,8 @@ class RAGAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: ConversationContextualizedEvent, memories: MemoryRecalledEvent
-    ) -> ComposeContextEvent:
+        self, ctx: Conversation.Contextualized, memories: Memory.Recalled
+    ) -> Conversation.Compose:
         return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step(
@@ -148,7 +141,7 @@ class RAGAgent(Agent):
     )
     async def few_shot_guard_step(
         self,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -170,7 +163,7 @@ class RAGAgent(Agent):
     )
     async def retrieve_step(
         self,
-        event: ConversationContextualizedEvent | ContextInsufficientWithQueryEvent,
+        event: Conversation.Contextualized | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
@@ -197,7 +190,7 @@ class RAGAgent(Agent):
     async def rerank_nodes_step(
         self,
         event: RetrieverEvent,
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -243,8 +236,8 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
-        ctx: ConversationContextualizedEvent,
-        composed: ContextComposedEvent,
+        ctx: Conversation.Contextualized,
+        composed: Conversation.Composed,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
@@ -290,7 +283,7 @@ class RAGAgent(Agent):
     async def limit_chat_history_with_context_step(
         self,
         context_event: InOrderNodeCombinerEvent,
-        composed: ContextComposedEvent,
+        composed: Conversation.Composed,
         _: ContextSufficientAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
@@ -311,15 +304,15 @@ class RAGAgent(Agent):
     async def respond_with_llm_step(
         self,
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
-        composed: ContextComposedEvent,
-        ctx: ConversationContextualizedEvent,
+        composed: Conversation.Composed,
+        ctx: Conversation.Contextualized,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """Answer from the grounded context or a guard rejection, then hand the turn back with its outcome."""
         answer = await do_respond_with_llm(
             event,
@@ -342,14 +335,14 @@ class RAGAgent(Agent):
 
     @staticmethod
     def hand_back(
-        ctx: ConversationContextualizedEvent,
+        ctx: Conversation.Contextualized,
         answer: LLMEvent,
         stop: StopEvent,
         agent_config: RAGAgentConfig,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None,
-    ) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         """The memory delegation first, so it is published before the run tears down, and the completion last."""
         remember = Memory.remember(
             query=ctx.query,

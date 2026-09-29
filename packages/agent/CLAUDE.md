@@ -129,19 +129,19 @@ class EchoAgentConfig(MemoryFields, ConversationFields, AgentConfig): ...
 
 class EchoAgent(Agent):
     @step()
-    async def limit_history_step(self, event: UserMessageEvent, config: ConversationFields) -> ContextualizeConversationEvent:
+    async def limit_history_step(self, event: UserMessageEvent, config: ConversationFields) -> Conversation.Contextualize:
         return Conversation.contextualize(history=limit_chat_history(event.messages, config.number_of_input_tokens), message=event)
 
     @step()
-    async def recall_memory_step(self, ctx: ConversationContextualizedEvent) -> RecallMemoryEvent:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
         return Memory.recall(ctx.query)
 
     @step()
-    async def assemble_prompt_step(self, ctx: ConversationContextualizedEvent, memories: MemoryRecalledEvent) -> ComposeContextEvent:
+    async def assemble_prompt_step(self, ctx: Conversation.Contextualized, memories: Memory.Recalled) -> Conversation.Compose:
         return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step()
-    async def respond_step(self, event: ContextComposedEvent, ctx: ConversationContextualizedEvent, ...) -> list[MemoryStorageRequestedEvent | CompleteConversationEvent]:
+    async def respond_step(self, event: Conversation.Composed, ctx: Conversation.Contextualized, ...) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
         answer = ...  # stream with as_stop_step=False
         remember = Memory.remember(query=ctx.query, answer=answer, user=user, topic=topic, agent_config=config, memory=config, locale=t.locale)
         return [*([remember] if remember else []), Conversation.complete(answer=answer)]
@@ -150,8 +150,12 @@ class EchoAgent(Agent):
 Reading a blueprint shows every capability it uses, in which order their context reaches the model, and what runs
 after the answer. Fan-out is returning a list; waiting is declaring parameters. A disabled capability still answers
 (an empty `MemoryRecalledEvent`), so waits never hang. Naming: requests are imperative (`ContextualizeConversationEvent`,
-`RecallMemoryEvent`), results are past participles (`ConversationContextualizedEvent`, `MemoryRecalledEvent`), helpers
-sit on the capability class.
+`RecallMemoryEvent`), results are past participles (`ConversationContextualizedEvent`, `MemoryRecalledEvent`), and the
+capability class carries both the call helpers (lowercase: `Conversation.compose(...)`) and the event types under
+their scoped names (CamelCase: `Conversation.Compose`, `Conversation.Composed`, `Memory.Recalled`), the way
+`AgentInTheLoop.request`/`.response` do. Annotate steps with the scoped names so a reader sees which sub-workflow an
+event belongs to; the composed workflow itself is flat, and the graph, discovery and the event store show the core
+event names.
 
 **`Conversation`** (needs `ConversationFields` on the config) exposes three calls:
 
