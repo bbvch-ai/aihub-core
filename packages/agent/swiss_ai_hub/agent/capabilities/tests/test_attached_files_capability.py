@@ -211,7 +211,8 @@ class TestAttachedFilesBudget:
         )
 
         assert rooms["small"] is None
-        assert rooms["large"] is not None and rooms["large"] > 0
+        assert rooms["large"] is not None
+        assert rooms["large"] > 0
 
     def test_everything_fits_when_there_is_room(self):
         rooms = AttachedFilesBudget(10_000, self._counter).allocate({"a": "alpha beta", "b": "gamma"})
