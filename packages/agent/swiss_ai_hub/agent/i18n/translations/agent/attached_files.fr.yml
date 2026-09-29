@@ -8,6 +8,7 @@ prompt:
   preamble: L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque
     la question s'y rapporte, réponds à partir de leur contenu et nomme le fichier
     utilisé.
+  excerpted: "Seules les parties de « %{filename} » les plus pertinentes pour la question ont tenu dans ton contexte ; elles sont séparées par […]. Indique à l'utilisateur que ta réponse repose sur des extraits de ce fichier."
   truncated: Seul le début de « %{filename} » a tenu dans ton contexte. Indique
     à l'utilisateur que ta réponse repose sur une partie de ce fichier.
   unreadable: L'utilisateur a joint « %{filename} », mais ce fichier n'a pas pu

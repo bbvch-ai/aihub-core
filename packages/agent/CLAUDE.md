@@ -175,12 +175,18 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
 scope; `remember(...)` builds the memory-storage delegation directly, no step behind it, so returning it ahead of the
 completion is what guarantees it is published before the run tears down (ADR `2026_09_11`).
 
-**`AttachedFiles`** (needs `ConversationFields`): `read(files, history)` → `AttachedFilesReadEvent` with one block
-holding every attached document's full text, trimmed to fit next to `history` and shared fairly between files, empty
-when nothing readable is attached (images stay image content). It emits an `AttachedFileEvent` per file, which chat
-clients show as a source; an unreadable file is reported in the block so the answer says so. Blueprints call it from
-their `gather_context_step` next to `Memory.recall` and compose the block after the memories. Chat clients send every
-file of the current message branch on each turn, so no file state is kept across turns.
+**`AttachedFiles`** (needs `AttachedFilesFields`: an embedding and a reranking model, preset to `embedding/bge-m3`
+and `reranker/bge`): `read(files, history, query, reserve_tokens)` → `AttachedFiles.Contents` (`AttachedFilesReadEvent`) with one block holding
+each attached document as `<attached_file name="…" pages="…">`, empty when nothing readable is attached (images stay
+image content). The files share the room left after `history` and `reserve_tokens`; a file that fits goes in whole,
+one that does not is cut down to its sections most relevant to `query` (embedding shortlist, then rerank, back in
+document order), and to its beginning when there is no query or the models fail. RAG reserves room for its retrieved
+nodes (`RAGAgentConfig.retrieved_context_reserve()`), because the final prompt keeps every system message whole and
+fails when they do not fit. It emits an `AttachedFileEvent` per file, which chat clients show as a source; an
+unreadable file is reported in the block so the answer says so. Blueprints call it from their `gather_context_step`
+next to `Memory.recall` and compose the block after the memories. Chat clients send every file of the current message
+branch on each turn, so no file state is kept across turns. The query used for knowledge retrieval does not consider
+the files.
 
 **Capability steps** are `@staticmethod`s decorated with `@step` taking the blueprint instance first, so the dispatcher
 calls them like methods. A capability declares `calls` (request → every outcome the call can end in: one or several

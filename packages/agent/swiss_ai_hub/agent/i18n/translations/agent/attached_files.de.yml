@@ -8,6 +8,7 @@ prompt:
   preamble: Der Benutzer hat die folgenden Dateien an diese Unterhaltung angehängt.
     Wenn sich die Frage auf sie bezieht, antworte anhand ihres Inhalts und nenne die
     verwendete Datei.
+  excerpted: "Nur die für die Frage relevantesten Teile von \"%{filename}\" haben in deinen Kontext gepasst; sie sind durch […] getrennt. Teile dem Benutzer mit, dass deine Antwort auf Auszügen dieser Datei beruht."
   truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Teile
     dem Benutzer mit, dass deine Antwort auf einem Teil dieser Datei beruht.
   unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht

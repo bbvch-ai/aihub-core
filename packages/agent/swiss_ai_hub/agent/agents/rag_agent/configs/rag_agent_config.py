@@ -7,6 +7,7 @@ from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrie
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -14,8 +15,12 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
     ContextSufficientGuardStepConfig,
 )
 
+# A retrieved chunk's size in tokens, on the generous side: ingestion chunks are shorter, but neighbour and summary
+# nodes ride along with them.
+RETRIEVED_TOKENS_PER_NODE = 800
 
-class RAGAgentConfig(MemoryFields, ConversationFields, AgentConfig):
+
+class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, AgentConfig):
     """
     Configuration for a RAGAgent with multiple retrieval sources.
 
@@ -65,6 +70,21 @@ class RAGAgentConfig(MemoryFields, ConversationFields, AgentConfig):
         ),
     ] = []
 
+    def retrieved_context_reserve(self) -> int:
+        """Tokens to keep free for the knowledge this profile retrieves, so attached files cannot crowd it out.
+
+        An estimate, not a count: retrieval runs after the files are sized. It covers every retrieved node with its
+        neighbours, narrowed to the reranker's top_n when reranking is on, and never more than half the budget.
+        """
+        nodes = sum(
+            retriever.retrieve_k
+            * (1 + 2 * retriever.retrieve_prev_next.num_nodes if retriever.retrieve_prev_next else 1)
+            for retriever in self.retrievers
+        )
+        if self.reranking_config is not None:
+            nodes = min(nodes, self.reranking_config.reranking_model.top_n)
+        return min(nodes * RETRIEVED_TOKENS_PER_NODE, self.input_budget() // 2)
+
     @classmethod
     def as_form(cls) -> Self:
         """Factory method to create a form-mode RAGAgentConfig."""
@@ -77,6 +97,7 @@ class RAGAgentConfig(MemoryFields, ConversationFields, AgentConfig):
             icon=base.icon,
             **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
+            **cls.attached_files_form_elements(),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
             reranking_config=RerankingConfig.as_form(),

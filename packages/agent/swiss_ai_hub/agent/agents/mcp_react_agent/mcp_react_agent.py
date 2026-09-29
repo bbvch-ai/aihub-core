@@ -89,7 +89,7 @@ class McpReactAgent(Agent):
     async def gather_context_step(
         self, ctx: Conversation.Contextualized, start_event: UserMessageEvent
     ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        return [Memory.recall(ctx.query), AttachedFiles.read(start_event.files, ctx.history)]
+        return [Memory.recall(ctx.query), AttachedFiles.read(start_event.files, ctx.history, ctx.query)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),

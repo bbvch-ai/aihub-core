@@ -22,8 +22,10 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_selector import AttachedFileSectionSelector
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files_config import AttachedFilesConfig
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 
 READER_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader"
@@ -55,12 +57,12 @@ def _document(content: str, pages: int | None = 3) -> ExtractedDocument:
     )
 
 
-async def _read(files: list[UserUploadedFile], budget: int = 100_000) -> list:
+async def _read(files: list[UserUploadedFile], budget: int = 100_000, query: str = "", reserve_tokens: int = 0) -> list:
     config = _config()
     with patch.object(ConversationFields, "input_budget", return_value=budget):
         return await AttachedFiles.read_step(
             LLMWrappingAgent(),
-            request=AttachedFiles.read(files, HISTORY),
+            request=AttachedFiles.read(files, HISTORY, query, reserve_tokens),
             topic=AgentInstanceTopic(
                 agent_class="LLMWrappingAgent",
                 agent_id="files-test",
@@ -72,7 +74,8 @@ async def _read(files: list[UserUploadedFile], budget: int = 100_000) -> list:
                 event_id="e1",
             ),
             conversation=config,
-            t=LocaleHandler(),
+            files_config=config,
+            t=LocaleHandler("en"),
         )
 
 
@@ -132,17 +135,69 @@ async def test_an_unreadable_file_is_reported_not_dropped():
     assert "corrupt PDF" in (read.block[0].content or "")
 
 
+LONG_TEXT = " ".join(f"Sentence number {index} of the handbook." for index in range(4000))
+
+
 @pytest.mark.asyncio
-async def test_a_file_too_large_for_the_prompt_is_trimmed_and_the_model_told_so():
-    long_text = " ".join(f"Sentence number {index} of the handbook." for index in range(4000))
-    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(long_text))):
+async def test_a_file_too_large_without_a_query_keeps_its_beginning():
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))):
         events = await _read([_file("handbook.pdf")], budget=2_000)
 
     source, read = events
     content = read.block[0].content or ""
     assert source.status == AttachedFileStatus.TRUNCATED
-    assert len(content) < len(long_text)
-    assert "handbook.pdf" in content.split("</attached_file>")[-1]
+    assert "Sentence number 0 " in content
+    assert "Sentence number 3999" not in content
+    assert "beginning" in content.split("</attached_file>")[-1]
+
+
+@pytest.mark.asyncio
+async def test_a_file_too_large_keeps_the_sections_relevant_to_the_query():
+    async def pick_last(self, sections: list[str], query: str) -> list[int]:
+        return list(reversed(range(len(sections))))
+
+    with (
+        patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))),
+        patch.object(AttachedFileSectionSelector, "rank", new=pick_last),
+    ):
+        events = await _read([_file("handbook.pdf")], budget=2_000, query="What does the last sentence say?")
+
+    source, read = events
+    content = read.block[0].content or ""
+    assert source.status == AttachedFileStatus.TRUNCATED
+    assert "Sentence number 3999" in content
+    assert "Sentence number 0 " not in content
+    assert "excerpts" in content.split("</attached_file>")[-1]
+
+
+@pytest.mark.asyncio
+async def test_a_failing_ranking_falls_back_to_the_beginning():
+    with (
+        patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))),
+        patch.object(AttachedFileSectionSelector, "rank", new=AsyncMock(side_effect=RuntimeError("reranker down"))),
+    ):
+        events = await _read([_file("handbook.pdf")], budget=2_000, query="Anything?")
+
+    assert "Sentence number 0 " in (events[-1].block[0].content or "")
+
+
+@pytest.mark.asyncio
+async def test_reserved_room_is_left_free():
+    text = " ".join(["word."] * 3000)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(text))):
+        whole = await _read([_file("a.pdf")], budget=100_000)
+        reserved = await _read([_file("a.pdf")], budget=100_000, reserve_tokens=99_000)
+
+    assert whole[0].status == AttachedFileStatus.READ
+    assert reserved[0].status == AttachedFileStatus.TRUNCATED
+
+
+@pytest.mark.asyncio
+async def test_a_quote_in_the_filename_cannot_break_the_tag():
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document("text"))):
+        events = await _read([_file('say "hi".pdf')])
+
+    assert 'name="say &quot;hi&quot;.pdf"' in (events[-1].block[0].content or "")
 
 
 class TestAttachedFilesBudget:
@@ -151,20 +206,41 @@ class TestAttachedFilesBudget:
         return [0] * len(text.split())
 
     def test_small_files_fit_whole_next_to_a_large_one(self):
-        small = "one two three"
-        large = " ".join(["word."] * 5000)
+        rooms = AttachedFilesBudget(1_000, self._counter).allocate(
+            {"small": "one two three", "large": " ".join(["word."] * 5000)}
+        )
 
-        fitted = AttachedFilesBudget(1_000, self._counter).fit({"small": small, "large": large})
-
-        assert fitted["small"] == (small, False)
-        assert fitted["large"][1] is True
+        assert rooms["small"] is None
+        assert rooms["large"] is not None and rooms["large"] > 0
 
     def test_everything_fits_when_there_is_room(self):
-        fitted = AttachedFilesBudget(10_000, self._counter).fit({"a": "alpha beta", "b": "gamma"})
+        rooms = AttachedFilesBudget(10_000, self._counter).allocate({"a": "alpha beta", "b": "gamma"})
 
-        assert fitted == {"a": ("alpha beta", False), "b": ("gamma", False)}
+        assert rooms == {"a": None, "b": None}
 
-    def test_no_room_left_trims_to_the_marker(self):
-        fitted = AttachedFilesBudget(0, self._counter).fit({"a": "alpha beta"})
+    def test_no_room_left(self):
+        assert AttachedFilesBudget(0, self._counter).allocate({"a": "alpha beta"}) == {"a": 0}
 
-        assert fitted["a"][1] is True
+
+class TestSectionSelector:
+    @staticmethod
+    def _counter(text: str) -> list[int]:
+        return [0] * len(text.split())
+
+    @pytest.mark.asyncio
+    async def test_fills_the_room_in_rank_order_and_keeps_document_order(self):
+        selector = AttachedFileSectionSelector(AttachedFilesConfig(), self._counter, None)
+        sections = ["alpha " * 50, "beta " * 50, "gamma " * 50]
+
+        with (
+            patch.object(AttachedFileSectionSelector, "split", return_value=sections),
+            patch.object(AttachedFileSectionSelector, "rank", new=AsyncMock(return_value=[2, 0, 1])),
+        ):
+            excerpt = await selector.select("ignored", "query", room=100)
+
+        assert excerpt.index("alpha") < excerpt.index("gamma")
+        assert "beta" not in excerpt
+
+    def test_cosine(self):
+        assert AttachedFileSectionSelector.cosine([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
+        assert AttachedFileSectionSelector.cosine([1.0, 0.0], [0.0, 1.0]) == pytest.approx(0.0)

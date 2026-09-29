@@ -20,3 +20,14 @@ class ReadAttachedFilesEvent(ControlEvent):
     history: Annotated[
         list[ChatMessage], Field(description="The history the files will be composed into, for sizing them.")
     ] = []
+    query: Annotated[
+        str, Field(description="The turn's query, for picking the relevant sections of a file too large to fit.")
+    ] = ""
+    reserve_tokens: Annotated[
+        int,
+        Field(
+            description="Room the caller still needs after composing, e.g. for retrieved knowledge, which the files "
+            "must leave free.",
+            ge=0,
+        ),
+    ] = 0
