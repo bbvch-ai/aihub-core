@@ -174,6 +174,19 @@ class TestFlatFormDuality:
         assert required_elem.required is True
         assert optional_elem.required is False
 
+    def test_explicit_required_survives_nullable_annotation(self) -> None:
+        """A toggled field that demands a value once enabled must stay required and carry the marker."""
+        form = OptionalFieldForm(
+            required_field=InputText(label=LocaleString(en="Required")),
+            optional_field=InputText(label=LocaleString(en="Optional"), required=True),
+        )
+
+        optional_elem = next(e for e in form.to_formkit_form() if e.name == "optional_field")
+
+        assert optional_elem.nullable is True
+        assert optional_elem.required is True
+        assert optional_elem.validation == "required"
+
     def test_none_values_are_skipped(self) -> None:
         """Test that None field values are not included in form output."""
         form = OptionalFieldForm(
