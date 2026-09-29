@@ -336,7 +336,7 @@ class ExpertRAGAgent(RAGAgent):
             t,
             user,
             as_stop_step=False,
-            cite_sources=not isinstance(start_event, RAGStartEvent) or start_event.cite_sources,
+            cite_sources=self.cites_sources(start_event),
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,

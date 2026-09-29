@@ -167,5 +167,30 @@ class TestAttachedFileSources:
         assert await _answer(pipe, context, f"Signed [{citation_id}].") == "Signed [1]."
 
 
+class TestSameNamedSources:
+    @pytest.mark.asyncio
+    async def test_a_file_and_a_document_sharing_a_name_get_their_own_numbers(self, pipe: Any) -> None:
+        emitter = _Recorder()
+        context = _context(pipe, emitter, owui_file_ids={"agent-file": "owui-file"})
+        chain = pipe.EventProcessorFactory.create_chain()
+        file_id = CitationId.for_attached_file("agent-file")
+        document = {**_node("s3://knowledge/legal/contract.pdf", "Clause 7"), "document_title": "contract.pdf"}
+        attached = {
+            "_parent_event_names": ["AttachedFileEvent"],
+            "file_id": "agent-file",
+            "filename": "contract.pdf",
+            "status": "read",
+            "citation_id": file_id,
+            "content": "Signed copy",
+        }
+
+        await chain.process(_grounding(document), context)
+        await chain.process(attached, context)
+
+        assert [source["metadata"][0]["name"] for source in emitter.sources] == ["contract.pdf", "contract.pdf (2)"]
+        answer = await _answer(pipe, context, f"Clause 7 [{document['citation_id']}], signed [{file_id}].")
+        assert answer == "Clause 7 [1], signed [2]."
+
+
 def test_generated_copy_matches_template() -> None:
     assert GENERATED_PIPE.read_text() == TEMPLATE_PIPE.read_text()

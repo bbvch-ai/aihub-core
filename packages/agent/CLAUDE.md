@@ -153,9 +153,10 @@ the answer. Fan-out is returning a list; waiting is declaring parameters. A disa
 `RecallMemoryEvent`), results are past participles (`ConversationContextualizedEvent`, `MemoryRecalledEvent`), and the
 capability class carries both the call helpers (lowercase: `Conversation.compose(...)`) and the event types under their
 scoped names (CamelCase: `Conversation.ComposeRequest`, `Conversation.Composed`, `Memory.Recalled`), the way
-`AgentInTheLoop.request`/`.response` do. Annotate steps with the scoped names so a reader sees which sub-workflow an
-event belongs to; the composed workflow itself is flat, and the graph, discovery and the event store show the core event
-names.
+`AgentInTheLoop.request`/`.response` do. A request's scoped name carries a `Request` suffix
+(`Conversation.ComposeRequest`, `Memory.RecallRequest`), so it never differs from its helper only in case, which Sonar
+rejects as a blocker (S1845). Annotate steps with the scoped names so a reader sees which sub-workflow an event belongs
+to; the composed workflow itself is flat, and the graph, discovery and the event store show the core event names.
 
 **`Conversation`** (needs `ConversationFields` on the config) exposes three calls:
 

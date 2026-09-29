@@ -387,12 +387,16 @@ class CitationRegistry:
     Open WebUI resolves ``[n]`` to the n-th distinct source of the message, counted in the order sources arrived and
     keyed the way ``getSourceIds`` keys them (``ContentRenderer.svelte``). Every source goes through here, memories
     included, so the numbers stay aligned even for sources no agent cites. An id the pipe never emitted as a source
-    is dropped rather than shown as a dead marker.
+    is dropped rather than shown as a dead marker. Two documents sharing a label, such as an attached
+    ``contract.pdf`` and a knowledge document of the same name, would share a number, so the later one is renamed
+    ``contract.pdf (2)``.
     """
 
     def __init__(self) -> None:
         self._keys: list[str] = []
         self._numbers: dict[str, int] = {}
+        self._label_owners: dict[str, str] = {}
+        self._labels_by_document: dict[str, str] = {}
 
     @staticmethod
     def key_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Dedupe key"]:
@@ -404,16 +408,43 @@ class CitationRegistry:
             return source_id
         return source_data.get("source", {}).get("name") or source_id
 
+    @staticmethod
+    def document_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Identity"]:
+        """What Open WebUI's source modal groups by, so it tells two same-named documents apart."""
+        metadata = (source_data.get("metadata") or [{}])[0]
+        return metadata.get("source") or source_data.get("source", {}).get("id") or CitationRegistry.key_of(source_data)
+
     def register(
         self,
         source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
         citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
-    ) -> None:
+    ) -> Annotated[dict[str, Any], "The payload to emit, relabelled when its label was taken"]:
+        source_data = self._with_unique_label(source_data)
         key = self.key_of(source_data)
         if key not in self._keys:
             self._keys.append(key)
         if citation_id and citation_id not in self._numbers:
             self._numbers[citation_id] = self._keys.index(key) + 1
+        return source_data
+
+    def _with_unique_label(self, source_data: dict[str, Any]) -> dict[str, Any]:
+        document = self.document_of(source_data)
+        label = self._labels_by_document.get(document)
+        if label is None:
+            label = base = self.key_of(source_data)
+            suffix = 2
+            while self._label_owners.get(label, document) != document:
+                label = f"{base} ({suffix})"
+                suffix += 1
+            self._label_owners[label] = document
+            self._labels_by_document[document] = label
+        if label == self.key_of(source_data):
+            return source_data
+        return {
+            **source_data,
+            "source": {**source_data.get("source", {}), "name": label},
+            "metadata": [{**metadata, "name": label} for metadata in source_data.get("metadata") or [{}]],
+        }
 
     def resolve(self, content: Annotated[str, "Rendered message content"]) -> Annotated[str, "Content Open WebUI links"]:
         resolved = CITATION_MARKER_PATTERN.sub(self._numbered, content)
@@ -629,7 +660,7 @@ class EventContext:
         source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
         citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
     ) -> None:
-        self.state_manager.citations.register(source_data, citation_id)
+        source_data = self.state_manager.citations.register(source_data, citation_id)
         await self.emitter({"type": "source", "data": source_data})
 
 

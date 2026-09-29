@@ -113,6 +113,11 @@ class RAGAgent(Agent):
         message = user_event if isinstance(user_event, UserMessageEvent) else None
         return Conversation.contextualize(history=limited.limited_history, message=message)
 
+    @staticmethod
+    def cites_sources(start_event: UserMessageEvent | RAGStartEvent) -> bool:
+        """A chat always cites; a programmatic caller rendering the answer without a source list opts out."""
+        return not isinstance(start_event, RAGStartEvent) or start_event.cite_sources
+
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
@@ -127,7 +132,11 @@ class RAGAgent(Agent):
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         files = AttachedFiles.read(
-            start_event.files, ctx.history, ctx.query, reserve_tokens=agent_config.retrieved_context_reserve()
+            start_event.files,
+            ctx.history,
+            ctx.query,
+            reserve_tokens=agent_config.retrieved_context_reserve(),
+            cite_sources=self.cites_sources(start_event),
         )
         return [Memory.recall(ctx.query, namespaces), files]
 
@@ -332,7 +341,7 @@ class RAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
-            cite_sources=not isinstance(start_event, RAGStartEvent) or start_event.cite_sources,
+            cite_sources=self.cites_sources(start_event),
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,
