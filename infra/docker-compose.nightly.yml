@@ -1768,6 +1768,10 @@ services:
       # --- SCIM 2.0 Provisioning ---
       SCIM_ENABLED: 'true'
       SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      # The API creates each user's account over SCIM before their first chat login. Without a
+      # provider, OpenWebUI 0.11.3 cannot record the account's external id: creation fails with a
+      # 500, and the account never appears in the SCIM user list the API reads group members from.
+      SCIM_AUTH_PROVIDER: oidc
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3

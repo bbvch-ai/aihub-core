@@ -163,6 +163,12 @@ class UserTenantRoleEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_all_user_ids(cls) -> set[str]:
+        """Returns every user ID holding a role in at least one tenant."""
+        return {assoc.user_id for assoc in cls.objects().only("user_id")}
+
+    @classmethod
+    @trace_fn
     def get_roles_for_users_in_tenant(cls, user_ids: list[str], tenant_id: str) -> TenantRolesByUser:
         """Batch-loads tenant role lists for many users in one query."""
         if not user_ids:

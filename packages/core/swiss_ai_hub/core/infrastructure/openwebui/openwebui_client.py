@@ -5,7 +5,8 @@ from typing import Any, cast
 
 import httpx
 from scim2_client.engines.httpx import AsyncSCIMClient
-from scim2_models import Group, GroupMember, ListResponse, Resource, SearchRequest, User
+from scim2_client.errors import SCIMResponseError
+from scim2_models import Email, Group, GroupMember, ListResponse, Resource, SearchRequest, User
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
@@ -162,6 +163,47 @@ class OpenWebuiClient:
             return await self._query_all(scim, User)
         async with self.scim_session() as s:
             return await self._query_all(s, User)
+
+    async def create_user(
+        self, email: str, display_name: str, external_id: str, scim: AsyncSCIMClient | None = None
+    ) -> User:
+        """Creates an OpenWebUI account ahead of the user's first chat, or returns the one that already exists.
+
+        An OAuth login can create the same account between the caller's listing and this request.
+        OpenWebUI then answers 409 with a non-SCIM body, which scim2-client only surfaces as a generic
+        ``SCIMResponseError`` — so an existing account is looked up by email before the error is re-raised.
+        ``external_id`` is the Keycloak ``sub``, which OpenWebUI's OAuth login matches the account on.
+        """
+
+        async def _create(client: AsyncSCIMClient) -> User:
+            user = User(
+                user_name=email,
+                external_id=external_id,
+                display_name=display_name,
+                emails=[Email(value=email, primary=True)],
+                active=True,
+            )
+            try:
+                return await client.create(user)
+            except SCIMResponseError:
+                existing = await self._find_user_by_email(client, email)
+                if existing is None:
+                    raise
+                logger.info("OpenWebUI account for '%s' already exists (id=%s); reusing it", email, existing.id)
+                return existing
+
+        if scim:
+            return await _create(scim)
+        async with self.scim_session() as s:
+            return await _create(s)
+
+    @staticmethod
+    async def _find_user_by_email(client: AsyncSCIMClient, email: str) -> User | None:
+        response = cast(
+            ListResponse[User],
+            await client.query(User, search_request=SearchRequest(filter=f'userName eq "{email}"')),
+        )
+        return next(iter(response.resources or []), None)
 
     # ------------------------------------------------------------------
     # Model methods (proprietary API + JWT auth)
