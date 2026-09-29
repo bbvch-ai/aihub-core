@@ -322,7 +322,7 @@ class ExpertRAGAgent(RAGAgent):
         expert_answer_context: ExpertAnswerContextEvent | None = None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None = None,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Answer from context or a guard rejection; an insufficient-context verdict goes to the expert instead,
         and an expert's answer counts as a successful grounding while a declined escalation keeps the verdict."""
         answer = await do_respond_with_llm(

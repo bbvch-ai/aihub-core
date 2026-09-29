@@ -37,11 +37,11 @@ class EchoAgent(Agent):
     """Calls the conversation twice and nothing else."""
 
     @step()
-    async def open_step(self, event: UserMessageEvent) -> Conversation.Contextualize:
+    async def open_step(self, event: UserMessageEvent) -> Conversation.ContextualizeRequest:
         return Conversation.contextualize(history=event.messages, message=event)
 
     @step()
-    async def respond_step(self, ctx: Conversation.Contextualized) -> Conversation.Complete:
+    async def respond_step(self, ctx: Conversation.Contextualized) -> Conversation.CompleteRequest:
         return Conversation.complete(answer=LLMEvent())
 
 
@@ -49,7 +49,7 @@ class ForgetfulAgent(Agent):
     """Calls the conversation but never picks the result up."""
 
     @step()
-    async def open_step(self, event: UserMessageEvent) -> Conversation.Contextualize:
+    async def open_step(self, event: UserMessageEvent) -> Conversation.ContextualizeRequest:
         return Conversation.contextualize(history=event.messages, message=event)
 
 

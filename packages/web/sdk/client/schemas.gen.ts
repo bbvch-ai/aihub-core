@@ -21057,7 +21057,7 @@ export const RatingSchema = {
 
 export const RefusalReasonSchema = {
   type: "string",
-  enum: ["condensation_empty", "input_too_large"],
+  enum: ["condensation_empty", "input_too_large", "out_of_scope"],
   title: "RefusalReason",
   description:
     "Why a conversational turn was refused before any answer was attempted.",

@@ -14003,6 +14003,7 @@ export type Rating = {
 export const RefusalReason = {
   CONDENSATION_EMPTY: "condensation_empty",
   INPUT_TOO_LARGE: "input_too_large",
+  OUT_OF_SCOPE: "out_of_scope",
 } as const;
 
 /**

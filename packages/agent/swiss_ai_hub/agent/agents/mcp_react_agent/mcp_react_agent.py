@@ -75,7 +75,7 @@ class McpReactAgent(Agent):
         self,
         event: UserMessageEvent,
         config: McpReactAgentConfig,
-    ) -> Conversation.Contextualize:
+    ) -> Conversation.ContextualizeRequest:
         """The entry step: the chat message becomes the limited history the conversation picks up from."""
         limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.number_of_input_tokens)
         return Conversation.contextualize(history=limited, message=event)
@@ -85,7 +85,7 @@ class McpReactAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
         return Memory.recall(ctx.query)
 
     @step(
@@ -163,7 +163,7 @@ class McpReactAgent(Agent):
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[ToolEvent] | list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Ask the LLM what to do next — call a tool, or answer the user and hand the turn back."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)

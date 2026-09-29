@@ -53,7 +53,7 @@ class LLMWrappingAgent(Agent):
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> Conversation.Contextualize | RefusalStopEvent:
+    ) -> Conversation.ContextualizeRequest | RefusalStopEvent:
         """Truncate the history to the model's own window, refusing a turn that cannot fit it.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]`
@@ -143,7 +143,7 @@ class LLMWrappingAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
         return Memory.recall(ctx.query)
 
     @step(
@@ -153,7 +153,7 @@ class LLMWrappingAgent(Agent):
     )
     async def assemble_prompt_step(
         self, ctx: Conversation.Contextualized, memories: Memory.Recalled
-    ) -> Conversation.Compose:
+    ) -> Conversation.ComposeRequest:
         return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step(
@@ -170,7 +170,7 @@ class LLMWrappingAgent(Agent):
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Stream the answer, then hand the turn back: the memory delegation first, so it is published before
         the run tears down, and the completion last."""
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:

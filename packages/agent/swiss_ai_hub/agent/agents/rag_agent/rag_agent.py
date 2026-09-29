@@ -94,7 +94,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> Conversation.Contextualize | RefusalStopEvent:
+    ) -> Conversation.ContextualizeRequest | RefusalStopEvent:
         """The entry step: both start events become the limited history the conversation picks up from.
 
         A programmatic start carries no user message, so the conversation skips meta-question inspection.
@@ -119,7 +119,7 @@ class RAGAgent(Agent):
     )
     async def recall_memory_step(
         self, ctx: Conversation.Contextualized, start_event: UserMessageEvent | RAGStartEvent
-    ) -> Memory.Recall:
+    ) -> Memory.RecallRequest:
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         return Memory.recall(ctx.query, namespaces)
@@ -131,7 +131,7 @@ class RAGAgent(Agent):
     )
     async def assemble_prompt_step(
         self, ctx: Conversation.Contextualized, memories: Memory.Recalled
-    ) -> Conversation.Compose:
+    ) -> Conversation.ComposeRequest:
         return Conversation.compose(ctx.history, blocks=memories.blocks)
 
     @step(
@@ -312,7 +312,7 @@ class RAGAgent(Agent):
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Answer from the grounded context or a guard rejection, then hand the turn back with its outcome."""
         answer = await do_respond_with_llm(
             event,
@@ -342,7 +342,7 @@ class RAGAgent(Agent):
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """The memory delegation first, so it is published before the run tears down, and the completion last."""
         remember = Memory.remember(
             query=ctx.query,

@@ -73,11 +73,11 @@ class Conversation(Capability):
     }
     required_config: ClassVar[type[ConversationFields]] = ConversationFields
 
-    Contextualize = ContextualizeConversationEvent
+    ContextualizeRequest = ContextualizeConversationEvent
     Contextualized = ConversationContextualizedEvent
-    Compose = ComposeContextEvent
+    ComposeRequest = ComposeContextEvent
     Composed = ContextComposedEvent
-    Complete = CompleteConversationEvent
+    CompleteRequest = CompleteConversationEvent
 
     @staticmethod
     def contextualize(

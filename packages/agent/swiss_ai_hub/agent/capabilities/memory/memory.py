@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Sequence
 from typing import ClassVar
 
@@ -46,7 +47,7 @@ class Memory(Capability):
     calls: ClassVar[dict] = {RecallMemoryEvent: MemoryRecalledEvent}
     required_config: ClassVar[type[MemoryFields]] = MemoryFields
 
-    Recall = RecallMemoryEvent
+    RecallRequest = RecallMemoryEvent
     Recalled = MemoryRecalledEvent
 
     @staticmethod
@@ -93,36 +94,69 @@ class Memory(Capability):
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[RetrieveUserMemoryEvent | RetrieveOrganizationMemoryEvent | MemoryRecalledEvent]:
-        """Search both scopes and answer with their blocks; the retrieval events are what the chat displays."""
+        """Search both scopes at once and answer with their blocks; the retrieval events are what the chat displays.
+
+        The scopes run concurrently because each may wait out its own timeout, which one after the other would add
+        up on every turn of a degraded memory backend.
+        """
         if not request.query.strip():
             return [MemoryRecalledEvent()]
-        events: list[RetrieveUserMemoryEvent | RetrieveOrganizationMemoryEvent | MemoryRecalledEvent] = []
-        user_block: list[ChatMessage] = []
-        organization_block: list[ChatMessage] = []
-
-        if user is not None and memory.user_memory.enable_user_memory_retrieval:
-            retrieved = await do_retrieve_user_memory(
-                query=request.query,
-                user_id=user.id,
-                memory=build_agent_memory(agent, agent_config, memory, t),
-                rerank=memory.user_memory.rerank_user_memory,
+        user_retrieved, organization_retrieved = await asyncio.gather(
+            Memory._recall_user(agent, request, agent_config, memory, t, user),
+            Memory._recall_organization(agent, request, agent_config, memory, t, user),
+        )
+        user_block = (
+            extend_chat_history_with_user_memory(
+                chat_history=[],
+                memories=user_retrieved.memories,
+                relations=user_retrieved.relations,
+                user=user,
+                t=t,
             )
-            user_block = extend_chat_history_with_user_memory(
-                chat_history=[], memories=retrieved.memories, relations=retrieved.relations, user=user, t=t
-            )
-            events.append(retrieved)
-
-        if memory.org_memory is not None:
-            retrieved = await do_retrieve_organization_memory(
-                query=request.query,
-                requested_namespaces=request.org_memory_namespaces,
-                user_id=user.id if user else None,
-                org_memory=memory.org_memory,
-                memory=build_agent_memory(agent, agent_config, memory, t),
-            )
-            organization_block = extend_chat_history_with_organization_memory(
-                chat_history=[], memories=retrieved.memories, t=t
-            )
-            events.append(retrieved)
-
+            if user_retrieved is not None and user is not None
+            else []
+        )
+        organization_block = (
+            extend_chat_history_with_organization_memory(chat_history=[], memories=organization_retrieved.memories, t=t)
+            if organization_retrieved is not None
+            else []
+        )
+        events = [event for event in (user_retrieved, organization_retrieved) if event is not None]
         return [*events, MemoryRecalledEvent(user_block=user_block, organization_block=organization_block)]
+
+    @staticmethod
+    async def _recall_user(
+        agent: Agent,
+        request: RecallMemoryEvent,
+        agent_config: AgentConfig,
+        memory: MemoryFields,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+    ) -> RetrieveUserMemoryEvent | None:
+        if user is None or not memory.user_memory.enable_user_memory_retrieval:
+            return None
+        return await do_retrieve_user_memory(
+            query=request.query,
+            user_id=user.id,
+            memory=build_agent_memory(agent, agent_config, memory, t),
+            rerank=memory.user_memory.rerank_user_memory,
+        )
+
+    @staticmethod
+    async def _recall_organization(
+        agent: Agent,
+        request: RecallMemoryEvent,
+        agent_config: AgentConfig,
+        memory: MemoryFields,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+    ) -> RetrieveOrganizationMemoryEvent | None:
+        if memory.org_memory is None:
+            return None
+        return await do_retrieve_organization_memory(
+            query=request.query,
+            requested_namespaces=request.org_memory_namespaces,
+            user_id=user.id if user else None,
+            org_memory=memory.org_memory,
+            memory=build_agent_memory(agent, agent_config, memory, t),
+        )

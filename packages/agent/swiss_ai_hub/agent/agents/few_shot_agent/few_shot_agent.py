@@ -11,7 +11,6 @@ from swiss_ai_hub.core.events.agent import (
     Message,
     RefusalReason,
     RefusalStopEvent,
-    StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -61,7 +60,7 @@ class FewShotAgent(Agent):
         agent_config: FewShotAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> Conversation.Contextualize | RefusalStopEvent:
+    ) -> Conversation.ContextualizeRequest | RefusalStopEvent:
         """Truncate the chat history to the token limit, and refuse the run when it still cannot be sent.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` when a
@@ -126,7 +125,7 @@ class FewShotAgent(Agent):
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.Recall:
+    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
         return Memory.recall(ctx.query)
 
     @step(
@@ -216,7 +215,7 @@ class FewShotAgent(Agent):
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.Complete]:
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Stream the answer, then hand the turn back: the memory delegation first, the completion last."""
         await displayer.display_thought(t("agent.thought.write_answer_based_on_few_shot_examples"))
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
@@ -245,7 +244,7 @@ class FewShotAgent(Agent):
         ctx: Conversation.Contextualized,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> Conversation.Complete:
+    ) -> Conversation.CompleteRequest:
         """End a rejected request with a streamed refusal, since a bare stop event reaches chat clients as an
         empty message.
 
@@ -255,8 +254,12 @@ class FewShotAgent(Agent):
         """
         refusal = t("agent.few_shot_agent.messages.unsuitable_request", reason=event.reason)
         await displayer.display_chunk(refusal, model_name=FewShotAgent.__name__)
+        output_messages = [Message.from_string(role="assistant", content=refusal, name=FewShotAgent.__name__)]
         answer = LLMEvent(
             input_messages=[Message.from_llama_index(message) for message in ctx.history],
-            output_messages=[Message.from_string(role="assistant", content=refusal, name=FewShotAgent.__name__)],
+            output_messages=output_messages,
         )
-        return Conversation.complete(answer=answer, stop=StopEvent())
+        stop = RefusalStopEvent(
+            reason=RefusalReason.OUT_OF_SCOPE, output_messages=output_messages, chat_model_name=FewShotAgent.__name__
+        )
+        return Conversation.complete(answer=answer, stop=stop)
