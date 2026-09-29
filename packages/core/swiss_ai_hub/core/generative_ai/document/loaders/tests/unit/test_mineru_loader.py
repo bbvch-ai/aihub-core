@@ -450,11 +450,10 @@ class TestParseCache:
 
     @pytest.mark.asyncio
     async def test_failed_conversion_is_not_cached(self, loader: MineruLoader, in_memory_parse_cache: dict[str, bytes]):
-        with (
-            patch.object(loader, "_execute_conversion", AsyncMock(side_effect=MineruRequestError("rejected"))),
-            pytest.raises(MineruRequestError),
-        ):
-            await loader.aload_data_from_bytes(make_pdf(1), FILENAME, embed_base64=True)
+        pdf = make_pdf(1)
+        with patch.object(loader, "_execute_conversion", AsyncMock(side_effect=MineruRequestError("rejected"))):
+            with pytest.raises(MineruRequestError):
+                await loader.aload_data_from_bytes(pdf, FILENAME, embed_base64=True)
 
         assert in_memory_parse_cache == {}
 
