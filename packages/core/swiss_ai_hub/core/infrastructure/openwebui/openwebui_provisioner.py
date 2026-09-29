@@ -57,6 +57,12 @@ _DEFAULT_FUNCTION_CALLING = "legacy"
 # their frontmatter) and attached per row through `meta.filterIds`, so plain LLM chats never load them.
 AGENT_FILTER_IDS = ("aihub-feature-filter", "aihub-title-filter")
 
+# Retrieval settings enforced on every provisioning run. OpenWebUI persists its config in its own database and
+# prefers the stored value over the compose env var, so a setting changed after the first boot only reaches an
+# existing deployment through its admin API. Uploads are not embedded: OpenWebUI answers plain LLM chats in
+# full-context mode, which never reads the embeddings, and agents read attached files themselves.
+RETRIEVAL_SETTINGS: dict[str, Any] = {"BYPASS_EMBEDDING_AND_RETRIEVAL": True}
+
 # LiteLLM model_info key through which a model opts out of _DEFAULT_FUNCTION_CALLING (e.g. Kimi-K2.6
 # declares "native"). LiteLLM passes custom model_info keys through /v1/model/info unchanged.
 FUNCTION_CALLING_MODEL_INFO_KEY = "aihub_openwebui_function_calling"
@@ -135,6 +141,7 @@ class OpenWebuiProvisioner:
             logger.info("Starting OpenWebUI provisioning...")
 
             async with httpx.AsyncClient(timeout=30.0) as http:
+                await self._openwebui.update_retrieval_config(http, RETRIEVAL_SETTINGS)
                 await self._sync_groups()
                 await self._sync_workspace_models(http, self._get_known_online_agents())
                 await self._sync_llm_workspace_models(http, await self._get_available_llm_models())
