@@ -12,6 +12,7 @@ from pymilvus import MilvusClient
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
+    DEFAULT_PARTITION_NAME,
     MAX_PARTITIONS,
     get_partition_name_for_namespace,
     get_partition_names_for_namespaces,
@@ -25,6 +26,9 @@ except ImportError:
     WeightedRanker = None
 
 MILVUS_DYNAMIC_FIELD_MAX_BYTES = 65536
+DOCUMENT_IDS_PER_DELETE_EXPRESSION = 500
+NODE_IDS_PER_DELETE = 1000
+NODES_PER_SCAN_PAGE = 1000
 
 
 class PartitionAwareMilvusVectorStore(MilvusVectorStore):
@@ -408,6 +412,79 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
                 pks=ids_to_delete,
                 partition_name=partition_name,
             )
+
+    def document_partition_names(self, namespaces: list[str]) -> list[str]:
+        """Every partition the nodes of documents in these namespaces can live in.
+
+        ``_default`` is always included: nodes written while a collection was not yet fully partitioned land
+        there (#1923), and a delete that skips it strands them. A legacy collection has no manual partitions,
+        so ``_default`` is all it has.
+        """
+        if not self._check_has_manual_partitions():
+            return [DEFAULT_PARTITION_NAME]
+        return [*dict.fromkeys(get_partition_names_for_namespaces(namespaces=namespaces)), DEFAULT_PARTITION_NAME]
+
+    def delete_documents(self, ref_doc_ids: list[str], namespaces: list[str]) -> int:
+        """Delete every node of these documents with a filtered delete; returns the number of deleted nodes.
+
+        Only the partitions the namespaces hash to are loaded, never the whole collection, which on a
+        partitioned store does not fit in memory. Deleting nothing succeeds, so a retried removal is safe.
+        """
+        if not ref_doc_ids:
+            return 0
+
+        partition_names = self.document_partition_names(namespaces)
+        self._ensure_collection_loaded(partition_names)
+
+        deleted = 0
+        for batch in iter_batch(ref_doc_ids, DOCUMENT_IDS_PER_DELETE_EXPRESSION):
+            doc_ids_expr = ['"' + entry + '"' for entry in batch]
+            for partition_name in partition_names:
+                result = self.client.delete(
+                    collection_name=self.collection_name,
+                    filter=f"{self.doc_id_field} in [{','.join(doc_ids_expr)}]",
+                    partition_name=partition_name,
+                )
+                deleted += self._deleted_count(result)
+        return deleted
+
+    def node_ids_by_document(self, partition_name: str) -> dict[str, list[str]]:
+        """Primary keys of every node in one partition, grouped by document id.
+
+        Milvus has no DISTINCT, so the grouping happens here while paging through the partition.
+        """
+        self._ensure_collection_loaded([partition_name])
+        iterator = self.client.query_iterator(
+            collection_name=self.collection_name,
+            batch_size=NODES_PER_SCAN_PAGE,
+            filter=f'{self.doc_id_field} != ""',
+            output_fields=["id", self.doc_id_field],
+            partition_names=[partition_name],
+        )
+
+        node_ids: dict[str, list[str]] = {}
+        try:
+            while page := iterator.next():
+                for row in page:
+                    node_ids.setdefault(row[self.doc_id_field], []).append(row["id"])
+        finally:
+            iterator.close()
+        return node_ids
+
+    def delete_nodes_in_partition(self, node_ids: list[str], partition_name: str) -> int:
+        """Delete nodes by primary key; returns the number of deleted nodes."""
+        deleted = 0
+        for batch in iter_batch(node_ids, NODE_IDS_PER_DELETE):
+            result = self.client.delete(collection_name=self.collection_name, ids=batch, partition_name=partition_name)
+            deleted += self._deleted_count(result)
+        return deleted
+
+    @staticmethod
+    def _deleted_count(result: dict[str, int] | list[str]) -> int:
+        """pymilvus returns the deleted primary keys when the server reports them, else a ``delete_count``."""
+        if isinstance(result, list):
+            return len(result)
+        return result.get("delete_count", 0)
 
     def delete_by_namespace(self, namespace: str) -> None:
         """Delete every vector of a namespace via a metadata-filtered delete.

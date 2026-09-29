@@ -5,6 +5,7 @@ from pymilvus import MilvusClient
 # Milvus limit: 1024 total partitions including _default
 # So we create 1023 manual partitions (partition_0 to partition_1022)
 MAX_PARTITIONS = 1023
+DEFAULT_PARTITION_NAME = "_default"
 
 
 def hash_namespace_to_partition(namespace: str) -> int:

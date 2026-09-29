@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from dagster import build_op_context
-from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import SOURCE
+from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, SOURCE
 
 from swiss_ai_hub.pipeline.ops.data_lake.fetch_ref_docs_to_remove import fetch_ref_docs_to_remove
 from swiss_ai_hub.pipeline.ops.document.delete_figures_for_many_ref_doc import delete_figures_for_many_ref_doc
@@ -24,7 +24,9 @@ def _context():
 
 
 def _ref_doc() -> RefDocDocument:
-    return RefDocDocument(id_="doc1", text="body", metadata={SOURCE: f"s3://{BUCKET}/a.pdf"})
+    return RefDocDocument(
+        id_="doc1", text="body", metadata={SOURCE: f"s3://{BUCKET}/reports/a.pdf", NAMESPACE: "reports"}
+    )
 
 
 class TestRemovePathResolvesItsOwnStores:
@@ -39,7 +41,7 @@ class TestRemovePathResolvesItsOwnStores:
 
         db_name.assert_called_once_with(BUCKET)
         build_doc_store.assert_called_once_with(DB_NAME)
-        build_doc_store.return_value.delete_document.assert_called_once_with("doc1", raise_error=True)
+        build_doc_store.return_value.delete_document.assert_called_once_with("doc1", raise_error=False)
 
     def test_vector_deletion_targets_the_run_s_collection(self):
         with (
@@ -49,7 +51,7 @@ class TestRemovePathResolvesItsOwnStores:
             delete_many_nodes_from_vector_store(_context(), [_ref_doc()])
 
         build_vector_store.assert_called_once_with(DB_NAME)
-        build_vector_store.return_value.delete.assert_called_once_with("doc1")
+        build_vector_store.return_value.delete_documents.assert_called_once_with(["doc1"], ["reports"])
 
     def test_figure_deletion_targets_the_run_s_bucket(self):
         with patch(f"{_FIGURES}.build_s3_data_lake_client") as build_client:

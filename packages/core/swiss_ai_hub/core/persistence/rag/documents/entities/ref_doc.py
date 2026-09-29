@@ -119,6 +119,20 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def get_all_ids(cls, db_alias: str) -> set[str]:
+        """Ids only, so a scan over a whole database does not load every document's text."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return set(SwitchedRefDoc.objects.scalar("id"))
+
+    @classmethod
+    @trace_fn
+    def get_existing_ids(cls, db_alias: str, doc_ids: list[str]) -> set[str]:
+        """The subset of ``doc_ids`` that still has a document."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return set(SwitchedRefDoc.objects.filter(id__in=doc_ids).scalar("id"))
+
+    @classmethod
+    @trace_fn
     def count_by_namespace(
         cls,
         db_alias: str,
