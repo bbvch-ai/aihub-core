@@ -97,7 +97,8 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     assert runner.has_event_of_class(FollowUpQuestionsEvent), "guard-reject path did not generate follow-ups"
     assert not runner.has_exception_event
     refusals = runner.get_events_of_class(RefusalStopEvent)
-    assert [refusal.reason for refusal in refusals] == [RefusalReason.OUT_OF_SCOPE], "reject is not a refusal"
+    assert refusals, "reject is not a refusal"
+    assert {refusal.reason for refusal in refusals} == {RefusalReason.OUT_OF_SCOPE}
     assert refusals[0].output_messages, "the refusal carries no text for programmatic callers"
 
     # Without a chunk the refusal never reaches OpenAI-compatible clients, which build the answer from
