@@ -191,6 +191,18 @@ from their `gather_context_step` next to `Memory.recall` and compose the block a
 every file of the current message branch on each turn, so no file state is kept across turns. The query used for
 knowledge retrieval does not consider the files.
 
+**`Knowledge`** (needs `KnowledgeFields`: a reranking model, preset to `reranker/bge`, and the deployment-fixed
+`retrieve_k` and `tokens_per_section`): `search(references, query, cite_sources)` → `Knowledge.Searched`
+(`KnowledgeSearchedEvent`), one block with the best sections of the collections the user referenced
+(`UserMessageEvent.knowledge_references`, sent by chat clients for `#` references), empty when none were. Each database
+is searched with the embedding model it was indexed with (core's `ReferencedKnowledge`), the results reranked together
+and rendered with `combine_nodes_in_order`. Only collections the injected `AccessChecker` lets the asking user read are
+searched; the rest, and collections that no longer exist, are named in the block so the answer says so. The result is
+a `ControlAndDisplayEvent` whose `grounding_nodes` chat clients list as sources. Blueprints call it from
+`gather_context_step` and compose its block between the memories and the files, reserving
+`KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds to the
+configured retrieval rather than replacing it.
+
 **Inline citations**: every document an agent hands the model carries a short stable id (`CitationId` in core: `s` + six
 hex digits, from the node's document id: the knowledge document, or the attached file's upload id) on its
 `REFERENCE_DOCUMENT` tag, and the prompt (`lib.prompt.citations.instruction`) asks the model to cite it as `[s3f9a1c]`.

@@ -186,6 +186,20 @@ of the agent's knowledge is readable, the agent says so rather than answering as
 setting is on for new agents and off for agents saved before it existed, so their behaviour does not change unannounced.
 Runs without a person, such as scheduled or mail-triggered ones, keep the agent's configured scope.
 
+### Referencing collections in a chat
+
+In OpenWebUI, any chat agent can be pointed at a collection with `#`, the way OpenWebUI references its own knowledge.
+The `#` picker lists our collections as "Database / Collection", each only to users whose roles let them browse it.
+The entries hold no content and OpenWebUI runs no retrieval on them: a referenced collection reaches the agent as a
+reference, and the agent searches it with the database's own embedding model and adds the best matches to its context,
+cited like any other document. In a knowledge agent's chat this search comes on top of the agent's configured
+retrieval. The agent checks the reference against the asking user's rules again, and says when a referenced collection
+is not available to them instead of answering from it. OpenWebUI administrators see every entry in the picker, since
+OpenWebUI lets them bypass its access control, but they too get answers only from what they may read here.
+
+Creating, renaming or deleting a collection shows up in the picker within seconds; collections a sync or pipeline
+creates appear on the next reconcile, at most a minute later.
+
 Agents connect to specific collections rather than entire databases. When configuring an agent, you specify which
 collections it can search. A customer support agent might access "products" and "faq" but not "engineering."
 

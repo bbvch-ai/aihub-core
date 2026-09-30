@@ -6104,6 +6104,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/AttachedFileEvent",
         },
         {
+          $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
           $ref: "#/components/schemas/ConversationTitleEvent",
         },
         {
@@ -14644,6 +14647,117 @@ export const KnowledgeDatabaseSelectorSchema = {
     'A FormKit element for selecting multiple knowledge databases.\n\nRenders as a multi-select dropdown that loads database names from:\n/api/v1/knowledge/databases\n\nThe output is a list of database names: list[str]\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_databases: Annotated[\n        list[str] | KnowledgeDatabaseSelector,\n        Field(description="Knowledge databases to query"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_databases=KnowledgeDatabaseSelector(\n                label=LocaleString(en="Knowledge Databases"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_databases=["database1", "database2"])\n```',
 } as const;
 
+export const KnowledgeReferenceSchema = {
+  properties: {
+    database: {
+      type: "string",
+      minLength: 1,
+      title: "Database",
+      description: "The knowledge database, by its vector collection name.",
+    },
+    namespace: {
+      type: "string",
+      minLength: 1,
+      title: "Namespace",
+      description: "The collection (namespace) within the database.",
+    },
+  },
+  type: "object",
+  required: ["database", "namespace"],
+  title: "KnowledgeReference",
+  description:
+    "A knowledge collection the user pointed the conversation at, e.g. with `#` in a chat client.\n\nA request, not a grant: the agent searches it only when the asking user may read it.",
+} as const;
+
+export const KnowledgeSearchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description: "System messages carrying the documents found, or none.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNode",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The document sections the block holds, for listing as sources.",
+      default: [],
+    },
+    refused: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Refused",
+      description:
+        "Referenced collections that were not searched, because the user may not read them.",
+      default: [],
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "KnowledgeSearchedEvent",
+  description:
+    "The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.\n\nDisplayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers\nexactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.",
+} as const;
+
 export const LLMCostEventSchema = {
   properties: {
     prompt_token_count: {
@@ -21926,6 +22040,24 @@ export const ResolutionSchema = {
   title: "Resolution",
 } as const;
 
+export const ResolveKnowledgeReferencesRequestSchema = {
+  properties: {
+    openwebui_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      maxItems: 100,
+      title: "Openwebui Ids",
+      description:
+        "Ids of the OpenWebUI knowledge entries a chat message referenced.",
+    },
+  },
+  type: "object",
+  required: ["openwebui_ids"],
+  title: "ResolveKnowledgeReferencesRequest",
+} as const;
+
 export const ResponseFormatJSONObjectSchema = {
   properties: {
     type: {
@@ -27344,6 +27476,16 @@ export const UserMessageEventSchema = {
         "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
       default: [],
     },
+    knowledge_references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Knowledge References",
+      description:
+        "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -31108,6 +31250,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/AttachedFileEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -36597,6 +36742,77 @@ export const KnowledgeDatabaseSelectorWritableSchema = {
   title: "KnowledgeDatabaseSelector",
   description:
     'A FormKit element for selecting multiple knowledge databases.\n\nRenders as a multi-select dropdown that loads database names from:\n/api/v1/knowledge/databases\n\nThe output is a list of database names: list[str]\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_databases: Annotated[\n        list[str] | KnowledgeDatabaseSelector,\n        Field(description="Knowledge databases to query"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_databases=KnowledgeDatabaseSelector(\n                label=LocaleString(en="Knowledge Databases"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_databases=["database1", "database2"])\n```',
+} as const;
+
+export const KnowledgeSearchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description: "System messages carrying the documents found, or none.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The document sections the block holds, for listing as sources.",
+      default: [],
+    },
+    refused: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Refused",
+      description:
+        "Referenced collections that were not searched, because the user may not read them.",
+      default: [],
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "KnowledgeSearchedEvent",
+  description:
+    "The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.\n\nDisplayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers\nexactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.",
 } as const;
 
 export const LLMCostEventWritableSchema = {
@@ -44507,6 +44723,16 @@ export const UserMessageEventWritableSchema = {
       title: "Requested Features",
       description:
         "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
+    },
+    knowledge_references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Knowledge References",
+      description:
+        "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
     },
   },

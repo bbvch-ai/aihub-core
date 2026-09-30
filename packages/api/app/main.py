@@ -123,6 +123,7 @@ runner.mount(
     .create_namespace()
     .update_namespace()
     .get_databases()
+    .resolve_openwebui_references()
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()

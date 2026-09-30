@@ -9,7 +9,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -190,6 +190,55 @@ class TestSameNamedSources:
         assert [source["metadata"][0]["name"] for source in emitter.sources] == ["contract.pdf", "contract.pdf (2)"]
         answer = await _answer(pipe, context, f"Clause 7 [{document['citation_id']}], signed [{file_id}].")
         assert answer == "Clause 7 [1], signed [2]."
+
+
+class TestReferencedKnowledge:
+    """A `#` reference to one of our collections reaches the agent as a reference, never as a file, and what the agent
+    found there is listed as sources like a knowledge agent's own retrieval."""
+
+    @pytest.mark.asyncio
+    async def test_what_a_referenced_collection_returned_is_listed_as_sources(self, pipe: Any) -> None:
+        emitter = _Recorder()
+        event = {**_grounding(_node("handbook.pdf", "25 days")), "_event_name": "KnowledgeSearchedEvent"}
+
+        await pipe.EventProcessorFactory.create_chain().process(event, _context(pipe, emitter))
+
+        assert [source["document"] for source in emitter.sources] == [["25 days"]]
+
+    @pytest.mark.asyncio
+    async def test_a_referenced_collection_is_not_uploaded_as_a_file(self, pipe: Any) -> None:
+        service = pipe.FileProcessingService.__new__(pipe.FileProcessingService)
+
+        files, owui_file_ids = await service.prepare_files_for_event(
+            [{"type": "collection", "id": "k1", "name": "HR / Policies"}], "RAGAgent", "hr", {}
+        )
+
+        assert (files, owui_file_ids) == ([], {})
+        pipe.Files.get_file_by_id.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_only_referenced_collections_are_resolved_once_each(
+        self, pipe: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        response = MagicMock(json=MagicMock(return_value=[{"database": "hr", "namespace": "policies"}]))
+        client = MagicMock(post=AsyncMock(return_value=response))
+        client.__aenter__ = AsyncMock(return_value=client)
+        client.__aexit__ = AsyncMock(return_value=None)
+        monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(return_value=client))
+        files = [{"type": "collection", "id": "k1"}, {"type": "file", "id": "f1"}, {"type": "collection", "id": "k1"}]
+
+        references = await pipe.KnowledgeReferenceService("http://api").references_for_event(files, {"X": "y"})
+
+        assert references == [{"database": "hr", "namespace": "policies"}]
+        url = client.post.await_args.args[0]
+        assert url == "http://api/api/v1/active/knowledge/openwebui-references"
+        assert client.post.await_args.kwargs["json"] == {"openwebui_ids": ["k1"]}
+
+    @pytest.mark.asyncio
+    async def test_a_message_without_references_asks_nothing(self, pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(pipe.httpx, "AsyncClient", MagicMock(side_effect=AssertionError("no request expected")))
+
+        assert await pipe.KnowledgeReferenceService("http://api").references_for_event([{"type": "file"}], {}) == []
 
 
 def test_generated_copy_matches_template() -> None:

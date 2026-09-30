@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, Self
 
 from fastapi import Depends, HTTPException, Path, Query, Response, Security, status
@@ -8,6 +9,7 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.dependencies import use_nats
+from swiss_ai_hub.core.events.agent import KnowledgeReference
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
@@ -15,6 +17,7 @@ from swiss_ai_hub.core.generative_ai.document.types.ingested_node import Ingeste
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
+from swiss_ai_hub.core.persistence import OpenWebuiKnowledgeEntryEntity
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
@@ -39,6 +42,9 @@ from swiss_ai_hub.api.routes.knowledge.dto.ingestor_dto import IngestorDTO
 from swiss_ai_hub.api.routes.knowledge.dto.namespace_response import NamespaceResponse
 from swiss_ai_hub.api.routes.knowledge.dto.node_summary_dto import NodeSummaryDTO
 from swiss_ai_hub.api.routes.knowledge.dto.paginated_documents_response import PaginatedDocumentsResponse
+from swiss_ai_hub.api.routes.knowledge.dto.resolve_knowledge_references_request import (
+    ResolveKnowledgeReferencesRequest,
+)
 from swiss_ai_hub.api.routes.knowledge.dto.source_pipeline_dto import SourcePipelineDTO
 from swiss_ai_hub.api.routes.knowledge.dto.update_database_source_request import UpdateDatabaseSourceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import UpdateNamespaceRequest
@@ -106,6 +112,22 @@ class KnowledgeController(TenantScopedController):
                         )
                     )
             return accessible_databases
+
+        return self
+
+    def resolve_openwebui_references(self, route: str = "/openwebui-references") -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def resolve_openwebui_references(
+            _: Annotated[UserIdentity, Security(self.authenticated_user())],
+            request: ResolveKnowledgeReferencesRequest,
+        ) -> list[KnowledgeReference]:
+            """
+            The collections behind the OpenWebUI knowledge entries a chat message referenced with `#`.
+
+            Resolved for anyone signed in, without checking access: the agent checks what the asking user may read and
+            tells them about the rest, which it could not if unreadable references were dropped here.
+            """
+            return await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.references_for, request.openwebui_ids)
 
         return self
 

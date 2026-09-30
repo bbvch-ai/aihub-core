@@ -39,6 +39,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopInputResponseEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    KnowledgeSearchedEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
@@ -97,6 +98,7 @@ DisplayEvents = (
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
+    | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]
