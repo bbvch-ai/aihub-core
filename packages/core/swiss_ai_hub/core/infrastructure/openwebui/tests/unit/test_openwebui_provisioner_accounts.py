@@ -48,9 +48,7 @@ class TestProvisionMissingAccounts:
     @pytest.mark.asyncio
     async def test_should_not_create_account_when_one_exists(self, provisioner: OpenWebuiProvisioner) -> None:
         with patch.object(provisioner._openwebui, "create_user") as create:
-            await provisioner._provision_missing_accounts(
-                [_keycloak_user("kc-a", "a@x")], {"kc-a"}, {"kc-a": "owui-a"}
-            )
+            await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], {"kc-a"}, {"kc-a": "owui-a"})
 
         create.assert_not_called()
 
