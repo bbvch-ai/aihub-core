@@ -1,0 +1,15 @@
+---
+steps:
+  search_knowledge:
+    name: "Search Referenced Knowledge"
+    description: "Searches the knowledge collections the user referenced and adds what it finds to the model's context"
+prompt:
+  context: |
+    {% chat role="system" %}
+    The user referenced the following knowledge collections in this conversation. Answer from these documents where they bear on the question. Each document is a `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>` block, its sections under their headings.
+    <referenced_knowledge>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </referenced_knowledge>
+    {% endchat %}
+  refused: "The user referenced %{collections}, but these collections are not available to them, so nothing was searched there. Tell the user that you could not use these collections."
+  nothing_found: "The user referenced knowledge collections, but nothing in them matched the question. Tell the user so if the question depended on them."

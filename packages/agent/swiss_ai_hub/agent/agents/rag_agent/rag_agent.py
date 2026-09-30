@@ -31,6 +31,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
@@ -125,17 +126,19 @@ class RAGAgent(Agent):
         ctx: Conversation.Contextualized,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's and may
+        reference collections to search on top of the configured ones."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
+        references = start_event.knowledge_references if isinstance(start_event, UserMessageEvent) else []
+        cite_sources = CitationPolicy.cites_sources(start_event)
+        reserve = agent_config.retrieved_context_reserve()
+        if references:
+            reserve += agent_config.knowledge.context_reserve()
         files = AttachedFiles.read(
-            start_event.files,
-            ctx.history,
-            ctx.query,
-            reserve_tokens=agent_config.retrieved_context_reserve(),
-            cite_sources=CitationPolicy.cites_sources(start_event),
+            start_event.files, ctx.history, ctx.query, reserve_tokens=reserve, cite_sources=cite_sources
         )
-        return [Memory.recall(ctx.query, namespaces), files]
+        return [Memory.recall(ctx.query, namespaces), files, Knowledge.search(references, ctx.query, cite_sources)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
@@ -143,9 +146,13 @@ class RAGAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled, files: AttachedFiles.Contents
+        self,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=[*memories.blocks, files.block])
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),

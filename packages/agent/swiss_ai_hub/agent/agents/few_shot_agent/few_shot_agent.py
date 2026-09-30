@@ -29,6 +29,8 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewSh
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -127,9 +129,15 @@ class FewShotAgent(Agent):
         icon="mdi:brain",
     )
     async def gather_context_step(
-        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        return [Memory.recall(ctx.query), AttachedFiles.read(start_event.files, ctx.history, ctx.query)]
+        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent, config: KnowledgeFields
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        references = start_event.knowledge_references
+        reserve = config.knowledge.context_reserve() if references else 0
+        return [
+            Memory.recall(ctx.query),
+            AttachedFiles.read(start_event.files, ctx.history, ctx.query, reserve_tokens=reserve),
+            Knowledge.search(references, ctx.query),
+        ]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.name"),
@@ -171,6 +179,7 @@ class FewShotAgent(Agent):
         _: AgentSuitabilityAcceptEvent,
         memories: Memory.Recalled,
         files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
         start_event: UserMessageEvent,
         agent_config: FewShotAgentConfig,
     ) -> FewShotEvent:
@@ -194,7 +203,7 @@ class FewShotAgent(Agent):
             [
                 *system_messages,
                 system_prompt,
-                *[message for block in [*memories.blocks, files.block] for message in block],
+                *[message for block in [*memories.blocks, knowledge.block, files.block] for message in block],
                 *few_shot_messages,
                 ChatMessage(role=MessageRole.USER, content=ctx.query),
             ]

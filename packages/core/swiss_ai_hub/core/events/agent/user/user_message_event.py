@@ -6,6 +6,7 @@ from pydantic import Field
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -70,6 +71,13 @@ class UserMessageEvent(StartEvent):
             description="Features the user asked for on this message, e.g. through a chat client's toggles. A "
             "request, not an order: the agent decides whether and how to serve each one, and ignores features "
             "its blueprint does not support.",
+        ),
+    ] = []
+    knowledge_references: Annotated[
+        list[KnowledgeReference],
+        Field(
+            description="Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. "
+            "The agent adds what it finds there to its context, searching only those the user may read.",
         ),
     ] = []
 

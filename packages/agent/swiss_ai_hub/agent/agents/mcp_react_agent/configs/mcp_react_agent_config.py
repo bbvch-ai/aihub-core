@@ -7,12 +7,13 @@ from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class McpReactAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, AgentConfig):
+class McpReactAgentConfig(MemoryFields, AttachedFilesFields, KnowledgeFields, ConversationFields, AgentConfig):
     """Configuration for the MCP ReAct Agent: the capability mixins plus the MCP server and the loop bound."""
 
     mcp: Annotated[
@@ -37,6 +38,7 @@ class McpReactAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields,
             **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
             **cls.attached_files_form_elements(),
+            **cls.knowledge_form_elements(),
             system_prompt=LocaleInput(
                 label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.label"),
                 help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.system_prompt.help"),
