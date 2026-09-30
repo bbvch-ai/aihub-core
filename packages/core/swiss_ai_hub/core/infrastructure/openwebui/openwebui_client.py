@@ -169,10 +169,12 @@ class OpenWebuiClient:
     ) -> User:
         """Creates an OpenWebUI account ahead of the user's first chat, or returns the one that already exists.
 
-        An OAuth login can create the same account between the caller's listing and this request.
-        OpenWebUI then answers 409 with a non-SCIM body, which scim2-client only surfaces as a generic
-        ``SCIMResponseError`` — so an existing account is looked up by email before the error is re-raised.
-        ``external_id`` is the Keycloak ``sub``, which OpenWebUI's OAuth login matches the account on.
+        OpenWebUI answers 409 with a non-SCIM body, which scim2-client only surfaces as a generic
+        ``SCIMResponseError``, so the existing account is looked up before the error is re-raised. The
+        lookup goes by ``external_id`` (the Keycloak ``sub``) first: OpenWebUI matches it against the OAuth
+        sub too, so it finds both an account a concurrent chat login just created and one whose email
+        changed in Keycloak afterwards — OpenWebUI never updates the email on login, so an email lookup
+        alone would miss the latter on every sync and abort the group sync for all users.
         """
 
         async def _create(client: AsyncSCIMClient) -> User:
@@ -186,10 +188,17 @@ class OpenWebuiClient:
             try:
                 return await client.create(user)
             except SCIMResponseError:
-                existing = await self._find_user_by_email(client, email)
+                existing = await self._find_first_user(
+                    client, f'externalId eq "{external_id}"'
+                ) or await self._find_first_user(client, f'userName eq "{email}"')
                 if existing is None:
                     raise
-                logger.info("OpenWebUI account for '%s' already exists (id=%s); reusing it", email, existing.id)
+                logger.info(
+                    "OpenWebUI account for '%s' already exists (id=%s, userName=%s); reusing it",
+                    email,
+                    existing.id,
+                    existing.user_name,
+                )
                 return existing
 
         if scim:
@@ -198,10 +207,10 @@ class OpenWebuiClient:
             return await _create(s)
 
     @staticmethod
-    async def _find_user_by_email(client: AsyncSCIMClient, email: str) -> User | None:
+    async def _find_first_user(client: AsyncSCIMClient, scim_filter: str) -> User | None:
         response = cast(
             ListResponse[User],
-            await client.query(User, search_request=SearchRequest(filter=f'userName eq "{email}"')),
+            await client.query(User, search_request=SearchRequest(filter=scim_filter)),
         )
         return next(iter(response.resources or []), None)
 

@@ -42,7 +42,10 @@ inside the group sync, and adds it to its groups in the same pass.**
   email, disabled users, and users without any `UserTenantRoleEntity`.
 - `OpenWebuiClient.create_user` sends the Keycloak `sub` as `externalId`. OpenWebUI's OAuth login links to that account
   instead of creating a second one (`OAUTH_MERGE_ACCOUNTS_BY_EMAIL` stays on). If the login created the account first,
-  OpenWebUI answers 409; the client then reuses the account it finds by email.
+  OpenWebUI answers 409; the client then reuses the account it finds by `externalId`, falling back to email. OpenWebUI
+  matches the `externalId` filter against the OAuth sub too, so the lookup also finds an account whose email changed in
+  Keycloak after its first chat login — OpenWebUI never updates it (`OAUTH_UPDATE_EMAIL_ON_LOGIN` is off), and an
+  unresolved 409 aborts the group sync for every user.
 - OpenWebUI runs with `SCIM_AUTH_PROVIDER: oidc`. Without it, 0.11.3 cannot record the external id: the create request
   fails with a 500, and the account never appears in the SCIM list, because `get_scim_users` only returns accounts
   linked to an OAuth or SCIM identity.
@@ -70,3 +73,6 @@ inside the group sync, and adds it to its groups in the same pass.**
 
 - Like ADR `2026_09_04`, this rests on OpenWebUI internals verified by reading and running the 0.11.3 image
   (`routers/scim.py`, `models/users.py`), not on a published contract.
+- An OpenWebUI account linked to neither an OAuth nor a SCIM identity (one added by hand in the admin panel) that shares
+  a Keycloak user's email still fails the sync: the create conflicts on the email, but `get_scim_users` hides the
+  account from both lookups. It resolves once its owner logs into the chat, which links it by email.
