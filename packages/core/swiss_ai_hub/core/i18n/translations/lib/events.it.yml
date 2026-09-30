@@ -9,6 +9,9 @@ attached_file_event:
 knowledge_searched_event:
   name: Conoscenza consultata
   description: "L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente."
+tool_result_event:
+  name: "Risultato dello strumento"
+  description: "Ciò che ha restituito uno strumento scelto dall'agente."
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.

@@ -6047,6 +6047,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/HumanInTheLoopInputRequestEvent",
         },
         {
+          $ref: "#/components/schemas/ToolApprovalRequestEvent",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEvent",
         },
         {
@@ -6063,6 +6066,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopInputResponseEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolApprovalResponseEvent",
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationResponseEvent",
@@ -6105,6 +6111,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolResultEvent",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEvent",
@@ -14731,6 +14740,19 @@ export const KnowledgeSearchedEventSchema = {
       description:
         "Referenced collections that were not searched, because the user may not read them.",
       default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
     },
     _event_name: {
       type: "string",
@@ -26296,6 +26318,196 @@ export const TokenResponseSchema = {
   title: "TokenResponse",
 } as const;
 
+export const ToolApprovalRequestEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "confirmation",
+      title: "Hitl Type",
+      default: "confirmation",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call awaiting approval.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool the model wants to run.",
+    },
+    arguments: {
+      additionalProperties: true,
+      type: "object",
+      title: "Arguments",
+      description: "The arguments the model passed.",
+      default: {},
+    },
+    kind: {
+      type: "string",
+      title: "Kind",
+      description: "Whether the loop runs it or a capability does.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether the tool tells the model to cite what it returns.",
+      default: true,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "question",
+    "topic",
+    "tool_call_id",
+    "name",
+    "kind",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "ToolApprovalRequestEvent",
+  description:
+    "Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.",
+} as const;
+
+export const ToolApprovalResponseEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    response: {
+      type: "boolean",
+      title: "Response",
+      description: "Whether the user approved the call.",
+    },
+    request_event: {
+      $ref: "#/components/schemas/ToolApprovalRequestEvent",
+      description:
+        "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["response", "request_event", "_event_name", "_parent_event_names"],
+  title: "ToolApprovalResponseEvent",
+  description:
+    "The user's answer to a tool approval request: run the call, or tell the model it was declined.",
+} as const;
+
 export const ToolCallBlockSchema = {
   properties: {
     block_type: {
@@ -26458,6 +26670,103 @@ export const ToolEventSchema = {
   type: "object",
   required: ["_event_name", "_parent_event_names"],
   title: "ToolEvent",
+} as const;
+
+export const ToolResultEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call this result answers.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool that ran.",
+    },
+    content: {
+      type: "string",
+      title: "Content",
+      description: "The result as the model reads it.",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "The result as context for an answer, when the tool renders it richer than its content.",
+      default: [],
+    },
+    is_error: {
+      type: "boolean",
+      title: "Is Error",
+      description: "Whether the call failed or was declined.",
+      default: false,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "tool_call_id",
+    "name",
+    "content",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "ToolResultEvent",
+  description:
+    "What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.",
 } as const;
 
 export const TopLogprobSchema = {
@@ -31195,6 +31504,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/HumanInTheLoopInputRequestEventWritable",
         },
         {
+          $ref: "#/components/schemas/ToolApprovalRequestEventWritable",
+        },
+        {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable",
         },
         {
@@ -31211,6 +31523,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopInputResponseEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolApprovalResponseEventWritable",
         },
         {
           $ref: "#/components/schemas/HumanInTheLoopConfirmationResponseEventWritable",
@@ -31253,6 +31568,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolResultEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -36806,6 +37124,19 @@ export const KnowledgeSearchedEventWritableSchema = {
       description:
         "Referenced collections that were not searched, because the user may not read them.",
       default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
     },
   },
   additionalProperties: true,
@@ -44492,6 +44823,154 @@ export const ToggleSwitchWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/ToggleSwitch",
 } as const;
 
+export const ToolApprovalRequestEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    question: {
+      type: "string",
+      title: "Question",
+      description: "The query or prompt presented to the human operator.",
+    },
+    topic: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/PartialAgentTopic",
+        },
+        {
+          $ref: "#/components/schemas/AgentInstanceTopic",
+        },
+      ],
+      title: "Topic",
+      description:
+        "A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.",
+    },
+    hitl_type: {
+      type: "string",
+      const: "confirmation",
+      title: "Hitl Type",
+      default: "confirmation",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call awaiting approval.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool the model wants to run.",
+    },
+    arguments: {
+      additionalProperties: true,
+      type: "object",
+      title: "Arguments",
+      description: "The arguments the model passed.",
+      default: {},
+    },
+    kind: {
+      type: "string",
+      title: "Kind",
+      description: "Whether the loop runs it or a capability does.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether the tool tells the model to cite what it returns.",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["question", "topic", "tool_call_id", "name", "kind"],
+  title: "ToolApprovalRequestEvent",
+  description:
+    "Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.",
+} as const;
+
+export const ToolApprovalResponseEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    response: {
+      type: "boolean",
+      title: "Response",
+      description: "Whether the user approved the call.",
+    },
+    request_event: {
+      $ref: "#/components/schemas/ToolApprovalRequestEventWritable",
+      description:
+        "The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["response", "request_event"],
+  title: "ToolApprovalResponseEvent",
+  description:
+    "The user's answer to a tool approval request: run the call, or tell the model it was declined.",
+} as const;
+
 export const ToolEventWritableSchema = {
   properties: {
     event_id: {
@@ -44592,6 +45071,80 @@ export const ToolEventWritableSchema = {
   additionalProperties: true,
   type: "object",
   title: "ToolEvent",
+} as const;
+
+export const ToolResultEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call this result answers.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool that ran.",
+    },
+    content: {
+      type: "string",
+      title: "Content",
+      description: "The result as the model reads it.",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "The result as context for an answer, when the tool renders it richer than its content.",
+      default: [],
+    },
+    is_error: {
+      type: "boolean",
+      title: "Is Error",
+      description: "Whether the call failed or was declined.",
+      default: false,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["tool_call_id", "name", "content"],
+  title: "ToolResultEvent",
+  description:
+    "What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.",
 } as const;
 
 export const UnreadMailListedEventWritableSchema = {

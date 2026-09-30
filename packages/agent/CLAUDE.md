@@ -203,6 +203,33 @@ a `ControlAndDisplayEvent` whose `grounding_nodes` chat clients list as sources.
 `KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds to the
 configured retrieval rather than replacing it.
 
+**`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and
+approval rules): the model decides which of the blueprint's tools to use, until it is done. `ToolLoop.run(history,
+mode)` → `ToolLoop.Finished` (`ToolLoopFinishedEvent`): the reply in `ToolLoopMode.ANSWER` (for `Conversation.complete`),
+the tool results as `block` in `GATHER` (for `Conversation.compose` and the blueprint's own answer); `ToolLoop.route`
+is one gathering decision. Call it wherever it fits: RAG retrieves then loops, a chat agent loops first. The blueprint
+declares its tools as `tools: ClassVar = ToolLoop.over(Knowledge, my_function_tool)`, which installs the capability
+tools (the one listing-based installation; validation refuses tools without a loop); the profile and the #590 toggles
+narrow them per message. Two kinds, the same to the model:
+
+- **Capability tools**: a capability sets `tool_name`, overrides `tool_definition(config, locale)` (return `None` when
+  the profile gives it nothing to do) and adds two adapter steps, `ToolCallApprovedEvent` → its ordinary request with
+  `tool_call_id`, and its ordinary result with a `tool_call_id` → `ToolResultEvent`, so a model-chosen call shows the
+  same events as an explicit one. `Knowledge` searches `KnowledgeConfig.tool_collections`.
+- **Function tools**: `FunctionTool(name, description, arguments=<BaseModel>, run=async (arguments, ToolContext) ->
+  str)`, run in `run_function_step`; a raising tool returns an error result instead of ending the run.
+
+Every stage is an event: `ToolEvent` per call and `ToolCallsDecidedEvent` (decide), `ToolApprovalRequestEvent` /
+`ToolApprovalResponseEvent` (a yes/no confirmation in the chat), `ToolCallApprovedEvent`, `ToolResultEvent`, and a new
+`ToolLoopIterationEvent` per round. The loop's state travels on those events (`ToolLoopState`), never in the run
+context, and the join fires once per iteration (a precondition against later iterations), because the dispatcher
+re-triggers a step for every event of a type it takes as a list. Approval policies: never, every call, once per run,
+once per conversation (remembered per tool in `RunContext` / `ThreadContext`); a tool with `approve_every_call` never
+lets an approval carry over. At the limits the model answers without tools and says it stopped early. The answering
+turn streams (`EventDisplayer.display_llm_stream(..., tools=...)`); a text preamble before tool calls stays visible.
+Example: `playground/minimal_workflow/tool_loop_workflow/`. ADR `2026_09_28_capabilities_and_the_conversational_spine`,
+amendment 2026-09-30.
+
 **Inline citations**: every document an agent hands the model carries a short stable id (`CitationId` in core: `s` + six
 hex digits, from the node's document id: the knowledge document, or the attached file's upload id) on its
 `REFERENCE_DOCUMENT` tag, and the prompt (`lib.prompt.citations.instruction`) asks the model to cite it as `[s3f9a1c]`.
@@ -515,7 +542,7 @@ config seeder needed.
   `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
-  `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
+  `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`, `tool_loop_workflow`,
   `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 

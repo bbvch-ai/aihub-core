@@ -4,7 +4,17 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
-from swiss_ai_hub.core.events.agent import KnowledgeReference, KnowledgeSearchedEvent, SearchKnowledgeEvent
+from pydantic import ValidationError
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.events.agent import (
+    KnowledgeReference,
+    KnowledgeSearchedEvent,
+    SearchKnowledgeEvent,
+    ToolCallApprovedEvent,
+    ToolCallsDecidedEvent,
+    ToolDefinition,
+    ToolResultEvent,
+)
 from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
     KnowledgeCollectionLabel,
@@ -20,10 +30,24 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_search_arguments import KnowledgeSearchArguments
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
+
+SEARCH_KNOWLEDGE_TOOL = "search_knowledge"
+
+
+@precondition()
+async def searches_knowledge(call: ToolCallApprovedEvent) -> bool:
+    return call.name == SEARCH_KNOWLEDGE_TOOL
+
+
+@precondition()
+async def answers_a_tool_call(searched: KnowledgeSearchedEvent, decided: ToolCallsDecidedEvent) -> bool:
+    return searched.tool_call_id is not None and searched.tool_call_id in decided.tool_call_ids
 
 
 class Knowledge(Capability):
@@ -43,6 +67,25 @@ class Knowledge(Capability):
 
     SearchRequest = SearchKnowledgeEvent
     Searched = KnowledgeSearchedEvent
+
+    tool_name: ClassVar[str] = SEARCH_KNOWLEDGE_TOOL
+
+    @classmethod
+    def tool_definition(cls, config: AgentConfig, locale: str) -> ToolDefinition | None:
+        """Offered when the profile names collections the model may search; the model picks among them."""
+        if not isinstance(config, KnowledgeFields) or not config.knowledge.tool_collections:
+            return None
+        t = LocaleHandler(locale)
+        collections = {
+            f"{reference.database}/{reference.namespace}": KnowledgeCollectionLabel.of_reference(reference, locale)
+            for reference in config.knowledge.tool_collections
+        }
+        listing = "\n".join(f"- {identifier}: {label}" for identifier, label in collections.items())
+        return ToolDefinition(
+            name=SEARCH_KNOWLEDGE_TOOL,
+            description=t("agent.knowledge.tool.description", collections=listing),
+            parameters=KnowledgeSearchArguments.schema_for(list(collections), t),
+        )
 
     @staticmethod
     def search(
@@ -66,7 +109,7 @@ class Knowledge(Capability):
     ) -> KnowledgeSearchedEvent:
         """Search the referenced collections the user may read, and answer with the best of it as one block."""
         if not request.references:
-            return KnowledgeSearchedEvent()
+            return KnowledgeSearchedEvent(tool_call_id=request.tool_call_id)
         searchable, refused = await asyncio.to_thread(
             ReferencedKnowledge.partition, request.references, access, UserScopedRetrievers.namespaces_of
         )
@@ -78,6 +121,56 @@ class Knowledge(Capability):
             block=Knowledge._block(found, refused_labels, t, request.cite_sources),
             grounding_nodes=found,
             refused=refused,
+            tool_call_id=request.tool_call_id,
+        )
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.knowledge.steps.search_as_tool.name"),
+        description=AgentLocaleString.from_i18n_path("agent.knowledge.steps.search_as_tool.description"),
+        icon="mdi:bookshelf",
+        precondition=searches_knowledge,
+    )
+    async def tool_call_step(
+        agent: Agent, call: ToolCallApprovedEvent, knowledge: KnowledgeFields
+    ) -> SearchKnowledgeEvent | ToolResultEvent:
+        """The model chose to search: the same search as a `#` reference, over the collections it picked."""
+        try:
+            arguments = KnowledgeSearchArguments.model_validate(call.arguments)
+        except ValidationError as error:
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
+            )
+        offered = knowledge.knowledge.tool_collections
+        chosen = [
+            reference
+            for reference in offered
+            if not arguments.collections or f"{reference.database}/{reference.namespace}" in arguments.collections
+        ]
+        return SearchKnowledgeEvent(
+            references=chosen or offered,
+            query=arguments.query,
+            cite_sources=call.cite_sources,
+            tool_call_id=call.tool_call_id,
+        )
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.knowledge.steps.answer_tool_call.name"),
+        description=AgentLocaleString.from_i18n_path("agent.knowledge.steps.answer_tool_call.description"),
+        icon="mdi:bookshelf",
+        precondition=answers_a_tool_call,
+    )
+    async def tool_result_step(
+        agent: Agent, searched: KnowledgeSearchedEvent, decided: ToolCallsDecidedEvent
+    ) -> ToolResultEvent:
+        """Hand what the search found back to the loop: its text for the model, its block for a gathered answer."""
+        content = "\n\n".join(message.content for message in searched.block if message.content)
+        return ToolResultEvent(
+            tool_call_id=searched.tool_call_id,
+            name=SEARCH_KNOWLEDGE_TOOL,
+            content=content,
+            block=searched.block,
         )
 
     @staticmethod

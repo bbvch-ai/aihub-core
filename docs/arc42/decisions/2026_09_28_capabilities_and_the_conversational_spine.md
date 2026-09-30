@@ -116,3 +116,41 @@ capability-specific hooks.
   because the query is what memory is recalled with.
 - New LLM wrapping, few-shot and MCP profiles get memory on by default; `number_of_input_tokens` defaults to 128000 on
   all of them.
+
+## Amendment 2026-09-30: the tool loop, and tools declared by the blueprint
+
+Once web search, code execution or image generation are switched on they should become options the model weighs, not
+steps that always run, and a knowledge agent should be able to retrieve first and then decide whether it needs more.
+That needs a loop in which the model decides, and it has to be placeable anywhere in a blueprint and as observable as a
+fixed flow (#1950).
+
+**Decision.** The loop is a capability, `ToolLoop`, called like any other: `ToolLoop.run(history, mode)` answers with
+`ToolLoopFinishedEvent`, carrying the model's reply (`ANSWER`) or the tool results as a context block for the
+blueprint's own answer step (`GATHER`); `ToolLoop.route(...)` is the one-decision preset. Its steps are the loop's
+stages as events: decide (`ToolEvent` per call, `ToolCallsDecidedEvent` for the join), gate (the approval policy,
+`ToolApprovalRequestEvent` when the user must approve), run, and join (`ToolResultEvent`s back to the model, cut to fit
+the budget). There are two kinds of tool, indistinguishable to the model:
+
+- **Capability tools.** A capability sets `tool_name` and `tool_definition(config, locale)` and adds two adapter steps:
+  one turns the `ToolCallApprovedEvent` into its ordinary request (carrying the call's `tool_call_id`), one turns its
+  ordinary result into a `ToolResultEvent`. A model-chosen call therefore runs the same sub-workflow, with the same
+  events and chat sources, as an explicit call. `Knowledge` is the first.
+- **Function tools** (`FunctionTool`): a name, a description, an arguments model and an async function, run inside the
+  loop, for tools that need no sub-workflow.
+
+A blueprint declares the tools it may offer with `tools = ToolLoop.over(...)`. **This is the one exception to "nothing
+is installed by listing":** a capability tool is installed from the declaration, because no step of the blueprint
+returns its request; the model does, at run time. The declaration keeps the tool set readable on the blueprint, and
+validation refuses tools declared without a loop to offer them. The profile (`ToolLoopFields`: limits, disabled tools,
+approval rules) and the chat toggles of #590 narrow the set per message; with none left, gathering ends without a model
+call.
+
+Two engine rules came with it. A capability step is composed into a blueprint only when *every* required input can be
+produced, not any one of them, so a tool adapter never shows in the graph of a blueprint that only calls the capability
+explicitly. And the "every outcome is consumed" check covers only calls made from outside the capability, since a
+model-chosen call is answered through the capability's own adapter step.
+
+**Rejected:** tools only as executors inside the loop (a model-chosen knowledge search would have shown different, and
+fewer, events than a `#` reference); a separate router capability (tool calling already picks several tools with
+arguments; a one-iteration preset covers routing); looping a whole fixed flow back to its start (hard to bound and to
+read; a re-runnable part becomes a tool instead).

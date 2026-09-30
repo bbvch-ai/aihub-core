@@ -9,6 +9,9 @@ attached_file_event:
 knowledge_searched_event:
   name: Connaissances consultées
   description: "L'agent a recherché dans les collections de connaissances référencées par l'utilisateur."
+tool_result_event:
+  name: "Résultat d'outil"
+  description: "Ce qu'a renvoyé un outil choisi par l'agent."
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.

@@ -1,0 +1,45 @@
+---
+steps:
+  start:
+    name: "Offer Tools"
+    description: "Works out which tools the model may use for this message"
+  decide:
+    name: "Decide on Tools"
+    description: "The model answers, or chooses the tools that help answer"
+  gate:
+    name: "Check Approval"
+    description: "Lets a tool call run, or asks the user to approve it first"
+  approval:
+    name: "Apply Approval"
+    description: "Runs an approved tool call, or tells the model it was declined"
+  run_function:
+    name: "Run Tool"
+    description: "Runs a tool the model chose"
+  join:
+    name: "Collect Tool Results"
+    description: "Hands every result of the model's tool calls back to it"
+prompt:
+  limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found, and tell the user that you stopped before looking into everything."
+  unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
+  declined: "The user declined running %{tool}. Answer without it, and do not call it again for this request."
+approval:
+  question: "The assistant wants to run the tool \"%{tool}\" with %{arguments}. Allow it?"
+config:
+  max_iterations:
+    label: "Maximum Decisions"
+    help: "How often the model may choose tools before it must answer."
+  max_tool_calls:
+    label: "Maximum Tool Calls"
+    help: "How many tool calls one answer may make."
+  disabled_tools:
+    label: "Disabled Tools"
+    help: "Tools this agent never offers."
+  approval_tool:
+    label: "Tool"
+  approval_policy:
+    label: "Approval"
+  policies:
+    never: "Never ask"
+    every_call: "Ask for every call"
+    once_per_run: "Ask once per answer"
+    once_per_thread: "Ask once per conversation"

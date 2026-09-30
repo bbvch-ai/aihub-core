@@ -65,6 +65,10 @@ class Agent(DispatchableWorkflow):
     # travel inside the request's payload, so no step's return type names them; without this declaration the
     # REST response model and the workflow graph fall back to the bare `StopEvent` and drop their fields.
     completion_stops: ClassVar[tuple[type[StopEvent], ...]] = ()
+    # The tools this blueprint's tool loop may offer the model, declared with `ToolLoop.over(...)`. Declaring a
+    # capability here installs it, so a model-chosen call can run its steps; the profile and the user's chat toggles
+    # narrow the set per message.
+    tools: ClassVar[tuple] = ()
 
     STEP_ANNOTATION = "_is_agent_step"
 
@@ -84,7 +88,7 @@ class Agent(DispatchableWorkflow):
         """Derived, never declared: returning a capability's request event from a step is what installs it."""
         from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
 
-        return CapabilityCatalog.called_by(cls.get_own_steps())
+        return CapabilityCatalog.called_by(cls.get_own_steps(), cls.declared_tool_capabilities())
 
     @classmethod
     @functools.cache
@@ -92,7 +96,14 @@ class Agent(DispatchableWorkflow):
         """The blueprint's own steps plus the capability steps its calls can trigger, as one flat set."""
         from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
 
-        return [*cls.get_own_steps(), *CapabilityCatalog.reachable_steps(cls.get_own_steps())]
+        return [
+            *cls.get_own_steps(),
+            *CapabilityCatalog.reachable_steps(cls.get_own_steps(), cls.declared_tool_capabilities()),
+        ]
+
+    @classmethod
+    def declared_tool_capabilities(cls) -> list["type[Capability]"]:
+        return [tool.capability for tool in cls.tools if tool.capability is not None]
 
     @classmethod
     def validate_workflow(cls, agent_config_type: type[AgentConfig]) -> None:
@@ -112,7 +123,7 @@ class Agent(DispatchableWorkflow):
             capability.chat_feature
             for capability in cls.installed_capabilities()
             if capability.chat_feature is not None
-        }
+        } | {tool.chat_feature for tool in cls.tools if tool.chat_feature is not None}
 
     @classmethod
     @functools.cache

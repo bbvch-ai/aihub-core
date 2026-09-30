@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
     from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
     from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+    from swiss_ai_hub.agent.capabilities.tool_loop.function_tool import FunctionTool
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 
 __all__ = [
     "AttachedFiles",
@@ -24,6 +28,10 @@ __all__ = [
     "Memory",
     "MemoryFields",
     "RequestedFeatures",
+    "FunctionTool",
+    "ToolContext",
+    "ToolLoop",
+    "ToolLoopFields",
     "UserMemoryConfig",
 ]
 
@@ -37,6 +45,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "Memory": "swiss_ai_hub.agent.capabilities.memory.memory",
     "MemoryFields": "swiss_ai_hub.agent.capabilities.memory.memory_fields",
     "RequestedFeatures": "swiss_ai_hub.agent.capabilities.requested_features",
+    "FunctionTool": "swiss_ai_hub.agent.capabilities.tool_loop.function_tool",
+    "ToolContext": "swiss_ai_hub.agent.capabilities.tool_loop.tool_context",
+    "ToolLoop": "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop",
+    "ToolLoopFields": "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields",
     "UserMemoryConfig": "swiss_ai_hub.agent.capabilities.memory.user_memory_config",
 }
 

@@ -1,0 +1,45 @@
+---
+steps:
+  start:
+    name: "Offrire strumenti"
+    description: "Determina quali strumenti il modello può usare per questo messaggio"
+  decide:
+    name: "Decidere sugli strumenti"
+    description: "Il modello risponde o sceglie gli strumenti utili alla risposta"
+  gate:
+    name: "Verificare l'approvazione"
+    description: "Lascia eseguire una chiamata o chiede prima il consenso dell'utente"
+  approval:
+    name: "Applicare l'approvazione"
+    description: "Esegue una chiamata approvata o comunica al modello che è stata rifiutata"
+  run_function:
+    name: "Eseguire lo strumento"
+    description: "Esegue uno strumento scelto dal modello"
+  join:
+    name: "Raccogliere i risultati"
+    description: "Restituisce al modello tutti i risultati delle sue chiamate"
+prompt:
+  limit_reached: "Hai usato tutte le chiamate agli strumenti disponibili per questa risposta. Rispondi ora con ciò che hai trovato e di' all'utente che ti sei fermato prima di esaminare tutto."
+  unknown_tool: "Non esiste uno strumento chiamato %{tool}. Usa uno degli strumenti offerti."
+  declined: "L'utente ha rifiutato l'esecuzione di %{tool}. Rispondi senza di esso e non richiamarlo per questa richiesta."
+approval:
+  question: "L'assistente vuole eseguire lo strumento «%{tool}» con %{arguments}. Consentirlo?"
+config:
+  max_iterations:
+    label: "Decisioni massime"
+    help: "Quante volte il modello può scegliere strumenti prima di dover rispondere."
+  max_tool_calls:
+    label: "Chiamate massime"
+    help: "Quante chiamate agli strumenti può fare una risposta."
+  disabled_tools:
+    label: "Strumenti disattivati"
+    help: "Strumenti che questo agente non offre mai."
+  approval_tool:
+    label: "Strumento"
+  approval_policy:
+    label: "Approvazione"
+  policies:
+    never: "Non chiedere mai"
+    every_call: "Chiedere a ogni chiamata"
+    once_per_run: "Chiedere una volta per risposta"
+    once_per_thread: "Chiedere una volta per conversazione"

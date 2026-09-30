@@ -111,7 +111,7 @@ async def test_a_collection_the_user_may_not_read_is_named_and_not_searched():
     assert event.refused == [REPORTS]
     assert event.grounding_nodes == []
     assert '"SFTP Live / Reports"' in event.block[0].content
-    assert "not available to them" in event.block[0].content
+    assert "not available to the user" in event.block[0].content
 
 
 @pytest.mark.asyncio
@@ -139,4 +139,4 @@ async def test_nothing_found_tells_the_model_so():
     event, _ = await _search([POLICIES], _access({"policies"}), [])
 
     assert event.grounding_nodes == []
-    assert "nothing in them matched" in event.block[0].content
+    assert "Nothing in the searched" in event.block[0].content
