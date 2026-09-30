@@ -27,7 +27,7 @@ class SearchWebEvent(ControlEvent):
 
 
 class WebSearchLikeCapability(Capability):
-    calls: ClassVar[dict[type[ControlEvent], type[ControlEvent] | None]] = {SearchWebEvent: None}
+    calls: ClassVar[dict[type[ControlEvent], tuple[type[ControlEvent], ...]]] = {SearchWebEvent: ()}
     chat_feature: ClassVar[ChatFeature | None] = ChatFeature.WEB_SEARCH
 
 
