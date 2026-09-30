@@ -4,7 +4,7 @@ from types import UnionType
 from typing import Annotated, Union, get_args, get_origin
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
@@ -858,3 +858,33 @@ class TestConfigRoundTrip:
         dump = model.model_validate(submitted).model_dump(mode="json", exclude_unset=True)
 
         assert dump["section"] == {"model": "text-generation/pick"}
+
+
+class _MapFieldEvent(BaseEvent):
+    toggles: Annotated[dict[str, bool], Field(description="A free-form map, the shape jambo cannot read.")] = {}
+    scores: Annotated[dict[str, int], Field(description="A required map of another value type.")]
+
+
+class TestFreeFormMapFields:
+    """jambo only reads `properties`, so a map field used to come back as an empty model and drop its data."""
+
+    @pytest.fixture
+    def model(self) -> type[BaseModel]:
+        return ModelCreationService.create_input_model_from_event_specs(EventSpecs.from_event_class(_MapFieldEvent))
+
+    def test_submitted_map_survives_validation(self, model: type[BaseModel]) -> None:
+        parsed = model.model_validate({"toggles": {"web_search": True}, "scores": {"a": 1}})
+
+        assert parsed.model_dump(mode="json")["toggles"] == {"web_search": True}
+        assert parsed.model_dump(mode="json")["scores"] == {"a": 1}
+
+    def test_value_type_is_enforced(self, model: type[BaseModel]) -> None:
+        with pytest.raises(ValidationError):
+            model.model_validate({"scores": {"a": "not a number"}})
+
+    def test_required_map_stays_required(self, model: type[BaseModel]) -> None:
+        with pytest.raises(ValidationError):
+            model.model_validate({"toggles": {}})
+
+    def test_optional_map_keeps_its_default(self, model: type[BaseModel]) -> None:
+        assert model.model_validate({"scores": {}}).model_dump()["toggles"] == {}
