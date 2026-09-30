@@ -35,6 +35,7 @@ from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
     do_context_sufficient_guard,
@@ -113,11 +114,6 @@ class RAGAgent(Agent):
         message = user_event if isinstance(user_event, UserMessageEvent) else None
         return Conversation.contextualize(history=limited.limited_history, message=message)
 
-    @staticmethod
-    def cites_sources(start_event: UserMessageEvent | RAGStartEvent) -> bool:
-        """A chat always cites; a programmatic caller rendering the answer without a source list opts out."""
-        return not isinstance(start_event, RAGStartEvent) or start_event.cite_sources
-
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
         description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
@@ -136,7 +132,7 @@ class RAGAgent(Agent):
             ctx.history,
             ctx.query,
             reserve_tokens=agent_config.retrieved_context_reserve(),
-            cite_sources=self.cites_sources(start_event),
+            cite_sources=CitationPolicy.cites_sources(start_event),
         )
         return [Memory.recall(ctx.query, namespaces), files]
 
@@ -341,7 +337,7 @@ class RAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
-            cite_sources=self.cites_sources(start_event),
+            cite_sources=CitationPolicy.cites_sources(start_event),
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,
