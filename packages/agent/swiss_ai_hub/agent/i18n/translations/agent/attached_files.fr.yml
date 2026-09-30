@@ -5,10 +5,14 @@ steps:
     description: Lit les fichiers que l'utilisateur a joints à la conversation et
       ajoute leur texte au contexte du modèle
 prompt:
-  preamble: L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque
-    la question s'y rapporte, réponds à partir de leur contenu et nomme le fichier
-    utilisé.
-  excerpted: "Seules les parties de « %{filename} » les plus pertinentes pour la question ont tenu dans ton contexte ; elles sont séparées par […]. Indique à l'utilisateur que ta réponse repose sur des extraits de ce fichier."
+  context: |
+    {% chat role="system" %}
+    L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque la question s'y rapporte, répondez à partir de leur contenu et nommez le fichier utilisé. Chaque fichier est un bloc `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ses sections sous leurs titres.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Seules les parties de « %{filename} » les plus pertinentes pour la question tiennent dans votre contexte. Indiquez à l''utilisateur que votre réponse repose sur des extraits de ce fichier.'
   truncated: Seul le début de « %{filename} » a tenu dans ton contexte. Indique
     à l'utilisateur que ta réponse repose sur une partie de ce fichier.
   unreadable: L'utilisateur a joint « %{filename} », mais ce fichier n'a pas pu

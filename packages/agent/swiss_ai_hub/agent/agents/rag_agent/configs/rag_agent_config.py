@@ -3,6 +3,7 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox, LocaleInput
+from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
@@ -14,10 +15,6 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
     ContextSufficientGuardStepConfig,
 )
-
-# A retrieved chunk's size in tokens, on the generous side: ingestion chunks are shorter, but neighbour and summary
-# nodes ride along with them.
-RETRIEVED_TOKENS_PER_NODE = 800
 
 
 class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, AgentConfig):
@@ -62,6 +59,14 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
         RerankingConfig | None,
         Field(description="Configuration for reranking retrieved documents to improve relevance.", title="Reranking"),
     ] = None
+    retrieved_tokens_per_node: Annotated[
+        int,
+        Field(
+            description="A retrieved node's size in tokens for reserving room, on the generous side: ingestion chunks "
+            "are shorter, but neighbour and summary nodes ride along with them."
+        ),
+        Ge(1),
+    ] = 800
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(
@@ -83,7 +88,7 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
         )
         if self.reranking_config is not None:
             nodes = min(nodes, self.reranking_config.reranking_model.top_n)
-        return min(nodes * RETRIEVED_TOKENS_PER_NODE, self.input_budget() // 2)
+        return min(nodes * self.retrieved_tokens_per_node, self.input_budget() // 2)
 
     @classmethod
     def as_form(cls) -> Self:

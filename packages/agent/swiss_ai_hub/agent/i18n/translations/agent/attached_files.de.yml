@@ -5,10 +5,14 @@ steps:
     description: Liest die Dateien, die der Benutzer an die Unterhaltung angehängt
       hat, und fügt ihren Text dem Kontext des Modells hinzu
 prompt:
-  preamble: Der Benutzer hat die folgenden Dateien an diese Unterhaltung angehängt.
-    Wenn sich die Frage auf sie bezieht, antworte anhand ihres Inhalts und nenne die
-    verwendete Datei.
-  excerpted: "Nur die für die Frage relevantesten Teile von \"%{filename}\" haben in deinen Kontext gepasst; sie sind durch […] getrennt. Teile dem Benutzer mit, dass deine Antwort auf Auszügen dieser Datei beruht."
+  context: |
+    {% chat role="system" %}
+    Die Benutzerin oder der Benutzer hat diesem Gespräch die folgenden Dateien angehängt. Wenn sich die Frage darauf bezieht, antworten Sie aus ihrem Inhalt und nennen Sie die verwendete Datei. Jede Datei ist ein Block `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ihre Abschnitte stehen unter ihren Überschriften.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Nur die für die Frage relevantesten Teile von "%{filename}" passen in Ihren Kontext. Teilen Sie mit, dass Ihre Antwort auf Auszügen dieser Datei beruht.'
   truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Teile
     dem Benutzer mit, dass deine Antwort auf einem Teil dieser Datei beruht.
   unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
