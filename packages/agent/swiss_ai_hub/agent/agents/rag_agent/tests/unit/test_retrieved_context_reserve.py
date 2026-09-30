@@ -5,7 +5,7 @@ from unittest.mock import patch
 from swiss_ai_hub.core.generative_ai import KnowledgeRetrieverConfig, LLMConfig, RerankingModelConfig
 from swiss_ai_hub.core.i18n import LocaleString
 
-from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RETRIEVED_TOKENS_PER_NODE, RAGAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 
@@ -30,12 +30,18 @@ def _config(retrieve_k: int, reranking_top_n: int | None = None) -> RAGAgentConf
 
 def test_reserve_covers_every_retrieved_node():
     with patch.object(ConversationFields, "input_budget", return_value=1_000_000):
-        assert _config(retrieve_k=5).retrieved_context_reserve() == 5 * RETRIEVED_TOKENS_PER_NODE
+        assert (
+            _config(retrieve_k=5).retrieved_context_reserve()
+            == 5 * RAGAgentConfig.model_fields["retrieved_tokens_per_node"].default
+        )
 
 
 def test_reranking_narrows_the_reserve_to_its_top_n():
     with patch.object(ConversationFields, "input_budget", return_value=1_000_000):
-        assert _config(retrieve_k=20, reranking_top_n=3).retrieved_context_reserve() == 3 * RETRIEVED_TOKENS_PER_NODE
+        assert (
+            _config(retrieve_k=20, reranking_top_n=3).retrieved_context_reserve()
+            == 3 * RAGAgentConfig.model_fields["retrieved_tokens_per_node"].default
+        )
 
 
 def test_reserve_never_exceeds_half_the_budget():

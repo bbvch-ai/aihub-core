@@ -22,7 +22,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
-from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_selector import AttachedFileSectionSelector
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_config import AttachedFilesConfig
@@ -148,17 +148,17 @@ async def test_a_file_too_large_without_a_query_keeps_its_beginning():
     assert source.status == AttachedFileStatus.TRUNCATED
     assert "Sentence number 0 " in content
     assert "Sentence number 3999" not in content
-    assert "beginning" in content.split("</attached_file>")[-1]
+    assert "beginning" in (read.block[-1].content or "")
 
 
 @pytest.mark.asyncio
 async def test_a_file_too_large_keeps_the_sections_relevant_to_the_query():
-    async def pick_last(self, sections: list[str], query: str) -> list[int]:
-        return list(reversed(range(len(sections))))
+    async def pick_last(self, sections: list, query: str) -> list:
+        return list(reversed(sections))
 
     with (
         patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))),
-        patch.object(AttachedFileSectionSelector, "rank", new=pick_last),
+        patch.object(AttachedFileSections, "rank", new=pick_last),
     ):
         events = await _read([_file("handbook.pdf")], budget=2_000, query="What does the last sentence say?")
 
@@ -167,14 +167,14 @@ async def test_a_file_too_large_keeps_the_sections_relevant_to_the_query():
     assert source.status == AttachedFileStatus.TRUNCATED
     assert "Sentence number 3999" in content
     assert "Sentence number 0 " not in content
-    assert "excerpts" in content.split("</attached_file>")[-1]
+    assert "excerpts" in (read.block[-1].content or "")
 
 
 @pytest.mark.asyncio
 async def test_a_failing_ranking_falls_back_to_the_beginning():
     with (
         patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document(LONG_TEXT))),
-        patch.object(AttachedFileSectionSelector, "rank", new=AsyncMock(side_effect=RuntimeError("reranker down"))),
+        patch.object(AttachedFileSections, "rank", new=AsyncMock(side_effect=RuntimeError("reranker down"))),
     ):
         events = await _read([_file("handbook.pdf")], budget=2_000, query="Anything?")
 
@@ -197,7 +197,7 @@ async def test_a_quote_in_the_filename_cannot_break_the_tag():
     with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=_document("text"))):
         events = await _read([_file('say "hi".pdf')])
 
-    assert 'name="say &quot;hi&quot;.pdf"' in (events[-1].block[0].content or "")
+    assert "source='say &quot;hi&quot;.pdf'" in (events[-1].block[0].content or "")
 
 
 class TestAttachedFilesBudget:
@@ -206,7 +206,7 @@ class TestAttachedFilesBudget:
         return [0] * len(text.split())
 
     def test_small_files_fit_whole_next_to_a_large_one(self):
-        rooms = AttachedFilesBudget(1_000, self._counter).allocate(
+        rooms = AttachedFilesBudget(1_000, 1.0, self._counter).allocate(
             {"small": "one two three", "large": " ".join(["word."] * 5000)}
         )
 
@@ -215,33 +215,41 @@ class TestAttachedFilesBudget:
         assert rooms["large"] > 0
 
     def test_everything_fits_when_there_is_room(self):
-        rooms = AttachedFilesBudget(10_000, self._counter).allocate({"a": "alpha beta", "b": "gamma"})
+        rooms = AttachedFilesBudget(10_000, 1.0, self._counter).allocate({"a": "alpha beta", "b": "gamma"})
 
         assert rooms == {"a": None, "b": None}
 
     def test_no_room_left(self):
-        assert AttachedFilesBudget(0, self._counter).allocate({"a": "alpha beta"}) == {"a": 0}
+        assert AttachedFilesBudget(0, 1.0, self._counter).allocate({"a": "alpha beta"}) == {"a": 0}
 
 
-class TestSectionSelector:
+class TestAttachedFileSections:
     @staticmethod
     def _counter(text: str) -> list[int]:
         return [0] * len(text.split())
 
-    @pytest.mark.asyncio
-    async def test_fills_the_room_in_rank_order_and_keeps_document_order(self):
-        selector = AttachedFileSectionSelector(AttachedFilesConfig(), self._counter, None)
-        sections = ["alpha " * 50, "beta " * 50, "gamma " * 50]
+    def test_a_file_is_split_along_its_headings_like_ingested_knowledge(self):
+        document = _document("# Handbook\n\nIntro.\n\n## Vacation\n\n25 days.\n\n## Remote\n\nThree days.")
 
-        with (
-            patch.object(AttachedFileSectionSelector, "split", return_value=sections),
-            patch.object(AttachedFileSectionSelector, "rank", new=AsyncMock(return_value=[2, 0, 1])),
-        ):
-            excerpt = await selector.select("ignored", "query", room=100)
+        sections = AttachedFileSections.parse(document, "file-1", "handbook.pdf")
 
-        assert excerpt.index("alpha") < excerpt.index("gamma")
-        assert "beta" not in excerpt
+        assert [(section.h1, section.h2) for section in sections] == [
+            ("Handbook", None),
+            ("Handbook", "Vacation"),
+            ("Handbook", "Remote"),
+        ]
+        assert {section.source for section in sections} == {"handbook.pdf"}
+        assert {section.document_id for section in sections} == {"file-1"}
+
+    def test_fills_the_room_in_rank_order_and_keeps_document_order(self):
+        document = _document("# A\n\n" + "alpha " * 50 + "\n\n# B\n\n" + "beta " * 50 + "\n\n# C\n\n" + "gamma " * 50)
+        alpha, beta, gamma = AttachedFileSections.parse(document, "file-1", "doc.pdf")
+        picker = AttachedFileSections(AttachedFilesConfig(), self._counter, None)
+
+        chosen = picker.fill([gamma, alpha, beta], room=110)
+
+        assert chosen == [alpha, gamma]
 
     def test_cosine(self):
-        assert AttachedFileSectionSelector.cosine([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
-        assert AttachedFileSectionSelector.cosine([1.0, 0.0], [0.0, 1.0]) == pytest.approx(0.0)
+        assert AttachedFileSections.cosine([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
+        assert AttachedFileSections.cosine([1.0, 0.0], [0.0, 1.0]) == pytest.approx(0.0)

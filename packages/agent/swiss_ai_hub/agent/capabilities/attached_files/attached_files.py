@@ -1,5 +1,4 @@
 import asyncio
-import html
 import logging
 from collections.abc import Sequence
 from typing import ClassVar
@@ -13,14 +12,19 @@ from swiss_ai_hub.core.events.agent import (
     ReadAttachedFilesEvent,
     UserUploadedFile,
 )
-from swiss_ai_hub.core.generative_ai import ExtractedDocument, estimate_prompt_tokens
+from swiss_ai_hub.core.generative_ai import (
+    ExtractedDocument,
+    IngestedNode,
+    combine_nodes_in_order,
+    estimate_prompt_tokens,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode import FitMode
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
-from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_selector import AttachedFileSectionSelector
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.capability import Capability
@@ -86,45 +90,50 @@ class AttachedFiles(Capability):
         outcomes = await asyncio.gather(
             *(AttachedFileReader.read(file, topic.agent_class, topic.agent_id) for file in files)
         )
+        readable = {event.file_id: (document, event) for document, event in outcomes if document is not None}
+        sections = dict(
+            zip(
+                readable,
+                await asyncio.gather(
+                    *(
+                        asyncio.to_thread(AttachedFileSections.parse, document, event.file_id, event.filename)
+                        for document, event in readable.values()
+                    )
+                ),
+                strict=True,
+            )
+        )
         counter = conversation.llm.token_counter
         available = (
             conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
         )
-        budget = AttachedFilesBudget(available, counter)
-        texts = {event.file_id: document.content for document, event in outcomes if document is not None}
-        selector = AttachedFileSectionSelector(files_config.attached_files, counter, user)
-        fitted = await AttachedFiles._fit(texts, budget.allocate(texts), budget, selector, request.query)
+        budget = AttachedFilesBudget(available, files_config.attached_files.share_of_input_budget, counter)
+        rooms = budget.allocate({file_id: document.content for file_id, (document, _) in readable.items()})
+        picker = AttachedFileSections(files_config.attached_files, counter, user)
+        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query)
 
-        sections = [AttachedFiles._render(document, event, fitted, t) for document, event in outcomes]
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
-        block = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content="\n\n".join([t("agent.attached_files.prompt.preamble"), *sections]),
-            )
-        ]
-        return [*events, AttachedFilesReadEvent(block=block)]
+        return [*events, AttachedFilesReadEvent(block=AttachedFiles._block(outcomes, fitted, t))]
 
     @staticmethod
     async def _fit(
-        texts: dict[str, str],
+        sections: dict[str, list[IngestedNode]],
         rooms: dict[str, int | None],
-        budget: AttachedFilesBudget,
-        selector: AttachedFileSectionSelector,
+        picker: AttachedFileSections,
         query: str,
-    ) -> dict[str, tuple[str, FitMode]]:
-        async def fit_one(file_id: str) -> tuple[str, tuple[str, FitMode]]:
+    ) -> dict[str, tuple[list[IngestedNode], FitMode]]:
+        async def fit_one(file_id: str) -> tuple[str, tuple[list[IngestedNode], FitMode]]:
             room = rooms[file_id]
             if room is None:
-                return file_id, (texts[file_id], FitMode.WHOLE)
-            return file_id, await AttachedFiles._cut_down(texts[file_id], room, budget, selector, query)
+                return file_id, (sections[file_id], FitMode.WHOLE)
+            return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query)
 
-        return dict(await asyncio.gather(*(fit_one(file_id) for file_id in texts)))
+        return dict(await asyncio.gather(*(fit_one(file_id) for file_id in sections)))
 
     @staticmethod
     async def _cut_down(
-        text: str, room: int, budget: AttachedFilesBudget, selector: AttachedFileSectionSelector, query: str
-    ) -> tuple[str, FitMode]:
+        sections: list[IngestedNode], room: int, picker: AttachedFileSections, query: str
+    ) -> tuple[list[IngestedNode], FitMode]:
         """Relevant sections when the models can pick them; the beginning otherwise.
 
         The fallback keeps the turn answering when the embedding or reranking service is down or the turn has no
@@ -132,31 +141,46 @@ class AttachedFiles(Capability):
         """
         if query.strip():
             try:
-                return await selector.select(text, query, room), FitMode.EXCERPTS
+                return picker.fill(await picker.rank(sections, query), room), FitMode.EXCERPTS
             except Exception:
                 logger.exception("[attached-files] Could not pick relevant sections, keeping the beginning instead")
-        return budget.trim_head(text, room), FitMode.BEGINNING
+        return picker.fill(sections, room), FitMode.BEGINNING
 
     @staticmethod
-    def _render(
-        document: ExtractedDocument | None,
-        event: AttachedFileEvent,
-        fitted: dict[str, tuple[str, FitMode]],
+    def _block(
+        outcomes: Sequence[tuple[ExtractedDocument | None, AttachedFileEvent]],
+        fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
-    ) -> str:
-        if document is None:
-            return t("agent.attached_files.prompt.unreadable", filename=event.filename, error=event.error)
-        text, mode = fitted[event.file_id]
-        pages = f' pages="{event.number_of_pages}"' if event.number_of_pages else ""
-        section = f'<attached_file name="{html.escape(event.filename, quote=True)}"{pages}>\n{text}\n</attached_file>'
-        if mode == FitMode.EXCERPTS:
-            section += "\n" + t("agent.attached_files.prompt.excerpted", filename=event.filename)
-        elif mode == FitMode.BEGINNING:
-            section += "\n" + t("agent.attached_files.prompt.truncated", filename=event.filename)
-        return section
+    ) -> list[ChatMessage]:
+        """The files as retrieved knowledge is rendered, followed by what the model must tell the user about them."""
+        chosen = [section for sections, _ in fitted.values() for section in sections]
+        block = []
+        if chosen:
+            block.append(
+                combine_nodes_in_order(
+                    chosen, t, AgentLocaleString.from_i18n_path("agent.attached_files.prompt.context")
+                )
+            )
+        notes = [AttachedFiles._note(event, fitted, t) for _, event in outcomes]
+        if any(notes):
+            block.append(ChatMessage(role=MessageRole.SYSTEM, content="\n".join(note for note in notes if note)))
+        return block
 
     @staticmethod
-    def _with_status(event: AttachedFileEvent, fitted: dict[str, tuple[str, FitMode]]) -> AttachedFileEvent:
+    def _note(event: AttachedFileEvent, fitted: dict[str, tuple[list[IngestedNode], FitMode]], t: LocaleHandler) -> str:
+        if event.file_id not in fitted:
+            return t("agent.attached_files.prompt.unreadable", filename=event.filename, error=event.error)
+        match fitted[event.file_id][1]:
+            case FitMode.EXCERPTS:
+                return t("agent.attached_files.prompt.excerpted", filename=event.filename)
+            case FitMode.BEGINNING:
+                return t("agent.attached_files.prompt.truncated", filename=event.filename)
+        return ""
+
+    @staticmethod
+    def _with_status(
+        event: AttachedFileEvent, fitted: dict[str, tuple[list[IngestedNode], FitMode]]
+    ) -> AttachedFileEvent:
         if event.file_id in fitted and fitted[event.file_id][1] != FitMode.WHOLE:
             return event.model_copy(update={"status": AttachedFileStatus.TRUNCATED})
         return event
