@@ -176,15 +176,17 @@ scope; `remember(...)` builds the memory-storage delegation directly, no step be
 completion is what guarantees it is published before the run tears down (ADR `2026_09_11`).
 
 **Capability steps** are `@staticmethod`s decorated with `@step` taking the blueprint instance first, so the dispatcher
-calls them like methods. A capability declares `calls` (request → result) and `required_config`; `CapabilityCatalog`
-composes only the steps a blueprint's calls can reach, so an unused call is pruned from the graph. The dispatcher
-injects the run's config into any parameter annotated with one of its bases: a step asks for `AgentConfig` for the
-identity and for the mixin for the capability's fields.
+calls them like methods. A capability declares `calls` (request → every outcome the call can end in: one or several
+events, and the stop events that end the run there) and `required_config`; `CapabilityCatalog` composes only the steps a
+blueprint's calls can reach, so an unused call is pruned from the graph. The dispatcher injects the run's config into
+any parameter annotated with one of its bases: a step asks for `AgentConfig` for the identity and for the mixin for the
+capability's fields.
 
 **Validation** (`Agent.validate_workflow`, run by `AgentRunner`, pinned by
 `capabilities/tests/test_capability_composition.py`) refuses a blueprint that would stall or crash: a step waiting for
-an event nothing produces, a call whose result no step consumes, two steps with one name, or a config missing a required
-mixin. Every message names the obligation.
+an event nothing produces, a call outcome no step consumes (every outcome that does not end the run), a declared outcome
+the capability's steps cannot emit, a stop the capability can end a call with but does not declare, two steps with one
+name, or a config missing a required mixin. Every message names the obligation.
 
 Every conversational blueprint runs this way: `RAGAgent`, `ExpertRAGAgent` (a `RAGAgent` subclass adding the expert
 steps and overriding three), `LLMWrappingAgent`, `FewShotAgent` and `McpReactAgent`.

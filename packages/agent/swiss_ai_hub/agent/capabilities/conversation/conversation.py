@@ -67,9 +67,9 @@ class Conversation(Capability):
     """
 
     calls: ClassVar[dict] = {
-        ContextualizeConversationEvent: ConversationContextualizedEvent,
-        ComposeContextEvent: ContextComposedEvent,
-        CompleteConversationEvent: None,
+        ContextualizeConversationEvent: (ConversationContextualizedEvent, LLMStopEvent, RefusalStopEvent),
+        ComposeContextEvent: (ContextComposedEvent,),
+        CompleteConversationEvent: (StopEvent,),
     }
     required_config: ClassVar[type[ConversationFields]] = ConversationFields
 

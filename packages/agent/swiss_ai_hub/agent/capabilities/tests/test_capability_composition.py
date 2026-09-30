@@ -5,12 +5,17 @@ reachable steps, an unused call is pruned, and a blueprint that would stall, cla
 is refused before a run exists.
 """
 
+from typing import ClassVar
+
 import pytest
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
     LLMEvent,
+    LLMStopEvent,
+    StopEvent,
     UserMessageEvent,
 )
+from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
@@ -23,6 +28,8 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config im
 from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.capability import Capability
+from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
@@ -106,3 +113,94 @@ def test_a_step_name_collision_is_refused():
 def test_every_conversational_blueprint_validates(agent: type[Agent], config: type[AgentConfig]):
     agent.validate_workflow(config)
     assert {capability.__name__ for capability in agent.installed_capabilities()} == {"Conversation", "Memory"}
+
+
+class SearchEvent(ControlEvent):
+    pass
+
+
+class FoundEvent(ControlEvent):
+    pass
+
+
+class NeedsClarificationEvent(ControlEvent):
+    pass
+
+
+class ExpiredEvent(ControlEvent):
+    pass
+
+
+class Search(Capability):
+    """Answers a search with a hit or a question back, and may give up on the turn."""
+
+    calls: ClassVar[dict] = {SearchEvent: (FoundEvent, NeedsClarificationEvent, LLMStopEvent)}
+
+    @staticmethod
+    @step()
+    async def search_step(agent: Agent, request: SearchEvent) -> FoundEvent | NeedsClarificationEvent | LLMStopEvent:
+        return FoundEvent()
+
+
+class StaleSearch(Search):
+    calls: ClassVar[dict] = {SearchEvent: (FoundEvent, NeedsClarificationEvent, LLMStopEvent, ExpiredEvent)}
+
+
+class HalfHandlingAgent(Agent):
+    @step()
+    async def open_step(self, event: UserMessageEvent) -> SearchEvent:
+        return SearchEvent()
+
+    @step()
+    async def answer_step(self, found: FoundEvent) -> StopEvent:
+        return StopEvent()
+
+
+class FullyHandlingAgent(HalfHandlingAgent):
+    @step()
+    async def ask_back_step(self, question: NeedsClarificationEvent) -> StopEvent:
+        return StopEvent()
+
+
+@pytest.fixture
+def search_capability(monkeypatch: pytest.MonkeyPatch):
+    def install(capability: type[Capability]) -> None:
+        monkeypatch.setattr(CapabilityCatalog, "all", staticmethod(lambda: [Conversation, Memory, capability]))
+
+    return install
+
+
+class TestSeveralOutcomes:
+    def test_every_outcome_that_does_not_end_the_run_must_be_consumed(self, search_capability):
+        search_capability(Search)
+
+        with pytest.raises(ValueError, match="no step consumes its result NeedsClarificationEvent"):
+            HalfHandlingAgent.validate_workflow(AgentConfig)
+        FullyHandlingAgent.validate_workflow(AgentConfig)
+
+    def test_an_outcome_no_step_emits_is_refused(self, search_capability):
+        class StaleSearchingAgent(FullyHandlingAgent):
+            @step()
+            async def expired_step(self, expired: ExpiredEvent) -> StopEvent:
+                return StopEvent()
+
+        search_capability(StaleSearch)
+
+        with pytest.raises(ValueError, match="declares ExpiredEvent as an outcome of SearchEvent, but none"):
+            StaleSearchingAgent.validate_workflow(AgentConfig)
+
+    def test_an_undeclared_way_to_end_the_call_is_refused(self, search_capability):
+        class QuietSearch(Search):
+            calls: ClassVar[dict] = {SearchEvent: (FoundEvent, NeedsClarificationEvent)}
+
+        class QuietlySearchingAgent(FullyHandlingAgent):
+            pass
+
+        search_capability(QuietSearch)
+
+        with pytest.raises(ValueError, match="can end SearchEvent with LLMStopEvent, but does not declare it"):
+            QuietlySearchingAgent.validate_workflow(AgentConfig)
+
+
+def test_the_meta_question_answer_is_a_declared_outcome_of_contextualize():
+    assert LLMStopEvent in Conversation.calls[Conversation.ContextualizeRequest]

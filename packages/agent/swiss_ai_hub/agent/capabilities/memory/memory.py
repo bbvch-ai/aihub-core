@@ -44,7 +44,7 @@ class Memory(Capability):
       delegation is published before the run tears down (ADR `2026_09_11`).
     """
 
-    calls: ClassVar[dict] = {RecallMemoryEvent: MemoryRecalledEvent}
+    calls: ClassVar[dict] = {RecallMemoryEvent: (MemoryRecalledEvent,)}
     required_config: ClassVar[type[MemoryFields]] = MemoryFields
 
     RecallRequest = RecallMemoryEvent

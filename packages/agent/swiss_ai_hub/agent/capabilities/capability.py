@@ -23,10 +23,11 @@ class Capability(abc.ABC):
     steps composed into `get_steps()`, and the run's config is checked to carry `required_config`.
     """
 
-    # The calls this capability answers: request event -> result event, or None when the call ends the run.
-    # Returning a request from a step is what composes the capability's steps into the blueprint's workflow,
-    # and the result is what the blueprint must consume to pick the call up again.
-    calls: ClassVar[dict[type[ControlEvent], type[ControlEvent] | None]] = {}
+    # The calls this capability answers: request event -> every outcome the call can end in. A call may answer
+    # with one of several events, or end the run (a stop event outcome). Returning a request from a step is what
+    # composes the capability's steps into the blueprint's workflow; the blueprint must consume every outcome that
+    # is not a stop event, and validation checks the outcomes against what the capability's steps can emit.
+    calls: ClassVar[dict[type[ControlEvent], tuple[type[ControlEvent], ...]]] = {}
 
     @classmethod
     def handles(cls) -> frozenset[type[ControlEvent]]:
@@ -43,6 +44,22 @@ class Capability(abc.ABC):
             for _, method in inspect.getmembers(cls, predicate=inspect.isfunction)
             if getattr(method, Agent.STEP_ANNOTATION, False)
         ]
+
+    @classmethod
+    def emittable_from(cls, request: type[ControlEvent]) -> set[type[BaseEvent]]:
+        """Every event the capability's own steps can emit once the request arrives, following its internal chain."""
+        produced: set[type[BaseEvent]] = {request}
+        reached: list[Callable] = []
+        changed = True
+        while changed:
+            changed = False
+            for step in cls.own_steps():
+                if step in reached or not produced & getattr(step, Agent.INPUT_EVENTS_ANNOTATION, set()):
+                    continue
+                reached.append(step)
+                produced |= set(getattr(step, Agent.OUTPUT_EVENTS_ANNOTATION, set()))
+                changed = True
+        return produced - {request}
 
     @staticmethod
     def produced_events(steps: list[Callable]) -> set[type[BaseEvent]]:

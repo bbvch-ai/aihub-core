@@ -9,6 +9,7 @@ from swiss_ai_hub.core.events.agent import (
     BotInTheLoopResponseEvent,
     HumanInTheLoopResponseEvent,
     StartEvent,
+    StopEvent,
 )
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.workflow import DispatchableWorkflow
@@ -46,6 +47,7 @@ class WorkflowValidation:
             *cls._duplicate_step_names(blueprint, steps),
             *cls._inputs_nobody_produces(blueprint, steps),
             *cls._results_nobody_consumes(blueprint, steps),
+            *cls._outcomes_not_as_declared(blueprint),
             *cls._missing_config_mixins(blueprint, agent_config_type),
             *cls._no_start(blueprint, steps),
         ]
@@ -92,9 +94,10 @@ class WorkflowValidation:
 
     @staticmethod
     def _results_nobody_consumes(blueprint: type[Agent], steps: list[Callable]) -> list[str]:
-        """A call whose result none of the blueprint's own steps picks up ends the run without a stop event, which
-        looks like a hang. The capability's own steps may consume the result too (the title does), so only the
-        blueprint's steps count."""
+        """A call outcome none of the blueprint's own steps picks up leaves the run waiting without a stop event,
+        which looks like a hang. Every outcome that does not end the run counts, since the call may answer with any of
+        them. The capability's own steps may consume an outcome too (the title does), so only the blueprint's steps
+        count."""
         produced = {event for step in steps for event in getattr(step, DispatchableWorkflow.OUTPUT_EVENTS_ANNOTATION)}
         consumed = {
             event
@@ -103,11 +106,35 @@ class WorkflowValidation:
         }
         return [
             f"{blueprint.__name__} calls {capability.__name__} with {request.__name__}, but no step consumes its "
-            f"result {result.__name__}"
+            f"result {outcome.__name__}"
             for capability in blueprint.installed_capabilities()
-            for request, result in capability.calls.items()
-            if result is not None and request in produced and result not in consumed
+            for request, outcomes in capability.calls.items()
+            for outcome in outcomes
+            if not issubclass(outcome, StopEvent) and request in produced and outcome not in consumed
         ]
+
+    @staticmethod
+    def _outcomes_not_as_declared(blueprint: type[Agent]) -> list[str]:
+        """The declared outcomes are what the blueprint is held to consume, so they must match the capability's steps:
+        an outcome no step emits is stale, and a stop event a step can end the call with but nobody declared is a branch
+        the blueprint's author cannot see."""
+        problems = []
+        for capability in blueprint.installed_capabilities():
+            for request, outcomes in capability.calls.items():
+                emittable = capability.emittable_from(request)
+                problems += [
+                    f"{capability.__name__} declares {outcome.__name__} as an outcome of {request.__name__}, but none "
+                    f"of its steps emits it"
+                    for outcome in outcomes
+                    if not any(issubclass(event, outcome) for event in emittable)
+                ]
+                problems += [
+                    f"{capability.__name__} can end {request.__name__} with {event.__name__}, but does not declare it "
+                    f"as an outcome"
+                    for event in emittable
+                    if issubclass(event, StopEvent) and not any(issubclass(event, outcome) for outcome in outcomes)
+                ]
+        return problems
 
     @staticmethod
     def _missing_config_mixins(blueprint: type[Agent], agent_config_type: type[AgentConfig]) -> list[str]:

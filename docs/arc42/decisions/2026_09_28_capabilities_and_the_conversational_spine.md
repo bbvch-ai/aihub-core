@@ -34,11 +34,12 @@ invokes them exactly as it invokes a method.
 
 **2 — Nothing is installed by listing.** Returning a capability's request from a step is what composes that capability's
 steps into `Agent.get_steps()`, and only the steps reachable from the blueprint's own events are composed, so a call a
-blueprint never makes is pruned from its graph. A capability declares `calls` (request → result) and `required_config`,
-the form mixin its steps are annotated with (`ConversationFields`, `MemoryFields`). The blueprint's config lists the
-mixins of the capabilities it calls as bases before `AgentConfig`; the dispatcher injects the run's concrete config into
-any parameter annotated with one of its bases. Nested `StepConfig` fields were considered and rejected for now because
-they change the stored profile shape.
+blueprint never makes is pruned from its graph. A capability declares `calls` (request → every outcome the call can end
+in, so a call may answer with one of several events or end the run) and `required_config`, the form mixin its steps are
+annotated with (`ConversationFields`, `MemoryFields`). The blueprint's config lists the mixins of the capabilities it
+calls as bases before `AgentConfig`; the dispatcher injects the run's concrete config into any parameter annotated with
+one of its bases. Nested `StepConfig` fields were considered and rejected for now because they change the stored profile
+shape.
 
 **3 — Only two calls keep a sub-graph behind them**, because a blueprint must not be able to get them wrong:
 
