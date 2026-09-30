@@ -173,7 +173,7 @@ class TestSameNamedSources:
         emitter = _Recorder()
         context = _context(pipe, emitter, owui_file_ids={"agent-file": "owui-file"})
         chain = pipe.EventProcessorFactory.create_chain()
-        file_id = CitationId.for_attached_file("agent-file")
+        file_id = CitationId.of("agent-file")
         document = {**_node("s3://knowledge/legal/contract.pdf", "Clause 7"), "document_title": "contract.pdf"}
         attached = {
             "_parent_event_names": ["AttachedFileEvent"],
