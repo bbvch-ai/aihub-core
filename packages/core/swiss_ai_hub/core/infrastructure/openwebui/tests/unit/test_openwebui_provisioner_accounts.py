@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
@@ -27,41 +29,28 @@ def _group(display_name: str, group_id: str) -> Group:
 
 class TestProvisionMissingAccounts:
     @pytest.mark.asyncio
-    async def test_should_create_account_when_user_has_role_but_no_account(
+    async def test_should_create_account_when_group_member_has_no_account(
         self, provisioner: OpenWebuiProvisioner
     ) -> None:
-        with (
-            patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
-            patch.object(provisioner._openwebui, "create_user", return_value=_owui_user("a@x", "owui-a")) as create,
-        ):
-            mock_utr.get_all_user_ids.return_value = {"kc-a"}
-
-            provisioned = await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], {})
+        with patch.object(provisioner._openwebui, "create_user", return_value=_owui_user("a@x", "owui-a")) as create:
+            provisioned = await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], {"kc-a"}, {})
 
         create.assert_awaited_once_with(email="a@x", display_name="New User", external_id="kc-a", scim=None)
         assert provisioned == {"kc-a": "owui-a"}
 
     @pytest.mark.asyncio
-    async def test_should_not_create_account_when_user_has_no_role(self, provisioner: OpenWebuiProvisioner) -> None:
-        with (
-            patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
-            patch.object(provisioner._openwebui, "create_user") as create,
-        ):
-            mock_utr.get_all_user_ids.return_value = set()
-
-            await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], {})
+    async def test_should_not_create_account_when_user_joins_no_group(self, provisioner: OpenWebuiProvisioner) -> None:
+        with patch.object(provisioner._openwebui, "create_user") as create:
+            await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], set(), {})
 
         create.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_should_not_create_account_when_one_exists(self, provisioner: OpenWebuiProvisioner) -> None:
-        with (
-            patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
-            patch.object(provisioner._openwebui, "create_user") as create,
-        ):
-            mock_utr.get_all_user_ids.return_value = {"kc-a"}
-
-            await provisioner._provision_missing_accounts([_keycloak_user("kc-a", "a@x")], {"kc-a": "owui-a"})
+        with patch.object(provisioner._openwebui, "create_user") as create:
+            await provisioner._provision_missing_accounts(
+                [_keycloak_user("kc-a", "a@x")], {"kc-a"}, {"kc-a": "owui-a"}
+            )
 
         create.assert_not_called()
 
@@ -70,21 +59,19 @@ class TestProvisionMissingAccounts:
     async def test_should_not_create_account_when_user_has_no_email_or_is_disabled(
         self, provisioner: OpenWebuiProvisioner, user: KeycloakUser
     ) -> None:
-        with (
-            patch(f"{_MODULE}.UserTenantRoleEntity") as mock_utr,
-            patch.object(provisioner._openwebui, "create_user") as create,
-        ):
-            mock_utr.get_all_user_ids.return_value = {"kc-a"}
-
-            await provisioner._provision_missing_accounts([user], {})
+        with patch.object(provisioner._openwebui, "create_user") as create:
+            await provisioner._provision_missing_accounts([user], {"kc-a"}, {})
 
         create.assert_not_called()
 
 
-class TestProvisionedAccountJoinsGroups:
-    @pytest.mark.asyncio
-    async def test_should_add_provisioned_account_to_role_group(self, provisioner: OpenWebuiProvisioner) -> None:
-        """The user's first role triggers a sync before their first chat login created an account."""
+class TestProvisioningDuringGroupSync:
+    """The user's first role triggers a sync before their first chat login created an account."""
+
+    @contextmanager
+    def _group_sync(
+        self, provisioner: OpenWebuiProvisioner, *, active_user_ids: set[str], role_holders: list[str]
+    ) -> Iterator[tuple[MagicMock, MagicMock]]:
         with (
             patch(f"{_MODULE}.TenantMetadataEntity") as mock_tenant,
             patch(f"{_MODULE}.RoleEntity") as mock_role,
@@ -92,7 +79,7 @@ class TestProvisionedAccountJoinsGroups:
             patch(f"{_MODULE}.KeycloakAdminService") as mock_keycloak,
             patch.object(provisioner._openwebui, "list_groups", return_value=[_group("aihub:T1:R1", "grp-1")]),
             patch.object(provisioner._openwebui, "list_users", return_value=[]),
-            patch.object(provisioner._openwebui, "create_user", return_value=_owui_user("a@x", "owui-a")),
+            patch.object(provisioner._openwebui, "create_user", return_value=_owui_user("a@x", "owui-a")) as create,
             patch.object(provisioner._openwebui, "update_group_members") as update_members,
         ):
             tenant = MagicMock()
@@ -102,10 +89,31 @@ class TestProvisionedAccountJoinsGroups:
             role.name, role.access_rules = "R1", []
             mock_role.get_roles_for_tenant.return_value = [role]
             mock_keycloak.get_all_users = AsyncMock(return_value=[_keycloak_user("kc-a", "a@x")])
-            mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value={"kc-a"})
-            mock_utr.get_all_user_ids.return_value = {"kc-a"}
-            mock_utr.objects.return_value = [MagicMock(user_id="kc-a")]
+            mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=active_user_ids)
+            mock_utr.objects.return_value = [MagicMock(user_id=uid) for uid in role_holders]
+            yield create, update_members
 
+    @pytest.mark.asyncio
+    async def test_should_add_provisioned_account_to_role_group(self, provisioner: OpenWebuiProvisioner) -> None:
+        with self._group_sync(provisioner, active_user_ids={"kc-a"}, role_holders=["kc-a"]) as (_, update_members):
             await provisioner._sync_groups()
 
         update_members.assert_awaited_once_with("grp-1", ["owui-a"], scim=ANY)
+
+    @pytest.mark.asyncio
+    async def test_should_not_create_account_before_user_has_an_active_tenant(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        """A role assigned before the user's first login: the account follows once their active tenant is set."""
+        with self._group_sync(provisioner, active_user_ids=set(), role_holders=["kc-a"]) as (create, _):
+            await provisioner._sync_groups()
+
+        create.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_should_not_create_account_when_user_holds_no_role(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Revoking a user's last role leaves their association with ``roles=[]``, which joins no group."""
+        with self._group_sync(provisioner, active_user_ids={"kc-a"}, role_holders=[]) as (create, _):
+            await provisioner._sync_groups()
+
+        create.assert_not_called()

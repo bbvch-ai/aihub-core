@@ -35,11 +35,14 @@ ended up in no group; one opening it after half a second ended up in theirs.
 
 ## Decision
 
-**The provisioner creates the OpenWebUI account of every Keycloak user who holds a role but has none yet, over SCIM,
-inside the group sync, and adds it to its groups in the same pass.**
+**The provisioner creates the OpenWebUI account of every Keycloak user about to join an `aihub:{tenant}:{role}` group
+who has none yet, over SCIM, inside the group sync, and adds it to its groups in the same pass.**
 
-- `_sync_groups_locked` calls `_provision_missing_accounts` after building the email mapping. It skips users without an
-  email, disabled users, and users without any `UserTenantRoleEntity`.
+- `_sync_groups_locked` computes each group's members first — users holding the role in the tenant that is their active
+  tenant — and `_provision_missing_accounts` only creates accounts for them, skipping users without an email and
+  disabled users. An account outside every group would see no model, and a user who gets a role or an active tenant
+  later joins a group through the sync that change triggers. Accounts are matched by email, falling back to the SCIM
+  external id once the email changed in Keycloak.
 - `OpenWebuiClient.create_user` sends the Keycloak `sub` as `externalId`. OpenWebUI's OAuth login links to that account
   instead of creating a second one (`OAUTH_MERGE_ACCOUNTS_BY_EMAIL` stays on). If the login created the account first,
   OpenWebUI answers 409; the client then reuses the account it finds by `externalId`, falling back to email. OpenWebUI
@@ -62,7 +65,7 @@ inside the group sync, and adds it to its groups in the same pass.**
 
 ### Negative
 
-- Every user with a role now has an OpenWebUI account, including users who only use the Admin UI.
+- Every user who is a member of a group now has an OpenWebUI account, including users who only use the Admin UI.
 - A provisioned account has role `user` until its owner's first chat login, where OAuth role management applies
   `AIHubSysAdmin` → `admin` as before.
 - `sync_access` callers can queue behind one another; the debounce in `AccessChangeHook` keeps bulk changes to one run.

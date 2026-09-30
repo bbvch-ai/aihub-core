@@ -56,8 +56,8 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 **How it works:**
 
 1. **Groups**: AI-Hub creates Open WebUI groups for each tenant-role combination (named `aihub:{tenant}:{role}`), with
-   memberships synced based on email matching between both systems. A user who holds a role but has not opened the
-   chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are there on their first
+   memberships synced based on email matching between both systems. A user who holds a role in their active tenant but
+   has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are there on their first
    chat visit; the chat login then links to that account
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function

@@ -97,6 +97,17 @@ class TestCreateUser:
         assert result is existing
 
     @pytest.mark.asyncio
+    async def test_should_not_log_provisioning_when_reusing_account(
+        self, owui_client: OpenWebuiClient, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        scim = _conflicting_scim({BY_EXTERNAL_ID: _scim_user(EMAIL, "owui-existing")})
+
+        with caplog.at_level("INFO"):
+            await _create(owui_client, scim)
+
+        assert "Provisioned account" not in caplog.text
+
+    @pytest.mark.asyncio
     async def test_should_raise_when_create_fails_and_no_account_exists(self, owui_client: OpenWebuiClient) -> None:
         scim = _conflicting_scim({})
 

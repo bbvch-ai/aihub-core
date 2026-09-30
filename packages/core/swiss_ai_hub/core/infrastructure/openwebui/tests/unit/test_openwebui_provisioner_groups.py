@@ -82,6 +82,16 @@ class TestBuildUserIdMapping:
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, [])
         assert result == {}
 
+    def test_user_id_mapping_falls_back_to_external_id_after_email_change(self) -> None:
+        """OpenWebUI keeps the email the account was created with, so only the Keycloak sub still matches."""
+        aihub_users = [{"id": "kc-sub-1", "email": "alice.new@example.com"}]
+        owui_user = _user("alice.old@example.com", "owui-1")
+        owui_user.external_id = "kc-sub-1"
+
+        result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, [owui_user])
+
+        assert result == {"kc-sub-1": "owui-1"}
+
 
 class TestSyncGroupsOrchestration:
     @pytest.mark.asyncio

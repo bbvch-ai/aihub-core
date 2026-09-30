@@ -186,7 +186,7 @@ class OpenWebuiClient:
                 active=True,
             )
             try:
-                return await client.create(user)
+                created = await client.create(user)
             except SCIMResponseError:
                 existing = await self._find_first_user(
                     client, f'externalId eq "{external_id}"'
@@ -200,6 +200,8 @@ class OpenWebuiClient:
                     existing.user_name,
                 )
                 return existing
+            logger.info("OpenWebUI: Provisioned account for '%s' (id=%s)", email, created.id)
+            return created
 
         if scim:
             return await _create(scim)
