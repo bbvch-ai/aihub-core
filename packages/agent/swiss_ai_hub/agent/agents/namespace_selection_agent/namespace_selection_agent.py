@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
@@ -15,7 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, UserScopedRetrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import BucketEntity, NamespaceEntity
 
@@ -206,7 +206,8 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> DetermineNamespacesEvent:
+        access: AccessChecker | None = None,
+    ) -> DetermineNamespacesEvent | StopEvent:
         """Fetch namespaces, store original query, and start determination loop."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.fetching_namespaces"))
 
@@ -224,6 +225,15 @@ class NamespaceSelectionAgent(Agent):
                 continue
 
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
+
+        if agent_config.restrict_to_user_access and access is not None and available_namespaces:
+            available_namespaces = UserScopedRetrievers.readable_namespaces(access, available_namespaces)
+            if not available_namespaces:
+                await displayer.display_chunk(
+                    t("agent.namespace_selection_agent.messages.no_accessible_knowledge"),
+                    model_name=NamespaceSelectionAgent.__name__,
+                )
+                return StopEvent()
 
         # Store in RunContext
         logger.debug("Available namespaces fetched: %s", available_namespaces)

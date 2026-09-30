@@ -11,7 +11,7 @@ from opentelemetry import context as otel_context
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
@@ -617,6 +617,13 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == Redis:
             return self.redis
+
+        if AccessChecker in (param.annotation, *get_args(param.annotation)):
+            # A run without a user gets None, so the step keeps its profile's scope.
+            user_data = await run_context.get("user")
+            if not user_data:
+                return None
+            return await asyncio.to_thread(AccessChecker.from_user, UserIdentity.model_validate(user_data))
 
         # Matched through the union members too: the programmatically-started agents annotate this
         # `UserIdentity | None`, and an equality check against the bare class silently misses them —

@@ -87,11 +87,9 @@ class KnowledgeController(TenantScopedController):
             accessible_databases = []
             access_checker = AccessChecker.from_user(user)
             for db in all_databases:
-                if access_checker.has_access(f"aihub.user.knowledge.{db.name}.?>"):
+                if access_checker.has_access_to_knowledge_database(db.name):
                     accessible_namespaces = [
-                        ns
-                        for ns in db.namespaces
-                        if access_checker.has_access(f"aihub.user.knowledge.{db.name}.{ns.name}")
+                        ns for ns in db.namespaces if access_checker.has_access_to_knowledge_namespace(db.name, ns.name)
                     ]
                     # Secrets are masked, but hosts, endpoints, tenant ids and folder paths are still the
                     # administrator's business: only the source editor needs them, and it is admin-gated.

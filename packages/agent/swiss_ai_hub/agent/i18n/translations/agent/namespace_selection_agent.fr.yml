@@ -4,6 +4,9 @@ metadata:
   description: Assistant IA qui vous aide à trouver et sélectionner les bonnes sources
     de connaissances pour vos questions
 config:
+  restrict_to_user_access:
+    label: "Limiter aux droits de l'utilisateur"
+    help: "Ne proposer que les espaces de noms que la personne qui pose la question peut lire dans l'espace de connaissances."
   bucket_names:
     label: Bases de connaissances
     help: Sélectionnez les bases de connaissances à interroger
@@ -32,6 +35,7 @@ thoughts:
   forwarding_to_rag: Recherche d'informations pertinentes
   rag_error: "Une erreur s'est produite lors de la recherche : %{error_message}"
 messages:
+  no_accessible_knowledge: "Aucune des connaissances entre lesquelles cet agent oriente ne vous est accessible. Demandez un accès à un administrateur si vous en avez besoin."
   determination_failed: Je n'ai pas pu déterminer quelles sources de connaissances
     consulter pour cette demande. Pourriez-vous la reformuler ou m'indiquer le sujet
     qui vous intéresse ?
