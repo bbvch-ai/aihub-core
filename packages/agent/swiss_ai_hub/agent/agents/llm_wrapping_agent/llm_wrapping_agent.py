@@ -187,9 +187,15 @@ class LLMWrappingAgent(Agent):
         user: UserIdentity | None = None,
     ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
         """Stream the answer, then hand the turn back: the memory delegation first, so it is published before
-        the run tears down, and the completion last."""
+        the run tears down, and the completion last.
+
+        The composed history carries each recalled block as its own system message behind the system prompt;
+        merged here so it reaches strict providers (e.g. Qwen3.5 on Infomaniak) as the single leading system
+        message they accept.
+        """
+        history = merge_consecutive_messages(event.history)
         async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            answer = await displayer.display_llm_stream(agent_config.llm, llm, event.history, as_stop_step=False)
+            answer = await displayer.display_llm_stream(agent_config.llm, llm, history, as_stop_step=False)
         remember = Memory.remember(
             query=ctx.query,
             answer=answer,

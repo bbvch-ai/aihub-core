@@ -94,7 +94,7 @@ class MailCategory(Form):
                 # Only ever evaluated while the enable toggle is on, since the toggle unmounts the field: switched
                 # on and left empty reads like narrowing but retrieves everything, so it is rejected in the form
                 # rather than by the run that would have been answered too widely.
-                additional_validation_rules="required",
+                required=True,
                 # A row-data reference, not `$get(...)`: categories are a repeater, and `$get` resolves through one
                 # global node registry shared by every row. Collections only shape a drafted reply, so they are
                 # offered only where one is drafted.

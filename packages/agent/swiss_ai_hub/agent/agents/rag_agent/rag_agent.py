@@ -9,7 +9,9 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LLMEvent,
     MemoryStorageRequestedEvent,
+    RAGFailureStopEvent,
     RAGStartEvent,
+    RAGSuccessStopEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
@@ -86,6 +88,7 @@ class RAGAgent(Agent):
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.description")
     icon: ClassVar[str] = "mage:file"
+    completion_stops: ClassVar[tuple[type[StopEvent], ...]] = (RAGSuccessStopEvent, RAGFailureStopEvent)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
