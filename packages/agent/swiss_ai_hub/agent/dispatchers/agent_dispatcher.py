@@ -259,7 +259,10 @@ class AgentDispatcher(BaseDispatcher):
     ) -> None:
         for step_method in self.agent.get_steps_waiting_for_event(type(event)):
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set())
+            precondition_fn = getattr(step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, None)
+            input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set()) | getattr(
+                precondition_fn, Agent.INPUT_EVENTS_ANNOTATION, set()
+            )
             input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
