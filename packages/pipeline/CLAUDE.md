@@ -43,6 +43,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── llm/                           # EmbeddingModelResource, LanguageModelResource
 │   │   ├── share_point/                   # SharePointResource (MS Graph API)
 │   │   ├── rclone/                        # RcloneClient (RC API; stateless, built per run)
+│   │   ├── structured/                    # Structured sources: markdown dlt destination, per-database dlt state store
 │   │   ├── local_file_system/             # LocalFileSystemResource
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
@@ -64,7 +65,9 @@ packages/pipeline/                        # SDK framework
 │   ├── ingestors/
 │   │   └── document_ingestion_config.py   # DocumentIngestionConfig: the announced per-database form (Form duality)
 │   ├── source_pipelines/
-│   │   └── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
+│   │   ├── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
+│   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
+│   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   └── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
@@ -78,6 +81,8 @@ packages/pipeline/                        # SDK framework
 │   │   ├── share_point_file.py            # SharePoint-specific file
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
+│   │   ├── structured_record_file.py      # One API record as a markdown file: namespace, frontmatter, body
+│   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
 │   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
