@@ -314,14 +314,14 @@ def local_mongo_milvus_storage_context_resource(vector_store_uri, store_name, di
 
 Resources read connection details from `packages/core` settings (Pydantic `BaseSettings`):
 
-| Settings Class                      | Env Prefix                     | Purpose                |
-| ----------------------------------- | ------------------------------ | ---------------------- |
-| `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection    |
-| `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB       |
-| `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API (`URL`, `RC_USER/PASS`) |
+| Settings Class                      | Env Prefix                     | Purpose                                     |
+| ----------------------------------- | ------------------------------ | ------------------------------------------- |
+| `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection                         |
+| `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB                            |
+| `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API (`URL`, `RC_USER/PASS`)       |
 | `RclonePipelineSettings`            | `RCLONE_PIPELINE_`             | Source pipeline schedule + `MAX_PARTITIONS` |
-| `MineruSettings`                    | `MINERU_`                      | MinerU parser          |
-| `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence |
+| `MineruSettings`                    | `MINERU_`                      | MinerU parser                               |
+| `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence                      |
 
 ______________________________________________________________________
 
@@ -330,16 +330,16 @@ ______________________________________________________________________
 IO managers control how assets are stored and retrieved. Each storage system has a dedicated IO manager in
 `packages/pipeline/swiss_ai_hub/pipeline/io/`.
 
-| IO Manager                 | Key                            | Storage      | Direction     | Partition Behavior              |
-| -------------------------- | ------------------------------ | ------------ | ------------- | ------------------------------- |
-| `S3DataLakeIOManager`      | `data_lake_io_manager`         | S3/MinIO     | Read + Write  | Partition key = file URI        |
-| `AzureDataLakeIOManager`   | `data_lake_io_manager`         | Azure ADLS   | Read + Write  | Partition key = file URI        |
-| `DocStoreIOManager`        | `doc_store_io_manager`         | MongoDB      | Read + Write  | Partition key = document URI/ID |
-| `VectorStoreIOManager`     | `vector_store_io_manager`      | Milvus       | Read + Write  | Partition key = document URI/ID |
-| `SharePointIOManager`      | `sharepoint_io_manager`        | SharePoint   | **Read-only** | Partition key = SP file path    |
-| `LocalFileSystemIOManager` | `local_file_system_io_manager` | Local FS     | **Read-only** | Partition key = file path       |
-| `RoutedRcloneIOManager`    | `rclone_io_manager`            | Rclone       | **Read-only** | Key = `{bucket}\|{remote path}`, remote per run |
-| `S3PickleIOManager`        | `io_manager` (default)         | S3/MinIO     | Read + Write  | Pickled Python objects          |
+| IO Manager                 | Key                            | Storage    | Direction     | Partition Behavior                              |
+| -------------------------- | ------------------------------ | ---------- | ------------- | ----------------------------------------------- |
+| `S3DataLakeIOManager`      | `data_lake_io_manager`         | S3/MinIO   | Read + Write  | Partition key = file URI                        |
+| `AzureDataLakeIOManager`   | `data_lake_io_manager`         | Azure ADLS | Read + Write  | Partition key = file URI                        |
+| `DocStoreIOManager`        | `doc_store_io_manager`         | MongoDB    | Read + Write  | Partition key = document URI/ID                 |
+| `VectorStoreIOManager`     | `vector_store_io_manager`      | Milvus     | Read + Write  | Partition key = document URI/ID                 |
+| `SharePointIOManager`      | `sharepoint_io_manager`        | SharePoint | **Read-only** | Partition key = SP file path                    |
+| `LocalFileSystemIOManager` | `local_file_system_io_manager` | Local FS   | **Read-only** | Partition key = file path                       |
+| `RoutedRcloneIOManager`    | `rclone_io_manager`            | Rclone     | **Read-only** | Key = `{bucket}\|{remote path}`, remote per run |
+| `S3PickleIOManager`        | `io_manager` (default)         | S3/MinIO   | Read + Write  | Pickled Python objects                          |
 
 **Read-only IO managers**: Source connectors (SharePoint, LocalFS, Rclone) never write back to sources.
 `RoutedRcloneIOManager` resolves the database from the composite key (partitioned read) or the `aihub/bucket` run tag

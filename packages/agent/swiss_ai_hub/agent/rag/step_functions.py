@@ -154,8 +154,13 @@ async def do_respond_with_llm(
     t: LocaleHandler,
     user: UserIdentity | None,
     as_stop_step: bool = True,
+    cite_sources: bool = True,
 ) -> LLMStopEvent | LLMEvent:
-    """Generate LLM response with proper message building and streaming."""
+    """Generate LLM response with proper message building and streaming.
+
+    With `cite_sources` the model is told to cite documents by their `id` attribute; chat clients turn those
+    markers into their own source references.
+    """
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
 
     if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
@@ -173,8 +178,11 @@ async def do_respond_with_llm(
         messages = event.limited_history_with_context
 
     system_prompt_text = t.extract(system_prompt) if system_prompt else None
-    if system_prompt_text:
-        system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
+    instructions = [
+        text for text in (system_prompt_text, t("lib.prompt.citations.instruction") if cite_sources else None) if text
+    ]
+    if instructions:
+        system_message = ChatMessage(role=MessageRole.SYSTEM, content="\n\n".join(instructions))
         messages = [system_message] + messages
 
     # Merge consecutive messages with the same role (required by LiteLLM)

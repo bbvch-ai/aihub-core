@@ -2043,6 +2043,130 @@ export const AssignRoleRequestSchema = {
   title: "AssignRoleRequest",
 } as const;
 
+export const AttachedFileEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    file_id: {
+      type: "string",
+      title: "File Id",
+      description: "The agent-side id of the uploaded file.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name as the user uploaded it.",
+    },
+    status: {
+      $ref: "#/components/schemas/AttachedFileStatus",
+      description: "Whether the file was read whole, in part, or not.",
+    },
+    number_of_pages: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Number Of Pages",
+      description: "Pages in the document, when the parser knows.",
+    },
+    citation_id: {
+      type: "string",
+      title: "Citation Id",
+      description: "The id the answer cites this file by, as [id].",
+      default: "",
+    },
+    content: {
+      type: "string",
+      title: "Content",
+      description:
+        "The text of the file as the model received it: whole, excerpts, or its beginning.",
+      default: "",
+    },
+    error: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Error",
+      description: "Why the file could not be read, for a failed file.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "file_id",
+    "filename",
+    "status",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "AttachedFileEvent",
+  description:
+    "One file the user attached to the conversation, as the agent read it for this turn.\n\nChat clients render it as a source on the answer, so the user sees which files the answer drew on and whether\nall of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a\nclient that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.",
+} as const;
+
+export const AttachedFileStatusSchema = {
+  type: "string",
+  enum: ["read", "truncated", "failed"],
+  title: "AttachedFileStatus",
+  description: "How much of an attached file reached the model.",
+} as const;
+
 export const AudioSchema = {
   properties: {
     id: {
@@ -4493,6 +4617,14 @@ export const ChatCompletionUserMessageParamSchema = {
     "Messages sent by an end user, containing prompts or additional context\ninformation.",
 } as const;
 
+export const ChatFeatureSchema = {
+  type: "string",
+  enum: ["web_search", "code_interpreter", "image_generation"],
+  title: "ChatFeature",
+  description:
+    "A capability a user can request per message in a chat client, which the agent then decides how to serve.\n\nWeb search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI\nhas no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding\na member here is all a new feature needs on the contract side.",
+} as const;
+
 export const ChatMessageSchema = {
   properties: {
     role: {
@@ -5967,6 +6099,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/ThoughtEvent",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFileEvent",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEvent",
@@ -12344,6 +12479,13 @@ export const IngestedNodeSchema = {
       title: "Score",
       description: "Score representing the relevance of the document.",
     },
+    citation_id: {
+      type: "string",
+      title: "Citation Id",
+      description:
+        "The id an agent's answer cites this node's document by; every node of one document shares it.",
+      readOnly: true,
+    },
   },
   type: "object",
   required: [
@@ -12355,6 +12497,7 @@ export const IngestedNodeSchema = {
     "id",
     "content",
     "document_id",
+    "citation_id",
   ],
   title: "IngestedNode",
   description:
@@ -17044,6 +17187,16 @@ export const MetadataSchema = {
       description:
         "List of files to attach to the request, if supported by the model.",
     },
+    features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Features",
+      description:
+        "Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.",
+      default: [],
+    },
   },
   type: "object",
   title: "Metadata",
@@ -20443,6 +20596,13 @@ export const RAGStartEventSchema = {
       description:
         "Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.",
       default: [],
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.",
+      default: true,
     },
     _event_name: {
       type: "string",
@@ -27173,6 +27333,16 @@ export const UserMessageEventSchema = {
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
     },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -29285,6 +29455,100 @@ export const AgentWorkResponseDTOWritableSchema = {
     "DTO representing an agent work response with specific agent-related information.",
 } as const;
 
+export const AttachedFileEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    file_id: {
+      type: "string",
+      title: "File Id",
+      description: "The agent-side id of the uploaded file.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name as the user uploaded it.",
+    },
+    status: {
+      $ref: "#/components/schemas/AttachedFileStatus",
+      description: "Whether the file was read whole, in part, or not.",
+    },
+    number_of_pages: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Number Of Pages",
+      description: "Pages in the document, when the parser knows.",
+    },
+    citation_id: {
+      type: "string",
+      title: "Citation Id",
+      description: "The id the answer cites this file by, as [id].",
+      default: "",
+    },
+    content: {
+      type: "string",
+      title: "Content",
+      description:
+        "The text of the file as the model received it: whole, excerpts, or its beginning.",
+      default: "",
+    },
+    error: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Error",
+      description: "Why the file could not be read, for a failed file.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["file_id", "filename", "status"],
+  title: "AttachedFileEvent",
+  description:
+    "One file the user attached to the conversation, as the agent read it for this turn.\n\nChat clients render it as a source on the answer, so the user sees which files the answer drew on and whether\nall of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a\nclient that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.",
+} as const;
+
 export const BaseRetrieveMemoryEventWritableSchema = {
   properties: {
     event_id: {
@@ -30840,6 +31104,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ThoughtEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFileEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -33965,6 +34232,318 @@ export const IncidentFormDTOWritableSchema = {
   title: "IncidentFormDTO",
   description:
     "The report form, already carrying what the platform knows about this reporter.",
+} as const;
+
+export const IngestedNodeWritableSchema = {
+  properties: {
+    source: {
+      type: "string",
+      title: "Source",
+      description: "Source URI (data lake URI).",
+    },
+    source_origin: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Source Origin",
+      description: "Original source URI (e.g., SharePoint URL, external URL).",
+    },
+    namespace: {
+      type: "string",
+      title: "Namespace",
+      description: "The namespace of the document within its metadata.",
+    },
+    version: {
+      type: "integer",
+      title: "Version",
+      description: "Document version.",
+      default: 1,
+    },
+    content_hash: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Content Hash",
+      description:
+        "Hash of the document/node, helpful to track whether file changed.",
+    },
+    number_of_pages: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Number Of Pages",
+      description: "Number of Pages in the Document.",
+    },
+    document_title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Title",
+      description: "Document title.",
+    },
+    language: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["de", "en", "fr", "it"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Language",
+      description: "Document language.",
+    },
+    created_at: {
+      type: "string",
+      title: "Created At",
+      description: "Date source document was created (ISO format string)",
+    },
+    updated_at: {
+      type: "string",
+      title: "Updated At",
+      description: "Date source document was last updated (ISO format string)",
+    },
+    inserted_at: {
+      type: "string",
+      title: "Inserted At",
+      description:
+        "Date source document was inserted into document store (ISO format string)",
+    },
+    metadata: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Metadata",
+      description: "Additional metadata for the document.",
+    },
+    id: {
+      type: "string",
+      title: "Id",
+      description: "The unique identifier of the Node.",
+    },
+    content: {
+      type: "string",
+      title: "Content",
+      description: "The textual content of the Node.",
+    },
+    type: {
+      type: "string",
+      enum: ["content", "summary"],
+      title: "Type",
+      description: "Type (content or summary).",
+      default: "content",
+    },
+    content_type: {
+      type: "string",
+      enum: ["text", "figure", "table"],
+      title: "Content Type",
+      description: "Content type (text, figure or table).",
+      default: "text",
+    },
+    document_id: {
+      type: "string",
+      title: "Document Id",
+      description: "ID of original ref_doc.",
+    },
+    start_char_idx: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Start Char Idx",
+      description: "The start character index of the Node.",
+    },
+    end_char_idx: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "End Char Idx",
+      description: "The end character index of the Node.",
+    },
+    index: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Index",
+      description: "Index counting position of node in document",
+    },
+    section_start_line: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Section Start Line",
+      description: "Start line of the node in document",
+    },
+    section_end_line: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Section End Line",
+      description: "End line of the node in document",
+    },
+    h1: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H1",
+      description: "H1 of the node in document",
+    },
+    h2: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H2",
+      description: "H2 of the node in document",
+    },
+    h3: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H3",
+      description: "H3 of the node in document",
+    },
+    h4: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H4",
+      description: "H4 of the node in document",
+    },
+    h5: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H5",
+      description: "H5 of the node in document",
+    },
+    h6: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "H6",
+      description: "H6 of the node in document",
+    },
+    heading_level: {
+      anyOf: [
+        {
+          type: "integer",
+          enum: [0, 1, 2, 3, 4, 5, 6],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Heading Level",
+      description: "Heading level of the node in document",
+    },
+    score: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Score",
+      description: "Score representing the relevance of the document.",
+    },
+  },
+  type: "object",
+  required: [
+    "source",
+    "namespace",
+    "created_at",
+    "updated_at",
+    "inserted_at",
+    "id",
+    "content",
+    "document_id",
+  ],
+  title: "IngestedNode",
+  description:
+    "A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.\nThe attributes defined here are the minimal number of attributes that a node must have to ensure the\nUI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.\nmust be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes\nthat are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,\nare strictly necessary.",
 } as const;
 
 export const IngestorDTOWritableSchema = {
@@ -38188,6 +38767,27 @@ export const MultiSelectWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/MultiSelect",
 } as const;
 
+export const NodeSummaryDTOWritableSchema = {
+  properties: {
+    level: {
+      type: "integer",
+      title: "Level",
+      description: "Level of the summary",
+    },
+    nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Nodes",
+      description: "List of nodes in the summary",
+    },
+  },
+  type: "object",
+  required: ["level", "nodes"],
+  title: "NodeSummaryDTO",
+} as const;
+
 export const OpenChatHitlResponseWritableSchema = {
   properties: {
     has_open_chat_hitl: {
@@ -39073,6 +39673,13 @@ export const RAGStartEventWritableSchema = {
       description:
         "Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.",
       default: [],
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.",
+      default: true,
     },
   },
   additionalProperties: true,
@@ -40220,7 +40827,7 @@ export const RerankerEventWritableSchema = {
       anyOf: [
         {
           items: {
-            $ref: "#/components/schemas/IngestedNode",
+            $ref: "#/components/schemas/IngestedNodeWritable",
           },
           type: "array",
         },
@@ -40235,7 +40842,7 @@ export const RerankerEventWritableSchema = {
       anyOf: [
         {
           items: {
-            $ref: "#/components/schemas/IngestedNode",
+            $ref: "#/components/schemas/IngestedNodeWritable",
           },
           type: "array",
         },
@@ -40459,7 +41066,7 @@ export const RetrieverEventWritableSchema = {
       anyOf: [
         {
           items: {
-            $ref: "#/components/schemas/IngestedNode",
+            $ref: "#/components/schemas/IngestedNodeWritable",
           },
           type: "array",
         },
@@ -43890,6 +44497,16 @@ export const UserMessageEventWritableSchema = {
       title: "Files",
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+    },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
     },
   },
   additionalProperties: true,

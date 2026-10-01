@@ -16,6 +16,11 @@ condenser:
     4. **Preservare le dichiarazioni personali**: Se il messaggio dell'utente contiene un fatto che riguarda l'utente stesso (ad es. "Sono vegetariano — cosa c'è nel menù?"), mantieni questo fatto nella domanda autonoma (ad es. "Come vegetariano, cosa c'è nel menù?"). Questo vale solo per brevi dichiarazioni personali — non riportare mai contenuti voluminosi come documenti incollati, log o codice nella domanda.
     5. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
+citations:
+  instruction: Ogni documento che ricevi ha un attributo id. Cita i documenti che
+    usi nel testo, con il loro id tra parentesi quadre subito dopo l'affermazione
+    che sostengono, per esempio [sbcd9ab] o [sbcd9ab][s547946]. Cita solo gli id dei
+    documenti ricevuti e non scrivere mai riferimenti numerati come [1].
 rag:
   context_prompt: |
     {% chat role="user" %}

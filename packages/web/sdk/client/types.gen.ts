@@ -1552,6 +1552,109 @@ export type AssignRoleRequest = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
+ */
+export type AttachedFileEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id the answer cites this file by, as [id].
+   */
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export const AttachedFileStatus = {
+  READ: "read",
+  TRUNCATED: "truncated",
+  FAILED: "failed",
+} as const;
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export type AttachedFileStatus =
+  (typeof AttachedFileStatus)[keyof typeof AttachedFileStatus];
+
+/**
  * Audio
  *
  * Data about a previous audio response from the model.
@@ -3085,6 +3188,32 @@ export type ChatCompletionUserMessageParam = {
 };
 
 /**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export const ChatFeature = {
+  WEB_SEARCH: "web_search",
+  CODE_INTERPRETER: "code_interpreter",
+  IMAGE_GENERATION: "image_generation",
+} as const;
+
+/**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export type ChatFeature = (typeof ChatFeature)[keyof typeof ChatFeature];
+
+/**
  * ChatMessage
  *
  * Chat message.
@@ -4020,6 +4149,7 @@ export type ContextualizedAgentEvent = {
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | AttachedFileEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -8293,6 +8423,12 @@ export type IngestedNode = {
    * Score representing the relevance of the document.
    */
   score?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id an agent's answer cites this node's document by; every node of one document shares it.
+   */
+  readonly citation_id: string;
 };
 
 /**
@@ -11308,6 +11444,12 @@ export type Metadata = {
    * List of files to attach to the request, if supported by the model.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Features
+   *
+   * Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.
+   */
+  features?: Array<ChatFeature>;
 };
 
 /**
@@ -13641,6 +13783,12 @@ export type RagStartEvent = {
    * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
    */
   org_memory_namespaces?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
   /**
    * Event Name
    *
@@ -18065,6 +18213,12 @@ export type UserMessageEvent = {
    */
   files?: Array<UserUploadedFile> | null;
   /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -19534,6 +19688,77 @@ export type AgentWorkResponseDtoWritable = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
+ */
+export type AttachedFileEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id the answer cites this file by, as [id].
+   */
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * BaseRetrieveMemoryEvent
  *
  * A control and display event emitted when an agent retrieves memories from long-term storage.
@@ -20506,6 +20731,7 @@ export type ContextualizedAgentEventWritable = {
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | AttachedFileEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -22454,6 +22680,201 @@ export type IncidentFormDtoWritable = {
    * Picker configuration, when the definition declares an upload field
    */
   attachments?: IncidentAttachmentsDto | null;
+};
+
+/**
+ * IngestedNode
+ *
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type IngestedNodeWritable = {
+  /**
+   * Source
+   *
+   * Source URI (data lake URI).
+   */
+  source: string;
+  /**
+   * Source Origin
+   *
+   * Original source URI (e.g., SharePoint URL, external URL).
+   */
+  source_origin?: string | null;
+  /**
+   * Namespace
+   *
+   * The namespace of the document within its metadata.
+   */
+  namespace: string;
+  /**
+   * Version
+   *
+   * Document version.
+   */
+  version?: number;
+  /**
+   * Content Hash
+   *
+   * Hash of the document/node, helpful to track whether file changed.
+   */
+  content_hash?: string | null;
+  /**
+   * Number Of Pages
+   *
+   * Number of Pages in the Document.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Document Title
+   *
+   * Document title.
+   */
+  document_title?: string | null;
+  /**
+   * Language
+   *
+   * Document language.
+   */
+  language?: "de" | "en" | "fr" | "it" | null;
+  /**
+   * Created At
+   *
+   * Date source document was created (ISO format string)
+   */
+  created_at: string;
+  /**
+   * Updated At
+   *
+   * Date source document was last updated (ISO format string)
+   */
+  updated_at: string;
+  /**
+   * Inserted At
+   *
+   * Date source document was inserted into document store (ISO format string)
+   */
+  inserted_at: string;
+  /**
+   * Metadata
+   *
+   * Additional metadata for the document.
+   */
+  metadata?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Id
+   *
+   * The unique identifier of the Node.
+   */
+  id: string;
+  /**
+   * Content
+   *
+   * The textual content of the Node.
+   */
+  content: string;
+  /**
+   * Type
+   *
+   * Type (content or summary).
+   */
+  type?: "content" | "summary";
+  /**
+   * Content Type
+   *
+   * Content type (text, figure or table).
+   */
+  content_type?: "text" | "figure" | "table";
+  /**
+   * Document Id
+   *
+   * ID of original ref_doc.
+   */
+  document_id: string;
+  /**
+   * Start Char Idx
+   *
+   * The start character index of the Node.
+   */
+  start_char_idx?: number | null;
+  /**
+   * End Char Idx
+   *
+   * The end character index of the Node.
+   */
+  end_char_idx?: number | null;
+  /**
+   * Index
+   *
+   * Index counting position of node in document
+   */
+  index?: number | null;
+  /**
+   * Section Start Line
+   *
+   * Start line of the node in document
+   */
+  section_start_line?: number | null;
+  /**
+   * Section End Line
+   *
+   * End line of the node in document
+   */
+  section_end_line?: number | null;
+  /**
+   * H1
+   *
+   * H1 of the node in document
+   */
+  h1?: string | null;
+  /**
+   * H2
+   *
+   * H2 of the node in document
+   */
+  h2?: string | null;
+  /**
+   * H3
+   *
+   * H3 of the node in document
+   */
+  h3?: string | null;
+  /**
+   * H4
+   *
+   * H4 of the node in document
+   */
+  h4?: string | null;
+  /**
+   * H5
+   *
+   * H5 of the node in document
+   */
+  h5?: string | null;
+  /**
+   * H6
+   *
+   * H6 of the node in document
+   */
+  h6?: string | null;
+  /**
+   * Heading Level
+   *
+   * Heading level of the node in document
+   */
+  heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Score
+   *
+   * Score representing the relevance of the document.
+   */
+  score?: number | null;
 };
 
 /**
@@ -25023,6 +25444,24 @@ export type MultiSelectWritable = {
 };
 
 /**
+ * NodeSummaryDTO
+ */
+export type NodeSummaryDtoWritable = {
+  /**
+   * Level
+   *
+   * Level of the summary
+   */
+  level: number;
+  /**
+   * Nodes
+   *
+   * List of nodes in the summary
+   */
+  nodes: Array<IngestedNodeWritable>;
+};
+
+/**
  * OpenChatHitlResponse
  *
  * Response indicating whether there's an open chat HITL request for a thread.
@@ -25569,6 +26008,12 @@ export type RagStartEventWritable = {
    * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
    */
   org_memory_namespaces?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
   [key: string]: unknown;
 };
 
@@ -26209,13 +26654,13 @@ export type RerankerEventWritable = {
    *
    * List of input documents provided to the reranker.
    */
-  input_nodes?: Array<IngestedNode> | null;
+  input_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Output Nodes
    *
    * List of documents outputted by the reranker.
    */
-  output_nodes?: Array<IngestedNode> | null;
+  output_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Query
    *
@@ -26354,7 +26799,7 @@ export type RetrieverEventWritable = {
    *
    * List of nodes retrieved by the retriever, including document IDs, scores, and content.
    */
-  nodes?: Array<IngestedNode> | null;
+  nodes?: Array<IngestedNodeWritable> | null;
   [key: string]: unknown;
 };
 
@@ -28483,6 +28928,12 @@ export type UserMessageEventWritable = {
    * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
   [key: string]: unknown;
 };
 

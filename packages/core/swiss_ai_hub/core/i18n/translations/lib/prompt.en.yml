@@ -16,6 +16,11 @@ condenser:
     4. **Preserve self-stated facts**: If the user's message states a fact about themselves (e.g., "I'm vegetarian — what's on the menu?"), keep that fact in the standalone question (e.g., "As a vegetarian, what is on the menu?"). This applies only to short personal statements — never carry bulk content such as pasted documents, logs, or code into the question.
     5. **Output**: Output ONLY the new sentence.
     </instructions>
+citations:
+  instruction: Every document you are given carries an id attribute. Cite the documents
+    you use inline, with their id in square brackets right after the statement they
+    support, for example [sbcd9ab] or [sbcd9ab][s547946]. Cite only ids of documents
+    you were given, and never write numbered references such as [1].
 rag:
   context_prompt: |
     {% chat role="user" %}

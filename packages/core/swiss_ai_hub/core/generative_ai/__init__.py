@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
         limit_chat_history_with_context,
     )
+    from swiss_ai_hub.core.generative_ai.citations.citation_id import CitationId
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
+        DEFAULT_METADATA,
         MarkdownStructuralNodeParser,
     )
     from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
@@ -64,7 +66,10 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
-    from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
+    from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
+        combine_nodes_in_order,
+        sanitize_metadata_value,
+    )
     from swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
     from swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error import EmptyCondensationError
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources import retrieve_from_all_sources
@@ -92,6 +97,7 @@ __all__ = [
     "BucketMetadataFilters",
     "BucketNamespacePair",
     "DocumentIntelligenceLoader",
+    "CitationId",
     "DocumentExtractor",
     "DocumentLoaderSelector",
     "DocumentTitleDeriver",
@@ -110,6 +116,7 @@ __all__ = [
     "LLMParameter",
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
+    "DEFAULT_METADATA",
     "MemorySettings",
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
@@ -128,6 +135,7 @@ __all__ = [
     "UserMemory",
     "agent_description_guard",
     "combine_nodes_in_order",
+    "sanitize_metadata_value",
     "condense_standalone_question",
     "EmptyCondensationError",
     "context_sufficient_guard",
@@ -160,6 +168,7 @@ _LAZY_IMPORTS = {
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
+    "CitationId": "swiss_ai_hub.core.generative_ai.citations.citation_id",
     "DocumentExtractor": "swiss_ai_hub.core.generative_ai.document.extraction.document_extractor",
     "DocumentLoaderSelector": "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector",
     "DocumentTitleDeriver": "swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver",
@@ -179,6 +188,7 @@ _LAZY_IMPORTS = {
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
+    "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "MemorySettings": "swiss_ai_hub.core.generative_ai.memory.memory_settings",
     "MetadataFilterPair": "swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair",
     "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",
@@ -196,6 +206,7 @@ _LAZY_IMPORTS = {
     "UserMemory": "swiss_ai_hub.core.generative_ai.memory.user_memory",
     "agent_description_guard": "swiss_ai_hub.core.generative_ai.guards.agent_description_guard",
     "combine_nodes_in_order": "swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order",
+    "sanitize_metadata_value": "swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order",
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
     "EmptyCondensationError": "swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",

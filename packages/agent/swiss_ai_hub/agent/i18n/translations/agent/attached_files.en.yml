@@ -1,0 +1,20 @@
+---
+steps:
+  read_attached_files:
+    name: Read Attached Files
+    description: Reads the files the user attached to the conversation and adds their
+      text to the model's context
+prompt:
+  context: |
+    {% chat role="system" %}
+    The user attached the following files to this conversation. When the question refers to them, answer from their content and name the file you used. Each file is a `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>` block, its sections under their headings.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Only the parts of "%{filename}" most relevant to the question fit into your context. Tell the user that your answer is based on excerpts of this file.'
+  truncated: Only the beginning of "%{filename}" fit into your context. Tell the
+    user that your answer is based on part of this file.
+  unreadable: The user attached "%{filename}", but it could not be read (%{error}).
+    Tell the user that this file could not be read, and suggest attaching it in another
+    format or pasting its text.

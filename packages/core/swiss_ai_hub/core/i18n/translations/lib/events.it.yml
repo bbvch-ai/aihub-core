@@ -3,6 +3,9 @@ display_event:
   name: Evento di Visualizzazione
   description: Un evento che mostra informazioni all'utente senza influenzare il flusso
     di lavoro.
+attached_file_event:
+  name: File allegato
+  description: L'agente ha letto un file che l'utente ha allegato alla conversazione.
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.

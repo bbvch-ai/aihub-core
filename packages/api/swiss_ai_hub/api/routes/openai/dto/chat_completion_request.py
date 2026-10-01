@@ -15,7 +15,7 @@ from openai.types.chat import (
     completion_create_params,
 )
 from pydantic import BaseModel, ConfigDict, Field
-from swiss_ai_hub.core.events.agent import UserUploadedFile
+from swiss_ai_hub.core.events.agent import ChatFeature, UserUploadedFile
 
 
 def _resolve_dict_part(part: dict[str, Any]) -> dict[str, Any] | None:
@@ -116,6 +116,13 @@ class Metadata(BaseModel):
         list[UserUploadedFile] | None,
         Field(description="List of files to attach to the request, if supported by the model."),
     ] = None
+    features: Annotated[
+        list[ChatFeature],
+        Field(
+            description="Chat features requested for this message (e.g. web_search). The agent serves those its "
+            "blueprint supports and ignores the rest."
+        ),
+    ] = []
 
 
 class ChatCompletionRequest(BaseModel):

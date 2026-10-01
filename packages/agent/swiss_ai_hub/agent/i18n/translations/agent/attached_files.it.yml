@@ -1,0 +1,20 @@
+---
+steps:
+  read_attached_files:
+    name: Leggi i file allegati
+    description: Legge i file che l'utente ha allegato alla conversazione e aggiunge
+      il loro testo al contesto del modello
+prompt:
+  context: |
+    {% chat role="system" %}
+    L'utente ha allegato i seguenti file a questa conversazione. Quando la domanda vi si riferisce, rispondi dal loro contenuto e indica il file usato. Ogni file è un blocco `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, con le sezioni sotto i rispettivi titoli.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Solo le parti di "%{filename}" più rilevanti per la domanda rientrano nel tuo contesto. Comunica all''utente che la risposta si basa su estratti di questo file.'
+  truncated: Solo l'inizio di «%{filename}» è entrato nel tuo contesto. Comunica
+    all'utente che la tua risposta si basa su una parte di questo file.
+  unreadable: L'utente ha allegato «%{filename}», ma non è stato possibile leggerlo
+    (%{error}). Comunica all'utente che questo file non è stato letto e suggerisci
+    di allegarlo in un altro formato o di incollarne il testo.

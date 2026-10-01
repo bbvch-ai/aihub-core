@@ -32,6 +32,7 @@ from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
 from swiss_ai_hub.agent.rag.preconditions import (
     check_context_ready_for_history_limit_with_expert,
     check_is_answer_response,
@@ -314,6 +315,7 @@ class ExpertRAGAgent(RAGAgent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -335,6 +337,7 @@ class ExpertRAGAgent(RAGAgent):
             t,
             user,
             as_stop_step=False,
+            cite_sources=CitationPolicy.cites_sources(start_event),
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,

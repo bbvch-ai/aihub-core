@@ -507,6 +507,8 @@ class EmailClassificationAgent(Agent):
                 # user-memory steps rather than attributing this mailbox's memories to a shared identity.
                 user=user,
                 locale=locale,
+                # A draft is plain text in the user's mailbox; citation markers would reach the recipient.
+                cite_sources=False,
                 files=[],
                 selected_namespaces=category.knowledge_namespaces or [],
             ),
