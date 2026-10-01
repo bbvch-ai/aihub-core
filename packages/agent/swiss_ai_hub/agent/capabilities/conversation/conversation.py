@@ -28,6 +28,7 @@ from swiss_ai_hub.core.generative_ai import (
     condense_standalone_question,
     estimate_prompt_tokens,
     limit_chat_history,
+    merge_consecutive_messages,
     usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -258,7 +259,8 @@ class Conversation(Capability):
         """Merge the blocks behind the leading system messages, within budget.
 
         Re-limited before it leaves this step so the result carries the same "fits the budget" guarantee the
-        limited history does. The blocks sit at the front of the trimmed part, so they are what gives way when
+        limited history does. The leading system messages leave as one: served models (Gemma behind vLLM) lose
+        context spread over several, answering from only some of the blocks. The blocks sit at the front of the trimmed part, so they are what gives way when
         the result does not fit — never the turn the user asked about, and never the system head, which is held
         out of the trim altogether.
         """
@@ -269,7 +271,8 @@ class Conversation(Capability):
 
         budget = _input_budget(conversation) - estimate_prompt_tokens(system_head, conversation.llm.token_counter)
         limited = limit_chat_history(chat_history=[*block_messages, *turns], number_of_input_tokens=max(budget, 1))
-        return ContextComposedEvent(history=[*system_head, *limited])
+        merged_head, rest = _split_system_head([*system_head, *limited])
+        return ContextComposedEvent(history=[*merge_consecutive_messages(merged_head), *rest])
 
     @staticmethod
     @step(

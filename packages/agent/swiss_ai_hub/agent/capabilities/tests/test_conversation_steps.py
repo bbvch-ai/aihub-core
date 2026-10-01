@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from swiss_ai_hub.core.generative_ai import merge_consecutive_messages
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     CompleteConversationEvent,
@@ -124,7 +125,10 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=1_000),
         )
-        assert composed.history == [system, first[0], second[0], turn]
+        assert composed.history == [*merge_consecutive_messages([system, first[0], second[0]]), turn]
+        assert [message.role for message in composed.history] == [MessageRole.SYSTEM, MessageRole.USER], (
+            "the context leaves as one system message, which served models read in full"
+        )
 
         trimmed = await Conversation.compose_context_step(
             LLMWrappingAgent(),
