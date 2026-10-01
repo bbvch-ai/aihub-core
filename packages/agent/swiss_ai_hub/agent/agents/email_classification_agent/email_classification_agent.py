@@ -60,6 +60,7 @@ from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.draft_prompt_builder import DraftPromptBuilder
 from swiss_ai_hub.agent.imap.extracted_attachment import AttachmentOutcome, ExtractedAttachment
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
+from swiss_ai_hub.agent.imap.mail_language_detector import MailLanguageDetector
 from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
@@ -316,12 +317,13 @@ class EmailClassificationAgent(Agent):
         )
         requests = []
         request_index: dict[str, str] = {}
-        for classification_ref in grounded:
-            request = await self._delegate_one(
-                classification_ref, classification, draft, agent_config, topic, builder, t, user
-            )
-            requests.append(request)
-            request_index[request.event_id] = classification_ref.message_id
+        async with agent_config.drafting_llm.cost_reporting_llm(displayer, user=user) as llm:
+            for classification_ref in grounded:
+                request = await self._delegate_one(
+                    classification_ref, classification, draft, agent_config, topic, builder, llm, t, user
+                )
+                requests.append(request)
+                request_index[request.event_id] = classification_ref.message_id
 
         # Keyed by request event id and held in RunContext rather than on the event: it maps mail identifiers for the
         # whole batch, and the marker event is persisted to the audit trail and streamed to the frontend. Same reason
@@ -477,10 +479,11 @@ class EmailClassificationAgent(Agent):
         agent_config: EmailClassificationAgentConfig,
         topic: AgentInstanceTopic,
         builder: DraftPromptBuilder,
+        llm: LLM,
         t: LocaleHandler,
         user: UserIdentity | None,
     ) -> AgentInTheLoop.request:
-        """One delegated RAG run for one message, scoped to its category's collections.
+        """One delegated RAG run for one message, scoped to its category's collections, in the message's language.
 
         A category that names none is sent an empty selection, which `narrow_retrievers` reads as the delegate's whole
         scope. A selection switched on but left empty would read the same way while looking narrowed, so
@@ -489,19 +492,20 @@ class EmailClassificationAgent(Agent):
         category = next(item for item in classification.categories if item.category == ref.category)
         parsed = await self._reparse_archived(ref, agent_config.imap, topic)
         attachments = await self._extracted_attachments_for_delegation(ref, draft, topic)
+        draft_prompt, locale = await self._in_reply_language(draft.draft_prompt, parsed, llm, t)
 
         return AgentInTheLoop.invoke(
             agent_class=agent_config.knowledge_delegation.rag_agent.agent_class,
             agent_id=agent_config.knowledge_delegation.rag_agent.agent_id,
             start_event=RAGStartEvent(
                 messages=[
-                    ChatMessage(role=MessageRole.SYSTEM, content=draft.draft_prompt),
+                    ChatMessage(role=MessageRole.SYSTEM, content=draft_prompt),
                     ChatMessage(role=MessageRole.USER, content=builder.build(parsed, attachments)),
                 ],
                 # Forwarded, never substituted: a scheduled run has no user, and the RAG agent skips its
                 # user-memory steps rather than attributing this mailbox's memories to a shared identity.
                 user=user,
-                locale=t.locale,
+                locale=locale,
                 files=[],
                 selected_namespaces=category.knowledge_namespaces or [],
             ),
@@ -514,6 +518,21 @@ class EmailClassificationAgent(Agent):
             share_display_id=False,
             timeout_seconds=draft.grounding_timeout_seconds,
         )
+
+    @staticmethod
+    async def _in_reply_language(
+        draft_prompt: str, parsed: ParsedMessage, llm: LLM, t: LocaleHandler
+    ) -> tuple[str, str]:
+        """The drafting prompt and delegated locale for a reply in the language `parsed` is written in.
+
+        Both, because either alone was not enough: the locale only picks the delegate's own system and context
+        prompts, and the admin's drafting prompt — one language, fixed phrases — outweighed them. A language that
+        cannot be detected keeps the prompt as written and the run's own locale.
+        """
+        locale = await MailLanguageDetector.detect(llm, parsed)
+        if locale is None:
+            return draft_prompt, t.locale
+        return MailLanguageDetector.with_reply_language(draft_prompt, locale), locale
 
     @staticmethod
     async def _extracted_attachments_for_delegation(

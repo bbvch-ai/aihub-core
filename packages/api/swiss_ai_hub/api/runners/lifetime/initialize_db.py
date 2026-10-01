@@ -24,6 +24,9 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, In
 
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
+    PrePairKnowledgeCollectionMigration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -336,6 +339,16 @@ def widen_empty_retriever_namespace_scopes() -> None:
     migrated = EmptyNamespaceScopeMigration.run()
     if migrated:
         logger.info(f"Widened an empty retriever namespace scope to all namespaces in: {', '.join(migrated)}")
+
+
+# Transitional: mail categories name their collections as (database, collection) pairs, and the old keys left in a
+# profile narrowed a category back to its old collection after an admin switched the selection off
+# (aihub-core-private#299). Delete it and `PrePairKnowledgeCollectionMigration` once deployments have upgraded past it.
+def carry_over_pre_pair_knowledge_collections() -> None:
+    """Rewrites mail categories still in the pre-pair collection shape, and removes the old keys from every profile."""
+    migrated = PrePairKnowledgeCollectionMigration.run()
+    if migrated:
+        logger.info(f"Carried pre-pair knowledge collections over to pairs in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
