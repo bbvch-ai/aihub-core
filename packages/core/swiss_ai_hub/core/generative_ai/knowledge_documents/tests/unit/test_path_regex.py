@@ -44,7 +44,8 @@ def test_pattern_that_breaks_the_standard_library_returns_promptly() -> None:
 
 
 def test_catastrophic_pattern_times_out_with_a_hint() -> None:
+    catastrophic = PathRegex(r"^(a|a)*$")
     started = time.monotonic()
     with pytest.raises(InvalidPathPatternError, match="too long to match"):
-        PathRegex(r"^(a|a)*$").matches("a" * 40 + "b")
+        catastrophic.matches("a" * 40 + "b")
     assert time.monotonic() - started < 1
