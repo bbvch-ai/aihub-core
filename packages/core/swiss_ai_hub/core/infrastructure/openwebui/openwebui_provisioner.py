@@ -12,6 +12,7 @@ from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
@@ -68,7 +69,10 @@ _LOCK_TIMEOUT = 60
 _GROUPS_LOCK_TTL = 600
 
 type AiHubToOwuiUserIdMapping = dict[str, str]
-"""Maps AI-Hub user IDs (keys) to OpenWebUI user IDs (values), matched by email."""
+"""Maps AI-Hub user IDs (keys) to OpenWebUI user IDs (values), matched by email or SCIM external id."""
+
+type DesiredGroupMembers = dict[str, list[str]]
+"""Maps an ``aihub:{tenant}:{role}`` group name to the AI-Hub user IDs that belong in it."""
 
 type TenantAccessRules = dict[str, list[str]]
 """Maps tenant name to its access rule strings."""
@@ -156,8 +160,17 @@ class OpenWebuiProvisioner:
         await self.sync_agents(self._get_known_online_agents())
 
     async def sync_access(self) -> None:
-        async with self._sync_lock("openwebui:sync:access") as acquired:
+        """Waits for a running access sync instead of dropping this one.
+
+        The running sync may have read its users, roles and accounts before the change that triggered
+        this call — a user's first role, for instance — so skipping here would leave that change unapplied
+        until some unrelated change happens to trigger another sync.
+        """
+        async with self._sync_lock(
+            "openwebui:sync:access", blocking=True, ttl=_GROUPS_LOCK_TTL, wait=_GROUPS_LOCK_TTL
+        ) as acquired:
             if not acquired:
+                logger.warning("OpenWebUI access sync skipped: timed out waiting for the access-sync lock")
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._sync_groups()
@@ -236,11 +249,16 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _build_user_id_mapping(aihub_users: list[dict[str, str]], owui_users: list[User]) -> AiHubToOwuiUserIdMapping:
-        """Maps AI-Hub user IDs to OpenWebUI user IDs via email."""
+        """Maps AI-Hub user IDs to OpenWebUI user IDs via email, falling back to the SCIM external id.
+
+        OpenWebUI never updates an account's email on login, so after an email change in Keycloak only
+        the external id (the Keycloak ``sub`` the provisioner created the account with) still matches.
+        """
         owui_by_email = {u.user_name: u.id for u in owui_users if u.user_name and u.id}
+        owui_by_external_id = {u.external_id: u.id for u in owui_users if u.external_id and u.id}
         mapping: AiHubToOwuiUserIdMapping = {}
         for user in aihub_users:
-            owui_id = owui_by_email.get(user["email"])
+            owui_id = owui_by_email.get(user["email"]) or owui_by_external_id.get(user["id"])
             if owui_id:
                 mapping[user["id"]] = owui_id
         return mapping
@@ -249,14 +267,14 @@ class OpenWebuiProvisioner:
     async def _get_active_user_ids(tenant_id: str) -> set[str]:
         return await KeycloakAdminService.get_user_ids_with_active_tenant(tenant_id)
 
-    async def _sync_group_memberships(
+    async def _build_desired_memberships(
         self,
         tenants: list[dict[str, Any]],
         roles_by_tenant: dict[str, list[dict[str, Any]]],
         aihub_groups: dict[str, Group],
-        user_id_mapping: AiHubToOwuiUserIdMapping,
-        scim: AsyncSCIMClient | None = None,
-    ) -> None:
+    ) -> DesiredGroupMembers:
+        """Only users whose active tenant is the group's tenant belong in it, matching the tenant they act in."""
+        desired: DesiredGroupMembers = {}
         for tenant in tenants:
             tenant_id = tenant["id"]
             active_user_ids = await self._get_active_user_ids(tenant_id)
@@ -267,10 +285,47 @@ class OpenWebuiProvisioner:
                     continue
 
                 all_utr = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_data["name"])
-                aihub_user_ids = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
-                owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
+                desired[group_name] = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
+        return desired
 
-                await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids, scim=scim)
+    async def _provision_missing_accounts(
+        self,
+        keycloak_users: list[KeycloakUser],
+        group_member_ids: set[str],
+        user_id_mapping: AiHubToOwuiUserIdMapping,
+        scim: AsyncSCIMClient | None = None,
+    ) -> AiHubToOwuiUserIdMapping:
+        """Creates the OpenWebUI account of every user about to join a group who has not opened the chat yet.
+
+        OpenWebUI otherwise creates the account on the user's first chat login, which usually comes after
+        the sync their first role triggered — that sync then finds no account to put into the role's group,
+        and since OpenWebUI 0.11.3 no signup webhook reaches the API to trigger another one, the user would
+        see an empty model picker until an unrelated change resyncs. The chat login later links to this
+        account by the Keycloak ``sub`` passed as its external id.
+
+        Only group members get one: an account without a group sees no model, and a user without an active
+        tenant or role yet joins a group through the sync that setting either of them triggers.
+        """
+        provisioned: AiHubToOwuiUserIdMapping = {}
+        for user in keycloak_users:
+            if user.id in user_id_mapping or user.id not in group_member_ids or not user.email or not user.enabled:
+                continue
+            account = await self._openwebui.create_user(
+                email=user.email, display_name=user.name, external_id=user.id, scim=scim
+            )
+            provisioned[user.id] = account.id
+        return provisioned
+
+    async def _sync_group_memberships(
+        self,
+        desired_members: DesiredGroupMembers,
+        aihub_groups: dict[str, Group],
+        user_id_mapping: AiHubToOwuiUserIdMapping,
+        scim: AsyncSCIMClient | None = None,
+    ) -> None:
+        for group_name, aihub_user_ids in desired_members.items():
+            owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
+            await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids, scim=scim)
 
     async def _sync_groups(self) -> None:
         """Serializes group reconciliation across all callers (``provision`` and ``sync_access``).
@@ -316,8 +371,13 @@ class OpenWebuiProvisioner:
             keycloak_users = await KeycloakAdminService.get_all_users()
             aihub_users = [{"id": u.id, "email": u.email} for u in keycloak_users]
             user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
+            desired_members = await self._build_desired_memberships(tenants, roles_by_tenant, aihub_groups)
+            group_member_ids = {uid for member_ids in desired_members.values() for uid in member_ids}
+            user_id_mapping |= await self._provision_missing_accounts(
+                keycloak_users, group_member_ids, user_id_mapping, scim=scim
+            )
 
-            await self._sync_group_memberships(tenants, roles_by_tenant, aihub_groups, user_id_mapping, scim=scim)
+            await self._sync_group_memberships(desired_members, aihub_groups, user_id_mapping, scim=scim)
 
     # ------------------------------------------------------------------
     # Workspace model sync
