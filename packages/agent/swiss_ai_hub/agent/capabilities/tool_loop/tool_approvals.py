@@ -13,7 +13,10 @@ class ToolApprovals:
         """The profile's rule, else the tool's default; a tool approved per call never lets an approval carry over."""
         rule = config.approval_rule_for(name)
         policy = ToolApprovalPolicy(rule.policy) if rule else options.default_approval
-        if options.approve_every_call and policy in {ToolApprovalPolicy.ONCE_PER_RUN, ToolApprovalPolicy.ONCE_PER_THREAD}:
+        if options.approve_every_call and policy in {
+            ToolApprovalPolicy.ONCE_PER_RUN,
+            ToolApprovalPolicy.ONCE_PER_THREAD,
+        }:
             return ToolApprovalPolicy.EVERY_CALL
         return policy
 

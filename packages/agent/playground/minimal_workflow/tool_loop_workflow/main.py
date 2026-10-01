@@ -5,11 +5,11 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
+from swiss_ai_hub.core.infrastructure import enable_logging
+
 from playground.minimal_workflow.tool_loop_workflow.answering_tool_loop_agent import AnsweringToolLoopAgent
 from playground.minimal_workflow.tool_loop_workflow.gathering_tool_loop_agent import GatheringToolLoopAgent
 from playground.minimal_workflow.tool_loop_workflow.tool_loop_playground_config import ToolLoopPlaygroundConfig
-from swiss_ai_hub.core.infrastructure import enable_logging
-
 from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()

@@ -1,13 +1,13 @@
 from typing import ClassVar
 
-from playground.minimal_workflow.tool_loop_workflow.clock_tools import ClockTools
-from playground.minimal_workflow.tool_loop_workflow.tool_loop_playground_config import ToolLoopPlaygroundConfig
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ToolLoopMode, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import limit_chat_history
 from swiss_ai_hub.core.i18n import LocaleString
 
+from playground.minimal_workflow.tool_loop_workflow.clock_tools import ClockTools
+from playground.minimal_workflow.tool_loop_workflow.tool_loop_playground_config import ToolLoopPlaygroundConfig
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities import Conversation, Knowledge, ToolLoop
 from swiss_ai_hub.agent.workflow.decorators.step import step
