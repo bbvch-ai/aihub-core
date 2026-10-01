@@ -1,5 +1,6 @@
 from typing import Any
 
+from swiss_ai_hub.core.form import transform_formkit_arrays
 from swiss_ai_hub.core.persistence import AgentConfigEntityDocument
 
 _LEGACY_DATABASES_KEY = "knowledge_databases"
@@ -48,9 +49,19 @@ class PrePairKnowledgeCollectionMigration:
         return rewritten
 
     @staticmethod
+    def _categories(value: dict[str, Any]) -> list[Any] | None:
+        """The category rows as a list, read in FormKit's numbered-dict shape too.
+
+        The runtime converts that shape back to a list before validating, so a profile stored in it reached the old
+        runtime carry-over all the same; skipping it here would leave its old keys unread and widen the category.
+        """
+        categories = transform_formkit_arrays(value.get("categories"))
+        return categories if isinstance(categories, list) else None
+
+    @staticmethod
     def _holds_old_keys(value: dict[str, Any]) -> bool:
-        categories = value.get("categories")
-        if not isinstance(categories, list):
+        categories = PrePairKnowledgeCollectionMigration._categories(value)
+        if categories is None:
             return False
         return _LEGACY_DATABASES_KEY in value or any(
             isinstance(category, dict) and _LEGACY_COLLECTION_KEY in category for category in categories
@@ -62,7 +73,7 @@ class PrePairKnowledgeCollectionMigration:
         databases = [database for database in stored_databases if isinstance(database, str)]
         categories = [
             PrePairKnowledgeCollectionMigration._category_carried_over(category, databases)
-            for category in classification["categories"]
+            for category in PrePairKnowledgeCollectionMigration._categories(classification) or []
         ]
         without_databases = {key: item for key, item in classification.items() if key != _LEGACY_DATABASES_KEY}
         return without_databases | {"categories": categories}

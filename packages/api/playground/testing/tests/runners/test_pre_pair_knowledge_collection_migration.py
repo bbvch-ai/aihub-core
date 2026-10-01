@@ -87,6 +87,28 @@ def test_every_database_is_paired_because_the_old_shape_did_not_say_which_held_t
     ]
 
 
+def test_categories_stored_in_formkits_numbered_dict_shape_are_carried_over(mongo_connection):
+    """The runtime reads this shape as a list, so the old carry-over saw these categories and so must this one."""
+    agent = _agent(
+        {
+            "knowledge_databases": ["support-kb"],
+            "categories": {
+                "0": _category("support", knowledge_namespace="support"),
+                "1": _category("info", knowledge_namespaces=None),
+            },
+        }
+    )
+
+    assert PrePairKnowledgeCollectionMigration.run() == ["agent EmailClassificationAgent/mailbox"]
+
+    assert _classification(agent) == {
+        "categories": [
+            _category("support", knowledge_namespaces=[SUPPORT_PAIR]),
+            _category("info", knowledge_namespaces=None),
+        ]
+    }
+
+
 def test_a_selection_switched_off_stays_off(mongo_connection):
     """The #299 case: the pair-aware form saved `null`, yet the old keys narrowed the category back at runtime."""
     agent = _agent(
