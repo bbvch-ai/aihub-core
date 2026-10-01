@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from playground.minimal_workflow.tool_loop_workflow.playground_tools import PlaygroundTools
+from playground.minimal_workflow.tool_loop_workflow.clock_tools import ClockTools
 from playground.minimal_workflow.tool_loop_workflow.tool_loop_playground_config import ToolLoopPlaygroundConfig
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -9,7 +9,7 @@ from swiss_ai_hub.core.generative_ai import limit_chat_history
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.agent import Agent
-from swiss_ai_hub.agent.capabilities import Conversation, ToolLoop
+from swiss_ai_hub.agent.capabilities import Conversation, Knowledge, ToolLoop
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
@@ -20,7 +20,7 @@ class GatheringToolLoopAgent(Agent):
     name: ClassVar[LocaleString] = LocaleString(en="Tool Loop (gathering)")
     description: ClassVar[LocaleString] = LocaleString(en="Gathers context with tools, then answers in a fixed step.")
     icon: ClassVar[str] = "mdi:toolbox"
-    tools: ClassVar[tuple] = PlaygroundTools.ALL
+    tools = ToolLoop.over(Knowledge, ClockTools)
 
     @step()
     async def contextualize_step(
@@ -31,7 +31,7 @@ class GatheringToolLoopAgent(Agent):
 
     @step()
     async def gather_step(self, ctx: Conversation.Contextualized) -> ToolLoop.RunRequest:
-        return ToolLoop.run(ctx.history, mode=ToolLoopMode.GATHER)
+        return GatheringToolLoopAgent.tools.run(ctx.history, mode=ToolLoopMode.GATHER)
 
     @step()
     async def compose_step(

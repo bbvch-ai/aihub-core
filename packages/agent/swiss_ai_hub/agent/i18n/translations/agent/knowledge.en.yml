@@ -20,6 +20,8 @@ prompt:
   refused: "%{collections} could not be searched, because these collections are not available to the user. Tell the user that you could not use them."
   nothing_found: "Nothing in the searched knowledge collections matched the question. Tell the user so if the question depended on them."
 tool:
+  label: "Search our knowledge"
+  approval_summary: "Search our knowledge for \"{query}\""
   description: "Searches our knowledge collections and returns the most relevant document sections, with ids to cite. Use it when the question may be answered by the organisation's documents. Available collections:\n%{collections}"
   query: "What to search for, as a short standalone question or keywords."
   collections: "The collections to search, by identifier; leave out to search all of them."

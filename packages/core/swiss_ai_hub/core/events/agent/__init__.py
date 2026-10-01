@@ -163,6 +163,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event import ToolLoopIterationEvent
     from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode import ToolLoopMode
     from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state import ToolLoopState
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event import ToolLoopStatusEvent
     from swiss_ai_hub.core.events.agent.tool_loop.tool_result_event import ToolResultEvent
     from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
     from swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event import KnowledgeSearchedEvent
@@ -290,6 +291,7 @@ __all__ = [
     "ToolLoopIterationEvent",
     "ToolLoopMode",
     "ToolLoopState",
+    "ToolLoopStatusEvent",
     "ToolResultEvent",
     "KnowledgeReference",
     "KnowledgeSearchedEvent",
@@ -419,6 +421,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolLoopFinishedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event",
     "ToolLoopIterationEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event",
     "ToolLoopMode": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode",
+    "ToolLoopStatusEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event",
     "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",
     "ToolResultEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_result_event",
     "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",

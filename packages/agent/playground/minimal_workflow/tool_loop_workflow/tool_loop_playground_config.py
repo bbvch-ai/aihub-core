@@ -1,14 +1,14 @@
 from typing import Self
 
-from playground.minimal_workflow.tool_loop_workflow.playground_tools import PlaygroundTools
 from swiss_ai_hub.core.agents import AgentConfig
 
-from swiss_ai_hub.agent.capabilities import ConversationFields, ToolLoop, ToolLoopFields
+from swiss_ai_hub.agent.capabilities import ConversationFields, ToolLoopFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 
 
 class ToolLoopPlaygroundConfig(KnowledgeFields, ToolLoopFields, ConversationFields, AgentConfig):
-    """The loop's limits and approvals, the collections the knowledge tool may search, and the answering model."""
+    """The collections the knowledge tool may search and the answering model; the loop's own settings are published
+    by the runner with the blueprint's tools as options."""
 
     @classmethod
     def as_form(cls) -> Self:
@@ -20,5 +20,4 @@ class ToolLoopPlaygroundConfig(KnowledgeFields, ToolLoopFields, ConversationFiel
             icon=base.icon,
             **cls.conversation_form_elements(),
             **cls.knowledge_form_elements(),
-            **cls.tool_loop_form_elements(ToolLoop.names(PlaygroundTools.ALL)),
         )

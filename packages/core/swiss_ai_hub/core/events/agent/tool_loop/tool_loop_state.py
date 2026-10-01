@@ -15,6 +15,9 @@ class ToolLoopState(BaseModel):
     gathered travel with the iteration; the trace then shows the loop's full state at every step.
     """
 
+    loop: Annotated[
+        str, Field(description="The blueprint's tool set this loop runs, telling two loops of one run apart.")
+    ] = "tools"
     messages: Annotated[list[Message], Field(description="The loop's conversation so far, tool calls and results.")]
     tools: Annotated[list[ToolDefinition], Field(description="The tools offered to the model in this run.")] = []
     mode: Annotated[ToolLoopMode, Field(description="Whether the loop answers or gathers context.")]

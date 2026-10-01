@@ -13,6 +13,9 @@ knowledge_searched_event:
 tool_result_event:
   name: "Werkzeugergebnis"
   description: "Was ein vom Agenten gewähltes Werkzeug zurückgegeben hat."
+tool_loop_status_event:
+  name: "Status der Werkzeugschleife"
+  description: "Was die Werkzeugschleife des Agenten gerade tut."
 conversation_title_event:
   name: Gesprächstitel
   description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.

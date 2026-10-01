@@ -15,6 +15,9 @@ class RunToolLoopEvent(ControlEvent):
     declaration, narrowed by the profile and by the features the user switched on for the message.
     """
 
+    loop: Annotated[
+        str, Field(description="The blueprint's tool set this loop runs, telling two loops of one run apart.")
+    ] = "tools"
     history: Annotated[list[ChatMessage], Field(description="The conversation the model decides on.")] = []
     mode: Annotated[ToolLoopMode, Field(description="Whether the loop answers or gathers context.")] = (
         ToolLoopMode.ANSWER

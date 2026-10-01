@@ -11,7 +11,7 @@ from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.form.form import Form
 
 from swiss_ai_hub.agent.agents.agent import Agent
-from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 
 
 class Capability(abc.ABC):
@@ -40,13 +40,20 @@ class Capability(abc.ABC):
     # own steps, with the same events as an explicit call: the capability's adapter steps turn a
     # `ToolCallApprovedEvent` for `tool_name` into its request and its answer into a `ToolResultEvent`.
     tool_name: ClassVar[str | None] = None
-    tool_default_approval: ClassVar[ToolApprovalPolicy] = ToolApprovalPolicy.NEVER
-    tool_approve_every_call: ClassVar[bool] = False
+    tool_options: ClassVar[ToolOptions] = ToolOptions()
 
     @classmethod
     def tool_definition(cls, config: AgentConfig, locale: str) -> ToolDefinition | None:
         """The tool as the model is offered it on this profile; none when the profile gives it nothing to do."""
         return None
+
+    @classmethod
+    def published_config[TConfig: AgentConfig](cls, config: TConfig, blueprint: type[Agent]) -> TConfig:
+        """The config as discovery publishes it for a blueprint installing this capability; unchanged by default.
+
+        For form elements only the blueprint can fill in, such as the options listing its own tools.
+        """
+        return config
 
     @classmethod
     def handles(cls) -> frozenset[type[ControlEvent]]:

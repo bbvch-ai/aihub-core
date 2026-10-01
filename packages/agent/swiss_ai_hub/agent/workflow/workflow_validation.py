@@ -148,13 +148,22 @@ class WorkflowValidation:
 
     @staticmethod
     def _tools_without_loop(blueprint: type[Agent]) -> list[str]:
-        """Declared tools only ever run inside a tool loop, so declaring them without calling one is a mistake."""
+        """Declared tools only ever run inside a tool loop, and a name must mean one tool across the blueprint's sets,
+        since a call carries only the name."""
         from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 
-        if not blueprint.tools or ToolLoop in blueprint.installed_capabilities():
-            return []
-        names = ", ".join(tool.name for tool in blueprint.tools)
-        return [f"{blueprint.__name__} declares the tools {names}, but no step runs ToolLoop.run(...) to offer them"]
+        problems = []
+        tool_sets = blueprint.tool_sets()
+        if tool_sets and ToolLoop not in blueprint.installed_capabilities():
+            names = ", ".join(tool_set.name for tool_set in tool_sets)
+            problems.append(f"{blueprint.__name__} declares the tool sets {names}, but no step runs one of them")
+        sources: dict[str, object] = {}
+        for tool_set in tool_sets:
+            for name in tool_set.names():
+                source = tool_set.source(name)
+                if sources.setdefault(name, source) != source:
+                    problems.append(f"{blueprint.__name__} declares two different tools named '{name}'")
+        return problems
 
     @staticmethod
     def _missing_config_mixins(blueprint: type[Agent], agent_config_type: type[AgentConfig]) -> list[str]:

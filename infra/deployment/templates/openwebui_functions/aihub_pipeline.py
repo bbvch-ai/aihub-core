@@ -178,6 +178,7 @@ class ToolBlock(ContentBlock):
     tool_id: Annotated[str, "Unique identifier for the tool call"]
     tool_name: Annotated[str, "Name of the tool being called"]
     tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(default_factory=dict)
+    result: Annotated[Optional[str], "What the tool returned, once it has"] = None
     closed: Annotated[bool, "Whether tool execution is complete"] = False
     ended_at: Annotated[Optional[float], "Unix timestamp when tool finished"] = None
 
@@ -195,13 +196,15 @@ class ToolBlock(ContentBlock):
     def to_html(self) -> Annotated[str, "HTML details element for tool"]:
         """Convert to HTML details element for tool display"""
         escaped_params = html.escape(json.dumps(self.tool_params))
-        done_status = "true" if self.closed else "false"
+        done_status = "true" if self.closed or self.result is not None else "false"
+        # Open WebUI shows the result inside the tool's collapsible, in the attribute its own tools use.
+        result_attribute = f' result="{html.escape(json.dumps(self.result, ensure_ascii=False))}"' if self.result is not None else ""
 
-        status_text = "Tool Executed" if self.closed else f"Calling {self.tool_name}..."
+        status_text = "Tool Executed" if done_status == "true" else f"Calling {self.tool_name}..."
 
         return (
-            f'\n<details type="tool_calls" done="{done_status}" id="{self.tool_id}" '
-            f'name="{self.tool_name}" arguments="{escaped_params}">\n'
+            f'\n<details type="tool_calls" done="{done_status}" id="{html.escape(self.tool_id)}" '
+            f'name="{html.escape(self.tool_name)}" arguments="{escaped_params}"{result_attribute}>\n'
             f"<summary>{status_text}</summary>\n"
             f"</details>\n"
         )
@@ -519,6 +522,11 @@ class StreamingStateManager:
         tool_params: Annotated[dict[str, Any], "Tool parameters"],
     ) -> None:
         """Start a new tool execution block"""
+        # Text streamed right before a tool call is the model talking to itself ("let me check…"), not the answer,
+        # so it moves into a collapsed thought instead of staying at the top of the reply.
+        if isinstance(self._current_block, TextBlock) and self._current_block.content.strip():
+            thought = self._block_factory.create_thinking_block(self._current_block.content).with_closure()
+            self._current_block = thought
         # Close any open blocks
         self._close_open_blocks()
         self._finalize_current_block()
@@ -528,6 +536,19 @@ class StreamingStateManager:
         self._current_block = self._block_factory.create_tool_block(
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
         )
+
+    def complete_tool_block(
+        self,
+        tool_id: Annotated[str, "Tool call identifier"],
+        result: Annotated[str, "What the tool returned"],
+    ) -> None:
+        """Put a tool's result into its block, wherever the block ended up while later content streamed"""
+        if isinstance(self._current_block, ToolBlock) and self._current_block.tool_id == tool_id:
+            self._current_block = self._current_block.model_copy(update={"result": result}).with_closure()
+            return
+        for index, block in enumerate(self._content_blocks):
+            if isinstance(block, ToolBlock) and block.tool_id == tool_id:
+                self._content_blocks[index] = block.model_copy(update={"result": result, "closed": True})
 
     def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
         """Append content to current block if it supports it"""
@@ -780,19 +801,14 @@ class ToolEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Tool event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        tool_name = event.get("name", "Unknown Tool")
-        tool_description = event.get("description", "")
-        parameters = event.get("parameters", {})
-        tool_id = event.get("event_id", "")
+        tool_name = event.get("label") or event.get("name") or "Unknown Tool"
+        parameters = event.get("parameters") or {}
+        tool_id = event.get("tool_call_id") or event.get("event_id", "")
 
         await context.emitter(
             {
                 "type": "status",
-                "data": {
-                    "action": None,
-                    "description": f"{tool_description}: {tool_name}",
-                    "done": False,
-                },
+                "data": {"action": None, "description": tool_name, "done": False},
             }
         )
 
@@ -802,6 +818,49 @@ class ToolEventHandler(EventHandler):
             {
                 "type": "replace",
                 "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+        return True
+
+
+class ToolResultEventHandler(EventHandler):
+    """Shows what a tool the agent chose returned, inside that tool's collapsible block."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if tool result event"]:
+        return "ToolResultEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Tool result event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        content = event.get("content", "")
+        result = f"Error: {content}" if event.get("is_error") and not content.startswith("Error") else content
+        context.state_manager.complete_tool_block(event.get("tool_call_id", ""), result)
+        await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
+        await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
+        return True
+
+
+class ToolLoopStatusEventHandler(EventHandler):
+    """What the agent's tool loop is doing when nothing else shows it, such as deciding in the background."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if tool loop status event"]:
+        return "ToolLoopStatusEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Tool loop status event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {"action": None, "description": event.get("description", ""), "done": bool(event.get("done"))},
             }
         )
         return True
@@ -1363,6 +1422,8 @@ class EventProcessorFactory:
             ThoughtEventHandler(),
             ChunkEventHandler(),
             ToolEventHandler(),
+            ToolResultEventHandler(),
+            ToolLoopStatusEventHandler(),
             HumanInTheLoopHandler(),
             ExceptionEventHandler(),
             EmbeddingEventHandler(),

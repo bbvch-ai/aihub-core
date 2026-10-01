@@ -16,6 +16,7 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.capability import Capability
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 
 
 class Agent(DispatchableWorkflow):
@@ -65,10 +66,6 @@ class Agent(DispatchableWorkflow):
     # travel inside the request's payload, so no step's return type names them; without this declaration the
     # REST response model and the workflow graph fall back to the bare `StopEvent` and drop their fields.
     completion_stops: ClassVar[tuple[type[StopEvent], ...]] = ()
-    # The tools this blueprint's tool loop may offer the model, declared with `ToolLoop.over(...)`. Declaring a
-    # capability here installs it, so a model-chosen call can run its steps; the profile and the user's chat toggles
-    # narrow the set per message.
-    tools: ClassVar[tuple] = ()
 
     STEP_ANNOTATION = "_is_agent_step"
 
@@ -102,8 +99,28 @@ class Agent(DispatchableWorkflow):
         ]
 
     @classmethod
+    @functools.cache
+    def tool_sets(cls) -> list["ToolSet"]:
+        """The tool sets the blueprint declares as class attributes with `ToolLoop.over(...)`, inherited ones too."""
+        from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
+
+        found: dict[str, ToolSet] = {}
+        for klass in reversed(cls.__mro__):
+            found |= {name: value for name, value in vars(klass).items() if isinstance(value, ToolSet)}
+        return list(found.values())
+
+    @classmethod
+    def tool_set(cls, name: str) -> "ToolSet":
+        return next(tool_set for tool_set in cls.tool_sets() if tool_set.name == name)
+
+    @classmethod
+    def tool_set_offering(cls, tool_name: str | None) -> "ToolSet | None":
+        return next((tool_set for tool_set in cls.tool_sets() if tool_name in tool_set.names()), None)
+
+    @classmethod
     def declared_tool_capabilities(cls) -> list["type[Capability]"]:
-        return [tool.capability for tool in cls.tools if tool.capability is not None]
+        """Declaring a capability as a tool installs it, so a model-chosen call can run its steps."""
+        return list(dict.fromkeys(c for tool_set in cls.tool_sets() for c in tool_set.capabilities))
 
     @classmethod
     def validate_workflow(cls, agent_config_type: type[AgentConfig]) -> None:
@@ -123,7 +140,7 @@ class Agent(DispatchableWorkflow):
             capability.chat_feature
             for capability in cls.installed_capabilities()
             if capability.chat_feature is not None
-        } | {tool.chat_feature for tool in cls.tools if tool.chat_feature is not None}
+        } | {feature for tool_set in cls.tool_sets() for feature in tool_set.chat_features()}
 
     @classmethod
     @functools.cache

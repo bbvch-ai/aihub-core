@@ -19,11 +19,14 @@ steps:
     name: "Werkzeugergebnisse sammeln"
     description: "Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück"
 prompt:
-  limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast, und sage dem Benutzer, dass du aufgehört hast, bevor du allem nachgegangen bist."
+  limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
   declined: "Der Benutzer hat die Ausführung von %{tool} abgelehnt. Antworte ohne dieses Werkzeug und rufe es für diese Anfrage nicht erneut auf."
 approval:
-  question: "Der Assistent möchte das Werkzeug «%{tool}» mit %{arguments} ausführen. Erlauben?"
+  question: "Der Assistent möchte «%{tool}» verwenden:
+%{summary}
+
+Erlauben?"
 config:
   max_iterations:
     label: "Maximale Entscheidungen"
@@ -43,3 +46,9 @@ config:
     every_call: "Bei jedem Aufruf fragen"
     once_per_run: "Einmal pro Antwort fragen"
     once_per_thread: "Einmal pro Unterhaltung fragen"
+notice:
+  stopped_early: "Ich habe aufgehört, dem nachzugehen, bevor ich fertig war, weil diese Antwort ihre Grenze an Werkzeugaufrufen erreicht hat."
+status:
+  deciding: "Entscheide, was nachzuschlagen ist"
+  gathered: "Alles Nötige für die Antwort gesammelt"
+  stopped_early: "Keine weitere Suche, die Grenze für diese Antwort ist erreicht"

@@ -19,11 +19,14 @@ steps:
     name: "Collect Tool Results"
     description: "Hands every result of the model's tool calls back to it"
 prompt:
-  limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found, and tell the user that you stopped before looking into everything."
+  limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found."
   unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
   declined: "The user declined running %{tool}. Answer without it, and do not call it again for this request."
 approval:
-  question: "The assistant wants to run the tool \"%{tool}\" with %{arguments}. Allow it?"
+  question: "The assistant wants to use \"%{tool}\":
+%{summary}
+
+Allow it?"
 config:
   max_iterations:
     label: "Maximum Decisions"
@@ -43,3 +46,9 @@ config:
     every_call: "Ask for every call"
     once_per_run: "Ask once per answer"
     once_per_thread: "Ask once per conversation"
+notice:
+  stopped_early: "I stopped looking into this before I was done, because this answer reached its limit of tool calls."
+status:
+  deciding: "Deciding what to look up"
+  gathered: "Gathered what the answer needs"
+  stopped_early: "Stopped looking up more, the limit for this answer is reached"

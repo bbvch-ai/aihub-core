@@ -12,6 +12,9 @@ knowledge_searched_event:
 tool_result_event:
   name: "Résultat d'outil"
   description: "Ce qu'a renvoyé un outil choisi par l'agent."
+tool_loop_status_event:
+  name: "État de la boucle d'outils"
+  description: "Ce que fait la boucle d'outils de l'agent."
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.

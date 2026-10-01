@@ -17649,9 +17649,11 @@ export type ToolEvent = {
    */
   created_at?: number;
   /**
-   * Display name for the event
+   * Display Name
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
    */
-  display_name?: LocaleString | null;
+  display_name?: string | null;
   /**
    * Display description for the event
    */
@@ -29274,9 +29276,11 @@ export type ToolEventWritable = {
    */
   created_at?: number;
   /**
-   * Display name for the event
+   * Display Name
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
    */
-  display_name?: LocaleString | null;
+  display_name?: string | null;
   /**
    * Display description for the event
    */

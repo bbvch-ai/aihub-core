@@ -20,6 +20,8 @@ prompt:
   refused: "%{collections} non hanno potuto essere consultate, perché queste raccolte non sono accessibili all'utente. Di' all'utente che non hai potuto usarle."
   nothing_found: "Nulla nelle raccolte consultate corrispondeva alla domanda. Diglielo se la domanda dipendeva da esse."
 tool:
+  label: "Cercare nella nostra conoscenza"
+  approval_summary: "Cercare «{query}» nella nostra conoscenza"
   description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
   query: "Cosa cercare, come breve domanda autonoma o parole chiave."
   collections: "Le raccolte da consultare, per identificativo; ometti per consultarle tutte."

@@ -1,10 +1,8 @@
-import asyncio
 import json
 import logging
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pydantic import ValidationError
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -23,6 +21,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolLoopIterationEvent,
     ToolLoopMode,
     ToolLoopState,
+    ToolLoopStatusEvent,
     ToolResultEvent,
 )
 from swiss_ai_hub.core.generative_ai import estimate_prompt_tokens
@@ -34,11 +33,11 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
-from swiss_ai_hub.agent.capabilities.tool_loop.declared_tool import DeclaredTool
-from swiss_ai_hub.agent.capabilities.tool_loop.function_tool import FunctionTool
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -59,25 +58,29 @@ async def runs_in_the_loop(call: ToolCallApprovedEvent) -> bool:
 async def every_call_answered(
     decided: ToolCallsDecidedEvent, results: list[ToolResultEvent], iterations: list[ToolLoopIterationEvent]
 ) -> bool:
-    """Joins once per iteration: the calls are all answered and no later iteration has started from them yet."""
+    """Joins once per iteration: the calls are all answered and no later iteration of the loop started from them."""
     answered = {result.tool_call_id for result in results}
-    already_joined = any(iteration.state.iteration > decided.state.iteration for iteration in iterations)
+    already_joined = any(
+        iteration.state.loop == decided.state.loop and iteration.state.iteration > decided.state.iteration
+        for iteration in iterations
+    )
     return not already_joined and set(decided.tool_call_ids) <= answered
 
 
 class ToolLoop(Capability):
     """
-    The model decides which of the blueprint's tools to use, runs them and decides again, until it is done:
+    The model decides which tools of one of the blueprint's tool sets to use, runs them and decides again, until it
+    is done:
 
-    - `run(history, mode)` is answered with `ToolLoopFinishedEvent`. In `ANSWER` mode it carries the model's reply,
-      for `Conversation.complete(...)`; in `GATHER` mode the tool results as a context block, for
-      `Conversation.compose(...)` and the blueprint's own answer.
+    - `tools.run(history, mode)` on a set declared with `tools = ToolLoop.over(...)` is answered with
+      `ToolLoopFinishedEvent`. In `ANSWER` mode it carries the model's reply, for `Conversation.complete(...)`; in
+      `GATHER` mode the tool results as a context block, for `Conversation.compose(...)` and the blueprint's own
+      answer. `tools.route(history)` is one gathering decision.
 
-    A blueprint declares the tools it may offer with `tools = ToolLoop.over(...)`: capabilities that offer a tool,
-    whose calls run their own sub-workflow with the same events as an explicit call, and function tools, which run
-    here. The profile and the chat toggles the user switched on narrow them per message; with no tool left the
-    model answers directly. Every decision, call, approval and result is an event, so the loop is as visible in the
-    trace and the chat as a fixed flow.
+    Capability tools run their capability's own sub-workflow, with the same events as an explicit call; LlamaIndex
+    tools and tool specs run here. The profile and the chat toggles the user switched on narrow a set per message,
+    and gathering with nothing left ends without a model call. Every decision, approval, call and result is an
+    event, and each carries the loop's name, so a blueprint may run several of its sets one after another.
     """
 
     calls: ClassVar[dict] = {RunToolLoopEvent: (ToolLoopFinishedEvent,)}
@@ -87,31 +90,16 @@ class ToolLoop(Capability):
     Finished = ToolLoopFinishedEvent
 
     @staticmethod
-    def over(*tools: FunctionTool | type[Capability]) -> tuple[DeclaredTool, ...]:
-        declared = tuple(DeclaredTool.of(tool) for tool in tools)
-        names = [tool.name for tool in declared]
-        if len(names) != len(set(names)):
-            msg = f"Tool names must be unique within a blueprint, got {names}"
-            raise ValueError(msg)
-        return declared
+    def over(*tools: Any) -> ToolSet:
+        return ToolSet.of(tools)
 
-    @staticmethod
-    def names(tools: tuple[DeclaredTool, ...]) -> list[str]:
-        return [tool.name for tool in tools]
-
-    @staticmethod
-    def run(
-        history: list[ChatMessage],
-        mode: ToolLoopMode = ToolLoopMode.ANSWER,
-        cite_sources: bool = True,
-        tools: list[str] | None = None,
-    ) -> RunToolLoopEvent:
-        return RunToolLoopEvent(history=history, mode=mode, cite_sources=cite_sources, tools=tools)
-
-    @staticmethod
-    def route(history: list[ChatMessage], cite_sources: bool = True) -> RunToolLoopEvent:
-        """One decision: the model picks the tools worth running now, and their results come back as context."""
-        return RunToolLoopEvent(history=history, mode=ToolLoopMode.GATHER, cite_sources=cite_sources, max_iterations=1)
+    @classmethod
+    def published_config[TConfig: AgentConfig](cls, config: TConfig, blueprint: type[Agent]) -> TConfig:
+        """The loop's form offers the blueprint's own tools, which only the blueprint knows."""
+        if not isinstance(config, ToolLoopFields):
+            return config
+        names = list(dict.fromkeys(name for tool_set in blueprint.tool_sets() for name in tool_set.names()))
+        return config.model_copy(update={"tool_loop": ToolLoopConfig.as_form(names)})
 
     @staticmethod
     @step(
@@ -125,15 +113,20 @@ class ToolLoop(Capability):
         loop: ToolLoopFields,
         agent_config: AgentConfig,
         run_context: RunContext,
+        displayer: EventDisplayer,
         t: LocaleHandler,
+        user: UserIdentity | None = None,
+        access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
-        offered = await ToolLoop._offered(agent, request, loop, agent_config, run_context, t)
+        context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
-            return ToolLoopFinishedEvent()
+            return ToolLoopFinishedEvent(loop=request.loop)
         await run_context.set(CITE_SOURCES_KEY, request.cite_sources)
         return ToolLoopIterationEvent(
             state=ToolLoopState(
+                loop=request.loop,
                 messages=[Message.from_llama_index(message) for message in request.history],
                 tools=offered,
                 mode=request.mode,
@@ -160,8 +153,10 @@ class ToolLoop(Capability):
         """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has."""
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
-        if exhausted and state.mode == ToolLoopMode.GATHER:
-            return ToolLoopFinishedEvent(block=state.gathered, stopped_early=True)
+        if state.mode == ToolLoopMode.GATHER:
+            await ToolLoop._status(displayer, state, t, "stopped_early" if exhausted else "deciding", done=exhausted)
+            if exhausted:
+                return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
         messages = [message.to_llama_index() for message in state.messages]
         if exhausted:
@@ -171,12 +166,12 @@ class ToolLoop(Capability):
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
-            answer = turn if state.mode == ToolLoopMode.ANSWER else None
-            return ToolLoopFinishedEvent(answer=answer, block=state.gathered, stopped_early=exhausted)
+            return await ToolLoop._finish(state, turn, exhausted, displayer, t)
 
         remaining = loop.tool_loop.max_tool_calls - state.tool_calls_made
         assistant = assistant.model_copy(update={"tool_calls": assistant.tool_calls[:remaining]})
-        calls = [ToolLoop._tool_event(tool_call, state.tools) for tool_call in assistant.tool_calls]
+        tool_set = type(agent).tool_set(state.loop)
+        calls = [ToolLoop._tool_event(call, state.tools, tool_set, t) for call in assistant.tool_calls]
         decided = ToolCallsDecidedEvent(
             state=state.model_copy(update={"messages": [*state.messages, assistant]}),
             tool_call_ids=[call.tool_call_id for call in calls],
@@ -198,37 +193,39 @@ class ToolLoop(Capability):
         t: LocaleHandler,
     ) -> ToolCallApprovedEvent | ToolApprovalRequestEvent | ToolResultEvent:
         """Let the call through, or ask the user first when the tool's approval policy says so."""
-        tool = ToolLoop._declared(agent, call.name)
-        if tool is None:
+        tool_set = type(agent).tool_set_offering(call.name)
+        if tool_set is None:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id,
                 name=call.name or "",
                 content=t("agent.tool_loop.prompt.unknown_tool", tool=call.name),
                 is_error=True,
             )
+        options = tool_set.options(call.name)
         cite_sources = await run_context.get(CITE_SOURCES_KEY, True)
-        if await ToolApprovals.needs_approval(tool, loop.tool_loop, run_context, thread_context):
+        arguments = call.parameters or {}
+        if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context):
             return ToolApprovalRequestEvent(
                 question=t(
                     "agent.tool_loop.approval.question",
-                    tool=tool.name,
-                    arguments=json.dumps(call.parameters or {}, ensure_ascii=False),
+                    tool=options.label_in(call.name, t.locale),
+                    summary=options.summary_in(call.name, arguments, t.locale),
                 ),
                 topic=PartialAgentTopic(
                     event_type=AgentTopicManager.CONTROL_EVENT,
                     event_name=ToolApprovalResponseEvent.event_name_from_class(),
                 ),
                 tool_call_id=call.tool_call_id,
-                name=tool.name,
-                arguments=call.parameters or {},
-                kind=tool.kind,
+                name=call.name,
+                arguments=arguments,
+                kind=tool_set.kind(call.name),
                 cite_sources=cite_sources,
             )
         return ToolCallApprovedEvent(
             tool_call_id=call.tool_call_id,
-            name=tool.name,
-            arguments=call.parameters or {},
-            kind=tool.kind,
+            name=call.name,
+            arguments=arguments,
+            kind=tool_set.kind(call.name),
             cite_sources=cite_sources,
         )
 
@@ -255,13 +252,15 @@ class ToolLoop(Capability):
                 content=t("agent.tool_loop.prompt.declined", tool=request.name),
                 is_error=True,
             )
-        tool = ToolLoop._declared(agent, request.name)
-        await ToolApprovals.remember(tool, loop.tool_loop, run_context, thread_context)
+        tool_set = type(agent).tool_set_offering(request.name)
+        await ToolApprovals.remember(
+            request.name, tool_set.options(request.name), loop.tool_loop, run_context, thread_context
+        )
         return ToolCallApprovedEvent(
             tool_call_id=request.tool_call_id,
             name=request.name,
             arguments=request.arguments,
-            kind=tool.kind,
+            kind=tool_set.kind(request.name),
             cite_sources=request.cite_sources,
         )
 
@@ -281,12 +280,12 @@ class ToolLoop(Capability):
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolResultEvent:
-        """Run a function tool; a failure goes back to the model as an error result rather than ending the run."""
-        tool = ToolLoop._declared(agent, call.name).function
+        """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
         context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
         try:
-            content = await tool.run(tool.arguments.model_validate(call.arguments), context)
-        except ValidationError as error:
+            output = await tool.acall(**call.arguments)
+        except TypeError as error:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
@@ -295,7 +294,12 @@ class ToolLoop(Capability):
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Error: {error}", is_error=True
             )
-        return ToolResultEvent(tool_call_id=call.tool_call_id, name=call.name, content=content)
+        return ToolResultEvent(
+            tool_call_id=call.tool_call_id,
+            name=call.name,
+            content=str(output.content),
+            is_error=bool(getattr(output, "is_error", False)),
+        )
 
     @staticmethod
     @step(
@@ -350,31 +354,46 @@ class ToolLoop(Capability):
 
     @staticmethod
     async def _offered(
-        agent: Agent,
-        request: RunToolLoopEvent,
-        loop: ToolLoopFields,
-        agent_config: AgentConfig,
-        run_context: RunContext,
-        t: LocaleHandler,
+        agent: Agent, request: RunToolLoopEvent, loop: ToolLoopFields, context: ToolContext, run_context: RunContext
     ) -> list[ToolDefinition]:
-        """The blueprint's tools, less those the profile disables, the call excludes or whose toggle is off."""
+        """The set's tools, less those the profile disables, the call excludes or whose toggle is off."""
         blueprint = type(agent)
+        tool_set = blueprint.tool_set(request.loop)
+        definitions = await tool_set.definitions(context.agent_config, context)
         offered = []
-        for tool in blueprint.tools:
-            if tool.name in loop.tool_loop.disabled_tools or (
-                request.tools is not None and tool.name not in request.tools
-            ):
+        for name, definition in definitions.items():
+            if name in loop.tool_loop.disabled_tools or (request.tools is not None and name not in request.tools):
                 continue
-            if tool.chat_feature and not await RequestedFeatures.contains(tool.chat_feature, run_context, blueprint):
+            feature = tool_set.options(name).chat_feature
+            if feature and not await RequestedFeatures.contains(feature, run_context, blueprint):
                 continue
-            definition = await asyncio.to_thread(tool.definition, agent_config, t.locale)
-            if definition is not None:
-                offered.append(definition)
+            offered.append(definition)
         return offered
 
     @staticmethod
-    def _declared(agent: Agent, name: str | None) -> DeclaredTool | None:
-        return next((tool for tool in type(agent).tools if tool.name == name), None)
+    async def _finish(
+        state: ToolLoopState, turn: LLMEvent, exhausted: bool, displayer: EventDisplayer, t: LocaleHandler
+    ) -> ToolLoopFinishedEvent:
+        """The model is done. Stopping at the limits is always said in the same words, not left to the model."""
+        if state.mode == ToolLoopMode.GATHER:
+            await ToolLoop._status(displayer, state, t, "gathered", done=True)
+            return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=exhausted)
+        if exhausted:
+            notice = f"\n\n_{t('agent.tool_loop.notice.stopped_early')}_"
+            await displayer.display_chunk(notice, turn.chat_model_name)
+            reply = turn.output_messages[-1]
+            turn = turn.model_copy(
+                update={"output_messages": [*turn.output_messages[:-1], Message.from_string(
+                    role="assistant", content=(reply.content or "") + notice, name=turn.chat_model_name
+                )]}
+            )
+        return ToolLoopFinishedEvent(loop=state.loop, answer=turn, stopped_early=exhausted)
+
+    @staticmethod
+    async def _status(displayer: EventDisplayer, state: ToolLoopState, t: LocaleHandler, phase: str, done: bool) -> None:
+        await displayer.display_event(
+            ToolLoopStatusEvent(loop=state.loop, description=t(f"agent.tool_loop.status.{phase}"), done=done)
+        )
 
     @staticmethod
     def _exhausted(state: ToolLoopState, loop: ToolLoopFields) -> bool:
@@ -402,17 +421,19 @@ class ToolLoop(Capability):
         )
 
     @staticmethod
-    def _tool_event(tool_call: dict, offered: list[ToolDefinition]) -> ToolEvent:
+    def _tool_event(tool_call: dict, offered: list[ToolDefinition], tool_set: ToolSet, t: LocaleHandler) -> ToolEvent:
         function = tool_call["function"]
         raw_arguments = function.get("arguments") or {}
         try:
             arguments = json.loads(raw_arguments) if isinstance(raw_arguments, str) else raw_arguments
         except json.JSONDecodeError:
             arguments = {}
-        definition = next((tool for tool in offered if tool.name == function["name"]), None)
+        name = function["name"]
+        definition = next((tool for tool in offered if tool.name == name), None)
         return ToolEvent(
             tool_call_id=tool_call["id"],
-            name=function["name"],
+            name=name,
+            label=tool_set.options(name).label_in(name, t.locale) if tool_set.kind(name) else name,
             description=definition.description if definition else None,
             json_schema=definition.parameters if definition else None,
             parameters=arguments if isinstance(arguments, dict) else {},

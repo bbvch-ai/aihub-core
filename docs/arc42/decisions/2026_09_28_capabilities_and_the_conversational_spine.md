@@ -135,15 +135,20 @@ the budget). There are two kinds of tool, indistinguishable to the model:
   one turns the `ToolCallApprovedEvent` into its ordinary request (carrying the call's `tool_call_id`), one turns its
   ordinary result into a `ToolResultEvent`. A model-chosen call therefore runs the same sub-workflow, with the same
   events and chat sources, as an explicit call. `Knowledge` is the first.
-- **Function tools** (`FunctionTool`): a name, a description, an arguments model and an async function, run inside the
-  loop, for tools that need no sub-workflow.
+- **Function tools** are LlamaIndex tools: a `BaseToolSpec` whose listed methods are the tools (schema from their
+  signatures and docstrings, the spec built per run with a `ToolContext`), or any `BaseTool`. `@ToolOptions.of(...)`
+  adds what the model does not need but users do: a label, an approval summary, the approval default, the chat toggle.
+  Using LlamaIndex's contract instead of our own keeps LlamaHub's tool specs usable as they are.
 
-A blueprint declares the tools it may offer with `tools = ToolLoop.over(...)`. **This is the one exception to "nothing
-is installed by listing":** a capability tool is installed from the declaration, because no step of the blueprint
-returns its request; the model does, at run time. The declaration keeps the tool set readable on the blueprint, and
-validation refuses tools declared without a loop to offer them. The profile (`ToolLoopFields`: limits, disabled tools,
-approval rules) and the chat toggles of #590 narrow the set per message; with none left, gathering ends without a model
-call.
+A blueprint declares **named tool sets** as class attributes, `research = ToolLoop.over(WebSearch, WeatherTools)`, and
+runs one with `research.run(history)`. **This is the one exception to "nothing is installed by listing":** a capability
+tool is installed from the declaration, because no step of the blueprint returns its request; the model does, at run
+time. A tool list passed only at run time would be invisible to that, which is why the sets are declared; naming them
+still gives each loop its own tools, and every loop event carries the set's name so several sets can run one after
+another in a run. Validation refuses sets no step runs and one name meaning two tools. The profile (`ToolLoopFields`:
+limits, disabled tools, approval rules, its form published by the runner with the blueprint's tools as options through
+`Capability.published_config`) and the chat toggles of #590 narrow a set per message; with none left, gathering ends
+without a model call.
 
 Two engine rules came with it. A capability step is composed into a blueprint only when *every* required input can be
 produced, not any one of them, so a tool adapter never shows in the graph of a blueprint that only calls the capability

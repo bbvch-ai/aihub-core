@@ -26567,13 +26567,15 @@ export const ToolEventSchema = {
     display_name: {
       anyOf: [
         {
-          $ref: "#/components/schemas/LocaleString",
+          type: "string",
         },
         {
           type: "null",
         },
       ],
-      description: "Display name for the event",
+      title: "Display Name",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
     },
     display_description: {
       anyOf: [
@@ -44986,13 +44988,15 @@ export const ToolEventWritableSchema = {
     display_name: {
       anyOf: [
         {
-          $ref: "#/components/schemas/LocaleString",
+          type: "string",
         },
         {
           type: "null",
         },
       ],
-      description: "Display name for the event",
+      title: "Display Name",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
     },
     display_description: {
       anyOf: [

@@ -4,12 +4,12 @@ once per iteration; at its limits it answers with what it has.
 """
 
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Annotated, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from pydantic import BaseModel
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.events.agent import (
     ChatFeature,
     KnowledgeReference,
@@ -39,7 +39,8 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge, answers_a_tool_call
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
-from swiss_ai_hub.agent.capabilities.tool_loop.function_tool import FunctionTool
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
@@ -53,35 +54,37 @@ T = LocaleHandler("en")
 HISTORY = [ChatMessage(role=MessageRole.USER, content="What time is it, and how many vacation days do I get?")]
 
 
-class EchoArguments(BaseModel):
-    text: str
+class Toolbox(BaseToolSpec):
+    spec_functions = ["echo", "broken", "draw", "code"]
+
+    def __init__(self, context: ToolContext) -> None:
+        self.context = context
+
+    @ToolOptions.of(label=LocaleString(en="Echo"), approval_summary=LocaleString(en="Shout {text}"))
+    async def echo(self, text: Annotated[str, "What to echo"]) -> str:
+        """Echoes."""
+        return f"{text.upper()} for {self.context.agent_config.agent_id}"
+
+    async def broken(self, text: str) -> str:
+        """Fails."""
+        raise RuntimeError("tool down")
+
+    @ToolOptions.of(chat_feature=ChatFeature.IMAGE_GENERATION)
+    async def draw(self, text: str) -> str:
+        """Draws."""
+        return text
+
+    @ToolOptions.of(default_approval=ToolApprovalPolicy.ONCE_PER_RUN, approve_every_call=True)
+    async def code(self, text: str) -> str:
+        """Runs code."""
+        return text
 
 
-async def _echo(arguments: EchoArguments, context: Any) -> str:
-    return arguments.text.upper()
-
-
-async def _broken(arguments: EchoArguments, context: Any) -> str:
-    raise RuntimeError("tool down")
-
-
-ECHO = FunctionTool(name="echo", description="Echoes.", arguments=EchoArguments, run=_echo)
-BROKEN = FunctionTool(name="broken", description="Fails.", arguments=EchoArguments, run=_broken)
-DRAW = FunctionTool(
-    name="draw", description="Draws.", arguments=EchoArguments, run=_echo, chat_feature=ChatFeature.IMAGE_GENERATION
-)
-CODE = FunctionTool(
-    name="code",
-    description="Runs code.",
-    arguments=EchoArguments,
-    run=_echo,
-    default_approval=ToolApprovalPolicy.ONCE_PER_RUN,
-    approve_every_call=True,
-)
+ECHO = ToolDefinition(name="echo", description="Echoes.", parameters={"type": "object", "properties": {}})
 
 
 class LoopAgent(Agent):
-    tools = ToolLoop.over(Knowledge, ECHO, BROKEN, DRAW, CODE)
+    tools = ToolLoop.over(Knowledge, Toolbox)
 
 
 class _Context:
@@ -125,13 +128,15 @@ def _conversation(reply: Message) -> MagicMock:
 
 def _displayer(reply: Message) -> MagicMock:
     turn = LLMEvent(input_messages=[], output_messages=[reply], chat_model_name="text-generation/test")
-    return MagicMock(display_llm_stream=AsyncMock(return_value=turn))
+    return MagicMock(
+        display_llm_stream=AsyncMock(return_value=turn), display_event=AsyncMock(), display_chunk=AsyncMock()
+    )
 
 
 def _state(mode: ToolLoopMode = ToolLoopMode.ANSWER, **update: Any) -> ToolLoopState:
     return ToolLoopState(
         messages=[Message.from_llama_index(message) for message in HISTORY],
-        tools=[ECHO.definition()],
+        tools=[ECHO],
         mode=mode,
         **update,
     )
@@ -163,12 +168,18 @@ async def _decide(state: ToolLoopState, reply: Message, **tool_loop: Any) -> tup
 
 class TestOfferedTools:
     async def _start(self, requested: list[str], mode: ToolLoopMode = ToolLoopMode.ANSWER, **kwargs: Any) -> Any:
-        request = ToolLoop.run(HISTORY, mode=mode, tools=kwargs.pop("tools", None))
+        request = LoopAgent.tools.run(HISTORY, mode=mode, tools=kwargs.pop("tools", None))
         config = kwargs.pop("config", _config(**kwargs))
         with patch(f"{MODULE}.RequestedFeatures.contains", new=AsyncMock(side_effect=lambda f, *_: f in requested)):
             with patch("swiss_ai_hub.core.generative_ai.KnowledgeCollectionLabel.of_reference", return_value="HR"):
                 return await ToolLoop.start_step(
-                    LoopAgent(), request=request, loop=config, agent_config=config, run_context=_Context(), t=T
+                    LoopAgent(),
+                    request=request,
+                    loop=config,
+                    agent_config=config,
+                    run_context=_Context(),
+                    displayer=MagicMock(spec=EventDisplayer),
+                    t=T,
                 )
 
     @pytest.mark.asyncio
@@ -251,6 +262,25 @@ class TestDecisions:
 
         assert (finished.block, finished.stopped_early) == (gathered, True)
         displayer.display_llm_stream.assert_not_awaited()
+        assert displayer.display_event.await_args.args[0].done
+
+    @pytest.mark.asyncio
+    async def test_stopping_early_is_always_said_in_the_same_words(self):
+        finished, displayer = await _decide(_state(iteration=5), ANSWER, max_iterations=5)
+
+        notice = displayer.display_chunk.await_args.args[0]
+        assert "reached its limit of tool calls" in notice
+        assert finished.answer.output_messages[-1].content.endswith(notice)
+
+    @pytest.mark.asyncio
+    async def test_gathering_shows_that_it_is_deciding(self):
+        _, displayer = await _decide(_state(ToolLoopMode.GATHER), ANSWER)
+
+        statuses = [call.args[0] for call in displayer.display_event.await_args_list]
+        assert [(status.description, status.done) for status in statuses] == [
+            ("Deciding what to look up", False),
+            ("Gathered what the answer needs", True),
+        ]
 
     @pytest.mark.asyncio
     async def test_gathering_decides_silently(self):
@@ -292,7 +322,8 @@ class TestApproval:
 
         assert isinstance(request, ToolApprovalRequestEvent)
         assert (request.hitl_type, request.tool_call_id, request.name) == ("confirmation", "c1", "echo")
-        assert '"text": "a"' in request.question
+        assert "Shout a" in request.question
+        assert "Echo" in request.question
 
     @pytest.mark.asyncio
     async def test_an_approval_remembered_for_the_run_is_not_asked_again(self):
@@ -350,7 +381,9 @@ class TestApproval:
         assert thread_context.values == {"tool_loop:approved:echo": True}
 
     def test_the_policy_defaults_to_the_tools_own(self):
-        assert ToolApprovals.policy(LoopAgent.tools[4], ToolLoopConfig()) == ToolApprovalPolicy.EVERY_CALL
+        options = LoopAgent.tools.options("code")
+
+        assert ToolApprovals.policy("code", options, ToolLoopConfig()) == ToolApprovalPolicy.EVERY_CALL
 
 
 class TestFunctionTools:
@@ -367,7 +400,7 @@ class TestFunctionTools:
     async def test_a_function_tool_returns_what_it_computed(self):
         result = await self._run("echo", {"text": "hi"})
 
-        assert (result.content, result.is_error) == ("HI", False)
+        assert (result.content, result.is_error) == ("HI for loop-test", False)
 
     @pytest.mark.asyncio
     async def test_invalid_arguments_go_back_to_the_model(self):
@@ -401,6 +434,13 @@ class TestJoin:
         next_iteration = ToolLoopIterationEvent(state=_state(iteration=1))
 
         assert not await every_call_answered(self._decided(), results, [next_iteration])
+
+    @pytest.mark.asyncio
+    async def test_another_loops_iterations_do_not_count_as_joined(self):
+        results = [self._result("c1"), self._result("c2")]
+        other_loop = ToolLoopIterationEvent(state=_state(iteration=3, loop="drafting"))
+
+        assert await every_call_answered(self._decided(), results, [other_loop])
 
     @pytest.mark.asyncio
     async def test_results_go_back_to_the_model_and_into_the_gathered_context(self):
@@ -487,21 +527,52 @@ class TestKnowledgeAsATool:
 class TestDeclaration:
     def test_tools_without_a_loop_are_refused(self):
         class ToolsButNoLoop(Agent):
-            tools = ToolLoop.over(ECHO)
+            tools = ToolLoop.over(Toolbox)
 
         assert WorkflowValidation._tools_without_loop(ToolsButNoLoop)
 
     def test_a_capability_that_offers_no_tool_cannot_be_declared(self):
         from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 
-        with pytest.raises(ValueError, match="offers no tool"):
+        with pytest.raises(ValueError, match="is no tool"):
             ToolLoop.over(Memory)
 
     def test_tool_names_are_unique(self):
         with pytest.raises(ValueError, match="unique"):
-            ToolLoop.over(ECHO, ECHO)
+            ToolLoop.over(Toolbox, Toolbox)
 
-    def test_a_definition_is_the_json_schema_of_the_arguments(self):
-        assert ECHO.definition() == ToolDefinition(
-            name="echo", description="Echoes.", parameters=EchoArguments.model_json_schema()
-        )
+    def test_a_set_is_named_after_its_attribute(self):
+        class TwoLoops(Agent):
+            research = ToolLoop.over(Knowledge)
+            drafting = ToolLoop.over(Toolbox)
+
+        assert [tool_set.name for tool_set in TwoLoops.tool_sets()] == ["research", "drafting"]
+        assert TwoLoops.research.run(HISTORY).loop == "research"
+        assert TwoLoops.tool_set_offering("echo") is TwoLoops.drafting
+
+    @pytest.mark.asyncio
+    async def test_a_spec_method_is_offered_with_the_schema_of_its_signature(self):
+        context = ToolContext(agent_config=_config(), displayer=MagicMock(spec=EventDisplayer), t=T)
+
+        definitions = await LoopAgent.tools.definitions(_config(collections=False), context)
+
+        echo = definitions["echo"]
+        assert echo.parameters["properties"]["text"]["description"] == "What to echo"
+        assert "Echoes." in echo.description
+
+    def test_the_published_form_offers_the_blueprints_tools(self):
+        published = ToolLoop.published_config(_config(), LoopAgent)
+
+        assert [option["value"] for option in published.tool_loop.disabled_tools.options] == [
+            "search_knowledge",
+            "echo",
+            "broken",
+            "draw",
+            "code",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_the_tool_call_carries_the_label_users_read(self):
+        events, _ = await _decide(_state(), _calling(_tool_call("c1", "echo", '{"text": "a"}')))
+
+        assert events[1].label == "Echo"

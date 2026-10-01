@@ -31,6 +31,7 @@ from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_search_arguments import KnowledgeSearchArguments
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -69,6 +70,10 @@ class Knowledge(Capability):
     Searched = KnowledgeSearchedEvent
 
     tool_name: ClassVar[str] = SEARCH_KNOWLEDGE_TOOL
+    tool_options: ClassVar[ToolOptions] = ToolOptions(
+        label=AgentLocaleString.from_i18n_path("agent.knowledge.tool.label"),
+        approval_summary=AgentLocaleString.from_i18n_path("agent.knowledge.tool.approval_summary"),
+    )
 
     @classmethod
     def tool_definition(cls, config: AgentConfig, locale: str) -> ToolDefinition | None:
