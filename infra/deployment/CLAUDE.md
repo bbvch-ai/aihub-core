@@ -40,7 +40,8 @@ deployment/
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
-    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
+    ├── aihub_feature_filter.py         # Inlet filter (agent models only): chat toggles → requested features for the pipe
+    ├── aihub_title_filter.py           # Outlet filter (agent models only): restores agent title after OpenWebUI's first-turn fallback
     ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
     ├── openai_pipeline.py
     ├── memory_action.py
@@ -105,6 +106,12 @@ changes AND the regenerated output files.
 Note that `make generate-compose` also runs `make format-yaml`, which is repo-wide: if any YAML outside `infra/` is not
 yamlfix-clean on `main`, it gets reformatted into your working tree. Revert that churn before committing so the diff
 stays reviewable.
+
+### Global and per-model OpenWebUI functions
+
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`. A non-global filter
+runs only on the models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent
+filters (`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 
 ### Applying an OpenWebUI function change to a running stack
 

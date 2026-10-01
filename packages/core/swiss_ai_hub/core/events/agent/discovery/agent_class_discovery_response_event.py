@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import Field
 
 from swiss_ai_hub.core.agents.visualizers.types.workflow_graph import WorkflowGraph
+from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.events.discovery.event_specs import EventSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
@@ -36,6 +37,13 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
     is_schedulable: Annotated[
         bool, Field(description="Whether the agent can be run automatically on a cron schedule")
     ] = False
+    supported_features: Annotated[
+        list[ChatFeature],
+        Field(
+            description="Chat features the blueprint can serve, derived from its installed capabilities. Chat "
+            "clients show a feature's toggle only for agents that support it.",
+        ),
+    ] = []
     form: Annotated[
         list[ALL_FORM_OPTIONS],
         Field(

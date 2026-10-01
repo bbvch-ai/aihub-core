@@ -146,6 +146,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.semantic.retriever.retriever_event import RetrieverEvent
     from swiss_ai_hub.core.events.agent.semantic.semantic_event import SemanticEvent
     from swiss_ai_hub.core.events.agent.semantic.tool.tool_event import ToolEvent
+    from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
@@ -254,6 +255,7 @@ __all__ = [
     "ToolEvent",
     "UnreadMailListedEvent",
     "UnreadMailSummary",
+    "ChatFeature",
     "UserMessageEvent",
     "UserUploadedFile",
 ]
@@ -365,6 +367,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
     "UnreadMailListedEvent": "swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event",
     "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
+    "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
 }

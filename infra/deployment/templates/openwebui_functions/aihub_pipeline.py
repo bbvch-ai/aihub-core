@@ -53,6 +53,10 @@ logger = logging.getLogger(__name__)
 AIHUB_TITLE_REDIS_KEY = "aihub:title:{chat_id}"
 AIHUB_TITLE_REDIS_TTL_SECONDS = 600
 
+# Must stay in sync with ``aihub_feature_filter.py``, which stashes the chat features the selected agent supports
+# under this key before OpenWebUI would act on them.
+REQUESTED_FEATURES_METADATA_KEY = "aihub_requested_features"
+
 # OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
 # ``metadata["task"]`` by its ``/api/v1/tasks/moa/completions`` route when a user presses "Merge
 # Responses". Unlike every other task value this one is user-initiated — see the two predicates below.
@@ -2213,7 +2217,10 @@ class Pipe:
                     # Normal flow - send UserMessageEvent
                     event_name = "UserMessageEvent"
                     hitl_display_id = display_id
-                    event_payload = {"messages": messages}
+                    event_payload = {
+                        "messages": messages,
+                        "requested_features": (__metadata__ or {}).get(REQUESTED_FEATURES_METADATA_KEY) or [],
+                    }
                     if files:
                         event_payload["files"] = files
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")

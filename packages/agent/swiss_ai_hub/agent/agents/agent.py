@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.events.agent import (
+    ChatFeature,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     StartEvent,
@@ -103,6 +104,15 @@ class Agent(DispatchableWorkflow):
         from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
 
         WorkflowValidation.for_blueprint(cls, agent_config_type).raise_for_problems()
+
+    @classmethod
+    def supported_features(cls) -> set[ChatFeature]:
+        """Derived, never declared: calling the capability that serves a feature is what makes it supported."""
+        return {
+            capability.chat_feature
+            for capability in cls.installed_capabilities()
+            if capability.chat_feature is not None
+        }
 
     @classmethod
     @functools.cache

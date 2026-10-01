@@ -4493,6 +4493,14 @@ export const ChatCompletionUserMessageParamSchema = {
     "Messages sent by an end user, containing prompts or additional context\ninformation.",
 } as const;
 
+export const ChatFeatureSchema = {
+  type: "string",
+  enum: ["web_search", "code_interpreter", "image_generation"],
+  title: "ChatFeature",
+  description:
+    "A capability a user can request per message in a chat client, which the agent then decides how to serve.\n\nWeb search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI\nhas no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding\na member here is all a new feature needs on the contract side.",
+} as const;
+
 export const ChatMessageSchema = {
   properties: {
     role: {
@@ -17044,6 +17052,16 @@ export const MetadataSchema = {
       description:
         "List of files to attach to the request, if supported by the model.",
     },
+    features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Features",
+      description:
+        "Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.",
+      default: [],
+    },
   },
   type: "object",
   title: "Metadata",
@@ -27172,6 +27190,16 @@ export const UserMessageEventSchema = {
       title: "Files",
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+    },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
     },
     _event_name: {
       type: "string",
@@ -43890,6 +43918,16 @@ export const UserMessageEventWritableSchema = {
       title: "Files",
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+    },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
     },
   },
   additionalProperties: true,

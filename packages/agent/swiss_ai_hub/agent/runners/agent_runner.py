@@ -181,6 +181,7 @@ class AgentRunner(HealthCheckProvider):
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             is_schedulable=self.is_schedulable,
+            supported_features=sorted(self.agent_type.supported_features()),
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,

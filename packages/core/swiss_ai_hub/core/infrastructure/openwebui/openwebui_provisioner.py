@@ -13,6 +13,7 @@ from scim2_models import Group, User
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
@@ -52,6 +53,10 @@ AIHUB_MANAGED_META_KEY = "aihub_managed"
 # check only brand-new rows would pick it up, since name is otherwise the sole field either diff
 # reconciles for an already-existing row.
 _DEFAULT_FUNCTION_CALLING = "legacy"
+
+# Our OpenWebUI filters that run on agent models only. They are registered non-global (`global: false` in
+# their frontmatter) and attached per row through `meta.filterIds`, so plain LLM chats never load them.
+AGENT_FILTER_IDS = ("aihub-feature-filter", "aihub-title-filter")
 
 # LiteLLM model_info key through which a model opts out of _DEFAULT_FUNCTION_CALLING (e.g. Kimi-K2.6
 # declares "native"). LiteLLM passes custom model_info keys through /v1/model/info unchanged.
@@ -192,14 +197,15 @@ class OpenWebuiProvisioner:
         if not class_entities:
             return []
 
-        agent_classes = [ce.agent_class for ce in class_entities]
-        all_configs = AgentConfigEntityDocument.find_for_classes(agent_classes)
+        features_by_class = {ce.agent_class: ce.supported_features for ce in class_entities}
+        all_configs = AgentConfigEntityDocument.find_for_classes(list(features_by_class))
 
         return [
             OnlineAgent(
                 agent_class=config.agent_class,
                 agent_id=config.agent_id,
                 display_name=self._resolve_display_name(config.name, config.agent_id),
+                supported_features=features_by_class[config.agent_class],
             )
             for config in all_configs
         ]
@@ -388,16 +394,28 @@ class OpenWebuiProvisioner:
         return f"{AGENT_PIPE_ID_PREFIX}{agent_class}.{agent_id}"
 
     @staticmethod
-    def _agent_capabilities() -> dict[str, bool]:
-        """Turns OpenWebUI's own web search off for agent workspace models.
+    def _agent_capabilities(agent: OnlineAgent) -> dict[str, bool]:
+        """Shows exactly the native toggles the agent's blueprint supports, and switches OpenWebUI's memory off.
 
-        OpenWebUI runs the search before the pipe and hands the hits over as a ``files`` entry with no
-        file id, which the pipe's file processing drops — so the agent never sees a single result and
-        answers "not in the documents" while the UI claims it searched. Hiding the toggle beats leaving
-        a button that silently does nothing. Plain LLM workspace models keep web search: they bypass the
-        pipe and reach LiteLLM directly, where OpenWebUI's own RAG injection works.
+        Every native toggle is written, on or off, because OpenWebUI treats a missing capability as enabled.
+        Memory is off because OpenWebUI would otherwise inject its own memories into the prompt next to the
+        ones our agents recall themselves.
         """
-        return {"web_search": False}
+        capabilities = {feature.openwebui_capability: False for feature in ChatFeature if feature.openwebui_capability}
+        for feature in agent.supported_features:
+            if feature.openwebui_capability:
+                capabilities[feature.openwebui_capability] = True
+        return {**capabilities, "memory": False}
+
+    @staticmethod
+    def _agent_filter_ids(agent: OnlineAgent) -> list[str]:
+        """Our agent filters, plus one toggle filter per supported feature OpenWebUI has no native toggle for."""
+        toggle_filter_ids = sorted(
+            feature.openwebui_toggle_filter_id
+            for feature in agent.supported_features
+            if feature.openwebui_capability is None
+        )
+        return [*AGENT_FILTER_IDS, *toggle_filter_ids]
 
     def _build_model_data(self, agent: OnlineAgent) -> dict[str, Any]:
         """Registers the raw agent pipe id directly as a base-registry row (no base_model_id).
@@ -407,16 +425,12 @@ class OpenWebuiProvisioner:
         unregistered base as a gate-free raw provider model. A preset pointing at the pipe id from one
         hop above no longer routes for non-admins, so the pipe id itself must carry the grant instead.
 
-        ``function_calling: "legacy"`` — see ``_build_llm_model_data`` for why. The agent pipe never
-        read OpenWebUI's ``tools``/builtins in the first place, so this is pure upside here: it just
-        makes OpenWebUI perform image generation/web search/code interpreter itself again instead of
-        handing the agent's LLM a tool spec it has nothing to invoke.
-
-        ``capabilities.web_search: False`` (see ``_agent_capabilities``) hides the Web Search toggle
-        for agent rows regardless of tool-calling mode: even under legacy, OpenWebUI's own search only
-        hands the agent pipe a ``files`` entry with no file id, which the pipe's file processing drops
-        — the agent never sees a result and answers "not in the documents" while the UI claims it
-        searched. Hiding the button beats leaving one that silently does nothing.
+        The row is the agent's whole description in OpenWebUI: which native toggles it shows, and which
+        of our filters run for it (see ``_agent_capabilities`` and ``_agent_filter_ids``). The feature
+        filter takes the toggles out of every request before OpenWebUI acts on them, so OpenWebUI runs
+        none of its own web search, image generation or code interpreter for agents whatever the
+        function-calling mode. ``function_calling: "legacy"`` keeps OpenWebUI from handing the pipe
+        builtin tool specs it has nothing to invoke; see ``_build_llm_model_data`` for the mode itself.
         """
         return {
             "id": self._base_model_id(agent.agent_class, agent.agent_id),
@@ -424,7 +438,8 @@ class OpenWebuiProvisioner:
             "meta": {
                 "description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}",
                 AIHUB_MANAGED_META_KEY: True,
-                "capabilities": self._agent_capabilities(),
+                "capabilities": self._agent_capabilities(agent),
+                "filterIds": self._agent_filter_ids(agent),
             },
             "params": {"function_calling": _DEFAULT_FUNCTION_CALLING},
         }
@@ -459,15 +474,12 @@ class OpenWebuiProvisioner:
     ) -> tuple[list[OnlineAgent], list[OnlineAgent], set[str]]:
         """Returns (models_to_create, models_to_update, model_ids_to_delete).
 
-        An agent is updated when its workspace model exists but the stored name drifted from the
-        current agent name (e.g. after a rename), its stored function-calling mode drifted from
-        ``_DEFAULT_FUNCTION_CALLING``, or the capabilities we push (``_agent_capabilities``) drifted
-        from the stored ones — three fields this diff reconciles, all for the same reason: a
-        provisioner default that changes after a row was already synced must still reach that row,
-        since name is otherwise the only thing that would ever trigger an update to an existing
-        model. Access grants are reconciled separately by _sync_access_grants.
+        An agent is updated when any field this provisioner owns drifted from the stored row: the name
+        (e.g. after a rename), the capabilities or filters derived from its supported features, or the
+        function-calling mode. A provisioner default or a blueprint's features that change after a row
+        was synced must still reach that row, and an admin's manual edit is reverted. Access grants are
+        reconciled separately by _sync_access_grants.
         """
-        desired_capabilities = OpenWebuiProvisioner._agent_capabilities()
         desired_ids: set[str] = set()
         to_create: list[OnlineAgent] = []
         to_update: list[OnlineAgent] = []
@@ -478,15 +490,24 @@ class OpenWebuiProvisioner:
             if existing is None:
                 to_create.append(agent)
                 continue
-            stored_capabilities = (existing.get("meta") or {}).get("capabilities") or {}
-            capabilities_drifted = any(
-                stored_capabilities.get(name) != value for name, value in desired_capabilities.items()
-            )
-            function_calling_drifted = existing.get("params", {}).get("function_calling") != _DEFAULT_FUNCTION_CALLING
-            if existing.get("name") != agent.display_name or capabilities_drifted or function_calling_drifted:
+            if existing.get("name") != agent.display_name or OpenWebuiProvisioner._managed_fields_drifted(
+                agent, existing
+            ):
                 to_update.append(agent)
         to_delete = set(existing_models) - desired_ids
         return to_create, to_update, to_delete
+
+    @staticmethod
+    def _managed_fields_drifted(agent: OnlineAgent, existing: dict[str, Any]) -> bool:
+        stored_meta = existing.get("meta") or {}
+        stored_capabilities = stored_meta.get("capabilities") or {}
+        capabilities_drifted = any(
+            stored_capabilities.get(name) != value
+            for name, value in OpenWebuiProvisioner._agent_capabilities(agent).items()
+        )
+        filters_drifted = stored_meta.get("filterIds") != OpenWebuiProvisioner._agent_filter_ids(agent)
+        function_calling_drifted = existing.get("params", {}).get("function_calling") != _DEFAULT_FUNCTION_CALLING
+        return capabilities_drifted or filters_drifted or function_calling_drifted
 
     async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
         """Reconciles agent pipe ids in the base-model registry (see ``_build_model_data``).
@@ -519,7 +540,7 @@ class OpenWebuiProvisioner:
         for agent in to_update:
             model_data = await self._build_update_data(http, agent)
             await self._openwebui.update_model(http, model_data)
-            logger.info(f"OpenWebUI: Updated workspace model '{model_data['id']}' name to '{agent.display_name}'")
+            logger.info(f"OpenWebUI: Updated workspace model '{model_data['id']}' ('{agent.display_name}')")
 
         for model_id in to_delete:
             await self._openwebui.delete_model(http, model_id)

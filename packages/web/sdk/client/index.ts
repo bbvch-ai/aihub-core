@@ -250,6 +250,7 @@ export {
   type ChatCompletionWithAssistantsErrors,
   type ChatCompletionWithAssistantsResponse,
   type ChatCompletionWithAssistantsResponses,
+  ChatFeature,
   type ChatMessage,
   type Checkbox,
   type CheckboxWritable,
