@@ -1557,8 +1557,8 @@ export type AssignRoleRequest = {
  * One file the user attached to the conversation, as the agent read it for this turn.
  *
  * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
- * all of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its
- * own record.
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
  */
 export type AttachedFileEvent = {
   /**
@@ -1602,11 +1602,17 @@ export type AttachedFileEvent = {
    */
   number_of_pages?: number | null;
   /**
-   * Excerpt
+   * Citation Id
    *
-   * The start of the extracted text, for a source preview.
+   * The id the answer cites this file by, as [id].
    */
-  excerpt?: string;
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
   /**
    * Error
    *
@@ -8417,6 +8423,12 @@ export type IngestedNode = {
    * Score representing the relevance of the document.
    */
   score?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id an agent's answer cites this node's document by; every node of one document shares it.
+   */
+  readonly citation_id: string;
 };
 
 /**
@@ -13771,6 +13783,12 @@ export type RagStartEvent = {
    * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
    */
   org_memory_namespaces?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
   /**
    * Event Name
    *
@@ -19675,8 +19693,8 @@ export type AgentWorkResponseDtoWritable = {
  * One file the user attached to the conversation, as the agent read it for this turn.
  *
  * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
- * all of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its
- * own record.
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
  */
 export type AttachedFileEventWritable = {
   /**
@@ -19720,11 +19738,17 @@ export type AttachedFileEventWritable = {
    */
   number_of_pages?: number | null;
   /**
-   * Excerpt
+   * Citation Id
    *
-   * The start of the extracted text, for a source preview.
+   * The id the answer cites this file by, as [id].
    */
-  excerpt?: string;
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
   /**
    * Error
    *
@@ -22659,6 +22683,201 @@ export type IncidentFormDtoWritable = {
 };
 
 /**
+ * IngestedNode
+ *
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type IngestedNodeWritable = {
+  /**
+   * Source
+   *
+   * Source URI (data lake URI).
+   */
+  source: string;
+  /**
+   * Source Origin
+   *
+   * Original source URI (e.g., SharePoint URL, external URL).
+   */
+  source_origin?: string | null;
+  /**
+   * Namespace
+   *
+   * The namespace of the document within its metadata.
+   */
+  namespace: string;
+  /**
+   * Version
+   *
+   * Document version.
+   */
+  version?: number;
+  /**
+   * Content Hash
+   *
+   * Hash of the document/node, helpful to track whether file changed.
+   */
+  content_hash?: string | null;
+  /**
+   * Number Of Pages
+   *
+   * Number of Pages in the Document.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Document Title
+   *
+   * Document title.
+   */
+  document_title?: string | null;
+  /**
+   * Language
+   *
+   * Document language.
+   */
+  language?: "de" | "en" | "fr" | "it" | null;
+  /**
+   * Created At
+   *
+   * Date source document was created (ISO format string)
+   */
+  created_at: string;
+  /**
+   * Updated At
+   *
+   * Date source document was last updated (ISO format string)
+   */
+  updated_at: string;
+  /**
+   * Inserted At
+   *
+   * Date source document was inserted into document store (ISO format string)
+   */
+  inserted_at: string;
+  /**
+   * Metadata
+   *
+   * Additional metadata for the document.
+   */
+  metadata?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Id
+   *
+   * The unique identifier of the Node.
+   */
+  id: string;
+  /**
+   * Content
+   *
+   * The textual content of the Node.
+   */
+  content: string;
+  /**
+   * Type
+   *
+   * Type (content or summary).
+   */
+  type?: "content" | "summary";
+  /**
+   * Content Type
+   *
+   * Content type (text, figure or table).
+   */
+  content_type?: "text" | "figure" | "table";
+  /**
+   * Document Id
+   *
+   * ID of original ref_doc.
+   */
+  document_id: string;
+  /**
+   * Start Char Idx
+   *
+   * The start character index of the Node.
+   */
+  start_char_idx?: number | null;
+  /**
+   * End Char Idx
+   *
+   * The end character index of the Node.
+   */
+  end_char_idx?: number | null;
+  /**
+   * Index
+   *
+   * Index counting position of node in document
+   */
+  index?: number | null;
+  /**
+   * Section Start Line
+   *
+   * Start line of the node in document
+   */
+  section_start_line?: number | null;
+  /**
+   * Section End Line
+   *
+   * End line of the node in document
+   */
+  section_end_line?: number | null;
+  /**
+   * H1
+   *
+   * H1 of the node in document
+   */
+  h1?: string | null;
+  /**
+   * H2
+   *
+   * H2 of the node in document
+   */
+  h2?: string | null;
+  /**
+   * H3
+   *
+   * H3 of the node in document
+   */
+  h3?: string | null;
+  /**
+   * H4
+   *
+   * H4 of the node in document
+   */
+  h4?: string | null;
+  /**
+   * H5
+   *
+   * H5 of the node in document
+   */
+  h5?: string | null;
+  /**
+   * H6
+   *
+   * H6 of the node in document
+   */
+  h6?: string | null;
+  /**
+   * Heading Level
+   *
+   * Heading level of the node in document
+   */
+  heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Score
+   *
+   * Score representing the relevance of the document.
+   */
+  score?: number | null;
+};
+
+/**
  * IngestorDTO
  */
 export type IngestorDtoWritable = {
@@ -25225,6 +25444,24 @@ export type MultiSelectWritable = {
 };
 
 /**
+ * NodeSummaryDTO
+ */
+export type NodeSummaryDtoWritable = {
+  /**
+   * Level
+   *
+   * Level of the summary
+   */
+  level: number;
+  /**
+   * Nodes
+   *
+   * List of nodes in the summary
+   */
+  nodes: Array<IngestedNodeWritable>;
+};
+
+/**
  * OpenChatHitlResponse
  *
  * Response indicating whether there's an open chat HITL request for a thread.
@@ -25771,6 +26008,12 @@ export type RagStartEventWritable = {
    * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
    */
   org_memory_namespaces?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
   [key: string]: unknown;
 };
 
@@ -26411,13 +26654,13 @@ export type RerankerEventWritable = {
    *
    * List of input documents provided to the reranker.
    */
-  input_nodes?: Array<IngestedNode> | null;
+  input_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Output Nodes
    *
    * List of documents outputted by the reranker.
    */
-  output_nodes?: Array<IngestedNode> | null;
+  output_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Query
    *
@@ -26556,7 +26799,7 @@ export type RetrieverEventWritable = {
    *
    * List of nodes retrieved by the retriever, including document IDs, scores, and content.
    */
-  nodes?: Array<IngestedNode> | null;
+  nodes?: Array<IngestedNodeWritable> | null;
   [key: string]: unknown;
 };
 

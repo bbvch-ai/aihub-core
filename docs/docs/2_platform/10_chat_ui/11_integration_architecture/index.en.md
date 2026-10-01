@@ -107,10 +107,24 @@ When a user attaches a file in an agent chat, the agent reads it; Open WebUI onl
   full text goes into the model's context, trimmed to fit, and the user is told when only part of a file fit.
 - **Later turns and edited messages**: every file of the current message branch is sent on every turn, so a file
   attached earlier keeps answering later questions, and an edited or regenerated message sees only its branch's files.
-- **Sources**: each file the answer drew on is listed as a source that opens the original upload. A file that cannot be
-  read is reported instead of silently skipped.
+- **Sources**: each file the model read is listed as a source that opens the original upload and shows the text the
+  model received. A file that cannot be read is reported instead of silently skipped.
 - **Temporary chats**: Open WebUI stores nothing and sends the text it extracted in the browser; the agent reads that
   text like any other attachment.
+
+## Inline citations
+
+Agent answers link each statement to the source it came from, the way Open WebUI does for its own retrieval.
+
+- **What the model cites**: every knowledge document and attached file in the prompt carries a short id, and the model
+  cites it as `[s3f9a1c]`. The ids stay stable across turns and retrievals because they derive from the document itself,
+  not from its position in a list.
+- **What Open WebUI shows**: Open WebUI links only numbers, counted over the sources of the message. The pipe lists each
+  document once, in the order the agent handed them over, and rewrites every cited id into that document's number while
+  the answer streams. An id the agent never listed as a source is dropped instead of shown as a dead marker.
+- **Which documents are listed**: the documents the model actually read, after reranking and including documents carried
+  over from an earlier turn, not every search hit. Each is labelled with its title or file name, and links to the
+  document when its source provides a reference URL.
 
 ## Configuration and deployment
 

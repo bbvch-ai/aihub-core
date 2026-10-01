@@ -1,11 +1,9 @@
 import logging
 
 from swiss_ai_hub.core.events.agent import AttachedFileEvent, AttachedFileStatus, UserUploadedFile
-from swiss_ai_hub.core.generative_ai import DocumentExtractor, ExtractedDocument
+from swiss_ai_hub.core.generative_ai import CitationId, DocumentExtractor, ExtractedDocument
 
 logger = logging.getLogger(__name__)
-
-EXCERPT_CHARACTERS = 500
 
 
 class AttachedFileReader:
@@ -32,15 +30,16 @@ class AttachedFileReader:
             return None, AttachedFileEvent(
                 file_id=file.file_id,
                 filename=file.filename,
+                citation_id=CitationId.of(file.file_id),
                 status=AttachedFileStatus.FAILED,
                 error=AttachedFileReader.describe_failure(error),
             )
         return document, AttachedFileEvent(
             file_id=file.file_id,
             filename=file.filename,
+            citation_id=CitationId.of(file.file_id),
             status=AttachedFileStatus.READ,
             number_of_pages=document.number_of_pages,
-            excerpt=document.content[:EXCERPT_CHARACTERS],
         )
 
     @staticmethod
