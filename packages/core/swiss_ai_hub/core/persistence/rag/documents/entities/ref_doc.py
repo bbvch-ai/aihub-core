@@ -98,6 +98,32 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def first_by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self | None:
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects(id=doc_id, data__metadata__namespace=namespace).first()
+
+    @classmethod
+    @trace_fn
+    def list_ingested_summaries(cls, db_alias: str, namespace: str) -> list["RefDoc"]:
+        """Every fully ingested document of a namespace, ordered by source and loaded with its metadata only.
+
+        The parsed text is the bulk of every row, and llama-index stores it twice: in `text` and again in the
+        undeclared `text_resource`. Projecting onto the fields a listing needs leaves out both, and any large field a
+        future llama-index adds, which is what keeps listing a few hundred documents cheap. Legacy rows without
+        `is_ingested` count as ingested, as everywhere else.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(
+                SwitchedRefDoc.objects(
+                    Q(data__metadata__namespace=namespace) & Q(data__metadata__is_ingested__ne=False),
+                    __raw__={"__type__": {"$ne": "placeholder"}},
+                )
+                .only("id", "type_", "data.metadata", "data.mimetype")
+                .order_by("data.metadata.source")
+            )
+
+    @classmethod
+    @trace_fn
     def by_namespace(
         cls,
         db_alias: str,
