@@ -112,3 +112,13 @@ rclone:
         label: Privater Schlüssel (PEM)
         help: PEM-kodierter privater Schlüssel als Alternative zu einem Passwort.
           Verschlüsselt gespeichert.
+structured:
+  display_name: Synchronisation von Geschäftsanwendungen
+  description: Hält die Datenbank mit Datensätzen aus Geschäftsanwendungen wie Issue-Trackern
+    und Wikis synchron. Jeder Datensatz wird zu einem Markdown-Dokument, sein Projekt
+    oder Bereich zu einem Namespace.
+  config:
+    source_kind:
+      label: Quellsystem
+      help: Aus welcher Anwendung die Datensätze gelesen werden. Ihre Einstellungen
+        erscheinen, sobald sie ausgewählt ist.

@@ -54,9 +54,13 @@ if TYPE_CHECKING:
         use_s3_service,
     )
     from swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings import SharePointSettings
+    from swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings import (
+        StructuredPipelineSettings,
+    )
 
 __all__ = [
     "SharePointSettings",
+    "StructuredPipelineSettings",
     "OpenTelemetrySettings",
     "MemoryRelation",
     "Memory",
@@ -107,6 +111,7 @@ __all__ = [
 
 _LAZY_IMPORTS = {
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
+    "StructuredPipelineSettings": "swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
