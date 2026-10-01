@@ -12,3 +12,7 @@ class AttachedFilesReadEvent(ControlEvent):
     block: Annotated[
         list[ChatMessage], Field(description="System messages carrying the attached files' text, or none.")
     ] = []
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call this answers when the model chose it in a tool loop; none otherwise."),
+    ] = None

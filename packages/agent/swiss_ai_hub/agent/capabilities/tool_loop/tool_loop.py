@@ -119,7 +119,7 @@ class ToolLoop(Capability):
         access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
-        context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
         offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
@@ -275,6 +275,7 @@ class ToolLoop(Capability):
     async def run_function_step(
         agent: Agent,
         call: ToolCallApprovedEvent,
+        request: RunToolLoopEvent,
         agent_config: AgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -282,7 +283,7 @@ class ToolLoop(Capability):
         access: AccessChecker | None = None,
     ) -> ToolResultEvent:
         """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
-        context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
         tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
         try:
             output = await tool.acall(**call.arguments)
@@ -360,7 +361,7 @@ class ToolLoop(Capability):
         """The set's tools, less those the profile disables, the call excludes or whose toggle is off."""
         blueprint = type(agent)
         tool_set = blueprint.tool_set(request.loop)
-        definitions = await tool_set.definitions(context.agent_config, context)
+        definitions = await tool_set.definitions(context)
         offered = []
         for name, definition in definitions.items():
             if name in loop.tool_loop.disabled_tools or (request.tools is not None and name not in request.tools):
@@ -370,6 +371,25 @@ class ToolLoop(Capability):
                 continue
             offered.append(definition)
         return offered
+
+    @staticmethod
+    def _context(
+        request: RunToolLoopEvent,
+        agent_config: AgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+        access: AccessChecker | None,
+    ) -> ToolContext:
+        return ToolContext(
+            agent_config=agent_config,
+            displayer=displayer,
+            t=t,
+            user=user,
+            access=access,
+            files=request.files,
+            knowledge_references=request.knowledge_references,
+        )
 
     @staticmethod
     async def _finish(
@@ -384,14 +404,21 @@ class ToolLoop(Capability):
             await displayer.display_chunk(notice, turn.chat_model_name)
             reply = turn.output_messages[-1]
             turn = turn.model_copy(
-                update={"output_messages": [*turn.output_messages[:-1], Message.from_string(
-                    role="assistant", content=(reply.content or "") + notice, name=turn.chat_model_name
-                )]}
+                update={
+                    "output_messages": [
+                        *turn.output_messages[:-1],
+                        Message.from_string(
+                            role="assistant", content=(reply.content or "") + notice, name=turn.chat_model_name
+                        ),
+                    ]
+                }
             )
         return ToolLoopFinishedEvent(loop=state.loop, answer=turn, stopped_early=exhausted)
 
     @staticmethod
-    async def _status(displayer: EventDisplayer, state: ToolLoopState, t: LocaleHandler, phase: str, done: bool) -> None:
+    async def _status(
+        displayer: EventDisplayer, state: ToolLoopState, t: LocaleHandler, phase: str, done: bool
+    ) -> None:
         await displayer.display_event(
             ToolLoopStatusEvent(loop=state.loop, description=t(f"agent.tool_loop.status.{phase}"), done=done)
         )

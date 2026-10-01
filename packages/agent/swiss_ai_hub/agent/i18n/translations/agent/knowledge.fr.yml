@@ -25,3 +25,13 @@ tool:
   description: "Recherche dans nos collections de connaissances et renvoie les passages les plus pertinents, avec des identifiants à citer. Utilise-le lorsque la réponse peut se trouver dans les documents de l'organisation. Collections disponibles :\n%{collections}"
   query: "Ce qu'il faut rechercher, sous forme de question autonome courte ou de mots-clés."
   collections: "Les collections à consulter, par identifiant ; omettre pour les consulter toutes."
+config:
+  retrieve_k:
+    label: "Sections par base"
+    help: "Combien de sections chaque base consultée renvoie avant que le reclassement ne garde les meilleures."
+  every_readable_collection:
+    label: "Toutes les collections lisibles par l'utilisateur"
+    help: "Le modèle peut consulter toutes les collections de connaissances que l'utilisateur peut lire, au lieu de celles listées ci-dessous."
+  source:
+    label: "Base de connaissances"
+    help: "Une base que le modèle peut consulter, entière ou limitée à certaines de ses collections."

@@ -40,9 +40,6 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     KnowledgeSearchedEvent,
-    ToolApprovalRequestEvent,
-    ToolApprovalResponseEvent,
-    ToolResultEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
@@ -70,7 +67,12 @@ from swiss_ai_hub.core.events.agent import (
     StoreOrganizationMemoryEvent,
     StoreUserMemoryEvent,
     ThoughtEvent,
+    ToolApprovalRequestEvent,
+    ToolApprovalResponseEvent,
     ToolEvent,
+    ToolLoopCondensedEvent,
+    ToolLoopStatusEvent,
+    ToolResultEvent,
     UnreadMailListedEvent,
     UserMessageEvent,
 )
@@ -105,6 +107,8 @@ DisplayEvents = (
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
+    | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]
+    | Annotated[ToolLoopCondensedEvent, Tag("ToolLoopCondensedEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]

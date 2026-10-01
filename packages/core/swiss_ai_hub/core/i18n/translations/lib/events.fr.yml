@@ -15,6 +15,9 @@ tool_result_event:
 tool_loop_status_event:
   name: "État de la boucle d'outils"
   description: "Ce que fait la boucle d'outils de l'agent."
+tool_loop_condensed_event:
+  name: "Boucle d'outils condensée"
+  description: "L'agent a condensé les résultats d'outils et les échanges précédents pour tenir dans le contexte du modèle."
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.
