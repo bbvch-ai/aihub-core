@@ -1,5 +1,11 @@
 ---
 steps:
+  read_as_tool:
+    name: "Angehängte Dateien als Werkzeug lesen"
+    description: "Liest die angehängten Dateien, die das Modell gewählt hat"
+  answer_tool_call:
+    name: "Dateien an das Modell zurückgeben"
+    description: "Gibt das Gelesene an die Werkzeugschleife des Modells zurück"
   read_attached_files:
     name: Angehängte Dateien lesen
     description: Liest die Dateien, die der Benutzer an die Unterhaltung angehängt
@@ -19,3 +25,10 @@ prompt:
     gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
     werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren
     Text einzufügen.
+tool:
+  label: "Angehängte Dateien lesen"
+  approval_summary: "Die angehängten Dateien lesen"
+  description: "Liest Dateien, die der Benutzer an dieses Gespräch angehängt hat, und gibt ihren Text mit zitierbaren IDs zurück. Von einer Datei, die zu gross ist, um sie ganz zu lesen, kommen die zur Anfrage passendsten Abschnitte. Angehängte Dateien:\n%{files}"
+  files: "Die zu lesenden Dateien nach ID; weglassen, um alle zu lesen."
+  query: "Was du in den Dateien suchst, damit von einer langen Datei die passenden Abschnitte bleiben."
+  nothing_readable: "Keine der gewählten Dateien konnte gelesen werden."

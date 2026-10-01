@@ -1,5 +1,11 @@
 ---
 steps:
+  read_as_tool:
+    name: "Leggere i file allegati come strumento"
+    description: "Legge i file allegati scelti dal modello"
+  answer_tool_call:
+    name: "Restituire i file al modello"
+    description: "Restituisce quanto letto al ciclo di strumenti del modello"
   read_attached_files:
     name: Leggi i file allegati
     description: Legge i file che l'utente ha allegato alla conversazione e aggiunge
@@ -18,3 +24,10 @@ prompt:
   unreadable: L'utente ha allegato «%{filename}», ma non è stato possibile leggerlo
     (%{error}). Comunica all'utente che questo file non è stato letto e suggerisci
     di allegarlo in un altro formato o di incollarne il testo.
+tool:
+  label: "Leggere i file allegati"
+  approval_summary: "Leggere i file allegati"
+  description: "Legge i file che l'utente ha allegato a questa conversazione e ne restituisce il testo, con identificativi da citare. Per un file troppo grande per essere letto per intero, restituisce le sezioni più pertinenti alla richiesta. File allegati:\n%{files}"
+  files: "I file da leggere, per identificativo; ometti per leggerli tutti."
+  query: "Cosa cerchi nei file, così che di un file lungo restino le sezioni pertinenti."
+  nothing_readable: "Nessuno dei file scelti ha potuto essere letto."

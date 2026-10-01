@@ -1,5 +1,11 @@
 ---
 steps:
+  read_as_tool:
+    name: "Lire les fichiers joints comme outil"
+    description: "Lit les fichiers joints choisis par le modèle"
+  answer_tool_call:
+    name: "Rendre les fichiers au modèle"
+    description: "Renvoie ce qui a été lu à la boucle d'outils du modèle"
   read_attached_files:
     name: Lire les fichiers joints
     description: Lit les fichiers que l'utilisateur a joints à la conversation et
@@ -18,3 +24,10 @@ prompt:
   unreadable: L'utilisateur a joint « %{filename} », mais ce fichier n'a pas pu
     être lu (%{error}). Indique-lui que ce fichier n'a pas pu être lu et propose
     de le joindre dans un autre format ou d'en coller le texte.
+tool:
+  label: "Lire les fichiers joints"
+  approval_summary: "Lire les fichiers joints"
+  description: "Lit les fichiers que l'utilisateur a joints à cette conversation et renvoie leur texte, avec des identifiants à citer. Pour un fichier trop grand pour être lu en entier, renvoie les sections les plus pertinentes pour la requête. Fichiers joints :\n%{files}"
+  files: "Les fichiers à lire, par identifiant ; omettre pour les lire tous."
+  query: "Ce que tu cherches dans les fichiers, pour qu'un long fichier garde les sections qui en parlent."
+  nothing_readable: "Aucun des fichiers choisis n'a pu être lu."

@@ -12,6 +12,10 @@ from swiss_ai_hub.core.events.agent import (
     RecallMemoryEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieveUserMemoryEvent,
+    ToolCallApprovedEvent,
+    ToolCallsDecidedEvent,
+    ToolDefinition,
+    ToolResultEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_organization_memory,
@@ -29,8 +33,23 @@ from swiss_ai_hub.agent.capabilities.memory.memory_step_functions import (
     do_retrieve_organization_memory,
     do_retrieve_user_memory,
 )
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
+
+RECALL_MEMORY_TOOL = "recall_memory"
+
+
+@precondition()
+async def recalls_memory(call: ToolCallApprovedEvent) -> bool:
+    return call.name == RECALL_MEMORY_TOOL
+
+
+@precondition()
+async def answers_a_recall_call(recalled: MemoryRecalledEvent, decided: ToolCallsDecidedEvent) -> bool:
+    return recalled.tool_call_id is not None and recalled.tool_call_id in decided.tool_call_ids
 
 
 class Memory(Capability):
@@ -42,6 +61,9 @@ class Memory(Capability):
     - `remember(...)` builds the memory-storage delegation directly, with no step behind it. Return it from
       the same step as `Conversation.complete(...)`, ahead of it, and the list order is what guarantees the
       delegation is published before the run tears down (ADR `2026_09_11`).
+
+    In a tool set, the model recalls what it needs when it needs it, through the same search, instead of every turn
+    starting with what memory holds for the question.
     """
 
     calls: ClassVar[dict] = {RecallMemoryEvent: (MemoryRecalledEvent,)}
@@ -49,6 +71,32 @@ class Memory(Capability):
 
     RecallRequest = RecallMemoryEvent
     Recalled = MemoryRecalledEvent
+
+    tool_name: ClassVar[str] = RECALL_MEMORY_TOOL
+    tool_options: ClassVar[ToolOptions] = ToolOptions(
+        label=AgentLocaleString.from_i18n_path("agent.memory.tool.label"),
+        approval_summary=AgentLocaleString.from_i18n_path("agent.memory.tool.approval_summary"),
+    )
+
+    @classmethod
+    def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
+        """Offered when the profile reads a memory scope the run can use: the user's needs a user to read for."""
+        config = context.agent_config
+        if not isinstance(config, MemoryFields):
+            return None
+        reads_user = context.user is not None and config.user_memory.enable_user_memory_retrieval
+        if not reads_user and config.org_memory is None:
+            return None
+        t = context.t
+        return ToolDefinition(
+            name=RECALL_MEMORY_TOOL,
+            description=t("agent.memory.tool.description"),
+            parameters={
+                "type": "object",
+                "properties": {"query": {"type": "string", "description": t("agent.memory.tool.query")}},
+                "required": ["query"],
+            },
+        )
 
     @staticmethod
     def recall(query: str, org_memory_namespaces: Sequence[str] = ()) -> RecallMemoryEvent:
@@ -100,7 +148,7 @@ class Memory(Capability):
         up on every turn of a degraded memory backend.
         """
         if not request.query.strip():
-            return [MemoryRecalledEvent()]
+            return [MemoryRecalledEvent(tool_call_id=request.tool_call_id)]
         user_retrieved, organization_retrieved = await asyncio.gather(
             Memory._recall_user(agent, request, agent_config, memory, t, user),
             Memory._recall_organization(agent, request, agent_config, memory, t, user),
@@ -122,7 +170,43 @@ class Memory(Capability):
             else []
         )
         events = [event for event in (user_retrieved, organization_retrieved) if event is not None]
-        return [*events, MemoryRecalledEvent(user_block=user_block, organization_block=organization_block)]
+        return [
+            *events,
+            MemoryRecalledEvent(
+                user_block=user_block, organization_block=organization_block, tool_call_id=request.tool_call_id
+            ),
+        ]
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.memory.steps.recall_as_tool.name"),
+        description=AgentLocaleString.from_i18n_path("agent.memory.steps.recall_as_tool.description"),
+        icon="mdi:brain",
+        precondition=recalls_memory,
+    )
+    async def tool_call_step(agent: Agent, call: ToolCallApprovedEvent) -> RecallMemoryEvent:
+        """The model chose to recall: the regular recall, for the query it asked with."""
+        return RecallMemoryEvent(query=str(call.arguments.get("query") or ""), tool_call_id=call.tool_call_id)
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.memory.steps.answer_tool_call.name"),
+        description=AgentLocaleString.from_i18n_path("agent.memory.steps.answer_tool_call.description"),
+        icon="mdi:brain",
+        precondition=answers_a_recall_call,
+    )
+    async def tool_result_step(
+        agent: Agent, recalled: MemoryRecalledEvent, decided: ToolCallsDecidedEvent, t: LocaleHandler
+    ) -> ToolResultEvent:
+        """Hand what memory holds back to the loop: its text for the model, its blocks for a gathered answer."""
+        block = [message for scope in recalled.blocks for message in scope]
+        content = "\n\n".join(message.content for message in block if message.content)
+        return ToolResultEvent(
+            tool_call_id=recalled.tool_call_id,
+            name=RECALL_MEMORY_TOOL,
+            content=content or t("agent.memory.tool.nothing_remembered"),
+            block=block,
+        )
 
     @staticmethod
     async def _recall_user(

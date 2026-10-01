@@ -1,5 +1,11 @@
 ---
 steps:
+  recall_as_tool:
+    name: "Richiamare la memoria come strumento"
+    description: "Cerca nella memoria ciò che il modello ha chiesto"
+  answer_tool_call:
+    name: "Restituire i ricordi al modello"
+    description: "Restituisce ciò che la memoria contiene al ciclo di strumenti del modello"
   recall:
     name: Richiama la memoria
     description: Cerca le memorie dell'utente e dell'organizzazione per la query del turno
@@ -24,3 +30,9 @@ config:
     help: Modello che estrae e riconcilia le memorie utente. L'estrazione è breve e meccanica,
       quindi di solito basta un modello più piccolo. Lasciare disabilitato per usare il modello
       predefinito della piattaforma; abilitandolo si parte dallo stesso modello.
+tool:
+  label: "Richiamare la memoria"
+  approval_summary: "Richiamare ciò che è memorizzato su «{query}»"
+  description: "Cerca ciò che è memorizzato sull'utente e sull'organizzazione: preferenze, fatti e decisioni di conversazioni precedenti. Usalo quando la risposta può dipendere da chi è l'utente o da qualcosa concordato in precedenza."
+  query: "Cosa richiamare, come breve domanda autonoma o parole chiave."
+  nothing_remembered: "Non c'è nulla di memorizzato al riguardo."
