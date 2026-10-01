@@ -35,8 +35,19 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event import RAGFailureStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event import RAGSuccessStopEvent
+    from swiss_ai_hub.core.events.agent.control.stop.refusal_reason import RefusalReason
+    from swiss_ai_hub.core.events.agent.control.stop.refusal_stop_event import RefusalStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
+    from swiss_ai_hub.core.events.agent.conversation.complete_conversation_event import CompleteConversationEvent
+    from swiss_ai_hub.core.events.agent.conversation.compose_context_event import ComposeContextEvent
+    from swiss_ai_hub.core.events.agent.conversation.context_composed_event import ContextComposedEvent
+    from swiss_ai_hub.core.events.agent.conversation.contextualize_conversation_event import (
+        ContextualizeConversationEvent,
+    )
+    from swiss_ai_hub.core.events.agent.conversation.conversation_contextualized_event import (
+        ConversationContextualizedEvent,
+    )
     from swiss_ai_hub.core.events.agent.cost.cost_event import CostEvent
     from swiss_ai_hub.core.events.agent.cost.llm_cost_event import LLMCostEvent
     from swiss_ai_hub.core.events.agent.discovery.agent_class_discovery_response_event import (
@@ -103,6 +114,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event import (
         AddUserMemoryToChatHistoryEvent,
     )
+    from swiss_ai_hub.core.events.agent.memory.recall.memory_recalled_event import MemoryRecalledEvent
+    from swiss_ai_hub.core.events.agent.memory.recall.recall_memory_event import RecallMemoryEvent
     from swiss_ai_hub.core.events.agent.memory.request.memory_storage_requested_event import (
         MemoryStorageRequestedEvent,
     )
@@ -137,6 +150,13 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
 __all__ = [
+    "CompleteConversationEvent",
+    "ComposeContextEvent",
+    "ContextComposedEvent",
+    "ContextualizeConversationEvent",
+    "ConversationContextualizedEvent",
+    "MemoryRecalledEvent",
+    "RecallMemoryEvent",
     "AddMemoryToChatHistoryEvent",
     "AddOrganizationMemoryToChatHistoryEvent",
     "AddUserMemoryToChatHistoryEvent",
@@ -205,6 +225,8 @@ __all__ = [
     "MetaQuestionDetectedEvent",
     "NotAMetaQuestionEvent",
     "RAGFailureReason",
+    "RefusalReason",
+    "RefusalStopEvent",
     "RAGFailureStopEvent",
     "RAGStartEvent",
     "RAGStopEvent",
@@ -237,6 +259,13 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
+    "CompleteConversationEvent": "swiss_ai_hub.core.events.agent.conversation.complete_conversation_event",
+    "ComposeContextEvent": "swiss_ai_hub.core.events.agent.conversation.compose_context_event",
+    "ContextComposedEvent": "swiss_ai_hub.core.events.agent.conversation.context_composed_event",
+    "ContextualizeConversationEvent": "swiss_ai_hub.core.events.agent.conversation.contextualize_conversation_event",
+    "ConversationContextualizedEvent": "swiss_ai_hub.core.events.agent.conversation.conversation_contextualized_event",
+    "MemoryRecalledEvent": "swiss_ai_hub.core.events.agent.memory.recall.memory_recalled_event",
+    "RecallMemoryEvent": "swiss_ai_hub.core.events.agent.memory.recall.recall_memory_event",
     "AddMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_memory_to_chat_history_event",
     "AddOrganizationMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_organization_memory_to_chat_history_event",
     "AddUserMemoryToChatHistoryEvent": "swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event",
@@ -305,6 +334,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "MetaQuestionDetectedEvent": "swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event",
     "NotAMetaQuestionEvent": "swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event",
     "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
+    "RefusalReason": "swiss_ai_hub.core.events.agent.control.stop.refusal_reason",
+    "RefusalStopEvent": "swiss_ai_hub.core.events.agent.control.stop.refusal_stop_event",
     "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
     "RAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_stop_event",

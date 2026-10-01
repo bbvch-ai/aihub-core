@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
-from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, RAGFailureReason, RAGFailureStopEvent
+from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, RefusalReason, RefusalStopEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
@@ -98,8 +98,8 @@ class TestAnInputTooLargeForTheModelIsRefused:
 
         result = await _run([oversized], oversized, displayer)
 
-        assert isinstance(result, RAGFailureStopEvent)
-        assert result.reason == RAGFailureReason.INPUT_TOO_LARGE
+        assert isinstance(result, RefusalStopEvent)
+        assert result.reason == RefusalReason.INPUT_TOO_LARGE
 
     @pytest.mark.asyncio
     async def test_the_refusal_is_streamed_to_the_user_and_carried_on_the_event(self):
@@ -110,8 +110,8 @@ class TestAnInputTooLargeForTheModelIsRefused:
         result = await _run([oversized], oversized, displayer)
 
         displayer.display_chunk.assert_awaited_once()
-        assert displayer.display_chunk.await_args.args[0] == result.answer
-        assert "too large" in result.answer
+        assert displayer.display_chunk.await_args.args[0] == result.output_messages[-1].content
+        assert "too large" in result.output_messages[-1].content
         displayer.display_thought.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -153,7 +153,7 @@ class TestAnInputTooLargeForTheModelIsRefused:
         assert isinstance(
             await _run([turn], turn, displayer, windows=(MODEL_WINDOW, MODEL_WINDOW)), LimitChatHistoryEvent
         )
-        assert isinstance(await _run([turn], turn, _displayer(), windows=(MODEL_WINDOW, 8_192)), RAGFailureStopEvent)
+        assert isinstance(await _run([turn], turn, _displayer(), windows=(MODEL_WINDOW, 8_192)), RefusalStopEvent)
 
 
 class TestAnUnknownWindowLeavesTheRunAlone:

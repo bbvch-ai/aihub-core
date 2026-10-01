@@ -13,8 +13,8 @@ moving; our copy is a point-in-time snapshot wearing the same name. Nobody ran t
 2026-09-22, so compose served Langfuse **3.147.0** while upstream's `:3` had reached **3.225.8** — eight months and 78
 minor versions of drift, on a component that stores full prompt and response content.
 
-`aihub-k8s` pulls `docker.io/langfuse/langfuse:3` directly, so Kubernetes ran 3.225.x. One tag name, two registries,
-two realities, and nothing comparing them.
+`aihub-k8s` pulls `docker.io/langfuse/langfuse:3` directly, so Kubernetes ran 3.225.x. One tag name, two registries, two
+realities, and nothing comparing them.
 
 Four properties kept this invisible:
 
@@ -28,10 +28,10 @@ Four properties kept this invisible:
    `git diff --exit-code`, and nothing asserts the mirror actually serves the tag we pinned.
 4. **No owner.** A manual developer command with no schedule and no runbook.
 
-The drift was not cosmetic. Langfuse added a private-address check on LLM connections in 3.167.1, so 3.225.x rejects
-our in-network base URLs with `400 Blocked IP address detected` while 3.147.0 accepts them. That gap is the sole reason
-the evaluator-provisioning bug presented as Kubernetes-only; the defect was in our code on every deployment the whole
-time. See `2026_09_22_langfuse_llm_connections_stay_in_cluster.md`, which names this work as its follow-up.
+The drift was not cosmetic. Langfuse added a private-address check on LLM connections in 3.167.1, so 3.225.x rejects our
+in-network base URLs with `400 Blocked IP address detected` while 3.147.0 accepts them. That gap is the sole reason the
+evaluator-provisioning bug presented as Kubernetes-only; the defect was in our code on every deployment the whole time.
+See `2026_09_22_langfuse_llm_connections_stay_in_cluster.md`, which names this work as its follow-up.
 
 A second defect falls out of the same mechanism: `docker pull` resolves a multi-arch index down to the pushing host's
 single platform. Upstream `langfuse/langfuse:3.225.8` is a manifest list (`linux/amd64` + `linux/arm64`); the mirror's
@@ -40,11 +40,12 @@ single platform. Upstream `langfuse/langfuse:3.225.8` is a manifest list (`linux
 ## Decision Drivers
 
 - **Reproducibility.** The release bundle promises version-pinned images to self-hosted operators. A floating tag voids
-  that promise for the services it covers, and `generate_compose.py` passes flat-string tags through to bundles verbatim.
-- **Irreversibility.** Langfuse migrations are forward-only, so a surprise upgrade cannot be undone at the data layer.
-  A version bump must be a deliberate, reviewed act.
-- **The mirror is the only pull source** for non-dev compose. A pin without a corresponding mirror push is not a
-  version — it is an outage.
+  that promise for the services it covers, and `generate_compose.py` passes flat-string tags through to bundles
+  verbatim.
+- **Irreversibility.** Langfuse migrations are forward-only, so a surprise upgrade cannot be undone at the data layer. A
+  version bump must be a deliberate, reviewed act.
+- **The mirror is the only pull source** for non-dev compose. A pin without a corresponding mirror push is not a version
+  — it is an outage.
 - **Cross-repo convergence.** The Helm chart lives in `aihub-k8s`, so compose and Kubernetes agreeing on a version has
   to be explicit rather than assumed.
 - **Detectability without vigilance.** The failure mode was eight months of nobody looking. Any fix that depends on

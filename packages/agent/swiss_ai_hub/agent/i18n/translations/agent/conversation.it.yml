@@ -1,0 +1,45 @@
+---
+config:
+  number_of_input_tokens:
+    label: Token di input max
+    help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione del
+      contesto per gestire i costi ed evitare di superare i limiti del modello.
+  condense_question:
+    label: Condensa la domanda
+    help: Riformula l'ultimo messaggio in una domanda autonoma a partire dalla conversazione,
+      prima di consultare la memoria, il retrieval e altro contesto. Disattivato, l'ultimo
+      messaggio viene usato così com'è.
+steps:
+  derive_query:
+    name: Deriva la query
+    description: Determina la domanda a cui questo turno risponde, l'ultimo messaggio così
+      com'è oppure condensato dalla conversazione.
+  compose_context:
+    name: Componi il contesto
+    description: Unisce i blocchi di contesto richiesti, come le memorie, nella cronologia
+      della chat entro il budget di input del modello.
+  complete:
+    name: Completa la conversazione
+    description: Suggerisce domande di follow-up dalla risposta e termina l'esecuzione con
+      l'evento di stop richiesto.
+  limit_chat_history:
+    name: Limita cronologia chat
+    description: Tronca i messaggi di chat in arrivo per rispettare il limite di token configurato.
+  recall_memory:
+    name: Richiama la memoria
+    description: Richiede le memorie dell'utente e dell'organizzazione per la query del turno.
+  assemble_prompt:
+    name: Assembla il prompt
+    description: Richiede la cronologia della chat con il contesto richiamato unito.
+thoughts:
+  condensation_empty: Il condensatore non ha prodotto alcuna domanda autonoma, quindi questo
+    turno non ha una query utilizzabile. La richiesta viene rifiutata invece di usare il messaggio
+    grezzo.
+  input_too_large: 'L''input non rientra nella finestra di contesto del modello: circa %{tokens}
+    token a fronte di un budget utilizzabile di %{budget}. La chiamata al modello viene rifiutata.'
+messages:
+  condensation_empty: Non sono riuscito a capire cosa cercare da questo messaggio. Riformula
+    la domanda e riprova.
+  input_too_large: Questo file è troppo grande perché io possa leggerlo in una volta sola.
+    Carica un file più piccolo, dividilo in parti, oppure passa a un assistente che usa un
+    modello con una finestra di contesto più ampia.

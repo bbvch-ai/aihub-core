@@ -239,6 +239,14 @@ event:
     assistant: Assistent
     system: System
     user: Benutzer/in
+  contextComposed:
+    summary: 'Kontext für das Modell zusammengestellt: {count} Nachricht | Kontext
+      für das Modell zusammengestellt: {count} Nachrichten'
+    description: Der Chat-Verlauf, den das Modell erhalten hat, mit allen abgerufenen
+      Kontextblöcken
+    assistant: Assistent
+    system: System
+    user: Benutzer/in
   reranker:
     topDocuments: 'Top {count} relevanteste Dokumente:'
     query: Suchanfrage
@@ -518,8 +526,8 @@ knowledge:
     title: Wissensdatenbank hinzufügen
     description: Eine neue Self-Service-Wissensdatenbank erstellen
   source:
-    description: 'Synchronisiert aus {name}'
-    edit: 'Quelle bearbeiten'
+    description: Synchronisiert aus {name}
+    edit: Quelle bearbeiten
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -559,16 +567,18 @@ knowledge:
         eine Pipeline läuft.
       steps:
         basic_info: Grundinformationen
-        source: 'Quelle'
+        source: Quelle
     edit_source:
-      title: 'Quelle von {name}'
-      success: 'Quelle aktualisiert'
-      error: 'Quelle konnte nicht aktualisiert werden'
-      switch_to_manual: 'Auf manuellen Upload umstellen'
+      title: Quelle von {name}
+      success: Quelle aktualisiert
+      error: Quelle konnte nicht aktualisiert werden
+      switch_to_manual: Auf manuellen Upload umstellen
       replace_documents:
-        header: 'Inhalt an die Quelle übergeben?'
-        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e). Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation jede Datei entfernt, die die Quelle nicht hat.'
-        accept: 'Bestehende Dokumente ersetzen'
+        header: Inhalt an die Quelle übergeben?
+        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e).
+          Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation
+          jede Datei entfernt, die die Quelle nicht hat.'
+        accept: Bestehende Dokumente ersetzen
     edit:
       title: Sammlung bearbeiten
     database:
@@ -582,12 +592,13 @@ knowledge:
       validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
         und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
     source:
-      label: 'Quelle'
-      placeholder: 'Wählen Sie, woher die Dokumente kommen'
-      help: 'Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron; jeder Ordner der obersten Ebene wird zu einem Namespace.'
+      label: Quelle
+      placeholder: Wählen Sie, woher die Dokumente kommen
+      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron;
+        jeder Ordner der obersten Ebene wird zu einem Namespace.
       manual_upload:
-        label: 'Manueller Upload'
-        description: 'Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.'
+        label: Manueller Upload
+        description: Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.
     ingestor:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen
@@ -1017,8 +1028,9 @@ support:
   submit: Meldung senden
   submitting: Wird gesendet…
   sent: Meldung gesendet
-  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per E-Mail.'
+  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per
+    E-Mail.'
   send_failed: Meldung nicht gesendet
   send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
-  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte wenden Sie
-    sich an Ihre Administration.
+  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte
+    wenden Sie sich an Ihre Administration.

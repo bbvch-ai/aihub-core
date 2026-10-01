@@ -18,10 +18,10 @@ from swiss_ai_hub.core.agents import AgentRef
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
+    CompleteConversationEvent,
     ExpertRejectEvent,
     HumanInTheLoopConfirmation,
     HumanInTheLoopConfirmationRequestEvent,
-    LLMEvent,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
@@ -281,9 +281,9 @@ def _(expert_rag_agent_runner: AgentTestRunner):
     )
 
 
-@then("an LLMEvent is present with a generated response")
+@then("the answer is handed to the completion")
 def _(expert_rag_agent_runner: AgentTestRunner):
-    llm_event = expert_rag_agent_runner.get_event_of_class(LLMEvent)
+    llm_event = expert_rag_agent_runner.get_event_of_class(CompleteConversationEvent).answer
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned"
 

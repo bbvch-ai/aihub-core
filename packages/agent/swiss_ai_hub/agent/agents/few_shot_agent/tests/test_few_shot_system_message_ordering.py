@@ -8,15 +8,17 @@ Pure unit test — create_few_shot_examples touches no infrastructure.
 """
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import (
+    AgentSuitabilityAcceptEvent,
+    ConversationContextualizedEvent,
+    MemoryRecalledEvent,
+    UserMessageEvent,
+)
 from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
-from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_question_condenser_event import (
-    FewShotStandaloneQuestionCondenserEvent,
-)
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
@@ -37,11 +39,10 @@ def _config() -> FewShotAgentConfig:
 
 async def _build_context(chat_history: list[ChatMessage]) -> list[ChatMessage]:
     event = await FewShotAgent().create_few_shot_examples(
-        event=FewShotStandaloneQuestionCondenserEvent(
-            condensed_chat_message=ChatMessage(role=MessageRole.USER, content="What is Fight Club about?")
-        ),
+        ctx=ConversationContextualizedEvent(history=chat_history, query="What is Fight Club about?", condensed=True),
+        _=AgentSuitabilityAcceptEvent(reason="fits"),
+        memories=MemoryRecalledEvent(),
         start_event=UserMessageEvent(messages=chat_history, user=fake_user(), locale="en"),
-        chat_history_event=LimitChatHistoryEvent(limited_history=chat_history),
         agent_config=_config(),
     )
     return event.full_context

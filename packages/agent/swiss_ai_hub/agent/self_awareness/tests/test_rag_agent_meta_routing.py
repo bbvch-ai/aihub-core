@@ -34,7 +34,7 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
 
 pytestmark = pytest.mark.self_hosted
 
-RAG_MODULE = "swiss_ai_hub.agent.agents.rag_agent.rag_agent"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 
 def _config(agent_id: str) -> RAGAgentConfig:
@@ -52,6 +52,7 @@ def _config(agent_id: str) -> RAGAgentConfig:
         description=LocaleString(en="A test RAG agent."),
         llm=LLMConfig(model_name="text-generation/dummy"),
         retrievers=[],
+        condense_question=False,
         number_of_input_tokens=8192,
         context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
     )
@@ -83,10 +84,10 @@ async def test_meta_question_answers_without_retrieval(monkeypatch):
     async def fake_generate_follow_ups(*_args, **_kwargs):
         pass
 
-    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
-    monkeypatch.setattr(f"{RAG_MODULE}.do_answer_meta_question", fake_answer)
-    monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
-    monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_answer_meta_question", fake_answer)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.generate_title", fake_generate_title)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_answers"))
     async with runner.test_run(delay_before_stop=30) as topic:
@@ -119,10 +120,10 @@ async def test_meta_question_branch_generates_title_and_follow_ups(monkeypatch):
     async def fake_generate_follow_ups(chat_messages, llm_config, displayer, t, user):
         await displayer.display_event(FollowUpQuestionsEvent(questions=["Fake follow-up?"]))
 
-    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
-    monkeypatch.setattr(f"{RAG_MODULE}.do_answer_meta_question", fake_answer)
-    monkeypatch.setattr(f"{RAG_MODULE}.generate_title", fake_generate_title)
-    monkeypatch.setattr(f"{RAG_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_answer_meta_question", fake_answer)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.generate_title", fake_generate_title)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.generate_follow_up_questions", fake_generate_follow_ups)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_metadata"))
     async with runner.test_run(delay_before_stop=30) as topic:
@@ -141,7 +142,7 @@ async def test_normal_question_opens_the_gate(monkeypatch):
     async def fake_detect(*, user_query, llm_config, displayer, t, user):
         return NotAMetaQuestionEvent(reasoning="normal task")
 
-    monkeypatch.setattr(f"{RAG_MODULE}.do_detect_meta_question", fake_detect)
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
 
     runner = AgentTestRunner(agent_type=RAGAgent, agent_config=_config("meta_routing_gate"))
     async with runner.test_run(delay_before_stop=20) as topic:
@@ -149,7 +150,7 @@ async def test_normal_question_opens_the_gate(monkeypatch):
 
     assert runner.has_event_of_class(NotAMetaQuestionEvent)
     # The gate opened: the condense step (first step past the gated entry steps) ran.
-    from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent
+    from swiss_ai_hub.core.events.agent import ConversationContextualizedEvent
 
-    assert runner.has_event_of_class(LimitChatHistoryEvent), "gate did not release the normal pipeline"
+    assert runner.has_event_of_class(ConversationContextualizedEvent), "gate did not release the normal pipeline"
     assert not runner.has_event_of_class(MetaQuestionDetectedEvent)

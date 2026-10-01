@@ -255,3 +255,11 @@ mail_batch_drafted_event:
   name: Lot Rédigé
   description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
     au dossier des brouillons pour qu'un humain les révise et les envoie.
+context_composed_event:
+  name: Contexte enrichi
+  description: L'historique de chat que le modèle reçoit, avec tous les blocs de contexte
+    récupérés
+refusal_stop_event:
+  name: Tour refusé
+  description: L'assistant a refusé ce tour à cause de l'entrée et en a expliqué la
+    raison à l'utilisateur.

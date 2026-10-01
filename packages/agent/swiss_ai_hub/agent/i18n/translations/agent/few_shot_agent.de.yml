@@ -27,10 +27,10 @@ steps:
   respond_with_llm:
     name: Mit LLM antworten
     description: Generiert eine Antwort mit dem LLM basierend auf Few-Shot-Beispielen.
-  stop:
-    name: Stoppen
-    description: Stoppt den Agenten, wenn die Anfrage von der Eignungsprüfung abgelehnt
-      wird.
+  reject_unsuitable_request:
+    name: Ungeeignete Anfrage ablehnen
+    description: Beendet den Lauf mit einer gestreamten Ablehnung, wenn der Eignungs-Guard
+      die Anfrage ablehnt.
 thoughts:
   input_too_large: 'Die Eingabe passt nicht in das Kontextfenster des Modells: rund
     %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des

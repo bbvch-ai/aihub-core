@@ -1,0 +1,26 @@
+---
+steps:
+  recall:
+    name: Richiama la memoria
+    description: Cerca le memorie dell'utente e dell'organizzazione per la query del turno
+      e le consegna come blocchi di contesto.
+  store_user_memory:
+    name: Archivia memoria utente
+    description: Persiste gli apprendimenti della conversazione nella memoria utente a lungo
+      termine per interazioni future
+config:
+  enable_user_memory_retrieval:
+    label: Abilita recupero memoria utente
+    help: Se recuperare le memorie specifiche dell'utente per un contesto personalizzato.
+  rerank_user_memory:
+    label: Riordina memoria utente
+    help: Riordina i risultati della ricerca della memoria utente con il reranker configurato
+      per una maggiore pertinenza. Aumenta la latenza e il costo.
+  enable_user_memory_storage:
+    label: Abilita archiviazione memoria utente
+    help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
+  memory_llm:
+    label: Modello di memoria
+    help: Modello che estrae e riconcilia le memorie utente. L'estrazione è breve e meccanica,
+      quindi di solito basta un modello più piccolo. Lasciare disabilitato per usare il modello
+      predefinito della piattaforma; abilitandolo si parte dallo stesso modello.

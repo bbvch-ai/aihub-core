@@ -18,6 +18,7 @@ from swiss_ai_hub.core.events.agent import (
     MailClassificationRef,
     RAGFailureStopEvent,
     RAGStartEvent,
+    RefusalStopEvent,
     StopEvent,
     UnreadMailListedEvent,
 )
@@ -620,8 +621,12 @@ class EmailClassificationAgent(Agent):
         # which is the most expensive moment there is to fail.
         stop_event = answer.stop_event
         returned_answer = getattr(stop_event, "answer", None)
-        if isinstance(stop_event, RAGFailureStopEvent) or not (returned_answer or "").strip():
-            reason = stop_event.reason if isinstance(stop_event, RAGFailureStopEvent) else "no usable answer"
+        if isinstance(stop_event, RAGFailureStopEvent | RefusalStopEvent) or not (returned_answer or "").strip():
+            reason = (
+                stop_event.reason
+                if isinstance(stop_event, RAGFailureStopEvent | RefusalStopEvent)
+                else "no usable answer"
+            )
             logger.info(
                 "[draft] uid=%s could not be grounded (%s) — drafting the no-information text", message_id, reason
             )
