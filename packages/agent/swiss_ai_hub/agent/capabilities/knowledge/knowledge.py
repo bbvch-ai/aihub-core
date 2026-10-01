@@ -116,7 +116,11 @@ class Knowledge(Capability):
                 block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
         if refused_labels:
             collections = ", ".join(f'"{label}"' for label in refused_labels)
-            block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.knowledge.prompt.refused", collections=collections)))
+            block.append(
+                ChatMessage(
+                    role=MessageRole.SYSTEM, content=t("agent.knowledge.prompt.refused", collections=collections)
+                )
+            )
         if not found and not refused_labels:
             block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.knowledge.prompt.nothing_found")))
         return block

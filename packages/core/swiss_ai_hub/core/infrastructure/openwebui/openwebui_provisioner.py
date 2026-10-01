@@ -90,6 +90,7 @@ type AiHubToOwuiUserIdMapping = dict[str, str]
 type DesiredGroupMembers = dict[str, list[str]]
 """Maps an ``aihub:{tenant}:{role}`` group name to the AI-Hub user IDs that belong in it."""
 
+
 class OpenWebuiProvisioner:
     def __init__(self, *, redis: Redis) -> None:
         self._settings = OpenWebuiSettings()
