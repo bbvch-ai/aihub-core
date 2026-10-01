@@ -57,6 +57,9 @@ class UserMessageEvent(StartEvent):
             "understand what the user is asking for and what has been discussed so far.",
         ),
     ] = []
+    capability_toggles: Annotated[
+        dict[str, bool], Field(description="Toggles to enable or disable specific agent capabilities")
+    ] = {}
     files: Annotated[
         list[UserUploadedFile] | None,
         Field(
