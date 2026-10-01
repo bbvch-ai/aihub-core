@@ -52,6 +52,12 @@
           height="5rem"
         />
       </template>
+      <div
+        v-else-if="appsError"
+        class="col-span-4 py-4 text-center text-sm text-surface-500 dark:text-surface-400"
+      >
+        {{ t('http_error.code.503') }}
+      </div>
       <template
         v-else
       >
@@ -104,7 +110,7 @@ const router = useRouter()
 const route = useRoute()
 const tenantPath = useTenantPath()
 
-const { apps, appsLoading } = useApps()
+const { apps, appsLoading, appsError } = useApps()
 const { t } = useI18n()
 
 const shownApps = computed(() => {

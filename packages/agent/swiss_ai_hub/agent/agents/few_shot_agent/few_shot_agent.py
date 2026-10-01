@@ -11,6 +11,7 @@ from swiss_ai_hub.core.events.agent import (
     Message,
     RefusalReason,
     RefusalStopEvent,
+    StopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -48,6 +49,7 @@ class FewShotAgent(Agent):
         "agent.few_shot_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:book"
+    completion_stops: ClassVar[tuple[type[StopEvent], ...]] = (RefusalStopEvent,)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),

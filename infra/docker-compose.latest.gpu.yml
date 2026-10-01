@@ -1898,7 +1898,12 @@ services:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
     restart: always
-    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
+      - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
     depends_on:
       otel-collector:
         condition: service_started
@@ -1977,6 +1982,10 @@ services:
       # --- SCIM 2.0 Provisioning ---
       SCIM_ENABLED: 'true'
       SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      # The API creates each user's account over SCIM before their first chat login. Without a
+      # provider, OpenWebUI 0.11.3 cannot record the account's external id: creation fails with a
+      # 500, and the account never appears in the SCIM user list the API reads group members from.
+      SCIM_AUTH_PROVIDER: oidc
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3
@@ -4000,3 +4009,7 @@ networks:
     name: code-sandbox
     driver: bridge
     internal: true
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "https://${DOMAIN}"}

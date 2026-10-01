@@ -256,7 +256,7 @@ class Form(BaseModel):
         For PrimeVueElement instances:
         - Auto-assigns the field name as the element's 'name'
         - Auto-assigns a unique 'id' using the prefix path (e.g., 'teams_config.channel_id')
-        - Determines 'required' based on whether None is in the field's type union
+        - Determines 'required' based on whether None is in the field's type union, unless set explicitly
         - Sets default value from Pydantic field if element has no explicit value
         """
         if isinstance(element, PrimeVueElement):
@@ -276,7 +276,9 @@ class Form(BaseModel):
             has_blank_default = field_info.default == ""
             allows_none = self._annotation_allows_none(field_info.annotation)
             is_required = not is_skip_required and not allows_none and not has_blank_default
-            element_copy.required = is_required
+            # An explicit `required=True` survives a nullable annotation: a field behind its enable toggle is
+            # only rendered while switched on, and may then still demand a value.
+            element_copy.required = is_required or element.required
             if allows_none and not is_skip_required:
                 element_copy.nullable = True
                 element_copy.default_enabled = self._default_is_non_null(field_info)

@@ -117,7 +117,7 @@ const config: DefaultConfigOptions = {
       props: ['options', 'placeholder'],
     }),
     localeInput: createInput(LocaleInput, {
-      props: ['inputType', 'rows', 'placeholder'],
+      props: ['inputType', 'rows', 'placeholder', 'allowTranslation'],
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],

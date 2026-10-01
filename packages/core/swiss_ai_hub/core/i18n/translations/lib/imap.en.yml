@@ -6,12 +6,31 @@ config:
   port:
     label: IMAP Port
     help: Port of the IMAP server. Use 993 for implicit TLS.
+  auth_method:
+    label: Authentication
+    help: How the agent logs in to the mailbox. Choose Microsoft 365 (OAuth 2.0) for
+      Microsoft 365 mailboxes where basic authentication is disabled; it requires
+      an app registration in Microsoft Entra ID.
+    password_label: Username and password
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Username
-    help: Mailbox login, usually the full email address.
+    help: Mailbox login, usually the full email address. With Microsoft 365 (OAuth
+      2.0), the address of the mailbox to process.
   password:
     label: Password
     help: Mailbox password or app-specific token.
+  tenant_id:
+    label: Tenant ID
+    help: Directory (tenant) ID of your Microsoft Entra ID tenant.
+  client_id:
+    label: Client ID
+    help: Application (client) ID of the Entra ID app registration that was granted
+      IMAP access to this mailbox.
+  client_secret:
+    label: Client Secret
+    help: Client secret of the Entra ID app registration. Secrets expire, so renew
+      it here before its expiry date.
   use_tls:
     label: Use TLS
     help: Connect over implicit TLS. Disable only for plaintext test servers.

@@ -2,6 +2,7 @@ import logging
 from functools import lru_cache
 
 from keycloak import KeycloakAdmin, KeycloakGetError
+from redis.asyncio import Redis
 
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
@@ -12,6 +13,8 @@ from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn 
 logger = logging.getLogger(__name__)
 
 TENANTS_GROUP_PATH = "/tenants"
+SINGLE_VALUED_ATTRIBUTES = ("active_tenant_id", "preferred_locale")
+ACTIVE_TENANT_LOCK_TTL_SECONDS = 30
 
 _superuser_id_cache: str | None = None
 
@@ -294,22 +297,38 @@ class KeycloakAdminService:
         return active_tenant[0] if active_tenant else None
 
     @staticmethod
+    async def _update_attributes(user_id: str, changes: dict[str, str | None]) -> None:
+        """GET-merge-PUT of custom attributes; a ``None`` value removes the attribute.
+
+        The whole user is resent to preserve its data and satisfy Keycloak's user profile
+        validation. Concurrent writes can leave Keycloak storing a single-valued attribute
+        several times, and resending that fails validation (``error-invalid-multivalued-size``)
+        for every later write, so single-valued attributes are trimmed to one value first.
+        """
+        admin = _create_admin()
+        user = await admin.a_get_user(user_id)
+        attributes = user.get("attributes", {})
+        for name in SINGLE_VALUED_ATTRIBUTES:
+            if attributes.get(name):
+                attributes[name] = attributes[name][:1]
+        for name, value in changes.items():
+            if value is None:
+                attributes.pop(name, None)
+            else:
+                attributes[name] = [value]
+        user["attributes"] = attributes
+        await admin.a_update_user(user_id, user)
+
+    @staticmethod
     @trace_fn
     async def set_active_tenant(user_id: str, tenant_id: str) -> None:
         """Writes the active_tenant_id custom attribute on the Keycloak user.
 
-        Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
-        user profile validation. Notifies ``AccessChangeHook`` so downstream caches
-        invalidate.
+        Notifies ``AccessChangeHook`` so downstream caches invalidate.
         """
         from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 
-        admin = _create_admin()
-        user = await admin.a_get_user(user_id)
-        attributes = user.get("attributes", {})
-        attributes["active_tenant_id"] = [tenant_id]
-        user["attributes"] = attributes
-        await admin.a_update_user(user_id, user)
+        await KeycloakAdminService._update_attributes(user_id, {"active_tenant_id": tenant_id})
         AccessChangeHook.notify()
 
     @staticmethod
@@ -327,22 +346,47 @@ class KeycloakAdminService:
     async def set_preferred_locale(user_id: str, locale: str) -> None:
         """Writes the preferred_locale custom attribute on the Keycloak user.
 
-        Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
-        user profile validation. Callers validate the locale against
-        ``LocaleHandler.LOCALE_WHITE_LIST`` first; unlike the active tenant this
-        grants no access, so ``AccessChangeHook`` is deliberately not notified.
+        Callers validate the locale against ``LocaleHandler.LOCALE_WHITE_LIST`` first;
+        unlike the active tenant this grants no access, so ``AccessChangeHook`` is
+        deliberately not notified.
         """
-        admin = _create_admin()
-        user = await admin.a_get_user(user_id)
-        attributes = user.get("attributes", {})
-        attributes["preferred_locale"] = [locale]
-        user["attributes"] = attributes
-        await admin.a_update_user(user_id, user)
+        await KeycloakAdminService._update_attributes(user_id, {"preferred_locale": locale})
 
     @staticmethod
     @trace_fn
-    async def ensure_active_tenant(user_id: str) -> None:
+    async def ensure_active_tenant(user_id: str, redis: Redis | None) -> None:
         """Ensures the user has a valid active tenant, auto-selecting one if needed.
+
+        Every authenticated request calls this, so the first page load after a login
+        sends several at once, all finding the active tenant missing. Their concurrent
+        writes are what leave Keycloak with duplicate values; with ``redis`` the write is
+        serialized per user across workers and replicas. Callers without Redis (the bot)
+        run a single process and fall back to an unguarded write.
+        """
+        if await KeycloakAdminService._tenant_to_auto_select(user_id) is None:
+            return
+        if redis is None:
+            await KeycloakAdminService._auto_select_active_tenant(user_id)
+            return
+        async with redis.lock(
+            f"keycloak:active-tenant:{user_id}",
+            timeout=ACTIVE_TENANT_LOCK_TTL_SECONDS,
+            blocking_timeout=ACTIVE_TENANT_LOCK_TTL_SECONDS,
+        ):
+            await KeycloakAdminService._auto_select_active_tenant(user_id)
+
+    @staticmethod
+    async def _auto_select_active_tenant(user_id: str) -> None:
+        """Re-evaluates before writing, since a concurrent caller may have set it meanwhile."""
+        selected_id = await KeycloakAdminService._tenant_to_auto_select(user_id)
+        if selected_id is None:
+            return
+        await KeycloakAdminService.set_active_tenant(user_id, selected_id)
+        logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)
+
+    @staticmethod
+    async def _tenant_to_auto_select(user_id: str) -> str | None:
+        """Returns the tenant to make active, or ``None`` when the current one is still valid.
 
         Keycloak is the sole source of truth for tenant membership; the candidate
         set is exactly the groups the user belongs to in Keycloak. The superuser
@@ -359,26 +403,19 @@ class KeycloakAdminService:
 
         existing_tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user_id)
         if not existing_tenant_ids:
-            return
+            return None
 
         current = await KeycloakAdminService.get_active_tenant_id(user_id)
         if current and current in existing_tenant_ids:
-            return
+            return None
 
         default_id = StartupTenantSettings().ID
         if len(existing_tenant_ids) == 1:
-            selected_id = next(iter(existing_tenant_ids))
-        elif default_id in existing_tenant_ids:
-            selected_id = default_id
-        else:
-            earliest = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids)).order_by("created_at").first()
-            if earliest:
-                selected_id = earliest.id
-            else:
-                selected_id = min(existing_tenant_ids)
-
-        await KeycloakAdminService.set_active_tenant(user_id, selected_id)
-        logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)
+            return next(iter(existing_tenant_ids))
+        if default_id in existing_tenant_ids:
+            return default_id
+        earliest = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids)).order_by("created_at").first()
+        return earliest.id if earliest else min(existing_tenant_ids)
 
     @staticmethod
     @trace_fn
@@ -389,10 +426,5 @@ class KeycloakAdminService:
         """
         from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 
-        admin = _create_admin()
-        user = await admin.a_get_user(user_id)
-        attributes = user.get("attributes", {})
-        attributes.pop("active_tenant_id", None)
-        user["attributes"] = attributes
-        await admin.a_update_user(user_id, user)
+        await KeycloakAdminService._update_attributes(user_id, {"active_tenant_id": None})
         AccessChangeHook.notify()

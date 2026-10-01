@@ -15,6 +15,13 @@
       display="chip"
       class="w-full"
     >
+      <!-- PrimeVue 4.5 renders the chip-mode placeholder twice while loading with no options yet. -->
+      <template
+        v-if="currentValue.length === 0"
+        #value="{ placeholder: emptyLabel }"
+      >
+        {{ emptyLabel }}
+      </template>
       <template #optiongroup="{ option }">
         <div class="flex items-center gap-2">
           <Icon
