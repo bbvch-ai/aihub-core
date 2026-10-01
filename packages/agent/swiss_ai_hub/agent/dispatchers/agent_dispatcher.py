@@ -593,18 +593,8 @@ class AgentDispatcher(BaseDispatcher):
         if step_configs.get(param.annotation):
             return step_configs[param.annotation]
 
-        if inspect.isclass(param.annotation) and issubclass(param.annotation, Form) and param.annotation is not Form:
-            # A shared step names the form mixin it needs; the run's concrete config carries every mixin it lists.
-            if issubclass(self.agent_config_type, param.annotation):
-                logger.debug(
-                    f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
-                )
-                return agent_config
-            if issubclass(param.annotation, AgentConfig):
-                raise ValueError(
-                    f"Expected a config deriving from '{param.annotation.__name__}' for parameter "
-                    f"'{param.name}', but this blueprint runs on '{self.agent_config_type.__name__}'."
-                )
+        if (config := self._config_for_form_parameter(param, agent_config)) is not None:
+            return config
 
         if param.annotation == type[Agent]:
             return self.agent
@@ -650,6 +640,25 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
 
+        return None
+
+    def _config_for_form_parameter(
+        self,
+        param: Annotated[inspect.Parameter, "Parameter from the step method signature."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+    ) -> AgentConfig | None:
+        """A shared step names the form mixin it needs; the run's concrete config carries every mixin it lists."""
+        annotation = param.annotation
+        if not inspect.isclass(annotation) or not issubclass(annotation, Form) or annotation is Form:
+            return None
+        if issubclass(self.agent_config_type, annotation):
+            logger.debug(f"Injected dynamic configuration for parameter '{param.name}' of type '{annotation.__name__}'")
+            return agent_config
+        if issubclass(annotation, AgentConfig):
+            raise ValueError(
+                f"Expected a config deriving from '{annotation.__name__}' for parameter "
+                f"'{param.name}', but this blueprint runs on '{self.agent_config_type.__name__}'."
+            )
         return None
 
     def get_topic_manager_for_thread(

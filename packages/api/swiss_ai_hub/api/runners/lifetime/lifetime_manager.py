@@ -35,10 +35,12 @@ from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     carry_over_bucket_model_columns,
+    carry_over_pre_pair_knowledge_collections,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
     strip_retired_agent_config_keys,
+    widen_empty_retriever_namespace_scopes,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -265,10 +267,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
-        await finalize_role_setup()
+        await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
         strip_retired_agent_config_keys()
+        widen_empty_retriever_namespace_scopes()
+        carry_over_pre_pair_knowledge_collections()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.

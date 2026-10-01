@@ -47,6 +47,7 @@ from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import (
 )
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
+from swiss_ai_hub.pipeline.util.model_builders import register_deployment_defaults
 from swiss_ai_hub.pipeline.util.run_routing import owned_by_ingestor
 
 _DEFAULT_INGESTOR = IngestorType.DOCUMENT_INGESTION.value
@@ -85,6 +86,7 @@ def document_ingestion_pipeline_definitions(
     same for every database; each enrichment op decides per run from the bucket's configuration.
     """
     settings = settings or DocumentIngestionPipelineSettings()
+    register_deployment_defaults(ingestor, settings)
 
     asset_group = f"{ingestor}_datalake_to_vectorstore"
 
