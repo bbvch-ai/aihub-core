@@ -12,6 +12,7 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopResponseEvent,
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
+    AttachedFileEvent,
     BaseRetrieveMemoryEvent,
     BaseStoreMemoryEvent,
     ChainEvent,
@@ -95,6 +96,7 @@ DisplayEvents = (
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
+    | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]

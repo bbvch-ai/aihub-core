@@ -2124,6 +2124,7 @@ services:
 
       # --- RAG & Document Processing ---
       RAG_FULL_CONTEXT: true
+      BYPASS_EMBEDDING_AND_RETRIEVAL: true
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: true
       RAG_FILE_MAX_COUNT: ${RAG_FILE_MAX_COUNT}

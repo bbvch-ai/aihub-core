@@ -95,6 +95,23 @@ something Open WebUI runs itself. The agent decides what to do and runs it as a 
   forwards only features the selected agent supports, and the agent ignores any other feature an API caller sends.
 - **Memory**: Open WebUI's own memory injection is off for agents, which recall user and organization memory themselves.
 
+## Attached files in agent chats
+
+When a user attaches a file in an agent chat, the agent reads it; Open WebUI only stores the upload.
+
+- **Open WebUI does not process it for agents**: file retrieval and injection (the File Context capability) are off on
+  agent models, and Open WebUI no longer embeds uploads, since it runs in full-context mode and never read the
+  embeddings. Plain LLM models keep Open WebUI's own file handling.
+- **The agent reads the whole document**: the pipe copies each file into the agent's upload bucket, once per agent, and
+  the agent parses it with the platform's document extraction (MinerU for PDFs and images, MarkItDown for Office). The
+  full text goes into the model's context, trimmed to fit, and the user is told when only part of a file fit.
+- **Later turns and edited messages**: every file of the current message branch is sent on every turn, so a file
+  attached earlier keeps answering later questions, and an edited or regenerated message sees only its branch's files.
+- **Sources**: each file the answer drew on is listed as a source that opens the original upload. A file that cannot be
+  read is reported instead of silently skipped.
+- **Temporary chats**: Open WebUI stores nothing and sends the text it extracted in the browser; the agent reads that
+  text like any other attachment.
+
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the

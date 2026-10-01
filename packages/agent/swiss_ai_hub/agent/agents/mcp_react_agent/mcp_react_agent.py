@@ -19,6 +19,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
@@ -81,12 +82,14 @@ class McpReactAgent(Agent):
         return Conversation.contextualize(history=limited, message=event)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
-        return Memory.recall(ctx.query)
+    async def gather_context_step(
+        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
+        return [Memory.recall(ctx.query), AttachedFiles.read(start_event.files, ctx.history, ctx.query)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
@@ -97,6 +100,7 @@ class McpReactAgent(Agent):
         self,
         ctx: Conversation.Contextualized,
         memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
         start_event: UserMessageEvent,
         mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
@@ -135,7 +139,7 @@ class McpReactAgent(Agent):
         if resource_context:
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=resource_context))
 
-        messages.extend(message for block in memories.blocks for message in block)
+        messages.extend(message for block in [*memories.blocks, files.block] for message in block)
         messages.extend(ctx.history)
 
         limited = limit_chat_history(
