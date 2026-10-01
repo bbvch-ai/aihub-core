@@ -20402,6 +20402,7 @@ export const RAGFailureReasonSchema = {
     "expert_declined",
     "expert_errored",
     "few_shot_rejected",
+    "no_accessible_knowledge",
   ],
   title: "RAGFailureReason",
   description:

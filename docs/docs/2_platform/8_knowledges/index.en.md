@@ -177,6 +177,15 @@ Saving an agent configuration also checks that scope against the saving user's r
 `aihub.user.knowledge.<db>.<ns>` (or a rule covering it), and opting into all collections needs a rule covering every
 one of them (`...<db>.*`, `...<db>.>` or broader).
 
+That check only covers whoever saved the agent. With **Restrict to the user's access** on, the knowledge agents (RAG,
+expert RAG and namespace selection) also check every run against the person asking. They search only the configured
+collections that person may browse under the rules above. A "Search all namespaces" retriever stays whole only for
+someone who may browse the whole database; anyone else gets the collections they may read. The knowledge area and the
+agents apply the same rules, so an agent never answers from a collection the person cannot open themselves. When nothing
+of the agent's knowledge is readable, the agent says so rather than answering as if the documents held no answer. The
+setting is on for new agents and off for agents saved before it existed, so their behaviour does not change unannounced.
+Runs without a person, such as scheduled or mail-triggered ones, keep the agent's configured scope.
+
 Agents connect to specific collections rather than entire databases. When configuring an agent, you specify which
 collections it can search. A customer support agent might access "products" and "faq" but not "engineering."
 

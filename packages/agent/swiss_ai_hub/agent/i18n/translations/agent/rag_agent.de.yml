@@ -4,6 +4,9 @@ metadata:
   description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte,
     kontextbezogene Antworten zu geben
 config:
+  restrict_to_user_access:
+    label: "Auf die Rechte der Benutzerin oder des Benutzers beschränken"
+    help: "Nur aus den konfigurierten Sammlungen abrufen, welche die fragende Person im Wissensbereich lesen darf. Ohne diese Einstellung erhalten alle, die diesen Agenten nutzen dürfen, Antworten aus allen seinen Sammlungen."
   number_of_input_tokens:
     label: Maximale Eingabe-Tokens
     help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
@@ -122,6 +125,7 @@ thoughts:
     %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
     Modells wird abgelehnt.'
 messages:
+  no_accessible_knowledge: "Das Wissen dieses Agenten steht Ihnen nicht zur Verfügung: Sie haben auf keine der Sammlungen Zugriff, aus denen er antwortet. Bitten Sie bei Bedarf eine Administratorin oder einen Administrator um Zugriff."
   condensation_empty: Ich konnte aus dieser Nachricht nicht ableiten, wonach ich suchen
     soll. Bitte formulieren Sie Ihre Frage neu und versuchen Sie es erneut.
   input_too_large: Diese Datei ist zu gross, als dass ich sie auf einmal lesen könnte.

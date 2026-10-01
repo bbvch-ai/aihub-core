@@ -67,6 +67,10 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
         ),
         Ge(1),
     ] = 800
+    restrict_to_user_access: Annotated[
+        bool | Checkbox,
+        Field(description="Retrieve only from the configured collections the asking user may read."),
+    ] = False
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(
@@ -107,6 +111,11 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
             reranking_config=RerankingConfig.as_form(),
             few_shot_guard_examples=[FewShotGuardExample.as_form()],
+            restrict_to_user_access=Checkbox(
+                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.restrict_to_user_access.label"),
+                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.restrict_to_user_access.help"),
+                value=True,
+            ),
             system_prompt=LocaleString.as_form(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.label"),
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.help"),
