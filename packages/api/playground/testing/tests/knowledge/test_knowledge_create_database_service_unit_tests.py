@@ -816,6 +816,7 @@ class TestCreateGrantsAccess:
         ):
             bucket_cls.get_bucket_by_db_name.return_value = MagicMock(id="abc123", source=None)
             namespace_cls.get_namespace_by_bucket_and_name.side_effect = DoesNotExist
+            namespace_cls.get_namespace_by_bucket_and_folder.side_effect = DoesNotExist
             namespace_cls.create_namespace.return_value = MagicMock(
                 id="ns1", bucket_id="abc123", namespace_name="policies", folder_name="policies"
             )

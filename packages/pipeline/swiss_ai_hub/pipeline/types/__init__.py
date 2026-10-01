@@ -4,15 +4,18 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+    from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
     from swiss_ai_hub.pipeline.types.document_with_figure_info import DocumentWithFigureInfo
     from swiss_ai_hub.pipeline.types.figure_metadata import FigureMetadata
     from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
     from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
     from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile, SharePointFile
+    from swiss_ai_hub.pipeline.types.skipped_data_lake_file import SkippedDataLakeFile
     from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile, SourceFile
 
 __all__ = [
     "DataLakeFile",
+    "DataLakeListing",
     "DocumentWithFigureInfo",
     "FigureMetadata",
     "MinimalRcloneFile",
@@ -21,11 +24,13 @@ __all__ = [
     "RcloneFile",
     "RefDocDocument",
     "SharePointFile",
+    "SkippedDataLakeFile",
     "SourceFile",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "DataLakeFile": "swiss_ai_hub.pipeline.types.data_lake_file",
+    "DataLakeListing": "swiss_ai_hub.pipeline.types.data_lake_listing",
     "DocumentWithFigureInfo": "swiss_ai_hub.pipeline.types.document_with_figure_info",
     "FigureMetadata": "swiss_ai_hub.pipeline.types.figure_metadata",
     "MinimalRcloneFile": "swiss_ai_hub.pipeline.types.rclone_file",
@@ -34,6 +39,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "RcloneFile": "swiss_ai_hub.pipeline.types.rclone_file",
     "RefDocDocument": "swiss_ai_hub.pipeline.types.ref_doc_document",
     "SharePointFile": "swiss_ai_hub.pipeline.types.share_point_file",
+    "SkippedDataLakeFile": "swiss_ai_hub.pipeline.types.skipped_data_lake_file",
     "SourceFile": "swiss_ai_hub.pipeline.types.source_file",
 }
 
