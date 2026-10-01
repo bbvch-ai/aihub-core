@@ -78,6 +78,7 @@ interface LocaleInputProps {
     inputType?: 'text' | 'textarea'
     rows?: number
     placeholder?: LocaleStringDto
+    allowTranslation?: boolean
   }
 }
 
@@ -140,6 +141,7 @@ function hasValue(lang: Locale): boolean {
 
 // Check if translation is possible (current locale has text and at least one other locale is empty)
 const canTranslate = computed(() => {
+  if (props.context.allowTranslation === false) return false
   const currentText = localeValue.value[activeLocale.value]
   if (!currentText) return false
 

@@ -56,7 +56,9 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 **How it works:**
 
 1. **Groups**: AI-Hub creates Open WebUI groups for each tenant-role combination (named `aihub:{tenant}:{role}`), with
-   memberships synced based on email matching between both systems
+   memberships synced based on email matching between both systems. A user who holds a role in their active tenant but
+   has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are there on their first
+   chat visit; the chat login then links to that account
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
@@ -64,15 +66,15 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 
 The provisioner runs at API startup, when an agent instance is created, renamed, or deleted (reflected immediately in
 the model picker), when the set of online agents changes (the periodic 60-second reconciler), when users switch tenants,
-when new users sign up via an Open WebUI webhook, and when roles, tenants, or user-role assignments are modified. All
-changes propagate immediately.
+and when roles, tenants, or user-role assignments are modified. All changes propagate immediately.
 
 **Reliability in multi-replica deployments:**
 
 - **Debouncing**: Rapid access entity mutations (e.g. bulk user assignments) are collapsed into a single sync call using
   a 2-second quiet window
-- **Distributed locking**: Each sync operation acquires a non-blocking Redis lock, so concurrent API replicas skip
-  rather than race
+- **Distributed locking**: Each sync operation acquires a Redis lock, so concurrent API replicas never race. Model
+  syncs skip while another holds the lock; access syncs wait for it, so a role change made during a running sync is
+  still applied
 - **Change detection**: The discovery service stores a SHA-256 hash of the online agent set in Redis, surviving restarts
   and working correctly across replicas
 

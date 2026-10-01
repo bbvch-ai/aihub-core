@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import Field, SecretStr
@@ -9,6 +9,11 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 class RedisSettings(EnvironmentSettings):
     """Settings for Redis/Valkey connection with optional token authentication."""
+
+    # redis-py waits forever on a TCP connect by default, and its built-in retry only fires on an error. A connect
+    # whose socket the event loop never reports writable then stalls the awaiting step for good; bounding it turns
+    # that into a TimeoutError the client retries on a fresh socket.
+    CONNECT_TIMEOUT_SECONDS: ClassVar[float] = 5.0
 
     model_config = EnvironmentSettings.create_settings_config("REDIS_")
 
@@ -51,4 +56,4 @@ class RedisSettings(EnvironmentSettings):
         """
         settings = cls()
         redis_url = settings.get_connection_url()
-        return Redis.from_url(redis_url)
+        return Redis.from_url(redis_url, socket_connect_timeout=cls.CONNECT_TIMEOUT_SECONDS)

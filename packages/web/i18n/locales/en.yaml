@@ -911,6 +911,8 @@ lib:
       label: Namespaces
       placeholder: Select at least one namespace
       help: Only the selected namespaces are searched
+      required: Select at least one namespace or turn on “Search all namespaces”.
+        The configuration cannot be saved otherwise.
     allNamespaces:
       label: Search all namespaces
       help: Every namespace of this database is searched, including ones added later
@@ -981,6 +983,7 @@ memory:
       title: Delete Failed
       message: Failed to delete all memories. Please try again.
 openwebui:
+  default_disclaimer: AI can make mistakes. Please verify answers.
   memories:
     title: Agent Memories
     select_agent: Select Agent

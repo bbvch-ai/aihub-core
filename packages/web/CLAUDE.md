@@ -40,7 +40,8 @@ packages/web/
 ├── plugins/                 # 0.runtime-config.client.ts (config), api-client.client.ts (SDK), oidc-client.ts, apexcharts.client.ts
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
-└── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
+├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
+└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook)
 ```
 
 ## Nuxt Layer Architecture
@@ -49,6 +50,11 @@ The `.app/` directory is the actual entry point — it extends the parent via `e
 `pnpm dev` runs `nuxi dev .app`. The parent `packages/web/` provides components, composables, pages, and config. `.app/`
 adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars). FormKit registration lives in the layer itself
 (`packages/web/formkit.config.ts`, wired via `formkit.configFile` in `nuxt.config.ts`), so extenders inherit it.
+
+**New top-level directory → add it to `files` in `package.json`.** `@swiss-ai-hub/web` is published to npm with a
+`files` allowlist; a directory missing from it is absent from the tarball, and any shipped file importing from it breaks
+every npm extender. In-repo extenders (`sysadmin-web`) resolve the workspace symlink and never notice. Check with
+`npm pack --dry-run` in `packages/web`.
 
 ## Page Composition Pattern
 
@@ -140,6 +146,14 @@ SDK client initialized in `plugins/api-client.client.ts` with global auth token 
 plugin runs in every app that extends this layer (including `sysadmin-web`), which is why it lives in a plugin rather
 than `app.vue` — extenders supply their own `app.vue`, so anything in the layer's `app.vue` would not run for them.
 
+The plugin also installs `createHtmlResponseGuard` (`utils/apiResponseGuard.ts`) as `onResponse`. It rejects `2xx`
+`text/html` responses — the SPA shell nginx serves when Traefik drops the `api` router — so they never land in the
+Pinia-Colada cache as DTOs. Two rules follow:
+
+- **Never set `onResponse` on this client in an extender's `setConfig`.** `mergeConfigs` is a shallow spread, so it
+  replaces the guard instead of adding to it.
+- **Any other SDK client must install the guard itself** (as `sysadmin-web` does for its sysadmin-api client).
+
 ## FormKit Dynamic Forms
 
 The backend defines form schemas (`FormkitElement[]`), the frontend renders them dynamically.
@@ -213,6 +227,8 @@ registration. Don't add manual imports for them.
 **Auto-imported** (no explicit import needed):
 
 - All composables from `composables/` and `composables/**/`
+- Top-level exports of `utils/` (Nuxt default; nested folders are not scanned). `composables/` is for `use*` functions
+  that need Vue/Nuxt context; plain helpers that run outside a component (ofetch hooks, formatters) go in `utils/`
 - `defineQuery`, `defineMutation`, `useQuery`, `useMutation`, `useQueryCache` (Pinia-Colada)
 - `computed`, `ref`, `watch`, `onMounted` (Vue)
 - `useRoute`, `useRouter`, `navigateTo` (Nuxt)

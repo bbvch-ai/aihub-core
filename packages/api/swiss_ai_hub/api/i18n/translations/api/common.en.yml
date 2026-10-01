@@ -1,5 +1,6 @@
 ---
 test: This is an english test
+default_chat_disclaimer: AI can make mistakes. Please verify answers.
 translation:
   prompt: |
     You are a professional translator. Your task is to translate text accurately while preserving meaning, tone, and cultural context.
