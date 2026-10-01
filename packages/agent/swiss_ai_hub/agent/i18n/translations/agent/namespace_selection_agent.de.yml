@@ -4,6 +4,9 @@ metadata:
   description: KI-Assistent, der Ihnen hilft, die richtigen Wissensquellen für Ihre
     Fragen zu finden und auszuwählen
 config:
+  restrict_to_user_access:
+    label: "Auf die Rechte der Benutzerin oder des Benutzers beschränken"
+    help: "Nur Namespaces anbieten, welche die fragende Person im Wissensbereich lesen darf."
   bucket_names:
     label: Wissensdatenbanken
     help: Wählen Sie die Wissensdatenbanken zur Namespace-Abfrage
@@ -31,6 +34,7 @@ thoughts:
   forwarding_to_rag: Relevante Informationen werden gesucht
   rag_error: 'Bei der Suche ist ein Fehler aufgetreten: %{error_message}'
 messages:
+  no_accessible_knowledge: "Keines der Wissensgebiete, zwischen denen dieser Agent vermittelt, steht Ihnen zur Verfügung. Bitten Sie bei Bedarf eine Administratorin oder einen Administrator um Zugriff."
   determination_failed: Ich konnte nicht ermitteln, welche Wissensquellen für diese
     Anfrage durchsucht werden sollen. Können Sie sie umformulieren oder mir sagen,
     welches Thema Sie meinen?

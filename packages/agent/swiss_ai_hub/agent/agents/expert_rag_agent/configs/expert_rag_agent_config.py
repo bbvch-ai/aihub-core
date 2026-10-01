@@ -28,21 +28,6 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
         base_form = RAGAgentConfig.as_form()
 
         return cls(
-            name=base_form.name,
-            description=base_form.description,
-            icon=base_form.icon,
-            agent_id=base_form.agent_id,
-            llm=base_form.llm,
-            task_llm=base_form.task_llm,
-            retrievers=base_form.retrievers,
-            number_of_input_tokens=base_form.number_of_input_tokens,
-            condense_question=base_form.condense_question,
-            context_sufficient_guard=base_form.context_sufficient_guard,
-            reranking_config=base_form.reranking_config,
-            few_shot_guard_examples=base_form.few_shot_guard_examples,
-            system_prompt=base_form.system_prompt,
-            context_prompt=base_form.context_prompt,
-            user_memory=base_form.user_memory,
-            org_memory=base_form.org_memory,
+            **{field: getattr(base_form, field) for field in RAGAgentConfig.model_fields},
             expert_escalation=ExpertEscalationConfig.as_form(),
         )

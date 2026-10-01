@@ -13653,6 +13653,7 @@ export const RagFailureReason = {
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",
   FEW_SHOT_REJECTED: "few_shot_rejected",
+  NO_ACCESSIBLE_KNOWLEDGE: "no_accessible_knowledge",
 } as const;
 
 /**

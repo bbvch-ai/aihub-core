@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
@@ -18,7 +18,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, narrow_retrievers
+from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, UserScopedRetrievers, narrow_retrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -38,6 +38,7 @@ from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
+from swiss_ai_hub.agent.rag.inaccessible_knowledge import InaccessibleKnowledge
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
     do_context_sufficient_guard,
@@ -182,10 +183,13 @@ class RAGAgent(Agent):
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> RetrieverEvent:
-        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+        access: AccessChecker | None = None,
+    ) -> RetrieverEvent | Conversation.CompleteRequest:
+        """Retrieves relevant nodes from multiple knowledge sources in parallel, from what the asking user may read
+        when the profile restricts retrieval to it. A run without a user keeps the profile's scope."""
         if isinstance(start_event, RAGStartEvent):
             runtime_configs = narrow_retrievers(
                 agent_config.retrievers,
@@ -194,6 +198,10 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
+        if agent_config.restrict_to_user_access and access is not None and runtime_configs:
+            runtime_configs = await UserScopedRetrievers.narrow(runtime_configs, access)
+            if not runtime_configs:
+                return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         return await do_retrieve(event, runtime_configs, t, user)
 
     @step(
