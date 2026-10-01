@@ -39,6 +39,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_groups"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.sync_access()
 
