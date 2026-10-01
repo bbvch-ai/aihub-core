@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -22,6 +24,17 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic, Topi
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+
+logger = logging.getLogger(__name__)
+
+
+class _ReportingTaskSet(set):
+    """TEMPORARY CI diagnostics: surfaces step tasks that end in an exception instead of dropping them silently."""
+
+    def discard(self, task: asyncio.Task) -> None:
+        if not task.cancelled() and task.exception() is not None:
+            logger.error(f"CI-DIAG step task {task.get_name()} failed", exc_info=task.exception())
+        super().discard(task)
 
 
 class ObservedEvent(BaseModel):
@@ -149,11 +162,30 @@ class AgentTestRunner(AgentRunner):
         # (e.g., ThreadContext persistence to Redis) to complete
         if self.has_stop_event:
             await sleep(grace_period)
+        else:
+            self._log_pending_step_tasks()
 
         await self.test_run_stop()
 
+    def _log_pending_step_tasks(self) -> None:
+        """TEMPORARY CI diagnostics: where every still-pending step task is suspended when the run timed out."""
+        tasks = list(self.dispatcher._background_tasks) if self.dispatcher else []
+        logger.error(f"CI-DIAG run timed out with {len(tasks)} pending step task(s)")
+        for task in tasks:
+            frames = []
+            awaitable = task.get_coro()
+            while awaitable is not None:
+                frame = getattr(awaitable, "cr_frame", None) or getattr(awaitable, "gi_frame", None)
+                if frame is None:
+                    frames.append(f"awaiting {awaitable!r}")
+                    break
+                frames.append(f"{frame.f_code.co_filename}:{frame.f_lineno} {frame.f_code.co_name}")
+                awaitable = getattr(awaitable, "cr_await", None) or getattr(awaitable, "gi_yieldfrom", None)
+            logger.error(f"CI-DIAG pending {task.get_name()}: " + " <- ".join(frames))
+
     async def test_run_start(self, thread_id: str | None = None) -> PartialAgentTopic:
         await self.start()
+        self.dispatcher._background_tasks = _ReportingTaskSet(self.dispatcher._background_tasks)
         if thread_id is None:
             thread_id = str(ObjectId())
         display_id = str(ObjectId())
