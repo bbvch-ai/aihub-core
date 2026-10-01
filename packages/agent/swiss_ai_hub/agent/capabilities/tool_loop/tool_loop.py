@@ -205,11 +205,12 @@ class ToolLoop(Capability):
         cite_sources = await run_context.get(CITE_SOURCES_KEY, True)
         arguments = call.parameters or {}
         if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context):
+            summary = options.summary_in(arguments, t.locale)
             return ToolApprovalRequestEvent(
                 question=t(
-                    "agent.tool_loop.approval.question",
+                    "agent.tool_loop.approval.question" if summary else "agent.tool_loop.approval.question_plain",
                     tool=options.label_in(call.name, t.locale),
-                    summary=options.summary_in(call.name, arguments, t.locale),
+                    summary=summary,
                 ),
                 topic=PartialAgentTopic(
                     event_type=AgentTopicManager.CONTROL_EVENT,

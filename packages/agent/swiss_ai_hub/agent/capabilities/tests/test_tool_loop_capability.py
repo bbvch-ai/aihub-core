@@ -291,10 +291,16 @@ class TestDecisions:
 
 
 class TestApproval:
-    async def _gate(self, name: str, run_context: _Context | None = None, **tool_loop: Any) -> Any:
+    async def _gate(
+        self,
+        name: str,
+        run_context: _Context | None = None,
+        parameters: dict[str, Any] | None = None,
+        **tool_loop: Any,
+    ) -> Any:
         return await ToolLoop.gate_step(
             LoopAgent(),
-            call=ToolEvent(tool_call_id="c1", name=name, parameters={"text": "a"}),
+            call=ToolEvent(tool_call_id="c1", name=name, parameters={"text": "a"} if parameters is None else parameters),
             loop=_config(**tool_loop),
             run_context=run_context or _Context(),
             thread_context=_Context(),
@@ -324,6 +330,19 @@ class TestApproval:
         assert (request.hitl_type, request.tool_call_id, request.name) == ("confirmation", "c1", "echo")
         assert "Shout a" in request.question
         assert "Echo" in request.question
+
+    @pytest.mark.asyncio
+    async def test_a_tool_without_a_summary_is_asked_for_with_its_arguments_and_its_name_once(self):
+        request = await self._gate("code")
+
+        assert "- text: a" in request.question
+        assert request.question.count("code") == 1
+
+    @pytest.mark.asyncio
+    async def test_a_call_without_arguments_or_summary_is_asked_for_plainly(self):
+        request = await self._gate("code", parameters={})
+
+        assert request.question == 'The assistant wants to use "code". Allow it?'
 
     @pytest.mark.asyncio
     async def test_an_approval_remembered_for_the_run_is_not_asked_again(self):

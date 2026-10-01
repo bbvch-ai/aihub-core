@@ -107,6 +107,16 @@ async def test_a_failed_call_reads_as_an_error(pipe: Any) -> None:
 
 
 @pytest.mark.asyncio
+async def test_a_result_is_shown_as_the_model_received_it(pipe: Any) -> None:
+    context = _context(pipe, _Recorder())
+    result = {"_event_name": "ToolResultEvent", "tool_call_id": "c1", "content": "Cite it as [s3f9a1c]."}
+
+    await _process(pipe, context, _tool_call(), result)
+
+    assert "[s3f9a1c]" in context.state_manager.serialize_to_html()
+
+
+@pytest.mark.asyncio
 async def test_text_streamed_before_a_tool_call_moves_out_of_the_answer(pipe: Any) -> None:
     context = _context(pipe, _Recorder())
     preamble = {"_parent_event_names": ["ChunkEvent"], "content": "Let me check the weather."}

@@ -27,6 +27,7 @@ approval:
 %{summary}
 
 Consentirlo?"
+  question_plain: "L'assistente vuole usare «%{tool}». Consentirlo?"
 config:
   max_iterations:
     label: "Decisioni massime"

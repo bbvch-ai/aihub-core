@@ -626,22 +626,15 @@ class StreamingStateManager:
 
     def serialize_to_html(self) -> Annotated[str, "Complete HTML representation"]:
         """Serialize all blocks to HTML"""
-        html_parts: list[str] = []
-
-        # Render finalized blocks
-        for block in self._content_blocks:
-            html_parts.append(block.to_html())
-
-        # Render current block if exists
-        if self._current_block:
-            html_parts.append(self._current_block.to_html())
-
+        blocks = [*self._content_blocks, *([self._current_block] if self._current_block else [])]
         # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
         # answer above them keeps growing, and flushing later lands them in this same position.
         if self._deferred_thinking:
-            html_parts.append(self._deferred_thinking.to_html())
-
-        return self.citations.resolve("".join(html_parts))
+            blocks.append(self._deferred_thinking)
+        return "".join(
+            block.to_html() if isinstance(block, ToolBlock) else self.citations.resolve(block.to_html())
+            for block in blocks
+        )
 
 
 # ============================================================================

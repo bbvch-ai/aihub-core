@@ -49,9 +49,8 @@ class ToolOptions(BaseModel):
     def label_in(self, name: str, locale: str) -> str:
         return self.label.in_locale(locale) if self.label else name.replace("_", " ")
 
-    def summary_in(self, name: str, arguments: dict[str, Any], locale: str) -> str:
+    def summary_in(self, arguments: dict[str, Any], locale: str) -> str:
         """The call in words for the approval prompt; its arguments one per line when the tool renders none."""
         if self.approval_summary:
             return self.approval_summary.in_locale(locale).format_map(defaultdict(str, arguments))
-        details = "\n".join(f"- {key}: {value}" for key, value in arguments.items())
-        return f"{self.label_in(name, locale)}\n{details}".strip()
+        return "\n".join(f"- {key}: {value}" for key, value in arguments.items())

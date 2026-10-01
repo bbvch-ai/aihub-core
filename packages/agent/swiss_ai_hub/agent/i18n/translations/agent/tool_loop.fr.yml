@@ -27,6 +27,7 @@ approval:
 %{summary}
 
 L'autoriser ?"
+  question_plain: "L'assistant souhaite utiliser « %{tool} ». L'autoriser ?"
 config:
   max_iterations:
     label: "Décisions maximales"
