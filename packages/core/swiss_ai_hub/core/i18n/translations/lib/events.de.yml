@@ -3,6 +3,10 @@ display_event:
   name: Anzeigeereignis
   description: Ein Ereignis, das dem Benutzer Informationen anzeigt, ohne den Arbeitsablauf
     zu beeinflussen.
+attached_file_event:
+  name: Angehängte Datei
+  description: Der Agent hat eine Datei gelesen, die der Benutzer an die Unterhaltung
+    angehängt hat.
 conversation_title_event:
   name: Gesprächstitel
   description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.

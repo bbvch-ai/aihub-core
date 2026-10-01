@@ -4,6 +4,7 @@ import inspect
 from collections.abc import Callable
 from typing import ClassVar
 
+from swiss_ai_hub.core.events.agent import ChatFeature
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.form.form import Form
@@ -28,6 +29,10 @@ class Capability(abc.ABC):
     # composes the capability's steps into the blueprint's workflow; the blueprint must consume every outcome that
     # is not a stop event, and validation checks the outcomes against what the capability's steps can emit.
     calls: ClassVar[dict[type[ControlEvent], tuple[type[ControlEvent], ...]]] = {}
+
+    # The chat feature this capability serves, if any. A blueprint supports exactly the features of the
+    # capabilities it installs, which is what chat clients use to decide which toggles to show.
+    chat_feature: ClassVar[ChatFeature | None] = None
 
     @classmethod
     def handles(cls) -> frozenset[type[ControlEvent]]:

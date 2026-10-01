@@ -333,6 +333,15 @@ class OpenWebuiClient:
         )
         _raise_with_detail(response)
 
+    async def update_retrieval_config(self, http: httpx.AsyncClient, settings: dict[str, Any]) -> None:
+        """Partial update: OpenWebUI keeps every retrieval setting the form leaves out."""
+        response = await http.post(
+            f"{self._base_url}/api/v1/retrieval/config/update",
+            headers=self._jwt_headers,
+            json=settings,
+        )
+        _raise_with_detail(response)
+
     async def get_model(self, http: httpx.AsyncClient, model_id: str) -> dict[str, Any]:
         response = await http.get(
             f"{self._base_url}{MODELS_ENDPOINT}/model",

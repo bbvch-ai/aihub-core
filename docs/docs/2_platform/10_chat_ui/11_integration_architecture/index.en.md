@@ -80,6 +80,38 @@ and when roles, tenants, or user-role assignments are modified. All changes prop
 
 `BYPASS_MODEL_ACCESS_CONTROL=False` must be set on Open WebUI to enforce these access controls.
 
+## Chat toggles for agents
+
+For an agent, Open WebUI's Web Search, Code Interpreter and Image Generation toggles are a request to the agent, not
+something Open WebUI runs itself. The agent decides what to do and runs it as a traced, cost-attributed step.
+
+- **Which toggles appear**: an agent shows a toggle only when its blueprint supports that feature. Support comes from
+  the capabilities the blueprint installs, and the provisioner writes it onto the agent's model in Open WebUI. Plain LLM
+  models keep all of Open WebUI's own toggles.
+- **What happens when a toggle is on**: an AI-Hub filter attached to agent models takes the toggles out of the request
+  before Open WebUI acts on them, and hands the supported ones to the agent. Open WebUI runs none of its own search,
+  image generation or code interpreter for agents, and does not change the prompt the agent receives.
+- **Stale toggles**: Open WebUI sends a toggle's state even after the user switched to a model that hides it. The filter
+  forwards only features the selected agent supports, and the agent ignores any other feature an API caller sends.
+- **Memory**: Open WebUI's own memory injection is off for agents, which recall user and organization memory themselves.
+
+## Attached files in agent chats
+
+When a user attaches a file in an agent chat, the agent reads it; Open WebUI only stores the upload.
+
+- **Open WebUI does not process it for agents**: file retrieval and injection (the File Context capability) are off on
+  agent models, and Open WebUI no longer embeds uploads, since it runs in full-context mode and never read the
+  embeddings. Plain LLM models keep Open WebUI's own file handling.
+- **The agent reads the whole document**: the pipe copies each file into the agent's upload bucket, once per agent, and
+  the agent parses it with the platform's document extraction (MinerU for PDFs and images, MarkItDown for Office). The
+  full text goes into the model's context, trimmed to fit, and the user is told when only part of a file fit.
+- **Later turns and edited messages**: every file of the current message branch is sent on every turn, so a file
+  attached earlier keeps answering later questions, and an edited or regenerated message sees only its branch's files.
+- **Sources**: each file the answer drew on is listed as a source that opens the original upload. A file that cannot be
+  read is reported instead of silently skipped.
+- **Temporary chats**: Open WebUI stores nothing and sends the text it extracted in the browser; the agent reads that
+  text like any other attachment.
+
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the

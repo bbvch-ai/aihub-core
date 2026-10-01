@@ -11,6 +11,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
         AgentInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.attached_file.attached_file_event import AttachedFileEvent
+    from swiss_ai_hub.core.events.agent.attached_file.attached_file_status import AttachedFileStatus
+    from swiss_ai_hub.core.events.agent.attached_file.attached_files_read_event import AttachedFilesReadEvent
+    from swiss_ai_hub.core.events.agent.attached_file.read_attached_files_event import ReadAttachedFilesEvent
     from swiss_ai_hub.core.events.agent.bitl.bot_in_the_loop import BotInTheLoop
     from swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event import (
         BotInTheLoopRequestEvent,
@@ -146,6 +150,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.semantic.retriever.retriever_event import RetrieverEvent
     from swiss_ai_hub.core.events.agent.semantic.semantic_event import SemanticEvent
     from swiss_ai_hub.core.events.agent.semantic.tool.tool_event import ToolEvent
+    from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
@@ -181,6 +186,10 @@ __all__ = [
     "ContextSufficientAcceptEvent",
     "ControlAndDisplayEvent",
     "ControlEvent",
+    "AttachedFileEvent",
+    "AttachedFileStatus",
+    "AttachedFilesReadEvent",
+    "ReadAttachedFilesEvent",
     "ConversationTitleEvent",
     "CostEvent",
     "CronStartEvent",
@@ -254,6 +263,7 @@ __all__ = [
     "ToolEvent",
     "UnreadMailListedEvent",
     "UnreadMailSummary",
+    "ChatFeature",
     "UserMessageEvent",
     "UserUploadedFile",
 ]
@@ -286,6 +296,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "BotInTheLoopResponseEvent": "swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event",
     "ChainEvent": "swiss_ai_hub.core.events.agent.semantic.chain.chain_event",
     "ChunkEvent": "swiss_ai_hub.core.events.agent.display.chunk_event",
+    "AttachedFileEvent": "swiss_ai_hub.core.events.agent.attached_file.attached_file_event",
+    "AttachedFileStatus": "swiss_ai_hub.core.events.agent.attached_file.attached_file_status",
+    "AttachedFilesReadEvent": "swiss_ai_hub.core.events.agent.attached_file.attached_files_read_event",
+    "ReadAttachedFilesEvent": "swiss_ai_hub.core.events.agent.attached_file.read_attached_files_event",
     "ConversationTitleEvent": "swiss_ai_hub.core.events.agent.display.conversation_title_event",
     "ContextInsufficientRejectEvent": "swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event",
     "ContextSufficientAcceptEvent": "swiss_ai_hub.core.events.agent.guard.context_sufficient_accept_event",
@@ -365,6 +379,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
     "UnreadMailListedEvent": "swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event",
     "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
+    "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
 }

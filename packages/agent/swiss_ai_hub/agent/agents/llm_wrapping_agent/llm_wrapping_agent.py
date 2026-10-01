@@ -22,6 +22,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -139,12 +140,14 @@ class LLMWrappingAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
-        return Memory.recall(ctx.query)
+    async def gather_context_step(
+        self, ctx: Conversation.Contextualized, event: UserMessageEvent
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
+        return [Memory.recall(ctx.query), AttachedFiles.read(event.files, ctx.history, ctx.query)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
@@ -152,9 +155,9 @@ class LLMWrappingAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled
+        self, ctx: Conversation.Contextualized, memories: Memory.Recalled, files: AttachedFiles.Contents
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=memories.blocks)
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.name"),

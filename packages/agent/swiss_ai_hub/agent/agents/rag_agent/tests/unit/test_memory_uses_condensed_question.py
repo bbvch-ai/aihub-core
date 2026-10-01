@@ -16,4 +16,4 @@ from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 @pytest.mark.parametrize("agent_class", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
 def test_memory_is_recalled_off_the_contextualized_turn(agent_class):
     on_turn = {step.__name__ for step in agent_class.get_steps_waiting_for_event(ConversationContextualizedEvent)}
-    assert "recall_memory_step" in on_turn
+    assert "gather_context_step" in on_turn

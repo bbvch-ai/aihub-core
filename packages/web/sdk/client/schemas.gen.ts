@@ -2043,6 +2043,123 @@ export const AssignRoleRequestSchema = {
   title: "AssignRoleRequest",
 } as const;
 
+export const AttachedFileEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    file_id: {
+      type: "string",
+      title: "File Id",
+      description: "The agent-side id of the uploaded file.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name as the user uploaded it.",
+    },
+    status: {
+      $ref: "#/components/schemas/AttachedFileStatus",
+      description: "Whether the file was read whole, in part, or not.",
+    },
+    number_of_pages: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Number Of Pages",
+      description: "Pages in the document, when the parser knows.",
+    },
+    excerpt: {
+      type: "string",
+      title: "Excerpt",
+      description: "The start of the extracted text, for a source preview.",
+      default: "",
+    },
+    error: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Error",
+      description: "Why the file could not be read, for a failed file.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "file_id",
+    "filename",
+    "status",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "AttachedFileEvent",
+  description:
+    "One file the user attached to the conversation, as the agent read it for this turn.\n\nChat clients render it as a source on the answer, so the user sees which files the answer drew on and whether\nall of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its\nown record.",
+} as const;
+
+export const AttachedFileStatusSchema = {
+  type: "string",
+  enum: ["read", "truncated", "failed"],
+  title: "AttachedFileStatus",
+  description: "How much of an attached file reached the model.",
+} as const;
+
 export const AudioSchema = {
   properties: {
     id: {
@@ -4493,6 +4610,14 @@ export const ChatCompletionUserMessageParamSchema = {
     "Messages sent by an end user, containing prompts or additional context\ninformation.",
 } as const;
 
+export const ChatFeatureSchema = {
+  type: "string",
+  enum: ["web_search", "code_interpreter", "image_generation"],
+  title: "ChatFeature",
+  description:
+    "A capability a user can request per message in a chat client, which the agent then decides how to serve.\n\nWeb search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI\nhas no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding\na member here is all a new feature needs on the contract side.",
+} as const;
+
 export const ChatMessageSchema = {
   properties: {
     role: {
@@ -5967,6 +6092,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/ThoughtEvent",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFileEvent",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEvent",
@@ -17044,6 +17172,16 @@ export const MetadataSchema = {
       description:
         "List of files to attach to the request, if supported by the model.",
     },
+    features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Features",
+      description:
+        "Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.",
+      default: [],
+    },
   },
   type: "object",
   title: "Metadata",
@@ -27173,6 +27311,16 @@ export const UserMessageEventSchema = {
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
     },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -29285,6 +29433,93 @@ export const AgentWorkResponseDTOWritableSchema = {
     "DTO representing an agent work response with specific agent-related information.",
 } as const;
 
+export const AttachedFileEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    file_id: {
+      type: "string",
+      title: "File Id",
+      description: "The agent-side id of the uploaded file.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name as the user uploaded it.",
+    },
+    status: {
+      $ref: "#/components/schemas/AttachedFileStatus",
+      description: "Whether the file was read whole, in part, or not.",
+    },
+    number_of_pages: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Number Of Pages",
+      description: "Pages in the document, when the parser knows.",
+    },
+    excerpt: {
+      type: "string",
+      title: "Excerpt",
+      description: "The start of the extracted text, for a source preview.",
+      default: "",
+    },
+    error: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Error",
+      description: "Why the file could not be read, for a failed file.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["file_id", "filename", "status"],
+  title: "AttachedFileEvent",
+  description:
+    "One file the user attached to the conversation, as the agent read it for this turn.\n\nChat clients render it as a source on the answer, so the user sees which files the answer drew on and whether\nall of each file fit. `file_id` is the agent-side upload id; a client that uploaded the file maps it back to its\nown record.",
+} as const;
+
 export const BaseRetrieveMemoryEventWritableSchema = {
   properties: {
     event_id: {
@@ -30840,6 +31075,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ThoughtEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFileEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -43890,6 +44128,16 @@ export const UserMessageEventWritableSchema = {
       title: "Files",
       description:
         "A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.",
+    },
+    requested_features: {
+      items: {
+        $ref: "#/components/schemas/ChatFeature",
+      },
+      type: "array",
+      title: "Requested Features",
+      description:
+        "Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.",
+      default: [],
     },
   },
   additionalProperties: true,

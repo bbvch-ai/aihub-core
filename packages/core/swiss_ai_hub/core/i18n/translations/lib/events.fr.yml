@@ -3,6 +3,9 @@ display_event:
   name: Événement d'Affichage
   description: Un événement qui affiche des informations à l'utilisateur sans affecter
     le flux de travail.
+attached_file_event:
+  name: Fichier joint
+  description: L'agent a lu un fichier que l'utilisateur a joint à la conversation.
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.

@@ -52,8 +52,31 @@ def _key(target: SyncTarget) -> str:
 
 _INSTANCES = [_make_instance("rag", "default"), _make_instance("chat", "main")]
 _INSTANCES_HASH = AgentEndpointsDiscoveryService._compute_agents_hash(
-    {(inst.agent_class, inst.agent_id, inst.name) for inst in _INSTANCES}
+    {(inst.agent_class, inst.agent_id, inst.name, "") for inst in _INSTANCES}
 )
+
+
+class TestSupportedFeaturesInHash:
+    def test_gaining_a_feature_changes_the_hash(self) -> None:
+        with_feature = AgentEndpointsDiscoveryService._compute_agents_hash(
+            {(inst.agent_class, inst.agent_id, inst.name, "web_search") for inst in _INSTANCES}
+        )
+
+        assert with_feature != _INSTANCES_HASH
+
+    @pytest.mark.asyncio
+    async def test_openwebui_agents_carry_their_class_features(self, no_supported_features) -> None:
+        no_supported_features.return_value = {"rag": ["web_search"]}
+        service = _make_service(redis=_make_redis())
+        service._openwebui_provisioner = SimpleNamespace(model_name_locale="en", sync_agents=AsyncMock())
+
+        await service._sync_agent_instances_to_openwebui(_INSTANCES)
+
+        synced = {
+            agent.agent_class: agent.supported_features
+            for agent in service._openwebui_provisioner.sync_agents.await_args.args[0]
+        }
+        assert synced == {"rag": ["web_search"], "chat": []}
 
 
 class TestSyncAgentInstancesToProvisioners:

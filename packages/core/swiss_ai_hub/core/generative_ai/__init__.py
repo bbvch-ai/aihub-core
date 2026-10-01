@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
+        DEFAULT_METADATA,
         MarkdownStructuralNodeParser,
     )
     from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
@@ -136,6 +137,7 @@ __all__ = [
     "LLMParameter",
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
+    "DEFAULT_METADATA",
     "MemorySettings",
     "MetadataFilterPair",
     "RetrievalRuntimeConfig",
@@ -213,6 +215,7 @@ _LAZY_IMPORTS = {
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
+    "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "MemorySettings": "swiss_ai_hub.core.generative_ai.memory.memory_settings",
     "MetadataFilterPair": "swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair",
     "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",

@@ -5,12 +5,13 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import LocaleInput
 from swiss_ai_hub.core.i18n import LocaleString
 
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-class LLMWrappingAgentConfig(MemoryFields, ConversationFields, AgentConfig):
+class LLMWrappingAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, AgentConfig):
     """
     Configuration for LLMWrappingAgent: the capability mixins plus a mandatory system prompt.
 
@@ -39,4 +40,5 @@ class LLMWrappingAgentConfig(MemoryFields, ConversationFields, AgentConfig):
             ),
             **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
+            **cls.attached_files_form_elements(),
         )
