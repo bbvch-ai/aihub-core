@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from collections.abc import Awaitable
@@ -175,31 +174,4 @@ async def generate_follow_up_questions(
         "generate_follow_up_questions",
         _trace_input(chat_messages),
         do_generate_follow_up_questions(chat_messages, llm_config, displayer, t, user),
-    )
-
-
-async def generate_conversation_metadata(
-    chat_messages: list[ChatMessage],
-    llm_config: LLMConfig,
-    displayer: EventDisplayer,
-    t: LocaleHandler,
-    thread_context: ThreadContext,
-    user: UserIdentity,
-) -> None:
-    """Generate title + follow-up questions inline, best-effort, for agents whose answer is a stop event.
-
-    Conversation metadata is a non-essential, post-answer enhancement. Agents whose answer is a terminal
-    stop event (``LLMWrappingAgent``, ``FewShotAgent``, ``McpReactAgent``) cannot adopt it as a separate
-    ``@step``: ``AgentDispatcher.handle_event`` cleans up and returns on a stop event **before** it
-    dispatches steps waiting on that event, so such a step would never run. Calling the generators here —
-    inside the terminal step, before it returns the stop event — emits the display events while the step
-    body runs, i.e. on the wire **before** the stop event is published and before teardown. (See ADR
-    ``2026_06_18_conversation_metadata_as_explicit_per_agent_steps``.)
-
-    Both generators are best-effort, so a failure in either is logged and swallowed and the run still
-    terminates normally with its answer intact.
-    """
-    await asyncio.gather(
-        generate_title(chat_messages, llm_config, displayer, t, thread_context, user),
-        generate_follow_up_questions(chat_messages, llm_config, displayer, t, user),
     )

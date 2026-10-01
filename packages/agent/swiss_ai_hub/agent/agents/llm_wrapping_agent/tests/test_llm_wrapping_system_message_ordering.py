@@ -10,7 +10,7 @@ real HTTP GET against LiteLLM, so it is patched here rather than left to fail op
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import NotAMetaQuestionEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -45,9 +45,8 @@ async def _limited_history(chat_history: list[ChatMessage]) -> list[ChatMessage]
             agent_config=_config(),
             displayer=_displayer(),
             t=LocaleHandler(locale="en"),
-            _clear=NotAMetaQuestionEvent(reasoning="forced normal"),
         )
-    return event.limited_history
+    return event.history
 
 
 @async_test

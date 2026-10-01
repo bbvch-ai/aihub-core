@@ -1,0 +1,45 @@
+---
+config:
+  number_of_input_tokens:
+    label: Max input tokens
+    help: Maximum number of tokens allowed in the LLM input. Limits context size to manage
+      costs and avoid exceeding model limits.
+  condense_question:
+    label: Condense the question
+    help: Rewrite the latest message into one standalone question using the conversation so
+      far, before memory, retrieval and other context is looked up. Off means the latest message
+      is used as is.
+steps:
+  derive_query:
+    name: Derive Query
+    description: Determines the question this turn is answered for, either the latest message
+      as is or condensed from the conversation.
+  compose_context:
+    name: Compose Context
+    description: Merges the requested context blocks, such as memories, into the chat history
+      within the model's input budget.
+  complete:
+    name: Complete Conversation
+    description: Suggests follow-up questions from the answer and ends the run with the requested
+      stop event.
+  limit_chat_history:
+    name: Limit Chat History
+    description: Truncates incoming chat messages to fit within the configured token limit.
+  recall_memory:
+    name: Recall Memory
+    description: Asks for the user's and the organization's memories about the turn's query.
+  assemble_prompt:
+    name: Assemble Prompt
+    description: Asks for the chat history with the recalled context merged in.
+thoughts:
+  condensation_empty: The condenser returned an empty standalone question, so this turn has
+    no usable query to retrieve or remember with. Refusing instead of answering from the raw
+    message.
+  input_too_large: 'The input does not fit the model context window: about %{tokens} tokens
+    against a usable budget of %{budget}. Refusing instead of calling the model.'
+messages:
+  condensation_empty: I could not work out what to search for from that message. Please rephrase
+    your question and try again.
+  input_too_large: This file is too large for me to read in one go. Please upload a smaller
+    file, split it into parts, or switch to an assistant that uses a model with a larger context
+    window.

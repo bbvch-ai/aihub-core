@@ -3767,6 +3767,56 @@ export type ConfigSpecs = {
 };
 
 /**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3963,6 +4013,7 @@ export type ContextualizedAgentEvent = {
     | HumanInTheLoopResponseEvent
     | LimitChatHistoryEvent
     | AddMemoryToChatHistoryEvent
+    | ContextComposedEvent
     | AddUserMemoryToChatHistoryEvent
     | AddOrganizationMemoryToChatHistoryEvent
     | StandaloneQuestionCondenserEvent
@@ -3980,6 +4031,7 @@ export type ContextualizedAgentEvent = {
     | EmbeddingEvent
     | LlmEvent
     | LlmStopEvent
+    | RefusalStopEvent
     | MetaQuestionDetectedEvent
     | RerankerEvent
     | RetrieverEvent
@@ -13452,21 +13504,19 @@ export type PromptTokensDetails = {
 /**
  * RAGFailureReason
  *
- * Why a RAG run failed to produce a useful answer.
+ * Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`.
  */
 export const RagFailureReason = {
-  CONDENSATION_EMPTY: "condensation_empty",
   CONTEXT_INSUFFICIENT: "context_insufficient",
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",
   FEW_SHOT_REJECTED: "few_shot_rejected",
-  INPUT_TOO_LARGE: "input_too_large",
 } as const;
 
 /**
  * RAGFailureReason
  *
- * Why a RAG run failed to produce a useful answer.
+ * Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`.
  */
 export type RagFailureReason =
   (typeof RagFailureReason)[keyof typeof RagFailureReason];
@@ -13942,6 +13992,156 @@ export type Rating = {
    * Validation
    */
   readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * RefusalReason
+ *
+ * Why a conversational turn was refused before any answer was attempted.
+ */
+export const RefusalReason = {
+  CONDENSATION_EMPTY: "condensation_empty",
+  INPUT_TOO_LARGE: "input_too_large",
+  OUT_OF_SCOPE: "out_of_scope",
+} as const;
+
+/**
+ * RefusalReason
+ *
+ * Why a conversational turn was refused before any answer was attempted.
+ */
+export type RefusalReason = (typeof RefusalReason)[keyof typeof RefusalReason];
+
+/**
+ * RefusalStopEvent
+ *
+ * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
+ *
+ * Shaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through
+ * `output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The
+ * retrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.
+ */
+export type RefusalStopEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Input Messages
+   *
+   * List of messages sent to the LLM as input.
+   */
+  input_messages?: Array<Message> | null;
+  /**
+   * Output Messages
+   *
+   * List of messages received from the LLM as output.
+   */
+  output_messages?: Array<Message> | null;
+  /**
+   * Invocation Parameters
+   *
+   * Parameters used during the invocation of the LLM.
+   */
+  invocation_parameters?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Chat Model Name
+   *
+   * The name of the language model being utilized.
+   */
+  chat_model_name?: string | null;
+  /**
+   * Provider
+   *
+   * The hosting provider of the LLM, e.g., OpenAI, Azure.
+   */
+  provider?: string | null;
+  /**
+   * System
+   *
+   * The AI product as identified by the client or server.
+   */
+  system?: string | null;
+  /**
+   * Prompt Template
+   *
+   * The prompt template as a Python f-string.
+   */
+  prompt_template?: string | null;
+  /**
+   * Prompt Template Variables
+   *
+   * A dictionary of input variables to the prompt template.
+   */
+  prompt_template_variables?: {
+    [key: string]: string;
+  } | null;
+  /**
+   * Prompt Template Version
+   *
+   * The version of the prompt template being used.
+   */
+  prompt_template_version?: string | null;
+  /**
+   * Token Count Prompt
+   *
+   * The number of tokens in the prompt.
+   */
+  token_count_prompt?: number | null;
+  /**
+   * Token Count Completion
+   *
+   * The number of tokens in the completion.
+   */
+  token_count_completion?: number | null;
+  /**
+   * Token Count Total
+   *
+   * The total number of tokens, including both prompt and completion.
+   */
+  token_count_total?: number | null;
+  /**
+   * Tools
+   *
+   * List of tools that are advertised to the LLM to be able to call.
+   */
+  tools?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * What about the input made the turn unanswerable.
+   */
+  reason: RefusalReason;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -20092,6 +20292,43 @@ export type ColorPickerWritable = {
 };
 
 /**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -20262,6 +20499,7 @@ export type ContextualizedAgentEventWritable = {
     | HumanInTheLoopResponseEventWritable
     | LimitChatHistoryEventWritable
     | AddMemoryToChatHistoryEventWritable
+    | ContextComposedEventWritable
     | AddUserMemoryToChatHistoryEventWritable
     | AddOrganizationMemoryToChatHistoryEventWritable
     | StandaloneQuestionCondenserEventWritable
@@ -20279,6 +20517,7 @@ export type ContextualizedAgentEventWritable = {
     | EmbeddingEventWritable
     | LlmEventWritable
     | LlmStopEventWritable
+    | RefusalStopEventWritable
     | MetaQuestionDetectedEventWritable
     | RerankerEventWritable
     | RetrieverEventWritable
@@ -25647,6 +25886,125 @@ export type RatingWritable = {
    * Icon for cancel button
    */
   cancelIcon?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * RefusalStopEvent
+ *
+ * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
+ *
+ * Shaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through
+ * `output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The
+ * retrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.
+ */
+export type RefusalStopEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Input Messages
+   *
+   * List of messages sent to the LLM as input.
+   */
+  input_messages?: Array<MessageWritable> | null;
+  /**
+   * Output Messages
+   *
+   * List of messages received from the LLM as output.
+   */
+  output_messages?: Array<MessageWritable> | null;
+  /**
+   * Invocation Parameters
+   *
+   * Parameters used during the invocation of the LLM.
+   */
+  invocation_parameters?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Chat Model Name
+   *
+   * The name of the language model being utilized.
+   */
+  chat_model_name?: string | null;
+  /**
+   * Provider
+   *
+   * The hosting provider of the LLM, e.g., OpenAI, Azure.
+   */
+  provider?: string | null;
+  /**
+   * System
+   *
+   * The AI product as identified by the client or server.
+   */
+  system?: string | null;
+  /**
+   * Prompt Template
+   *
+   * The prompt template as a Python f-string.
+   */
+  prompt_template?: string | null;
+  /**
+   * Prompt Template Variables
+   *
+   * A dictionary of input variables to the prompt template.
+   */
+  prompt_template_variables?: {
+    [key: string]: string;
+  } | null;
+  /**
+   * Prompt Template Version
+   *
+   * The version of the prompt template being used.
+   */
+  prompt_template_version?: string | null;
+  /**
+   * Token Count Prompt
+   *
+   * The number of tokens in the prompt.
+   */
+  token_count_prompt?: number | null;
+  /**
+   * Token Count Completion
+   *
+   * The number of tokens in the completion.
+   */
+  token_count_completion?: number | null;
+  /**
+   * Token Count Total
+   *
+   * The total number of tokens, including both prompt and completion.
+   */
+  token_count_total?: number | null;
+  /**
+   * Tools
+   *
+   * List of tools that are advertised to the LLM to be able to call.
+   */
+  tools?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * What about the input made the turn unanswerable.
+   */
+  reason: RefusalReason;
   [key: string]: unknown;
 };
 

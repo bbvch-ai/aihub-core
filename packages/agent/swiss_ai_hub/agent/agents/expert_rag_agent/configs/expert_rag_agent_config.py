@@ -36,6 +36,7 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
             task_llm=base_form.task_llm,
             retrievers=base_form.retrievers,
             number_of_input_tokens=base_form.number_of_input_tokens,
+            condense_question=base_form.condense_question,
             context_sufficient_guard=base_form.context_sufficient_guard,
             reranking_config=base_form.reranking_config,
             few_shot_guard_examples=base_form.few_shot_guard_examples,

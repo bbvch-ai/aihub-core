@@ -220,11 +220,10 @@ no retrieval at all.
 
 With a knowledge agent picked, every drafted reply is answered from it. By default a category searches every collection
 the knowledge agent retrieves from. **Select Knowledge Collections** appears on a category once its **Draft a Reply**
-switch is on — collections only shape a drafted reply. Tick it and pick one or more
-collections, and its replies are answered from those and nothing else — so a message classified as `support_request` can
-be answered from your support material alone, with the category verdict making the lookup precise. Only the collections
-the knowledge agent you picked is actually configured for are offered, because a collection outside its scope would
-retrieve nothing at all.
+switch is on — collections only shape a drafted reply. Tick it and pick one or more collections, and its replies are
+answered from those and nothing else — so a message classified as `support_request` can be answered from your support
+material alone, with the category verdict making the lookup precise. Only the collections the knowledge agent you picked
+is actually configured for are offered, because a collection outside its scope would retrieve nothing at all.
 
 **The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
 creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that

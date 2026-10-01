@@ -25,10 +25,10 @@ steps:
   respond_with_llm:
     name: Rispondi con LLM
     description: Genera una risposta utilizzando il LLM basato su esempi Few-Shot.
-  stop:
-    name: Ferma
-    description: Ferma l'agente quando la richiesta viene rifiutata dalla verifica
-      di idoneità.
+  reject_unsuitable_request:
+    name: Rifiuta richiesta non adatta
+    description: Termina l'esecuzione con un rifiuto trasmesso quando il guard di
+      idoneità respinge la richiesta.
 thoughts:
   input_too_large: "L'input non rientra nella finestra di contesto del modello: circa\
     \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\

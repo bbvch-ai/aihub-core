@@ -5642,6 +5642,75 @@ export const ConfigSpecsSchema = {
     "Validation specification for a form-duality configuration, as announced by the service that owns it.\n\nCarries only the JSON schema the API validates submissions against, so a configuration class defined in\nan agent, process or pipeline container can be enforced by the API without that class being installed there.",
 } as const;
 
+export const ContextComposedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "Chat history with the context blocks merged in, within the input budget.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "_event_name", "_parent_event_names"],
+  title: "ContextComposedEvent",
+  description:
+    "The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind\nthe leading system messages, re-limited to the model's input budget.\n\nDisplayed because it is exactly what the model receives, which the per-capability display events cannot\nshow on their own.",
+} as const;
+
 export const ContextInsufficientRejectEventSchema = {
   properties: {
     event_id: {
@@ -5879,6 +5948,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/AddMemoryToChatHistoryEvent",
         },
         {
+          $ref: "#/components/schemas/ContextComposedEvent",
+        },
+        {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEvent",
         },
         {
@@ -5928,6 +6000,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/LLMStopEvent",
+        },
+        {
+          $ref: "#/components/schemas/RefusalStopEvent",
         },
         {
           $ref: "#/components/schemas/MetaQuestionDetectedEvent",
@@ -20170,15 +20245,14 @@ export const PromptTokensDetailsSchema = {
 export const RAGFailureReasonSchema = {
   type: "string",
   enum: [
-    "condensation_empty",
     "context_insufficient",
     "expert_declined",
     "expert_errored",
     "few_shot_rejected",
-    "input_too_large",
   ],
   title: "RAGFailureReason",
-  description: "Why a RAG run failed to produce a useful answer.",
+  description:
+    "Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`.",
 } as const;
 
 export const RAGFailureStopEventSchema = {
@@ -20979,6 +21053,250 @@ export const RatingSchema = {
   required: ["label", "validation"],
   title: "Rating",
   description: "https://formkit-primevue.netlify.app/inputs/Rating",
+} as const;
+
+export const RefusalReasonSchema = {
+  type: "string",
+  enum: ["condensation_empty", "input_too_large", "out_of_scope"],
+  title: "RefusalReason",
+  description:
+    "Why a conversational turn was refused before any answer was attempted.",
+} as const;
+
+export const RefusalStopEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    input_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/Message",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Input Messages",
+      description: "List of messages sent to the LLM as input.",
+    },
+    output_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/Message",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Output Messages",
+      description: "List of messages received from the LLM as output.",
+    },
+    invocation_parameters: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Invocation Parameters",
+      description: "Parameters used during the invocation of the LLM.",
+    },
+    chat_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Chat Model Name",
+      description: "The name of the language model being utilized.",
+    },
+    provider: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Provider",
+      description: "The hosting provider of the LLM, e.g., OpenAI, Azure.",
+    },
+    system: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "System",
+      description: "The AI product as identified by the client or server.",
+    },
+    prompt_template: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template",
+      description: "The prompt template as a Python f-string.",
+    },
+    prompt_template_variables: {
+      anyOf: [
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Variables",
+      description: "A dictionary of input variables to the prompt template.",
+    },
+    prompt_template_version: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Version",
+      description: "The version of the prompt template being used.",
+    },
+    token_count_prompt: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Prompt",
+      description: "The number of tokens in the prompt.",
+    },
+    token_count_completion: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Completion",
+      description: "The number of tokens in the completion.",
+    },
+    token_count_total: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Total",
+      description:
+        "The total number of tokens, including both prompt and completion.",
+    },
+    tools: {
+      anyOf: [
+        {
+          items: {
+            additionalProperties: true,
+            type: "object",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tools",
+      description:
+        "List of tools that are advertised to the LLM to be able to call.",
+    },
+    reason: {
+      $ref: "#/components/schemas/RefusalReason",
+      description: "What about the input made the turn unanswerable.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["reason", "_event_name", "_parent_event_names"],
+  title: "RefusalStopEvent",
+  description:
+    "Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.\n\nShaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through\n`output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The\nretrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.",
 } as const;
 
 export const RepeaterSchema = {
@@ -30248,6 +30566,58 @@ export const ColorPickerWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/ColorPicker",
 } as const;
 
+export const ContextComposedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "Chat history with the context blocks merged in, within the input budget.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history"],
+  title: "ContextComposedEvent",
+  description:
+    "The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind\nthe leading system messages, re-limited to the model's input budget.\n\nDisplayed because it is exactly what the model receives, which the per-capability display events cannot\nshow on their own.",
+} as const;
+
 export const ContextInsufficientRejectEventWritableSchema = {
   properties: {
     event_id: {
@@ -30451,6 +30821,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/AddMemoryToChatHistoryEventWritable",
         },
         {
+          $ref: "#/components/schemas/ContextComposedEventWritable",
+        },
+        {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEventWritable",
         },
         {
@@ -30500,6 +30873,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/LLMStopEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/RefusalStopEventWritable",
         },
         {
           $ref: "#/components/schemas/MetaQuestionDetectedEventWritable",
@@ -39262,6 +39638,225 @@ export const RatingWritableSchema = {
   required: ["label"],
   title: "Rating",
   description: "https://formkit-primevue.netlify.app/inputs/Rating",
+} as const;
+
+export const RefusalStopEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    input_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/MessageWritable",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Input Messages",
+      description: "List of messages sent to the LLM as input.",
+    },
+    output_messages: {
+      anyOf: [
+        {
+          items: {
+            $ref: "#/components/schemas/MessageWritable",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Output Messages",
+      description: "List of messages received from the LLM as output.",
+    },
+    invocation_parameters: {
+      anyOf: [
+        {
+          additionalProperties: true,
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Invocation Parameters",
+      description: "Parameters used during the invocation of the LLM.",
+    },
+    chat_model_name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Chat Model Name",
+      description: "The name of the language model being utilized.",
+    },
+    provider: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Provider",
+      description: "The hosting provider of the LLM, e.g., OpenAI, Azure.",
+    },
+    system: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "System",
+      description: "The AI product as identified by the client or server.",
+    },
+    prompt_template: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template",
+      description: "The prompt template as a Python f-string.",
+    },
+    prompt_template_variables: {
+      anyOf: [
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Variables",
+      description: "A dictionary of input variables to the prompt template.",
+    },
+    prompt_template_version: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prompt Template Version",
+      description: "The version of the prompt template being used.",
+    },
+    token_count_prompt: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Prompt",
+      description: "The number of tokens in the prompt.",
+    },
+    token_count_completion: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Completion",
+      description: "The number of tokens in the completion.",
+    },
+    token_count_total: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Token Count Total",
+      description:
+        "The total number of tokens, including both prompt and completion.",
+    },
+    tools: {
+      anyOf: [
+        {
+          items: {
+            additionalProperties: true,
+            type: "object",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tools",
+      description:
+        "List of tools that are advertised to the LLM to be able to call.",
+    },
+    reason: {
+      $ref: "#/components/schemas/RefusalReason",
+      description: "What about the input made the turn unanswerable.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["reason"],
+  title: "RefusalStopEvent",
+  description:
+    "Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.\n\nShaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through\n`output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The\nretrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.",
 } as const;
 
 export const RepeaterWritableSchema = {
