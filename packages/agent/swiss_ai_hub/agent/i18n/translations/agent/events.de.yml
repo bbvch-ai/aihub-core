@@ -5,3 +5,7 @@ rag_start:
 determine_namespaces:
   name: Namespaces-Bestimmungs-Event
   description: Löst das LLM aus, um Namespaces aus dem Gesprächskontext zu bestimmen.
+in_order_node_combiner:
+  name: Dokumente für die Antwort
+  description: Die gefundenen Dokumente, auf die sich die Antwort stützt, in der Reihenfolge,
+    in der das Modell sie liest.

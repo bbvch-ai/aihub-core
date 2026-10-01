@@ -16,6 +16,11 @@ condenser:
     4. **Conserver les déclarations personnelles** : Si le message de l'utilisateur contient un fait le concernant (par ex. "Je suis végétarien — qu'y a-t-il au menu ?"), conservez ce fait dans la question autonome (par ex. "En tant que végétarien, qu'y a-t-il au menu ?"). Cela ne s'applique qu'aux courtes déclarations personnelles — ne reportez jamais de contenu volumineux tel que des documents collés, des journaux ou du code dans la question.
     5. **Sortie** : Ne donnez QUE la nouvelle phrase.
     </instructions>
+citations:
+  instruction: Chaque document qui t'est fourni porte un attribut id. Cite les documents
+    utilisés dans le texte, avec leur id entre crochets juste après l'affirmation
+    qu'ils étayent, par exemple [sbcd9ab] ou [sbcd9ab][s547946]. Ne cite que les id
+    des documents fournis et n'écris jamais de références numérotées comme [1].
 rag:
   context_prompt: |
     {% chat role="user" %}

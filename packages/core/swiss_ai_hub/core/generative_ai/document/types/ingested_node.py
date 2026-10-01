@@ -4,8 +4,9 @@ from typing import Annotated
 
 from llama_index.core.schema import BaseNode, NodeWithScore, TextNode
 from openinference.semconv.trace import DocumentAttributes
-from pydantic import Field
+from pydantic import Field, computed_field
 
+from swiss_ai_hub.core.generative_ai.citations.citation_id import CitationId
 from swiss_ai_hub.core.generative_ai.document.types.ingested_base import IngestedBase
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -58,6 +59,12 @@ class IngestedNode(IngestedBase):
         NODE_CONTENT_TYPE_TEXT
     )
     document_id: Annotated[str, Field(description="ID of original ref_doc.")]
+
+    @computed_field
+    @property
+    def citation_id(self) -> str:
+        """The id an agent's answer cites this node's document by; every node of one document shares it."""
+        return CitationId.of(self.document_id)
 
     start_char_idx: Annotated[int | None, Field(description="The start character index of the Node.")] = None
     end_char_idx: Annotated[int | None, Field(description="The end character index of the Node.")] = None

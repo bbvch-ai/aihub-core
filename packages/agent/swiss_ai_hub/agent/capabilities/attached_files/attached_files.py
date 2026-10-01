@@ -62,9 +62,14 @@ class AttachedFiles(Capability):
         history: list[ChatMessage],
         query: str = "",
         reserve_tokens: int = 0,
+        cite_sources: bool = True,
     ) -> ReadAttachedFilesEvent:
         return ReadAttachedFilesEvent(
-            files=list(files or []), history=history, query=query, reserve_tokens=max(reserve_tokens, 0)
+            files=list(files or []),
+            history=history,
+            query=query,
+            reserve_tokens=max(reserve_tokens, 0),
+            cite_sources=cite_sources,
         )
 
     @staticmethod
@@ -113,7 +118,8 @@ class AttachedFiles(Capability):
         fitted = await AttachedFiles._fit(sections, rooms, picker, request.query)
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
-        return [*events, AttachedFilesReadEvent(block=AttachedFiles._block(outcomes, fitted, t))]
+        block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources)
+        return [*events, AttachedFilesReadEvent(block=block)]
 
     @staticmethod
     async def _fit(
@@ -151,6 +157,7 @@ class AttachedFiles(Capability):
         outcomes: Sequence[tuple[ExtractedDocument | None, AttachedFileEvent]],
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
+        cite_sources: bool,
     ) -> list[ChatMessage]:
         """The files as retrieved knowledge is rendered, followed by what the model must tell the user about them."""
         chosen = [section for sections, _ in fitted.values() for section in sections]
@@ -161,6 +168,8 @@ class AttachedFiles(Capability):
                     chosen, t, AgentLocaleString.from_i18n_path("agent.attached_files.prompt.context")
                 )
             )
+            if cite_sources:
+                block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
         notes = [AttachedFiles._note(event, fitted, t) for _, event in outcomes]
         if any(notes):
             block.append(ChatMessage(role=MessageRole.SYSTEM, content="\n".join(note for note in notes if note)))
@@ -181,6 +190,11 @@ class AttachedFiles(Capability):
     def _with_status(
         event: AttachedFileEvent, fitted: dict[str, tuple[list[IngestedNode], FitMode]]
     ) -> AttachedFileEvent:
-        if event.file_id in fitted and fitted[event.file_id][1] != FitMode.WHOLE:
-            return event.model_copy(update={"status": AttachedFileStatus.TRUNCATED})
-        return event
+        """The text the model received, and whether it was all of the file."""
+        if event.file_id not in fitted:
+            return event
+        sections, mode = fitted[event.file_id]
+        status = AttachedFileStatus.READ if mode == FitMode.WHOLE else AttachedFileStatus.TRUNCATED
+        return event.model_copy(
+            update={"status": status, "content": "\n\n".join(section.content for section in sections)}
+        )

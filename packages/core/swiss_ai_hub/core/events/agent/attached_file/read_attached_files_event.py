@@ -31,3 +31,7 @@ class ReadAttachedFilesEvent(ControlEvent):
             ge=0,
         ),
     ] = 0
+    cite_sources: Annotated[
+        bool,
+        Field(description="Whether the model is told to cite the files by id, off where citations cannot resolve."),
+    ] = True

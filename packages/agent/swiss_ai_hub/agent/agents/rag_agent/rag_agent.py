@@ -37,6 +37,7 @@ from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
     do_context_sufficient_guard,
@@ -130,7 +131,11 @@ class RAGAgent(Agent):
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         files = AttachedFiles.read(
-            start_event.files, ctx.history, ctx.query, reserve_tokens=agent_config.retrieved_context_reserve()
+            start_event.files,
+            ctx.history,
+            ctx.query,
+            reserve_tokens=agent_config.retrieved_context_reserve(),
+            cite_sources=CitationPolicy.cites_sources(start_event),
         )
         return [Memory.recall(ctx.query, namespaces), files]
 
@@ -316,6 +321,7 @@ class RAGAgent(Agent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
@@ -334,6 +340,7 @@ class RAGAgent(Agent):
             t,
             user,
             as_stop_step=False,
+            cite_sources=CitationPolicy.cites_sources(start_event),
         )
         stop = do_finalize_rag_stop(
             llm_event=answer,

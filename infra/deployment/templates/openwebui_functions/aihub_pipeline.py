@@ -71,6 +71,12 @@ MOA_RESPONSE_GENERATION_TASK = "moa_response_generation"
 # LiteLLM/Langfuse session.
 MOA_MERGE_THREAD_SALT = "moa-merge"
 
+# Agents cite a source by the id on its ``REFERENCE_DOCUMENT`` tag (``CitationId`` in swiss_ai_hub.core), e.g.
+# ``[s3f9a1c]``. Open WebUI only links numbers, 1-based into the message's source list, so the pipe rewrites them.
+CITATION_MARKER_PATTERN = re.compile(r"(\s*)\[\s*(s[0-9a-f]{6}(?:\s*[,;]\s*s[0-9a-f]{6})*)\s*\]")
+CITATION_ID_PATTERN = re.compile(r"s[0-9a-f]{6}")
+UNFINISHED_CITATION_PATTERN = re.compile(r"\[\s*s[0-9a-f]{0,6}(?:\s*[,;]\s*s[0-9a-f]{0,6})*$")
+
 
 # ============================================================================
 # Domain Models with Inheritance
@@ -375,10 +381,91 @@ class MessageConverter:
 # ============================================================================
 
 
+class CitationRegistry:
+    """The message's source list as Open WebUI numbers it, and the rewrite of cited ids into those numbers.
+
+    Open WebUI resolves ``[n]`` to the n-th distinct source of the message, counted in the order sources arrived and
+    keyed the way ``getSourceIds`` keys them (``ContentRenderer.svelte``). Every source goes through here, memories
+    included, so the numbers stay aligned even for sources no agent cites. An id the pipe never emitted as a source
+    is dropped rather than shown as a dead marker. Two documents sharing a label, such as an attached
+    ``contract.pdf`` and a knowledge document of the same name, would share a number, so the later one is renamed
+    ``contract.pdf (2)``.
+    """
+
+    def __init__(self) -> None:
+        self._keys: list[str] = []
+        self._numbers: dict[str, int] = {}
+        self._label_owners: dict[str, str] = {}
+        self._labels_by_document: dict[str, str] = {}
+
+    @staticmethod
+    def key_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Dedupe key"]:
+        metadata = (source_data.get("metadata") or [{}])[0]
+        source_id = metadata.get("source") or "N/A"
+        if metadata.get("name"):
+            return metadata["name"]
+        if source_id.startswith(("http://", "https://")):
+            return source_id
+        return source_data.get("source", {}).get("name") or source_id
+
+    @staticmethod
+    def document_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Identity"]:
+        """What Open WebUI's source modal groups by, so it tells two same-named documents apart."""
+        metadata = (source_data.get("metadata") or [{}])[0]
+        return metadata.get("source") or source_data.get("source", {}).get("id") or CitationRegistry.key_of(source_data)
+
+    def register(
+        self,
+        source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
+        citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
+    ) -> Annotated[dict[str, Any], "The payload to emit, relabelled when its label was taken"]:
+        source_data = self._with_unique_label(source_data)
+        key = self.key_of(source_data)
+        if key not in self._keys:
+            self._keys.append(key)
+        if citation_id and citation_id not in self._numbers:
+            self._numbers[citation_id] = self._keys.index(key) + 1
+        return source_data
+
+    def _with_unique_label(self, source_data: dict[str, Any]) -> dict[str, Any]:
+        document = self.document_of(source_data)
+        label = self._labels_by_document.get(document)
+        if label is None:
+            label = base = self.key_of(source_data)
+            suffix = 2
+            while self._label_owners.get(label, document) != document:
+                label = f"{base} ({suffix})"
+                suffix += 1
+            self._label_owners[label] = document
+            self._labels_by_document[document] = label
+        if label == self.key_of(source_data):
+            return source_data
+        return {
+            **source_data,
+            "source": {**source_data.get("source", {}), "name": label},
+            "metadata": [{**metadata, "name": label} for metadata in source_data.get("metadata") or [{}]],
+        }
+
+    def resolve(self, content: Annotated[str, "Rendered message content"]) -> Annotated[str, "Content Open WebUI links"]:
+        resolved = CITATION_MARKER_PATTERN.sub(self._numbered, content)
+        return UNFINISHED_CITATION_PATTERN.sub("", resolved)
+
+    def _numbered(self, match: re.Match) -> str:
+        numbers = []
+        for citation_id in CITATION_ID_PATTERN.findall(match.group(2)):
+            number = self._numbers.get(citation_id)
+            if number is not None and number not in numbers:
+                numbers.append(number)
+        if not numbers:
+            return ""
+        return match.group(1) + "".join(f"[{number}]" for number in numbers)
+
+
 class StreamingStateManager:
     """Manages streaming content state with proper encapsulation"""
 
     def __init__(self):
+        self.citations = CitationRegistry()
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
         self._deferred_thinking: Annotated[
@@ -529,7 +616,7 @@ class StreamingStateManager:
         if self._deferred_thinking:
             html_parts.append(self._deferred_thinking.to_html())
 
-        return "".join(html_parts)
+        return self.citations.resolve("".join(html_parts))
 
 
 # ============================================================================
@@ -567,6 +654,14 @@ class EventContext:
         self.chat_id = chat_id
         self.message_id = message_id
         self.redis = redis
+
+    async def emit_source(
+        self,
+        source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
+        citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
+    ) -> None:
+        source_data = self.state_manager.citations.register(source_data, citation_id)
+        await self.emitter({"type": "source", "data": source_data})
 
 
 class EventHandler(ABC):
@@ -857,7 +952,7 @@ class EmbeddingEventHandler(EventHandler):
 
 
 class RetrieverEventHandler(EventHandler):
-    """Handler for document retrieval events"""
+    """Reports how many documents were found; the sources come from what the model is handed, see below."""
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
@@ -872,10 +967,6 @@ class RetrieverEventHandler(EventHandler):
         nodes = event.get("nodes", [])
 
         if nodes:
-            for node in nodes:
-                source_data = self._build_source_data(node)
-                await context.emitter({"type": "source", "data": source_data})
-
             description = event.get("display_description", {}).get("en", f"Found {len(nodes)} relevant documents")
 
             await context.emitter(
@@ -891,43 +982,75 @@ class RetrieverEventHandler(EventHandler):
 
         return True
 
+
+class GroundingNodesEventHandler(EventHandler):
+    """Lists the knowledge documents the answer is grounded in as sources, one per document.
+
+    The grounding nodes are exactly what the model reads, after reranking and with carried prior-turn documents, so
+    every document it can cite is listed and none it never saw. Chunks of one document share the document's
+    citation id and become one source holding each chunk.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if grounding nodes event"]:
+        return "InOrderNodeCombinerEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Grounding nodes event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        documents: dict[str, list[dict[str, Any]]] = {}
+        for node in event.get("grounding_nodes") or []:
+            documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
+        for citation_id, nodes in documents.items():
+            await context.emit_source(self._build_source_data(nodes), citation_id)
+        return True
+
+    @staticmethod
     def _build_source_data(
-        self, node: Annotated[dict[str, Any], "Node data"]
+        nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
-        """Build source data structure from node"""
-        metadata = node.get("metadata", {})
-
-        source_data = {
+        first = nodes[0]
+        reference_url = (first.get("metadata") or {}).get("reference_url", "")
+        source_data: dict[str, Any] = {
             "source": {
-                "name": node.get("document_title", node.get("source", "Unknown Source")),
-                "id": node.get("id", ""),
+                "name": GroundingNodesEventHandler.display_name(first),
+                "id": first.get("document_id", ""),
             },
-            "document": [node.get("content", "")],
-            "metadata": [
-                {
-                    "source": node.get("source", ""),
-                    "document_title": node.get("document_title", ""),
-                    "namespace": node.get("namespace", ""),
-                    "language": node.get("language", ""),
-                    "document_id": node.get("document_id", ""),
-                    "reference_url": metadata.get("reference_url", ""),
-                    "created_at": node.get("created_at", ""),
-                    "name": node.get("source", ""),
-                }
-            ],
+            "document": [node.get("content", "") for node in nodes],
+            "metadata": [GroundingNodesEventHandler._node_metadata(node, reference_url) for node in nodes],
         }
-
-        # Add optional fields
-        if metadata.get("reference_url"):
-            source_data["source"]["url"] = metadata["reference_url"]
-
-        if node.get("index") is not None:
-            source_data["metadata"][0]["page"] = node["index"]
-
-        if "score" in node:
-            source_data["distances"] = [node["score"]]
-
+        if reference_url:
+            source_data["source"]["url"] = reference_url
+        if all("score" in node for node in nodes):
+            source_data["distances"] = [node["score"] for node in nodes]
         return source_data
+
+    @staticmethod
+    def display_name(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Label on the citation chip"]:
+        """The document's title or file name; its storage URL is not something a user can open."""
+        source = node.get("source", "")
+        return node.get("document_title") or source.rstrip("/").rsplit("/", 1)[-1] or "Unknown Source"
+
+    @staticmethod
+    def _node_metadata(
+        node: Annotated[dict[str, Any], "Node data"], reference_url: Annotated[str, "Document link"]
+    ) -> Annotated[dict[str, Any], "Open WebUI metadata of one chunk"]:
+        metadata = {
+            "source": node.get("source", ""),
+            "name": GroundingNodesEventHandler.display_name(node),
+            "document_title": node.get("document_title", ""),
+            "namespace": node.get("namespace", ""),
+            "language": node.get("language", ""),
+            "document_id": node.get("document_id", ""),
+            "reference_url": reference_url,
+            "created_at": node.get("created_at", ""),
+        }
+        if node.get("index") is not None:
+            metadata["page"] = node["index"]
+        return metadata
 
 
 class AttachedFileEventHandler(EventHandler):
@@ -962,15 +1085,13 @@ class AttachedFileEventHandler(EventHandler):
         metadata: dict[str, Any] = {"source": owui_file_id or filename, "name": name}
         if owui_file_id:
             metadata["file_id"] = owui_file_id
-        await context.emitter(
+        await context.emit_source(
             {
-                "type": "source",
-                "data": {
-                    "source": {"id": owui_file_id or event.get("file_id", ""), "name": name},
-                    "document": [event.get("excerpt", "")],
-                    "metadata": [metadata],
-                },
-            }
+                "source": {"id": owui_file_id or event.get("file_id", ""), "name": name},
+                "document": [event.get("content") or ""],
+                "metadata": [metadata],
+            },
+            event.get("citation_id"),
         )
         return True
 
@@ -993,7 +1114,7 @@ class RetrieveUserMemoryEventHandler(EventHandler):
         if memories:
             for memory in memories:
                 source_data = self._build_memory_source_data(memory, memory_type="user")
-                await context.emitter({"type": "source", "data": source_data})
+                await context.emit_source(source_data)
 
             description = event.get("display_description", {}).get("en", f"Retrieved {len(memories)} user memories")
 
@@ -1021,14 +1142,16 @@ class RetrieveUserMemoryEventHandler(EventHandler):
         score = memory.get("score")
         created_at = memory.get("created_at", "")
 
+        name = f"💭 Memory: {memory_text[:100]}{'...' if len(memory_text) > 100 else ''}"
         source_data = {
             "source": {
-                "name": f"💭 Memory: {memory_text[:100]}{'...' if len(memory_text) > 100 else ''}",
+                "name": name,
                 "id": memory_id,
             },
             "document": [memory_text],
             "metadata": [
                 {
+                    "source": name,
                     "type": memory_type,
                     "memory_id": memory_id,
                     "created_at": created_at,
@@ -1064,7 +1187,7 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
         if memories:
             for memory in memories:
                 source_data = self._build_memory_source_data(memory, memory_type="organization")
-                await context.emitter({"type": "source", "data": source_data})
+                await context.emit_source(source_data)
 
             description = event.get("display_description", {}).get(
                 "en", f"Retrieved {len(memories)} organization memories"
@@ -1094,14 +1217,16 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
         score = memory.get("score")
         created_at = memory.get("created_at", "")
 
+        name = f"🏢 Org Memory: {memory_id[:8]}..."
         source_data = {
             "source": {
-                "name": f"🏢 Org Memory: {memory_id[:8]}...",
+                "name": name,
                 "id": memory_id,
             },
             "document": [memory_text],
             "metadata": [
                 {
+                    "source": name,
                     "type": memory_type,
                     "memory_id": memory_id,
                     "created_at": created_at,
@@ -1236,6 +1361,7 @@ class EventProcessorFactory:
             ExceptionEventHandler(),
             EmbeddingEventHandler(),
             RetrieverEventHandler(),
+            GroundingNodesEventHandler(),
             AttachedFileEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
