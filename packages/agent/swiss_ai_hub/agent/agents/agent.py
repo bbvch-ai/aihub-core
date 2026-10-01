@@ -60,6 +60,11 @@ class Agent(DispatchableWorkflow):
     # Admin UI. Non-discoverable agents still subscribe to and process their control events normally.
     discoverable: ClassVar[bool] = True
 
+    # The stop events a blueprint ends its runs with by handing them to `Conversation.complete(stop=...)`. They
+    # travel inside the request's payload, so no step's return type names them; without this declaration the
+    # REST response model and the workflow graph fall back to the bare `StopEvent` and drop their fields.
+    completion_stops: ClassVar[tuple[type[StopEvent], ...]] = ()
+
     STEP_ANNOTATION = "_is_agent_step"
 
     PRECONDITION_FUNCTION_ANNOTATION = "_precondition_fn"
@@ -117,7 +122,7 @@ class Agent(DispatchableWorkflow):
         These events indicate how a run/workflow can terminate.
         """
         output_events = cls.get_output_events()
-        return {event for event in output_events if issubclass(event, StopEvent)}
+        return {event for event in output_events if issubclass(event, StopEvent)} | set(cls.completion_stops)
 
     @classmethod
     @functools.cache
