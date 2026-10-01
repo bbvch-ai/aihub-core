@@ -49,3 +49,17 @@ def test_catastrophic_pattern_times_out_with_a_hint() -> None:
     with pytest.raises(InvalidPathPatternError, match="too long to match"):
         catastrophic.matches("a" * 40 + "b")
     assert time.monotonic() - started < 1
+
+
+def test_budget_covers_the_whole_call_not_each_path() -> None:
+    """About 40 ms per path stays under any per-path timeout, but across 300 paths it blocked for about 13 s."""
+    slow_per_path = PathRegex(r"^(a|a)*$")
+    paths = ["a" * 18 + "b"] * 300
+    started = time.monotonic()
+    with pytest.raises(InvalidPathPatternError, match="too long to match"):
+        slow_per_path.matches_all(paths)
+    assert time.monotonic() - started < 1.5
+
+
+def test_matches_all_keeps_order() -> None:
+    assert PathRegex("acme").matches_all(["a/acme.pdf", "b/globex.pdf", "acme.md"]) == [True, False, True]

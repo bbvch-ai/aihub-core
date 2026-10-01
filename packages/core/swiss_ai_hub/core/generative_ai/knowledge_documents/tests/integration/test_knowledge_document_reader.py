@@ -1,5 +1,7 @@
+import asyncio
 import time
 import unicodedata
+import uuid
 from collections.abc import Iterator
 
 import pytest
@@ -25,10 +27,13 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.documents.utils.id_utils import source_to_doc_id
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
-_DB_A = "kdocreadertesta"
-_DB_B = "kdocreadertestb"
+# Unique per run: the doc-store databases live outside the test database the session fixture drops, so fixed names
+# would let an interrupted run's rows fail every later one on duplicate ids.
+_RUN = uuid.uuid4().hex[:8]
+_DB_A = f"kdocreader{_RUN}a"
+_DB_B = f"kdocreader{_RUN}b"
 _FINANCE = BucketNamespacePair(bucket_name=_DB_A, namespace_name="finance")
 _LEGAL = BucketNamespacePair(bucket_name=_DB_A, namespace_name="legal")
 _BULK = BucketNamespacePair(bucket_name=_DB_A, namespace_name="bulk")
@@ -90,8 +95,9 @@ def knowledge_databases() -> Iterator[dict[str, str]]:
     gone = NamespaceEntity.create_namespace(str(bucket_a.id), "gone", folder_name="gone")
     NamespaceEntity.mark_deleting(str(gone.id))
     NamespaceEntity.create_namespace(str(bucket_b.id), "hr", folder_name="hr")
-    MongoConnectionRegistry.ensure_alias(_DB_A)
-    MongoConnectionRegistry.ensure_alias(_DB_B)
+    for db_name in (_DB_A, _DB_B):
+        MongoConnectionRegistry.ensure_alias(db_name)
+        get_db(db_name).client.drop_database(db_name)
 
     ids = {
         "acme": _insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/q1/acme.pdf", text="ACME " * 1000),
@@ -239,6 +245,38 @@ async def test_load_by_path_rejects_an_unknown_path() -> None:
 async def test_an_unusable_collection_fails_the_whole_call(collection: BucketNamespacePair, reason: str) -> None:
     with pytest.raises(KnowledgeCollectionNotFoundError, match=reason):
         await KnowledgeDocumentReader.list_documents([_FINANCE, collection])
+
+
+@pytest.mark.asyncio
+async def test_concurrent_reads_of_two_databases_never_cross(knowledge_databases: dict[str, str]) -> None:
+    """Worker threads used to share one `switch_db` binding of `RefDoc`: half of these calls got the other database."""
+    finance_ids = {knowledge_databases[key] for key in ("acme", "legacy", "umlaut")}
+    hr_ids = {knowledge_databases["hr_acme"]}
+
+    for _ in range(50):
+        finance, hr, hr_document = await asyncio.gather(
+            KnowledgeDocumentReader.list_documents([_FINANCE]),
+            KnowledgeDocumentReader.list_documents([_HR]),
+            KnowledgeDocumentReader.load_document([_HR], knowledge_databases["hr_acme"]),
+        )
+        assert {doc.id for doc in finance.documents} == finance_ids
+        assert {doc.id for doc in hr.documents} == hr_ids
+        assert hr_document.text == "HR copy"
+
+
+@pytest.mark.asyncio
+async def test_load_by_path_ignores_a_sibling_collection_being_deleted(knowledge_databases: dict[str, str]) -> None:
+    document = await KnowledgeDocumentReader.load_document_by_path(
+        [_FINANCE, _GONE], _FINANCE, "invoices/2025/q1/acme.pdf"
+    )
+
+    assert document.summary.id == knowledge_databases["acme"]
+
+
+@pytest.mark.asyncio
+async def test_load_by_path_from_a_collection_being_deleted_fails() -> None:
+    with pytest.raises(KnowledgeCollectionNotFoundError, match="is being deleted"):
+        await KnowledgeDocumentReader.load_document_by_path([_FINANCE, _GONE], _GONE, "any.pdf")
 
 
 @pytest.mark.asyncio

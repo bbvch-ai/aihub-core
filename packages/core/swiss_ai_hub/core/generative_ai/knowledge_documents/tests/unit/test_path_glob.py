@@ -1,3 +1,4 @@
+import time
 import unicodedata
 
 import pytest
@@ -56,3 +57,20 @@ def test_empty_pattern_is_rejected_with_a_hint(pattern: str) -> None:
 def test_brace_explosion_is_rejected() -> None:
     with pytest.raises(InvalidPathPatternError, match="more than 64"):
         PathGlob("{a,b}" * 7)
+
+
+def test_brace_explosion_is_rejected_before_it_is_built() -> None:
+    """Building every combination first took 2.6 s for 20 groups, doubling with each one."""
+    started = time.monotonic()
+    with pytest.raises(InvalidPathPatternError, match="more than 64"):
+        PathGlob("{a,b}" * 60)
+    assert time.monotonic() - started < 0.1
+
+
+def test_exactly_64_alternatives_are_allowed() -> None:
+    assert PathGlob("{a,b}" * 6).matches("abaaba")
+
+
+def test_overlong_pattern_is_rejected() -> None:
+    with pytest.raises(InvalidPathPatternError, match="longer than 500"):
+        PathGlob("a" * 501)

@@ -4,6 +4,7 @@ from pathlib import PurePosixPath
 from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
 
 _MAX_ALTERNATIVES = 64
+_MAX_PATTERN_LENGTH = 500
 
 
 class PathGlob:
@@ -17,30 +18,40 @@ class PathGlob:
 
     def __init__(self, pattern: str) -> None:
         self.pattern = pattern
+        if len(pattern) > _MAX_PATTERN_LENGTH:
+            raise InvalidPathPatternError(
+                pattern[:80] + "...", f"it is longer than {_MAX_PATTERN_LENGTH} characters; use a shorter pattern"
+            )
         normalized = unicodedata.normalize("NFC", pattern).lstrip("/")
         if not normalized:
             raise InvalidPathPatternError(pattern, "the pattern is empty; use '**' to match every document")
         self._alternatives = self._expand_braces(normalized)
-        if len(self._alternatives) > _MAX_ALTERNATIVES:
-            raise InvalidPathPatternError(
-                pattern, f"its braces expand to more than {_MAX_ALTERNATIVES} patterns; use fewer alternatives"
-            )
 
     def matches(self, path: str) -> bool:
         candidate = PurePosixPath(unicodedata.normalize("NFC", path))
         return any(candidate.full_match(alternative, case_sensitive=False) for alternative in self._alternatives)
 
-    @staticmethod
-    def _expand_braces(pattern: str) -> list[str]:
-        group = PathGlob._first_brace_group(pattern)
-        if group is None:
-            return [pattern]
-        start, end, alternatives = group
-        prefix, suffix = pattern[:start], pattern[end + 1 :]
-        expansions: list[str] = []
-        for alternative in alternatives:
-            expansions.extend(PathGlob._expand_braces(f"{prefix}{alternative}{suffix}"))
-        return expansions
+    def _expand_braces(self, pattern: str) -> list[str]:
+        """Expand groups one at a time and stop at the cap: building every combination first made `'{a,b}' * 20`
+        take seconds on the event loop before the cap was even checked.
+
+        Every pending pattern still expands to at least one result, so finished plus pending is a lower bound on the
+        final count and the cap can be enforced as soon as it is crossed.
+        """
+        pending, expanded = [pattern], []
+        while pending:
+            current = pending.pop()
+            group = self._first_brace_group(current)
+            if group is None:
+                expanded.append(current)
+            else:
+                start, end, alternatives = group
+                pending.extend(f"{current[:start]}{alternative}{current[end + 1 :]}" for alternative in alternatives)
+            if len(expanded) + len(pending) > _MAX_ALTERNATIVES:
+                raise InvalidPathPatternError(
+                    self.pattern, f"its braces expand to more than {_MAX_ALTERNATIVES} patterns; use fewer alternatives"
+                )
+        return expanded
 
     @staticmethod
     def _first_brace_group(pattern: str) -> tuple[int, int, list[str]] | None:

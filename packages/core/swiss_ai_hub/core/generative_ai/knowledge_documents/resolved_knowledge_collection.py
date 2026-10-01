@@ -26,9 +26,3 @@ class ResolvedKnowledgeCollection(BaseModel):
 
     def relative_path(self, source: str) -> str:
         return source.removeprefix(self.source_prefix)
-
-    def is_collection(self, collection: BucketNamespacePair) -> bool:
-        return (
-            self.collection.bucket_name == collection.bucket_name
-            and self.collection.namespace_name == collection.namespace_name
-        )

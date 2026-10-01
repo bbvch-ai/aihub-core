@@ -36,5 +36,7 @@ class KnowledgeDocumentListing(BaseModel):
         return self.model_copy(update={"documents": [doc for doc in self.documents if glob.matches(doc.path)]})
 
     def matching_regex(self, pattern: str) -> Self:
-        path_regex = PathRegex(pattern)
-        return self.model_copy(update={"documents": [doc for doc in self.documents if path_regex.matches(doc.path)]})
+        matched = PathRegex(pattern).matches_all([doc.path for doc in self.documents])
+        return self.model_copy(
+            update={"documents": [doc for doc, is_match in zip(self.documents, matched, strict=True) if is_match]}
+        )

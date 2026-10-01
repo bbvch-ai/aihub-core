@@ -33,8 +33,10 @@ _COLLECTIONS_DESCRIPTION = "Collections the caller may read; nothing outside the
 class KnowledgeDocumentReader:
     """Read access to the ingested documents of knowledge collections, independent of any agent.
 
-    Callers pass the collections they may read, so deciding which those are stays with the caller's configuration.
-    Every query is scoped to them, which is also what rejects an id or path from any other collection. Each knowledge
+    Callers pass the collections they may read, and the reader trusts that list: it must come from the agent's profile,
+    whose collection picker checked access when the profile was saved, never from a model's tool arguments. Every query
+    is scoped to it, which is what rejects an id or path from any other collection, so the only argument safe to take
+    from a model is `collection` in `load_document_by_path`, which is checked against the list. Each knowledge
     database's document store is reached through its own connection alias, registered on first use, so this works from
     any process that has the default connection.
     """
@@ -79,11 +81,13 @@ class KnowledgeDocumentReader:
         start: Annotated[int | None, "Offset of the first character to return; None for the beginning"] = None,
         end: Annotated[int | None, "Offset one past the last character to return; None for the end"] = None,
     ) -> KnowledgeDocument:
-        """Load a document's parsed text by its path, which a model reproduces more reliably than a hex id."""
-        resolved_collections = await KnowledgeDocumentReader._resolve_all(collections)
-        target = next((resolved for resolved in resolved_collections if resolved.is_collection(collection)), None)
-        if target is None:
+        """Load a document's parsed text by its path, which a model reproduces more reliably than a hex id.
+
+        Only the named collection is resolved, so a sibling collection being deleted does not fail the load.
+        """
+        if not any(KnowledgeDocumentReader._same(allowed, collection) for allowed in collections):
             raise KnowledgeDocumentNotFoundError(path, collections)
+        target = await asyncio.to_thread(KnowledgeDocumentReader._resolve, collection)
 
         normalized_path = unicodedata.normalize("NFC", path).lstrip("/")
         ref_doc = await asyncio.to_thread(
@@ -130,6 +134,10 @@ class KnowledgeDocumentReader:
         if ref_doc.data.metadata.is_ingested is False or ref_doc.type_ == "placeholder":
             raise KnowledgeDocumentPendingError(reference, resolved.collection)
         return KnowledgeDocument.from_ref_doc(ref_doc, resolved, start, end)
+
+    @staticmethod
+    def _same(first: BucketNamespacePair, second: BucketNamespacePair) -> bool:
+        return first.bucket_name == second.bucket_name and first.namespace_name == second.namespace_name
 
     @staticmethod
     async def _resolve_all(collections: list[BucketNamespacePair]) -> list[ResolvedKnowledgeCollection]:
