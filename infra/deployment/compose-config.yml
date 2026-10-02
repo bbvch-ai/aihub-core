@@ -36,7 +36,7 @@ image_tags:
   litellm: litellm:v1.83.10-stable
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
-  open_terminal: open-terminal-office:0.11.34
+  open_terminal: open-terminal-office:0.11.34-1
   otel_collector: otel/opentelemetry-collector-contrib:0.154.0
   traefik: traefik:v3.6.2
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3

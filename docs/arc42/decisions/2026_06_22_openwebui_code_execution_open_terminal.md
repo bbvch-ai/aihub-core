@@ -103,3 +103,14 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 > **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
 > service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
 > from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.
+
+> **Amendment 2026-10-02 — the file API is confined to the user's home.** open-terminal's multi-user file API checks a
+> path as written and then opens it with the server's own rights, which reach every user's home. A user could therefore
+> read and overwrite another user's files through a symlink in their own home, and read paths outside `/home` such as
+> `/proc/1/environ`, which holds `OPEN_TERMINAL_API_KEY` and with it the means to act as any user (upstream issue #123).
+> Upstream treats cross-user access inside one container as out of scope (its `SECURITY.md`, as of v0.14.0), so our
+> image patches it: `confine_file_api_to_home.py` resolves links and lets the file API reach only the user's real home,
+> and the image build fails when the patched code changed upstream. Shell commands still run as the user and see the rest
+> of the system under normal permissions. A window remains between the check and the open, in which a user who swaps a
+> link at the right moment could still escape; closing it needs every file operation to verify the opened file instead.
+> One container per user, upstream's recommendation, is what removes the shared boundary altogether.

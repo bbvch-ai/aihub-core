@@ -1506,7 +1506,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
     restart: always
     ports: [8200:8000]
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
