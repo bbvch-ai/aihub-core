@@ -1983,6 +1983,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
+        thread_id: Annotated[str, "The conversation, whose folder in the user's files gets each file"],
     ) -> Annotated[
         tuple[list[dict[str, str]], dict[str, str]],
         "Prepared files for AI-Hub, and each agent file id mapped to the Open WebUI file id it came from",
@@ -1995,7 +1996,7 @@ class FileProcessingService:
             if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
                 continue
             try:
-                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
+                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers, thread_id)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
                 continue
@@ -2012,6 +2013,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
         """Upload a single file to the agent's bucket via initiate → PUT → validate, unless it is already there.
 
@@ -2023,7 +2025,9 @@ class FileProcessingService:
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
             filename = name if name.lower().endswith(".txt") else f"{name}.txt"
-            return await self._upload(file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers)
+            return await self._upload(
+                file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers, thread_id
+            )
 
         owui_file_id = file.get("id", "")
         file_obj = await Files.get_file_by_id(owui_file_id)
@@ -2038,11 +2042,11 @@ class FileProcessingService:
         known_uploads = file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}
 
         known_file_id = known_uploads.get(agent_key)
-        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers):
+        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers, thread_id):
             return {"filename": filename, "file_type": content_type, "file_id": known_file_id}
 
         file_content = await asyncio.to_thread(self._read_file_content, file_obj)
-        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers)
+        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers, thread_id)
         if prepared:
             await Files.update_file_metadata_by_id(
                 owui_file_id, {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: prepared["file_id"]}}
@@ -2059,12 +2063,13 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[bool, "Whether the agent bucket still holds it; uploads expire after 7 days"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
-                json={"file_id": file_id, "filename": filename},
+                json={"file_id": file_id, "filename": filename, "thread_id": thread_id},
             )
         return response.status_code == 200 and bool(response.json().get("exists"))
 
@@ -2076,6 +2081,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[Optional[dict[str, str]], "The uploaded file reference, or None when validation failed"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
             initiate_resp = await client.post(
@@ -2095,7 +2101,7 @@ class FileProcessingService:
             validate_resp = await client.post(
                 self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
-                json={"file_id": agent_file_id, "filename": filename},
+                json={"file_id": agent_file_id, "filename": filename, "thread_id": thread_id},
             )
             validate_resp.raise_for_status()
             if not validate_resp.json().get("exists"):
@@ -2615,7 +2621,7 @@ class Pipe:
 
                 # Process files — upload to agent's dedicated bucket
                 files, owui_file_ids = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers
+                    __files__, agent_class, agent_id, headers, thread_id
                 )
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers

@@ -1,4 +1,6 @@
+import asyncio
 import posixpath
+from collections.abc import Callable
 from urllib.parse import quote
 
 from bson import ObjectId
@@ -103,6 +105,21 @@ class UserKnowledgeService:
         relative = UserKnowledgeService._below_top(path)
         await UserKnowledgeService.client_for(user).delete(relative)
         return FilePathDTO(path=relative)
+
+    @staticmethod
+    @trace_fn
+    async def place_attachment(
+        user: UserIdentity, thread_id: str, filename: str, read: Callable[[], bytes]
+    ) -> FilePathDTO | None:
+        """A file attached in a chat also lands in that conversation's folder; a user without a file space yet has
+        none to place it in."""
+        openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
+        if openwebui_id is None:
+            return None
+        folder = posixpath.join(UserKnowledgeService.CONVERSATIONS_FOLDER, thread_id)
+        name = SandboxHomePath.name(filename)
+        await OpenTerminalClient(openwebui_id).upload(folder, name, await asyncio.to_thread(read))
+        return FilePathDTO(path=posixpath.join(folder, name))
 
     @staticmethod
     def _below_top(path: str) -> str:

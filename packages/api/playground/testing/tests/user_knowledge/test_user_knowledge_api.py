@@ -9,7 +9,7 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from swiss_ai_hub.core.infrastructure import OpenTerminalError
-from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler, fake_user
 
 from swiss_ai_hub.api.routes.user_knowledge import user_knowledge_service
 from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller import UserKnowledgeController
@@ -182,3 +182,23 @@ async def test_a_sandbox_refusal_is_passed_on_and_a_failure_is_a_bad_gateway(cli
 
     assert (missing.status_code, missing.json()["detail"]) == (404, "404: Path not found")
     assert (broken.status_code, broken.json()["detail"]) == (502, "The code sandbox did not respond.")
+
+
+@pytest.mark.asyncio
+async def test_an_attachment_is_placed_in_its_conversation_folder(sandbox: Any) -> None:
+    placed = await user_knowledge_service.UserKnowledgeService.place_attachment(
+        fake_user(), THREAD, "report.pdf", lambda: b"%PDF"
+    )
+
+    sandbox.upload.assert_awaited_once_with(f"conversations/{THREAD}", "report.pdf", b"%PDF")
+    assert placed.path == f"conversations/{THREAD}/report.pdf"
+
+
+@pytest.mark.asyncio
+async def test_a_user_without_a_file_space_gets_no_attachment_placed(sandbox: Any) -> None:
+    sandbox.id_of.return_value = None
+
+    assert (
+        await user_knowledge_service.UserKnowledgeService.place_attachment(fake_user(), THREAD, "a.pdf", bytes) is None
+    )
+    sandbox.upload.assert_not_awaited()
