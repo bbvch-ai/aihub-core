@@ -18,6 +18,7 @@ from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import (
 from swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity import OpenWebuiKnowledgeEntryEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility import KnowledgeVisibility
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class OpenWebuiKnowledgeSync:
         listing = await asyncio.to_thread(self.listing)
         entries = {
             (entry.database, entry.namespace): entry
-            for entry in await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.all_entries)
+            for entry in await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.current_entries)
         }
         existing = {knowledge["id"]: knowledge for knowledge in await self._openwebui.list_own_knowledge(http)}
 
@@ -82,24 +83,28 @@ class OpenWebuiKnowledgeSync:
     ) -> None:
         """Entries whose collection is gone, and ones the service account created but nothing maps any more.
 
+        An entry OpenWebUI no longer has, because an administrator deleted it there, is only retired: OpenWebUI
+        refuses to delete an id it does not know, and that refusal would stop every later sync at the same entry.
         The second kind is left behind by a sync that created an entry and stopped before recording it; removing it
         keeps the `#` picker from listing a collection twice.
         """
         for key, entry in entries.items():
             if key not in listing:
-                await self._openwebui.delete_knowledge(http, entry.openwebui_id)
-                await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.forget, entry.openwebui_id)
+                if entry.openwebui_id in existing:
+                    await self._openwebui.delete_knowledge(http, entry.openwebui_id)
+                await asyncio.to_thread(OpenWebuiKnowledgeEntryEntity.retire, entry.openwebui_id)
                 logger.info("OpenWebUI: Removed knowledge entry for '%s/%s'", *key)
         for knowledge_id in set(existing) - {entry.openwebui_id for entry in entries.values()}:
             await self._openwebui.delete_knowledge(http, knowledge_id)
             logger.info("OpenWebUI: Removed unmapped knowledge entry '%s'", knowledge_id)
 
     def listing(self) -> Listing:
-        """Every live collection, named "Database / Collection" in the deployment's model-name locale."""
+        """Every live collection the knowledge page offers, named "Database / Collection" in the deployment's
+        model-name locale."""
         handler = LocaleHandler(self._locale)
         listing: Listing = {}
         for bucket in BucketEntity.get_all_buckets():
-            if bucket.deleting:
+            if bucket.deleting or not KnowledgeVisibility.is_browsable(bucket):
                 continue
             for namespace in NamespaceEntity.get_namespaces_by_bucket(str(bucket.id)):
                 if namespace.deleting:

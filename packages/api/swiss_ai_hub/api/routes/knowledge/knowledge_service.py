@@ -19,6 +19,7 @@ from swiss_ai_hub.core.generative_ai.document.types.ingested_node import Ingeste
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoConnectionRegistry, trace_fn
+from swiss_ai_hub.core.persistence import KnowledgeVisibility
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -26,7 +27,6 @@ from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleString
 from swiss_ai_hub.core.persistence.rag.datalake.entities import (
     BucketEntity,
     IngestorEntity,
-    IngestorType,
     NamespaceEntity,
     SourcePipelineEntity,
 )
@@ -74,8 +74,6 @@ logger = logging.getLogger(__name__)
 _S3_URI_SCHEME = "s3://"
 
 _DOCUMENT_NOT_FOUND_DETAIL = "Document not found"
-
-_SYSTEM_DATABASE_NAMES = frozenset({"admin", "local", "config"})
 
 
 class KnowledgeService:
@@ -166,7 +164,7 @@ class KnowledgeService:
 
             # The legacy default_rag / shared_rag databases are obsolete once their deploy-bound pipelines
             # are switched off, so they are hidden unless a deployment opts back in via SHOW_LEGACY_KNOWLEDGE.
-            if not show_legacy and KnowledgeService._is_legacy_bucket(bucket):
+            if not show_legacy and KnowledgeVisibility.is_legacy(bucket):
                 continue
 
             db_name = bucket.db_name
@@ -581,7 +579,7 @@ class KnowledgeService:
             bucket = BucketEntity.get_bucket_by_db_name(database)
         except DoesNotExist:
             raise HTTPException(status_code=404, detail=f"Database '{database}' not found.") from None
-        if KnowledgeService._is_legacy_bucket(bucket):
+        if KnowledgeVisibility.is_legacy(bucket):
             raise HTTPException(status_code=403, detail=f"Legacy database '{database}' cannot be given a source.")
 
         if request.source is None:
@@ -1016,42 +1014,21 @@ class KnowledgeService:
         return BatchDeleteDocumentsResponse(results=results)
 
     @staticmethod
-    def _is_legacy_bucket(bucket: BucketEntity) -> bool:
-        """Whether the bucket belongs to a legacy deploy-bound pipeline (``default_rag`` / ``shared_rag``)."""
-        return bucket.ingestor in (IngestorType.DEFAULT_RAG.value, IngestorType.SHARED_RAG.value)
-
-    @staticmethod
     def reserved_database_names() -> frozenset[str]:
         """Names a new knowledge database may never be created on.
 
         A database's name doubles as its Mongo store and Milvus collection, so Mongo's own system databases
         and the application's main database would collide, and the two legacy names would put a new database
         on top of a frozen corpus that has no migration path. Spelled out rather than derived from
-        ``non_browsable_database_names``, so that widening one policy cannot silently widen the other.
+        ``KnowledgeVisibility.non_browsable_database_names``, so that widening one policy cannot silently widen
+        the other.
         """
         aihub_settings = AIHubSettings()
-        return _SYSTEM_DATABASE_NAMES | {
+        return KnowledgeVisibility.SYSTEM_DATABASE_NAMES | {
             aihub_settings.MONGO_MAIN_DB_NAME,
             aihub_settings.DEFAULT_BUCKET_NAME,
             aihub_settings.SHARED_BUCKET_NAME,
         }
-
-    @staticmethod
-    def non_browsable_database_names() -> frozenset[str]:
-        """Names no caller may read from or delete in, whatever access rules they hold.
-
-        Reserving a name for creation is not a reason to refuse reads of the database already on it, so the
-        legacy names appear here only when the deployment hides legacy knowledge, making hidden mean
-        unreadable rather than merely unlisted. Uploads and namespace creation stay open either way.
-        """
-        # Keyed on the two configured names, while get_databases hides by the bucket's ingestor. The two
-        # agree unless a deployment renamed its buckets after seeding, which would leave such a bucket
-        # unlisted yet readable by name; closing that would cost a bucket lookup on every guarded read.
-        aihub_settings = AIHubSettings()
-        system_names = _SYSTEM_DATABASE_NAMES | {aihub_settings.MONGO_MAIN_DB_NAME}
-        if aihub_settings.SHOW_LEGACY_KNOWLEDGE:
-            return frozenset(system_names)
-        return frozenset(system_names | {aihub_settings.DEFAULT_BUCKET_NAME, aihub_settings.SHARED_BUCKET_NAME})
 
     @staticmethod
     def _is_database_deletable(bucket: BucketEntity) -> bool:
@@ -1063,7 +1040,7 @@ class KnowledgeService:
         are deletable; only the database as a whole is not. A sourced database is deletable: tearing it down ends
         its sync, nothing refills it.
         """
-        return not KnowledgeService._is_legacy_bucket(bucket)
+        return not KnowledgeVisibility.is_legacy(bucket)
 
     @staticmethod
     def _reject_if_sourced(bucket: BucketEntity) -> None:
@@ -1084,7 +1061,7 @@ class KnowledgeService:
 
         Mongo-internal / main-db names are rejected earlier, at the controller, via the hidden-name guard.
         """
-        if KnowledgeService._is_legacy_bucket(bucket):
+        if KnowledgeVisibility.is_legacy(bucket):
             raise HTTPException(status_code=403, detail=f"Legacy database '{bucket.db_name}' cannot be deleted.")
 
     @staticmethod

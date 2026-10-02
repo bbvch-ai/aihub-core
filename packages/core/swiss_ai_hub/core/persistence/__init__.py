@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_change_hook import AgentConfigChangeHook
-    from swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook import KnowledgeChangeHook
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
     from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEntity
     from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
@@ -31,6 +30,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
     from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
     from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
+    from swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity import OpenWebuiKnowledgeEntryEntity
     from swiss_ai_hub.core.persistence.process.process_class_entity import (
         AgentInSpecsEntity,
         HumanInSpecsEntity,
@@ -46,6 +46,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline import SourcePipeline
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_entity import SourcePipelineEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type import SourcePipelineType
+    from swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook import KnowledgeChangeHook
+    from swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility import KnowledgeVisibility
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
     from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
     from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
@@ -91,7 +93,6 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
-    from swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity import OpenWebuiKnowledgeEntryEntity
     from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
@@ -100,6 +101,7 @@ __all__ = [
     "AgentClassEntity",
     "AgentConfigChangeHook",
     "KnowledgeChangeHook",
+    "KnowledgeVisibility",
     "AgentConfigEntityDocument",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
@@ -180,6 +182,7 @@ _LAZY_IMPORTS = {
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
     "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "KnowledgeChangeHook": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook",
+    "KnowledgeVisibility": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",

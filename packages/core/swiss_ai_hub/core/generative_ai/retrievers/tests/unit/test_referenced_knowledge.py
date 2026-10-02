@@ -81,3 +81,21 @@ def test_a_database_without_a_stored_model_uses_the_deployment_default():
         ),
     ):
         assert ReferencedKnowledge.embedding_model_of("old") == "embedding/default"
+
+
+def test_a_database_the_platform_hides_offers_no_collection_to_reference():
+    with (
+        patch(f"{MODULE}.KnowledgeVisibility.is_browsable_database", return_value=False),
+        patch(f"{MODULE}.UserScopedRetrievers.namespaces_of") as namespaces_of,
+    ):
+        assert ReferencedKnowledge.namespaces_of("sharedknowledge") == []
+
+    namespaces_of.assert_not_called()
+
+
+def test_a_browsable_database_offers_its_live_collections():
+    with (
+        patch(f"{MODULE}.KnowledgeVisibility.is_browsable_database", return_value=True),
+        patch(f"{MODULE}.UserScopedRetrievers.namespaces_of", return_value=["policies"]),
+    ):
+        assert ReferencedKnowledge.namespaces_of("hr") == ["policies"]

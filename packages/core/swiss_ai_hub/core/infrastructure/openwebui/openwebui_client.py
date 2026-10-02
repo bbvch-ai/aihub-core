@@ -430,9 +430,8 @@ class OpenWebuiClient:
         _raise_with_detail(response)
 
     async def delete_knowledge(self, http: httpx.AsyncClient, knowledge_id: str) -> None:
+        """Fails on an id OpenWebUI does not know, which it answers with 400, not 404: delete only listed entries."""
         response = await http.delete(
             f"{self._base_url}{KNOWLEDGE_ENDPOINT}/{knowledge_id}/delete", headers=self._jwt_headers
         )
-        if response.status_code == httpx.codes.NOT_FOUND:
-            return
         _raise_with_detail(response)

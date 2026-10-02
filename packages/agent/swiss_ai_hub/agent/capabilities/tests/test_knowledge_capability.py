@@ -52,7 +52,7 @@ async def _search(
 ) -> tuple[KnowledgeSearchedEvent, AsyncMock]:
     rerank = AsyncMock(side_effect=reranked) if isinstance(reranked, Exception) else AsyncMock(return_value=reranked)
     with (
-        patch(f"{MODULE}.UserScopedRetrievers.namespaces_of", return_value=["policies", "reports"]),
+        patch(f"{MODULE}.ReferencedKnowledge.namespaces_of", return_value=["policies", "reports"]),
         patch(f"{MODULE}.ReferencedKnowledge.retrievers", return_value=["retriever"]),
         patch(f"{MODULE}.retrieve_from_all_sources", new=AsyncMock(return_value=nodes)) as retrieve,
         patch(f"{MODULE}.rerank_nodes", new=rerank),
