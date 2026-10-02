@@ -86,10 +86,14 @@ class TestPaths:
     def test_a_relative_path_lies_in_the_conversation_folder(self) -> None:
         assert self.workspace.path("out/chart.png") == f"conversations/{THREAD}/out/chart.png"
 
-    def test_the_home_and_absolute_paths_are_left_as_they_are(self) -> None:
+    def test_a_tilde_path_lies_in_the_home(self) -> None:
         assert self.workspace.path("~/notes.txt") == "notes.txt"
         assert self.workspace.path("~") == "."
-        assert self.workspace.path("/tmp/x") == "/tmp/x"
+
+    @pytest.mark.parametrize("path", ["/etc/passwd", "/proc/1/environ", "../../../etc", "~/../other", "a\0b"])
+    def test_a_path_outside_the_home_is_refused(self, path: str) -> None:
+        with pytest.raises(OpenTerminalError):
+            self.workspace.path(path)
 
 
 class TestAttachedFiles:

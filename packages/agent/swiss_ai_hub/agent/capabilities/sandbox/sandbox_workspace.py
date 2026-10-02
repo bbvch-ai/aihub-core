@@ -44,12 +44,21 @@ class SandboxWorkspace:
         return cls(OpenTerminalClient(openwebui_id), topic, files)
 
     def path(self, path: str) -> str:
-        """A path as the sandbox resolves it: relative to the conversation folder, `~/…` to the home."""
-        if path.startswith("/"):
-            return path
+        """A path as the sandbox resolves it, relative to the home: given relative to the conversation folder, or as
+        `~/…` relative to the home. Anything outside the home is refused, whatever the sandbox would allow."""
+        if "\0" in path:
+            raise OpenTerminalError("A path must not contain NUL characters.")
         if path == "~" or path.startswith("~/"):
-            return path.removeprefix("~").removeprefix("/") or "."
-        return posixpath.normpath(posixpath.join(self.folder, path))
+            relative = posixpath.normpath(path.removeprefix("~").removeprefix("/") or ".")
+        elif path.startswith("/"):
+            raise OpenTerminalError(
+                f"{path} is an absolute path; use a path inside your home, e.g. ~/{path.lstrip('/')}."
+            )
+        else:
+            relative = posixpath.normpath(posixpath.join(self.folder, path))
+        if relative == ".." or relative.startswith("../"):
+            raise OpenTerminalError(f"{path} lies outside your home.")
+        return relative
 
     async def prepare(self) -> None:
         """Place the conversation's attached files in its folder, each once."""
