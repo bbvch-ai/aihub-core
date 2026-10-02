@@ -6,6 +6,15 @@ display_event:
 attached_file_event:
   name: Fichier joint
   description: L'agent a lu un fichier que l'utilisateur a joint à la conversation.
+knowledge_searched_event:
+  name: Connaissances consultées
+  description: "L'agent a recherché dans les collections de connaissances référencées par l'utilisateur."
+tool_result_event:
+  name: "Résultat d'outil"
+  description: "Ce qu'a renvoyé un outil choisi par l'agent."
+tool_loop_status_event:
+  name: "État de la boucle d'outils"
+  description: "Ce que fait la boucle d'outils de l'agent."
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.

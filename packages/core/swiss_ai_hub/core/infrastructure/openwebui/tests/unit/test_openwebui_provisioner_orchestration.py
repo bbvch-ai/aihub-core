@@ -34,6 +34,7 @@ class TestProvision:
             patch.object(provisioner, "_get_available_llm_models", return_value=[]),
             patch.object(provisioner, "_sync_llm_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.provision()
 
@@ -52,6 +53,7 @@ class TestProvision:
             patch.object(provisioner, "_get_available_llm_models", return_value=[]),
             patch.object(provisioner, "_sync_llm_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.provision()
 
@@ -66,6 +68,7 @@ class TestSyncAgents:
         with (
             patch.object(provisioner, "_sync_workspace_models") as mock_models,
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.sync_agents([_RAG_AGENT])
             await provisioner.sync_agents([_RAG_AGENT])

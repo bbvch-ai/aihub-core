@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
@@ -18,7 +18,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, narrow_retrievers
+from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, UserScopedRetrievers, narrow_retrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -33,11 +33,13 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
+from swiss_ai_hub.agent.rag.inaccessible_knowledge import InaccessibleKnowledge
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
     do_context_sufficient_guard,
@@ -127,17 +129,19 @@ class RAGAgent(Agent):
         ctx: Conversation.Contextualized,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's and may
+        reference collections to search on top of the configured ones."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
+        references = start_event.knowledge_references if isinstance(start_event, UserMessageEvent) else []
+        cite_sources = CitationPolicy.cites_sources(start_event)
+        reserve = agent_config.retrieved_context_reserve()
+        if references:
+            reserve += agent_config.knowledge.context_reserve()
         files = AttachedFiles.read(
-            start_event.files,
-            ctx.history,
-            ctx.query,
-            reserve_tokens=agent_config.retrieved_context_reserve(),
-            cite_sources=CitationPolicy.cites_sources(start_event),
+            start_event.files, ctx.history, ctx.query, reserve_tokens=reserve, cite_sources=cite_sources
         )
-        return [Memory.recall(ctx.query, namespaces), files]
+        return [Memory.recall(ctx.query, namespaces), files, Knowledge.search(references, ctx.query, cite_sources)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
@@ -145,9 +149,13 @@ class RAGAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled, files: AttachedFiles.Contents
+        self,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=[*memories.blocks, files.block])
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
@@ -182,10 +190,13 @@ class RAGAgent(Agent):
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> RetrieverEvent:
-        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+        access: AccessChecker | None = None,
+    ) -> RetrieverEvent | Conversation.CompleteRequest:
+        """Retrieves relevant nodes from multiple knowledge sources in parallel, from what the asking user may read
+        when the profile restricts retrieval to it. A run without a user keeps the profile's scope."""
         if isinstance(start_event, RAGStartEvent):
             runtime_configs = narrow_retrievers(
                 agent_config.retrievers,
@@ -194,6 +205,10 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
+        if agent_config.restrict_to_user_access and access is not None and runtime_configs:
+            runtime_configs = await UserScopedRetrievers.narrow(runtime_configs, access)
+            if not runtime_configs:
+                return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         return await do_retrieve(event, runtime_configs, t, user)
 
     @step(

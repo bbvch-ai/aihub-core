@@ -4131,12 +4131,14 @@ export type ContextualizedAgentEvent = {
     | StartEvent
     | AgentInTheLoopResponseEvent
     | HumanInTheLoopInputRequestEvent
+    | ToolApprovalRequestEvent
     | HumanInTheLoopConfirmationRequestEvent
     | HumanInTheLoopChatRequestEvent
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
     | AgentInTheLoopExceptionEvent
     | HumanInTheLoopInputResponseEvent
+    | ToolApprovalResponseEvent
     | HumanInTheLoopConfirmationResponseEvent
     | HumanInTheLoopChatResponseEvent
     | HumanInTheLoopResponseEvent
@@ -4150,6 +4152,8 @@ export type ContextualizedAgentEvent = {
     | ChunkEvent
     | ThoughtEvent
     | AttachedFileEvent
+    | KnowledgeSearchedEvent
+    | ToolResultEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -9672,6 +9676,95 @@ export type KnowledgeDatabaseSelector = {
 };
 
 /**
+ * KnowledgeReference
+ *
+ * A knowledge collection the user pointed the conversation at, e.g. with `#` in a chat client.
+ *
+ * A request, not a grant: the agent searches it only when the asking user may read it.
+ */
+export type KnowledgeReference = {
+  /**
+   * Database
+   *
+   * The knowledge database, by its vector collection name.
+   */
+  database: string;
+  /**
+   * Namespace
+   *
+   * The collection (namespace) within the database.
+   */
+  namespace: string;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * LLMCostEvent
  *
  * A concrete event representing the costs associated with Large Language Model operations,
@@ -13653,6 +13746,7 @@ export const RagFailureReason = {
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",
   FEW_SHOT_REJECTED: "few_shot_rejected",
+  NO_ACCESSIBLE_KNOWLEDGE: "no_accessible_knowledge",
 } as const;
 
 /**
@@ -14555,6 +14649,18 @@ export const Resolution = {
  * Resolution
  */
 export type Resolution = (typeof Resolution)[keyof typeof Resolution];
+
+/**
+ * ResolveKnowledgeReferencesRequest
+ */
+export type ResolveKnowledgeReferencesRequest = {
+  /**
+   * Openwebui Ids
+   *
+   * Ids of the OpenWebUI knowledge entries a chat message referenced.
+   */
+  openwebui_ids: Array<string>;
+};
 
 /**
  * ResponseFormatJSONObject
@@ -17359,6 +17465,144 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolApprovalRequestEvent
+ *
+ * Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.
+ */
+export type ToolApprovalRequestEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "confirmation";
+  /**
+   * Tool Call Id
+   *
+   * The call awaiting approval.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool the model wants to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolApprovalResponseEvent
+ *
+ * The user's answer to a tool approval request: run the call, or tell the model it was declined.
+ */
+export type ToolApprovalResponseEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Response
+   *
+   * Whether the user approved the call.
+   */
+  response: boolean;
+  /**
+   * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+   */
+  request_event: ToolApprovalRequestEvent;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolCallBlock
  */
 export type ToolCallBlock = {
@@ -17431,6 +17675,12 @@ export type ToolEvent = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -17446,6 +17696,76 @@ export type ToolEvent = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolResultEvent
+ *
+ * What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.
+ */
+export type ToolResultEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call this result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool that ran.
+   */
+  name: string;
+  /**
+   * Content
+   *
+   * The result as the model reads it.
+   */
+  content: string;
+  /**
+   * Block
+   *
+   * The result as context for an answer, when the tool renders it richer than its content.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Is Error
+   *
+   * Whether the call failed or was declined.
+   */
+  is_error?: boolean;
   /**
    * Event Name
    *
@@ -18218,6 +18538,12 @@ export type UserMessageEvent = {
    * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
    */
   requested_features?: Array<ChatFeature>;
+  /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
   /**
    * Event Name
    *
@@ -20713,12 +21039,14 @@ export type ContextualizedAgentEventWritable = {
     | StartEventWritable
     | AgentInTheLoopResponseEventWritable
     | HumanInTheLoopInputRequestEventWritable
+    | ToolApprovalRequestEventWritable
     | HumanInTheLoopConfirmationRequestEventWritable
     | HumanInTheLoopChatRequestEventWritable
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
     | AgentInTheLoopExceptionEventWritable
     | HumanInTheLoopInputResponseEventWritable
+    | ToolApprovalResponseEventWritable
     | HumanInTheLoopConfirmationResponseEventWritable
     | HumanInTheLoopChatResponseEventWritable
     | HumanInTheLoopResponseEventWritable
@@ -20732,6 +21060,8 @@ export type ContextualizedAgentEventWritable = {
     | ChunkEventWritable
     | ThoughtEventWritable
     | AttachedFileEventWritable
+    | KnowledgeSearchedEventWritable
+    | ToolResultEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -24044,6 +24374,60 @@ export type KnowledgeDatabaseSelectorWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -28770,6 +29154,118 @@ export type ToggleSwitchWritable = {
 };
 
 /**
+ * ToolApprovalRequestEvent
+ *
+ * Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.
+ */
+export type ToolApprovalRequestEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "confirmation";
+  /**
+   * Tool Call Id
+   *
+   * The call awaiting approval.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool the model wants to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolApprovalResponseEvent
+ *
+ * The user's answer to a tool approval request: run the call, or tell the model it was declined.
+ */
+export type ToolApprovalResponseEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Response
+   *
+   * Whether the user approved the call.
+   */
+  response: boolean;
+  /**
+   * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+   */
+  request_event: ToolApprovalRequestEventWritable;
+  [key: string]: unknown;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventWritable = {
@@ -28810,6 +29306,12 @@ export type ToolEventWritable = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -28825,6 +29327,63 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolResultEvent
+ *
+ * What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.
+ */
+export type ToolResultEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call this result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool that ran.
+   */
+  name: string;
+  /**
+   * Content
+   *
+   * The result as the model reads it.
+   */
+  content: string;
+  /**
+   * Block
+   *
+   * The result as context for an answer, when the tool renders it richer than its content.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Is Error
+   *
+   * Whether the call failed or was declined.
+   */
+  is_error?: boolean;
   [key: string]: unknown;
 };
 
@@ -28934,6 +29493,12 @@ export type UserMessageEventWritable = {
    * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
    */
   requested_features?: Array<ChatFeature>;
+  /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
   [key: string]: unknown;
 };
 
@@ -32394,6 +32959,42 @@ export type GetDatabasesResponses = {
 
 export type GetDatabasesResponse =
   GetDatabasesResponses[keyof GetDatabasesResponses];
+
+export type ResolveOpenwebuiReferencesData = {
+  body: ResolveKnowledgeReferencesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/openwebui-references";
+};
+
+export type ResolveOpenwebuiReferencesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveOpenwebuiReferencesError =
+  ResolveOpenwebuiReferencesErrors[keyof ResolveOpenwebuiReferencesErrors];
+
+export type ResolveOpenwebuiReferencesResponses = {
+  /**
+   * Response Resolve Openwebui References
+   *
+   * Successful Response
+   */
+  200: Array<KnowledgeReference>;
+};
+
+export type ResolveOpenwebuiReferencesResponse =
+  ResolveOpenwebuiReferencesResponses[keyof ResolveOpenwebuiReferencesResponses];
 
 export type BatchDeleteDocumentsData = {
   body: BatchDeleteDocumentsRequest;

@@ -6,6 +6,15 @@ display_event:
 attached_file_event:
   name: File allegato
   description: L'agente ha letto un file che l'utente ha allegato alla conversazione.
+knowledge_searched_event:
+  name: Conoscenza consultata
+  description: "L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente."
+tool_result_event:
+  name: "Risultato dello strumento"
+  description: "Ciò che ha restituito uno strumento scelto dall'agente."
+tool_loop_status_event:
+  name: "Stato del ciclo di strumenti"
+  description: "Cosa sta facendo il ciclo di strumenti dell'agente."
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.

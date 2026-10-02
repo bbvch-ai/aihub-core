@@ -20,6 +20,13 @@ from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import (
+    AIHUB_GROUP_PREFIX,
+    OpenWebuiGroupAccess,
+    RoleAccessRules,
+    TenantAccessRules,
+)
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -29,8 +36,6 @@ from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import Ag
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 logger = logging.getLogger(__name__)
-
-AIHUB_GROUP_PREFIX = "aihub:"
 
 # Pre-0.11.3 preset id prefixes. OpenWebUI 0.11.3 made an unregistered base_model_id admin-only
 # (see _build_model_data / _build_llm_model_data below), so provisioning switched to registering the
@@ -85,16 +90,6 @@ type AiHubToOwuiUserIdMapping = dict[str, str]
 type DesiredGroupMembers = dict[str, list[str]]
 """Maps an ``aihub:{tenant}:{role}`` group name to the AI-Hub user IDs that belong in it."""
 
-type TenantAccessRules = dict[str, list[str]]
-"""Maps tenant name to its access rule strings."""
-
-type RoleAccessRules = dict[tuple[str, str], list[str]]
-"""Maps (tenant display name, role name) to that role's access rule strings.
-
-Keyed by the pair because role names are only unique per tenant (index ``(tenant_id, name)``):
-the same name (``AIHubUser``, a shared ``TestRole``, …) exists in every tenant with its own rules,
-so a name-only key would collapse them and let one tenant's rules mask another's."""
-
 
 class OpenWebuiProvisioner:
     def __init__(self, *, redis: Redis) -> None:
@@ -106,6 +101,7 @@ class OpenWebuiProvisioner:
             service_account_id=self._settings.SERVICE_ACCOUNT_ID,
         )
         self._redis = redis
+        self._knowledge = OpenWebuiKnowledgeSync(self._openwebui, self._settings.MODEL_NAME_LOCALE)
 
     @asynccontextmanager
     async def _sync_lock(
@@ -150,6 +146,7 @@ class OpenWebuiProvisioner:
                 await self._sync_workspace_models(http, self._get_known_online_agents())
                 await self._sync_llm_workspace_models(http, await self._get_available_llm_models())
                 await self._sync_access_grants(http)
+                await self._sync_knowledge_entries(http)
 
             logger.info("OpenWebUI provisioning completed")
 
@@ -187,6 +184,15 @@ class OpenWebuiProvisioner:
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._sync_groups()
                 await self._sync_access_grants(http)
+                await self._sync_knowledge_entries(http)
+
+    async def sync_knowledge(self) -> None:
+        """Reconciles the knowledge entries users reference with `#` against our live collections."""
+        async with self._sync_lock("openwebui:sync:knowledge") as acquired:
+            if not acquired:
+                return
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                await self._sync_knowledge_entries(http)
 
     @property
     def model_name_locale(self) -> str:
@@ -635,26 +641,9 @@ class OpenWebuiProvisioner:
         role_rules: RoleAccessRules,
     ) -> list[AccessGrant]:
         """Computes which groups should have read access to a given agent workspace model."""
-        grants: list[AccessGrant] = []
-
-        for group in groups:
-            group_name = group.display_name or ""
-            if not group_name.startswith(AIHUB_GROUP_PREFIX):
-                continue
-
-            parts = group_name[len(AIHUB_GROUP_PREFIX) :].rsplit(":", 1)
-            if len(parts) != 2:
-                continue
-
-            tenant_name, role_name = parts
-            t_rules = tenant_rules.get(tenant_name, [])
-            r_rules = role_rules.get((tenant_name, role_name), [])
-
-            checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
-            if checker.has_access_to_agent(agent_class, agent_id):
-                grants.append(AccessGrant(principal_type="group", principal_id=group.id, permission="read"))
-
-        return grants
+        return OpenWebuiGroupAccess.read_grants(
+            groups, tenant_rules, role_rules, lambda checker: checker.has_access_to_agent(agent_class, agent_id)
+        )
 
     @staticmethod
     def _compute_access_for_llm_model(
@@ -665,26 +654,9 @@ class OpenWebuiProvisioner:
         role_rules: RoleAccessRules,
     ) -> list[AccessGrant]:
         """Computes which groups should have read access to a given LLM workspace model."""
-        grants: list[AccessGrant] = []
-
-        for group in groups:
-            group_name = group.display_name or ""
-            if not group_name.startswith(AIHUB_GROUP_PREFIX):
-                continue
-
-            parts = group_name[len(AIHUB_GROUP_PREFIX) :].rsplit(":", 1)
-            if len(parts) != 2:
-                continue
-
-            tenant_name, role_name = parts
-            t_rules = tenant_rules.get(tenant_name, [])
-            r_rules = role_rules.get((tenant_name, role_name), [])
-
-            checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
-            if checker.has_access_to_model(capability, name):
-                grants.append(AccessGrant(principal_type="group", principal_id=group.id, permission="read"))
-
-        return grants
+        return OpenWebuiGroupAccess.read_grants(
+            groups, tenant_rules, role_rules, lambda checker: checker.has_access_to_model(capability, name)
+        )
 
     @staticmethod
     def _parse_agent_from_model(model: dict[str, Any]) -> tuple[str, str] | None:
@@ -750,6 +722,13 @@ class OpenWebuiProvisioner:
             logger.info(
                 f"OpenWebUI: Deleted legacy preset model '{model_id}' (superseded by direct base-row registration)"
             )
+
+    async def _sync_knowledge_entries(self, http: httpx.AsyncClient) -> None:
+        async with self._openwebui.scim_session() as scim:
+            all_groups = await self._openwebui.list_groups(scim=scim)
+        aihub_groups = [g for g in all_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)]
+        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantMetadataEntity.objects()}
+        await self._knowledge.sync(http, aihub_groups, tenant_rules, self._build_role_rules())
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         """Recomputes and pushes access grants for every managed base-registry row.

@@ -39,6 +39,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopInputResponseEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    KnowledgeSearchedEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
@@ -66,7 +67,10 @@ from swiss_ai_hub.core.events.agent import (
     StoreOrganizationMemoryEvent,
     StoreUserMemoryEvent,
     ThoughtEvent,
+    ToolApprovalRequestEvent,
+    ToolApprovalResponseEvent,
     ToolEvent,
+    ToolResultEvent,
     UnreadMailListedEvent,
     UserMessageEvent,
 )
@@ -78,12 +82,14 @@ DisplayEvents = (
     Annotated[StartEvent, Tag("StartEvent")]
     | Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")]
     | Annotated[HumanInTheLoopInputRequestEvent, Tag("HumanInTheLoopInputRequestEvent")]
+    | Annotated[ToolApprovalRequestEvent, Tag("ToolApprovalRequestEvent")]
     | Annotated[HumanInTheLoopConfirmationRequestEvent, Tag("HumanInTheLoopConfirmationRequestEvent")]
     | Annotated[HumanInTheLoopChatRequestEvent, Tag("HumanInTheLoopChatRequestEvent")]
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
     | Annotated[HumanInTheLoopInputResponseEvent, Tag("HumanInTheLoopInputResponseEvent")]
+    | Annotated[ToolApprovalResponseEvent, Tag("ToolApprovalResponseEvent")]
     | Annotated[HumanInTheLoopConfirmationResponseEvent, Tag("HumanInTheLoopConfirmationResponseEvent")]
     | Annotated[HumanInTheLoopChatResponseEvent, Tag("HumanInTheLoopChatResponseEvent")]
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
@@ -97,6 +103,8 @@ DisplayEvents = (
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
+    | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
+    | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]

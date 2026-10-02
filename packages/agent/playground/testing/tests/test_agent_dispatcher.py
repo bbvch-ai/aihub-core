@@ -10,7 +10,7 @@ from nats.js import JetStreamContext
 from pydantic import Field
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, AgentRef
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.dispatcher import StepStore
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
@@ -1160,5 +1160,39 @@ class TestUserIdentityInjection:
         value = await agent_dispatcher._get_parameter_value(
             self._param(step_name), {}, Mock(), run_context, Mock(), agent_topic
         )
+
+        assert value is None
+
+
+class AccessInjectionAgent(Agent):
+    @step()
+    async def scoped_step(self, start_event: StartEvent, access: AccessChecker | None = None) -> list[BaseEvent]:
+        return []
+
+
+class TestAccessCheckerInjection:
+    """A step scoping what it reads to the asking user declares `AccessChecker | None` and gets that user's rules."""
+
+    @staticmethod
+    def _param() -> inspect.Parameter:
+        return inspect.signature(AccessInjectionAgent.scoped_step).parameters["access"]
+
+    @pytest.mark.asyncio
+    async def test_injects_the_asking_users_rules(self, agent_dispatcher, agent_topic):
+        user = UserIdentity(id="u1", name="Tester", email="t@example.com", is_sys_admin=True, roles=[])
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=user.model_dump(mode="json"))
+
+        value = await agent_dispatcher._get_parameter_value(self._param(), {}, Mock(), run_context, Mock(), agent_topic)
+
+        assert isinstance(value, AccessChecker)
+        assert value.is_sys_admin
+
+    @pytest.mark.asyncio
+    async def test_yields_none_when_the_run_carries_no_user(self, agent_dispatcher, agent_topic):
+        run_context = Mock()
+        run_context.get = AsyncMock(return_value=None)
+
+        value = await agent_dispatcher._get_parameter_value(self._param(), {}, Mock(), run_context, Mock(), agent_topic)
 
         assert value is None

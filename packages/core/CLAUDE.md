@@ -296,6 +296,11 @@ VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a
 - A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
   nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
   empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
+- A nested element's pre-filled `value` comes from the **parent field's default instance** first (e.g.
+  `knowledge: KnowledgeConfig = KnowledgeConfig()` whose `reranking_model` names `reranker/bge`), then from the leaf
+  field's own class default. The UI falls back to these values for keys a stored profile lacks, so a profile saved
+  before a sub-form existed opens with the declared model instead of an empty select. `default_factory` values are not
+  inherited — they come from deployment settings at build time, and the admin picks them (e.g. the org-memory tenant).
 
 ## NATS Messaging
 

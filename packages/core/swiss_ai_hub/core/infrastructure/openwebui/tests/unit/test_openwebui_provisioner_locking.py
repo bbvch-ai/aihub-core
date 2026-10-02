@@ -39,6 +39,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_groups"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.sync_access()
 
@@ -74,6 +75,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.sync_agents([_RAG_AGENT])
             mock_lock.release.assert_awaited_once()
@@ -102,6 +104,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
             patch.object(provisioner, "_sync_groups"),
         ):
             await provisioner.sync_agents([_RAG_AGENT])

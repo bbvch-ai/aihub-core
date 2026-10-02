@@ -116,6 +116,7 @@ def test_every_conversational_blueprint_validates(agent: type[Agent], config: ty
         "Conversation",
         "Memory",
         "AttachedFiles",
+        "Knowledge",
     }
 
 
