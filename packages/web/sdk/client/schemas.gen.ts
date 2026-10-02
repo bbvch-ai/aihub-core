@@ -6116,6 +6116,12 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/ToolResultEvent",
         },
         {
+          $ref: "#/components/schemas/ToolLoopStatusEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopCondensedEvent",
+        },
+        {
           $ref: "#/components/schemas/ConversationTitleEvent",
         },
         {
@@ -26567,15 +26573,13 @@ export const ToolEventSchema = {
     display_name: {
       anyOf: [
         {
-          type: "string",
+          $ref: "#/components/schemas/LocaleString",
         },
         {
           type: "null",
         },
       ],
-      title: "Display Name",
-      description:
-        "The tool's name as users read it, in the run's locale; the name otherwise",
+      description: "Display name for the event",
     },
     display_description: {
       anyOf: [
@@ -26623,6 +26627,19 @@ export const ToolEventSchema = {
       ],
       title: "Description",
       description: "Description of the tool's purpose and functionality",
+    },
+    label: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Label",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
     },
     json_schema: {
       anyOf: [
@@ -26672,6 +26689,185 @@ export const ToolEventSchema = {
   type: "object",
   required: ["_event_name", "_parent_event_names"],
   title: "ToolEvent",
+} as const;
+
+export const ToolLoopCondensedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description: "The blueprint's tool set the loop runs.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What was condensed, as users read it, in the run's locale.",
+      default: "",
+    },
+    tokens_before: {
+      type: "integer",
+      minimum: 0,
+      title: "Tokens Before",
+      description: "The conversation's size before condensing.",
+    },
+    tokens_after: {
+      type: "integer",
+      minimum: 0,
+      title: "Tokens After",
+      description: "The conversation's size after condensing.",
+    },
+    condensed_results: {
+      type: "integer",
+      minimum: 0,
+      title: "Condensed Results",
+      description: "How many earlier tool results were condensed.",
+      default: 0,
+    },
+    condensed_turns: {
+      type: "integer",
+      minimum: 0,
+      title: "Condensed Turns",
+      description: "How many earlier conversation turns were condensed.",
+      default: 0,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "loop",
+    "tokens_before",
+    "tokens_after",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "ToolLoopCondensedEvent",
+  description:
+    "The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.",
+} as const;
+
+export const ToolLoopStatusEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description: "The blueprint's tool set the loop runs.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "The status as users read it, in the run's locale.",
+    },
+    done: {
+      type: "boolean",
+      title: "Done",
+      description: "Whether the step the status describes is over.",
+      default: false,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["loop", "description", "_event_name", "_parent_event_names"],
+  title: "ToolLoopStatusEvent",
+  description:
+    "What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.",
 } as const;
 
 export const ToolResultEventSchema = {
@@ -31573,6 +31769,12 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ToolResultEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopStatusEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopCondensedEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -44988,15 +45190,13 @@ export const ToolEventWritableSchema = {
     display_name: {
       anyOf: [
         {
-          type: "string",
+          $ref: "#/components/schemas/LocaleString",
         },
         {
           type: "null",
         },
       ],
-      title: "Display Name",
-      description:
-        "The tool's name as users read it, in the run's locale; the name otherwise",
+      description: "Display name for the event",
     },
     display_description: {
       anyOf: [
@@ -45045,6 +45245,19 @@ export const ToolEventWritableSchema = {
       title: "Description",
       description: "Description of the tool's purpose and functionality",
     },
+    label: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Label",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
+    },
     json_schema: {
       anyOf: [
         {
@@ -45075,6 +45288,145 @@ export const ToolEventWritableSchema = {
   additionalProperties: true,
   type: "object",
   title: "ToolEvent",
+} as const;
+
+export const ToolLoopCondensedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description: "The blueprint's tool set the loop runs.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What was condensed, as users read it, in the run's locale.",
+      default: "",
+    },
+    tokens_before: {
+      type: "integer",
+      minimum: 0,
+      title: "Tokens Before",
+      description: "The conversation's size before condensing.",
+    },
+    tokens_after: {
+      type: "integer",
+      minimum: 0,
+      title: "Tokens After",
+      description: "The conversation's size after condensing.",
+    },
+    condensed_results: {
+      type: "integer",
+      minimum: 0,
+      title: "Condensed Results",
+      description: "How many earlier tool results were condensed.",
+      default: 0,
+    },
+    condensed_turns: {
+      type: "integer",
+      minimum: 0,
+      title: "Condensed Turns",
+      description: "How many earlier conversation turns were condensed.",
+      default: 0,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["loop", "tokens_before", "tokens_after"],
+  title: "ToolLoopCondensedEvent",
+  description:
+    "The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.",
+} as const;
+
+export const ToolLoopStatusEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description: "The blueprint's tool set the loop runs.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "The status as users read it, in the run's locale.",
+    },
+    done: {
+      type: "boolean",
+      title: "Done",
+      description: "Whether the step the status describes is over.",
+      default: false,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["loop", "description"],
+  title: "ToolLoopStatusEvent",
+  description:
+    "What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.",
 } as const;
 
 export const ToolResultEventWritableSchema = {

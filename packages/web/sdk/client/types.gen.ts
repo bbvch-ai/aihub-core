@@ -4154,6 +4154,8 @@ export type ContextualizedAgentEvent = {
     | AttachedFileEvent
     | KnowledgeSearchedEvent
     | ToolResultEvent
+    | ToolLoopStatusEvent
+    | ToolLoopCondensedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -17649,11 +17651,9 @@ export type ToolEvent = {
    */
   created_at?: number;
   /**
-   * Display Name
-   *
-   * The tool's name as users read it, in the run's locale; the name otherwise
+   * Display name for the event
    */
-  display_name?: string | null;
+  display_name?: LocaleString | null;
   /**
    * Display description for the event
    */
@@ -17677,6 +17677,12 @@ export type ToolEvent = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -17692,6 +17698,140 @@ export type ToolEvent = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
   /**
    * Event Name
    *
@@ -21058,6 +21198,8 @@ export type ContextualizedAgentEventWritable = {
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
     | ToolResultEventWritable
+    | ToolLoopStatusEventWritable
+    | ToolLoopCondensedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -29276,11 +29418,9 @@ export type ToolEventWritable = {
    */
   created_at?: number;
   /**
-   * Display Name
-   *
-   * The tool's name as users read it, in the run's locale; the name otherwise
+   * Display name for the event
    */
-  display_name?: string | null;
+  display_name?: LocaleString | null;
   /**
    * Display description for the event
    */
@@ -29304,6 +29444,12 @@ export type ToolEventWritable = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -29319,6 +29465,114 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
   [key: string]: unknown;
 };
 
