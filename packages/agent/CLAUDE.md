@@ -197,11 +197,11 @@ knowledge retrieval does not consider the files.
 (`UserMessageEvent.knowledge_references`, sent by chat clients for `#` references), empty when none were. Each database
 is searched with the embedding model it was indexed with (core's `ReferencedKnowledge`), the results reranked together
 and rendered with `combine_nodes_in_order`. Only collections the injected `AccessChecker` lets the asking user read are
-searched; the rest, and collections that no longer exist, are named in the block so the answer says so. The result is
-a `ControlAndDisplayEvent` whose `grounding_nodes` chat clients list as sources. Blueprints call it from
-`gather_context_step` and compose its block between the memories and the files, reserving
-`KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds to the
-configured retrieval rather than replacing it.
+searched; the rest, collections that no longer exist, and those in databases core's `KnowledgeVisibility` hides, are
+named in the block so the answer says so. The result is a `ControlAndDisplayEvent` whose `grounding_nodes` chat clients
+list as sources. Blueprints call it from `gather_context_step` and compose its block between the memories and the files,
+reserving `KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds
+to the configured retrieval rather than replacing it.
 
 **Inline citations**: every document an agent hands the model carries a short stable id (`CitationId` in core: `s` + six
 hex digits, from the node's document id: the knowledge document, or the attached file's upload id) on its

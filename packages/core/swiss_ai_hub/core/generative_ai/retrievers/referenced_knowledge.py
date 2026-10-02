@@ -7,10 +7,12 @@ from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeRef
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
+from swiss_ai_hub.core.generative_ai.retrievers.user_scoped_retrievers import UserScopedRetrievers
 from swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings import (
     DocumentIngestionPipelineSettings,
 )
 from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
+from swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility import KnowledgeVisibility
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
 
 
@@ -39,6 +41,16 @@ class ReferencedKnowledge:
             readable = access_checker is None or access_checker.has_access_to_knowledge_namespace(database, namespace)
             (searchable if namespace in live[database] and readable else refused).append(reference)
         return searchable, refused
+
+    @staticmethod
+    def namespaces_of(database: str) -> list[str]:
+        """The collections a user may reference in the database: its live ones, none when the platform hides it.
+
+        A reference arrives from a chat client, so a hidden database must not become reachable by naming it there.
+        """
+        if not KnowledgeVisibility.is_browsable_database(database):
+            return []
+        return UserScopedRetrievers.namespaces_of(database)
 
     @staticmethod
     def retrievers(references: list[KnowledgeReference], retrieve_k: int) -> list[RetrievalRuntimeConfig]:

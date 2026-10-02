@@ -17,7 +17,7 @@ from swiss_ai_hub.core.generative_ai.document.types.ingested_node import Ingeste
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
-from swiss_ai_hub.core.persistence import OpenWebuiKnowledgeEntryEntity
+from swiss_ai_hub.core.persistence import KnowledgeVisibility, OpenWebuiKnowledgeEntryEntity
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import TenantScopedController
 
@@ -75,7 +75,7 @@ class KnowledgeController(TenantScopedController):
         # already sitting on it stays readable. Both are settings-derived, so they are fixed for the
         # lifetime of the process — changing the legacy visibility needs a restart, as it always did.
         self._reserved_database_names = KnowledgeService.reserved_database_names()
-        self._non_browsable_database_names = KnowledgeService.non_browsable_database_names()
+        self._non_browsable_database_names = KnowledgeVisibility.non_browsable_database_names()
         self.translation_llm_config = translation_llm_config
 
     @access_catalog_entry(i18n_path="api.access.capabilities.ops.knowledge.see")

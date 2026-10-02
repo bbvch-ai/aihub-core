@@ -39,7 +39,7 @@ async def _sync(listing: dict, entries: list[MagicMock], existing: list[dict]) -
         patch.object(OpenWebuiKnowledgeSync, "listing", return_value=listing),
         patch(f"{MODULE}.OpenWebuiKnowledgeEntryEntity") as entity,
     ):
-        entity.all_entries.return_value = entries
+        entity.current_entries.return_value = entries
         await OpenWebuiKnowledgeSync(client, "en").sync(MagicMock(), [HR_GROUP, SALES_GROUP], TENANT_RULES, ROLE_RULES)
     return client, entity
 
@@ -92,7 +92,34 @@ async def test_the_entry_of_a_deleted_collection_is_removed():
 
     client.delete_knowledge.assert_awaited_once()
     assert client.delete_knowledge.await_args.args[1] == "k1"
-    entity.forget.assert_called_once_with("k1")
+    entity.retire.assert_called_once_with("k1")
+
+
+@pytest.mark.asyncio
+async def test_an_entry_already_gone_from_openwebui_is_retired_without_deleting():
+    """OpenWebUI answers a delete of an id it does not know with 400, which would stop every later sync here."""
+    gone, deleted_later = _entry("k1", *POLICIES), _entry("k2", "hr", "reports")
+    existing = [{"id": "k2", "name": "HR / Reports", "description": "", "access_grants": []}]
+
+    client, entity = await _sync({}, [gone, deleted_later], existing)
+
+    assert [call.args[1] for call in client.delete_knowledge.await_args_list] == ["k2"]
+    assert [call.args[0] for call in entity.retire.call_args_list] == ["k1", "k2"]
+
+
+def test_databases_the_knowledge_page_hides_are_not_listed():
+    shown, hidden = MagicMock(db_name="hr", deleting=False), MagicMock(db_name="sharedknowledge", deleting=False)
+    namespace = MagicMock(namespace_name="policies", deleting=False, description=None)
+
+    with (
+        patch(f"{MODULE}.BucketEntity.get_all_buckets", return_value=[shown, hidden]),
+        patch(f"{MODULE}.NamespaceEntity.get_namespaces_by_bucket", return_value=[namespace]),
+        patch(f"{MODULE}.KnowledgeVisibility.is_browsable", side_effect=lambda bucket: bucket is shown),
+        patch(f"{MODULE}.KnowledgeCollectionLabel.of", return_value="HR / Policies"),
+    ):
+        listing = OpenWebuiKnowledgeSync(_client([]), "en").listing()
+
+    assert list(listing) == [("hr", "policies")]
 
 
 @pytest.mark.asyncio
