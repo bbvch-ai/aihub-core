@@ -1,3 +1,4 @@
+from swiss_ai_hub.core.events import agent as events
 from swiss_ai_hub.core.events.agent import (
     ConversationTitleEvent,
     DisplayEvent,
@@ -17,6 +18,27 @@ from swiss_ai_hub.api.sockets.events.server_to_user.contextualized_agent_event i
     DisplayEvents,
     event_discriminator,
 )
+
+PROTOCOL_EVENTS = [
+    "ContextualizeConversationEvent",
+    "ConversationContextualizedEvent",
+    "ComposeContextEvent",
+    "CompleteConversationEvent",
+    "NotAMetaQuestionEvent",
+    "RecallMemoryEvent",
+    "MemoryRecalledEvent",
+    "MemoryStorageRequestedEvent",
+    "SearchKnowledgeEvent",
+    "KnowledgeSearchedEvent",
+    "ReadAttachedFilesEvent",
+    "AttachedFilesReadEvent",
+    "RunToolLoopEvent",
+    "ToolLoopIterationEvent",
+    "ToolCallsDecidedEvent",
+    "ToolCallApprovedEvent",
+    "ToolResultEvent",
+    "ToolLoopFinishedEvent",
+]
 
 
 class _FakeInputRequest(HumanInTheLoopInputRequestEvent):
@@ -153,3 +175,25 @@ def test_agent_subclass_preserved_through_contextualized_dump():
     assert nested["_event_name"] == "_FakeInputRequest"
     assert "HumanInTheLoopInputRequestEvent" in nested["_parent_event_names"]
     assert nested["hitl_type"] == "input"
+
+
+def test_protocol_events_are_displayed_under_their_own_tag():
+    """Every capability and tool-loop call is a display event with its own tag, so the event history shows it."""
+    for name in PROTOCOL_EVENTS:
+        event = getattr(events, name).model_construct()
+        assert event.is_control_event and event.is_display_event, name
+        assert event_discriminator(event) == name, name
+
+
+def test_tool_loop_state_survives_the_contextualized_dump():
+    """The loop events carry the whole loop state; it reaches the event history intact."""
+    state = events.ToolLoopState(
+        messages=[events.Message.from_string(role="user", content="What changed in Q1?")],
+        mode=events.ToolLoopMode.ANSWER,
+        iteration=2,
+    )
+    dumped = _wrap(events.ToolCallsDecidedEvent(state=state, tool_call_ids=["c1"])).model_dump()["event"]
+
+    assert dumped["_event_name"] == "ToolCallsDecidedEvent"
+    assert dumped["state"]["iteration"] == 2
+    assert dumped["tool_call_ids"] == ["c1"]

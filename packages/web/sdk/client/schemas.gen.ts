@@ -2167,6 +2167,89 @@ export const AttachedFileStatusSchema = {
   description: "How much of an attached file reached the model.",
 } as const;
 
+export const AttachedFilesReadEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the attached files' text, or none.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "AttachedFilesReadEvent",
+  description:
+    "The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.",
+} as const;
+
 export const AudioSchema = {
   properties: {
     id: {
@@ -5656,6 +5739,82 @@ export const ColorPickerSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/ColorPicker",
 } as const;
 
+export const CompleteConversationEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    answer: {
+      $ref: "#/components/schemas/LLMEvent",
+      description: "The answer the follow-up questions are grounded on.",
+    },
+    stop: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/StopEvent",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["answer", "_event_name", "_parent_event_names"],
+  title: "CompleteConversationEvent",
+  description:
+    "Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then\nemit the stop event.\n\nBuilt with `Conversation.complete(...)`. Anything that must be published before the run tears down, such\nas a memory-storage delegation, is returned from the same step ahead of this event.",
+} as const;
+
 export const CompletionTokensDetailsSchema = {
   properties: {
     accepted_prediction_tokens: {
@@ -5749,6 +5908,87 @@ export const CompletionUsageSchema = {
   required: ["completion_tokens", "prompt_tokens", "total_tokens"],
   title: "CompletionUsage",
   description: "Usage statistics for the completion request.",
+} as const;
+
+export const ComposeContextEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The chat history to merge the blocks into.",
+    },
+    blocks: {
+      items: {
+        items: {
+          $ref: "#/components/schemas/ChatMessage",
+        },
+        type: "array",
+      },
+      type: "array",
+      title: "Blocks",
+      description:
+        "Context blocks in the order they should reach the model. Empty blocks are skipped.",
+      default: [],
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "_event_name", "_parent_event_names"],
+  title: "ComposeContextEvent",
+  description:
+    "Asks the conversation capability to merge context blocks into a chat history, in the given order, behind\nthe leading system messages and within the input budget.\n\nBuilt with `Conversation.compose(...)`; answered with `ContextComposedEvent`.",
 } as const;
 
 export const ConfigSpecsSchema = {
@@ -5973,6 +6213,87 @@ export const ContextSufficientAcceptEventSchema = {
     "Event indicating that the context sufficiency guard accepted the request.\n\nThis event is triggered when the context sufficiency guard determines that\nthere is sufficient context available to answer the user's query without\nrequiring additional information retrieval or processing.",
 } as const;
 
+export const ContextualizeConversationEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The chat history, already limited to the budget.",
+    },
+    user_query: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Query",
+      description:
+        "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "_event_name", "_parent_event_names"],
+  title: "ContextualizeConversationEvent",
+  description:
+    "Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the\nmessage for a meta question, derive the query the turn is answered for, and title the thread.\n\nBuilt with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a\nstop event when the message was a meta question or could not be condensed.",
+} as const;
+
 export const ContextualizedAgentEventSchema = {
   properties: {
     locale: {
@@ -6087,6 +6408,54 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/ContextComposedEvent",
+        },
+        {
+          $ref: "#/components/schemas/ContextualizeConversationEvent",
+        },
+        {
+          $ref: "#/components/schemas/ConversationContextualizedEvent",
+        },
+        {
+          $ref: "#/components/schemas/ComposeContextEvent",
+        },
+        {
+          $ref: "#/components/schemas/CompleteConversationEvent",
+        },
+        {
+          $ref: "#/components/schemas/NotAMetaQuestionEvent",
+        },
+        {
+          $ref: "#/components/schemas/RecallMemoryEvent",
+        },
+        {
+          $ref: "#/components/schemas/MemoryRecalledEvent",
+        },
+        {
+          $ref: "#/components/schemas/MemoryStorageRequestedEvent",
+        },
+        {
+          $ref: "#/components/schemas/SearchKnowledgeEvent",
+        },
+        {
+          $ref: "#/components/schemas/ReadAttachedFilesEvent",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFilesReadEvent",
+        },
+        {
+          $ref: "#/components/schemas/RunToolLoopEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopIterationEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolCallsDecidedEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolCallApprovedEvent",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopFinishedEvent",
         },
         {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEvent",
@@ -6313,6 +6682,87 @@ export const ControlEventSchema = {
   title: "ControlEvent",
   description:
     "Represents a system-level or workflow-level signal, often used to coordinate steps,\nindicate state changes, or trigger specific actions in the event-driven architecture.\n\n### Why ControlEvent?\nWhile `BaseEvent` covers the general structure for any event, `ControlEvent` marks an event as\nparticularly important for controlling the flow of a system. Hence, all events taken as inputs to\nworkflow steps must be of type `ControlEvent`. Even though other type of events can be returned\nfrom workflow steps, only 'ControlEvent' influence the flow of the system.\n\nBy subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and\nserialization, ensuring that control signals are as easy to produce and consume as any other event.",
+} as const;
+
+export const ConversationContextualizedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The limited chat history the request carried.",
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description:
+        "The question this turn is answered for. Blank when the message carried no text.",
+    },
+    condensed: {
+      type: "boolean",
+      title: "Condensed",
+      description:
+        "Whether the query was condensed from the history rather than taken verbatim.",
+      default: false,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "query", "_event_name", "_parent_event_names"],
+  title: "ConversationContextualizedEvent",
+  description:
+    "The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query\nevery capability and the blueprint answer it for.",
 } as const;
 
 export const ConversationTitleEventSchema = {
@@ -16968,6 +17418,98 @@ export const MemoryMetadataSchema = {
   title: "MemoryMetadata",
 } as const;
 
+export const MemoryRecalledEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "User Block",
+      description: "System messages carrying the user's memories, or none.",
+      default: [],
+    },
+    organization_block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Organization Block",
+      description:
+        "System messages carrying the organization's memories, or none.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "MemoryRecalledEvent",
+  description:
+    "The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.",
+} as const;
+
 export const MemoryRelationSchema = {
   properties: {
     source: {
@@ -17052,6 +17594,87 @@ export const MemorySearchResponseSchema = {
   title: "MemorySearchResponse",
   description:
     "Response for searching memories with scored results and matching graph relations.",
+} as const;
+
+export const MemoryStorageRequestedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    start_event: {
+      $ref: "#/components/schemas/StoreUserMemoryRequestedEvent",
+      description:
+        "The start event published to the writer agent to begin its independent run.",
+    },
+    target_agent_class: {
+      type: "string",
+      title: "Target Agent Class",
+      description: "Writer agent class to route the start event to.",
+    },
+    target_agent_id: {
+      type: "string",
+      title: "Target Agent Id",
+      description: "Writer agent id (fixed system id) to route to.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "start_event",
+    "target_agent_class",
+    "target_agent_id",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "MemoryStorageRequestedEvent",
+  description:
+    "Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to\npersist user memory, WITHOUT awaiting a response (issue #1179).\n\n### Why a dedicated event (not AgentInTheLoop)?\n`AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact\nsymptom #1179 removes — and it opens a response subscription that would route a result back into the\ncaller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the\nwriter's subject and nothing is routed back. It is displayed like every protocol event, so the event\nhistory shows the delegation; chat clients show no more than a passing status. Its control copy lands in the\ncaller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the\nrun finalizes as soon as this cheap marker exists, not when storage completes.",
 } as const;
 
 export const MemoryTypeSchema = {
@@ -19085,6 +19708,72 @@ export const NodeSummaryDTOSchema = {
   type: "object",
   required: ["level", "nodes"],
   title: "NodeSummaryDTO",
+} as const;
+
+export const NotAMetaQuestionEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description:
+        "Why the message was classified as a normal (non-meta) request.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["reasoning", "_event_name", "_parent_event_names"],
+  title: "NotAMetaQuestionEvent",
+  description:
+    "Internal \"all-clear\" gate signal: the user's message is a normal task, not a meta\nquestion about the agent. It releases the agent's normal entry steps, which depend\non it so they cannot start until meta-question detection has cleared the message.",
 } as const;
 
 export const NotificationDTOSchema = {
@@ -21358,6 +22047,208 @@ export const RatingSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Rating",
 } as const;
 
+export const ReadAttachedFilesEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Files",
+      description: "The files attached to the current branch.",
+      default: [],
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "The history the files will be composed into, for sizing them.",
+      default: [],
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description:
+        "The turn's query, for picking the relevant sections of a file too large to fit.",
+      default: "",
+    },
+    reserve_tokens: {
+      type: "integer",
+      minimum: 0,
+      title: "Reserve Tokens",
+      description:
+        "Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.",
+      default: 0,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the files by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "ReadAttachedFilesEvent",
+  description:
+    "Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.\n\nBuilt with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is\nattached. It carries the history the files will be composed into, since that is what decides how much room\nthe files have.",
+} as const;
+
+export const RecallMemoryEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description: "The question to search memories with.",
+    },
+    org_memory_namespaces: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Org Memory Namespaces",
+      description:
+        "Organization-memory namespaces to narrow the search to; empty means the profile's own.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["query", "_event_name", "_parent_event_names"],
+  title: "RecallMemoryEvent",
+  description:
+    "Asks the memory capability for what the profile remembers about the user and the organization, for a query.\n\nBuilt with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the\nprofile or the run has no identity to read for.",
+} as const;
+
 export const RefusalReasonSchema = {
   type: "string",
   enum: ["condensation_empty", "input_too_large", "out_of_scope"],
@@ -22699,6 +23590,144 @@ export const RunStatisticsSchema = {
   description: "Statistics for a single run, intended for API response.",
 } as const;
 
+export const RunToolLoopEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The conversation the model decides on.",
+      default: [],
+    },
+    mode: {
+      $ref: "#/components/schemas/ToolLoopMode",
+      description: "Whether the loop answers or gathers context.",
+      default: "answer",
+    },
+    tools: {
+      anyOf: [
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tools",
+      description:
+        "Narrows the offered tools to these names for this call, if given.",
+    },
+    max_iterations: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Iterations",
+      description:
+        "An iteration limit tighter than the profile's, e.g. 1 for routing.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether tools tell the model to cite what they return, off where it cannot resolve.",
+      default: true,
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Files",
+      description:
+        "The files attached to the message, for tools that read them.",
+      default: [],
+    },
+    knowledge_references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Knowledge References",
+      description:
+        "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "RunToolLoopEvent",
+  description:
+    "Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.\n\nBuilt with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's\ndeclaration, narrowed by the profile and by the features the user switched on for the message.",
+} as const;
+
 export const SearchContextCostPerQueryDTOSchema = {
   properties: {
     search_context_size_low: {
@@ -22742,6 +23771,101 @@ export const SearchContextCostPerQueryDTOSchema = {
   title: "SearchContextCostPerQueryDTO",
   description:
     "LiteLLM reports search context cost per query broken down by context size, not as a single value.",
+} as const;
+
+export const SearchKnowledgeEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "References",
+      description: "The collections the user referenced on this message.",
+      default: [],
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description: "The turn's query the collections are searched for.",
+      default: "",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the documents by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "SearchKnowledgeEvent",
+  description:
+    "Asks the knowledge capability to search the collections the user referenced for the turn's query.\n\nBuilt with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.",
 } as const;
 
 export const SecretFileInputSchema = {
@@ -24696,6 +25820,147 @@ export const StoreUserMemoryEventSchema = {
     "Specialized BaseStoreMemoryEvent for user-specific memories.\n\nEmitted when an agent stores private user memories to long-term storage.\nThese memories are scoped to individual users and never shared across users.\nUser memories are typically inferred from conversation context.",
 } as const;
 
+export const StoreUserMemoryRequestedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "Originating run's locale, so extraction prompts stay in the user's language.",
+      default: "de",
+    },
+    user: {
+      $ref: "#/components/schemas/UserIdentity",
+      description: "User the memories belong to.",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Conversation the writer extracts user memories from.",
+    },
+    origin_thread_id: {
+      type: "string",
+      title: "Origin Thread Id",
+      description: "Originating run's thread id, kept as memory metadata.",
+    },
+    origin_display_id: {
+      type: "string",
+      title: "Origin Display Id",
+      description: "Originating run's display id, kept as memory metadata.",
+    },
+    origin_run_id: {
+      type: "string",
+      title: "Origin Run Id",
+      description: "Originating run's run id, kept as memory metadata.",
+    },
+    origin_agent_class: {
+      type: "string",
+      title: "Origin Agent Class",
+      description:
+        "Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).",
+    },
+    origin_agent_id: {
+      type: "string",
+      title: "Origin Agent Id",
+      description:
+        "Originating agent's id — part of the _agent_id scoping tag.",
+    },
+    origin_agent_name: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Originating agent's name — used in the fact-extraction prompt.",
+    },
+    origin_agent_description: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Originating agent's description — used in the fact-extraction prompt.",
+    },
+    origin_memory_llm: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Origin Memory Llm",
+      description:
+        "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "user",
+    "messages",
+    "origin_thread_id",
+    "origin_display_id",
+    "origin_run_id",
+    "origin_agent_class",
+    "origin_agent_id",
+    "origin_agent_name",
+    "origin_agent_description",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "StoreUserMemoryRequestedEvent",
+  description:
+    "Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's\ncritical path (issue #1179).\n\nIt runs in a different execution context than the originating RAG run and cannot read that run's\n`run_context`, so it carries everything the writer needs as plain serializable data. The originating\nagent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*\n`AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.\n\nScope: user memory only. Organization memory has a different API shape and is not on #1179's critical\npath; if it is decoupled later, add a `memory_type` discriminator here.",
+} as const;
+
 export const SubmittedFormDTOSchema = {
   properties: {
     process_class: {
@@ -26514,6 +27779,101 @@ export const ToolApprovalResponseEventSchema = {
     "The user's answer to a tool approval request: run the call, or tell the model it was declined.",
 } as const;
 
+export const ToolCallApprovedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call's id, which its result answers.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool to run.",
+    },
+    arguments: {
+      additionalProperties: true,
+      type: "object",
+      title: "Arguments",
+      description: "The arguments the model passed.",
+      default: {},
+    },
+    kind: {
+      type: "string",
+      enum: ["function", "capability"],
+      title: "Kind",
+      description: "Whether the loop runs it or a capability does.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether the tool tells the model to cite what it returns.",
+      default: true,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "tool_call_id",
+    "name",
+    "kind",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "ToolCallApprovedEvent",
+  description:
+    "A tool call cleared to run, either because it needs no approval or because the user approved it.\n\nFunction tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own\nrequest, so the call runs the same sub-workflow, with the same events, as an explicit call would.",
+} as const;
+
 export const ToolCallBlockSchema = {
   properties: {
     block_type: {
@@ -26556,6 +27916,105 @@ export const ToolCallBlockSchema = {
   type: "object",
   required: ["tool_name"],
   title: "ToolCallBlock",
+} as const;
+
+export const ToolCallsDecidedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    state: {
+      $ref: "#/components/schemas/ToolLoopState",
+      description: "The loop's state including the model's tool-calling turn.",
+    },
+    tool_call_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Tool Call Ids",
+      description: "The calls this iteration waits for.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["state", "tool_call_ids", "_event_name", "_parent_event_names"],
+  title: "ToolCallsDecidedEvent",
+  description:
+    "The model chose tools in this iteration; the loop continues once every one of them has a result.",
+} as const;
+
+export const ToolDefinitionSchema = {
+  properties: {
+    name: {
+      type: "string",
+      pattern: "^[a-zA-Z0-9_-]{1,64}$",
+      title: "Name",
+      description: "The name the model calls the tool by.",
+    },
+    description: {
+      type: "string",
+      title: "Description",
+      description: "What the tool does and when to use it, for the model.",
+    },
+    parameters: {
+      additionalProperties: true,
+      type: "object",
+      title: "Parameters",
+      description: "JSON schema of the tool's arguments.",
+    },
+  },
+  type: "object",
+  required: ["name", "description", "parameters"],
+  title: "ToolDefinition",
+  description:
+    "A tool as the model is offered it: what it is called, what it does and which arguments it takes.",
 } as const;
 
 export const ToolEventSchema = {
@@ -26792,6 +28251,269 @@ export const ToolLoopCondensedEventSchema = {
   title: "ToolLoopCondensedEvent",
   description:
     "The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.",
+} as const;
+
+export const ToolLoopFinishedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    answer: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LLMEvent",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "The model's final reply, in answering mode.",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "The tool results as context for the blueprint's answer, gathering mode.",
+      default: [],
+    },
+    stopped_early: {
+      type: "boolean",
+      title: "Stopped Early",
+      description: "Whether the loop stopped at its limits.",
+      default: false,
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "ToolLoopFinishedEvent",
+  description:
+    "The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.",
+} as const;
+
+export const ToolLoopIterationEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    state: {
+      $ref: "#/components/schemas/ToolLoopState",
+      description: "The loop's state at the start of this iteration.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["state", "_event_name", "_parent_event_names"],
+  title: "ToolLoopIterationEvent",
+  description:
+    "The model's turn to decide: answer, or call tools. One per iteration of the loop.",
+} as const;
+
+export const ToolLoopModeSchema = {
+  type: "string",
+  enum: ["answer", "gather"],
+  title: "ToolLoopMode",
+  description:
+    "What the loop's last turn is for.\n\nANSWER: the model's final turn is the reply, for blueprints that let the loop answer. GATHER: the loop collects\ntool results as context and the blueprint answers itself, keeping its own prompt, citations and checks.",
+} as const;
+
+export const ToolLoopStateSchema = {
+  properties: {
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/Message",
+      },
+      type: "array",
+      title: "Messages",
+      description: "The loop's conversation so far, tool calls and results.",
+    },
+    tools: {
+      items: {
+        $ref: "#/components/schemas/ToolDefinition",
+      },
+      type: "array",
+      title: "Tools",
+      description: "The tools offered to the model in this run.",
+      default: [],
+    },
+    mode: {
+      $ref: "#/components/schemas/ToolLoopMode",
+      description: "Whether the loop answers or gathers context.",
+    },
+    iteration: {
+      type: "integer",
+      minimum: 0,
+      title: "Iteration",
+      description: "How many decisions the model has made so far.",
+      default: 0,
+    },
+    tool_calls_made: {
+      type: "integer",
+      minimum: 0,
+      title: "Tool Calls Made",
+      description: "How many tool calls ran so far.",
+      default: 0,
+    },
+    max_iterations: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Iterations",
+      description: "The call's own iteration limit, if any.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    gathered: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Gathered",
+      description:
+        "The tool results as context, for the blueprint's own answer.",
+      default: [],
+    },
+    needs_condensing: {
+      type: "boolean",
+      title: "Needs Condensing",
+      description:
+        "Whether the conversation outgrew the prompt and is condensed before the model decides.",
+      default: false,
+    },
+    condensed_tool_call_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Condensed Tool Call Ids",
+      description:
+        "Tool results already condensed or dropped, which are not condensed again.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["messages", "mode"],
+  title: "ToolLoopState",
+  description:
+    "Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.\n\nSteps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it\ngathered travel with the iteration; the trace then shows the loop's full state at every step.",
 } as const;
 
 export const ToolLoopStatusEventSchema = {
@@ -30199,6 +31921,71 @@ export const AttachedFileEventWritableSchema = {
     "One file the user attached to the conversation, as the agent read it for this turn.\n\nChat clients render it as a source on the answer, so the user sees which files the answer drew on and whether\nall of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a\nclient that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.",
 } as const;
 
+export const AttachedFilesReadEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the attached files' text, or none.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "AttachedFilesReadEvent",
+  description:
+    "The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.",
+} as const;
+
 export const BaseRetrieveMemoryEventWritableSchema = {
   properties: {
     event_id: {
@@ -31480,6 +33267,129 @@ export const ColorPickerWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/ColorPicker",
 } as const;
 
+export const CompleteConversationEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    answer: {
+      $ref: "#/components/schemas/LLMEventWritable",
+      description: "The answer the follow-up questions are grounded on.",
+    },
+    stop: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/StopEventWritable",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["answer"],
+  title: "CompleteConversationEvent",
+  description:
+    "Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then\nemit the stop event.\n\nBuilt with `Conversation.complete(...)`. Anything that must be published before the run tears down, such\nas a memory-storage delegation, is returned from the same step ahead of this event.",
+} as const;
+
+export const ComposeContextEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The chat history to merge the blocks into.",
+    },
+    blocks: {
+      items: {
+        items: {
+          $ref: "#/components/schemas/ChatMessage",
+        },
+        type: "array",
+      },
+      type: "array",
+      title: "Blocks",
+      description:
+        "Context blocks in the order they should reach the model. Empty blocks are skipped.",
+      default: [],
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history"],
+  title: "ComposeContextEvent",
+  description:
+    "Asks the conversation capability to merge context blocks into a chat history, in the given order, behind\nthe leading system messages and within the input budget.\n\nBuilt with `Conversation.compose(...)`; answered with `ContextComposedEvent`.",
+} as const;
+
 export const ContextComposedEventWritableSchema = {
   properties: {
     event_id: {
@@ -31628,6 +33538,70 @@ export const ContextSufficientAcceptEventWritableSchema = {
     "Event indicating that the context sufficiency guard accepted the request.\n\nThis event is triggered when the context sufficiency guard determines that\nthere is sufficient context available to answer the user's query without\nrequiring additional information retrieval or processing.",
 } as const;
 
+export const ContextualizeConversationEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The chat history, already limited to the budget.",
+    },
+    user_query: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "User Query",
+      description:
+        "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history"],
+  title: "ContextualizeConversationEvent",
+  description:
+    "Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the\nmessage for a meta question, derive the query the turn is answered for, and title the thread.\n\nBuilt with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a\nstop event when the message was a meta question or could not be condensed.",
+} as const;
+
 export const ContextualizedAgentEventWritableSchema = {
   properties: {
     locale: {
@@ -31742,6 +33716,54 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ContextComposedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ContextualizeConversationEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ConversationContextualizedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ComposeContextEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/CompleteConversationEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/NotAMetaQuestionEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/RecallMemoryEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MemoryRecalledEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/MemoryStorageRequestedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/SearchKnowledgeEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ReadAttachedFilesEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/AttachedFilesReadEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/RunToolLoopEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopIterationEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolCallsDecidedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolCallApprovedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/ToolLoopFinishedEventWritable",
         },
         {
           $ref: "#/components/schemas/AddUserMemoryToChatHistoryEventWritable",
@@ -31950,6 +33972,70 @@ export const ControlEventWritableSchema = {
   title: "ControlEvent",
   description:
     "Represents a system-level or workflow-level signal, often used to coordinate steps,\nindicate state changes, or trigger specific actions in the event-driven architecture.\n\n### Why ControlEvent?\nWhile `BaseEvent` covers the general structure for any event, `ControlEvent` marks an event as\nparticularly important for controlling the flow of a system. Hence, all events taken as inputs to\nworkflow steps must be of type `ControlEvent`. Even though other type of events can be returned\nfrom workflow steps, only 'ControlEvent' influence the flow of the system.\n\nBy subclassing `BaseEvent`, `ControlEvent` benefits from automatic type registration and\nserialization, ensuring that control signals are as easy to produce and consume as any other event.",
+} as const;
+
+export const ConversationContextualizedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The limited chat history the request carried.",
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description:
+        "The question this turn is answered for. Blank when the message carried no text.",
+    },
+    condensed: {
+      type: "boolean",
+      title: "Condensed",
+      description:
+        "Whether the query was condensed from the history rather than taken verbatim.",
+      default: false,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["history", "query"],
+  title: "ConversationContextualizedEvent",
+  description:
+    "The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query\nevery capability and the blueprint answer it for.",
 } as const;
 
 export const ConversationTitleEventWritableSchema = {
@@ -38788,6 +40874,138 @@ export const MailMovedEventWritableSchema = {
     "Records that a message was moved from its source folder into a target folder on the IMAP server.",
 } as const;
 
+export const MemoryRecalledEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    user_block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "User Block",
+      description: "System messages carrying the user's memories, or none.",
+      default: [],
+    },
+    organization_block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Organization Block",
+      description:
+        "System messages carrying the organization's memories, or none.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "MemoryRecalledEvent",
+  description:
+    "The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.",
+} as const;
+
+export const MemoryStorageRequestedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    start_event: {
+      $ref: "#/components/schemas/StoreUserMemoryRequestedEventWritable",
+      description:
+        "The start event published to the writer agent to begin its independent run.",
+    },
+    target_agent_class: {
+      type: "string",
+      title: "Target Agent Class",
+      description: "Writer agent class to route the start event to.",
+    },
+    target_agent_id: {
+      type: "string",
+      title: "Target Agent Id",
+      description: "Writer agent id (fixed system id) to route to.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["start_event", "target_agent_class", "target_agent_id"],
+  title: "MemoryStorageRequestedEvent",
+  description:
+    "Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to\npersist user memory, WITHOUT awaiting a response (issue #1179).\n\n### Why a dedicated event (not AgentInTheLoop)?\n`AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact\nsymptom #1179 removes — and it opens a response subscription that would route a result back into the\ncaller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the\nwriter's subject and nothing is routed back. It is displayed like every protocol event, so the event\nhistory shows the delegation; chat clients show no more than a passing status. Its control copy lands in the\ncaller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the\nrun finalizes as soon as this cheap marker exists, not when storage completes.",
+} as const;
+
 export const MessageWritableSchema = {
   properties: {
     role: {
@@ -39538,6 +41756,55 @@ export const NodeSummaryDTOWritableSchema = {
   type: "object",
   required: ["level", "nodes"],
   title: "NodeSummaryDTO",
+} as const;
+
+export const NotAMetaQuestionEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    reasoning: {
+      type: "string",
+      title: "Reasoning",
+      description:
+        "Why the message was classified as a normal (non-meta) request.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["reasoning"],
+  title: "NotAMetaQuestionEvent",
+  description:
+    "Internal \"all-clear\" gate signal: the user's message is a normal task, not a meta\nquestion about the agent. It releases the agent's normal entry steps, which depend\non it so they cannot start until meta-question detection has cleared the message.",
 } as const;
 
 export const OpenChatHitlResponseWritableSchema = {
@@ -40999,6 +43266,173 @@ export const RatingWritableSchema = {
   description: "https://formkit-primevue.netlify.app/inputs/Rating",
 } as const;
 
+export const ReadAttachedFilesEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Files",
+      description: "The files attached to the current branch.",
+      default: [],
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description:
+        "The history the files will be composed into, for sizing them.",
+      default: [],
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description:
+        "The turn's query, for picking the relevant sections of a file too large to fit.",
+      default: "",
+    },
+    reserve_tokens: {
+      type: "integer",
+      minimum: 0,
+      title: "Reserve Tokens",
+      description:
+        "Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.",
+      default: 0,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the files by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "ReadAttachedFilesEvent",
+  description:
+    "Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.\n\nBuilt with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is\nattached. It carries the history the files will be composed into, since that is what decides how much room\nthe files have.",
+} as const;
+
+export const RecallMemoryEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description: "The question to search memories with.",
+    },
+    org_memory_namespaces: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Org Memory Namespaces",
+      description:
+        "Organization-memory namespaces to narrow the search to; empty means the profile's own.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose it in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["query"],
+  title: "RecallMemoryEvent",
+  description:
+    "Asks the memory capability for what the profile remembers about the user and the organization, for a query.\n\nBuilt with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the\nprofile or the run has no identity to read for.",
+} as const;
+
 export const RefusalStopEventWritableSchema = {
   properties: {
     event_id: {
@@ -42062,6 +44496,203 @@ export const RunStatisticsWritableSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const RunToolLoopEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    history: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "History",
+      description: "The conversation the model decides on.",
+      default: [],
+    },
+    mode: {
+      $ref: "#/components/schemas/ToolLoopMode",
+      description: "Whether the loop answers or gathers context.",
+      default: "answer",
+    },
+    tools: {
+      anyOf: [
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tools",
+      description:
+        "Narrows the offered tools to these names for this call, if given.",
+    },
+    max_iterations: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Iterations",
+      description:
+        "An iteration limit tighter than the profile's, e.g. 1 for routing.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether tools tell the model to cite what they return, off where it cannot resolve.",
+      default: true,
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Files",
+      description:
+        "The files attached to the message, for tools that read them.",
+      default: [],
+    },
+    knowledge_references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "Knowledge References",
+      description:
+        "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "RunToolLoopEvent",
+  description:
+    "Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.\n\nBuilt with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's\ndeclaration, narrowed by the profile and by the features the user switched on for the message.",
+} as const;
+
+export const SearchKnowledgeEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    references: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeReference",
+      },
+      type: "array",
+      title: "References",
+      description: "The collections the user referenced on this message.",
+      default: [],
+    },
+    query: {
+      type: "string",
+      title: "Query",
+      description: "The turn's query the collections are searched for.",
+      default: "",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the documents by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the search in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "SearchKnowledgeEvent",
+  description:
+    "Asks the knowledge capability to search the collections the user referenced for the turn's query.\n\nBuilt with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.",
 } as const;
 
 export const SecretFileInputWritableSchema = {
@@ -43785,6 +46416,128 @@ export const StoreUserMemoryEventWritableSchema = {
     "Specialized BaseStoreMemoryEvent for user-specific memories.\n\nEmitted when an agent stores private user memories to long-term storage.\nThese memories are scoped to individual users and never shared across users.\nUser memories are typically inferred from conversation context.",
 } as const;
 
+export const StoreUserMemoryRequestedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    locale: {
+      type: "string",
+      title: "Locale",
+      description:
+        "Originating run's locale, so extraction prompts stay in the user's language.",
+      default: "de",
+    },
+    user: {
+      $ref: "#/components/schemas/UserIdentity",
+      description: "User the memories belong to.",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Messages",
+      description: "Conversation the writer extracts user memories from.",
+    },
+    origin_thread_id: {
+      type: "string",
+      title: "Origin Thread Id",
+      description: "Originating run's thread id, kept as memory metadata.",
+    },
+    origin_display_id: {
+      type: "string",
+      title: "Origin Display Id",
+      description: "Originating run's display id, kept as memory metadata.",
+    },
+    origin_run_id: {
+      type: "string",
+      title: "Origin Run Id",
+      description: "Originating run's run id, kept as memory metadata.",
+    },
+    origin_agent_class: {
+      type: "string",
+      title: "Origin Agent Class",
+      description:
+        "Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).",
+    },
+    origin_agent_id: {
+      type: "string",
+      title: "Origin Agent Id",
+      description:
+        "Originating agent's id — part of the _agent_id scoping tag.",
+    },
+    origin_agent_name: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Originating agent's name — used in the fact-extraction prompt.",
+    },
+    origin_agent_description: {
+      $ref: "#/components/schemas/LocaleString",
+      description:
+        "Originating agent's description — used in the fact-extraction prompt.",
+    },
+    origin_memory_llm: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Origin Memory Llm",
+      description:
+        "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "user",
+    "messages",
+    "origin_thread_id",
+    "origin_display_id",
+    "origin_run_id",
+    "origin_agent_class",
+    "origin_agent_id",
+    "origin_agent_name",
+    "origin_agent_description",
+  ],
+  title: "StoreUserMemoryRequestedEvent",
+  description:
+    "Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's\ncritical path (issue #1179).\n\nIt runs in a different execution context than the originating RAG run and cannot read that run's\n`run_context`, so it carries everything the writer needs as plain serializable data. The originating\nagent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*\n`AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.\n\nScope: user memory only. Organization memory has a different API shape and is not on #1179's critical\npath; if it is decoupled later, add a `memory_type` discriminator here.",
+} as const;
+
 export const TenantSelectWritableSchema = {
   properties: {
     is_formkit_element: {
@@ -45175,6 +47928,133 @@ export const ToolApprovalResponseEventWritableSchema = {
     "The user's answer to a tool approval request: run the call, or tell the model it was declined.",
 } as const;
 
+export const ToolCallApprovedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    tool_call_id: {
+      type: "string",
+      title: "Tool Call Id",
+      description: "The call's id, which its result answers.",
+    },
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The tool to run.",
+    },
+    arguments: {
+      additionalProperties: true,
+      type: "object",
+      title: "Arguments",
+      description: "The arguments the model passed.",
+      default: {},
+    },
+    kind: {
+      type: "string",
+      enum: ["function", "capability"],
+      title: "Kind",
+      description: "Whether the loop runs it or a capability does.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether the tool tells the model to cite what it returns.",
+      default: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["tool_call_id", "name", "kind"],
+  title: "ToolCallApprovedEvent",
+  description:
+    "A tool call cleared to run, either because it needs no approval or because the user approved it.\n\nFunction tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own\nrequest, so the call runs the same sub-workflow, with the same events, as an explicit call would.",
+} as const;
+
+export const ToolCallsDecidedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    state: {
+      $ref: "#/components/schemas/ToolLoopStateWritable",
+      description: "The loop's state including the model's tool-calling turn.",
+    },
+    tool_call_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Tool Call Ids",
+      description: "The calls this iteration waits for.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["state", "tool_call_ids"],
+  title: "ToolCallsDecidedEvent",
+  description:
+    "The model chose tools in this iteration; the loop continues once every one of them has a result.",
+} as const;
+
 export const ToolEventWritableSchema = {
   properties: {
     event_id: {
@@ -45368,6 +48248,226 @@ export const ToolLoopCondensedEventWritableSchema = {
   title: "ToolLoopCondensedEvent",
   description:
     "The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.",
+} as const;
+
+export const ToolLoopFinishedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    answer: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LLMEventWritable",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "The model's final reply, in answering mode.",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "The tool results as context for the blueprint's answer, gathering mode.",
+      default: [],
+    },
+    stopped_early: {
+      type: "boolean",
+      title: "Stopped Early",
+      description: "Whether the loop stopped at its limits.",
+      default: false,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "ToolLoopFinishedEvent",
+  description:
+    "The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.",
+} as const;
+
+export const ToolLoopIterationEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    state: {
+      $ref: "#/components/schemas/ToolLoopStateWritable",
+      description: "The loop's state at the start of this iteration.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["state"],
+  title: "ToolLoopIterationEvent",
+  description:
+    "The model's turn to decide: answer, or call tools. One per iteration of the loop.",
+} as const;
+
+export const ToolLoopStateWritableSchema = {
+  properties: {
+    loop: {
+      type: "string",
+      title: "Loop",
+      description:
+        "The blueprint's tool set this loop runs, telling two loops of one run apart.",
+      default: "tools",
+    },
+    messages: {
+      items: {
+        $ref: "#/components/schemas/MessageWritable",
+      },
+      type: "array",
+      title: "Messages",
+      description: "The loop's conversation so far, tool calls and results.",
+    },
+    tools: {
+      items: {
+        $ref: "#/components/schemas/ToolDefinition",
+      },
+      type: "array",
+      title: "Tools",
+      description: "The tools offered to the model in this run.",
+      default: [],
+    },
+    mode: {
+      $ref: "#/components/schemas/ToolLoopMode",
+      description: "Whether the loop answers or gathers context.",
+    },
+    iteration: {
+      type: "integer",
+      minimum: 0,
+      title: "Iteration",
+      description: "How many decisions the model has made so far.",
+      default: 0,
+    },
+    tool_calls_made: {
+      type: "integer",
+      minimum: 0,
+      title: "Tool Calls Made",
+      description: "How many tool calls ran so far.",
+      default: 0,
+    },
+    max_iterations: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Iterations",
+      description: "The call's own iteration limit, if any.",
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    gathered: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Gathered",
+      description:
+        "The tool results as context, for the blueprint's own answer.",
+      default: [],
+    },
+    needs_condensing: {
+      type: "boolean",
+      title: "Needs Condensing",
+      description:
+        "Whether the conversation outgrew the prompt and is condensed before the model decides.",
+      default: false,
+    },
+    condensed_tool_call_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Condensed Tool Call Ids",
+      description:
+        "Tool results already condensed or dropped, which are not condensed again.",
+      default: [],
+    },
+  },
+  type: "object",
+  required: ["messages", "mode"],
+  title: "ToolLoopState",
+  description:
+    "Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.\n\nSteps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it\ngathered travel with the iteration; the trace then shows the loop's full state at every step.",
 } as const;
 
 export const ToolLoopStatusEventWritableSchema = {

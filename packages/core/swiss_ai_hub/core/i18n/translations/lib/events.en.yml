@@ -8,16 +8,17 @@ attached_file_event:
   description: The agent read a file the user attached to the conversation.
 knowledge_searched_event:
   name: Knowledge Searched
-  description: "The agent searched the knowledge collections the user referenced."
+  description: The agent searched the knowledge collections the user referenced.
 tool_result_event:
-  name: "Tool Result"
-  description: "What a tool the agent chose returned."
+  name: Tool Result
+  description: What a tool the agent chose returned.
 tool_loop_status_event:
-  name: "Tool Loop Status"
-  description: "What the agent's tool loop is doing."
+  name: Tool Loop Status
+  description: What the agent's tool loop is doing.
 tool_loop_condensed_event:
-  name: "Tool Loop Condensed"
-  description: "The agent condensed earlier tool results and turns to fit the model's context."
+  name: Tool Loop Condensed
+  description: The agent condensed earlier tool results and turns to fit the model's
+    context.
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.
@@ -266,3 +267,51 @@ refusal_stop_event:
   name: Turn Refused
   description: The assistant refused this turn because of its input, and told the
     user why.
+contextualize_conversation_event:
+  name: Contextualize Conversation
+  description: Understanding the question
+conversation_contextualized_event:
+  name: Conversation Contextualized
+  description: Question understood
+compose_context_event:
+  name: Compose Context
+  description: Putting together what the model reads
+recall_memory_event:
+  name: Recall Memory
+  description: Recalling memories
+memory_recalled_event:
+  name: Memory Recalled
+  description: Memories recalled
+search_knowledge_event:
+  name: Search Knowledge
+  description: Searching the knowledge collections
+read_attached_files_event:
+  name: Read Attached Files
+  description: Reading the attached files
+attached_files_read_event:
+  name: Attached Files Read
+  description: Attached files read
+complete_conversation_event:
+  name: Complete Conversation
+  description: Suggesting follow-up questions
+run_tool_loop_event:
+  name: Run Tool Loop
+  description: Deciding which tools to use
+tool_calls_decided_event:
+  name: Tool Calls Decided
+  description: Running the chosen tools
+tool_call_approved_event:
+  name: Tool Call Approved
+  description: Running a tool
+tool_loop_iteration_event:
+  name: Tool Loop Iteration
+  description: Deciding the next step
+tool_loop_finished_event:
+  name: Tool Loop Finished
+  description: Done with the tools
+memory_storage_requested_event:
+  name: Memory Storage Requested
+  description: Saving what to remember
+not_a_meta_question_event:
+  name: Not a Meta Question
+  description: Answering the request

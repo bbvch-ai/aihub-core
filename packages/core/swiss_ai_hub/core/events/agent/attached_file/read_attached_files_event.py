@@ -1,13 +1,14 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
-from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
-class ReadAttachedFilesEvent(ControlEvent):
+class ReadAttachedFilesEvent(ControlAndDisplayEvent):
     """
     Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.
 
@@ -15,6 +16,11 @@ class ReadAttachedFilesEvent(ControlEvent):
     attached. It carries the history the files will be composed into, since that is what decides how much room
     the files have.
     """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.read_attached_files_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.read_attached_files_event.description"
+    )
 
     files: Annotated[list[UserUploadedFile], Field(description="The files attached to the current branch.")] = []
     history: Annotated[
