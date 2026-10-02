@@ -2845,6 +2845,10 @@ services:
       MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
       MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
+      # Open Terminal (code sandbox)
+      OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+
       # Mem0
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
@@ -2873,6 +2877,7 @@ services:
       - backend
       - data
       - storage
+      - code-sandbox
   # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent
