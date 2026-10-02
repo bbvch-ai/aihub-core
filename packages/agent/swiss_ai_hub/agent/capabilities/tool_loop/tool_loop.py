@@ -195,7 +195,8 @@ class ToolLoop(Capability):
     ) -> ToolCallApprovedEvent | ToolApprovalRequestEvent | ToolResultEvent:
         """Let the call through, or ask the user first when the tool's approval policy says so."""
         tool_set = type(agent).tool_set_offering(call.name)
-        if tool_set is None:
+        # Only an offered tool carries its schema; a disabled, toggled-off or other set's tool must not run.
+        if tool_set is None or call.json_schema is None:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id,
                 name=call.name or "",

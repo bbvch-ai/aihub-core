@@ -304,12 +304,16 @@ class TestApproval:
         name: str,
         run_context: _Context | None = None,
         parameters: dict[str, Any] | None = None,
+        offered: bool = True,
         **tool_loop: Any,
     ) -> Any:
         return await ToolLoop.gate_step(
             LoopAgent(),
             call=ToolEvent(
-                tool_call_id="c1", name=name, parameters={"text": "a"} if parameters is None else parameters
+                tool_call_id="c1",
+                name=name,
+                parameters={"text": "a"} if parameters is None else parameters,
+                json_schema={"type": "object"} if offered else None,
             ),
             loop=_config(**tool_loop),
             run_context=run_context or _Context(),
@@ -370,6 +374,18 @@ class TestApproval:
     @pytest.mark.asyncio
     async def test_an_unknown_tool_is_reported_to_the_model(self):
         result = await self._gate("nope")
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
+    @pytest.mark.asyncio
+    async def test_a_tool_of_the_blueprint_the_model_was_not_offered_does_not_run(self):
+        events, _ = await _decide(_state(), _calling(_tool_call("c1", "broken", "{}")), disabled_tools=["broken"])
+        call = next(event for event in events if isinstance(event, ToolEvent))
+
+        result = await ToolLoop.gate_step(
+            LoopAgent(), call=call, loop=_config(), run_context=_Context(), thread_context=_Context(), t=T
+        )
 
         assert isinstance(result, ToolResultEvent)
         assert result.is_error
