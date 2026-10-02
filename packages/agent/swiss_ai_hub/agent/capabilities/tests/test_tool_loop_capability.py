@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     Message,
     SearchKnowledgeEvent,
+    TextContent,
     ToolApprovalRequestEvent,
     ToolApprovalResponseEvent,
     ToolCallApprovedEvent,
@@ -259,6 +260,21 @@ class TestDecisions:
         messages = displayer.display_llm_stream.await_args.args[2]
         assert messages[-1].role == MessageRole.USER
         assert all(message.role != MessageRole.SYSTEM for message in messages[1:])
+
+    @pytest.mark.asyncio
+    async def test_at_the_limit_the_tool_turns_reach_the_model_as_plain_text(self):
+        result = Message(role="tool", tool_call_id="c1", name="echo", contents=[TextContent(text="A for loop-test")])
+        state = _state(iteration=5)
+        state = state.model_copy(
+            update={"messages": [*state.messages, _calling(_tool_call("c1", "echo", '{"text": "a"}')), result]}
+        )
+
+        await_args = (await _decide(state, ANSWER, max_iterations=5))[1].display_llm_stream.await_args
+        messages = await_args.args[2]
+
+        assert [message.role for message in messages] == [MessageRole.USER, MessageRole.ASSISTANT, MessageRole.USER]
+        assert messages[1].content == "echo:\nA for loop-test"
+        assert not any(message.additional_kwargs.get("tool_calls") for message in messages)
 
     @pytest.mark.asyncio
     async def test_gathering_at_the_limit_hands_back_what_it_has(self):

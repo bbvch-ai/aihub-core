@@ -158,7 +158,8 @@ class ToolLoop(Capability):
             if exhausted:
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
-        messages = [message.to_llama_index() for message in state.messages]
+        history = ToolLoop._tool_turns_as_text(state.messages) if exhausted else state.messages
+        messages = [message.to_llama_index() for message in history]
         if exhausted:
             # A user turn: chat templates such as Qwen's reject any system message after the first.
             messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
@@ -404,6 +405,26 @@ class ToolLoop(Capability):
         await displayer.display_event(
             ToolLoopStatusEvent(loop=state.loop, description=t(f"agent.tool_loop.status.{phase}"), done=done)
         )
+
+    @staticmethod
+    def _tool_turns_as_text(messages: list[Message]) -> list[Message]:
+        """The loop's calls and results as one plain assistant turn, for the answer at the limits.
+
+        Offered no tools after a tool-call history, Gemma answers with nothing at all; in plain text it answers.
+        """
+        kept: list[Message] = []
+        notes: list[str] = []
+        for message in messages:
+            if message.role == "tool":
+                notes.append(f"{message.name}:\n{message.content}")
+            elif message.tool_calls:
+                notes.extend([message.content] if message.content else [])
+            else:
+                kept.extend([Message.from_string(role="assistant", content="\n\n".join(notes))] if notes else [])
+                notes = []
+                kept.append(message)
+        kept.extend([Message.from_string(role="assistant", content="\n\n".join(notes))] if notes else [])
+        return kept
 
     @staticmethod
     def _exhausted(state: ToolLoopState, loop: ToolLoopFields) -> bool:
