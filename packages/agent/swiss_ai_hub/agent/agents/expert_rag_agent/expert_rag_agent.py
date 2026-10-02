@@ -24,23 +24,22 @@ from swiss_ai_hub.agent.agents.expert_asking_agent.events.ask_expert_start_event
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
-    LimitChatHistoryWithContextEvent,
-)
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
+from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
 from swiss_ai_hub.agent.rag.preconditions import (
-    check_context_ready_for_history_limit_with_expert,
     check_is_answer_response,
     check_is_no_answer_response,
 )
 from swiss_ai_hub.agent.rag.step_functions import (
+    do_context_block,
     do_finalize_rag_stop,
-    do_limit_chat_history_with_context,
     do_respond_with_llm,
 )
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
@@ -48,15 +47,6 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
 )
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
-
-
-@precondition()
-async def context_ready_for_history_limit(
-    context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
-    context_sufficient_event: ContextSufficientAcceptEvent | None = None,
-) -> bool:
-    """Expert context is ready as it comes; retrieved context needs the guard's acceptance first."""
-    return check_context_ready_for_history_limit_with_expert(context_event, context_sufficient_event)
 
 
 @precondition()
@@ -78,9 +68,9 @@ class ExpertRAGAgent(RAGAgent):
     Everything up to the context-sufficiency verdict is `RAGAgent`, capabilities included. This blueprint
     replaces what happens after an insufficient verdict: instead of answering that it cannot, it asks the
     user for consent, delegates the question to the configured expert-asking agent, and answers from the
-    expert's reply as if it were retrieved context. Three inherited steps are overridden for that: the
-    context limit accepts expert context, the answer accepts the user's refusal to escalate, and the stop
-    reports the expert outcome.
+    expert's reply as if it were retrieved context. Two inherited steps are overridden for that: the prompt
+    takes the expert's reply or the user's refusal to escalate as its outcome, and the answer reports the
+    expert outcome in its stop.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.expert_rag_agent.metadata.name")
@@ -90,27 +80,41 @@ class ExpertRAGAgent(RAGAgent):
     icon: ClassVar[str] = "mage:building-a"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
-        description=AgentLocaleString.from_i18n_path(
-            "agent.rag_agent.steps.limit_chat_history_with_context.description"
-        ),
-        icon="mage:edit",
-        precondition=context_ready_for_history_limit,
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.description"),
+        icon="mdi:database-plus",
     )
-    async def limit_chat_history_with_context_step(  # type: ignore[override]
+    async def assemble_prompt_step(  # type: ignore[override]
         self,
-        context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
-        composed: Conversation.Composed,
+        outcome: ContextSufficientAcceptEvent | FewShotRejectEvent | ExpertRejectEvent | ExpertAnswerContextEvent,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
-        _: ContextSufficientAcceptEvent | None = None,
-    ) -> LimitChatHistoryWithContextEvent:
-        return do_limit_chat_history_with_context(
-            context_event.context_message,
-            composed.history,
-            start_event.last_user_message,
-            agent_config.llm.token_counter,
-            agent_config.number_of_input_tokens,
+        guard_config: ContextSufficientGuardStepConfig,
+        t: LocaleHandler,
+        documents: InOrderNodeCombinerEvent | None = None,
+    ) -> Conversation.ComposeRequest:
+        """An insufficient verdict goes to the expert rather than to an answer, so the expert's reply is the
+        context when there is one, and a declined escalation answers with the verdict's reason."""
+        match outcome:
+            case ExpertAnswerContextEvent():
+                rejection, context = None, do_context_block(outcome.context_message)
+            case ContextSufficientAcceptEvent():
+                rejection, context = None, do_context_block(documents.context_message) if documents else []
+            case _:
+                rejection, context = outcome, []
+        return AnswerPrompt.compose(
+            rejection,
+            context,
+            ctx,
+            (memories, files, knowledge),
+            start_event,
+            agent_config.system_prompt,
+            guard_config.context_insufficient_prompt,
+            t,
         )
 
     # --- Expert Escalation Steps ---
@@ -226,14 +230,7 @@ class ExpertRAGAgent(RAGAgent):
         context_content = t("agent.prompt.expert_context", expert_conversation=expert_conversation_text)
         await displayer.display_thought(f"Expert context: {context_content}")
 
-        # USER, not SYSTEM: limit_chat_history_with_context places context messages *after* the conversation
-        # turns, and strict providers (e.g. Qwen3.5 on Infomaniak) reject a 400 "System message must be at
-        # the beginning" for any system message past index 0. This matches the retrieval context message,
-        # which lib.prompt.rag.context_prompt already renders with role="user".
-        context_message = ChatMessage(
-            role=MessageRole.USER,
-            content=context_content,
-        )
+        context_message = ChatMessage(role=MessageRole.SYSTEM, content=context_content)
         return ExpertAnswerContextEvent(context_message=context_message)
 
     @step(
@@ -312,37 +309,22 @@ class ExpertRAGAgent(RAGAgent):
     )
     async def respond_with_llm_step(  # type: ignore[override]
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
+        outcome: ContextSufficientAcceptEvent | FewShotRejectEvent | ExpertRejectEvent | ExpertAnswerContextEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
-        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
-        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
-        expert_answer_context: ExpertAnswerContextEvent | None = None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None = None,
         user: UserIdentity | None = None,
     ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
-        """Answer from context or a guard rejection; an insufficient-context verdict goes to the expert instead,
-        and an expert's answer counts as a successful grounding while a declined escalation keeps the verdict."""
-        answer = await do_respond_with_llm(
-            event,
-            composed.history,
-            guard_config.context_insufficient_prompt,
-            agent_config.system_prompt,
-            agent_config.llm,
-            displayer,
-            t,
-            user,
-            as_stop_step=False,
-            cite_sources=CitationPolicy.cites_sources(start_event),
-        )
+        """An expert's answer counts as a successful grounding, while a declined escalation keeps the verdict."""
+        answer = await do_respond_with_llm(composed.history, agent_config.llm, displayer, t, user, as_stop_step=False)
         stop = do_finalize_rag_stop(
             llm_event=answer,
-            expert_answer_context=expert_answer_context,
-            few_shot_reject=event if isinstance(event, FewShotRejectEvent) else None,
+            expert_answer_context=outcome if isinstance(outcome, ExpertAnswerContextEvent) else None,
+            few_shot_reject=outcome if isinstance(outcome, FewShotRejectEvent) else None,
             context_insufficient_reject=context_insufficient_reject,
         )
         return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)

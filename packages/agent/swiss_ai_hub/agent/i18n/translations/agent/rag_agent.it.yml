@@ -101,10 +101,6 @@ steps:
     name: Conserva i documenti di base
     description: Conserva i principali documenti che hanno fondato questa risposta
       affinché una domanda di follow-up possa riutilizzarli.
-  limit_chat_history_with_context:
-    name: Limita cronologia con contesto
-    description: Include il contesto combinato e tronca nuovamente la cronologia della
-      chat.
   respond_with_llm:
     name: Rispondi con LLM
     description: Genera una risposta utilizzando il LLM configurato.

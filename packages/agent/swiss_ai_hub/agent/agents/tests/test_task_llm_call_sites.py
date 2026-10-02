@@ -139,7 +139,6 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             user=fake_user(),
             event=_event(),
             ctx=TURN,
-            composed=_event(history=[]),
             run_context=MagicMock(),
         )
 
@@ -147,15 +146,13 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
 
 
 @pytest.mark.asyncio
-async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -> None:
+async def test_main_answer_stays_on_main_llm(config_with_task_llm) -> None:
     with patch(f"{RAG_MODULE}.do_respond_with_llm", new=AsyncMock(return_value=LLMEvent())) as respond:
         await RAGAgent().respond_with_llm_step(
-            event=_event(),
+            outcome=_event(),
             composed=_event(history=[]),
             ctx=TURN,
-            start_event=_event(),
             agent_config=config_with_task_llm,
-            guard_config=MagicMock(),
             displayer=MagicMock(),
             topic=AgentInstanceTopic(
                 agent_class="RAGAgent",
@@ -171,18 +168,4 @@ async def test_main_answer_and_trimming_stay_on_main_llm(config_with_task_llm) -
             user=fake_user(),
         )
 
-    assert respond.await_args.args[4].model_name == MAIN_MODEL
-
-    with (
-        patch(f"{RAG_MODULE}.do_limit_chat_history_with_context") as trim,
-        patch.object(LLMConfig, "token_counter", property(lambda config: f"counter::{config.model_name}")),
-    ):
-        await RAGAgent().limit_chat_history_with_context_step(
-            context_event=_event(),
-            composed=_event(history=[]),
-            _=None,
-            start_event=_event(),
-            agent_config=config_with_task_llm,
-        )
-
-    assert trim.call_args.args[3] == f"counter::{MAIN_MODEL}"
+    assert respond.await_args.args[1].model_name == MAIN_MODEL

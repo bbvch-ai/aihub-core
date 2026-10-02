@@ -15,6 +15,7 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 from swiss_ai_hub.core.events.agent import (
     CompleteConversationEvent,
+    ContextComposedEvent,
     ContextualizeConversationEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
@@ -48,9 +49,6 @@ from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_c
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
-    LimitChatHistoryWithContextEvent,
-)
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
@@ -349,10 +347,15 @@ def _(agent_runner: AgentTestRunner):
     assert combiner_event.context_message, "InOrderNodeCombinerEvent did not produce context message"
 
 
-@then("a LimitChatHistoryWithContextEvent is present with limited history and context")
+@then("the composed prompt holds the retrieved documents and is what the model answered from")
 def _(agent_runner: AgentTestRunner):
-    history_event = agent_runner.get_event_of_class(LimitChatHistoryWithContextEvent)
-    assert history_event.limited_history_with_context, "LimitChatHistoryWithContextEvent missing data"
+    composed = agent_runner.get_event_of_class(ContextComposedEvent).history
+    documents = agent_runner.get_event_of_class(InOrderNodeCombinerEvent).context_message.content
+    assert composed[0].role == "system" and documents in composed[0].content, "the documents are not in the prompt"
+    answer = agent_runner.get_event_of_class(CompleteConversationEvent).answer
+    sent = [(message.role, " ".join((message.content or "").split())) for message in answer.input_messages or []]
+    shown = [(message.role, " ".join((message.content or "").split())) for message in composed]
+    assert sent == shown, "the model saw a different prompt"
 
 
 @then("the answer is handed to the completion")

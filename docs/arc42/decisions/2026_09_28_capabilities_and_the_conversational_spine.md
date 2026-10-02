@@ -179,3 +179,29 @@ up front and offers `Knowledge`, `AttachedFiles` and `Memory` as tools, so the m
 - **Condensing belongs to the loop.** Only the loop sees its conversation grow between decisions, so `ToolLoop`
   condenses it in a step of its own when it outgrows the input budget, rather than leaving that to the model as a tool
   or cutting each result to a share of the room left, which starved every result after a few calls.
+
+## Amendment 2026-10-02: one composed prompt per answer, and every protocol event displayed
+
+`ContextComposedEvent` is shown as what the model was given, but RAG composed its prompt before retrieval and added the
+retrieved documents, the profile's prompt and the rejection reason afterwards, outside the capability (#2007). Anyone
+reading a RAG answer's trace saw the memories and files, not the knowledge the model read.
+
+- **RAG composes once its outcome is known.** `assemble_prompt_step` runs on the guard's verdict: the retrieved
+  documents on acceptance, the rejection's reason on a few-shot or context rejection, and in `ExpertRAGAgent` the
+  expert's reply or the declined escalation. The profile's prompt, the citation rule and the reason lead the system
+  head; the documents are the last block, joined to the system head like every other block; the answer step sends the
+  composed history as it is. The context-sufficiency guard reads the contextualized history, and RAG's own context limit
+  step is gone.
+- **Old turns give way before blocks.** `compose` used to drop blocks before any earlier turn, which RAG's context limit
+  did the other way round. It now trims the oldest turns first; blocks give way only when they and the question alone do
+  not fit, and the system head and the question never do. A file a user attached to this turn no longer vanishes to keep
+  an old one.
+- **Files keep their reserve.** `AttachedFiles.read` still keeps room for the documents retrieval has yet to return,
+  because files are read in parallel with retrieval and sized to fit, and `compose` can only drop a whole block. Reading
+  them after retrieval would size them exactly, for the file read's latency on every RAG turn with attachments.
+- **Protocol events are control and display.** The event history lists display events only, so every capability request
+  and result and every tool-loop event is a `ControlAndDisplayEvent` with a component of its own. The loop events show
+  the round, the decided calls and the limits rather than repeating the conversation they carry.
+
+**Rejected:** placing the documents beside the question in a slot of their own (it kept RAG's previous prompt shape, but
+made RAG the only blueprint whose context sits outside the system head); dropping the file reserve (see above).

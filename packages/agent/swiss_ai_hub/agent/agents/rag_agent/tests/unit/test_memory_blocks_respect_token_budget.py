@@ -1,14 +1,8 @@
 """Memory blocks are inside the token budget, not added on top of it.
 
-`add_memory_to_chat_history_step` extends the *already-limited* history (#1753), so without a re-limit
-`extended_history` could exceed `number_of_input_tokens` — and every consumer reads it unchecked:
-`context_sufficient_guard` formats it straight into a prompt, `do_respond_with_llm`'s reject paths prepend a
-system message and send it, and `limit_chat_history_with_context` *reserves* system messages rather than
-trimming them, so an oversized block raises there instead of being cut.
-
-Before the reorder this was structurally impossible: memory was added to the raw history and the single
-limiter ran afterwards. These tests pin that invariant back in place, including which side loses when the
-result does not fit.
+The memory block joins an *already-limited* history (#1753), and the composed prompt is sent to the model as it is,
+so the composition has to re-limit it. These tests pin that invariant, including which side loses when the result
+does not fit.
 """
 
 from unittest.mock import patch

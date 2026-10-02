@@ -138,6 +138,29 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
 
 
 @pytest.mark.asyncio
+async def test_compose_trims_the_oldest_turns_before_any_block():
+    """A large attached file and the retrieved documents were asked for this turn; old turns are what gives way."""
+    system = _message(MessageRole.SYSTEM, 10)
+    older = [_message(MessageRole.USER if index % 2 == 0 else MessageRole.ASSISTANT, 100) for index in range(8)]
+    question = _message(MessageRole.USER, 20)
+    attached_file = [_message(MessageRole.SYSTEM, 300)]
+    documents = [_message(MessageRole.SYSTEM, 300)]
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, *older, question], blocks=[attached_file, documents]),
+            conversation=_config(number_of_input_tokens=900),
+        )
+
+    head, *turns = composed.history
+    assert head.content.count(TOKEN_WORD.strip()) == 610, "the file and the documents both stay in the prompt"
+    assert turns[-1] == question
+    assert 0 < len(turns) - 1 < len(older), "only the oldest turns gave way"
+    assert turns[:-1] == older[-(len(turns) - 1) :]
+
+
+@pytest.mark.asyncio
 async def test_compose_passes_the_history_through_when_every_block_is_empty():
     history = [_message(MessageRole.USER, 5)]
     composed = await Conversation.compose_context_step(

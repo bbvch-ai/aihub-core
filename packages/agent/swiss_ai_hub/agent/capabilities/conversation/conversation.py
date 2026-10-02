@@ -259,18 +259,24 @@ class Conversation(Capability):
 
         Re-limited before it leaves this step so the result carries the same "fits the budget" guarantee the
         limited history does. The leading system messages leave as one: served models (Gemma behind vLLM) lose
-        context spread over several, answering from only some of the blocks. The blocks sit at the front of the
-        trimmed part, so they are what gives way when the result does not fit — never the turn the user asked
-        about, and never the system head, which is held out of the trim altogether.
+        context spread over several, answering from only some of the blocks, and strict chat templates (Qwen)
+        reject a system message anywhere else. What gives way when the result does not fit is the oldest turns
+        first, since the blocks were asked for this turn; the blocks give way only when they and the question
+        alone do not fit, and the question and the system head never do.
         """
         system_head, turns = _split_system_head(request.history)
         block_messages = [message for block in request.blocks for message in block]
         if not block_messages:
             return ContextComposedEvent(history=request.history)
 
-        budget = conversation.input_budget() - estimate_prompt_tokens(system_head, conversation.llm.token_counter)
-        limited = limit_chat_history(chat_history=[*block_messages, *turns], number_of_input_tokens=max(budget, 1))
-        merged_head, rest = _split_system_head([*system_head, *limited])
+        counter = conversation.llm.token_counter
+        budget = max(conversation.input_budget() - estimate_prompt_tokens(system_head, counter), 1)
+        earlier, question = turns[:-1], turns[-1:]
+        fitted = limit_chat_history(chat_history=[*block_messages, *question], number_of_input_tokens=budget)
+        fitted_blocks = fitted[: len(fitted) - len(question)]
+        room = budget - estimate_prompt_tokens(fitted, counter)
+        kept = limit_chat_history(chat_history=earlier, number_of_input_tokens=room) if room > 0 and earlier else []
+        merged_head, rest = _split_system_head([*system_head, *fitted_blocks, *kept, *question])
         return ContextComposedEvent(history=[*merge_consecutive_messages(merged_head), *rest])
 
     @staticmethod
