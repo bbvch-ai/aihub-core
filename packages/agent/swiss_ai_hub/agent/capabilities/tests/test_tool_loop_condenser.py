@@ -11,6 +11,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     Message,
     TextContent,
+    ToolDefinition,
     ToolLoopCondensedEvent,
     ToolLoopIterationEvent,
     ToolLoopMode,
@@ -158,3 +159,37 @@ async def test_nothing_is_announced_when_nothing_could_be_condensed():
 
     displayer.display_event.assert_not_awaited()
     assert state.messages == messages
+
+
+@pytest.mark.asyncio
+async def test_a_condensed_result_is_not_condensed_again_in_a_later_round():
+    first, _ = await _condense(_conversation(), budget=200)
+    later = first.model_copy(
+        update={"messages": [*first.messages, _calling("c3"), _result("c3", 400)], "needs_condensing": True}
+    )
+    llm = _llm()
+    condenser = ToolLoopCondenser(llm, 200, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+    summarised: list[str] = []
+
+    async def summarise(request: str, message: Message) -> str:
+        summarised.append(message.tool_call_id)
+        return "short"
+
+    condenser._summarise_result = summarise  # type: ignore[method-assign]
+    second = await condenser.condense(later)
+
+    assert summarised == ["c2"]
+    assert set(second.condensed_tool_call_ids) == {"c1", "c2"}
+
+
+@pytest.mark.asyncio
+async def test_a_prompt_too_large_even_alone_lets_the_model_answer_without_tools():
+    messages = [Message.from_string(role="user", content="What changed in Q1?")]
+    tool = ToolDefinition(name="search", description=" ".join(["search"] * 400), parameters={"type": "object"})
+    state = ToolLoopState(messages=messages, tools=[tool], mode=ToolLoopMode.ANSWER, needs_condensing=True)
+    condenser = ToolLoopCondenser(_llm(), 100, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+
+    condensed = await condenser.condense(state)
+
+    assert condensed.tools == []
+    assert not condensed.needs_condensing

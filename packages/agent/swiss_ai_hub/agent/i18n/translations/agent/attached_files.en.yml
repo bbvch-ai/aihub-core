@@ -31,3 +31,4 @@ tool:
   files: "The files to read, by id; leave out to read all of them."
   query: "What you are looking for in the files, so a long file keeps the sections about it."
   nothing_readable: "None of the chosen files could be read."
+  unknown_files: "None of the given ids is an attached file. Attached files: %{files}"
