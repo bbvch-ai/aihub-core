@@ -98,6 +98,12 @@ or SharePoint, Google Drive, S3, Azure Blob, SFTP or a local path — from the b
 database, with no code location, compose service or environment variable per source. Each top-level folder of the synced
 root becomes a namespace, and every synced file is announced to the ingestion pipeline the way an upload is.
 
+Records that are not files, such as Jira issues or Confluence pages, come through the `structured_pipeline`
+(`structured_pipeline_definitions()`). It runs a [dlt](https://dlthub.com/) source per database and writes each record
+as a markdown file with YAML frontmatter, one folder (namespace) per project or space, so the same ingestion pipeline
+parses and embeds it. Each source system is one adapter class. `make structured-demo` runs the playground's demo source,
+which reads a local JSON file, next to the ingestion pipeline.
+
 ______________________________________________________________________
 
 ## How it works
