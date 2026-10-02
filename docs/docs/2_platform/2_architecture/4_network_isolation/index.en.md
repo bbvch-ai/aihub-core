@@ -26,11 +26,11 @@ from the internet (no ingress). Inter-Container Communication (ICC) is disabled 
 cannot communicate with each other via this network—they can only use it for outbound internet access.
 
 The `code-sandbox` network is a single-tenant zone for the `open-terminal` code-execution sandbox, which runs arbitrary
-user-submitted code. Its membership is the sandbox plus **exactly its callers** (`open-webui`; the AI-Hub agents as a
-follow-up). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what prevents a sandbox
-breakout from laterally reaching `litellm`, `vLLM`, `mineru`, `presidio`, `speaches`, or `otel-collector`. ICC stays
-enabled (the callers must reach `open-terminal:8000`), and `internal: true` in non-dev stages also denies the sandbox
-any outbound internet.
+user-submitted code. Its membership is the sandbox plus **exactly its callers** (`open-webui` and `universal-agent`, the
+one AI-Hub agent that runs code). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what
+prevents a sandbox breakout from laterally reaching `litellm`, `vLLM`, `mineru`, `presidio`, `speaches`, or
+`otel-collector`. ICC stays enabled (the callers must reach `open-terminal:8000`), and `internal: true` in non-dev
+stages also denies the sandbox any outbound internet.
 
 ## Service Network Assignments
 
@@ -106,10 +106,10 @@ The single-tenant zone for the code-execution sandbox:
   `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
 
 The sandbox is the **only** resident; its callers join this network in addition to their own. `open-webui` is attached
-to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach `open-terminal:8000`, and the AI-Hub
-agents will join as a follow-up when agent tool-calling lands. Because the sandbox shares a network only with its
-callers, a breakout has no network path to the `backend` or `data` tiers. In dev, `open-webui` uses `network_mode: host`
-and reaches the sandbox via the published `localhost:8200` port instead.
+to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach `open-terminal:8000`, and
+`universal-agent` joins it (alongside `backend`/`data`/`storage`) to run code in the asking user's sandbox home. Because
+the sandbox shares a network only with its callers, a breakout has no network path to the `backend` or `data` tiers. In
+dev, `open-webui` uses `network_mode: host` and reaches the sandbox via the published `localhost:8200` port instead.
 
 ## Network Topology
 
@@ -230,8 +230,8 @@ flowchart TB
 
 \*ICC disabled on egress network - containers cannot communicate with each other via this network.
 
-\*\*Only `open-terminal` and its callers (`open-webui`; agents as a follow-up) reside on `code-sandbox`, so the sandbox
-can reach its callers but no other tier.
+\*\*Only `open-terminal` and its callers (`open-webui`, `universal-agent`) reside on `code-sandbox`, so the sandbox can
+reach its callers but no other tier.
 
 \*\*\*`internal: true` in non-dev stages blocks outbound internet from the sandbox; in `dev` the network is non-internal
 (localhost access), so this guarantee applies to `local`/`build`/`nightly`/`latest` only.

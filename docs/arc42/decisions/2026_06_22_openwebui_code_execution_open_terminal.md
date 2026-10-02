@@ -103,3 +103,26 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 > **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
 > service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
 > from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.
+
+> **Amendment 2026-10-02 — our agents use the sandbox.** The deferred agent support is done (#1570), and only the
+> Universal Agent joins `code-sandbox`; the other agents stay off it. It sits on `code-sandbox`, `backend`, `data` and
+> `storage`, which is the bridge-node position described above. The sandbox still reaches only its callers, so sandboxed
+> code reaches nothing it could not reach before: it is not put on any other network, holds no storage credentials, and
+> the agent fetches and stores the files itself. Agents call the sandbox's API rather than OpenWebUI's terminal
+> integration, so each call is traced and checked against the asking user like any other agent step:
+>
+> - **The user's own home.** The sandbox keys homes by the `X-User-Id` header and falls back to a shared `/home/user`
+>   without one, so every agent call sends the user's OpenWebUI id. The group sync records the id it matches for each of
+>   our users (`OpenWebuiAccountEntity`), which puts agent work in the same home the user's chats and Files panel see.
+>   The sandbox keeps only the first 8 alphanumeric characters of that id as the account name, so two users whose ids
+>   share them would share a home; OpenWebUI's UUIDs make that unlikely but not impossible.
+> - **A folder per conversation.** Agents work in `~/conversations/<thread>/`, where the conversation's attached files
+>   are placed once before the first call. Every write goes through the sandbox's API, never through the volume, so the
+>   home stays the only place sandbox files are written (see #2031 for mirroring it to our storage).
+> - **Files shown to the user are copied out.** A file the model displays is read through the sandbox's raw file
+>   endpoint (`GET /files/view`, which returns binary documents that `/files/read` refuses), stored in the `agent-files`
+>   bucket and registered by the pipe as an OpenWebUI file on the answer, so the attachment outlives the sandbox file.
+>   `/files/view` is not in the sandbox's published schema; upgrades of `open-terminal` must keep it.
+>
+> The *Dev stays non-internal* bullet above names `OPEN_TERMINAL_ALLOWED_DOMAINS` for egress control; open-terminal
+> 0.11.34 has no such setting, so egress outside dev rests on `code-sandbox` being internal.
