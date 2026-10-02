@@ -13,7 +13,9 @@ from swiss_ai_hub.api.routes.user_knowledge.dto.folder_listing_dto import Folder
 from swiss_ai_hub.api.routes.user_knowledge.dto.move_file_request import MoveFileRequest
 from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_service import UserKnowledgeService
 
-OWN_FILES = "aihub.user.files.own"
+# The service rule itself: a tenant's ceiling already covers the service family, where a family of its own would leave
+# every existing tenant without access until its ceiling was migrated.
+OWN_FILES = "aihub.user.service.userknowledge"
 
 
 class UserKnowledgeController(TenantScopedController):

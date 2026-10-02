@@ -106,9 +106,15 @@ class TestAgentCapabilities:
         assert model_data["meta"]["filterIds"] == list(AGENT_FILTER_IDS)
 
     def test_native_features_add_no_toggle_filter(self) -> None:
-        agent = _RAG_AGENT.model_copy(update={"supported_features": list(ChatFeature)})
+        native = [feature for feature in ChatFeature if feature.openwebui_capability]
+        agent = _RAG_AGENT.model_copy(update={"supported_features": native})
 
         assert OpenWebuiProvisioner._agent_filter_ids(agent) == list(AGENT_FILTER_IDS)
+
+    def test_my_files_gets_its_own_toggle_filter(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": [ChatFeature.USER_FILES]})
+
+        assert OpenWebuiProvisioner._agent_filter_ids(agent) == [*AGENT_FILTER_IDS, "aihub-feature-user-files"]
 
     def test_feature_without_native_toggle_gets_a_toggle_filter(self) -> None:
         custom = MagicMock(openwebui_capability=None, openwebui_toggle_filter_id="aihub-feature-deep-research")
