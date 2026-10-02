@@ -1,0 +1,90 @@
+import asyncio
+import posixpath
+import uuid
+from typing import Self
+
+from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.events.agent import SandboxFileDisplayedEvent, UserUploadedFile
+from swiss_ai_hub.core.infrastructure import OpenTerminalClient, OpenTerminalError, create_s3_client
+from swiss_ai_hub.core.persistence import OpenWebuiAccountEntity
+from swiss_ai_hub.core.topics import AgentInstanceTopic
+
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+
+
+class SandboxWorkspace:
+    """Where a run's sandbox tools work: the asking user's sandbox home, in a folder of its own per conversation.
+
+    The folder holds the files attached to the conversation, so code can work on them without the user attaching
+    them again, and relative paths resolve against it. Every write goes through the sandbox's API, never around it.
+    """
+
+    CONVERSATIONS_FOLDER = "conversations"
+
+    def __init__(self, client: OpenTerminalClient, topic: AgentInstanceTopic, files: list[UserUploadedFile]) -> None:
+        self.client = client
+        self._topic = topic
+        self._files = files
+        self.folder = posixpath.join(self.CONVERSATIONS_FOLDER, topic.thread_id)
+
+    @classmethod
+    def of(cls, context: ToolContext) -> Self:
+        return cls.for_user(context.user, context.topic, context.files)
+
+    @classmethod
+    def for_user(
+        cls, user: UserIdentity | None, topic: AgentInstanceTopic | None, files: list[UserUploadedFile]
+    ) -> Self:
+        """The user's workspace in this conversation, for a step running code without a tool loop as much as a tool."""
+        if user is None or topic is None:
+            raise OpenTerminalError("The code sandbox needs a signed-in user in a conversation.")
+        openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
+        if openwebui_id is None:
+            raise OpenTerminalError("This user has no code sandbox yet; it is set up with their chat account.")
+        return cls(OpenTerminalClient(openwebui_id), topic, files)
+
+    def path(self, path: str) -> str:
+        """A path as the sandbox resolves it: relative to the conversation folder, `~/…` to the home."""
+        if path.startswith("/"):
+            return path
+        if path == "~" or path.startswith("~/"):
+            return path.removeprefix("~").removeprefix("/") or "."
+        return posixpath.normpath(posixpath.join(self.folder, path))
+
+    async def prepare(self) -> None:
+        """Place the conversation's attached files in its folder, each once."""
+        present = await self._present_names()
+        for file in self._files:
+            if file.filename not in present:
+                bucket, key = file.resolve_s3_location(self._topic.agent_class, self._topic.agent_id)
+                content = await asyncio.to_thread(self._download, bucket, key)
+                await self.client.upload(self.folder, file.filename, content)
+
+    async def keep(self, path: str) -> SandboxFileDisplayedEvent:
+        """Copy a sandbox file into our storage, so what the user was shown outlives the sandbox."""
+        content, content_type = await self.client.view(self.path(path))
+        filename = posixpath.basename(path.rstrip("/"))
+        kept = UserUploadedFile(filename=filename, file_type=content_type, file_id=str(uuid.uuid4()))
+        bucket, key = kept.resolve_s3_location(self._topic.agent_class, self._topic.agent_id)
+        await asyncio.to_thread(
+            create_s3_client().put_object, Bucket=bucket, Key=key, Body=content, ContentType=content_type
+        )
+        return SandboxFileDisplayedEvent(
+            path=self.path(path),
+            filename=filename,
+            content_type=content_type,
+            size=len(content),
+            bucket=bucket,
+            key=key,
+        )
+
+    @staticmethod
+    def _download(bucket: str, key: str) -> bytes:
+        return create_s3_client().get_object(Bucket=bucket, Key=key)["Body"].read()
+
+    async def _present_names(self) -> set[str]:
+        try:
+            listing = await self.client.list_files(self.folder)
+        except OpenTerminalError:
+            return set()
+        return {entry["name"] for entry in listing.get("entries", [])}

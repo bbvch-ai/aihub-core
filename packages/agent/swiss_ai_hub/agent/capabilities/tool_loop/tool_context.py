@@ -6,6 +6,7 @@ from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import KnowledgeReference, UserUploadedFile
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 
 class ToolContext(BaseModel):
@@ -22,3 +23,7 @@ class ToolContext(BaseModel):
     knowledge_references: Annotated[
         list[KnowledgeReference], Field(description="The collections the user referenced on the message.")
     ] = []
+    topic: Annotated[
+        AgentInstanceTopic | None,
+        Field(description="The run's agent and thread, for tools that keep per-thread state."),
+    ] = None
