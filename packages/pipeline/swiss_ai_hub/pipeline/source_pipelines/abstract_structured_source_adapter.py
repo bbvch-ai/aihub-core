@@ -21,6 +21,9 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
     MARKDOWN_COLUMN: ClassVar[str] = "_aihub_markdown"
 
     kind: ClassVar[str]
+    layout_version: ClassVar[int] = 1
+    """Raise when ``to_record_file`` changes where or how records are written: the cursor alone would never rewrite
+    the records it already passed."""
 
     @staticmethod
     def shown_for(kind: str) -> str:
@@ -41,12 +44,15 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
 
     @abc.abstractmethod
     def to_record_file(self, record: dict[str, Any]) -> StructuredRecordFile:
-        """The file one record is written as."""
+        """The file one record is written as; a pure function of the record, so an unchanged record is skipped."""
 
     @abc.abstractmethod
     def list_record_paths(self, options: TOptions) -> set[str]:
-        """Object key of every record currently in scope. Raises instead of returning a partial set, because whatever
-        is not listed is removed from the database."""
+        """Object key of every record currently in scope, each built with ``StructuredRecordFile.object_key_for``.
+
+        Raises instead of returning a partial set, because whatever is not listed is removed from the database. It
+        must not read the incremental state: listing runs after the sync, whose cursor would hide older records.
+        """
 
     def file_source(self, options: TOptions) -> DltSource:
         """The adapter's source with each record carrying the file it is written as.

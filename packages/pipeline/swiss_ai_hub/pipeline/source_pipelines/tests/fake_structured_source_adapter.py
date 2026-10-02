@@ -59,7 +59,10 @@ class FakeTrackerAdapter(AbstractStructuredSourceAdapter[FakeTrackerOptions]):
         )
 
     def list_record_paths(self, options: FakeTrackerOptions) -> set[str]:
-        return {f"{record['project']}/{record['key']}.md" for record in FAKE_TRACKERS[options.base_url]}
+        return {
+            StructuredRecordFile.object_key_for(record["project"], [record["key"]])
+            for record in FAKE_TRACKERS[options.base_url]
+        }
 
 
 class FakeStructuredSyncConfig(StructuredSyncConfig):

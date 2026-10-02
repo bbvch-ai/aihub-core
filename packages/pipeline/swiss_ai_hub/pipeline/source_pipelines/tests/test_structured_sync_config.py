@@ -94,3 +94,10 @@ class TestScopeFingerprint:
     def test_changing_what_is_synced_reads_everything_again(self):
         """With the old cursor, issues of a newly added project older than it would never be fetched."""
         assert _config(project="ABC").scope_fingerprint() != _config(project="XYZ").scope_fingerprint()
+
+    def test_a_new_file_layout_reads_everything_again(self, monkeypatch: pytest.MonkeyPatch):
+        """Files of the old layout are removed as unlisted; only a full re-read writes them in the new one."""
+        before = _config().scope_fingerprint()
+        monkeypatch.setattr(FakeTrackerAdapter, "layout_version", 2)
+
+        assert _config().scope_fingerprint() != before

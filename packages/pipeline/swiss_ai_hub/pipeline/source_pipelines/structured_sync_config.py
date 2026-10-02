@@ -54,12 +54,16 @@ class StructuredSyncConfig(SourcePipelineConfig):
         return getattr(self, self.source_kind)
 
     def scope_fingerprint(self) -> str:
-        """Changes with what is synced but not with a rotated credential, so a new project key re-reads everything
-        while a new token keeps the cursors."""
+        """Changes with what is synced or how it is laid out, but not with a rotated credential: a new project key or
+        a new file layout re-reads everything, while a new token keeps the cursors."""
         stored = self.model_dump(mode="json")
         for path in self.secret_field_paths():
             self._drop_path(stored, path.split("."))
-        scope = {"source_kind": self.source_kind, "options": stored.get(self.source_kind, {})}
+        scope = {
+            "source_kind": self.source_kind,
+            "layout_version": self.adapter().layout_version,
+            "options": stored.get(self.source_kind, {}),
+        }
         return hashlib.sha256(json.dumps(scope, sort_keys=True).encode()).hexdigest()
 
     @staticmethod

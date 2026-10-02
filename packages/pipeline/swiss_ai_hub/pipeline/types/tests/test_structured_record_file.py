@@ -71,6 +71,13 @@ class TestObjectKey:
 
         assert record.object_key == "ABC/Q1_Q2 plan_draft_.md"
 
+    def test_a_listing_builds_exactly_the_key_the_record_is_written_under(self):
+        """A listed key that differs from the written one would make the removal delete that record for good."""
+        written = _record(namespace="My Project", path_segments=["Q1/Q2 plan"])
+
+        assert StructuredRecordFile.object_key_for("My Project", ["Q1/Q2 plan"]) == written.object_key
+        assert written.object_key == "My_Project/Q1_Q2 plan.md"
+
     def test_an_overlong_title_is_capped(self):
         record = _record(path_segments=["x" * 500])
 

@@ -51,6 +51,15 @@ class StructuredRecordFile(BaseModel):
         *folders, name = self.path_segments
         return "/".join([self.namespace, *folders, f"{name}.md"])
 
+    @classmethod
+    def object_key_for(cls, namespace: str, path_segments: list[str]) -> str:
+        """The key a record is written under, for listings that know where a record lives but not its content.
+
+        Built through the same validators as the written file: a listed key that differs from the written one would
+        make the removal delete a record the cursor never fetches again.
+        """
+        return cls(namespace=namespace, path_segments=path_segments, body="").object_key
+
     def render(self) -> bytes:
         fields = {key: value for key, value in self.frontmatter.items() if value is not None}
         body = self.body if self.body.endswith("\n") else f"{self.body}\n"
