@@ -3847,7 +3847,15 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
-      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       MEM0_TELEMETRY: ${MEM0_TELEMETRY}
 
       # OpenTelemetry Configuration
