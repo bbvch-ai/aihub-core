@@ -215,10 +215,10 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   ├── RerankerEvent, ToolEvent, ChainEvent
 │   │   ├── GuardEvent, AgentEvent
 │   │   └── ExceptionEvent
-│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
-│
-├── ControlEvent (drives workflow execution)
-│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
+│   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
+│   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
+│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
+│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -239,7 +239,12 @@ Events are organized by which system they belong to:
 
 ### Creating a New Event
 
-1. Choose the correct base class from the hierarchy above
+1. Choose the correct base class from the hierarchy above. An event that is part of the protocol — a call between steps
+   or capabilities that an admin reading a run would want to see — is a `ControlAndDisplayEvent`, because the event
+   history lists display events only. Plain `ControlEvent` is for internal bookkeeping no reader needs. Give it
+   `_display_name`/`_display_description` from `lib.events.*` (the description is a short progress phrase: chat clients
+   show it as a live status), a component in `packages/web/components/Event/Display/`, and an entry in the
+   `DisplayEvents` union
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors
@@ -536,7 +541,7 @@ Real-time event emission for streaming LLM output to the UI:
 | `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
 | `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
 | `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
-| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                                                         |
+| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                    |
 | `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
 | `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
 | `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |

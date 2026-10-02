@@ -37,12 +37,14 @@ def _request() -> MemoryStorageRequestedEvent:
     )
 
 
-def test_is_control_event_not_display_event():
-    """Must be control-only so the dispatcher never emits a visible delegation step (the #1179 symptom)."""
+def test_is_a_protocol_event_but_not_a_delegation_step():
+    """Displayed like every protocol event, yet never an agent-in-the-loop request, which would render a visible
+    delegation step after the answer (the #1179 symptom) and route a result back."""
     event = _request()
     assert event.is_control_event
-    assert not event.is_display_event
+    assert event.is_display_event
     assert event.is_memory_storage_request_event
+    assert not event.is_aitl_request_event
 
 
 def test_round_trip_preserves_nested_start_event():
