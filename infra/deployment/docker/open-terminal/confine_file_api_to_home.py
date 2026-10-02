@@ -41,12 +41,55 @@ CONFINED_CHECK = '''    def is_path_allowed(self, path: str) -> bool:
 ORIGINAL_MESSAGE = 'f"Access denied: {os.path.abspath(path)} belongs to another user"'
 CONFINED_MESSAGE = 'f"Access denied: {os.path.abspath(path)} is outside your home"'
 
-source_file = pathlib.Path(fs_module.__file__)
-source = source_file.read_text()
-for original in (ORIGINAL_CHECK, ORIGINAL_MESSAGE):
-    if source.count(original) != 1:
-        sys.exit(f"open-terminal changed {source_file}; re-check the home confinement patch against it")
-source_file.write_text(
-    source.replace(ORIGINAL_CHECK, CONFINED_CHECK).replace(ORIGINAL_MESSAGE, CONFINED_MESSAGE)
+# Search and glob reach files without going through UserFS: grep opens a file root directly, glob checks its root and
+# stats the files it walks without asking whether they are the user's. Each root is checked first, and glob skips any
+# walked entry outside the home.
+ORIGINAL_GREP_ROOT = """    target = fs.resolve_path(path, cwd=session_cwd)
+    if not await aiofiles.os.path.exists(target):
+        raise HTTPException(status_code=404, detail="Search path not found")
+"""
+CONFINED_GREP_ROOT = """    target = fs.resolve_path(path, cwd=session_cwd)
+    fs._check_path(target)
+    if not await aiofiles.os.path.exists(target):
+        raise HTTPException(status_code=404, detail="Search path not found")
+"""
+ORIGINAL_GLOB_ROOT = """    target = fs.resolve_path(path, cwd=session_cwd)
+    if not await aiofiles.os.path.isdir(target):
+        raise HTTPException(status_code=404, detail="Search directory not found")
+"""
+CONFINED_GLOB_ROOT = """    target = fs.resolve_path(path, cwd=session_cwd)
+    fs._check_path(target)
+    if not await aiofiles.os.path.isdir(target):
+        raise HTTPException(status_code=404, detail="Search directory not found")
+"""
+ORIGINAL_GLOB_ENTRY = """                full_path = os.path.join(dirpath, name)
+                rel_path = os.path.relpath(full_path, target)
+"""
+CONFINED_GLOB_ENTRY = """                full_path = os.path.join(dirpath, name)
+                if not fs.is_path_allowed(full_path):
+                    continue
+                rel_path = os.path.relpath(full_path, target)
+"""
+
+
+def patch(source_file: pathlib.Path, replacements: list[tuple[str, str]]) -> None:
+    source = source_file.read_text()
+    for original, _ in replacements:
+        if source.count(original) != 1:
+            sys.exit(f"open-terminal changed {source_file}; re-check the home confinement patch against it")
+    for original, confined in replacements:
+        source = source.replace(original, confined)
+    source_file.write_text(source)
+    print(f"Confined the file API to the user's home in {source_file}")
+
+
+package = pathlib.Path(fs_module.__file__).parent.parent
+patch(pathlib.Path(fs_module.__file__), [(ORIGINAL_CHECK, CONFINED_CHECK), (ORIGINAL_MESSAGE, CONFINED_MESSAGE)])
+patch(
+    package / "main.py",
+    [
+        (ORIGINAL_GREP_ROOT, CONFINED_GREP_ROOT),
+        (ORIGINAL_GLOB_ROOT, CONFINED_GLOB_ROOT),
+        (ORIGINAL_GLOB_ENTRY, CONFINED_GLOB_ENTRY),
+    ],
 )
-print(f"Confined the file API to the user's home in {source_file}")

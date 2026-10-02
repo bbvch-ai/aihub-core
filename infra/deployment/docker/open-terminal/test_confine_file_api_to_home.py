@@ -60,6 +60,26 @@ def test_writing_through_a_link_into_another_home_is_refused(victim: httpx.Clien
     assert victim.get("/files/view", params={"path": "secret.txt"}).content == b"private"
 
 
+def test_searching_through_a_link_into_another_home_is_refused(victim_file: str) -> None:
+    attacker = _user("attk")
+    _run(attacker, f"ln -s {victim_file} link.txt")
+    _run(attacker, f"ln -s {victim_file.rsplit('/', 1)[0]} victimdir")
+
+    grep = attacker.get("/files/grep", params={"query": "private", "path": "link.txt"})
+    assert grep.status_code == 403 and b"private" not in grep.content
+    glob = attacker.get("/files/glob", params={"pattern": "*", "path": "victimdir"})
+    assert glob.status_code == 403
+    own = attacker.get("/files/glob", params={"pattern": "*", "path": "."})
+    assert "secret.txt" not in own.text
+
+
+def test_searching_the_server_environment_is_refused() -> None:
+    attacker = _user("attk")
+
+    assert attacker.get("/files/grep", params={"query": "OPEN_TERMINAL", "path": "/proc/1/environ"}).status_code == 403
+    assert attacker.get("/files/glob", params={"pattern": "*", "path": "/proc/1"}).status_code == 403
+
+
 def test_the_server_environment_with_the_api_key_is_unreachable() -> None:
     attacker = _user("attk")
 
