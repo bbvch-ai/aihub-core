@@ -58,6 +58,7 @@ config:
 notice:
   stopped_early: "Ich habe aufgehört, dem nachzugehen, bevor ich fertig war, weil diese Antwort ihre Grenze an Werkzeugaufrufen erreicht hat."
 status:
+  condensed: "Frühere Ergebnisse verdichtet, damit das Gespräch passt"
   deciding: "Entscheide, was nachzuschlagen ist"
   gathered: "Alles Nötige für die Antwort gesammelt"
   stopped_early: "Keine weitere Suche, die Grenze für diese Antwort ist erreicht"

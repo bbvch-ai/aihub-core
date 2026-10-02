@@ -61,6 +61,7 @@ class ToolLoopCondenser:
         await self._displayer.display_event(
             ToolLoopCondensedEvent(
                 loop=state.loop,
+                description=self._t("agent.tool_loop.status.condensed"),
                 tokens_before=before,
                 tokens_after=self.size(messages, state.tools, counter),
                 condensed_results=results,

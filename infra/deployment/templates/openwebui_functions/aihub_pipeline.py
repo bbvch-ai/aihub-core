@@ -838,12 +838,14 @@ class ToolResultEventHandler(EventHandler):
 
 
 class ToolLoopStatusEventHandler(EventHandler):
-    """What the agent's tool loop is doing when nothing else shows it, such as deciding in the background."""
+    """What the agent's tool loop is doing when nothing else shows it: deciding in the background, or condensing
+    earlier results to fit the model's context."""
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
     ) -> Annotated[bool, "True if tool loop status event"]:
-        return "ToolLoopStatusEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        names = [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        return "ToolLoopStatusEvent" in names or "ToolLoopCondensedEvent" in names
 
     async def handle(
         self,
@@ -853,7 +855,11 @@ class ToolLoopStatusEventHandler(EventHandler):
         await context.emitter(
             {
                 "type": "status",
-                "data": {"action": None, "description": event.get("description", ""), "done": bool(event.get("done"))},
+                "data": {
+                    "action": None,
+                    "description": event.get("description", ""),
+                    "done": bool(event.get("done", event.get("_event_name") == "ToolLoopCondensedEvent")),
+                },
             }
         )
         return True

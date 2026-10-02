@@ -58,6 +58,7 @@ config:
 notice:
   stopped_early: "I stopped looking into this before I was done, because this answer reached its limit of tool calls."
 status:
+  condensed: "Condensed earlier results to fit the conversation"
   deciding: "Deciding what to look up"
   gathered: "Gathered what the answer needs"
   stopped_early: "Stopped looking up more, the limit for this answer is reached"

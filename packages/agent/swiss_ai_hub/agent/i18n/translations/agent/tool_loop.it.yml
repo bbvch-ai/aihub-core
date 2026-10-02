@@ -58,6 +58,7 @@ config:
 notice:
   stopped_early: "Ho smesso di approfondire prima di aver finito, perché questa risposta ha raggiunto il limite di chiamate agli strumenti."
 status:
+  condensed: "Risultati precedenti condensati per far rientrare la conversazione"
   deciding: "Decido cosa consultare"
   gathered: "Raccolto tutto il necessario per la risposta"
   stopped_early: "Ricerca interrotta, il limite per questa risposta è raggiunto"

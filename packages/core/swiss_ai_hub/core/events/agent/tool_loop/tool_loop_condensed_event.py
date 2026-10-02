@@ -15,6 +15,7 @@ class ToolLoopCondensedEvent(DisplayEvent):
     )
 
     loop: Annotated[str, Field(description="The blueprint's tool set the loop runs.")]
+    description: Annotated[str, Field(description="What was condensed, as users read it, in the run's locale.")] = ""
     tokens_before: Annotated[int, Field(description="The conversation's size before condensing.", ge=0)]
     tokens_after: Annotated[int, Field(description="The conversation's size after condensing.", ge=0)]
     condensed_results: Annotated[int, Field(description="How many earlier tool results were condensed.", ge=0)] = 0
