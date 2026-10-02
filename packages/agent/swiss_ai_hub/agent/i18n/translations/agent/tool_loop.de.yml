@@ -30,7 +30,7 @@ prompt:
   dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst.]"
   limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
-  declined: "Der Benutzer hat die Ausführung von %{tool} abgelehnt. Antworte so gut wie möglich ohne dieses Werkzeug und sag, dass du es nicht verwendet hast, weil der Benutzer abgelehnt hat; behaupte nicht, dass dir der Zugriff fehlt."
+  declined: "Nicht ausgeführt: Der Benutzer hat %{tool} abgelehnt. Beginne deine Antwort damit, dass du %{tool} nicht verwendet hast, weil der Benutzer es abgelehnt hat, antworte dann mit dem, was du bereits weisst, und biete an, es zu verwenden, wenn er es erlaubt. Die Information kann durchaus vorhanden sein; sag nie, dass du keinen Zugriff darauf hast."
 approval:
   question: "Der Assistent möchte «%{tool}» verwenden:
 %{summary}
