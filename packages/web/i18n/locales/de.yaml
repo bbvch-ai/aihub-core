@@ -286,6 +286,9 @@ event:
       identity: Identität
       capabilities: Fähigkeiten
       behavior: Verhalten
+  humanInTheLoopResponse:
+    confirmed: Bestätigt
+    declined: Abgelehnt
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
