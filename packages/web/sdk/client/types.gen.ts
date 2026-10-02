@@ -4156,6 +4156,7 @@ export type ContextualizedAgentEvent = {
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
+    | SandboxFileDisplayedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -15129,6 +15130,84 @@ export type RunStatistics = {
 };
 
 /**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SearchContextCostPerQueryDTO
  *
  * LiteLLM reports search context cost per query broken down by context size, not as a single value.
@@ -21200,6 +21279,7 @@ export type ContextualizedAgentEventWritable = {
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
+    | SandboxFileDisplayedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -27503,6 +27583,71 @@ export type RunStatisticsWritable = {
    * The agent that ran the run
    */
   agent: MinimalAgentInstanceDtoWritable;
+};
+
+/**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
+  [key: string]: unknown;
 };
 
 /**
