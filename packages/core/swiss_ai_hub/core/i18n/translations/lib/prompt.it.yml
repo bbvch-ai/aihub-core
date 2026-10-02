@@ -1627,7 +1627,7 @@ structured_extraction:
     {{ description }}
     </request>
     {% endchat %}
-  extraction_prompt: |
+  extraction_prompt: |-
     {% chat role="system" %}
     Estrai record strutturati dai documenti.
     <task>

@@ -1627,7 +1627,7 @@ structured_extraction:
     {{ description }}
     </request>
     {% endchat %}
-  extraction_prompt: |
+  extraction_prompt: |-
     {% chat role="system" %}
     You extract structured records from documents.
     <task>
