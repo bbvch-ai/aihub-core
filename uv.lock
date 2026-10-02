@@ -1112,6 +1112,19 @@ wheels = [
 ]
 
 [[package]]
+name = "dagster-dlt"
+version = "0.29.23"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+    { name = "dlt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a4/09/48fdd4bba6d7902e6a3b4f977f1cd8c18c1a5701fe0c6b9bc3dec28536e5/dagster_dlt-0.29.23.tar.gz", hash = "sha256:b54831dc36e422ce734591f64b40a10caacf0584eeda6fed08d7a91c41333052", size = 230925, upload-time = "2026-09-16T19:58:45.749Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/60/0ad9b46319c90f4b59cb610cb39656bfe9f1295c75b779ce9c3257ece613/dagster_dlt-0.29.23-py3-none-any.whl", hash = "sha256:823060ed884f1d9ebab6cab1622767138966a626f7735fb4837788941eaaff5c", size = 21171, upload-time = "2026-09-16T19:58:44.655Z" },
+]
+
+[[package]]
 name = "dagster-graphql"
 version = "1.13.23"
 source = { registry = "https://pypi.org/simple" }
@@ -6052,6 +6065,7 @@ dependencies = [
     { name = "dagster-apprise" },
     { name = "dagster-aws" },
     { name = "dagster-azure" },
+    { name = "dagster-dlt" },
     { name = "dagster-postgres" },
     { name = "dagster-webserver" },
     { name = "dlt" },
@@ -6066,6 +6080,7 @@ requires-dist = [
     { name = "dagster-apprise", specifier = ">=0.0.2" },
     { name = "dagster-aws", specifier = ">=0.27.2" },
     { name = "dagster-azure", specifier = ">=0.27.2" },
+    { name = "dagster-dlt", specifier = ">=0.29.23" },
     { name = "dagster-postgres", specifier = ">=0.27.2" },
     { name = "dagster-webserver", specifier = ">=1.11.2" },
     { name = "dlt", specifier = ">=1.30.0" },
