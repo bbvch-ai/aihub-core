@@ -21,6 +21,7 @@ from swiss_ai_hub.core.events.agent import (
     Message,
     RunToolLoopEvent,
     SearchKnowledgeEvent,
+    TextContent,
     ToolApprovalRequestEvent,
     ToolApprovalResponseEvent,
     ToolCallApprovedEvent,
@@ -291,6 +292,29 @@ class TestDecisions:
         assert "Answer now" in displayer.display_llm_stream.await_args.args[2][-1].content
 
     @pytest.mark.asyncio
+    async def test_the_limit_is_told_as_a_user_turn_since_some_models_refuse_a_late_system_message(self):
+        _, displayer = await _decide(_state(iteration=5), ANSWER, max_iterations=5)
+
+        messages = displayer.display_llm_stream.await_args.args[2]
+        assert messages[-1].role == MessageRole.USER
+        assert all(message.role != MessageRole.SYSTEM for message in messages[1:])
+
+    @pytest.mark.asyncio
+    async def test_at_the_limit_the_tool_turns_reach_the_model_as_plain_text(self):
+        result = Message(role="tool", tool_call_id="c1", name="echo", contents=[TextContent(text="A for loop-test")])
+        state = _state(iteration=5)
+        state = state.model_copy(
+            update={"messages": [*state.messages, _calling(_tool_call("c1", "echo", '{"text": "a"}')), result]}
+        )
+
+        await_args = (await _decide(state, ANSWER, max_iterations=5))[1].display_llm_stream.await_args
+        messages = await_args.args[2]
+
+        assert [message.role for message in messages] == [MessageRole.USER, MessageRole.ASSISTANT, MessageRole.USER]
+        assert messages[1].content == "echo:\nA for loop-test"
+        assert not any(message.additional_kwargs.get("tool_calls") for message in messages)
+
+    @pytest.mark.asyncio
     async def test_gathering_at_the_limit_hands_back_what_it_has(self):
         gathered = [ChatMessage(role=MessageRole.SYSTEM, content="echo: A")]
 
@@ -334,12 +358,16 @@ class TestApproval:
         name: str,
         run_context: _Context | None = None,
         parameters: dict[str, Any] | None = None,
+        offered: bool = True,
         **tool_loop: Any,
     ) -> Any:
         return await ToolLoop.gate_step(
             LoopAgent(),
             call=ToolEvent(
-                tool_call_id="c1", name=name, parameters={"text": "a"} if parameters is None else parameters
+                tool_call_id="c1",
+                name=name,
+                parameters={"text": "a"} if parameters is None else parameters,
+                json_schema={"type": "object"} if offered else None,
             ),
             loop=_config(**tool_loop),
             run_context=run_context or _Context(),
@@ -400,6 +428,18 @@ class TestApproval:
     @pytest.mark.asyncio
     async def test_an_unknown_tool_is_reported_to_the_model(self):
         result = await self._gate("nope")
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
+    @pytest.mark.asyncio
+    async def test_a_tool_of_the_blueprint_the_model_was_not_offered_does_not_run(self):
+        events, _ = await _decide(_state(), _calling(_tool_call("c1", "broken", "{}")), disabled_tools=["broken"])
+        call = next(event for event in events if isinstance(event, ToolEvent))
+
+        result = await ToolLoop.gate_step(
+            LoopAgent(), call=call, loop=_config(), run_context=_Context(), thread_context=_Context(), t=T
+        )
 
         assert isinstance(result, ToolResultEvent)
         assert result.is_error

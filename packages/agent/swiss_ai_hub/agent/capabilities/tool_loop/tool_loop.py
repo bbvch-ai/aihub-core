@@ -181,9 +181,11 @@ class ToolLoop(Capability):
             if exhausted:
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
-        messages = [message.to_llama_index() for message in state.messages]
+        history = ToolLoop._tool_turns_as_text(state.messages) if exhausted else state.messages
+        messages = [message.to_llama_index() for message in history]
         if exhausted:
-            messages.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.tool_loop.prompt.limit_reached")))
+            # A user turn: chat templates such as Qwen's reject any system message after the first.
+            messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
         available = [
             tool for tool in state.tools if not await run_context.get(DECLINED_KEY.format(tool=tool.name), False)
         ]
@@ -239,7 +241,8 @@ class ToolLoop(Capability):
     ) -> ToolCallApprovedEvent | ToolApprovalRequestEvent | ToolResultEvent:
         """Let the call through, or ask the user first when the tool's approval policy says so."""
         tool_set = type(agent).tool_set_offering(call.name)
-        if tool_set is None:
+        # Only an offered tool carries its schema; a disabled, toggled-off or other set's tool must not run.
+        if tool_set is None or call.json_schema is None:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id,
                 name=call.name or "",
@@ -476,6 +479,26 @@ class ToolLoop(Capability):
         await displayer.display_event(
             ToolLoopStatusEvent(loop=state.loop, description=t(f"agent.tool_loop.status.{phase}"), done=done)
         )
+
+    @staticmethod
+    def _tool_turns_as_text(messages: list[Message]) -> list[Message]:
+        """The loop's calls and results as one plain assistant turn, for the answer at the limits.
+
+        Offered no tools after a tool-call history, Gemma answers with nothing at all; in plain text it answers.
+        """
+        kept: list[Message] = []
+        notes: list[str] = []
+        for message in messages:
+            if message.role == "tool":
+                notes.append(f"{message.name}:\n{message.content}")
+            elif message.tool_calls:
+                notes.extend([message.content] if message.content else [])
+            else:
+                kept.extend([Message.from_string(role="assistant", content="\n\n".join(notes))] if notes else [])
+                notes = []
+                kept.append(message)
+        kept.extend([Message.from_string(role="assistant", content="\n\n".join(notes))] if notes else [])
+        return kept
 
     @staticmethod
     def _exhausted(state: ToolLoopState, loop: ToolLoopFields) -> bool:
