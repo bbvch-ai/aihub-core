@@ -50,6 +50,7 @@ class WorkflowValidation:
             *cls._outcomes_not_as_declared(blueprint),
             *cls._missing_config_mixins(blueprint, agent_config_type),
             *cls._no_start(blueprint, steps),
+            *cls._tools_without_loop(blueprint),
         ]
         return cls(blueprint, problems)
 
@@ -97,21 +98,30 @@ class WorkflowValidation:
         """A call outcome none of the blueprint's own steps picks up leaves the run waiting without a stop event,
         which looks like a hang. Every outcome that does not end the run counts, since the call may answer with any of
         them. The capability's own steps may consume an outcome too (the title does), so only the blueprint's steps
-        count."""
-        produced = {event for step in steps for event in getattr(step, DispatchableWorkflow.OUTPUT_EVENTS_ANNOTATION)}
+        count, and only for calls made from outside the capability: a tool call the model chose is answered through
+        the capability's own adapter step."""
         consumed = {
             event
             for step in blueprint.get_own_steps()
             for event in getattr(step, DispatchableWorkflow.INPUT_EVENTS_ANNOTATION)
         }
-        return [
-            f"{blueprint.__name__} calls {capability.__name__} with {request.__name__}, but no step consumes its "
-            f"result {outcome.__name__}"
-            for capability in blueprint.installed_capabilities()
-            for request, outcomes in capability.calls.items()
-            for outcome in outcomes
-            if not issubclass(outcome, StopEvent) and request in produced and outcome not in consumed
-        ]
+        problems = []
+        for capability in blueprint.installed_capabilities():
+            own = capability.own_steps()
+            produced = {
+                event
+                for step in steps
+                if step not in own
+                for event in getattr(step, DispatchableWorkflow.OUTPUT_EVENTS_ANNOTATION)
+            }
+            problems += [
+                f"{blueprint.__name__} calls {capability.__name__} with {request.__name__}, but no step consumes its "
+                f"result {outcome.__name__}"
+                for request, outcomes in capability.calls.items()
+                for outcome in outcomes
+                if not issubclass(outcome, StopEvent) and request in produced and outcome not in consumed
+            ]
+        return problems
 
     @staticmethod
     def _outcomes_not_as_declared(blueprint: type[Agent]) -> list[str]:
@@ -134,6 +144,25 @@ class WorkflowValidation:
                     for event in emittable
                     if issubclass(event, StopEvent) and not any(issubclass(event, outcome) for outcome in outcomes)
                 ]
+        return problems
+
+    @staticmethod
+    def _tools_without_loop(blueprint: type[Agent]) -> list[str]:
+        """Declared tools only ever run inside a tool loop, and a name must mean one tool across the blueprint's sets,
+        since a call carries only the name."""
+        from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+
+        problems = []
+        tool_sets = blueprint.tool_sets()
+        if tool_sets and ToolLoop not in blueprint.installed_capabilities():
+            names = ", ".join(tool_set.name for tool_set in tool_sets)
+            problems.append(f"{blueprint.__name__} declares the tool sets {names}, but no step runs one of them")
+        sources: dict[str, object] = {}
+        for tool_set in tool_sets:
+            for name in tool_set.names():
+                source = tool_set.source(name)
+                if sources.setdefault(name, source) != source:
+                    problems.append(f"{blueprint.__name__} declares two different tools named '{name}'")
         return problems
 
     @staticmethod

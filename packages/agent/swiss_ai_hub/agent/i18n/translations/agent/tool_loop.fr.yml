@@ -1,0 +1,55 @@
+---
+steps:
+  start:
+    name: "Proposer des outils"
+    description: "Détermine les outils que le modèle peut utiliser pour ce message"
+  decide:
+    name: "Choisir des outils"
+    description: "Le modèle répond ou choisit les outils utiles à la réponse"
+  gate:
+    name: "Vérifier l'autorisation"
+    description: "Laisse passer un appel d'outil ou demande d'abord l'accord de l'utilisateur"
+  approval:
+    name: "Appliquer l'autorisation"
+    description: "Exécute un appel autorisé ou informe le modèle qu'il a été refusé"
+  run_function:
+    name: "Exécuter l'outil"
+    description: "Exécute un outil choisi par le modèle"
+  join:
+    name: "Rassembler les résultats"
+    description: "Renvoie au modèle tous les résultats de ses appels d'outils"
+prompt:
+  limit_reached: "Tu as utilisé tous les appels d'outils disponibles pour cette réponse. Réponds maintenant avec ce que tu as trouvé."
+  unknown_tool: "Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés."
+  declined: "L'utilisateur a refusé l'exécution de %{tool}. Réponds sans cet outil et ne l'appelle plus pour cette demande."
+approval:
+  question: "L'assistant souhaite utiliser « %{tool} » :
+%{summary}
+
+L'autoriser ?"
+  question_plain: "L'assistant souhaite utiliser « %{tool} ». L'autoriser ?"
+config:
+  max_iterations:
+    label: "Décisions maximales"
+    help: "Combien de fois le modèle peut choisir des outils avant de devoir répondre."
+  max_tool_calls:
+    label: "Appels d'outils maximaux"
+    help: "Combien d'appels d'outils une réponse peut faire."
+  disabled_tools:
+    label: "Outils désactivés"
+    help: "Outils que cet agent ne propose jamais."
+  approval_tool:
+    label: "Outil"
+  approval_policy:
+    label: "Autorisation"
+  policies:
+    never: "Ne jamais demander"
+    every_call: "Demander à chaque appel"
+    once_per_run: "Demander une fois par réponse"
+    once_per_thread: "Demander une fois par conversation"
+notice:
+  stopped_early: "J'ai arrêté mes recherches avant d'avoir terminé, car cette réponse a atteint sa limite d'appels d'outils."
+status:
+  deciding: "Choix de ce qu'il faut consulter"
+  gathered: "Tout le nécessaire pour la réponse est réuni"
+  stopped_early: "Recherches arrêtées, la limite de cette réponse est atteinte"

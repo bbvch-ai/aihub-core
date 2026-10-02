@@ -153,6 +153,18 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+    from swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event import RunToolLoopEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event import ToolApprovalRequestEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_response_event import ToolApprovalResponseEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_call_approved_event import ToolCallApprovedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_calls_decided_event import ToolCallsDecidedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_definition import ToolDefinition
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event import ToolLoopFinishedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event import ToolLoopIterationEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode import ToolLoopMode
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state import ToolLoopState
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event import ToolLoopStatusEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_result_event import ToolResultEvent
     from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
     from swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event import KnowledgeSearchedEvent
     from swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event import SearchKnowledgeEvent
@@ -269,6 +281,18 @@ __all__ = [
     "ChatFeature",
     "UserMessageEvent",
     "UserUploadedFile",
+    "RunToolLoopEvent",
+    "ToolApprovalRequestEvent",
+    "ToolApprovalResponseEvent",
+    "ToolCallApprovedEvent",
+    "ToolCallsDecidedEvent",
+    "ToolDefinition",
+    "ToolLoopFinishedEvent",
+    "ToolLoopIterationEvent",
+    "ToolLoopMode",
+    "ToolLoopState",
+    "ToolLoopStatusEvent",
+    "ToolResultEvent",
     "KnowledgeReference",
     "KnowledgeSearchedEvent",
     "SearchKnowledgeEvent",
@@ -388,6 +412,18 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
+    "RunToolLoopEvent": "swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event",
+    "ToolApprovalRequestEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event",
+    "ToolApprovalResponseEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_response_event",
+    "ToolCallApprovedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_call_approved_event",
+    "ToolCallsDecidedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_calls_decided_event",
+    "ToolDefinition": "swiss_ai_hub.core.events.agent.tool_loop.tool_definition",
+    "ToolLoopFinishedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event",
+    "ToolLoopIterationEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event",
+    "ToolLoopMode": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode",
+    "ToolLoopStatusEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event",
+    "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",
+    "ToolResultEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_result_event",
     "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
     "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
     "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",

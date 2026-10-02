@@ -21,3 +21,7 @@ class SearchKnowledgeEvent(ControlEvent):
         bool,
         Field(description="Whether the model is told to cite the documents by id, off where citations cannot resolve."),
     ] = True
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call this answers when the model chose the search in a tool loop; none otherwise."),
+    ] = None

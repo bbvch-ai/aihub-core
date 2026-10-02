@@ -1,6 +1,7 @@
 from typing import Annotated, Self
 
 from pydantic import Field
+from swiss_ai_hub.core.events.agent import KnowledgeReference
 from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import RerankingModelConfig
@@ -30,6 +31,14 @@ class KnowledgeConfig(Form):
         ),
         Ge(1),
     ] = 800
+
+    tool_collections: Annotated[
+        list[KnowledgeReference],
+        Field(
+            description="The collections the model may search when it chooses to, in a tool loop; the tool is not "
+            "offered without any. Still narrowed to what the asking user may read."
+        ),
+    ] = []
 
     def context_reserve(self) -> int:
         """Tokens to keep free for what the search returns, so attached files cannot crowd it out."""

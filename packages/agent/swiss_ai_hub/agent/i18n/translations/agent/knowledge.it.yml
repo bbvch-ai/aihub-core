@@ -3,13 +3,25 @@ steps:
   search_knowledge:
     name: "Cerca la conoscenza indicata"
     description: "Cerca nelle raccolte di conoscenza indicate dall'utente e aggiunge i risultati al contesto del modello"
+  search_as_tool:
+    name: "Cercare la conoscenza come strumento"
+    description: "Esegue la ricerca di conoscenza scelta dal modello"
+  answer_tool_call:
+    name: "Restituire la conoscenza al modello"
+    description: "Restituisce i risultati della ricerca al ciclo di strumenti del modello"
 prompt:
   context: |
     {% chat role="system" %}
-    L'utente ha indicato le seguenti raccolte di conoscenza in questa conversazione. Rispondi basandoti su questi documenti quando riguardano la domanda. Ogni documento è un blocco `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, con le sezioni sotto i loro titoli.
+    I seguenti documenti provengono dalle nostre raccolte di conoscenza. Rispondi basandoti su questi documenti quando riguardano la domanda. Ogni documento è un blocco `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, con le sezioni sotto i loro titoli.
     <referenced_knowledge>
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: "L'utente ha indicato %{collections}, ma queste raccolte non gli sono accessibili, quindi lì non è stata effettuata alcuna ricerca. Di' all'utente che non hai potuto usare queste raccolte."
-  nothing_found: "L'utente ha indicato delle raccolte di conoscenza, ma nulla corrispondeva alla domanda. Diglielo se la domanda dipendeva da esse."
+  refused: "%{collections} non hanno potuto essere consultate, perché queste raccolte non sono accessibili all'utente. Di' all'utente che non hai potuto usarle."
+  nothing_found: "Nulla nelle raccolte consultate corrispondeva alla domanda. Diglielo se la domanda dipendeva da esse."
+tool:
+  label: "Cercare nella nostra conoscenza"
+  approval_summary: "Cercare «{query}» nella nostra conoscenza"
+  description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
+  query: "Cosa cercare, come breve domanda autonoma o parole chiave."
+  collections: "Le raccolte da consultare, per identificativo; ometti per consultarle tutte."

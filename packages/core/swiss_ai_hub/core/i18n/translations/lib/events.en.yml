@@ -9,6 +9,12 @@ attached_file_event:
 knowledge_searched_event:
   name: Knowledge Searched
   description: "The agent searched the knowledge collections the user referenced."
+tool_result_event:
+  name: "Tool Result"
+  description: "What a tool the agent chose returned."
+tool_loop_status_event:
+  name: "Tool Loop Status"
+  description: "What the agent's tool loop is doing."
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.

@@ -32,3 +32,7 @@ class KnowledgeSearchedEvent(ControlAndDisplayEvent):
         list[KnowledgeReference],
         Field(description="Referenced collections that were not searched, because the user may not read them."),
     ] = []
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call this answers when the model chose the search in a tool loop; none otherwise."),
+    ] = None

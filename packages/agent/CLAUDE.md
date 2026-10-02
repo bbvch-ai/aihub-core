@@ -203,6 +203,58 @@ a `ControlAndDisplayEvent` whose `grounding_nodes` chat clients list as sources.
 `KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds to the
 configured retrieval rather than replacing it.
 
+**`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and
+approval rules; the runner publishes its form with the blueprint's tools as options, so `as_form()` spreads nothing):
+the model decides which tools of a tool set to use, until it is done. A blueprint declares sets as class attributes,
+each named after its attribute, and calls them where they fit:
+
+```python
+class WeatherTools(BaseToolSpec):  # LlamaIndex: every listed method is a tool, schema from signature + docstring
+    spec_functions = ["get_weather"]
+
+    def __init__(self, context: ToolContext) -> None:  # built per run: config, user, locale, displayer
+        self.context = context
+
+    @ToolOptions.of(label=LocaleString(en="Weather"), approval_summary=LocaleString(en="Weather for {city}"))
+    async def get_weather(self, city: Annotated[str, "City, e.g. Zurich"]) -> str:
+        """Weather and forecast for a city."""
+
+
+class WeatherAgent(Agent):
+    tools = ToolLoop.over(WebSearch, WeatherTools)
+
+    @step()
+    async def loop_step(self, ctx: Conversation.Contextualized) -> ToolLoop.RunRequest:
+        return WeatherAgent.tools.run(ctx.history)  # ToolLoopMode.ANSWER; .route(...) is one gathering decision
+```
+
+`ToolLoop.Finished` (`ToolLoopFinishedEvent`) carries the reply in `ANSWER` mode (for `Conversation.complete`) and the
+tool results as `block` in `GATHER` (for `Conversation.compose` and the blueprint's own answer). Declaring a capability
+in a set installs it (the one listing-based installation; validation refuses sets no step runs, and one name meaning
+two tools). The profile and the #590 toggles narrow a set per message. Three kinds of tool, the same to the model:
+
+- **Capability tools**: a capability sets `tool_name` and `tool_options`, overrides `tool_definition(config, locale)`
+  (`None` when the profile gives it nothing to do) and adds two adapter steps, `ToolCallApprovedEvent` → its ordinary
+  request with `tool_call_id`, and its ordinary result with a `tool_call_id` → `ToolResultEvent`, so a model-chosen
+  call shows the same events as an explicit one. `Knowledge` searches `KnowledgeConfig.tool_collections`.
+- **LlamaIndex tool specs** (`BaseToolSpec` subclasses, built per run with a `ToolContext`) and **LlamaIndex tools**
+  (`FunctionTool.from_defaults(...)`), run in `run_function_step`; a raising tool returns an error result instead of
+  ending the run. `@ToolOptions.of(...)` on the function sets its label, approval summary, default approval, whether
+  every call needs approval, and the chat toggle it needs.
+
+Every stage is an event: `ToolEvent` per call (with the localized `label`) and `ToolCallsDecidedEvent` (decide),
+`ToolApprovalRequestEvent` / `ToolApprovalResponseEvent` (a yes/no confirmation in the chat), `ToolCallApprovedEvent`,
+`ToolResultEvent` (the pipe puts it into the tool's collapsible block), `ToolLoopIterationEvent` per round and
+`ToolLoopStatusEvent` while gathering decides. The loop's state travels on those events (`ToolLoopState`, carrying the
+set's name as `loop`), never in the run context, and the join fires once per iteration of its loop, because the
+dispatcher re-triggers a step for every event of a type it takes as a list. Several sets may run one after another in
+a run; a step consuming `ToolLoop.Finished` tells them apart by `finished.loop`. Approval policies: never, every call,
+once per run, once per conversation (remembered per tool); `approve_every_call` never lets one carry over. At the
+limits the model answers without tools and a fixed notice says it stopped early. The answering turn streams
+(`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed thought.
+Example: `playground/minimal_workflow/tool_loop_workflow/`. ADR `2026_09_28_capabilities_and_the_conversational_spine`,
+amendment 2026-09-30.
+
 **Inline citations**: every document an agent hands the model carries a short stable id (`CitationId` in core: `s` + six
 hex digits, from the node's document id: the knowledge document, or the attached file's upload id) on its
 `REFERENCE_DOCUMENT` tag, and the prompt (`lib.prompt.citations.instruction`) asks the model to cite it as `[s3f9a1c]`.
@@ -515,7 +567,7 @@ config seeder needed.
   `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
-  `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
+  `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`, `tool_loop_workflow`,
   `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
