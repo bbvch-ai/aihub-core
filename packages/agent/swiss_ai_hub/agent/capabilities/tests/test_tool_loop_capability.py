@@ -253,6 +253,14 @@ class TestDecisions:
         assert "Answer now" in displayer.display_llm_stream.await_args.args[2][-1].content
 
     @pytest.mark.asyncio
+    async def test_the_limit_is_told_as_a_user_turn_since_some_models_refuse_a_late_system_message(self):
+        _, displayer = await _decide(_state(iteration=5), ANSWER, max_iterations=5)
+
+        messages = displayer.display_llm_stream.await_args.args[2]
+        assert messages[-1].role == MessageRole.USER
+        assert all(message.role != MessageRole.SYSTEM for message in messages[1:])
+
+    @pytest.mark.asyncio
     async def test_gathering_at_the_limit_hands_back_what_it_has(self):
         gathered = [ChatMessage(role=MessageRole.SYSTEM, content="echo: A")]
 

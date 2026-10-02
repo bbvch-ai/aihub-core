@@ -160,7 +160,8 @@ class ToolLoop(Capability):
 
         messages = [message.to_llama_index() for message in state.messages]
         if exhausted:
-            messages.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.tool_loop.prompt.limit_reached")))
+            # A user turn: chat templates such as Qwen's reject any system message after the first.
+            messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
         tools = [tool.to_openai() for tool in state.tools] if state.tools and not exhausted else None
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
