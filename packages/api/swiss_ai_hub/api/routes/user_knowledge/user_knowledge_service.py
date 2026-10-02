@@ -20,6 +20,9 @@ class UserKnowledgeService:
 
     CONVERSATIONS_FOLDER = "conversations"
     MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+    SHOWN_IN_PLACE = frozenset(
+        {"application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp", "text/plain", "text/csv"}
+    )
 
     @staticmethod
     def client_for(user: UserIdentity) -> OpenTerminalClient:
@@ -48,14 +51,24 @@ class UserKnowledgeService:
     @staticmethod
     @trace_fn
     async def file_content(user: UserIdentity, path: str, download: bool) -> Response:
+        """Agents write these files, so only types a browser cannot run script from are shown in place.
+
+        An HTML or SVG file shown inline would run its script on the API's origin; every other type is sent as a
+        download, and the response forbids sniffing and scripting either way.
+        """
         relative = SandboxHomePath.of(path)
         content, content_type = await UserKnowledgeService.client_for(user).view(relative)
-        disposition = "attachment" if download else "inline"
+        media_type = content_type.split(";")[0].strip().lower()
+        shown = not download and media_type in UserKnowledgeService.SHOWN_IN_PLACE
         filename = quote(posixpath.basename(relative))
         return Response(
             content=content,
-            media_type=content_type,
-            headers={"Content-Disposition": f"{disposition}; filename*=UTF-8''{filename}"},
+            media_type=media_type if shown else "application/octet-stream",
+            headers={
+                "Content-Disposition": f"{'inline' if shown else 'attachment'}; filename*=UTF-8''{filename}",
+                "X-Content-Type-Options": "nosniff",
+                "Content-Security-Policy": "sandbox; default-src 'none'",
+            },
         )
 
     @staticmethod
@@ -81,9 +94,7 @@ class UserKnowledgeService:
     async def move(user: UserIdentity, source: str, destination: str) -> FilePathDTO:
         relative_destination = UserKnowledgeService._below_top(destination)
         SandboxHomePath.name(posixpath.basename(relative_destination))
-        await UserKnowledgeService.client_for(user).move(
-            UserKnowledgeService._below_top(source), relative_destination
-        )
+        await UserKnowledgeService.client_for(user).move(UserKnowledgeService._below_top(source), relative_destination)
         return FilePathDTO(path=relative_destination)
 
     @staticmethod

@@ -96,9 +96,33 @@ async def test_a_download_returns_the_bytes_as_an_attachment(client: AsyncClient
     response = await client.get(f"{ENDPOINT}/content", params={"path": "reports/Q1 report.pdf", "download": True})
 
     assert response.content == b"%PDF-1.7"
-    assert response.headers["content-type"] == "application/pdf"
     assert response.headers["content-disposition"] == "attachment; filename*=UTF-8''Q1%20report.pdf"
+    assert response.headers["x-content-type-options"] == "nosniff"
     sandbox.view.assert_awaited_once_with("reports/Q1 report.pdf")
+
+
+@pytest.mark.asyncio
+async def test_a_pdf_is_shown_in_place(client: AsyncClient, sandbox: Any) -> None:
+    response = await client.get(f"{ENDPOINT}/content", params={"path": "report.pdf"})
+
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.headers["content-disposition"].startswith("inline;")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "content_type", ["text/html", "image/svg+xml", "application/xhtml+xml", "text/html; charset=utf-8"]
+)
+async def test_a_file_a_browser_could_run_script_from_is_never_shown_in_place(
+    client: AsyncClient, sandbox: Any, content_type: str
+) -> None:
+    sandbox.view.return_value = (b"<script>alert(1)</script>", content_type)
+
+    response = await client.get(f"{ENDPOINT}/content", params={"path": "page.html"})
+
+    assert response.headers["content-type"] == "application/octet-stream"
+    assert response.headers["content-disposition"].startswith("attachment;")
+    assert response.headers["content-security-policy"] == "sandbox; default-src 'none'"
 
 
 @pytest.mark.asyncio
