@@ -17649,11 +17649,9 @@ export type ToolEvent = {
    */
   created_at?: number;
   /**
-   * Display Name
-   *
-   * The tool's name as users read it, in the run's locale; the name otherwise
+   * Display name for the event
    */
-  display_name?: string | null;
+  display_name?: LocaleString | null;
   /**
    * Display description for the event
    */
@@ -17676,6 +17674,12 @@ export type ToolEvent = {
    * Description of the tool's purpose and functionality
    */
   description?: string | null;
+  /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
   /**
    * Json Schema
    *
@@ -29276,11 +29280,9 @@ export type ToolEventWritable = {
    */
   created_at?: number;
   /**
-   * Display Name
-   *
-   * The tool's name as users read it, in the run's locale; the name otherwise
+   * Display name for the event
    */
-  display_name?: string | null;
+  display_name?: LocaleString | null;
   /**
    * Display description for the event
    */
@@ -29303,6 +29305,12 @@ export type ToolEventWritable = {
    * Description of the tool's purpose and functionality
    */
   description?: string | null;
+  /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
   /**
    * Json Schema
    *

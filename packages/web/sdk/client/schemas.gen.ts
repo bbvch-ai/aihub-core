@@ -26567,15 +26567,13 @@ export const ToolEventSchema = {
     display_name: {
       anyOf: [
         {
-          type: "string",
+          $ref: "#/components/schemas/LocaleString",
         },
         {
           type: "null",
         },
       ],
-      title: "Display Name",
-      description:
-        "The tool's name as users read it, in the run's locale; the name otherwise",
+      description: "Display name for the event",
     },
     display_description: {
       anyOf: [
@@ -26623,6 +26621,19 @@ export const ToolEventSchema = {
       ],
       title: "Description",
       description: "Description of the tool's purpose and functionality",
+    },
+    label: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Label",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
     },
     json_schema: {
       anyOf: [
@@ -44988,15 +44999,13 @@ export const ToolEventWritableSchema = {
     display_name: {
       anyOf: [
         {
-          type: "string",
+          $ref: "#/components/schemas/LocaleString",
         },
         {
           type: "null",
         },
       ],
-      title: "Display Name",
-      description:
-        "The tool's name as users read it, in the run's locale; the name otherwise",
+      description: "Display name for the event",
     },
     display_description: {
       anyOf: [
@@ -45044,6 +45053,19 @@ export const ToolEventWritableSchema = {
       ],
       title: "Description",
       description: "Description of the tool's purpose and functionality",
+    },
+    label: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Label",
+      description:
+        "The tool's name as users read it, in the run's locale; the name otherwise",
     },
     json_schema: {
       anyOf: [
