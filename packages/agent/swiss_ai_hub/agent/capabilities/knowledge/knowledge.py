@@ -19,7 +19,6 @@ from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
     KnowledgeCollectionLabel,
     ReferencedKnowledge,
-    UserScopedRetrievers,
     combine_nodes_in_order,
     rerank_nodes,
     retrieve_from_all_sources,
@@ -126,7 +125,7 @@ class Knowledge(Capability):
         if not request.references:
             return KnowledgeSearchedEvent(tool_call_id=request.tool_call_id)
         searchable, missing, refused = await asyncio.to_thread(
-            ReferencedKnowledge.partition, request.references, access, UserScopedRetrievers.namespaces_of
+            ReferencedKnowledge.partition, request.references, access, ReferencedKnowledge.namespaces_of
         )
         found = await Knowledge._find(searchable, request.query, knowledge.knowledge, t, user) if searchable else []
         missing_labels, refused_labels = await asyncio.to_thread(

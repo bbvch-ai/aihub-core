@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_entity import SourcePipelineEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type import SourcePipelineType
     from swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook import KnowledgeChangeHook
+    from swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility import KnowledgeVisibility
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
     from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
     from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
@@ -108,6 +109,7 @@ __all__ = [
     "AgentClassEntity",
     "AgentConfigChangeHook",
     "KnowledgeChangeHook",
+    "KnowledgeVisibility",
     "AgentConfigEntityDocument",
     "BeanieInitializer",
     "AgentInSpecsEntity",
@@ -194,6 +196,7 @@ _LAZY_IMPORTS = {
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
     "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
     "KnowledgeChangeHook": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook",
+    "KnowledgeVisibility": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_visibility",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "BeanieInitializer": "swiss_ai_hub.core.persistence.beanie_initializer",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",

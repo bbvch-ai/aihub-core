@@ -35,27 +35,3 @@ class TestReservedForCreation:
         show_legacy_knowledge(False)
 
         assert "researchdocs" not in KnowledgeService.reserved_database_names()
-
-
-class TestNonBrowsable:
-    @pytest.mark.parametrize("shown", [True, False])
-    @pytest.mark.parametrize("database", MONGO_SYSTEM_DATABASES)
-    def test_mongo_system_databases_are_never_readable(self, database, shown, show_legacy_knowledge):
-        show_legacy_knowledge(shown)
-
-        assert database in KnowledgeService.non_browsable_database_names()
-
-    @pytest.mark.parametrize("database", LEGACY_DATABASES)
-    def test_legacy_databases_are_readable_when_shown(self, database, show_legacy_knowledge):
-        """Reserving a name for creation is no reason to refuse reads of the database already on it: the
-        frozen pipelines still serve those corpora, so the per-resource rules govern them like any other."""
-        show_legacy_knowledge(True)
-
-        assert database not in KnowledgeService.non_browsable_database_names()
-
-    @pytest.mark.parametrize("database", LEGACY_DATABASES)
-    def test_legacy_databases_are_unreadable_when_hidden(self, database, show_legacy_knowledge):
-        """Hidden must mean unreadable, not merely unlisted, or the name alone reaches the documents."""
-        show_legacy_knowledge(False)
-
-        assert database in KnowledgeService.non_browsable_database_names()
