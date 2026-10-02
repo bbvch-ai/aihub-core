@@ -5,7 +5,12 @@ from typing import Self
 
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import SandboxFileDisplayedEvent, UserUploadedFile
-from swiss_ai_hub.core.infrastructure import OpenTerminalClient, OpenTerminalError, create_s3_client
+from swiss_ai_hub.core.infrastructure import (
+    OpenTerminalClient,
+    OpenTerminalError,
+    SandboxHomePath,
+    create_s3_client,
+)
 from swiss_ai_hub.core.persistence import OpenWebuiAccountEntity
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -45,20 +50,8 @@ class SandboxWorkspace:
 
     def path(self, path: str) -> str:
         """A path as the sandbox resolves it, relative to the home: given relative to the conversation folder, or as
-        `~/…` relative to the home. Anything outside the home is refused, whatever the sandbox would allow."""
-        if "\0" in path:
-            raise OpenTerminalError("A path must not contain NUL characters.")
-        if path == "~" or path.startswith("~/"):
-            relative = posixpath.normpath(path.removeprefix("~").removeprefix("/") or ".")
-        elif path.startswith("/"):
-            raise OpenTerminalError(
-                f"{path} is an absolute path; use a path inside your home, e.g. ~/{path.lstrip('/')}."
-            )
-        else:
-            relative = posixpath.normpath(posixpath.join(self.folder, path))
-        if relative == ".." or relative.startswith("../"):
-            raise OpenTerminalError(f"{path} lies outside your home.")
-        return relative
+        `~/…` relative to the home; anything outside the home is refused."""
+        return SandboxHomePath.of(path, self.folder)
 
     async def prepare(self) -> None:
         """Place the conversation's attached files in its folder, each once."""

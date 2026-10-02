@@ -87,6 +87,16 @@ class OpenTerminalClient:
         files = {"file": (filename, content)}
         return await self._json("POST", "/files/upload", params={"directory": directory}, files=files)
 
+    async def mkdir(self, path: str) -> dict[str, Any]:
+        return await self._json("POST", "/files/mkdir", json={"path": path})
+
+    async def move(self, source: str, destination: str) -> dict[str, Any]:
+        return await self._json("POST", "/files/move", json={"source": source, "destination": destination})
+
+    async def delete(self, path: str) -> dict[str, Any]:
+        """Removes a file, or a folder with everything in it."""
+        return await self._json("DELETE", "/files/delete", params={"path": path})
+
     async def view(self, path: str) -> tuple[bytes, str]:
         """A file's raw bytes and type; unlike reading, this works for any file, binary documents included."""
         response = await self._request("GET", "/files/view", params={"path": path})
@@ -102,7 +112,7 @@ class OpenTerminalClient:
         async with httpx.AsyncClient(base_url=self._settings.BASE_URL, headers=self._headers, timeout=timeout) as http:
             response = await http.request(method, path, **kwargs)
         if response.is_error:
-            raise OpenTerminalError(f"{response.status_code}: {self._reason(response)}")
+            raise OpenTerminalError(f"{response.status_code}: {self._reason(response)}", response.status_code)
         return response
 
     @staticmethod
