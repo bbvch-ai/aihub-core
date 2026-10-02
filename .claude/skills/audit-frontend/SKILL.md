@@ -209,25 +209,26 @@ List pages must follow:
 StructuralScreen > StructuralColumn + NuxtPage
 ```
 
-Check that every file directly under `pages/service/*.vue` wraps content in `StructuralScreen` with a `NuxtPage` for
-detail routing.
+Check that every file directly under `pages/[tenant]/service/*.vue` wraps content in `StructuralScreen` with a
+`NuxtPage` for detail routing.
 
 ```bash
-grep -rL "StructuralScreen" packages/web/pages/service/*.vue
+grep -rL "StructuralScreen" packages/web/pages/[tenant]/service/*.vue
 ```
 
-### 4b. localePath for all navigation (ERROR)
+### 4b. tenantPath for all navigation (ERROR)
 
-All `router.push()`, `navigateTo()`, and `NuxtLink :to` must use `localePath()`. Bare paths like
-`router.push('/service/agents')` break i18n locale prefixing.
+All `router.push()`, `navigateTo()`, and `NuxtLink :to` must use `useTenantPath()` (it wraps `useLocalePath()` and adds
+the `[tenant]` segment). Bare paths like `router.push('/service/agents')` break locale and tenant prefixing.
 
 ```bash
-# Find bare path navigation without localePath
+# Find bare path navigation without tenantPath/localePath
 grep -rn "router\.push\|navigateTo" packages/web/pages/ packages/web/components/ --include="*.vue" \
-  | grep -v localePath | grep -v "//.*router"
+  | grep -v tenantPath | grep -v localePath | grep -v "//.*router"
 ```
 
-Also check `<NuxtLink :to="` attributes — they should wrap paths in `localePath()`.
+Also check `<NuxtLink :to="` attributes — they should wrap paths in `tenantPath()`. Sysadmin pages (`/tenants/...`) are
+not tenant-scoped and use `useLocalePath()`.
 
 ### 4c. NavItem isActive must be a closure (ERROR)
 
@@ -236,15 +237,15 @@ boolean value. The `SelectButton` calls `isActive()` dynamically.
 
 ```typescript
 // Correct: closure
-isActive: () => route.path.startsWith(localePath(subPath('overview')))
+isActive: () => route.path.startsWith(tenantPath(subPath('overview')))
 // Wrong: evaluated once
-isActive: route.path.startsWith(localePath(subPath('overview')))
+isActive: route.path.startsWith(tenantPath(subPath('overview')))
 ```
 
 ### 4d. Detail pages use close-route (WARNING)
 
 Leaf pages (inside `[param]/`) should pass `close-route` to `StructuralColumn` for the back button. The path should be
-bare (not wrapped in `localePath` — `StructuralColumn` applies it internally).
+bare (not wrapped in `tenantPath` — `StructuralColumn` applies it internally).
 
 ### 4e. Unnecessary explicit imports (WARNING)
 
@@ -264,7 +265,7 @@ grep -rn "import.*from 'vue-i18n'" packages/web/pages/ --include="*.vue"
 grep -rn "import.*from 'primevue/use" packages/web/pages/ --include="*.vue"
 ```
 
-Exception: `useLocalePath` from `'#i18n'` DOES need explicit import.
+Exception: `useLocalePath` from `'#i18n'` DOES need explicit import (`useTenantPath` is auto-imported).
 
 ______________________________________________________________________
 
@@ -357,7 +358,7 @@ Then list each issue grouped by audit area with: file path, line number, issue d
 - `/audit-frontend all` -- Run all 7 audits and produce summary table
 - `/audit-frontend composables` -- Deep check on Pinia-Colada patterns (defineQuery, keys, staleTime, cache)
 - `/audit-frontend typescript` -- Find type errors, implicit any, missing type imports
-- `/audit-frontend pages` -- Check page architecture, localePath usage, NavItem patterns
+- `/audit-frontend pages` -- Check page architecture, tenantPath usage, NavItem patterns
 - `/audit-frontend i18n` -- Cross-check translation keys across de/en/fr/it locales
 
 ## Troubleshooting

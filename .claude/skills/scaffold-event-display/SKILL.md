@@ -23,13 +23,19 @@ Check the event component resolver: `packages/web/composables/event/useEventComp
 
 ## Step 1: Identify the Event Type
 
-Check the backend event definition in `packages/core/swiss_ai_hub/core/events/` to understand:
+Check the backend event definition in `packages/core/swiss_ai_hub/core/events/agent/` to understand:
 
 - Event class name (e.g., `MyNewEvent`)
 - Fields available on the event
 - Parent event class (for inheritance-based resolution)
 
 Also check the SDK types in `packages/web/sdk/client/` for the TypeScript type.
+
+**Protocol events are control and display.** Every event of the capability calls (`Conversation`, `Memory`,
+`AttachedFiles`, `Knowledge` request and result events) and of the tool loop (`ToolLoop*`, `ToolCall*`, `ToolResult`) is
+a `ControlAndDisplayEvent`, appears in the event history, and gets its own component here. An event that renders as
+"Unknown" (`UnknownEvent.vue`) is missing its component and mapping. The event's `_display_description` also doubles as
+the chat's progress status, so write it as a short status sentence.
 
 ## Step 2: Create the Component
 

@@ -20,13 +20,14 @@ cd packages/web && pnpm dev
 
 Use the Playwright MCP `browser_navigate` tool to open the page. Common entry points:
 
-- **Dashboard**: `http://localhost:3333/en`
-- **Agents**: `http://localhost:3333/en/service/agents`
-- **Processes**: `http://localhost:3333/en/service/processes`
-- **Threads**: `http://localhost:3333/en/service/threads`
-- **Knowledge**: `http://localhost:3333/en/service/databases`
-- **Users**: `http://localhost:3333/en/service/users`
-- **Roles**: `http://localhost:3333/en/service/roles`
+- **Dashboard**: `http://localhost:3333/en` (redirects into the user's tenant; admin pages live under
+  `/<locale>/<tenant>/service/...`)
+- **Agents**: `http://localhost:3333/en/<tenant>/service/agents`
+- **Processes**: `http://localhost:3333/en/<tenant>/service/processes`
+- **Threads**: `http://localhost:3333/en/<tenant>/service/threads`
+- **Knowledge**: `http://localhost:3333/en/<tenant>/service/knowledge`
+- **Users**: `http://localhost:3333/en/<tenant>/service/users`
+- **Roles**: `http://localhost:3333/en/<tenant>/service/roles`
 
 ## Step 2: Capture Page State
 
@@ -89,7 +90,7 @@ Reproduce the issue step by step and capture screenshots at each stage.
 
 Once the issue is identified:
 
-1. Find the page component: `packages/web/pages/service/{resource}/`
+1. Find the page component: `packages/web/pages/[tenant]/service/{resource}/`
 2. Find composables: `packages/web/composables/{resource}/`
 3. Find child components: `packages/web/components/{Resource}/`
 4. Check SDK types: `packages/web/sdk/client/`

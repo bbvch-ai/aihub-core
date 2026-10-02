@@ -19,7 +19,7 @@ For Docker Compose or Traefik questions, use Context7 MCP to fetch up-to-date do
 
 ## Day-to-Day Actions
 
-### `up` — Start the development stack
+### `up` — Start the development stack (`make up-dev`; GPU: `make up-dev-gpu`)
 
 ```bash
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
@@ -79,7 +79,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | Dagster        | :3000  | Pipeline orchestrator (local)      |
 | LiteLLM        | :4000  | LLM proxy                          |
 | Langfuse       | :6006  | LLM observability                  |
-| MinerU         | :5001  | Document parsing                   |
+| MinerU         | :8002  | Document parsing                   |
 | PostgreSQL     | :5432  | Relational DB (4 databases)        |
 | FerretDB       | :27017 | MongoDB-compatible                 |
 | Milvus         | :19530 | Vector DB                          |
@@ -88,7 +88,10 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | NATS           | :4222  | Message broker, :8222 (monitor)    |
 | SeaweedFS      | :8889  | Filer UI, :9000 (S3 gateway)       |
 | Rclone         | :5572  | Cloud sync RC API                  |
-| Speaches       | :8185  | STT/TTS                            |
+| Speaches       | :8185  | STT/TTS (GPU compose only)         |
+| Keycloak       | :8180  | Identity provider                  |
+| SearXNG        | :8881  | Web search                         |
+| Backup UI      | :3004  | Backup Dagster webserver           |
 | Open Terminal  | :8200  | Code execution sandbox (OpenWebUI) |
 | Playwright     | :3036  | Browser automation                 |
 | Attu           | :3003  | Milvus admin UI                    |
@@ -104,7 +107,8 @@ make generate-compose
 ```
 
 Run this after editing any template in `infra/deployment/templates/` or `infra/deployment/compose-config.yml`. Commit
-both the template changes and the regenerated output files.
+both the template changes and the regenerated output files. `make check-env` verifies `.env.prod` against the rendered
+compose files and every settings class (part of `make test` and `make pr-ready`).
 
 ## Compose Generation System
 
@@ -117,8 +121,8 @@ Read `infra/deployment/CLAUDE.md` for full details. Quick overview:
 
 - `infra/deployment/compose-config.yml` — image tags + stage-specific values (SINGLE SOURCE OF TRUTH)
 - `infra/deployment/generate_compose.py` — Jinja2 renderer
-- `infra/deployment/templates/docker-compose.yml.j2` — main template (~3000 lines)
-- `infra/deployment/templates/configs/` — 15 service config templates (NATS, LiteLLM, Traefik, Milvus, etc.)
+- `infra/deployment/templates/docker-compose.yml.j2` — main template (~4400 lines)
+- `infra/deployment/templates/configs/` — service config templates (NATS, LiteLLM, Traefik, Milvus, etc.)
 
 **5 Stages**:
 
@@ -141,15 +145,16 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
 ## Network Zones
 
-5 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`):
+6 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`, amended for the sandbox):
 
-| Network   | Purpose                      | Key Services                              |
-| --------- | ---------------------------- | ----------------------------------------- |
-| `proxy`   | External ingress via Traefik | traefik, api, web, open-webui, langfuse   |
-| `backend` | Application services         | litellm, langfuse, mineru-api, vLLM (GPU) |
-| `data`    | Databases, caches, broker    | postgres, ferretdb, milvus, nats, valkey  |
-| `storage` | SeaweedFS cluster            | seaweedfs-\*, etcd                        |
-| `egress`  | Outbound internet (no ICC)   | playwright                                |
+| Network        | Purpose                                                        | Key Services                              |
+| -------------- | -------------------------------------------------------------- | ----------------------------------------- |
+| `proxy`        | External ingress via Traefik                                   | traefik, api, web, open-webui, langfuse   |
+| `backend`      | Application services                                           | litellm, langfuse, mineru-api, vLLM (GPU) |
+| `data`         | Databases, caches, broker                                      | postgres, ferretdb, milvus, nats, valkey  |
+| `storage`      | SeaweedFS cluster                                              | seaweedfs-\*, etcd                        |
+| `egress`       | Outbound internet (no ICC)                                     | playwright                                |
+| `code-sandbox` | Single-tenant zone for `open-terminal` and exactly its callers | open-terminal, agents/API that run code   |
 
 Dev stage has all networks non-internal for localhost access.
 

@@ -6,7 +6,7 @@ description: >-
   model reference, and implementation checklist. Use when user says "create new agent",
   "scaffold an agent", "generate agent boilerplate", "add AI agent", "new workflow agent",
   or "build an agent for X". Do NOT use for debugging agents (use /debug-agent), event
-  infrastructure (use /nats-events), or process orchestration (use /scaffold-process).
+  infrastructure (use /nats-events), or process orchestration (see packages/process/CLAUDE.md).
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 
@@ -20,9 +20,20 @@ Read the agent scope guide: `packages/agent/CLAUDE.md`
 
 Study existing agents for reference patterns:
 
-- **Minimal reference**: `packages/agent/playground/minimal_workflow/simple_workflow/SimpleAgent.py`
+- **Minimal reference**: `packages/agent/playground/minimal_workflow/simple_workflow/simple_agent.py`
+- **Smallest chat blueprint** (capabilities):
+  `packages/agent/swiss_ai_hub/agent/agents/llm_wrapping_agent/llm_wrapping_agent.py`
 - **Production reference**: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
-- **Pattern index**: `packages/agent/playground/minimal_workflow/` (20 self-contained examples)
+- **Pattern index**: `packages/agent/playground/minimal_workflow/` (20+ self-contained examples)
+
+**Agent classes hold steps only.** A class derived from `Agent` defines `@step` methods and class attributes, nothing
+else — helpers go into standalone classes the steps import (or dispatcher-injected dependencies), never onto `self`.
+`swiss_ai_hub/agent/agents/tests/test_agent_classes_hold_steps_only.py` fails otherwise.
+
+**Conversational agents (chat UI) use capabilities, not hand-written steps.** Title, follow-ups, meta-question gate,
+query condensing, memory, attached files, `#` knowledge references, tool loops and the final stop come from
+`Conversation`, `Memory`, `AttachedFiles`, `Knowledge` and `ToolLoop` under
+`packages/agent/swiss_ai_hub/agent/capabilities/` — see "Step 4b" below.
 
 ______________________________________________________________________
 
@@ -246,10 +257,12 @@ event type—using the same base type for multiple interactions causes ambiguity
 **Step 1: Define custom HITL event pairs**
 
 ```python
-# events/FirstStepHumanInTheLoop.py
-from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+# events/first_step_human_in_the_loop.py
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopInput,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopInputResponseEvent,
+)
 
 
 class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -266,10 +279,12 @@ class FirstStepHumanInTheLoop(HumanInTheLoopInput):
 ```
 
 ```python
-# events/SecondStepHumanInTheLoop.py
-from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+# events/second_step_human_in_the_loop.py
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopInput,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopInputResponseEvent,
+)
 
 
 class SecondStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -288,12 +303,13 @@ class SecondStepHumanInTheLoop(HumanInTheLoopInput):
 **Step 2: Use distinct types in the workflow**
 
 ```python
-from swiss_ai_hub.core.nats.events import StartEvent, StopEvent
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
+
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
-from .events.FirstStepHumanInTheLoop import FirstStepHumanInTheLoop
-from .events.SecondStepHumanInTheLoop import SecondStepHumanInTheLoop
+from .events.first_step_human_in_the_loop import FirstStepHumanInTheLoop
+from .events.second_step_human_in_the_loop import SecondStepHumanInTheLoop
 
 
 class MultistepHumanInTheLoopAgent(Agent):
@@ -319,7 +335,7 @@ class MultistepHumanInTheLoopAgent(Agent):
 When the HITL type depends on runtime conditions, use union return types:
 
 ```python
-from swiss_ai_hub.core.nats.events.human_in_the_loop import (
+from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopChat,
     HumanInTheLoopConfirmation,
     HumanInTheLoopInput,
@@ -361,7 +377,7 @@ BITL requires platform-specific configuration:
 **Microsoft Teams:**
 
 ```python
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
+from swiss_ai_hub.core.events.agent import TeamsConfig
 
 teams_config = TeamsConfig(
     channel_id="19:abc123@thread.tacv2",
@@ -373,7 +389,7 @@ teams_config = TeamsConfig(
 **Slack:**
 
 ```python
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig
+from swiss_ai_hub.core.events.agent import SlackConfig
 
 slack_config = SlackConfig(
     channel_id="C0123456789",
@@ -384,7 +400,7 @@ slack_config = SlackConfig(
 #### Basic Usage
 
 ```python
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
+from swiss_ai_hub.core.events.agent import BotInTheLoop
 
 class BotInTheLoopAgent(Agent):
     @step()
@@ -451,7 +467,7 @@ async def handle_response(
 
 **Requires**: A bot agent configured with the appropriate channel. See `/bot-framework` for bot setup.
 
-**Playground**: `playground/agent/BotInTheLoopAgent/`
+**Playground**: `playground/agent/bot_in_the_loop_agent/`
 
 ### Pattern 8: Agent-in-the-Loop (AITL)
 
@@ -463,7 +479,7 @@ async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
     return AgentInTheLoop.invoke(
         agent_class="WorkerAgent",
         agent_id="worker-1",
-        start_event=UserMessageEvent(message=event.message),
+        start_event=UserMessageEvent(messages=event.messages, user=event.user, locale=event.locale),
     )
 
 @step()
@@ -484,35 +500,43 @@ ______________________________________________________________________
 
 ## Step 2: Create Directory Structure
 
-Extract the agent name from `$ARGUMENTS`. Convert to `CamelCase` for classes, `snake_case` for directories.
+Extract the agent name from `$ARGUMENTS`. Convert to `CamelCase` for classes, `snake_case` for files and directories.
 
 ```
-packages/agent/swiss_ai_hub/agent/agents/{AgentName}/
-├── {AgentName}.py              # Agent class
+packages/agent/swiss_ai_hub/agent/agents/{agent_name}/
+├── __init__.py                 # Exports {AgentName} and {AgentName}Config
+├── {agent_name}.py             # Agent class (@step methods only)
 ├── configs/
-│   └── {AgentName}Config.py    # AgentConfig subclass with form duality
+│   └── {agent_name}_config.py  # AgentConfig subclass with form duality
 ├── events/
-│   └── {EventName}.py          # One file per custom event (one class per file)
+│   └── {event_name}.py         # One file per custom event (one class per file)
 └── tests/
     ├── features/
     │   └── {agent_name}.feature  # BDD scenario
     └── test_{agent_name}.py      # Test implementation
 
 packages/agent/app/{agent_name}/
-└── main.py                     # Entry point with AgentRunner
+├── main.py                     # Entry point with AgentRunner
+└── Dockerfile
 
-packages/agent/i18n/translations/agent/
+packages/agent/swiss_ai_hub/agent/i18n/translations/agent/
 ├── {agent_name}.de.yml
 ├── {agent_name}.en.yml
 ├── {agent_name}.fr.yml
 └── {agent_name}.it.yml
 ```
 
+Production agents also get a `run-{agent-name}` target in `packages/agent/Makefile` and a service in the compose
+template (`infra/deployment/templates/docker-compose.yml.j2`, then `make generate-compose`). Look at how
+`llm_wrapping_agent` is wired through `app/llm_wrapping_agent/` for a complete example. Playground agents live under
+`packages/agent/playground/` and use `LocaleString` instead of i18n files.
+
 **Naming conventions:**
 
-- One class per file, file name matches class name: `MyAgent.py` contains `class MyAgent`
-- Events: `{AgentName}{Action}Event.py` — e.g., `SummaryGeneratedEvent.py`
-- Config: `{AgentName}Config.py`
+- One class per file, snake_case file name matches the class: `my_agent.py` contains `class MyAgent`
+- Events: `{action}_event.py` — e.g., `summary_generated_event.py` contains `SummaryGeneratedEvent`
+- Config: `{agent_name}_config.py` containing `{AgentName}Config`
+- Helper logic that is not a step goes into its own class next to the agent, imported by the steps
 
 ______________________________________________________________________
 
@@ -568,24 +592,9 @@ another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly a
 **Rule of thumb**: If a step consumes it → `ControlEvent`. If only the UI needs it → `DisplayEvent`. If both →
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.
 
-**Self-awareness pattern**: Detection/answer for meta-questions about the agent itself ("What can you do?", "Who are
-you?") is added per agent, not inherited. For a conversational agent: (1) define two thin `@step` methods —
-`detect_meta_question_step` (on `UserMessageEvent`) and `answer_meta_question_step` — each delegating to the shared free
-functions `do_detect_meta_question` / `do_answer_meta_question` / `summarize_workflow_for_meta_answer` and passing
-`agent_config.task_llm` (both are auxiliary work; `task_llm` falls back to the main `llm` when unset). There is no
-separate stop step — `answer_meta_question_step` returns the terminal `LLMStopEvent` itself; (2) gate every raw
-`UserMessageEvent` entry step with `_clear: NotAMetaQuestionEvent | None = None` and combine its precondition with
-`check_passed_meta_question_gate`. The compliance test `self_awareness/tests/test_self_awareness_wiring.py` fails if a
-self-aware agent defines a partial step set or leaves an entry step ungated. See `RAGAgent` for the reference
-implementation.
-
-If the agent also adopts conversation metadata (title + follow-up questions, see ADR `2026_06_18`), the meta branch
-needs its own wiring too — it doesn't inherit the normal-flow wiring automatically. Add a third `@step`
-(`generate_meta_question_title_step`) triggered on the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`
-(so the dispatcher runs both concurrently — title only needs the user's question, not the meta answer, so it must not
-wait for it), calling `generate_title`. Then have `answer_meta_question_step` call `generate_follow_up_questions` (not
-the bundled `generate_conversation_metadata` — title is already handled by the parallel step) on the returned
-`LLMStopEvent.chat_messages` before returning it. See `RAGAgent` for both.
+**Chat-UI agents do not wire self-awareness, titles or follow-ups by hand.** The meta-question gate ("What can you
+do?"), the thread title and the follow-up questions belong to the `Conversation` capability (`contextualize` runs the
+gate and titles the thread, `complete` generates follow-ups and ends the run). See "Step 4b".
 
 ### The Stop Event Constraint
 
@@ -613,11 +622,11 @@ async def finalize(self, cleanup: CleanupEvent) -> StopEvent:
 
 ### Custom Event Template
 
-Create one file per event in `agents/{AgentName}/events/`:
+Create one file per event in `agents/{agent_name}/events/`:
 
 ```python
-# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/events/{EventName}.py
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+# packages/agent/swiss_ai_hub/agent/agents/{agent_name}/events/{event_name}.py
+from swiss_ai_hub.core.events.agent import ControlEvent
 
 
 class {EventName}(ControlEvent):
@@ -656,17 +665,15 @@ ______________________________________________________________________
 ## Step 4: Create Agent Class
 
 ```python
-# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/{AgentName}.py
+# packages/agent/swiss_ai_hub/agent/agents/{agent_name}/{agent_name}.py
 from typing import ClassVar
 
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import StopEvent, UserMessageEvent
 
-from swiss_ai_hub.agent.agents.Agent import Agent
-from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.agents.{agent_name}.events.{event_name} import {EventName}
+from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
-
-from .events.{EventName} import {EventName}
 
 
 class {AgentName}(Agent):
@@ -679,15 +686,15 @@ class {AgentName}(Agent):
     icon: ClassVar[str] = "mage:robot"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.start"),
-        description=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.start_description"),
+        name=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.start.name"),
+        description=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.start.description"),
         icon="mage:play",
     )
     async def start_step(self, event: UserMessageEvent) -> {EventName}:
-        return {EventName}(field_name=event.message)
+        return {EventName}(field_name=event.user_query)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.end"),
+        name=AgentLocaleString.from_i18n_path("agent.{agent_name}.steps.end.name"),
         icon="mage:check",
     )
     async def end_step(self, event: {EventName}) -> StopEvent:
@@ -765,20 +772,65 @@ For debugging execution issues, see `/debug-agent`.
 
 ______________________________________________________________________
 
+## Step 4b: Chat Blueprints Use Capabilities
+
+A conversational agent (chat UI, bots) is assembled from **capabilities**
+(`packages/agent/swiss_ai_hub/agent/capabilities/`), not from hand-written retrieval, memory, title or stop steps. A
+step returns a capability's request event through its typed helper; a later step declares the result event as a
+parameter. The reference is `agents/llm_wrapping_agent/llm_wrapping_agent.py`; the full contract is in
+`packages/agent/CLAUDE.md` ("Capabilities").
+
+| Capability      | Config mixin          | Request helper (returns)                                     | Result (declare as parameter) |
+| --------------- | --------------------- | ------------------------------------------------------------ | ----------------------------- |
+| `Conversation`  | `ConversationFields`  | `contextualize(history, message)` -> `ContextualizeRequest`  | `Conversation.Contextualized` |
+|                 |                       | `compose(history, blocks)` -> `ComposeRequest`               | `Conversation.Composed`       |
+|                 |                       | `complete(answer, stop=None)` -> `CompleteRequest` (last)    | ends the run                  |
+| `Memory`        | `MemoryFields`        | `recall(query)` / `remember(...)` (returned before complete) | `Memory.Recalled`             |
+| `AttachedFiles` | `AttachedFilesFields` | `read(files, history, query, reserve_tokens)`                | `AttachedFiles.Contents`      |
+| `Knowledge`     | `KnowledgeFields`     | `search(references, query)` (`#` references)                 | `Knowledge.Searched`          |
+| `ToolLoop`      | `ToolLoopFields`      | `<Agent>.tools.run(history)` (`tools = ToolLoop.over(...)`)  | `ToolLoop.Finished`           |
+
+Typical spine of a chat blueprint (each line is one `@step`):
+
+1. `limit_chat_history_step(UserMessageEvent) -> Conversation.ContextualizeRequest` (`Conversation.contextualize(...)`)
+2. `gather_context_step(Conversation.Contextualized, UserMessageEvent) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]`
+   (fan-out by returning a list)
+3. `assemble_prompt_step(Conversation.Contextualized, Memory.Recalled, AttachedFiles.Contents, Knowledge.Searched) -> Conversation.ComposeRequest`
+4. `respond_step(Conversation.Composed, Conversation.Contextualized, ...) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]`:
+   stream with `displayer.display_llm_stream(..., as_stop_step=False)`, then return `Memory.remember(...)` first and
+   `Conversation.complete(answer=...)` last
+
+Rules:
+
+- The config class inherits the mixins of every capability it calls
+  (`class MyConfig(MemoryFields, ConversationFields, AgentConfig)`) and spreads their `*_form_elements()` in `as_form()`
+  (see `LLMWrappingAgentConfig`). The runner refuses to start otherwise.
+- Annotate steps with the scoped names (`Conversation.Composed`, `Memory.Recalled`); requests carry a `Request` suffix.
+- Do not write your own steps for the meta-question gate, query condensing, title, follow-ups, memory storage or the
+  terminal stop event.
+- A model that picks its own tools (Universal Agent pattern): declare
+  `tools = ToolLoop.over(Knowledge, AttachedFiles, Memory, MyToolSpec)` on the class and call
+  `MyAgent.tools.run(history)`; capabilities are offered as tools and `BaseToolSpec` classes (LlamaIndex) add custom
+  ones. Example: `playground/minimal_workflow/tool_loop_workflow/`.
+- All validation is in `Agent.validate_workflow` (run by `AgentRunner`);
+  `capabilities/tests/test_capability_composition.py` shows what it rejects.
+- Protocol events of capabilities and the tool loop are `ControlAndDisplayEvent`s with their own frontend component (see
+  `/scaffold-event-display`).
+
+______________________________________________________________________
+
 ## Step 5: Create Config
 
 ```python
-# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/configs/{AgentName}Config.py
+# packages/agent/swiss_ai_hub/agent/agents/{agent_name}/configs/{agent_name}_config.py
 from typing import Annotated, Self
 
 from pydantic import Field
 
-from swiss_ai_hub.core.agents.agent_config import AgentConfig
-from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.form import InputNumber, InputText, ModelSelect
 from swiss_ai_hub.core.form.constraints import Ge, Le
-from swiss_ai_hub.core.form import InputNumber
-from swiss_ai_hub.core.form import InputText
-from swiss_ai_hub.core.form import ModelSelect
+from swiss_ai_hub.core.i18n import LocaleString
 
 
 class {AgentName}Config(AgentConfig):
@@ -818,7 +870,7 @@ class {AgentName}Config(AgentConfig):
 For step-specific configuration, nest a `StepConfig` subclass:
 
 ```python
-from swiss_ai_hub.core.agents.AgentConfig import StepConfig
+from swiss_ai_hub.core.agents import StepConfig
 
 class MyStepConfig(StepConfig):
     threshold: Annotated[float | InputNumber, Field(description="Threshold")] = 0.5
@@ -840,6 +892,9 @@ From `packages/core/swiss_ai_hub/core/form/elements/`:
   `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`, `DatePicker`, `Knob`, `Rating`, `Slider`
 - **Layout**: `Group` (auto-created from nested `Form`), `Repeater` (auto-created from `list[Form]`)
 
+For a chat blueprint, add the capability mixins (`ConversationFields`, `MemoryFields`, ...) as bases and spread their
+`*_form_elements()` into `as_form()` — see `LLMWrappingAgentConfig`.
+
 Source: `packages/core/swiss_ai_hub/core/agents/agent_config.py`, `packages/core/swiss_ai_hub/core/form/form.py`
 
 ______________________________________________________________________
@@ -848,11 +903,19 @@ ______________________________________________________________________
 
 ```python
 # packages/agent/app/{agent_name}/main.py
+# ruff: noqa: E402
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
-from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
-from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
+
+from swiss_ai_hub.agent.agents.{agent_name} import {AgentName}, {AgentName}Config
+from swiss_ai_hub.agent.runners import AgentRunner
+
+enable_logging()
 
 
 async def main():
@@ -861,8 +924,12 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(AIHubSettings().startup_banner)
     asyncio.run(main())
 ```
+
+Model on `packages/agent/app/llm_wrapping_agent/main.py` (it also passes `templates=` for agent profile templates,
+optional).
 
 Source: `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`
 
@@ -870,20 +937,20 @@ ______________________________________________________________________
 
 ## Step 7: Add i18n
 
-Create translation files in `packages/agent/i18n/translations/agent/`:
+Create translation files in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`. The file name is the path
+segment after `agent.`, so no locale root key is needed:
 
 ```yaml
 # {agent_name}.en.yml
-en:
-  agent:
-    {agent_name}:
-      metadata:
-        name: "{Agent Display Name}"
-        description: "{Agent description for Admin UI}"
-      steps:
-        start: "Start"
-        start_description: "Receives user message and begins processing"
-        end: "Finish"
+metadata:
+  name: "{Agent Display Name}"
+  description: "{Agent description for Admin UI}"
+steps:
+  start:
+    name: "Start"
+    description: "Receives user message and begins processing"
+  end:
+    name: "Finish"
 ```
 
 Create matching files for `de`, `fr`, `it` locales with translated strings.
@@ -912,11 +979,12 @@ ______________________________________________________________________
 
 ## Step 8: LLM Integration
 
-Use `EventDisplayer` for streaming LLM output to the frontend:
+Use `EventDisplayer` for streaming LLM output to the frontend. `AgentConfig` carries the `LLMConfig` (`config.llm`);
+`cost_reporting_llm` yields an LLM that reports its costs as `LLMCostEvent`s:
 
 ```python
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import LLMStopEvent
+from swiss_ai_hub.core.events.agent import LLMEvent
 
 @step()
 async def llm_step(
@@ -924,29 +992,19 @@ async def llm_step(
     event: MyEvent,
     config: MyAgentConfig,
     displayer: EventDisplayer,
+    user: UserIdentity | None = None,
 ) -> LLMEvent:
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content=config.system_prompt),
         ChatMessage(role=MessageRole.USER, content=event.message),
     ]
-
-    # Stream LLM response with automatic ChunkEvent emission
-    llm_response = await displayer.display_llm_stream(
-        messages=messages,
-        model=config.model_name,
-    )
-
-    # Report LLM costs
-    await displayer.display_llm_costs(
-        model=config.model_name,
-        response=llm_response,
-    )
-
-    return LLMEvent.from_response(llm_response)
+    async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
+        return await displayer.display_llm_stream(config.llm, llm, messages, as_stop_step=False)
 ```
 
 **Key**: `display_llm_stream()` handles token-by-token streaming, `<think>` tag parsing, and `ChunkEvent` emission
-automatically. `display_llm_costs()` emits `LLMCostEvent` for billing.
+automatically. With `as_stop_step=True` it returns an `LLMStopEvent` that ends the run; a chat blueprint passes `False`
+and hands the answer to `Conversation.complete(...)`. Pass `tools=` only inside the tool loop.
 
 ### Display Methods
 
@@ -963,253 +1021,123 @@ ______________________________________________________________________
 
 ## Step 9: Memory Integration
 
-For agents that need to remember across conversations:
+**Chat blueprints**: use the `Memory` capability (see "Step 4b"): `Memory.recall(ctx.query)` ahead of the prompt,
+`Memory.remember(...)` returned before `Conversation.complete(...)` so the storage request is published before the run
+tears down. The config needs `MemoryFields`; the profile decides which scopes are read and written.
+
+**Non-chat agents** that talk to memory directly inject `AgentMemory` (built from the profile's own extraction model)
+and call `search_user_memory` / `search_organization_memory` / `add_user_memory`:
 
 ```python
 from swiss_ai_hub.core.generative_ai import AgentMemory
 
 @step()
 async def retrieve_memory(self, event: UserMessageEvent, memory: AgentMemory) -> MemoryEvent:
-    # 1. Retrieve relevant memories
-    user_memories = await memory.search_user_memory(query=event.message)
-    org_memories = await memory.search_organization_memory(query=event.message)
-    return MemoryEvent(user_memories=user_memories, org_memories=org_memories)
-
-@step()
-async def respond(self, event: MemoryEvent, ...) -> LLMEvent:
-    # 2. Inject memories into chat context
-    # 3. Call LLM with memory-augmented context
-    ...
-
-@step()
-async def store_memory(
-    self,
-    user_event: UserMessageEvent,
-    llm_event: LLMEvent,
-    memory: AgentMemory,
-    topic: AgentInstanceTopic,
-) -> StoreMemoryEvent:
-    # 4. Store the exchange as new memory
-    await memory.add_user_memory(
-        messages=[user_event.message, llm_event.response],
-        user_id=topic.agent_id,
-    )
-    return StoreMemoryEvent()
-
-@step()
-async def stop(self, _: StoreMemoryEvent) -> StopEvent:
-    # 5. MUST stop AFTER memory is stored (R4: StopEvent is last)
-    return StopEvent()
+    user_memories = await memory.search_user_memory(query=event.user_query, user_id=event.user.id)
+    return MemoryEvent(user_memories=user_memories)
 ```
 
-**Memory lifecycle**: Retrieve → Inject → Respond → Store → Stop
-
-**Termination constraint**: `StopEvent` must come AFTER memory storage. The memory store step produces an intermediate
-event, and the stop step consumes it.
+**Termination constraint**: `StopEvent` must come AFTER memory storage — the store step produces an intermediate event
+and the stop step consumes it.
 
 **Playground**: `playground/minimal_workflow/user_memory_workflow/`,
 `playground/minimal_workflow/organization_memory_workflow/`
 
 Source: `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`
 
-### Complete Memory Pattern with Preconditions
-
-For production agents with configurable memory features:
-
-```python
-def check_memory_ready(
-    user_event: UserMessageEvent,
-    user_memory: RetrieveUserMemoryEvent | None,
-    org_memory: RetrieveOrganizationMemoryEvent | None,
-    config: AgentConfig,
-) -> bool:
-    if config.enable_user_memory and user_memory is None:
-        return False
-    if config.enable_org_memory and org_memory is None:
-        return False
-    return config.enable_user_memory or config.enable_org_memory
-
-def check_storage_complete(
-    llm: LLMEvent,
-    stored: StoreUserMemoryEvent | None,
-    config: AgentConfig,
-) -> bool:
-    if config.enable_memory_storage and stored is None:
-        return False
-    return True
-
-
-class MemoryAgent(Agent):
-    @step(precondition=lambda config: config.enable_user_memory)
-    async def retrieve_user_memory(
-        self, event: UserMessageEvent, memory: AgentMemory
-    ) -> RetrieveUserMemoryEvent:
-        result = await memory.search_user_memory(query=event.user_query, user_id=event.user.id)
-        return RetrieveUserMemoryEvent.from_memory_search_result(result)
-
-    @step(precondition=lambda config: config.enable_org_memory)
-    async def retrieve_org_memory(
-        self, event: UserMessageEvent, memory: AgentMemory, config: AgentConfig
-    ) -> RetrieveOrganizationMemoryEvent:
-        result = await memory.search_organization_memory(
-            query=event.user_query, tenant_id=config.tenant_id, tenant_namespace=config.tenant_namespace,
-        )
-        return RetrieveOrganizationMemoryEvent.from_memory_search_result(result)
-
-    @step(precondition=check_memory_ready)
-    async def extend_history(
-        self,
-        user_event: UserMessageEvent,
-        user_memory: RetrieveUserMemoryEvent | None,
-        org_memory: RetrieveOrganizationMemoryEvent | None,
-        config: AgentConfig,
-        t: LocaleHandler,
-    ) -> ExtendedHistoryEvent:
-        history = user_event.messages
-        if config.enable_user_memory and user_memory:
-            history = extend_chat_history_with_user_memory(history, user_memory, t)
-        if config.enable_org_memory and org_memory:
-            history = extend_chat_history_with_organization_memory(history, org_memory, t)
-        return ExtendedHistoryEvent(history=history)
-
-    @step()
-    async def respond(
-        self, event: ExtendedHistoryEvent, displayer: EventDisplayer, config: AgentConfig
-    ) -> LLMEvent:
-        async with config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(
-                config.llm, llm, event.history, as_stop_step=False
-            )
-
-    @step(precondition=lambda config: config.enable_memory_storage)
-    async def store_memory(
-        self, user_event: UserMessageEvent, llm: LLMEvent, memory: AgentMemory, topic: AgentInstanceTopic,
-    ) -> StoreUserMemoryEvent:
-        result = await memory.add_user_memory(
-            memory=llm.response, user_id=user_event.user.id,
-            thread_id=topic.thread_id, display_id=topic.display_id, run_id=topic.run_id,
-        )
-        return StoreUserMemoryEvent.from_memory_added_object(result)
-
-    @step(precondition=check_storage_complete)
-    async def finalize(
-        self, llm: LLMEvent, stored: StoreUserMemoryEvent | None, config: AgentConfig
-    ) -> StopEvent:
-        return StopEvent()
-```
-
 ______________________________________________________________________
 
 ## Step 10: Create Tests
 
+Runner-backed tests need the Docker dev stack (NATS, API for config RPC). Stop any locally running agent of the same
+class first — it shares the test runner's NATS queue group and eats its events.
+
 ### BDD Feature File
 
 ```gherkin
-# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/tests/features/{agent_name}.feature
+# packages/agent/swiss_ai_hub/agent/agents/{agent_name}/tests/features/{agent_name}.feature
 Feature: {Agent Display Name}
 
   Scenario: Happy path
-    Given an agent "{AgentName}" is running
-    When the user sends "test message"
-    Then the agent produces a "StopEvent"
-    And the agent does not produce an "ExceptionEvent"
+    Given a {AgentName} runner
+    When the start event is sent with payload "test message"
+    Then a StartEvent is present with payload "test message"
+    And a StopEvent is present
 ```
 
 ### Test Implementation
 
+Model on `packages/agent/playground/minimal_workflow/simple_workflow/tests/test_simple_agent.py`:
+
 ```python
-# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/tests/test_{agent_name}.py
-import pytest
-from pytest_bdd import given, scenario, then, when
+# packages/agent/swiss_ai_hub/agent/agents/{agent_name}/tests/test_{agent_name}.py
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pytest_bdd import given, parsers, scenarios, then, when
+from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
-from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
-from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
-
-from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
-from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
+from swiss_ai_hub.agent.agents.{agent_name} import {AgentName}, {AgentName}Config
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
-
-@scenario("features/{agent_name}.feature", "Happy path")
-def test_happy_path():
-    pass
+scenarios("./features/{agent_name}.feature")
 
 
-@given('an agent "{AgentName}" is running')
+@given("a {AgentName} runner", target_fixture="agent_runner")
+def _():
+    return AgentTestRunner(
+        agent_type={AgentName},
+        agent_config={AgentName}Config(agent_id="{agent_name}", name=LocaleString(en="{Agent Display Name}"),
+                                       description=LocaleString(en="Test")),
+    )
+
+
+@when(parsers.parse('the start event is sent with payload "{payload}"'))
 @async_test
-async def runner(request):
-    config = {AgentName}Config.as_form()
-    async with AgentTestRunner(agent_type={AgentName}, agent_config=config).test_run() as runner:
-        request.node.runner = runner
-        yield runner
+async def _(agent_runner: AgentTestRunner, payload: str):
+    async with agent_runner.test_run() as topic:
+        await agent_runner.send_event_from_topic(
+            start_event=UserMessageEvent(
+                messages=[ChatMessage(content=payload, role=MessageRole.USER)], user=fake_user()
+            ),
+            topic=topic,
+        )
 
 
-@when('the user sends "test message"')
-@async_test
-async def send_message(runner):
-    await runner.send_event_from_topic(UserMessageEvent(message="test message"))
-
-
-@then('the agent produces a "StopEvent"')
-@async_test
-async def check_stop(runner):
-    stop = await runner.wait_for_event(StopEvent, timeout=30)
-    assert stop is not None
-
-
-@then('the agent does not produce an "ExceptionEvent"')
-@async_test
-async def check_no_exception(runner):
-    assert not runner.has_exception_event
+@then("a StopEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_stop_event, "Agent did not receive stop event"
 ```
+
+A blueprint that uses memory or other agents needs `await agent_runner.ensure_dependent_agent_stream(...)` inside the
+`test_run()` block (see `rag_agent/tests/test_rag_agent.py`).
 
 ### Key Test Assertions
 
-| Method                                | Purpose                              |
-| ------------------------------------- | ------------------------------------ |
-| `runner.has_start_event`              | Check if StartEvent was received     |
-| `runner.has_stop_event`               | Check if StopEvent was received      |
-| `runner.has_exception_event`          | Check if ExceptionEvent was received |
-| `runner.get_events_of_class(cls)`     | Get all events of a specific type    |
-| `runner.wait_for_event(cls, timeout)` | Wait for a specific event (async)    |
-| `runner.send_event_from_topic(e)`     | Send an event to the agent           |
+| Method                                                 | Purpose                              |
+| ------------------------------------------------------ | ------------------------------------ |
+| `runner.has_start_event`                               | Check if StartEvent was received     |
+| `runner.has_stop_event`                                | Check if StopEvent was received      |
+| `runner.has_exception_event`                           | Check if ExceptionEvent was received |
+| `runner.get_events_of_class(cls)`                      | Get all events of a specific type    |
+| `runner.get_event_of_class(cls)`                       | First event of that type (raises)    |
+| `runner.wait_for_event(cls, timeout)`                  | Wait for a specific event (async)    |
+| `runner.send_event_from_topic(start_event=e, topic=t)` | Send an event to the agent           |
 
 For AITL tests, use `runner.ensure_dependent_agent_stream(agent_class)`.
 
 ### Unit Testing (Direct Step Invocation)
 
-Individual steps can be tested by calling them directly, bypassing the dispatcher:
+Individual steps can be tested by calling them directly, bypassing the dispatcher (see
+`llm_wrapping_agent/tests/test_llm_wrapping_input_too_large_guard.py`):
 
 ```python
-async def test_retrieve_step():
-    agent = MyAgent()
-    event = UserMessageEvent(messages=[...], user=..., locale="en")
-    memory = Mock(spec=AgentMemory)
-    memory.search_user_memory.return_value = MemorySearchResult(...)
-
-    result = await agent.retrieve_step(event, memory)
-
-    assert isinstance(result, RetrieveUserMemoryEvent)
-    memory.search_user_memory.assert_called_once()
+result = await MyAgent().retrieve_step(event=event, memory=memory)
 ```
 
-### Integration Testing (Full Workflow)
-
-```python
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
-
-async def test_full_workflow():
-    runner = AgentTestRunner(MyAgent, MyAgentConfig())
-
-    async with runner.test_run() as topic:
-        await runner.send_event(UserMessageEvent(...))
-        stop_event = await runner.wait_for_event(StopEvent, timeout=30)
-
-        assert stop_event is not None
-        events = runner.get_events_of_type(RetrieveEvent)
-        assert len(events) == 1
-```
+Helper classes the steps import are tested on their own. Capability composition (a blueprint that stalls or crashes) is
+pinned by `capabilities/tests/test_capability_composition.py`.
 
 Source: `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`
 
@@ -1223,7 +1151,7 @@ form schema, event specs, and workflow graph. No manual registration needed.
 **Verify the agent is discoverable:**
 
 ```bash
-cd packages/agent && uv run python -c "from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}; print({AgentName}.get_steps())"
+cd packages/agent && uv run python -c "from swiss_ai_hub.agent.agents.{agent_name} import {AgentName}; print({AgentName}.get_steps())"
 ```
 
 ______________________________________________________________________
@@ -1241,13 +1169,14 @@ ______________________________________________________________________
 
 - [ ] Agent class extends `Agent` with `name`, `description`, `icon` as `ClassVar[AgentLocaleString]`
 - [ ] All `@step` methods are `async`, use type annotations, return events
-- [ ] No instance state on `self` — all state in `RunContext` / `ThreadContext`
+- [ ] No instance state on `self` and no helper methods on the class — state in `RunContext` / `ThreadContext`, helpers
+  in imported classes
 - [ ] Events inherit from the correct base class (see table above)
 - [ ] One class per file, file name matches class name
 - [ ] Config uses form duality pattern with `as_form()` classmethod
 - [ ] Form constraints use `Ge()`, `Le()` etc. — not Pydantic's `ge=`, `le=`
 - [ ] i18n translations in all 4 locales (de, en, fr, it)
-- [ ] Entry point in `app/{agent_name}/main.py`
+- [ ] Entry point in `app/{agent_name}/main.py`; chat agent: config carries the capability mixins
 
 ### After Coding
 
@@ -1255,9 +1184,8 @@ ______________________________________________________________________
 - [ ] Every execution path reaches `StopEvent`
 - [ ] `StopEvent` is returned alone (not in a list with other events)
 - [ ] Optional params have synchronization (precondition or max_executions_per_run)
-- [ ] BDD tests pass: `cd packages/agent && uv run pytest tests/ -k "{agent_name}" -v`
-- [ ] Agent is importable:
-  `uv run python -c "from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}"`
+- [ ] BDD tests pass: `cd packages/agent && uv run pytest swiss_ai_hub/agent/agents/{agent_name} -v`
+- [ ] Agent is importable: `uv run python -c "from swiss_ai_hub.agent.agents.{agent_name} import {AgentName}"`
 
 ______________________________________________________________________
 
@@ -1289,6 +1217,7 @@ ______________________________________________________________________
 | Directory                               | Pattern                | Key Concept                             |
 | --------------------------------------- | ---------------------- | --------------------------------------- |
 | `simple_workflow/`                      | Linear pipeline        | Basic step chaining                     |
+| `tool_loop_workflow/`                   | Tool loop              | `ToolLoop.over`, tool specs, approvals  |
 | `conditional_workflow/`                 | Branching              | Union return types                      |
 | `fan_out_workflow/`                     | Fan-out / fan-in       | `list[E]` return + `FixedList(E, N)`    |
 | `precondition_workflow/`                | Precondition sync      | Dynamic event count guard               |
@@ -1310,9 +1239,8 @@ ______________________________________________________________________
 ## Commands
 
 ```bash
-make pr-ready    # Format + lint + type check
-make test        # Run tests (excluding Azure)
-make test-all    # Run all tests
+make pr-ready    # Format + lint (also run by the stop hook)
+make test        # Run pytest in the scope (from packages/agent or the root)
 ```
 
 ______________________________________________________________________
@@ -1323,4 +1251,4 @@ ______________________________________________________________________
 - **Event infrastructure**: `/nats-events` — event hierarchy, subject format, dispatcher architecture
 - **Event display components**: `/scaffold-event-display` — frontend visualization for new event types
 - **Bot integration**: `/bot-framework` — CompletionHandler, channel setup for BITL patterns
-- **Process orchestration**: `/scaffold-process` — multi-entity workflows (agents + humans + programs)
+- **Process orchestration**: see `packages/process/CLAUDE.md` — multi-entity workflows (agents + humans + programs)

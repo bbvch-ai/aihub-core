@@ -81,7 +81,7 @@ EOF
 
 **Metadata inheritance rules:**
 
-- Copy `--label` (version label: major/minor/patch) from parent
+- Copy `--label` (the `area:*` labels; never a major/minor/patch version label, those belong on PRs) from parent
 - Copy `--milestone` from parent
 - Copy `--assignee` from parent
 - Body starts with `Parent: #$ISSUE_NUMBER`
@@ -257,8 +257,8 @@ gh issue close $ISSUE_NUMBER -R bbvch-ai/aihub-core -r "not planned" -c "Spliced
    when all children are done.
 3. **Using `addSubIssue` for dependencies.** Sub-issue means "part of this work." Use `addBlockedBy` for "must be done
    before."
-4. **Forgetting to inherit metadata.** Every sub-issue must have the same label (major/minor/patch), milestone, and
-   assignee as the parent.
+4. **Forgetting to inherit metadata.** Every sub-issue must have the same `area:*` labels, milestone, and assignee as
+   the parent, plus the parent's native issue type (children of an Epic are Features or Tasks).
 5. **Creating issues before getting user confirmation.** Always present the proposed breakdown and wait for approval.
 6. **Adding redundant blocked-by relationships.** If A is blocked by B, and B is blocked by C, do NOT also add A blocked
    by C. Check the transitive chain first.

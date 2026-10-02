@@ -64,7 +64,7 @@ ______________________________________________________________________
 
 ## CompletionHandler Pattern (Strategy)
 
-**File**: `packages/bot/swiss_ai_hub/bot/bots/chat/CompletionHandler.py`
+**File**: `packages/bot/swiss_ai_hub/bot/bots/chat/completion_handler.py`
 
 The CompletionHandler is the **core abstraction** for generating responses. All methods are `@staticmethod`. Subclasses
 override `get_completion` and `get_stream_completion` with typed parameters resolved via `handler_kwargs` in
@@ -190,7 +190,7 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 
 ### System Message Templates
 
-**File**: `packages/bot/swiss_ai_hub/bot/persistence/entities/PathEntity.py`
+**File**: `packages/bot/swiss_ai_hub/bot/persistence/entities/path_entity.py`
 
 ```python
 # Stored in PathEntity.system_message with placeholders:
@@ -251,7 +251,7 @@ ______________________________________________________________________
 ## Conversation State Management
 
 Both `ConversationEntity` and `ConversationTracker` are defined in the same file:
-`packages/bot/swiss_ai_hub/bot/persistence/entities/ConversationEntity.py`
+`packages/bot/swiss_ai_hub/bot/persistence/entities/conversation_entity.py`
 
 ### ConversationEntity (MongoDB)
 
@@ -311,7 +311,7 @@ ______________________________________________________________________
 
 ## Content Extraction
 
-**File**: `packages/bot/swiss_ai_hub/bot/bots/chat/ContentExtractor.py`
+**File**: `packages/bot/swiss_ai_hub/bot/bots/chat/content_extractor.py`
 
 Extracts content from Azure Bot Framework Activity objects:
 
@@ -409,7 +409,7 @@ ______________________________________________________________________
 
 ## CloudAdapter Caching
 
-**File**: `packages/bot/swiss_ai_hub/bot/routes/RoutesService.py`
+**File**: `packages/bot/swiss_ai_hub/bot/routes/routes_service.py`
 
 ```python
 class RoutesService(ChatService):
@@ -447,7 +447,7 @@ ______________________________________________________________________
 
 ## PathEntity Configuration
 
-**File**: `packages/bot/swiss_ai_hub/bot/persistence/entities/PathEntity.py`
+**File**: `packages/bot/swiss_ai_hub/bot/persistence/entities/path_entity.py`
 
 ```python
 class PathEntity(Document):
@@ -514,29 +514,29 @@ ______________________________________________________________________
 
 ## Key Files Reference
 
-| File                                                                             | Purpose                                                       |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/BaseChatBot.py`                         | Base bot: lifecycle, routing, error handling                  |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/CompletionHandler.py`                   | Strategy base: channel handling, streaming, conversation CRUD |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/ContentExtractor.py`                    | Multi-channel file/text extraction                            |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/AgentChatBot.py`                  | Agent-based chat (non-streaming)                              |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/AgentCompletionHandler.py`        | Agent completion via NATS                                     |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/StreamAgentChatBot.py`            | Streaming agent chat                                          |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/OpenaiChatBot.py`                | Direct LLM chat (non-streaming)                               |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/OpenaiCompletionHandler.py`      | Direct LLM completion                                         |
-| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/StreamOpenaiChatBot.py`          | Streaming direct LLM                                          |
-| `packages/bot/swiss_ai_hub/bot/bots/bot_in_the_loop/BotInTheLoopBot.py`          | BITL inbound: human → agent                                   |
-| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/BotInTheLoopHandler.py`    | BITL outbound: agent → channel                                |
-| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/BotInTheLoopController.py` | BITL HTTP endpoint                                            |
-| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/SlackUtils.py`             | Slack API helpers                                             |
-| `packages/bot/swiss_ai_hub/bot/persistence/entities/ConversationEntity.py`       | ConversationEntity + ConversationTracker                      |
-| `packages/bot/swiss_ai_hub/bot/persistence/entities/PathEntity.py`               | Bot credentials + config                                      |
-| `packages/bot/swiss_ai_hub/bot/routes/RoutesService.py`                          | CloudAdapter caching                                          |
-| `packages/bot/swiss_ai_hub/bot/routes/agent/AgentChatController.py`              | Agent chat endpoints                                          |
-| `packages/bot/swiss_ai_hub/bot/routes/openai/OpenaiChatController.py`            | OpenAI chat endpoints                                         |
-| `packages/bot/swiss_ai_hub/bot/runners/lifetime/lifetime_manager.py`             | NATS + MongoDB startup                                        |
-| `packages/bot/swiss_ai_hub/bot/runners/BotRunner.py`                             | Production runner                                             |
-| `packages/bot/swiss_ai_hub/bot/runners/BotTestRunner.py`                         | Test runner                                                   |
-| `packages/bot/swiss_ai_hub/bot/runners/SimulatedAgentBotTestRunner.py`           | Mocked agent runner                                           |
-| `packages/bot/swiss_ai_hub/bot/setup_azure_bot.py`                               | Azure Bot provisioning                                        |
-| `packages/bot/swiss_ai_hub/bot/add_path_entity.py`                               | PathEntity CLI                                                |
+| File                                                                                 | Purpose                                                       |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/base_chat_bot.py`                           | Base bot: lifecycle, routing, error handling                  |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/completion_handler.py`                      | Strategy base: channel handling, streaming, conversation CRUD |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/content_extractor.py`                       | Multi-channel file/text extraction                            |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_chat_bot.py`                    | Agent-based chat (non-streaming)                              |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_completion_handler.py`          | Agent completion via NATS                                     |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/agent/stream_agent_chat_bot.py`             | Streaming agent chat                                          |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_chat_bot.py`                  | Direct LLM chat (non-streaming)                               |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_completion_handler.py`        | Direct LLM completion                                         |
+| `packages/bot/swiss_ai_hub/bot/bots/chat/openai/stream_openai_chat_bot.py`           | Streaming direct LLM                                          |
+| `packages/bot/swiss_ai_hub/bot/bots/bot_in_the_loop/bot_in_the_loop_bot.py`          | BITL inbound: human → agent                                   |
+| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/bot_in_the_loop_handler.py`    | BITL outbound: agent → channel                                |
+| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/bot_in_the_loop_controller.py` | BITL HTTP endpoint                                            |
+| `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/slack_utils.py`                | Slack API helpers                                             |
+| `packages/bot/swiss_ai_hub/bot/persistence/entities/conversation_entity.py`          | ConversationEntity + ConversationTracker                      |
+| `packages/bot/swiss_ai_hub/bot/persistence/entities/path_entity.py`                  | Bot credentials + config                                      |
+| `packages/bot/swiss_ai_hub/bot/routes/routes_service.py`                             | CloudAdapter caching                                          |
+| `packages/bot/swiss_ai_hub/bot/routes/agent/agent_chat_controller.py`                | Agent chat endpoints                                          |
+| `packages/bot/swiss_ai_hub/bot/routes/openai/openai_chat_controller.py`              | OpenAI chat endpoints                                         |
+| `packages/bot/swiss_ai_hub/bot/runners/lifetime/lifetime_manager.py`                 | NATS + MongoDB startup                                        |
+| `packages/bot/swiss_ai_hub/bot/runners/bot_runner.py`                                | Production runner                                             |
+| `packages/bot/swiss_ai_hub/bot/runners/bot_test_runner.py`                           | Test runner                                                   |
+| `packages/bot/swiss_ai_hub/bot/runners/simulated_agent_bot_test_runner.py`           | Mocked agent runner                                           |
+| `packages/bot/swiss_ai_hub/bot/setup_azure_bot.py`                                   | Azure Bot provisioning                                        |
+| `packages/bot/swiss_ai_hub/bot/add_path_entity.py`                                   | PathEntity CLI                                                |

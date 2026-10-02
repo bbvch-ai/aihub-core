@@ -12,17 +12,17 @@ Generate a new bot handler following the strategy pattern. The bot purpose shoul
 
 1. Read the bot scope guide: `packages/bot/CLAUDE.md`
 2. Study the agent bot variant (the primary reference implementation):
-   - Bot: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/AgentChatBot.py`
-   - Stream: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/StreamAgentChatBot.py`
-   - Handler: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/AgentCompletionHandler.py`
-   - Controller: `packages/bot/swiss_ai_hub/bot/routes/agent/AgentChatController.py`
+   - Bot: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_chat_bot.py`
+   - Stream: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/stream_agent_chat_bot.py`
+   - Handler: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_completion_handler.py`
+   - Controller: `packages/bot/swiss_ai_hub/bot/routes/agent/agent_chat_controller.py`
 3. Also study the OpenAI variant for a simpler example (no NATS):
-   - Bot: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/OpenaiChatBot.py`
-   - Handler: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/OpenaiCompletionHandler.py`
-   - Controller: `packages/bot/swiss_ai_hub/bot/routes/openai/OpenaiChatController.py`
+   - Bot: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_chat_bot.py`
+   - Handler: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_completion_handler.py`
+   - Controller: `packages/bot/swiss_ai_hub/bot/routes/openai/openai_chat_controller.py`
 4. Read base classes:
-   - `packages/bot/swiss_ai_hub/bot/bots/chat/BaseChatBot.py`
-   - `packages/bot/swiss_ai_hub/bot/bots/chat/CompletionHandler.py`
+   - `packages/bot/swiss_ai_hub/bot/bots/chat/base_chat_bot.py`
+   - `packages/bot/swiss_ai_hub/bot/bots/chat/completion_handler.py`
 5. Extract the bot name from `$ARGUMENTS` and derive `CamelCase` for class names
 
 ## Architecture: Strategy Pattern
@@ -69,7 +69,7 @@ This is where the actual response generation logic lives. All methods are `@stat
 ```python
 from collections.abc import AsyncGenerator
 
-from swiss_ai_hub.bot.bots.chat.CompletionHandler import CompletionHandler
+from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 
 
 class <Name>CompletionHandler(CompletionHandler):
@@ -121,7 +121,7 @@ Bot classes are constructor-only — they wire the CompletionHandler and forward
 full message lifecycle.
 
 ```python
-from swiss_ai_hub.bot.bots.chat.BaseChatBot import BaseChatBot
+from swiss_ai_hub.bot.bots.chat.base_chat_bot import BaseChatBot
 from swiss_ai_hub.bot.bots.chat.<bot_name>.<Name>CompletionHandler import <Name>CompletionHandler
 
 
@@ -182,14 +182,14 @@ Controllers use the fluent builder pattern — each method registers a route and
 ```python
 from typing import Self
 
-from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.routes.Controller import Controller
+from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.routes.controller import Controller
 from fastapi import Request, Response
 
 from swiss_ai_hub.bot.bots.chat.<bot_name>.<Name>ChatBot import <Name>ChatBot
 from swiss_ai_hub.bot.bots.chat.<bot_name>.Stream<Name>ChatBot import Stream<Name>ChatBot
-from swiss_ai_hub.bot.routes.RoutesService import RoutesService
+from swiss_ai_hub.bot.routes.routes_service import RoutesService
 
 
 class <Name>ChatController(Controller):
@@ -261,8 +261,8 @@ Follow the patterns in `playground/testing/tests/test_ChatBot.py`:
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from swiss_ai_hub.bot.persistence.entities.PathEntity import PathEntity
-from swiss_ai_hub.bot.runners.BotTestRunner import BotTestRunner
+from swiss_ai_hub.bot.persistence.entities.path_entity import PathEntity
+from swiss_ai_hub.bot.runners.bot_test_runner import BotTestRunner
 # Or SimulatedAgentBotTestRunner for NATS-based bots
 
 
@@ -310,12 +310,12 @@ Key test fixtures from `conftest.py`:
 
 **Expected output files**:
 
-- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/FaqChatBot.py` — `FaqChatBot(BaseChatBot)`, constructor-only
-- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/StreamFaqChatBot.py` — `StreamFaqChatBot(FaqChatBot)`, one-method
+- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/faq_chat_bot.py` — `FaqChatBot(BaseChatBot)`, constructor-only
+- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/stream_faq_chat_bot.py` — `StreamFaqChatBot(FaqChatBot)`, one-method
   override
-- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/FaqCompletionHandler.py` — `FaqCompletionHandler(CompletionHandler)`,
+- `packages/bot/swiss_ai_hub/bot/bots/chat/faq/faq_completion_handler.py` — `FaqCompletionHandler(CompletionHandler)`,
   implements `get_completion` / `get_stream_completion`
-- `packages/bot/swiss_ai_hub/bot/routes/faq/FaqChatController.py` — `FaqChatController(Controller)`, fluent builder
+- `packages/bot/swiss_ai_hub/bot/routes/faq/faq_chat_controller.py` — `FaqChatController(Controller)`, fluent builder
 - Registration in `packages/bot/app/main.py`: `FaqChatController(auth=auth).completions_json().completions_stream()`
 - `packages/bot/playground/testing/tests/test_FaqBot.py`
 

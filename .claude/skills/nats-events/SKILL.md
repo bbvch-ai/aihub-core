@@ -51,6 +51,7 @@ logic.
 BaseEvent
 ├── ControlEvent (workflow-driving)
 │   └── ControlAndDisplayEvent (hybrid: workflow + UI)
+│       ├── (capability calls and results, tool loop: see "Capability and Tool-Loop Events")
 │       ├── StartEvent
 │       │   └── UserMessageEvent (user chat message)
 │       ├── StopEvent (run completed)
@@ -86,6 +87,8 @@ BaseEvent
 ├── DisplayEvent (observability-only)
 │   ├── ThoughtEvent (agent reasoning)
 │   ├── ChunkEvent (streaming text tokens)
+│   ├── AttachedFileEvent (a file the model received, with its citation id)
+│   ├── ToolLoopStatusEvent (status while the loop decides)
 │   ├── CostEvent
 │   │   └── LLMCostEvent (token costs)
 │   └── (All ControlAndDisplayEvent types also publish as display)
@@ -126,7 +129,7 @@ Phoenix, and any OpenTelemetry-compatible system.
 | `AgentEvent`           | `AGENT`                 | Agent invocation trace                      |
 
 ```python
-from swiss_ai_hub.core.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.agent import RetrieverEvent
 
 event = RetrieverEvent.from_nodes(retrieved_nodes)
 otel_attributes = event.to_semantic_convention()
@@ -252,17 +255,44 @@ front-end that runs its own selection flow, or another agent delegating via `Age
 | `LimitChatHistoryEvent`            | `ControlEvent`           | Truncated history      |
 | `StandaloneQuestionCondenserEvent` | `ControlEvent`           | Question reformulation |
 
+#### Capability and Tool-Loop Events
+
+A capability (`packages/agent/swiss_ai_hub/agent/capabilities/`) is called with a request event and answers with a
+result event; see `/scaffold-agent` ("Step 4b") for the calling side. Requests are imperative, results are past
+participles. **Protocol events are control and display**: every one of them is a `ControlAndDisplayEvent` so it appears
+in the event history, and each has its own frontend component (`/scaffold-event-display`). Only high-frequency or purely
+cosmetic events stay `DisplayEvent` (`ChunkEvent`, `AttachedFileEvent`, `ToolLoopStatusEvent`).
+
+| Capability      | Request event                    | Result event                                              |
+| --------------- | -------------------------------- | --------------------------------------------------------- |
+| `Conversation`  | `ContextualizeConversationEvent` | `ConversationContextualizedEvent` (or a stop)             |
+|                 | `ComposeContextEvent`            | `ContextComposedEvent`                                    |
+|                 | `CompleteConversationEvent`      | ends the run (`LLMStopEvent` or the given stop)           |
+| `Memory`        | `RecallMemoryEvent`              | `MemoryRecalledEvent`                                     |
+|                 | `MemoryStorageRequestedEvent`    | none (detached)                                           |
+| `AttachedFiles` | `ReadAttachedFilesEvent`         | `AttachedFilesReadEvent` (+ `AttachedFileEvent` per file) |
+| `Knowledge`     | `SearchKnowledgeEvent`           | `KnowledgeSearchedEvent`                                  |
+| `ToolLoop`      | `RunToolLoopEvent`               | `ToolLoopFinishedEvent`                                   |
+
+Tool-loop internals (`events/agent/tool_loop/`): `ToolLoopIterationEvent` per round, `ToolCallsDecidedEvent` (the
+model's choice), `ToolApprovalRequestEvent` / `ToolApprovalResponseEvent` (a `HumanInTheLoopConfirmationRequestEvent`
+and its response, shown as a yes/no in chat), `ToolCallApprovedEvent`, `ToolResultEvent`, `ToolEvent` per call and
+`ToolLoopStatusEvent`. The loop's state travels on the events (`ToolLoopState`), never in the run context. Code
+execution adds `SandboxFileDisplayedEvent` (`events/agent/sandbox/`) when an agent shows a sandbox file to the user.
+
 #### Memory Events
 
-| Event                             | Base                     | Purpose                      |
-| --------------------------------- | ------------------------ | ---------------------------- |
-| `BaseRetrieveMemoryEvent`         | `ControlAndDisplayEvent` | Memory retrieval base        |
-| `RetrieveUserMemoryEvent`         | above                    | User-scoped memory retrieval |
-| `RetrieveOrganizationMemoryEvent` | above                    | Org-scoped memory retrieval  |
-| `BaseStoreMemoryEvent`            | `ControlAndDisplayEvent` | Memory storage base          |
-| `StoreUserMemoryEvent`            | above                    | User-scoped memory storage   |
-| `StoreOrganizationMemoryEvent`    | above                    | Org-scoped memory storage    |
-| `AddMemoryToChatHistoryEvent`     | `ControlEvent`           | Extended chat history        |
+| Event                             | Base                     | Purpose                                                            |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------ |
+| `BaseRetrieveMemoryEvent`         | `ControlAndDisplayEvent` | Memory retrieval base                                              |
+| `RetrieveUserMemoryEvent`         | above                    | User-scoped memory retrieval                                       |
+| `RetrieveOrganizationMemoryEvent` | above                    | Org-scoped memory retrieval                                        |
+| `BaseStoreMemoryEvent`            | `ControlAndDisplayEvent` | Memory storage base                                                |
+| `StoreUserMemoryEvent`            | above                    | User-scoped memory storage                                         |
+| `StoreOrganizationMemoryEvent`    | above                    | Org-scoped memory storage                                          |
+| `AddMemoryToChatHistoryEvent`     | `ControlAndDisplayEvent` | Extended chat history                                              |
+| `MemoryStorageRequestedEvent`     | `ControlAndDisplayEvent` | Detached delegation to the memory writer agent (`Memory.remember`) |
+| `StoreUserMemoryRequestedEvent`   | `StartEvent`             | Start event of the memory writer agent                             |
 
 #### Interaction Events
 
@@ -431,7 +461,7 @@ ______________________________________________________________________
 ### NCPublisher (NATS Core — Ephemeral)
 
 ```python
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.publishers import NCPublisher
 
 publisher = NCPublisher("MyPublisher", nc)
 await publisher.publish_event(event, subject)
@@ -446,7 +476,7 @@ await publisher.publish_event(event, subject)
 ### JSPublisher (JetStream — Persistent)
 
 ```python
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.publishers import JSPublisher
 
 publisher = JSPublisher("MyPublisher", js)
 await publisher.ensure_stream_exists(stream_name, stream_subject)
@@ -476,7 +506,7 @@ if event.is_display_event:
 ### Message Headers
 
 ```python
-from swiss_ai_hub.core.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
+from swiss_ai_hub.core.tracing import NATSMessageHeaders
 
 headers = (
     NATSMessageHeaders()
@@ -493,7 +523,7 @@ ______________________________________________________________________
 ### NCSubscriber (NATS Core — Ephemeral)
 
 ```python
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.subscribers import NCSubscriber
 
 subscriber = NCSubscriber(
     name="MySubscriber",
@@ -518,7 +548,7 @@ await subscriber.stop()
 ### JSSubscriber (JetStream — Durable with Queue Groups)
 
 ```python
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers import JSSubscriber
 
 subscriber = JSSubscriber(
     name="MySubscriber",
@@ -547,8 +577,8 @@ await subscriber.start()
 Use the factory class methods instead of constructing subscribers directly:
 
 ```python
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers import AgentJSSubscriber
 
 # All display events from all agents (NATS Core)
 sub = AgentNCSubscriber.for_all_agents_display_events(nc=nc, topic_manager=tm, handler=handler)
@@ -578,7 +608,7 @@ ______________________________________________________________________
 ### NCRequester (Client)
 
 ```python
-from swiss_ai_hub.core.nats.requester.NCRequester import NCRequester
+from swiss_ai_hub.core.requester import NCRequester
 
 requester = NCRequester(
     name="AgentConfig",
@@ -597,7 +627,7 @@ response = await requester.request(
 ### NCResponder (Server)
 
 ```python
-from swiss_ai_hub.core.nats.responder.NCResponder import NCResponder
+from swiss_ai_hub.core.responder import NCResponder
 
 responder = NCResponder(
     name="AgentConfig",
@@ -617,7 +647,7 @@ no response.
 ### High-Level RPC Client (Preferred)
 
 ```python
-from swiss_ai_hub.core.nats.rpc.AgentConfigClient import AgentConfigClient
+from swiss_ai_hub.core.rpc import AgentConfigClient
 
 client = AgentConfigClient(nc=nc, timeout_ms=5000)
 config = await client.fetch_config(agent_class="RAGAgent", agent_id="wiki")
@@ -671,7 +701,7 @@ StreamConfig(
 ### JSPoller (Pull Consumer)
 
 ```python
-from swiss_ai_hub.core.nats.polling.JSPoller import JSPoller
+from swiss_ai_hub.core.polling import JSPoller
 
 poller = JSPoller(js=js, stream_name="...", stream_subject="...", consumer_name="...")
 await poller.ensure_consumer_exists(
@@ -777,7 +807,7 @@ ______________________________________________________________________
 ### NatsSettings
 
 ```python
-# packages/core/swiss_ai_hub/core/infrastructure/nats/NatsSettings.py
+# packages/core/swiss_ai_hub/core/infrastructure/nats/nats_settings.py
 class NatsSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("NATS_")
     ENDPOINT: str                    # NATS_ENDPOINT (e.g., "nats://localhost:4222")
@@ -830,7 +860,7 @@ Shutdown: reverse order, NATS closed in `finally` block.
 
 ### NATS Server Config
 
-**Template**: `deployment/templates/configs/nats-config.conf.j2`
+**Template**: `infra/deployment/templates/configs/nats-config.conf.j2`
 
 | Setting                      | Dev   | Prod   |
 | ---------------------------- | ----- | ------ |
@@ -912,14 +942,17 @@ from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndD
 class MyFeatureEvent(ControlAndDisplayEvent):
     """Signals that my feature completed."""
 
-    _display_name: ClassVar[LocaleString] = from_i18n_path("events.my_feature.display_name")
-    _display_description: ClassVar[LocaleString] = from_i18n_path("events.my_feature.description")
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.my_feature_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.my_feature_event.description")
 
     result: str
     confidence: float
 ```
 
-**No registration needed** — `__pydantic_init_subclass__` auto-registers the class.
+**No registration needed** — `__pydantic_init_subclass__` auto-registers the class. Add the name and description under
+`my_feature_event:` in `packages/core/swiss_ai_hub/core/i18n/translations/lib/events.{de,en,fr,it}.yml`, export the
+class from `swiss_ai_hub/core/events/agent/__init__.py` (lazy `__all__` + `_LAZY_IMPORTS` entries), and add a frontend
+component (`/scaffold-event-display`).
 
 **Choosing the right base class:** See `/scaffold-agent` for a decision table on when to use `ControlEvent` vs
 `ControlAndDisplayEvent` vs `DisplayEvent` vs a semantic event.
@@ -954,8 +987,8 @@ ______________________________________________________________________
 ### Custom Publisher
 
 ```python
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.publishers import JSPublisher
+from swiss_ai_hub.core.publishers import NCPublisher
 
 # For durable events:
 js_pub = JSPublisher("MyServicePublisher", js)
@@ -1085,7 +1118,7 @@ ______________________________________________________________________
 | File                                                                        | Purpose                     |
 | --------------------------------------------------------------------------- | --------------------------- |
 | `docs/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
-| `deployment/templates/configs/nats-config.conf.j2`                          | NATS server config template |
+| `infra/deployment/templates/configs/nats-config.conf.j2`                    | NATS server config template |
 
 ______________________________________________________________________
 

@@ -61,6 +61,17 @@ ______________________________________________________________________
 4. Find the `AgentConfig` subclass and its `as_form()` method
 5. Find the entry point in `packages/agent/app/*/main.py`
 
+**Chat blueprints (capabilities).** `RAGAgent`, `LLMWrappingAgent`, `FewShotAgent`, `McpReactAgent`, `ExpertRAGAgent`
+(and `UniversalAgent`) do not define their own title, memory, meta-question or stop steps. A step returns a request
+event (`Conversation.contextualize(...)`, `Memory.recall(...)`, `Knowledge.search(...)`, `AttachedFiles.read(...)`,
+`<Agent>.tools.run(...)`) and the capability's steps (`packages/agent/swiss_ai_hub/agent/capabilities/`) are composed
+into `get_steps()` only when the blueprint's calls can reach them. Map the DAG from `Agent.get_steps()`, not from the
+class body alone. Tool-loop state travels on the `ToolLoop*` events, never in the run context. Startup failures with
+messages naming an obligation (step waiting for an event nothing produces, call outcome no step consumes, config missing
+a capability mixin such as `MemoryFields`) come from `Agent.validate_workflow`; see
+`capabilities/tests/test_capability_composition.py`. An agent class may define `@step` methods only
+(`agents/tests/test_agent_classes_hold_steps_only.py`).
+
 **Output**: Complete step/event chain with parameter types and decorator options.
 
 ______________________________________________________________________
@@ -784,16 +795,20 @@ After identifying and fixing the issue, verify with tests.
 ### Running Tests
 
 ```bash
-cd packages/agent && uv run pytest tests/ -k "<agent_name>" -v
+cd packages/agent && uv run pytest swiss_ai_hub/agent/agents/<agent_name> -v
 ```
 
 ### AgentTestRunner Assertions
 
 ```python
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
-async with AgentTestRunner(agent_type=MyAgent, agent_config=MyConfig.as_form()).test_run() as runner:
-    await runner.send_event_from_topic(UserMessageEvent(message="test"))
+runner = AgentTestRunner(agent_type=MyAgent, agent_config=MyConfig(agent_id="my_agent", name=..., description=...))
+async with runner.test_run() as topic:
+    await runner.send_event_from_topic(
+        start_event=UserMessageEvent(messages=[ChatMessage(content="test", role=MessageRole.USER)], user=fake_user()),
+        topic=topic,
+    )
 
     # Wait for specific events
     stop = await runner.wait_for_event(StopEvent, timeout=30)
@@ -813,13 +828,16 @@ async with AgentTestRunner(agent_type=MyAgent, agent_config=MyConfig.as_form()).
 ```gherkin
 Feature: My Agent
   Scenario: Happy path
-    Given an agent "MyAgent" is running
-    When the user sends "test message"
-    Then the agent produces a "StopEvent"
-    And the agent does not produce an "ExceptionEvent"
+    Given a MyAgent runner
+    When the start event is sent with payload "test message"
+    Then a StopEvent is present
 ```
 
-Source: `packages/agent/runners/AgentTestRunner.py`, `packages/core/testing/asyncio_utils/bdd.py`
+Runner-backed tests need the dev stack (NATS, API config RPC). A locally running agent of the same class shares the test
+runner's NATS queue group and eats its events: stop it first, otherwise delegation and BDD tests fail at random.
+
+Source: `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`,
+`packages/core/swiss_ai_hub/core/testing/asyncio_utils/bdd.py`
 
 ______________________________________________________________________
 

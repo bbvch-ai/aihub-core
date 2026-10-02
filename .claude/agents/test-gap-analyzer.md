@@ -34,15 +34,15 @@ the future, incorporate `coverage report --show-missing` into your analysis alon
 
 ### Test Locations
 
-| Scope               | Test Location                                                              | Pattern                                   |
-| ------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
-| `packages/core`     | `packages/core/tests/` + inline `*/tests/` dirs next to code               | pytest + BDD                              |
-| `packages/agent`    | `packages/agent/agents/{Name}/tests/` per agent                            | BDD with `AgentTestRunner`                |
-| `packages/api`      | `packages/api/playground/testing/tests/`                                   | pytest with `SimulatedAgentApiTestRunner` |
-| `packages/process`  | `packages/process/agentic_processes/{Name}/tests/` + `playground/*/tests/` | BDD with `ProcessTestRunner`              |
-| `packages/pipeline` | `packages/pipeline/tests/`                                                 | pytest (currently empty)                  |
-| `packages/bot`      | `packages/bot/tests/`                                                      | pytest                                    |
-| `packages/web`      | None                                                                       | No test framework configured              |
+| Scope               | Test Location                                               | Pattern                                   |
+| ------------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| `packages/core`     | inline `*/tests/` dirs next to code in `swiss_ai_hub/core/` | pytest + BDD                              |
+| `packages/agent`    | `swiss_ai_hub/agent/agents/{name}/tests/` per agent         | BDD with `AgentTestRunner`                |
+| `packages/api`      | `packages/api/playground/testing/tests/`                    | pytest with `SimulatedAgentApiTestRunner` |
+| `packages/process`  | `packages/process/playground/*/tests/`                      | BDD with `ProcessTestRunner`              |
+| `packages/pipeline` | inline `swiss_ai_hub/pipeline/**/tests/` dirs               | pytest                                    |
+| `packages/bot`      | `packages/bot/playground/testing/tests/`                    | pytest with `BotTestRunner`               |
+| `packages/web`      | None                                                        | No test framework configured              |
 
 ### What Counts as "Testable"
 
@@ -53,7 +53,7 @@ Not everything needs a test. Focus on:
 3. **API controller endpoints** — each public endpoint should have at least one API test
 4. **Service methods with business logic** — methods with `@staticmethod` + `@trace_fn` in `packages/api/routes/*/`
 5. **Persistence entity classmethods** — repository query methods on MongoEngine entities
-6. **Guards and processors** in `packages/core/generative_ai/` — these have direct BDD test patterns
+6. **Guards and processors** in `packages/core/swiss_ai_hub/core/generative_ai/` — these have direct BDD test patterns
 7. **Event serialization/deserialization** — for events with complex fields or custom validators
 8. **Pipeline assets and ops** — Dagster ops with transformation logic
 
@@ -79,13 +79,13 @@ For each scope, find all testable units:
 grep -rn "@step" packages/agent/swiss_ai_hub/agent/agents --include="*.py" | grep -v __pycache__
 
 # Process steps
-grep -rn "@process_step" packages/process/packages/process --include="*.py" | grep -v __pycache__
+grep -rn "@process_step" packages/process/swiss_ai_hub/process --include="*.py" | grep -v __pycache__
 
 # API endpoints (public methods on controllers)
-grep -rn "def " packages/api/swiss_ai_hub/api/routes --include="*Controller.py" | grep -v __pycache__ | grep -v "def __" | grep -v "def _"
+grep -rn "def " packages/api/swiss_ai_hub/api/routes --include="*_controller.py" | grep -v __pycache__ | grep -v "def __" | grep -v "def _"
 
 # Service methods
-grep -rn "@staticmethod" packages/api/swiss_ai_hub/api/routes --include="*Service.py" | grep -v __pycache__
+grep -rn "@staticmethod" packages/api/swiss_ai_hub/api/routes --include="*_service.py" | grep -v __pycache__
 
 # Shared methods
 grep -rn "@staticmethod" packages/api/swiss_ai_hub/api/util --include="*.py" | grep -v __pycache__
@@ -118,10 +118,11 @@ find . -name "*.feature" -not -path "*/node_modules/*" -not -path "*/__pycache__
 
 For each testable unit, check if a corresponding test exists:
 
-- Agent `RAGAgent.retrieval_step` → look for `test_rag_agent.py` or `rag_agent.feature` in `agents/RagAgent/tests/`
+- Agent `RAGAgent.retrieval_step` → look for `test_rag_agent.py` or a `.feature` file in `agents/rag_agent/tests/`
 - API `AgentController.get_agent` → look for `test_agent_api.py` in `playground/testing/tests/agent/`
 - Entity `RoleEntity.get_access_rules_for_roles` → look for test files referencing `RoleEntity`
-- Pipeline op `parse_document` → look for `test_parse_document.py` in `packages/pipeline/tests/`
+- Pipeline op `parse_document` → look for `test_parse_document.py` in the `tests/` dir next to the op
+  (`swiss_ai_hub/pipeline/ops/document/tests/`)
 
 ### Phase 4: Prioritize Gaps
 
@@ -168,7 +169,7 @@ Rank untested code by risk:
 
 ### Existing Test Patterns to Follow
 {For each gap, reference an existing test file that demonstrates the right pattern:
-- Agent tests: see `packages/agent/agents/RagAgent/tests/`
+- Agent tests: see `packages/agent/swiss_ai_hub/agent/agents/rag_agent/tests/`
 - API tests: see `packages/api/playground/testing/tests/agent/`
-- BDD pattern: see `packages/core/swiss_ai_hub/core/auth/access/tests/`}
+- BDD pattern: see `packages/core/swiss_ai_hub/core/auth/access/tests/`
 ```
