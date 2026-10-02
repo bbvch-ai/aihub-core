@@ -31,3 +31,4 @@ tool:
   files: "I file da leggere, per identificativo; ometti per leggerli tutti."
   query: "Cosa cerchi nei file, così che di un file lungo restino le sezioni pertinenti."
   nothing_readable: "Nessuno dei file scelti ha potuto essere letto."
+  unknown_files: "Nessuno degli id indicati è un file allegato. File allegati: %{files}"
