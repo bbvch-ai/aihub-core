@@ -41,7 +41,7 @@ class KnowledgeConfig(Form):
     @classmethod
     def as_form(cls) -> Self:
         return cls(
-            reranking_model=RerankingModelConfig.as_form(),
+            reranking_model=RerankingModelConfig.as_form(cls().reranking_model.model_name),
             retrieve_k=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.knowledge.config.retrieve_k.label"),
                 help=AgentLocaleString.from_i18n_path("agent.knowledge.config.retrieve_k.help"),

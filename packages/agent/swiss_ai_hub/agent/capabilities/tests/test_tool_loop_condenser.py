@@ -114,7 +114,7 @@ async def test_the_conversation_before_the_request_becomes_one_summary_when_resu
 
 @pytest.mark.asyncio
 async def test_old_results_are_dropped_only_when_condensing_cannot_make_room():
-    state, _ = await _condense(_conversation(), budget=80, summary=" ".join(["long"] * 300))
+    state, _ = await _condense(_conversation(), budget=120, summary=" ".join(["long"] * 300))
 
     assert "removed to fit the context" in state.messages[3].content
     assert state.messages[5].content == " ".join(["fact"] * 50)
@@ -132,3 +132,29 @@ async def test_condensing_and_deciding_never_both_take_an_iteration():
 
     assert (await outgrew_the_prompt(over), await fits_the_prompt(over)) == (True, False)
     assert (await outgrew_the_prompt(fitted), await fits_the_prompt(fitted)) == (False, True)
+
+
+@pytest.mark.asyncio
+async def test_a_latest_round_that_alone_outgrows_the_prompt_is_cut_to_fit():
+    messages = [
+        Message.from_string(role="system", content="You are helpful."),
+        Message.from_string(role="user", content="What changed in Q1?"),
+        _calling("c1"),
+        _result("c1", 400),
+    ]
+
+    state, displayer = await _condense(messages, budget=200)
+
+    assert "cut to fit the context" in state.messages[3].content
+    assert not ToolLoopCondenser.outgrown(state.messages, [], 220, _counter)
+    assert displayer.display_event.await_args.args[0].tokens_after <= 200
+
+
+@pytest.mark.asyncio
+async def test_nothing_is_announced_when_nothing_could_be_condensed():
+    messages = [Message.from_string(role="system", content=" ".join(["rules"] * 300))]
+
+    state, displayer = await _condense(messages, budget=100)
+
+    displayer.display_event.assert_not_awaited()
+    assert state.messages == messages

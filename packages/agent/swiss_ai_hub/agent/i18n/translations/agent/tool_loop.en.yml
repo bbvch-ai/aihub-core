@@ -22,6 +22,7 @@ steps:
     name: "Collect Tool Results"
     description: "Hands every result of the model's tool calls back to it"
 prompt:
+  cut_result: "\n[…cut to fit the context]"
   condense_result: "Condense the tool result below to what matters for the user's request, which precedes it. Keep facts, figures, names, dates and document ids such as [s3f9a1c] exactly as written. Leave out everything else. At most %{words} words, no preamble."
   condensed_result: "[Condensed earlier result] %{summary}"
   condense_turns: "Summarise the conversation below so it can continue without it: what the user asked, what was answered, and what was decided or is still open. Keep facts, figures, names and document ids such as [s3f9a1c] exactly. At most %{words} words, no preamble."

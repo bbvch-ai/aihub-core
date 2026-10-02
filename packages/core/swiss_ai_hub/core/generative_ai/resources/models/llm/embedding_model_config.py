@@ -100,13 +100,14 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
     ] = EmbeddingLLMParameter()
 
     @classmethod
-    def as_form(cls) -> Self:
-        """Factory method to create a form-mode EmbeddingModelConfig."""
+    def as_form(cls, model_name: str | None = None) -> Self:
+        """Factory method to create a form-mode EmbeddingModelConfig, its picker preset to `model_name` if given."""
         return cls(
             model_name=ModelSelect(
                 label=LocaleString.from_i18n_path("lib.embedding.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.embedding.config.model.help"),
                 mode="embedding",
+                value=model_name,
             ),
             default_parameter=EmbeddingLLMParameter.as_form(),
         )

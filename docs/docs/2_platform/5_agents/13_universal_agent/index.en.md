@@ -110,7 +110,7 @@ per answer, or once per conversation.
 | **Every Collection the User Can Read** | Off     | Offer every knowledge collection the asking user may read, instead of the listed ones. |
 | **Collections**                        | —       | Databases the model may search, each whole or narrowed to some of its collections.     |
 
-Under **Referenced Knowledge**, **Sections per Database** and the **Reranking Model** set how the search ranks what it
+Under **Knowledge Search**, **Sections per Database** and the **Reranking Model** set how the search ranks what it
 finds.
 
 ### Tools

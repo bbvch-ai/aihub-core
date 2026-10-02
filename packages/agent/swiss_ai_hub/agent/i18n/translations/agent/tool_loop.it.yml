@@ -22,6 +22,7 @@ steps:
     name: "Raccogliere i risultati"
     description: "Restituisce al modello tutti i risultati delle sue chiamate"
 prompt:
+  cut_result: "\n[…tagliato per rientrare nel contesto]"
   condense_result: "Condensa il risultato dello strumento qui sotto a ciò che conta per la richiesta dell'utente che lo precede. Mantieni esattamente fatti, cifre, nomi, date e identificativi di documenti come [s3f9a1c]. Ometti tutto il resto. Al massimo %{words} parole, senza preambolo."
   condensed_result: "[Risultato precedente condensato] %{summary}"
   condense_turns: "Riassumi la conversazione qui sotto in modo che possa continuare senza di essa: cosa ha chiesto l'utente, cosa è stato risposto e cosa è stato deciso o resta aperto. Mantieni esattamente fatti, cifre, nomi e identificativi di documenti come [s3f9a1c]. Al massimo %{words} parole, senza preambolo."

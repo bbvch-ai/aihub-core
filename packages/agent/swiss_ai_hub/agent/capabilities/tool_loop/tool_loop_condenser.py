@@ -17,7 +17,8 @@ class ToolLoopCondenser:
 
     Earlier tool results are condensed to what matters for the request, each keeping its place, so every tool call
     still has its answer. If that is not enough, the conversation before the request becomes one summary; only then
-    are the oldest results dropped. The request and the latest round of results are never touched.
+    are the oldest results dropped. The request is never touched, and the latest round of results is cut only when it
+    alone outgrows the prompt, since the model call would otherwise fail.
     """
 
     def __init__(
@@ -58,16 +59,20 @@ class ToolLoopCondenser:
             messages, turns = await self._condense_turns(messages, request_at)
         if self.outgrown(messages, state.tools, self._budget, counter):
             messages = self._drop_oldest_results(messages, state.tools)
-        await self._displayer.display_event(
-            ToolLoopCondensedEvent(
-                loop=state.loop,
-                description=self._t("agent.tool_loop.status.condensed"),
-                tokens_before=before,
-                tokens_after=self.size(messages, state.tools, counter),
-                condensed_results=results,
-                condensed_turns=turns,
+        if self.outgrown(messages, state.tools, self._budget, counter):
+            messages = self._cut_latest_results(messages, state.tools)
+        after = self.size(messages, state.tools, counter)
+        if after < before:
+            await self._displayer.display_event(
+                ToolLoopCondensedEvent(
+                    loop=state.loop,
+                    description=self._t("agent.tool_loop.status.condensed"),
+                    tokens_before=before,
+                    tokens_after=after,
+                    condensed_results=results,
+                    condensed_turns=turns,
+                )
             )
-        )
         return state.model_copy(update={"messages": messages, "needs_condensing": False})
 
     async def _condense_results(self, messages: list[Message], request_at: int) -> tuple[list[Message], int]:
@@ -105,6 +110,36 @@ class ToolLoopCondenser:
             text = self._t("agent.tool_loop.prompt.dropped_result")
             dropped[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
         return dropped
+
+    def _cut_latest_results(self, messages: list[Message], tools: list[ToolDefinition]) -> list[Message]:
+        """The latest results share what is left of the prompt, each cut to its part."""
+        counter = self._llm.token_counter
+        latest = [index for index, message in enumerate(messages) if message.role == "tool"]
+        latest = [index for index in latest if index not in self._earlier_results(messages)]
+        if not latest:
+            return messages
+        note = self._t("agent.tool_loop.prompt.cut_result")
+        emptied = [
+            message.model_copy(update={"contents": [TextContent(text=note)]}) if index in latest else message
+            for index, message in enumerate(messages)
+        ]
+        room = max(self._budget - self.size(emptied, tools, counter), 0) // len(latest)
+        cut = list(messages)
+        for index in latest:
+            content = messages[index].content
+            if len(counter(content)) > room:
+                cut[index] = messages[index].model_copy(
+                    update={"contents": [TextContent(text=self._shortened(content, max(room, 0), counter) + note)]}
+                )
+        return cut
+
+    @staticmethod
+    def _shortened(content: str, room: int, counter: Callable[[str], list[int]]) -> str:
+        """The longest start of `content` within `room` tokens, found by shrinking a character estimate."""
+        text = content[: int(len(content) * room / max(len(counter(content)), 1))]
+        while text and len(counter(text)) > room:
+            text = text[: int(len(text) * 0.9)]
+        return text
 
     async def _summarise_result(self, request: str, result: Message) -> str:
         instruction = self._t("agent.tool_loop.prompt.condense_result", words=SUMMARY_WORDS)

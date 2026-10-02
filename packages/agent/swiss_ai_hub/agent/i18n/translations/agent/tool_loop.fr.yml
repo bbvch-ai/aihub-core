@@ -22,6 +22,7 @@ steps:
     name: "Rassembler les résultats"
     description: "Renvoie au modèle tous les résultats de ses appels d'outils"
 prompt:
+  cut_result: "\n[…coupé pour tenir dans le contexte]"
   condense_result: "Condense le résultat d'outil ci-dessous à ce qui compte pour la demande de l'utilisateur qui le précède. Conserve exactement les faits, chiffres, noms, dates et identifiants de documents comme [s3f9a1c]. Omets tout le reste. Au plus %{words} mots, sans préambule."
   condensed_result: "[Résultat précédent condensé] %{summary}"
   condense_turns: "Résume la conversation ci-dessous pour qu'elle puisse continuer sans elle : ce que l'utilisateur a demandé, ce qui a été répondu et ce qui a été décidé ou reste ouvert. Conserve exactement les faits, chiffres, noms et identifiants de documents comme [s3f9a1c]. Au plus %{words} mots, sans préambule."

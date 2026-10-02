@@ -22,6 +22,7 @@ steps:
     name: "Werkzeugergebnisse sammeln"
     description: "Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück"
 prompt:
+  cut_result: "\n[…gekürzt, damit es in den Kontext passt]"
   condense_result: "Verdichte das folgende Werkzeugergebnis auf das, was für die vorangehende Anfrage des Benutzers zählt. Übernimm Fakten, Zahlen, Namen, Daten und Dokument-IDs wie [s3f9a1c] genau so, wie sie stehen. Lass alles andere weg. Höchstens %{words} Wörter, ohne Einleitung."
   condensed_result: "[Verdichtetes früheres Ergebnis] %{summary}"
   condense_turns: "Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung."

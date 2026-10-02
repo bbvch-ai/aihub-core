@@ -16,8 +16,8 @@ class KnowledgeFields(Form):
     knowledge: Annotated[
         KnowledgeConfig,
         Field(
-            description="How the knowledge collections the user references in the chat are searched.",
-            title="Referenced Knowledge",
+            description="How knowledge collections are searched, whether the user referenced them or the model chose to.",
+            title="Knowledge Search",
         ),
     ] = KnowledgeConfig()
 
