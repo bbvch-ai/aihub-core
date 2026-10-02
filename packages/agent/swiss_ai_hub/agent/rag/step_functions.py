@@ -13,11 +13,9 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
-    Message,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
-    RefusalReason,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
@@ -45,6 +43,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
@@ -107,7 +106,7 @@ async def do_limit_chat_history(
     answering_config = next(config for config in llm_configs if config is not None)
     last_turn_tokens = estimate_prompt_tokens([last_user_message], answering_config.token_counter)
     if last_turn_tokens > budget:
-        return await _refuse_oversized_input(last_turn_tokens, budget, answering_config.model_name, displayer, t)
+        return await OversizedInputRefusal.refuse(last_turn_tokens, budget, answering_config.model_name, displayer, t)
 
     # Trim only what precedes the last turn, then put it back -- the same shape `Conversation.compose` uses for
     # the turns. Reserving room for the turn and then handing the trimmer a list that still contains it charges the
@@ -116,27 +115,6 @@ async def do_limit_chat_history(
     older_limit = min(number_of_input_tokens, budget - last_turn_tokens)
     limited = [*limit_chat_history(chat_history=messages[:-1], number_of_input_tokens=older_limit), *messages[-1:]]
     return LimitChatHistoryEvent(limited_history=limited)
-
-
-async def _refuse_oversized_input(
-    needed: int,
-    budget: int,
-    model_name: str,
-    displayer: EventDisplayer,
-    t: LocaleHandler,
-) -> RefusalStopEvent:
-    """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
-
-    The chunk is what the chat renders; `output_messages` carries the same text for non-streaming consumers.
-    """
-    await displayer.display_thought(t("agent.conversation.thoughts.input_too_large", tokens=needed, budget=budget))
-    refusal = t("agent.conversation.messages.input_too_large")
-    await displayer.display_chunk(refusal, model_name=model_name)
-    return RefusalStopEvent(
-        reason=RefusalReason.INPUT_TOO_LARGE,
-        output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
-        chat_model_name=model_name,
-    )
 
 
 def do_answer_instructions(
