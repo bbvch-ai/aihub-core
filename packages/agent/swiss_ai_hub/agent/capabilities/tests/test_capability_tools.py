@@ -86,6 +86,23 @@ class TestAttachedFilesAsATool:
         assert AttachedFiles.tool_definition(_context([PHOTO])) is None
 
     @pytest.mark.asyncio
+    async def test_a_choice_naming_no_attached_file_is_refused_not_widened(self):
+        conversation = MagicMock()
+        conversation.input_budget.return_value = 10_000
+
+        read = await AttachedFiles.read_tool_call_step(
+            Agent(),
+            call=_call("read_attached_files", files=["s000000"]),
+            request=RunToolLoopEvent(files=[REPORT, NOTES]),
+            conversation=conversation,
+            loop=_config(),
+            t=T,
+        )
+
+        assert isinstance(read, ToolResultEvent) and read.is_error
+        assert CitationId.of(F1) in read.content and CitationId.of(F2) in read.content
+
+    @pytest.mark.asyncio
     async def test_a_chosen_read_runs_the_regular_read_within_one_results_room(self):
         conversation = MagicMock()
         conversation.input_budget.return_value = 10_000
@@ -96,6 +113,7 @@ class TestAttachedFilesAsATool:
             request=RunToolLoopEvent(files=[REPORT, NOTES]),
             conversation=conversation,
             loop=_config(),
+            t=T,
         )
 
         assert isinstance(read, ReadAttachedFilesEvent)

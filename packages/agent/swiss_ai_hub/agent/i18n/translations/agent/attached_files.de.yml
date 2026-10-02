@@ -32,3 +32,4 @@ tool:
   files: "Die zu lesenden Dateien nach ID; weglassen, um alle zu lesen."
   query: "Was du in den Dateien suchst, damit von einer langen Datei die passenden Abschnitte bleiben."
   nothing_readable: "Keine der gewählten Dateien konnte gelesen werden."
+  unknown_files: "Keine der angegebenen ids ist eine angehängte Datei. Angehängte Dateien: %{files}"

@@ -183,8 +183,12 @@ class AttachedFiles(Capability):
         request: RunToolLoopEvent,
         conversation: ConversationFields,
         loop: ToolLoopFields,
+        t: LocaleHandler,
     ) -> ReadAttachedFilesEvent | ToolResultEvent:
-        """The model chose to read: the regular read of the files it picked, sized to one tool result's room."""
+        """The model chose to read: the regular read of the files it picked, sized to one tool result's room.
+
+        A choice naming no attached file is refused rather than widened to every file, which the model did not ask
+        for."""
         try:
             arguments = AttachedFilesToolArguments.model_validate(call.arguments)
         except ValidationError as error:
@@ -194,8 +198,16 @@ class AttachedFiles(Capability):
         chosen = [
             file for file in request.files if not arguments.files or CitationId.of(file.file_id) in arguments.files
         ]
+        if not chosen:
+            known = ", ".join(f"{CitationId.of(file.file_id)} ({file.filename})" for file in request.files)
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id,
+                name=call.name,
+                content=t("agent.attached_files.tool.unknown_files", files=known),
+                is_error=True,
+            )
         return ReadAttachedFilesEvent(
-            files=chosen or request.files,
+            files=chosen,
             query=arguments.query,
             reserve_tokens=max(conversation.input_budget() - loop.tool_loop.max_result_tokens, 0),
             cite_sources=call.cite_sources,
