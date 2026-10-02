@@ -68,6 +68,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
 │   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents
+│   ├── structured_extraction/       # RecordSchemaBuilder + RecordExtractor: runtime-schema record extraction
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
@@ -537,6 +538,7 @@ Real-time event emission for streaming LLM output to the UI:
 | `prompting/`           | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
 | `chat_history/`        | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
 | `routing/`             | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+| `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()` |
 
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
@@ -553,6 +555,26 @@ collection is reported as not found. Pending documents raise `KnowledgeDocumentP
 exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
 range, and `text_length` reports the full length. Nothing here reads agent configuration: deciding which collections an
 agent may read stays with its profile.
+
+`structured_extraction/` pulls records out of one document with a schema decided at request time (issue #1949, ADR
+`2026_10_02_runtime_record_schemas_for_structured_extraction`). Both entry points take their model as an argument and
+read no agent configuration:
+
+- **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at most
+  `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
+  `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None)`** returns a
+  `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only hardware");
+  filters never become fields. The document must be loaded whole.
+- **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
+  half the output limit, because the records come back as JSON. `RecordMerger` drops overlap copies between adjacent
+  windows only.
+- **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
+  Infrastructure errors still raise.
+
+Keep the schema model and the extraction model separate parameters. Each model is consistent with itself across runs,
+but models disagree with each other on names and types, so the schema model decides what a table looks like.
+`page` stays `None` because parsed text carries no page boundaries yet.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
