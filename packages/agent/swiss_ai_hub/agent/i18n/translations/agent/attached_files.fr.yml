@@ -31,3 +31,4 @@ tool:
   files: "Les fichiers à lire, par identifiant ; omettre pour les lire tous."
   query: "Ce que tu cherches dans les fichiers, pour qu'un long fichier garde les sections qui en parlent."
   nothing_readable: "Aucun des fichiers choisis n'a pu être lu."
+  unknown_files: "Aucun des ids indiqués n'est un fichier joint. Fichiers joints : %{files}"

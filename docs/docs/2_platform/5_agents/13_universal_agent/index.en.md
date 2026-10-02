@@ -60,7 +60,9 @@ block with what the tool returned, and the agent trace records each step.
 Long conversations with many tool results can outgrow what the model can read. Before each decision, the agent checks
 the size and, when needed, condenses the oldest material first: earlier tool results are summarised to what matters for
 the question, then the conversation before the question becomes one summary. The chat shows a short status when this
-happens. The current question and the latest results are never condensed.
+happens. The current question and the latest results are never summarised; only when the latest results alone are too
+large are they cut to fit, marked as cut. When even the question and the tools' descriptions do not fit, the agent
+answers without its tools.
 
 ### Limits and approvals
 
