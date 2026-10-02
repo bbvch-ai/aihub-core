@@ -17,6 +17,7 @@ from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalA
 from swiss_ai_hub.agent.capabilities.sandbox import sandbox_workspace
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
+from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -178,3 +179,41 @@ class TestOffer:
 
     def test_the_universal_agent_offers_the_code_interpreter_toggle(self) -> None:
         assert ChatFeature.CODE_INTERPRETER in UniversalAgent.supported_features()
+
+
+class TestUserFiles:
+    @pytest.mark.asyncio
+    async def test_the_listing_is_the_user_s_whole_file_space_without_dotfiles(self, sandbox: Any) -> None:
+        sandbox.list_files = AsyncMock(
+            return_value={
+                "entries": [{"name": "conversations", "type": "directory"}, {"name": ".cache", "type": "directory"}]
+            }
+        )
+
+        result = await UserFilesTools(_context()).list_my_files()
+
+        sandbox.list_files.assert_awaited_once_with(".")
+        assert "conversations" in result and ".cache" not in result
+
+    @pytest.mark.asyncio
+    async def test_a_file_is_read_relative_to_the_top_not_the_conversation(self, sandbox: Any) -> None:
+        sandbox.read_file = AsyncMock(return_value={"content": "25 days"})
+
+        result = await UserFilesTools(_context()).read_my_file("reports/q1.pdf")
+
+        sandbox.read_file.assert_awaited_once_with("reports/q1.pdf", None, None)
+        assert "25 days" in result
+
+    @pytest.mark.asyncio
+    async def test_a_path_outside_the_user_s_files_is_refused(self, sandbox: Any) -> None:
+        sandbox.read_file = AsyncMock()
+
+        with pytest.raises(OpenTerminalError):
+            await UserFilesTools(_context()).read_my_file("/proc/1/environ")
+        sandbox.read_file.assert_not_awaited()
+
+    def test_the_tools_need_my_files_switched_on(self) -> None:
+        tool_set = ToolSet.of((UserFilesTools,))
+
+        assert {tool_set.options(name).chat_feature for name in tool_set.names()} == {ChatFeature.USER_FILES}
+        assert ChatFeature.USER_FILES in UniversalAgent.supported_features()

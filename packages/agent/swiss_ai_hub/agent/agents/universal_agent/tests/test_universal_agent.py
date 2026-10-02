@@ -72,6 +72,8 @@ def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop
         "grep_search",
         "glob_search",
         "display_file",
+        "list_my_files",
+        "read_my_file",
     ]
 
 

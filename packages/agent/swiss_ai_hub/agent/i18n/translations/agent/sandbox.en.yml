@@ -36,3 +36,10 @@ tools:
   display_file:
     label: "Show File"
     approval: "Attach {path} to the answer"
+user_files:
+  list_my_files:
+    label: "List My Files"
+    approval: "List your files in {folder}"
+  read_my_file:
+    label: "Read My File"
+    approval: "Read your file {path}"
