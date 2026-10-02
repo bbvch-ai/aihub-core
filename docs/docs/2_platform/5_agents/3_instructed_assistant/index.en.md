@@ -23,33 +23,40 @@ to look things up in your company's documents, use the
 
 ## What it does
 
-The Instructed Assistant runs a minimal two-step workflow every time a user sends a message:
+The Instructed Assistant runs a short, fixed workflow every time a user sends a message:
 
 ```mermaid
 flowchart LR
-    A[User message] --> B[Apply instructions<br/>& trim history]
-    B --> C[Ask the<br/>language model]
-    C --> D[Stream the answer]
+    A[User message] --> B[Trim history,<br/>derive the query]
+    B --> C[Gather memory,<br/>files, referenced knowledge]
+    C --> D[Compose the<br/>model's context]
+    D --> E[Stream the answer]
 ```
 
-1. **Prepare the conversation.** Your configured system prompt is inserted at the front of the conversation, and the
-   chat history is trimmed so it fits inside the model's input budget. This keeps long conversations affordable and
-   prevents the model from being overwhelmed by old context.
-2. **Answer.** The prepared conversation is sent to the language model, and the response is streamed back to the user
-   token by token.
+1. **Prepare the conversation.** The chat history is trimmed so it fits inside the model's input budget and the thread
+   gets its title. If the message alone is larger than the model's context window, the assistant says so in the chat and
+   stops, rather than failing with an error.
+2. **Gather context.** In parallel, it recalls what it remembers about the user and the organization, reads any files
+   the user attached, and searches any knowledge collections the user pointed it at with `#`. Each is empty when it does
+   not apply.
+3. **Compose.** Your system prompt and whatever was gathered are merged into the model's system instructions, within the
+   input budget. The event history shows exactly what the model was given.
+4. **Answer.** The response is streamed back token by token, with follow-up suggestions, and new facts about the user
+   are stored in the background.
 
-That's the whole workflow. Because it does so little, it is fast, cheap, and predictable — which is exactly what makes
-it a good default for assistants that don't need to consult your data.
+There is no search of your document collections unless the user asks for one with `#`, so the assistant stays fast,
+cheap, and predictable, which makes it a good default for assistants that don't need to consult your data.
 
 ## What it does *not* do
 
 It helps to be explicit about the boundaries, because the name "assistant" can suggest more than this blueprint offers:
 
-- **No knowledge base.** It never searches your documents. If you ask it about an internal policy, it will answer from
-  the model's general training, not from your files. For grounded, cited answers, use the
+- **No knowledge base of its own.** It searches your documents only for collections a user references with `#`, and
+  reads files a user attaches. If you ask it about an internal policy without either, it will answer from the model's
+  general training. For grounded, cited answers on a fixed set of collections, use the
   [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **No tools or actions.** It cannot create tickets, send messages, or call external systems. For that, use the MCP Tool
-  Agent.
+  Agent, or the Universal Agent for tools the model chooses.
 - **No human escalation.** It will not hand a question off to a colleague. For that, see the
   [Expert Coordinator Agent](../9_expert_coordinator_agent/).
 - **No "training" on your data.** Like every agent on the platform, it is not fine-tuned on your content. Its behaviour
@@ -119,9 +126,13 @@ These fields control how the assistant treats each conversation.
 
 ::: warning Match the input budget to your model
 **Maximum Input Tokens** must stay within the chosen model's actual context window. Setting it higher than the model
-supports won't expand the model — the model will simply reject or truncate the request. When in doubt, leave it at the
-default.
+supports won't expand the model — the model will simply reject or truncate the request. The assistant also checks the
+message against the model's real window and answers with a short notice when it cannot fit. When in doubt, leave it at
+the default.
 :::
+
+The form also contains the shared chat sections (memory, attached files, referenced knowledge, task model). See
+[Shared chat settings](../2_blueprints_and_profiles/#shared-chat-settings).
 
 ### Language model
 

@@ -57,8 +57,8 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 
 1. **Groups**: AI-Hub creates Open WebUI groups for each tenant-role combination (named `aihub:{tenant}:{role}`), with
    memberships synced based on email matching between both systems. A user who holds a role in their active tenant but
-   has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are there on their first
-   chat visit; the chat login then links to that account
+   has not opened the chat yet gets their Open WebUI account created over SCIM in the same sync, so their models are
+   there on their first chat visit; the chat login then links to that account
 2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
    pipe function
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
@@ -72,9 +72,9 @@ and when roles, tenants, or user-role assignments are modified. All changes prop
 
 - **Debouncing**: Rapid access entity mutations (e.g. bulk user assignments) are collapsed into a single sync call using
   a 2-second quiet window
-- **Distributed locking**: Each sync operation acquires a Redis lock, so concurrent API replicas never race. Model
-  syncs skip while another holds the lock; access syncs wait for it, so a role change made during a running sync is
-  still applied
+- **Distributed locking**: Each sync operation acquires a Redis lock, so concurrent API replicas never race. Model syncs
+  skip while another holds the lock; access syncs wait for it, so a role change made during a running sync is still
+  applied
 - **Change detection**: The discovery service stores a SHA-256 hash of the online agent set in Redis, surviving restarts
   and working correctly across replicas
 
@@ -125,6 +125,47 @@ Agent answers link each statement to the source it came from, the way Open WebUI
 - **Which documents are listed**: the documents the model actually read, after reranking and including documents carried
   over from an earlier turn, not every search hit. Each is labelled with its title or file name, and links to the
   document when its source provides a reference URL.
+
+## Referencing our knowledge with
+
+In an agent chat, typing `#` lists the knowledge collections the user may read, named "Database / Collection", next to
+Open WebUI's own knowledge bases. Open WebUI stays a picker: the entries hold no content and it runs no retrieval on
+them. The agent searches the referenced collections itself, with the embedding model each database was indexed with, and
+cites what it finds like any other source.
+
+- **Who sees what**: an entry is readable by the role groups that may browse the collection, so the list matches the
+  knowledge area. The agent checks the asking user's access again before it searches, so a reference never reaches a
+  collection the user may not read. A collection that is unreadable or deleted is named to the model, which tells the
+  user it could not use it.
+- **Kept in sync automatically**: entries are created when a collection appears, a few seconds after a collection or
+  database changes, and on every discovery cycle for collections a pipeline creates. A collection that is gone loses its
+  entry.
+- **On top of the agent's own retrieval**: a Document Intelligence Assistant searches its configured sources and the
+  referenced collections; an Instructed Assistant answers from the referenced collections alone.
+
+## Tool calls in agent chats
+
+When an agent lets the model choose its tools (see [Agents overview](../../5_agents/#tools-the-model-chooses)), every
+call shows in Open WebUI as one of its own collapsible tool blocks, under a readable label such as "Search our
+knowledge", with the result inside, as the model received it. Text the model streamed before a call moves into a
+collapsed thought, so the answer starts where the work ends. While the agent gathers, the chat shows what it is doing,
+including when a long conversation is being condensed to fit the model.
+
+- **Approvals**: a tool an admin marked for approval asks a yes/no confirmation in the chat that names the tool and what
+  the call does. A declined tool is not requested again for that answer, and the model answers without it.
+- **Toggles decide what is offered**: a tool that needs Web Search, Code Interpreter or Image Generation is offered only
+  while that toggle is on. See [Chat toggles for agents](#chat-toggles-for-agents).
+- **Limits**: a profile caps how often the model may decide and how many calls it may make. At the cap the model answers
+  with what it has and says it stopped early.
+- **Sources**: a knowledge search the model chose produces the same citation chips as a `#` reference.
+
+## Chat disclaimer
+
+A short note below the chat input, such as "AI can make mistakes. Please verify answers.", is managed per tenant by
+system administrators in the SysAdmin UI under **Tenants → Overview**. It can be set in German, English, French and
+Italian, up to 100 characters each, and follows the user's language; a tenant without custom text shows the translated
+default. Open WebUI has no setting for this, so the platform shows the text through a small script Open WebUI loads. The
+deployment details are in `infra/deployment/openwebui-disclaimer.md`.
 
 ## Configuration and deployment
 

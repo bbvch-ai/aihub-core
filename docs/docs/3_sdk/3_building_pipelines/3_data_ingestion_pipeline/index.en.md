@@ -70,8 +70,9 @@ serves every database whose source is `rclone`, and nothing about a source lives
   ingestion pipeline.
 - **Key Assets**: `remote_files` (observable), `data_lake_files`, `removed_data_lake_files` in the
   `rclone_source_to_datalake` group.
-- **Supported Backends**: OneDrive / SharePoint, Google Drive, AWS S3 (and S3-compatible), Azure Blob, SFTP, and a local
-  path inside the rclone container.
+- **Backends**: the dialog offers Google Drive and AWS S3 (and S3-compatible), the two verified end to end, plus a local
+  path inside the rclone container where enabled. OneDrive / SharePoint, Azure Blob and SFTP are implemented but hidden
+  (see below).
 
 ### Two Axes of a Knowledge Database
 
@@ -135,6 +136,14 @@ are therefore generated from the folders under the root path.
 ::: warning Root-level files are skipped
 Files directly in the chosen root folder have no folder to become a namespace and are not synced. The observation
 reports how many were skipped. Move them into a folder or point the root one level up.
+:::
+
+::: warning Colliding folder names are skipped, not merged
+Two top-level folders that sanitise to the same namespace (`hr docs` and `hr_docs` both become `hr_docs`) cannot share
+it: a namespace stores one folder, and teardown acts on that folder only. The first folder keeps the name; the files of
+the second get no partition. The ingestion observation reports them (`Skipped files (namespace collision)` count and a
+`Skipped files` table naming both folders), and removal compares URIs only, so a collision never blocks ingestion or
+removal for the rest of the database. Renaming the losing folder at the source repairs it.
 :::
 
 A sourced database has one owner of its content: it refuses manual upload, hand-made namespaces and manual document
@@ -222,8 +231,11 @@ defs = document_ingestion_pipeline_definitions(
 `settings` carries the text, embedding and vision models, the three enrichment switches and the observation schedule.
 Those are deployment defaults, not fixed behaviour. The pipeline announces a configuration form pre-filled with them,
 each knowledge database created for this ingestor chooses its own values in the create dialog, and the pipeline reads
-those values per run. See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add
-a setting of your own.
+those values per run. Settings you pass in code win over the `DOCUMENT_INGESTION_*` environment variables, both for the
+form's pre-filled defaults and for databases that store no value of their own; the environment is read only when no
+settings were passed. If you point the text model at a provider without image input, also set the vision model
+(`DOCUMENT_INGESTION_VISION_MODEL`); it defaults to the text model, and nothing checks that the model can read images.
+See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
 
 ## Default Data Mapping
 

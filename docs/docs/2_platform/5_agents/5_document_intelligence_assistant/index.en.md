@@ -48,6 +48,11 @@ flowchart LR
    find enough, tell the user it doesn't know rather than guess.
 5. **Answer with citations.** The model writes the answer using only the retrieved passages and references its sources.
 
+Users can also bring their own material into the conversation. Files attached in the chat are read by the agent and used
+next to the configured knowledge (a long file is cut to the sections that matter for the question, and the answer says
+so). Typing `#` in Open WebUI adds one of the company's collections to the search for that message. Every document the
+model read appears as a numbered citation chip in the answer, labelled with the document's title.
+
 Beyond this core loop, the agent can also draw on **memory** — personal context it has learned about the individual
 user, and shared organizational knowledge — and apply a **suitability guard** that politely declines questions outside
 its remit. These are all optional and covered in the configuration reference below.
@@ -57,7 +62,7 @@ its remit. These are all optional and covered in the configuration reference bel
 - **It won't answer from general knowledge.** By design it answers from your documents. If nothing relevant is found
   (and the sufficiency guard is on), it says so rather than inventing an answer.
 - **No tools or actions.** It reads and answers; it doesn't create tickets or call external systems. For that, use the
-  MCP Tool Agent.
+  MCP Tool Agent, or the Universal Agent when the model should choose between searching knowledge and other tools.
 - **No human escalation on its own.** If you want it to fall back to a human expert when it can't answer, use the
   Company Knowledge Agent (the expert-RAG variant). See the [Expert Coordinator Agent](../9_expert_coordinator_agent/).
 - **It does not ingest documents.** Filling and updating the knowledge base is the job of a
@@ -151,6 +156,16 @@ together. Each source has these settings:
 | **Retrieve previous/next** | Optional group        | Off       | Also pull the chunks immediately before/after each hit, so passages keep their surrounding context. |
 | **Retrieve summaries**     | Optional group        | Off       | Also pull parent-level summary nodes for a higher-level view of the source document.                |
 
+### Restrict to the user's access
+
+| Field                             | Type   | Default                                 | Description                                                                                                                                                                        |
+| --------------------------------- | ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Restrict to the user's access** | Toggle | On for new profiles, off for older ones | Retrieve only from the configured collections the person asking may read in the knowledge area. Without it, everyone who can use this agent gets answers from all its collections. |
+
+If a user may read none of the configured collections, the agent says that no knowledge is available to them. Runs
+without a user (scheduled or triggered by mail) keep the profile's scope. See
+[Restrict to the user's access](../2_blueprints_and_profiles/#restrict-to-the-user-s-access).
+
 ### Reranking *(optional)*
 
 Off by default. When enabled, a dedicated model re-scores retrieved passages for relevance before they reach the chat
@@ -209,6 +224,19 @@ Lets the assistant draw on shared knowledge captured for the whole organization 
 | **Default namespace**          | Text   | platform default | Namespace used when a request doesn't specify one. Must be within the allow-list if one is set. |
 | **Rerank organization memory** | Toggle | On               | Rerank retrieved organization memories for relevance. Adds cost.                                |
 
+### Attached files and referenced knowledge
+
+Two sections with preset models cover material users bring into the chat. Most profiles never change them.
+
+| Field                                      | Default            | Description                                                                                                   |
+| ------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **Attached Files > Embedding Model**       | `embedding/bge-m3` | Shortlists the sections of an attached file that is too long to fit whole.                                    |
+| **Attached Files > Reranking Model**       | `reranker/bge`     | Orders the shortlisted sections by relevance before they fill the room left in the prompt.                    |
+| **Referenced Knowledge > Reranking Model** | `reranker/bge`     | Orders what the collections a user referenced with `#` return. Each is searched with its own embedding model. |
+
+The agent reserves room for its retrieved passages before it sizes attached files, so a large attachment cannot crowd
+out the knowledge search.
+
 ### Prompts and input budget
 
 | Field                | Type      | Default               | Description                                                                                                                                    |
@@ -216,6 +244,10 @@ Lets the assistant draw on shared knowledge captured for the whole organization 
 | **System prompt**    | Long text | *(grounding default)* | Defines the assistant's role and rules. The default instructs it to answer only from retrieved context and quote sources.                      |
 | **Context prompt**   | Long text | *(template default)*  | Template for how retrieved passages are presented to the model. Most deployments leave this at the default.                                    |
 | **Max input tokens** | Number    | `128000`              | The input budget; the conversation and retrieved context are trimmed to fit. Keep within the chat model's context window. Range 1,024–128,000. |
+
+If a message alone is larger than the chat model's context window, the agent replies that the input is too large (and
+suggests a smaller file) instead of ending in an error. The check uses the real window of the model, not only this
+budget.
 
 ## Best practices
 

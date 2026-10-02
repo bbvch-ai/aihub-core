@@ -39,6 +39,10 @@ ______________________________________________________________________
 infrastructure layer. Use VM snapshots, rclone sync, or external S3 replication to protect this data. The platform
 cannot back up SeaweedFS into itself.
 
+Two buckets are derived data. `parse-cache` holds MinerU results that are re-created on demand. `sandbox-files` is
+already a copy: it mirrors the code-sandbox homes (**My Files**) so the files survive the loss of the sandbox volume,
+but it is not itself backed up, so include it when you protect SeaweedFS.
+
 All service backups are required. A missing backup for any service will block the restore.
 
 ______________________________________________________________________

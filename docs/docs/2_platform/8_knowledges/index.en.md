@@ -64,16 +64,21 @@ as a safety net, catching anything a missed notification would otherwise have le
 ### Syncing from an external source
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
-database. Pick the storage system (SharePoint or OneDrive, Google Drive, S3, Azure Blob, SFTP), enter its credentials,
-the folder to sync and optional include/exclude patterns. Credentials are stored encrypted and shown masked afterwards;
-re-saving the dialog without retyping them keeps the stored ones, so a rotation is a matter of editing the source. The
-system then:
+database. Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials,
+the folder to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the
+`.json` file downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with.
+Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
+stored ones, so a rotation is a matter of editing the source. The system then:
 
 - Syncs files from the source on a daily schedule
 - Creates collections automatically from the top-level folders of the synced root (files directly in the root are
   skipped and counted in the run)
 - Processes each synced file within a minute or two, like an upload
 - Disables manual uploads, hand-made collections and manual document deletion for that database
+
+If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
+name and the second is skipped: its files are not synced, and the sync run reports which folders were skipped and why.
+Other folders and the database's other files are unaffected; renaming the folder at the source fixes it.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Giving a database that already holds uploaded documents a source asks for
@@ -106,7 +111,9 @@ at the source instead.
 The system processes each uploaded document through several stages:
 
 Parsing: MinerU extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
-layouts, multi-column pages, and embedded content while preserving logical structure.
+layouts, multi-column pages, and embedded content while preserving logical structure. A file is parsed once however
+often the platform needs it: results are cached by file content for seven days, so re-uploading identical bytes, or an
+agent reading a file the chat already parsed, does not run MinerU again.
 
 Chunking: Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of chunks,
 each preserving its relationship to surrounding content.
@@ -128,9 +135,10 @@ sidebars, and other structural elements.
 Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
 retrieval. Useful when agents aren't finding expected content.
 
-Processing status indicates whether documents are uploading, processing, or ready. A document counts as ready only once
-its embeddings have been written to the vector database — until then it is still processing and agents cannot retrieve
-it, even though its text has already been parsed.
+Processing status indicates whether documents are uploading, processing, or ready. The document list refreshes itself
+every few seconds while a document on the page is still processing, so you do not need to reload to see it become ready.
+A document counts as ready only once its embeddings have been written to the vector database — until then it is still
+processing and agents cannot retrieve it, even though its text has already been parsed.
 
 ## Access control
 
@@ -186,16 +194,24 @@ of the agent's knowledge is readable, the agent says so rather than answering as
 setting is on for new agents and off for agents saved before it existed, so their behaviour does not change unannounced.
 Runs without a person, such as scheduled or mail-triggered ones, keep the agent's configured scope.
 
+### Knowledge databases and My Files
+
+Knowledge databases are shared, curated and indexed: documents are parsed, chunked and embedded so agents can search
+them semantically. **My Files** is different. It is each user's own file space (their chat attachments, files agents
+made for them and their uploads) and is not part of any knowledge database. Its files are not embedded or searched by
+retrieval; an agent with the My Files option on reads them by name. Put documents that a team should find through search
+into a knowledge database, and keep personal working files in My Files.
+
 ### Referencing collections in a chat
 
 In OpenWebUI, any chat agent can be pointed at a collection with `#`, the way OpenWebUI references its own knowledge.
-The `#` picker lists our collections as "Database / Collection", each only to users whose roles let them browse it.
-The entries hold no content and OpenWebUI runs no retrieval on them: a referenced collection reaches the agent as a
+The `#` picker lists our collections as "Database / Collection", each only to users whose roles let them browse it. The
+entries hold no content and OpenWebUI runs no retrieval on them: a referenced collection reaches the agent as a
 reference, and the agent searches it with the database's own embedding model and adds the best matches to its context,
-cited like any other document. In a knowledge agent's chat this search comes on top of the agent's configured
-retrieval. The agent checks the reference against the asking user's rules again, and says when a referenced collection
-is not available to them instead of answering from it. OpenWebUI administrators see every entry in the picker, since
-OpenWebUI lets them bypass its access control, but they too get answers only from what they may read here.
+cited like any other document. In a knowledge agent's chat this search comes on top of the agent's configured retrieval.
+The agent checks the reference against the asking user's rules again, and says when a referenced collection is not
+available to them instead of answering from it. OpenWebUI administrators see every entry in the picker, since OpenWebUI
+lets them bypass its access control, but they too get answers only from what they may read here.
 
 Creating, renaming or deleting a collection shows up in the picker within seconds; collections a sync or pipeline
 creates appear on the next reconcile, at most a minute later.

@@ -43,6 +43,11 @@ flowchart LR
 5. **Answer or stop.** When the model is ready, it replies to the user. If it loops too many times without finishing, it
    stops gracefully at a configured iteration limit.
 
+Like the other chat agents, it also recalls memory, reads files the user attached and searches collections referenced
+with `#`, and cites them as sources. See [Shared chat settings](../2_blueprints_and_profiles/#shared-chat-settings). To
+let the model choose among tools other than an MCP server's, such as knowledge search, files and memory, see the
+Universal Agent.
+
 ## What it does *not* do
 
 - **No knowledge base / RAG.** It doesn't search your documents. For grounded document answers, use the

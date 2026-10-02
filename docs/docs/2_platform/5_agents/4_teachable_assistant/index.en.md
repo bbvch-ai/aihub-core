@@ -38,13 +38,18 @@ flowchart LR
 
 1. **Check fit (suitability guard).** The assistant compares the request against its own description. If the question is
    clearly outside what this assistant is for, it declines instead of answering badly. This is what keeps a narrowly
-   trained assistant from being dragged off-topic.
+   trained assistant from being dragged off-topic. The decline is written in the chat, with the guard's reason, so the
+   user is never left with an empty answer.
 2. **Condense the question.** The recent conversation and the latest message are folded into one self-contained
    question, so follow-ups like "and the second one?" still make sense on their own.
 3. **Prime with your examples.** Your system prompt and your example pairs are assembled into the context the model
    sees, followed by the condensed question.
 4. **Answer in your style.** The model responds, following the pattern your examples established, and the answer is
    streamed back to the user.
+
+Before any of this, the assistant checks that the message fits the model's context window. A message that cannot fit,
+for example a very long pasted text, gets a short reply saying so, and since the assistant answers from its examples and
+does not read documents, the reply points the user to an assistant built for documents.
 
 ::: warning The examples replace the raw chat history
 At the answering step the assistant deliberately uses your **examples** as the conversational context rather than the
