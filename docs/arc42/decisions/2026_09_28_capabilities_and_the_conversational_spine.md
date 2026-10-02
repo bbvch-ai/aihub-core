@@ -159,3 +159,23 @@ model-chosen call is answered through the capability's own adapter step.
 fewer, events than a `#` reference); a separate router capability (tool calling already picks several tools with
 arguments; a one-iteration preset covers routing); looping a whole fixed flow back to its start (hard to bound and to
 read; a re-runnable part becomes a tool instead).
+
+## Amendment 2026-10-02: an open-format agent, and capabilities as its tools
+
+The Universal Agent (#1937) is the first production blueprint built on the tool loop: it loads nothing into the prompt
+up front and offers `Knowledge`, `AttachedFiles` and `Memory` as tools, so the model decides per message what it needs.
+
+- **RAG keeps its own retrieval.** RAG is a fixed workflow that forces its steps; the Universal Agent is open-format.
+  The knowledge tool any agent can offer is `Knowledge` grown to search the profile's collections
+  (`KnowledgeToolFields`, RAG's own database picker) or every collection the user can read, plus the message's `#`
+  references, always narrowed to what the user may read. The two retrievals may diverge, and that is accepted;
+  extracting RAG's steps into a shared capability was rejected because it would loosen the workflow RAG guarantees.
+- **A tool may need settings an explicit call does not.** A capability names them as `tool_config`, and validation
+  requires that mixin wherever the capability sits in a tool set, so the tool settings stay off the forms of blueprints
+  that only call the capability.
+- **Tool definitions see the run, not just the profile.** `tool_definition` receives the run's `ToolContext`, which
+  carries the user's access and the message's files and references, because what a tool offers (readable collections,
+  attached files) depends on them.
+- **Condensing belongs to the loop.** Only the loop sees its conversation grow between decisions, so `ToolLoop`
+  condenses it in a step of its own when it outgrows the input budget, rather than leaving that to the model as a tool
+  or cutting each result to a share of the room left, which starved every result after a few calls.
