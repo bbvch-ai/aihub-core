@@ -77,7 +77,7 @@ class ToolLoopCondenser:
 
     async def _condense_results(self, messages: list[Message], request_at: int) -> tuple[list[Message], int]:
         """Every tool result older than the latest round, summarised for the request in its place."""
-        earlier = self._earlier_results(messages)
+        earlier = [index for index in self._earlier_results(messages) if not self._already_condensed(messages[index])]
         if not earlier:
             return messages, 0
         request = messages[request_at].content if request_at >= 0 else ""
@@ -96,10 +96,13 @@ class ToolLoopCondenser:
             return messages, 0
         transcript = "\n\n".join(f"{message.role}: {message.content}" for message in earlier)
         summary = await self._ask(self._t("agent.tool_loop.prompt.condense_turns", words=SUMMARY_WORDS * 2), transcript)
-        summary_message = Message.from_string(
-            role="system", content=self._t("agent.tool_loop.prompt.condensed_turns", summary=summary)
+        # One system message: chat templates such as Qwen's reject any system message after the first.
+        leading = [message.content for message in messages[:head]]
+        system = Message.from_string(
+            role="system",
+            content="\n\n".join([*leading, self._t("agent.tool_loop.prompt.condensed_turns", summary=summary)]),
         )
-        return [*messages[:head], summary_message, *messages[request_at:]], len(earlier)
+        return [system, *messages[request_at:]], len(earlier)
 
     def _drop_oldest_results(self, messages: list[Message], tools: list[ToolDefinition]) -> list[Message]:
         """The last resort: earlier results give way, oldest first, until the rest fits."""
@@ -140,6 +143,13 @@ class ToolLoopCondenser:
         while text and len(counter(text)) > room:
             text = text[: int(len(text) * 0.9)]
         return text
+
+    def _already_condensed(self, result: Message) -> bool:
+        """A result an earlier round condensed or dropped: summarising it again costs a model call and loses more."""
+        condensed = self._t("agent.tool_loop.prompt.condensed_result", summary="")
+        return result.content.startswith(condensed) or result.content == self._t(
+            "agent.tool_loop.prompt.dropped_result"
+        )
 
     async def _summarise_result(self, request: str, result: Message) -> str:
         instruction = self._t("agent.tool_loop.prompt.condense_result", words=SUMMARY_WORDS)

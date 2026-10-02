@@ -106,10 +106,23 @@ async def test_the_conversation_before_the_request_becomes_one_summary_when_resu
     state, displayer = await _condense(_conversation(earlier_words=400), budget=200)
 
     roles = [message.role for message in state.messages]
-    assert roles[:3] == ["system", "system", "user"]
-    assert state.messages[1].content.startswith("Summary of the earlier conversation:")
-    assert state.messages[2].content == "What changed in Q1?"
+    assert roles[:2] == ["system", "user"]
+    assert "system" not in roles[1:]
+    assert state.messages[0].content.startswith("You are helpful.\n\nSummary of the earlier conversation:")
+    assert state.messages[1].content == "What changed in Q1?"
     assert displayer.display_event.await_args.args[0].condensed_turns == 2
+
+
+@pytest.mark.asyncio
+async def test_a_result_an_earlier_round_condensed_is_not_summarised_again():
+    messages = _conversation()
+    messages[3] = messages[3].model_copy(update={"contents": [TextContent(text="[Condensed earlier result] old")]})
+    condenser = ToolLoopCondenser(_llm(), 30, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+    condenser._summarise_result = AsyncMock(return_value="again")
+
+    await condenser.condense(_state(messages))
+
+    condenser._summarise_result.assert_not_awaited()
 
 
 @pytest.mark.asyncio
