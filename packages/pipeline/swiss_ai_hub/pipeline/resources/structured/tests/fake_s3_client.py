@@ -10,10 +10,12 @@ class FakeS3Client:
     def __init__(self) -> None:
         self.objects: dict[tuple[str, str], dict[str, Any]] = {}
         self.put_attempts = 0
+        self.put_keys: list[tuple[str, str]] = []
         self.fail_next_puts_with: list[str] = []
 
     def put_object(self, *, Bucket: str, Key: str, Body: bytes | str, Metadata: dict | None = None, **params: Any):
         self.put_attempts += 1
+        self.put_keys.append((Bucket, Key))
         if self.fail_next_puts_with:
             raise ClientError({"Error": {"Code": self.fail_next_puts_with.pop(0), "Message": "fake"}}, "PutObject")
         body = Body.encode() if isinstance(Body, str) else Body
@@ -30,6 +32,22 @@ class FakeS3Client:
 
     def keys(self, bucket: str) -> list[str]:
         return sorted(key for stored_bucket, key in self.objects if stored_bucket == bucket)
+
+    def list_objects_v2(self, *, Bucket: str, Prefix: str = "", **_: Any) -> dict[str, Any]:
+        matching = [{"Key": key} for key in self.keys(Bucket) if key.startswith(Prefix)]
+        return {"Contents": matching} if matching else {}
+
+    def get_paginator(self, operation: str) -> "FakeS3Client._ListObjectsPaginator":
+        if operation != "list_objects_v2":
+            raise NotImplementedError(operation)
+        return self._ListObjectsPaginator(self)
+
+    class _ListObjectsPaginator:
+        def __init__(self, client: "FakeS3Client") -> None:
+            self.client = client
+
+        def paginate(self, *, Bucket: str, **_: Any):
+            yield {"Contents": [{"Key": key} for key in self.client.keys(Bucket)]}
 
     def _stored(self, bucket: str, key: str, operation: str, missing_code: str) -> dict[str, Any]:
         if (bucket, key) not in self.objects:

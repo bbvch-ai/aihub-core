@@ -12,21 +12,22 @@ _STATE_FILE = "state.json"
 
 
 class StructuredSourceStateStore:
-    """Keeps one database's dlt state in the Dagster bucket between syncs.
+    """Keeps one database's dlt state in that database's own bucket between syncs.
 
-    dlt cannot restore state from a custom destination and every step starts in an empty working directory, so
-    without this each run would re-read the whole source. Save only after a fully successful run: dlt advances the
-    cursor while extracting, before any file is written.
+    dlt cannot restore state from a custom destination and every run starts in an empty working directory, so
+    without this each run would re-read the whole source. The state sits in a ``.{source}_dagster`` folder, which
+    data lake listings skip, because the ``dagster`` bucket expires its objects after a day; and it is torn down with
+    the database. Save only after a fully successful run: dlt advances the cursor while extracting, before any file
+    is written.
     """
-
-    STATE_BUCKET = "dagster"
 
     def __init__(
         self,
         source: Annotated[str, "Source pipeline id, so two structured pipelines never share state"],
         bucket: Annotated[str, "Bucket name of the knowledge database the state belongs to"],
     ):
-        self.object_key = f"{source}/state/{bucket}.json"
+        self.bucket = bucket
+        self.object_key = f".{source}_dagster/{_STATE_FILE}"
 
     def restore(
         self,
@@ -47,14 +48,14 @@ class StructuredSourceStateStore:
             scope_fingerprint=scope_fingerprint,
             pipeline_state=json.loads((pipeline_dir / _STATE_FILE).read_text()),
         )
-        self._client().put_object(Bucket=self.STATE_BUCKET, Key=self.object_key, Body=state.model_dump_json())
+        self._client().put_object(Bucket=self.bucket, Key=self.object_key, Body=state.model_dump_json())
 
     def delete(self) -> None:
-        self._client().delete_object(Bucket=self.STATE_BUCKET, Key=self.object_key)
+        self._client().delete_object(Bucket=self.bucket, Key=self.object_key)
 
     def _load(self) -> StructuredSourceState | None:
         try:
-            body = self._client().get_object(Bucket=self.STATE_BUCKET, Key=self.object_key)["Body"].read()
+            body = self._client().get_object(Bucket=self.bucket, Key=self.object_key)["Body"].read()
         except ClientError as error:
             if error.response["Error"]["Code"] == "NoSuchKey":
                 return None
@@ -62,4 +63,4 @@ class StructuredSourceStateStore:
         return StructuredSourceState.model_validate_json(body)
 
     def _client(self) -> BaseClient:
-        return build_s3_data_lake_client(self.STATE_BUCKET, ensure_bucket=False).raw_client
+        return build_s3_data_lake_client(self.bucket, ensure_bucket=False).raw_client

@@ -63,15 +63,23 @@ class TestStore:
         StructuredSourceStateStore("structured", "db-a").save(_working_dir_with_state(tmp_path / "a", "x"), "scope")
 
         assert StructuredSourceStateStore("structured", "db-b").restore(tmp_path / "b", "scope") is False
-        assert s3.keys("dagster") == ["structured/state/db-a.json"]
+        assert s3.keys("db-a") == [".structured_dagster/state.json"]
+        assert s3.keys("db-b") == []
 
-    def test_a_forgotten_database_has_no_state_left(self, tmp_path, s3):
+    def test_the_state_never_shows_up_as_a_file_of_the_database(self, tmp_path, s3):
+        """Ingestion and removal both list through ``list_ingestible_uris``; neither may see or delete the state."""
+        StructuredSourceStateStore("structured", "db-a").save(_working_dir_with_state(tmp_path / "a", "x"), "scope")
+        s3.put_object(Bucket="db-a", Key="ABC/ABC-1.md", Body=b"record")
+
+        assert S3DataLakeClient("db-a", s3, False).list_ingestible_uris() == ["s3://db-a/ABC/ABC-1.md"]
+
+    def test_a_discarded_state_is_gone(self, tmp_path, s3):
         store = StructuredSourceStateStore("structured", "db-a")
         store.save(_working_dir_with_state(tmp_path / "run1", "x"), "scope")
 
         store.delete()
 
-        assert s3.keys("dagster") == []
+        assert s3.keys("db-a") == []
 
 
 class TestResume:
