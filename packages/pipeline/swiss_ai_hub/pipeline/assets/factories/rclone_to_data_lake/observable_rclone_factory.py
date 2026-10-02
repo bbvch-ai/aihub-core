@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from dagster import (
     AssetKey,
     DataVersionsByPartition,
@@ -13,6 +15,7 @@ from swiss_ai_hub.pipeline.util.async_utils import run_async
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 from swiss_ai_hub.pipeline.util.run_routing import bucket_from_run_tag
 from swiss_ai_hub.pipeline.util.source_builders import build_rclone_client, rclone_remote_for_bucket
+from swiss_ai_hub.pipeline.util.unlanded_partition_retry_config import UnlandedPartitionRetryConfig
 
 
 def observable_rclone_factory(
@@ -21,6 +24,7 @@ def observable_rclone_factory(
     *,
     source: str,
     max_partitions: int,
+    retry_config: Annotated[UnlandedPartitionRetryConfig, "Data-lake asset and retry budget the observation reports"],
 ) -> observable_source_asset:
     """Observes one knowledge database's rclone remote, resolved from the run.
 
@@ -50,6 +54,7 @@ def observable_rclone_factory(
             bucket=bucket,
             rclone_files=files,
             max_partitions=max_partitions,
+            retry_config=retry_config,
         )
 
     return observable_rclone

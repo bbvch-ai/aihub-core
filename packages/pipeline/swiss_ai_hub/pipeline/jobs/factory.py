@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from dagster import AssetSelection, JobDefinition, RunConfig, define_asset_job, observable_source_asset
 from dagster._core.storage.tags import PRIORITY_TAG
 
@@ -48,6 +50,7 @@ def materialize_asset_job(
     asset_selection: AssetSelection,
     config: RunConfig | None = None,
     description: str | None = None,
+    prioritized: Annotated[bool, "Jump the run queue; off for bulk work that must not starve orchestration"] = True,
 ) -> JobDefinition:
     """Creates a job that materializes a specific selection of assets."""
     return define_asset_job(
@@ -55,5 +58,5 @@ def materialize_asset_job(
         selection=asset_selection,
         config=config,
         description=description or "A job to materialize the selected assets.",
-        run_tags=ORCHESTRATION_RUN_PRIORITY,
+        run_tags=ORCHESTRATION_RUN_PRIORITY if prioritized else None,
     )

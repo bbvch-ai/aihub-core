@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Annotated
 
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition, SensorDefinition
@@ -25,8 +26,10 @@ from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_suc
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
 from swiss_ai_hub.pipeline.sensors.source_bucket_cleanup_sensor import source_bucket_cleanup_sensor
 from swiss_ai_hub.pipeline.sensors.source_pipeline_registration_sensor import source_pipeline_registration_sensor
+from swiss_ai_hub.pipeline.sensors.unlanded_partition_retry_sensor import unlanded_partition_retry_sensor
 from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSyncConfig
 from swiss_ai_hub.pipeline.util.run_routing import owned_by_source
+from swiss_ai_hub.pipeline.util.unlanded_partition_retry_config import UnlandedPartitionRetryConfig
 
 _DEFAULT_SOURCE = SourcePipelineType.RCLONE.value
 
@@ -58,8 +61,25 @@ def rclone_pipeline_definitions(
     removed_files_key = AssetKey([asset_group, "removed_data_lake_files"])
     partitions = DynamicPartitionsDefinition(name=f"{source}_source_partitions")
 
+    retry_job = materialize_asset_job(
+        source_location_name=source,
+        job_name="retry_unlanded_files",
+        asset_selection=AssetSelection.keys(data_lake_files_key),
+        description="Re-requests source files whose data-lake write failed, bounded per file.",
+        prioritized=False,
+    )
+    retry_config = UnlandedPartitionRetryConfig(
+        asset_key=data_lake_files_key,
+        retry_job_name=retry_job.name,
+        max_attempts=settings.RETRY_MAX_ATTEMPTS,
+        base_delay=timedelta(minutes=settings.RETRY_BASE_DELAY_MINUTES),
+    )
     observable_asset = observable_rclone_factory(
-        remote_files_key, partitions, source=source, max_partitions=settings.MAX_PARTITIONS
+        remote_files_key,
+        partitions,
+        source=source,
+        max_partitions=settings.MAX_PARTITIONS,
+        retry_config=retry_config,
     )
     assets = [
         observable_asset,
@@ -86,12 +106,15 @@ def rclone_pipeline_definitions(
         sensors=[
             default_automation_sensor(assets),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
+            unlanded_partition_retry_sensor(
+                monitored_job=observe_job, retry_job=retry_job, config=retry_config, partitions=partitions
+            ),
             registration_sensor,
             source_bucket_cleanup_sensor(source=source, partition_registry_name=partitions.name),
             *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
-        jobs=[observe_job, remove_job],
+        jobs=[observe_job, remove_job, retry_job],
         schedules=[
             per_bucket_observe_schedule(
                 observe_job,
