@@ -70,6 +70,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolApprovalRequestEvent,
     ToolApprovalResponseEvent,
     ToolEvent,
+    ToolLoopStatusEvent,
     ToolResultEvent,
     UnreadMailListedEvent,
     UserMessageEvent,
@@ -105,6 +106,7 @@ DisplayEvents = (
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
+    | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]
