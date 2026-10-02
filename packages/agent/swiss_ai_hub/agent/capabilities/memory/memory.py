@@ -184,7 +184,7 @@ class Memory(Capability):
         icon="mdi:brain",
         precondition=recalls_memory,
     )
-    async def tool_call_step(agent: Agent, call: ToolCallApprovedEvent) -> RecallMemoryEvent:
+    async def recall_tool_call_step(agent: Agent, call: ToolCallApprovedEvent) -> RecallMemoryEvent:
         """The model chose to recall: the regular recall, for the query it asked with."""
         return RecallMemoryEvent(query=str(call.arguments.get("query") or ""), tool_call_id=call.tool_call_id)
 
@@ -195,7 +195,7 @@ class Memory(Capability):
         icon="mdi:brain",
         precondition=answers_a_recall_call,
     )
-    async def tool_result_step(
+    async def recall_tool_result_step(
         agent: Agent, recalled: MemoryRecalledEvent, decided: ToolCallsDecidedEvent, t: LocaleHandler
     ) -> ToolResultEvent:
         """Hand what memory holds back to the loop: its text for the model, its blocks for a gathered answer."""

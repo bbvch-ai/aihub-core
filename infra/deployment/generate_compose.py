@@ -11,6 +11,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
@@ -168,6 +169,7 @@ OWN_IMAGE_LICENSES = {
     "imap_agent": "Apache-2.0",
     "email_classification_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
+    "universal_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
@@ -652,7 +654,7 @@ def main():
         stats = generate_default(env, config_data)
 
     # Print summary
-    print(f"\nGeneration complete!")
+    print("\nGeneration complete!")
     for name, count in stats.items():
         icon = "[]" if "docker-compose" in name else "  "
         print(f"   {icon} {count} {name} files")

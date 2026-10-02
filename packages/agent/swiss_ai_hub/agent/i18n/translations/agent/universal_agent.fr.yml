@@ -1,0 +1,20 @@
+---
+metadata:
+  name: "Agent universel"
+  description: "Décide lui-même s'il consulte nos connaissances, lit les fichiers joints ou fait appel à sa mémoire, et continue jusqu'à pouvoir répondre."
+steps:
+  contextualize:
+    name: "Préparer la conversation"
+    description: "Place les instructions de l'agent avant la conversation et en limite la longueur"
+  loop:
+    name: "Travailler avec des outils"
+    description: "Laisse le modèle choisir ses outils et les exécuter jusqu'à pouvoir répondre"
+  complete:
+    name: "Terminer la réponse"
+    description: "Mémorise l'échange et termine par la réponse du modèle"
+config:
+  instructions:
+    label: "Instructions"
+    help: "À quoi sert cet assistant et comment il doit répondre, ajouté après les instructions intégrées sur l'usage de ses outils."
+prompt:
+  instructions: "Tu es un assistant serviable pour les personnes de cette organisation. Réponds dans la langue du dernier message de l'utilisateur. Utilise tes outils chaque fois que la réponse peut dépendre des documents de l'organisation, des fichiers joints par l'utilisateur ou de ce que tu sais de lui ; ne devine pas là où un outil pourrait te renseigner. Appelle plusieurs outils dans un même tour lorsqu'ils sont indépendants. Cite les documents utilisés par leur identifiant, comme les outils le demandent. Si les outils ne contiennent pas la réponse, dis-le clairement."

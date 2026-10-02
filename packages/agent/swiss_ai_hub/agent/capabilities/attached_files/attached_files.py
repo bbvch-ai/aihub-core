@@ -175,7 +175,7 @@ class AttachedFiles(Capability):
         icon="mdi:paperclip",
         precondition=reads_attached_files,
     )
-    async def tool_call_step(
+    async def read_tool_call_step(
         agent: Agent,
         call: ToolCallApprovedEvent,
         request: RunToolLoopEvent,
@@ -205,7 +205,7 @@ class AttachedFiles(Capability):
         icon="mdi:paperclip",
         precondition=answers_a_read_call,
     )
-    async def tool_result_step(
+    async def read_tool_result_step(
         agent: Agent, read: AttachedFilesReadEvent, decided: ToolCallsDecidedEvent, t: LocaleHandler
     ) -> ToolResultEvent:
         """Hand what was read back to the loop: its text for the model, its block for a gathered answer."""

@@ -533,7 +533,7 @@ class TestKnowledgeAsATool:
             kind="capability",
         )
 
-        request = await Knowledge.tool_call_step(LoopAgent(), call=call, request=RunToolLoopEvent(), tool=config)
+        request = await Knowledge.search_tool_call_step(LoopAgent(), call=call, request=RunToolLoopEvent(), tool=config)
 
         assert isinstance(request, SearchKnowledgeEvent)
         assert (request.query, request.tool_call_id) == ("vacation days", "c1")
@@ -548,7 +548,7 @@ class TestKnowledgeAsATool:
         decided = ToolCallsDecidedEvent(state=_state(), tool_call_ids=["c1"])
 
         assert await answers_a_tool_call(searched, decided)
-        result = await Knowledge.tool_result_step(LoopAgent(), searched=searched, decided=decided)
+        result = await Knowledge.search_tool_result_step(LoopAgent(), searched=searched, decided=decided)
 
         assert (result.tool_call_id, result.block) == ("c1", block)
         assert "25 days" in result.content

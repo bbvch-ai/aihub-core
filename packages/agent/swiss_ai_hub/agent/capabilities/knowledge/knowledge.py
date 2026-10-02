@@ -146,7 +146,7 @@ class Knowledge(Capability):
         icon="mdi:bookshelf",
         precondition=searches_knowledge,
     )
-    async def tool_call_step(
+    async def search_tool_call_step(
         agent: Agent,
         call: ToolCallApprovedEvent,
         request: RunToolLoopEvent,
@@ -182,7 +182,7 @@ class Knowledge(Capability):
         icon="mdi:bookshelf",
         precondition=answers_a_tool_call,
     )
-    async def tool_result_step(
+    async def search_tool_result_step(
         agent: Agent, searched: KnowledgeSearchedEvent, decided: ToolCallsDecidedEvent
     ) -> ToolResultEvent:
         """Hand what the search found back to the loop: its text for the model, its block for a gathered answer."""

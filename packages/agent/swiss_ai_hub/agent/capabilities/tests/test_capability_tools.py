@@ -88,7 +88,7 @@ class TestAttachedFilesAsATool:
         conversation = MagicMock()
         conversation.input_budget.return_value = 10_000
 
-        read = await AttachedFiles.tool_call_step(
+        read = await AttachedFiles.read_tool_call_step(
             Agent(),
             call=_call("read_attached_files", files=[F2], query="action items"),
             request=RunToolLoopEvent(files=[REPORT, NOTES]),
@@ -106,7 +106,7 @@ class TestAttachedFilesAsATool:
         read = AttachedFilesReadEvent(block=block, tool_call_id="c1")
 
         assert await answers_a_read_call(read, _decided("c1"))
-        result = await AttachedFiles.tool_result_step(Agent(), read=read, decided=_decided("c1"), t=T)
+        result = await AttachedFiles.read_tool_result_step(Agent(), read=read, decided=_decided("c1"), t=T)
 
         assert isinstance(result, ToolResultEvent)
         assert (result.tool_call_id, result.block) == ("c1", block)
@@ -128,7 +128,7 @@ class TestMemoryAsATool:
 
     @pytest.mark.asyncio
     async def test_a_chosen_recall_runs_the_regular_recall(self):
-        recall = await Memory.tool_call_step(Agent(), call=_call("recall_memory", query="preferred language"))
+        recall = await Memory.recall_tool_call_step(Agent(), call=_call("recall_memory", query="preferred language"))
 
         assert isinstance(recall, RecallMemoryEvent)
         assert (recall.query, recall.tool_call_id) == ("preferred language", "c1")
@@ -140,13 +140,13 @@ class TestMemoryAsATool:
         )
 
         assert await answers_a_recall_call(recalled, _decided("c1"))
-        result = await Memory.tool_result_step(Agent(), recalled=recalled, decided=_decided("c1"), t=T)
+        result = await Memory.recall_tool_result_step(Agent(), recalled=recalled, decided=_decided("c1"), t=T)
 
         assert "Prefers German." in result.content
 
     @pytest.mark.asyncio
     async def test_nothing_remembered_is_said_so(self):
-        result = await Memory.tool_result_step(
+        result = await Memory.recall_tool_result_step(
             Agent(), recalled=MemoryRecalledEvent(tool_call_id="c1"), decided=_decided("c1"), t=T
         )
 
