@@ -426,6 +426,6 @@ def test_grounding_is_not_checked_when_drafting_is_off():
     """Drafting off means grounding cannot execute, so it must not be able to fail the run either.
 
     The reachable case is an admin who set grounding up and later paused drafting: every classification run would
-    otherwise die on a feature that `_drafting_batch` disables anyway.
+    otherwise die on a feature that `ReplyDrafting.drafting_batch` disables anyway.
     """
     MailTriageValidator.validate(_grounded_settings(), _no_drafting(), "INBOX", _counter, None)
