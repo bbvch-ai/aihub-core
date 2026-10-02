@@ -8,12 +8,12 @@ Agents need to pull structured records out of whole documents, such as the billi
 levels of an SLA (issue #1949, consumed by the extraction agent in #1888). Two things make this different from every
 structured LLM call the platform already makes:
 
-1. **The record shape is only known at request time.** Every existing `astructured_predict` caller uses a Pydantic
-   model written at development time. Here the user's message decides the fields.
+1. **The record shape is only known at request time.** Every existing `astructured_predict` caller uses a Pydantic model
+   written at development time. Here the user's message decides the fields.
 2. **One document holds zero, one or many records, and can exceed the model's context window.**
 
-Strict structured output, the default since `2026_07_13`, puts every property into `required`. A field the model
-cannot fill must therefore still be emittable, or the model cannot close the JSON object and pads to its output limit.
+Strict structured output, the default since `2026_07_13`, puts every property into `required`. A field the model cannot
+fill must therefore still be emittable, or the model cannot close the JSON object and pads to its output limit.
 
 ## Decision Drivers
 
@@ -39,17 +39,17 @@ names every field individually, as the structured-output guidance requires.
 errors, and an identical request at temperature zero returns the same schema. `RecordSchema.validated()` reports every
 problem at once instead. Field names are normalised during parsing, which never fails.
 
-**4. The schema model and the extraction model are separate parameters.** `RecordSchemaBuilder.build` takes its own
-LLM and calls a temperature-zero copy of it. Measured on 2026-10-02 with the invoice description from #1949, five runs
-per model:
+**4. The schema model and the extraction model are separate parameters.** `RecordSchemaBuilder.build` takes its own LLM
+and calls a temperature-zero copy of it. Measured on 2026-10-02 with the invoice description from #1949, five runs per
+model:
 
-| Model                   | Runs sharing one schema | Differs from the majority                |
-| ----------------------- | ----------------------- | ---------------------------------------- |
-| gemma-4-31B-it          | 5/5                     | none                                     |
-| Apertus-70B-Instruct    | 5/5                     | none                                     |
-| Kimi-K2.6               | 5/5                     | none                                     |
-| Ministral-3-14B         | 5/5                     | names `invoice_date`, `supplier_name`    |
-| Qwen3.5-122B-A10B       | 5/5                     | types `amount` as string                 |
+| Model                | Runs sharing one schema | Differs from the majority             |
+| -------------------- | ----------------------- | ------------------------------------- |
+| gemma-4-31B-it       | 5/5                     | none                                  |
+| Apertus-70B-Instruct | 5/5                     | none                                  |
+| Kimi-K2.6            | 5/5                     | none                                  |
+| Ministral-3-14B      | 5/5                     | names `invoice_date`, `supplier_name` |
+| Qwen3.5-122B-A10B    | 5/5                     | types `amount` as string              |
 
 Each model is consistent with itself, but models disagree with each other, so the schema model decides what a table
 looks like. Keeping it separate lets a consuming agent pin it independently of the extraction model. The measurement is
@@ -73,8 +73,8 @@ records of the windows that worked, because a partial list would read as complet
 - **Letting the model return free-form JSON and parsing it leniently.** It abandons the strict path every other caller
   uses and moves validation into hand-written code.
 - **Deduplicating on value equality across all windows.** It collapses genuinely repeated lines.
-- **Passing only the schema to extraction.** The filter then has to be smuggled into field descriptions, which models
-  do not reliably act on.
+- **Passing only the schema to extraction.** The filter then has to be smuggled into field descriptions, which models do
+  not reliably act on.
 
 ## Consequences
 
