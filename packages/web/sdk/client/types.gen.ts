@@ -4154,6 +4154,7 @@ export type ContextualizedAgentEvent = {
     | AttachedFileEvent
     | KnowledgeSearchedEvent
     | ToolResultEvent
+    | ToolLoopStatusEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -17713,6 +17714,64 @@ export type ToolEvent = {
 };
 
 /**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolResultEvent
  *
  * What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.
@@ -21062,6 +21121,7 @@ export type ContextualizedAgentEventWritable = {
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
     | ToolResultEventWritable
+    | ToolLoopStatusEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -29327,6 +29387,51 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
   [key: string]: unknown;
 };
 

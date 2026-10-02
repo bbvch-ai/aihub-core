@@ -1082,6 +1082,8 @@ export {
   type ToolCallBlock,
   type ToolEvent,
   type ToolEventWritable,
+  type ToolLoopStatusEvent,
+  type ToolLoopStatusEventWritable,
   type ToolResultEvent,
   type ToolResultEventWritable,
   type TopLogprob,
