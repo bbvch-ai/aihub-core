@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import (
+    CitationId,
     ExtractedDocument,
     IngestedNode,
     combine_nodes_in_order,
@@ -96,11 +97,12 @@ class AttachedFiles(Capability):
         if not files:
             return None
         t = context.t
-        listing = "\n".join(f"- {file.file_id}: {file.filename} ({file.file_type})" for file in files)
+        # Files go by their citation id: a model shown the upload id cites that instead, which no client links.
+        listing = "\n".join(f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})" for file in files)
         return ToolDefinition(
             name=READ_ATTACHED_FILES_TOOL,
             description=t("agent.attached_files.tool.description", files=listing),
-            parameters=AttachedFilesToolArguments.schema_for([file.file_id for file in files], t),
+            parameters=AttachedFilesToolArguments.schema_for([CitationId.of(file.file_id) for file in files], t),
         )
 
     @staticmethod
@@ -189,7 +191,9 @@ class AttachedFiles(Capability):
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
-        chosen = [file for file in request.files if not arguments.files or file.file_id in arguments.files]
+        chosen = [
+            file for file in request.files if not arguments.files or CitationId.of(file.file_id) in arguments.files
+        ]
         return ReadAttachedFilesEvent(
             files=chosen or request.files,
             query=arguments.query,

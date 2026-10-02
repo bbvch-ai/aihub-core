@@ -21,6 +21,7 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
     UserUploadedFile,
 )
+from swiss_ai_hub.core.generative_ai import CitationId
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
@@ -76,9 +77,10 @@ class TestAttachedFilesAsATool:
     def test_the_attached_documents_are_listed_for_the_model(self):
         definition = AttachedFiles.tool_definition(_context([REPORT, PHOTO]))
 
-        assert f"{F1}: report.pdf (application/pdf)" in definition.description
+        assert f"{CitationId.of(F1)}: report.pdf (application/pdf)" in definition.description
+        assert F1 not in definition.description
         assert "photo.png" not in definition.description
-        assert definition.parameters["properties"]["files"]["items"]["enum"] == [F1]
+        assert definition.parameters["properties"]["files"]["items"]["enum"] == [CitationId.of(F1)]
 
     def test_nothing_readable_attached_offers_no_tool(self):
         assert AttachedFiles.tool_definition(_context([PHOTO])) is None
@@ -90,7 +92,7 @@ class TestAttachedFilesAsATool:
 
         read = await AttachedFiles.read_tool_call_step(
             Agent(),
-            call=_call("read_attached_files", files=[F2], query="action items"),
+            call=_call("read_attached_files", files=[CitationId.of(F2)], query="action items"),
             request=RunToolLoopEvent(files=[REPORT, NOTES]),
             conversation=conversation,
             loop=_config(),
