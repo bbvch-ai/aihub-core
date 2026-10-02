@@ -134,6 +134,15 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
         await self._sync_agent_instances_to_provisioners()
 
+        # Step 5: Reconcile the OpenWebUI knowledge entries, since collections a pipeline creates signal nothing here
+        await self._sync_knowledge_to_openwebui()
+
+    async def _sync_knowledge_to_openwebui(self) -> None:
+        try:
+            await self._openwebui_provisioner.sync_knowledge()
+        except Exception as e:
+            logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
+
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
         Broadcasts a NATS discovery request to all agents and collects responses.

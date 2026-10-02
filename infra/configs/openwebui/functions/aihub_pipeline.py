@@ -57,6 +57,10 @@ AIHUB_TITLE_REDIS_TTL_SECONDS = 600
 # under this key before OpenWebUI would act on them.
 REQUESTED_FEATURES_METADATA_KEY = "aihub_requested_features"
 
+# The type Open WebUI gives a knowledge entry the user referenced with `#`. Ours hold no content: each stands for one
+# of our collections, which the agent searches itself.
+KNOWLEDGE_COLLECTION_TYPE = "collection"
+
 # OpenWebUI file meta key under which the pipe remembers each agent's upload of that file, keyed "{class}/{id}", so
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
@@ -984,7 +988,8 @@ class RetrieverEventHandler(EventHandler):
 
 
 class GroundingNodesEventHandler(EventHandler):
-    """Lists the knowledge documents the answer is grounded in as sources, one per document.
+    """Lists the knowledge documents the answer is grounded in as sources, one per document: a knowledge agent's own
+    retrieval, and the collections the user referenced with `#`.
 
     The grounding nodes are exactly what the model reads, after reranking and with carried prior-turn documents, so
     every document it can cite is listed and none it never saw. Chunks of one document share the document's
@@ -994,7 +999,8 @@ class GroundingNodesEventHandler(EventHandler):
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
     ) -> Annotated[bool, "True if grounding nodes event"]:
-        return "InOrderNodeCombinerEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        names = {event.get("_event_name"), *event.get("_parent_event_names", [])}
+        return bool(names & {"InOrderNodeCombinerEvent", "KnowledgeSearchedEvent"})
 
     async def handle(
         self,
@@ -1726,6 +1732,36 @@ class AgentDiscoveryService:
 # ============================================================================
 
 
+class KnowledgeReferenceService:
+    """Turns the knowledge entries the user referenced with `#` into references to our collections.
+
+    Open WebUI assigns its own ids to knowledge entries, so the AI-Hub, which created them, resolves which collection
+    each one stands for. An entry nobody resolves, such as one a user created in Open WebUI, is left out.
+    """
+
+    def __init__(self, base_url: str) -> None:
+        self._base_url = base_url
+
+    async def references_for_event(
+        self,
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
+        headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
+    ) -> Annotated[list[dict[str, str]], "The referenced collections, as database and namespace"]:
+        openwebui_ids = list(
+            dict.fromkeys(file["id"] for file in files or [] if file.get("type") == KNOWLEDGE_COLLECTION_TYPE)
+        )
+        if not openwebui_ids:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self._base_url}/api/v1/active/knowledge/openwebui-references",
+                json={"openwebui_ids": openwebui_ids},
+                headers=headers,
+            )
+            response.raise_for_status()
+            return response.json()
+
+
 class FileProcessingService:
     """Handles file processing via the agent file upload API.
 
@@ -1767,6 +1803,8 @@ class FileProcessingService:
         owui_file_ids: dict[str, str] = {}
 
         for file in files or []:
+            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
+                continue
             try:
                 prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
             except Exception as e:
@@ -2206,6 +2244,9 @@ class Pipe:
             self.valves.S3_STORAGE_SECRET_KEY,
         )
 
+        # Referenced knowledge collections
+        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL)
+
         # Message Conversion
         self._message_converter = MessageConverter()
 
@@ -2410,6 +2451,9 @@ class Pipe:
                 files, owui_file_ids = await self._file_service.prepare_files_for_event(
                     __files__, agent_class, agent_id, headers
                 )
+                knowledge_references = await self._knowledge_reference_service.references_for_event(
+                    __files__, headers
+                )
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -2442,6 +2486,8 @@ class Pipe:
                     if files:
                         event_payload["files"] = files
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                    if knowledge_references:
+                        event_payload["knowledge_references"] = knowledge_references
 
                 # Emit initial status
                 await __event_emitter__(

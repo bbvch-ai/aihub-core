@@ -24,6 +24,8 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -145,9 +147,15 @@ class LLMWrappingAgent(Agent):
         icon="mdi:brain",
     )
     async def gather_context_step(
-        self, ctx: Conversation.Contextualized, event: UserMessageEvent
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest]:
-        return [Memory.recall(ctx.query), AttachedFiles.read(event.files, ctx.history, ctx.query)]
+        self, ctx: Conversation.Contextualized, event: UserMessageEvent, config: KnowledgeFields
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        references = event.knowledge_references
+        reserve = config.knowledge.context_reserve() if references else 0
+        return [
+            Memory.recall(ctx.query),
+            AttachedFiles.read(event.files, ctx.history, ctx.query, reserve_tokens=reserve),
+            Knowledge.search(references, ctx.query),
+        ]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
@@ -155,9 +163,13 @@ class LLMWrappingAgent(Agent):
         icon="mdi:database-plus",
     )
     async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled, files: AttachedFiles.Contents
+        self,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=[*memories.blocks, files.block])
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.name"),

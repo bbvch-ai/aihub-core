@@ -6,6 +6,9 @@ display_event:
 attached_file_event:
   name: File allegato
   description: L'agente ha letto un file che l'utente ha allegato alla conversazione.
+knowledge_searched_event:
+  name: Conoscenza consultata
+  description: "L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente."
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.

@@ -4150,6 +4150,7 @@ export type ContextualizedAgentEvent = {
     | ChunkEvent
     | ThoughtEvent
     | AttachedFileEvent
+    | KnowledgeSearchedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -9672,6 +9673,89 @@ export type KnowledgeDatabaseSelector = {
 };
 
 /**
+ * KnowledgeReference
+ *
+ * A knowledge collection the user pointed the conversation at, e.g. with `#` in a chat client.
+ *
+ * A request, not a grant: the agent searches it only when the asking user may read it.
+ */
+export type KnowledgeReference = {
+  /**
+   * Database
+   *
+   * The knowledge database, by its vector collection name.
+   */
+  database: string;
+  /**
+   * Namespace
+   *
+   * The collection (namespace) within the database.
+   */
+  namespace: string;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * LLMCostEvent
  *
  * A concrete event representing the costs associated with Large Language Model operations,
@@ -14558,6 +14642,18 @@ export const Resolution = {
 export type Resolution = (typeof Resolution)[keyof typeof Resolution];
 
 /**
+ * ResolveKnowledgeReferencesRequest
+ */
+export type ResolveKnowledgeReferencesRequest = {
+  /**
+   * Openwebui Ids
+   *
+   * Ids of the OpenWebUI knowledge entries a chat message referenced.
+   */
+  openwebui_ids: Array<string>;
+};
+
+/**
  * ResponseFormatJSONObject
  *
  * JSON object response format.
@@ -18220,6 +18316,12 @@ export type UserMessageEvent = {
    */
   requested_features?: Array<ChatFeature>;
   /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20733,6 +20835,7 @@ export type ContextualizedAgentEventWritable = {
     | ChunkEventWritable
     | ThoughtEventWritable
     | AttachedFileEventWritable
+    | KnowledgeSearchedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -24045,6 +24148,54 @@ export type KnowledgeDatabaseSelectorWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
   [key: string]: unknown;
 };
 
@@ -28935,6 +29086,12 @@ export type UserMessageEventWritable = {
    * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
    */
   requested_features?: Array<ChatFeature>;
+  /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
   [key: string]: unknown;
 };
 
@@ -32395,6 +32552,42 @@ export type GetDatabasesResponses = {
 
 export type GetDatabasesResponse =
   GetDatabasesResponses[keyof GetDatabasesResponses];
+
+export type ResolveOpenwebuiReferencesData = {
+  body: ResolveKnowledgeReferencesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/openwebui-references";
+};
+
+export type ResolveOpenwebuiReferencesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveOpenwebuiReferencesError =
+  ResolveOpenwebuiReferencesErrors[keyof ResolveOpenwebuiReferencesErrors];
+
+export type ResolveOpenwebuiReferencesResponses = {
+  /**
+   * Response Resolve Openwebui References
+   *
+   * Successful Response
+   */
+  200: Array<KnowledgeReference>;
+};
+
+export type ResolveOpenwebuiReferencesResponse =
+  ResolveOpenwebuiReferencesResponses[keyof ResolveOpenwebuiReferencesResponses];
 
 export type BatchDeleteDocumentsData = {
   body: BatchDeleteDocumentsRequest;

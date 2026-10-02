@@ -14,9 +14,10 @@ class CapabilityCatalog:
     def all() -> list[type[Capability]]:
         from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
         from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+        from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
         from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 
-        return [Conversation, Memory, AttachedFiles]
+        return [Conversation, Memory, AttachedFiles, Knowledge]
 
     @classmethod
     def called_by(cls, steps: list[Callable]) -> list[type[Capability]]:

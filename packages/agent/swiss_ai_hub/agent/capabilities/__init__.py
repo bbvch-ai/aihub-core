@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
     from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
     from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+    from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
     from swiss_ai_hub.agent.capabilities.memory.memory import Memory
     from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
     from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
@@ -19,6 +20,7 @@ __all__ = [
     "CapabilityCatalog",
     "Conversation",
     "ConversationFields",
+    "Knowledge",
     "Memory",
     "MemoryFields",
     "RequestedFeatures",
@@ -31,6 +33,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "CapabilityCatalog": "swiss_ai_hub.agent.capabilities.catalog",
     "Conversation": "swiss_ai_hub.agent.capabilities.conversation.conversation",
     "ConversationFields": "swiss_ai_hub.agent.capabilities.conversation.conversation_fields",
+    "Knowledge": "swiss_ai_hub.agent.capabilities.knowledge.knowledge",
     "Memory": "swiss_ai_hub.agent.capabilities.memory.memory",
     "MemoryFields": "swiss_ai_hub.agent.capabilities.memory.memory_fields",
     "RequestedFeatures": "swiss_ai_hub.agent.capabilities.requested_features",

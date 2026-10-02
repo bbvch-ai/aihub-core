@@ -6,6 +6,9 @@ display_event:
 attached_file_event:
   name: Attached File
   description: The agent read a file the user attached to the conversation.
+knowledge_searched_event:
+  name: Knowledge Searched
+  description: "The agent searched the knowledge collections the user referenced."
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.

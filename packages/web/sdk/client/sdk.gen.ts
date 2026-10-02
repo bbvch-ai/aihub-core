@@ -284,6 +284,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveOpenwebuiReferencesData,
+  ResolveOpenwebuiReferencesError,
+  ResolveOpenwebuiReferencesResponse,
   ResolveThreadForDisplayData,
   ResolveThreadForDisplayError,
   ResolveThreadForDisplayResponse,
@@ -3097,6 +3100,44 @@ export const getDatabases = <
     ],
     url: "/{tenant_id}/knowledge/databases",
     ...options,
+  });
+
+/**
+ * Resolve Openwebui References
+ *
+ * The collections behind the OpenWebUI knowledge entries a chat message referenced with `#`.
+ *
+ * Resolved for anyone signed in, without checking access: the agent checks what the asking user may read and
+ * tells them about the rest, which it could not if unreadable references were dropped here.
+ */
+export const resolveOpenwebuiReferences = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveOpenwebuiReferencesResponse =
+    ResolveOpenwebuiReferencesResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveOpenwebuiReferencesData,
+    ResolveOpenwebuiReferencesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    ResolveOpenwebuiReferencesResponse | DefaultT,
+    ResolveOpenwebuiReferencesError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/openwebui-references",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**

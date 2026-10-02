@@ -153,6 +153,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+    from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+    from swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event import KnowledgeSearchedEvent
+    from swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event import SearchKnowledgeEvent
 
 __all__ = [
     "CompleteConversationEvent",
@@ -266,6 +269,9 @@ __all__ = [
     "ChatFeature",
     "UserMessageEvent",
     "UserUploadedFile",
+    "KnowledgeReference",
+    "KnowledgeSearchedEvent",
+    "SearchKnowledgeEvent",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -382,6 +388,9 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
+    "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
+    "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
+    "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",
 }
 
 
