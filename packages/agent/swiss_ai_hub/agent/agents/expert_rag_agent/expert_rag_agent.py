@@ -16,12 +16,13 @@ from swiss_ai_hub.core.events.agent import (
     RAGStartEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import OrgMemoryReadConfig, format_expert_conversation
+from swiss_ai_hub.core.generative_ai import format_expert_conversation
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.ask_expert_start_event import AskExpertStartEvent
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
+from swiss_ai_hub.agent.agents.expert_rag_agent.expert_write_namespace import ExpertWriteNamespace
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
@@ -32,6 +33,7 @@ from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
 from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
 from swiss_ai_hub.agent.rag.preconditions import (
     check_is_answer_response,
@@ -154,21 +156,6 @@ class ExpertRAGAgent(RAGAgent):
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.waiting_for_instructions"))
         return ExpertRejectEvent(reason="User declined expert escalation")
 
-    @staticmethod
-    def _resolve_expert_write_namespace(
-        event: UserMessageEvent | RAGStartEvent,
-        org_memory: OrgMemoryReadConfig | None,
-    ) -> str | None:
-        """Pick the namespace the expert should write under. Single-entry event override
-        propagates; multiple or empty fall back to the profile default (writes are singular)."""
-        default = org_memory.default_tenant_namespace if org_memory else None
-        if not isinstance(event, RAGStartEvent):
-            return default
-        requested = event.org_memory_namespaces
-        if len(requested) == 1:
-            return requested[0]
-        return default
-
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.name"),
         description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.description"),
@@ -203,9 +190,7 @@ class ExpertRAGAgent(RAGAgent):
                 question_to_expert=ctx.query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-                org_memory_namespace=ExpertRAGAgent._resolve_expert_write_namespace(
-                    user_message_event, agent_config.org_memory
-                ),
+                org_memory_namespace=ExpertWriteNamespace.resolve(user_message_event, agent_config.org_memory),
             ),
         )
 
@@ -327,4 +312,4 @@ class ExpertRAGAgent(RAGAgent):
             few_shot_reject=outcome if isinstance(outcome, FewShotRejectEvent) else None,
             context_insufficient_reject=context_insufficient_reject,
         )
-        return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)
+        return AnswerHandBack.of(ctx, answer, stop, agent_config, topic, t, user)

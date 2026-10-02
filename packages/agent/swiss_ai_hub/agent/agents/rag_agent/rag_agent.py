@@ -7,7 +7,6 @@ from swiss_ai_hub.core.events.agent import (
     ContextSufficientAcceptEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    LLMEvent,
     MemoryStorageRequestedEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
@@ -35,6 +34,7 @@ from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
 from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
 from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
 from swiss_ai_hub.agent.rag.inaccessible_knowledge import InaccessibleKnowledge
@@ -342,26 +342,4 @@ class RAGAgent(Agent):
             few_shot_reject=outcome if isinstance(outcome, FewShotRejectEvent) else None,
             context_insufficient_reject=outcome if isinstance(outcome, ContextInsufficientRejectEvent) else None,
         )
-        return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)
-
-    @staticmethod
-    def hand_back(
-        ctx: Conversation.Contextualized,
-        answer: LLMEvent,
-        stop: StopEvent,
-        agent_config: RAGAgentConfig,
-        topic: AgentInstanceTopic,
-        t: LocaleHandler,
-        user: UserIdentity | None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
-        """The memory delegation first, so it is published before the run tears down, and the completion last."""
-        remember = Memory.remember(
-            query=ctx.query,
-            answer=answer,
-            user=user,
-            topic=topic,
-            agent_config=agent_config,
-            memory=agent_config,
-            locale=t.locale,
-        )
-        return [*([remember] if remember else []), Conversation.complete(answer=answer, stop=stop)]
+        return AnswerHandBack.of(ctx, answer, stop, agent_config, topic, t, user)
