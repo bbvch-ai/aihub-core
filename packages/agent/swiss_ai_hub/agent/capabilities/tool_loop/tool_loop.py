@@ -47,6 +47,7 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 logger = logging.getLogger(__name__)
 
 CITE_SOURCES_KEY = "tool_loop:cite_sources"
+DECLINED_KEY = "tool_loop:declined:{tool}"
 
 
 @precondition()
@@ -162,11 +163,16 @@ class ToolLoop(Capability):
         iteration: ToolLoopIterationEvent,
         conversation: ConversationFields,
         loop: ToolLoopFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[ToolCallsDecidedEvent | ToolEvent] | ToolLoopFinishedEvent:
-        """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has."""
+        """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has.
+
+        A tool the user declined is no longer offered in this run, since models ask for it again regardless of being
+        told not to, and the user would be prompted until they gave in.
+        """
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
         if state.mode == ToolLoopMode.GATHER:
@@ -177,7 +183,10 @@ class ToolLoop(Capability):
         messages = [message.to_llama_index() for message in state.messages]
         if exhausted:
             messages.append(ChatMessage(role=MessageRole.SYSTEM, content=t("agent.tool_loop.prompt.limit_reached")))
-        tools = [tool.to_openai() for tool in state.tools] if state.tools and not exhausted else None
+        available = [
+            tool for tool in state.tools if not await run_context.get(DECLINED_KEY.format(tool=tool.name), False)
+        ]
+        tools = [tool.to_openai() for tool in available] if available and not exhausted else None
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
         assistant = turn.output_messages[-1]
@@ -282,6 +291,7 @@ class ToolLoop(Capability):
         """Run an approved call, remembering the approval as the policy allows; tell the model about a declined one."""
         request = answer.request_event
         if not answer.response:
+            await run_context.set(DECLINED_KEY.format(tool=request.name), True)
             return ToolResultEvent(
                 tool_call_id=request.tool_call_id,
                 name=request.name,

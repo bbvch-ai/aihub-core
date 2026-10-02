@@ -173,13 +173,16 @@ def _calling(*calls: dict) -> Message:
 ANSWER = Message.from_string(role="assistant", content="It is noon.")
 
 
-async def _decide(state: ToolLoopState, reply: Message, **tool_loop: Any) -> tuple[Any, MagicMock]:
+async def _decide(
+    state: ToolLoopState, reply: Message, run_context: "_Context | None" = None, **tool_loop: Any
+) -> tuple[Any, MagicMock]:
     displayer = _displayer(reply)
     result = await ToolLoop.decide_step(
         LoopAgent(),
         iteration=ToolLoopIterationEvent(state=state),
         conversation=_conversation(reply),
         loop=_config(**tool_loop),
+        run_context=run_context or _Context(),
         displayer=displayer,
         t=T,
     )
@@ -413,7 +416,16 @@ class TestApproval:
 
         assert isinstance(result, ToolResultEvent)
         assert result.is_error and "declined" in result.content
-        assert run_context.values == {}
+        assert run_context.values == {"tool_loop:declined:echo": True}
+
+    @pytest.mark.asyncio
+    async def test_a_declined_tool_is_not_offered_again_in_the_run(self):
+        run_context = _Context({"tool_loop:declined:echo": True})
+
+        _, displayer = await _decide(_state(), ANSWER, run_context=run_context)
+
+        offered = [tool["function"]["name"] for tool in displayer.display_llm_stream.await_args.kwargs["tools"] or []]
+        assert "echo" not in offered
 
     @pytest.mark.asyncio
     async def test_an_approved_call_runs_and_the_approval_is_remembered_as_the_policy_says(self):

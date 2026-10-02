@@ -30,7 +30,7 @@ prompt:
   dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte. Rappelle l'outil si tu en as besoin.]"
   limit_reached: "Tu as utilisé tous les appels d'outils disponibles pour cette réponse. Réponds maintenant avec ce que tu as trouvé."
   unknown_tool: "Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés."
-  declined: "L'utilisateur a refusé l'exécution de %{tool}. Réponds sans cet outil et ne l'appelle plus pour cette demande."
+  declined: "L'utilisateur a refusé l'exécution de %{tool}. Réponds au mieux sans cet outil et dis que tu ne l'as pas utilisé parce que l'utilisateur a refusé ; ne prétends pas que l'accès te manque."
 approval:
   question: "L'assistant souhaite utiliser « %{tool} » :
 %{summary}

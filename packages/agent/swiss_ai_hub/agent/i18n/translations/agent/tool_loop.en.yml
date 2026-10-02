@@ -30,7 +30,7 @@ prompt:
   dropped_result: "[This earlier result was removed to fit the context. Call the tool again if you need it.]"
   limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found."
   unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
-  declined: "The user declined running %{tool}. Answer without it, and do not call it again for this request."
+  declined: "The user declined running %{tool}. Answer without it as well as you can, and say that you did not use it because the user declined; do not claim you lack access."
 approval:
   question: "The assistant wants to use \"%{tool}\":
 %{summary}
