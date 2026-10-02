@@ -221,6 +221,7 @@ class WeatherTools(BaseToolSpec):  # LlamaIndex: every listed method is a tool, 
     async def get_weather(self, city: Annotated[str, "City, e.g. Zurich"]) -> str:
         """Weather and forecast for a city."""
 
+
 class WeatherAgent(Agent):
     tools = ToolLoop.over(WebSearch, WeatherTools)
 

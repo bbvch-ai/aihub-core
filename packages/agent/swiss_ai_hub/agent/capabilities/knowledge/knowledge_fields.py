@@ -16,7 +16,8 @@ class KnowledgeFields(Form):
     knowledge: Annotated[
         KnowledgeConfig,
         Field(
-            description="How knowledge collections are searched, whether the user referenced them or the model chose to.",
+            description="How knowledge collections are searched, whether the user referenced them or the model "
+            "chose to.",
             title="Knowledge Search",
         ),
     ] = KnowledgeConfig()

@@ -14,7 +14,10 @@ class OpenWebuiKnowledgeEntryEntity(Document):
 
     meta = {
         "collection": "openwebui_knowledge_entries",
-        "indexes": [{"fields": ["openwebui_id"], "unique": True}, {"fields": ["database", "namespace"], "unique": True}],
+        "indexes": [
+            {"fields": ["openwebui_id"], "unique": True},
+            {"fields": ["database", "namespace"], "unique": True},
+        ],
     }
 
     openwebui_id = StringField(required=True)
