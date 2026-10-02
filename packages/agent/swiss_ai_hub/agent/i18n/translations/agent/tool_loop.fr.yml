@@ -1,5 +1,8 @@
 ---
 steps:
+  condense:
+    name: "Condenser la conversation"
+    description: "Condense les résultats d'outils et les échanges précédents quand la conversation ne tient plus dans le contexte du modèle"
   start:
     name: "Proposer des outils"
     description: "Détermine les outils que le modèle peut utiliser pour ce message"
@@ -19,6 +22,11 @@ steps:
     name: "Rassembler les résultats"
     description: "Renvoie au modèle tous les résultats de ses appels d'outils"
 prompt:
+  condense_result: "Condense le résultat d'outil ci-dessous à ce qui compte pour la demande de l'utilisateur qui le précède. Conserve exactement les faits, chiffres, noms, dates et identifiants de documents comme [s3f9a1c]. Omets tout le reste. Au plus %{words} mots, sans préambule."
+  condensed_result: "[Résultat précédent condensé] %{summary}"
+  condense_turns: "Résume la conversation ci-dessous pour qu'elle puisse continuer sans elle : ce que l'utilisateur a demandé, ce qui a été répondu et ce qui a été décidé ou reste ouvert. Conserve exactement les faits, chiffres, noms et identifiants de documents comme [s3f9a1c]. Au plus %{words} mots, sans préambule."
+  condensed_turns: "Résumé de la conversation précédente : %{summary}"
+  dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte. Rappelle l'outil si tu en as besoin.]"
   limit_reached: "Tu as utilisé tous les appels d'outils disponibles pour cette réponse. Réponds maintenant avec ce que tu as trouvé."
   unknown_tool: "Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés."
   declined: "L'utilisateur a refusé l'exécution de %{tool}. Réponds sans cet outil et ne l'appelle plus pour cette demande."

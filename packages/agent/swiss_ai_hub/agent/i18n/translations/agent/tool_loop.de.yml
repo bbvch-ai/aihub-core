@@ -1,5 +1,8 @@
 ---
 steps:
+  condense:
+    name: "Gespräch verdichten"
+    description: "Verdichtet frühere Werkzeugergebnisse und Gesprächsrunden, wenn das Gespräch nicht mehr in den Kontext des Modells passt"
   start:
     name: "Werkzeuge anbieten"
     description: "Ermittelt, welche Werkzeuge das Modell für diese Nachricht nutzen darf"
@@ -19,6 +22,11 @@ steps:
     name: "Werkzeugergebnisse sammeln"
     description: "Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück"
 prompt:
+  condense_result: "Verdichte das folgende Werkzeugergebnis auf das, was für die vorangehende Anfrage des Benutzers zählt. Übernimm Fakten, Zahlen, Namen, Daten und Dokument-IDs wie [s3f9a1c] genau so, wie sie stehen. Lass alles andere weg. Höchstens %{words} Wörter, ohne Einleitung."
+  condensed_result: "[Verdichtetes früheres Ergebnis] %{summary}"
+  condense_turns: "Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung."
+  condensed_turns: "Zusammenfassung des bisherigen Gesprächs: %{summary}"
+  dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst.]"
   limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
   declined: "Der Benutzer hat die Ausführung von %{tool} abgelehnt. Antworte ohne dieses Werkzeug und rufe es für diese Anfrage nicht erneut auf."

@@ -1,5 +1,8 @@
 ---
 steps:
+  condense:
+    name: "Condense the Conversation"
+    description: "Condenses earlier tool results and turns when the conversation no longer fits the model's context"
   start:
     name: "Offer Tools"
     description: "Works out which tools the model may use for this message"
@@ -19,6 +22,11 @@ steps:
     name: "Collect Tool Results"
     description: "Hands every result of the model's tool calls back to it"
 prompt:
+  condense_result: "Condense the tool result below to what matters for the user's request, which precedes it. Keep facts, figures, names, dates and document ids such as [s3f9a1c] exactly as written. Leave out everything else. At most %{words} words, no preamble."
+  condensed_result: "[Condensed earlier result] %{summary}"
+  condense_turns: "Summarise the conversation below so it can continue without it: what the user asked, what was answered, and what was decided or is still open. Keep facts, figures, names and document ids such as [s3f9a1c] exactly. At most %{words} words, no preamble."
+  condensed_turns: "Summary of the earlier conversation: %{summary}"
+  dropped_result: "[This earlier result was removed to fit the context. Call the tool again if you need it.]"
   limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found."
   unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
   declined: "The user declined running %{tool}. Answer without it, and do not call it again for this request."

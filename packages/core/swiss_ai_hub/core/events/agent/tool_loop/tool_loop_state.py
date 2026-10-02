@@ -28,6 +28,7 @@ class ToolLoopState(BaseModel):
     gathered: Annotated[
         list[ChatMessage], Field(description="The tool results as context, for the blueprint's own answer.")
     ] = []
-    condensed: Annotated[
-        bool, Field(description="Whether this iteration's conversation was already condensed to fit the prompt.")
+    needs_condensing: Annotated[
+        bool,
+        Field(description="Whether the conversation outgrew the prompt and is condensed before the model decides."),
     ] = False

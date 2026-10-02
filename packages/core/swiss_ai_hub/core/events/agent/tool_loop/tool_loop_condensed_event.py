@@ -19,4 +19,3 @@ class ToolLoopCondensedEvent(DisplayEvent):
     tokens_after: Annotated[int, Field(description="The conversation's size after condensing.", ge=0)]
     condensed_results: Annotated[int, Field(description="How many earlier tool results were condensed.", ge=0)] = 0
     condensed_turns: Annotated[int, Field(description="How many earlier conversation turns were condensed.", ge=0)] = 0
-    summary: Annotated[str, Field(description="What the condensed part now reads as, for the model.")] = ""

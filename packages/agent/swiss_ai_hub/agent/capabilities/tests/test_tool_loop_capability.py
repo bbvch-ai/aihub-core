@@ -196,6 +196,7 @@ class TestOfferedTools:
                     LoopAgent(),
                     request=request,
                     loop=config,
+                    conversation=_conversation(ANSWER),
                     agent_config=config,
                     run_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
