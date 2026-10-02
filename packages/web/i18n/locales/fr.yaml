@@ -1042,3 +1042,40 @@ support:
   send_failed_detail: Vos réponses sont toujours là — réessayez.
   unavailable: Le signalement n'est pas configuré sur cette installation. Contactez
     votre administrateur.
+userFiles:
+  title: "Mes fichiers"
+  description: "Les fichiers avec lesquels vous et vos agents travaillez : pièces jointes des chats, fichiers créés pour vous par les agents et vos propres envois."
+  conversation: "Chat"
+  actions:
+    move: "Déplacer"
+    upload: "Envoyer"
+    newFolder: "Nouveau dossier"
+    refresh: "Actualiser"
+    download: "Télécharger"
+    rename: "Renommer"
+    delete: "Supprimer"
+    close: "Fermer"
+    cancel: "Annuler"
+    save: "Enregistrer"
+  columns:
+    name: "Nom"
+    size: "Taille"
+    modified: "Modifié"
+  empty:
+    folder: "Ce dossier est vide. Déposez des fichiers ici pour les envoyer."
+    noSpace: "Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le chat une fois, puis revenez."
+  move:
+    header: "Déplacer {name} vers"
+    noTargets: "Aucun dossier vers lequel le déplacer."
+  preview:
+    unavailable: "Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir."
+  name:
+    invalid: "Un nom ne doit pas être vide ni contenir de barre oblique."
+  delete:
+    header: "Supprimer"
+    file: "Supprimer {name} ?"
+    folder: "Supprimer le dossier {name} et tout son contenu ?"
+  toast:
+    uploaded: "{count} fichier(s) envoyé(s)"
+    uploadFailed: "Échec de l'envoi"
+    changeFailed: "La modification a échoué"

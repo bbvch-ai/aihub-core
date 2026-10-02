@@ -1038,3 +1038,40 @@ support:
   send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
   unavailable: La segnalazione non è configurata su questa installazione. Contatta
     l'amministratore.
+userFiles:
+  title: "I miei file"
+  description: "I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file creati per te dagli agenti e i tuoi caricamenti."
+  conversation: "Chat"
+  actions:
+    move: "Sposta"
+    upload: "Carica"
+    newFolder: "Nuova cartella"
+    refresh: "Aggiorna"
+    download: "Scarica"
+    rename: "Rinomina"
+    delete: "Elimina"
+    close: "Chiudi"
+    cancel: "Annulla"
+    save: "Salva"
+  columns:
+    name: "Nome"
+    size: "Dimensione"
+    modified: "Modificato"
+  empty:
+    folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
+    noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+  move:
+    header: "Sposta {name} in"
+    noTargets: "Nessuna cartella in cui spostarlo."
+  preview:
+    unavailable: "Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo."
+  name:
+    invalid: "Un nome non può essere vuoto né contenere una barra."
+  delete:
+    header: "Elimina"
+    file: "Eliminare {name}?"
+    folder: "Eliminare la cartella {name} con tutto il contenuto?"
+  toast:
+    uploaded: "{count} file caricati"
+    uploadFailed: "Caricamento non riuscito"
+    changeFailed: "La modifica non è riuscita"

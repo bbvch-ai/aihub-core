@@ -48,7 +48,17 @@ class UserKnowledgeService:
             else {}
         )
         dtos = [FileEntryDTO.from_entry(relative, entry, titles.get(entry["name"])) for entry in entries]
-        return FolderListingDTO(folder=relative, entries=sorted(dtos, key=lambda dto: (dto.kind != "folder", dto.name)))
+        parent, name = posixpath.split(relative)
+        folder_title = (
+            UserKnowledgeService._conversation_titles(user, [name]).get(name)
+            if parent == UserKnowledgeService.CONVERSATIONS_FOLDER
+            else None
+        )
+        return FolderListingDTO(
+            folder=relative,
+            entries=sorted(dtos, key=lambda dto: (dto.kind != "folder", dto.name)),
+            folder_title=folder_title,
+        )
 
     @staticmethod
     @trace_fn

@@ -880,6 +880,20 @@ export const AgentFileValidationRequestSchema = {
       description:
         "Original filename with extension. Must not contain path separators.",
     },
+    thread_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[0-9a-f]{24}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Thread Id",
+      description:
+        "The conversation the file is attached in; it is also placed in the user's files there.",
+    },
   },
   type: "object",
   required: ["file_id", "filename"],
@@ -2652,6 +2666,20 @@ export const Body_create_transcriptionSchema = {
   type: "object",
   required: ["file", "model"],
   title: "Body_create_transcription",
+} as const;
+
+export const Body_upload_user_fileSchema = {
+  properties: {
+    file: {
+      type: "string",
+      contentMediaType: "application/octet-stream",
+      title: "File",
+      description: "The file to add; one with the same name is replaced.",
+    },
+  },
+  type: "object",
+  required: ["file"],
+  title: "Body_upload_user_file",
 } as const;
 
 export const BucketMetadataFiltersSchema = {
@@ -4619,7 +4647,7 @@ export const ChatCompletionUserMessageParamSchema = {
 
 export const ChatFeatureSchema = {
   type: "string",
-  enum: ["web_search", "code_interpreter", "image_generation"],
+  enum: ["web_search", "code_interpreter", "image_generation", "user_files"],
   title: "ChatFeature",
   description:
     "A capability a user can request per message in a chat client, which the agent then decides how to serve.\n\nWeb search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI\nhas no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding\na member here is all a new feature needs on the contract side.",
@@ -6448,6 +6476,19 @@ export const CreateDatabaseRequestSchema = {
   },
   type: "object",
   title: "CreateDatabaseRequest",
+} as const;
+
+export const CreateFolderRequestSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The new folder's path in the user's file space.",
+    },
+  },
+  type: "object",
+  required: ["path"],
+  title: "CreateFolderRequest",
 } as const;
 
 export const CreateNamespaceRequestSchema = {
@@ -9025,6 +9066,59 @@ export const FileSchema = {
     "Learn about [file inputs](https://platform.openai.com/docs/guides/text) for text generation.",
 } as const;
 
+export const FileEntryDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The file or folder name.",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Its path relative to the user's file space.",
+    },
+    kind: {
+      type: "string",
+      enum: ["file", "folder"],
+      title: "Kind",
+      description: "Whether it is a file or a folder.",
+    },
+    size: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Size",
+      description: "The file's size in bytes; none for a folder.",
+    },
+    modified: {
+      type: "number",
+      title: "Modified",
+      description: "When it last changed, as seconds since the epoch.",
+    },
+    conversation_title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Conversation Title",
+      description: "The title of the chat a conversation folder belongs to.",
+    },
+  },
+  type: "object",
+  required: ["name", "path", "kind", "modified"],
+  title: "FileEntryDTO",
+} as const;
+
 export const FileFileSchema = {
   properties: {
     file_data: {
@@ -9045,6 +9139,19 @@ export const FileFileSchema = {
   title: "FileFile",
 } as const;
 
+export const FilePathDTOSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The affected path, relative to the user's file space.",
+    },
+  },
+  type: "object",
+  required: ["path"],
+  title: "FilePathDTO",
+} as const;
+
 export const FilePromptCacheBreakpointSchema = {
   properties: {
     mode: {
@@ -9059,6 +9166,41 @@ export const FilePromptCacheBreakpointSchema = {
   title: "FilePromptCacheBreakpoint",
   description:
     "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
+} as const;
+
+export const FolderListingDTOSchema = {
+  properties: {
+    folder: {
+      type: "string",
+      title: "Folder",
+      description:
+        "The listed folder, relative to the user's file space; '.' is its top.",
+    },
+    entries: {
+      items: {
+        $ref: "#/components/schemas/FileEntryDTO",
+      },
+      type: "array",
+      title: "Entries",
+      description: "Its folders first, then its files, each by name.",
+    },
+    folder_title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Folder Title",
+      description:
+        "The title of the chat, when the folder is a conversation's own.",
+    },
+  },
+  type: "object",
+  required: ["folder", "entries"],
+  title: "FolderListingDTO",
 } as const;
 
 export const FollowUpQuestionsEventSchema = {
@@ -18586,6 +18728,25 @@ export const ModerationOutputModerationResultsResultSchema = {
   ],
   title: "ModerationOutputModerationResultsResult",
   description: "A moderation result produced for the response input or output.",
+} as const;
+
+export const MoveFileRequestSchema = {
+  properties: {
+    source: {
+      type: "string",
+      title: "Source",
+      description: "The file or folder to move or rename.",
+    },
+    destination: {
+      type: "string",
+      title: "Destination",
+      description:
+        "Its new path; a rename keeps the folder and changes the name.",
+    },
+  },
+  type: "object",
+  required: ["source", "destination"],
+  title: "MoveFileRequest",
 } as const;
 
 export const MultiSelectSchema = {

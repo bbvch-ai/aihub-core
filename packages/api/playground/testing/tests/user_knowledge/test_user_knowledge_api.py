@@ -92,6 +92,17 @@ async def test_conversation_folders_carry_the_chat_title(client: AsyncClient, sa
 
 
 @pytest.mark.asyncio
+async def test_a_conversation_folder_carries_its_own_chat_title(client: AsyncClient, sandbox: Any) -> None:
+    sandbox.list_files.return_value = {"entries": [{"name": "brief.md", "type": "file", "size": 9, "modified": 1.0}]}
+    with patch.object(
+        user_knowledge_service.UserKnowledgeService, "_conversation_titles", return_value={THREAD: "Q1 sales"}
+    ):
+        response = await client.get(ENDPOINT, params={"folder": f"conversations/{THREAD}"})
+
+    assert response.json()["folder_title"] == "Q1 sales"
+
+
+@pytest.mark.asyncio
 async def test_a_download_returns_the_bytes_as_an_attachment(client: AsyncClient, sandbox: Any) -> None:
     response = await client.get(f"{ENDPOINT}/content", params={"path": "reports/Q1 report.pdf", "download": True})
 
