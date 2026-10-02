@@ -18,7 +18,9 @@ async def test_the_events_a_precondition_reads_are_loaded_for_it():
     dispatcher.is_step_ready = AsyncMock(return_value=False)
     event = ToolResultEvent(tool_call_id="c1", name="echo", content="done")
 
-    await dispatcher._trigger_ready_steps(event, MagicMock(), MagicMock(), MagicMock(execution_context_id="r1"), MagicMock())
+    await dispatcher._trigger_ready_steps(
+        event, MagicMock(), MagicMock(), MagicMock(execution_context_id="r1"), MagicMock()
+    )
 
     loaded = dispatcher.event_store.get_events_of_multiple_types.await_args.args[1]
     assert ToolLoopIterationEvent.event_name_from_class() in loaded

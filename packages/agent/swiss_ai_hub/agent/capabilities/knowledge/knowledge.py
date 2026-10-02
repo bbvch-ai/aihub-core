@@ -3,9 +3,9 @@ import logging
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from pydantic import ValidationError
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.events.agent import (
     KnowledgeReference,
     KnowledgeSearchedEvent,

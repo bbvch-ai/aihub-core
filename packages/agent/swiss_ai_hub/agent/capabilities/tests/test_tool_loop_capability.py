@@ -10,6 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ChatFeature,
     KnowledgeReference,
@@ -29,8 +31,6 @@ from swiss_ai_hub.core.events.agent import (
     ToolLoopState,
     ToolResultEvent,
 )
-from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -39,14 +39,14 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge, answers_a_tool_call
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
-from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
-from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop, every_call_answered
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
 
 MODULE = "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop"
@@ -300,7 +300,9 @@ class TestApproval:
     ) -> Any:
         return await ToolLoop.gate_step(
             LoopAgent(),
-            call=ToolEvent(tool_call_id="c1", name=name, parameters={"text": "a"} if parameters is None else parameters),
+            call=ToolEvent(
+                tool_call_id="c1", name=name, parameters={"text": "a"} if parameters is None else parameters
+            ),
             loop=_config(**tool_loop),
             run_context=run_context or _Context(),
             thread_context=_Context(),

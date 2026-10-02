@@ -2,10 +2,10 @@
 loop answer, the other gathers with it and answers in its own step."""
 
 import pytest
+
 from playground.minimal_workflow.tool_loop_workflow.answering_tool_loop_agent import AnsweringToolLoopAgent
 from playground.minimal_workflow.tool_loop_workflow.gathering_tool_loop_agent import GatheringToolLoopAgent
 from playground.minimal_workflow.tool_loop_workflow.tool_loop_playground_config import ToolLoopPlaygroundConfig
-
 from swiss_ai_hub.agent.capabilities import ToolLoop
 
 

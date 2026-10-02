@@ -384,14 +384,21 @@ class ToolLoop(Capability):
             await displayer.display_chunk(notice, turn.chat_model_name)
             reply = turn.output_messages[-1]
             turn = turn.model_copy(
-                update={"output_messages": [*turn.output_messages[:-1], Message.from_string(
-                    role="assistant", content=(reply.content or "") + notice, name=turn.chat_model_name
-                )]}
+                update={
+                    "output_messages": [
+                        *turn.output_messages[:-1],
+                        Message.from_string(
+                            role="assistant", content=(reply.content or "") + notice, name=turn.chat_model_name
+                        ),
+                    ]
+                }
             )
         return ToolLoopFinishedEvent(loop=state.loop, answer=turn, stopped_early=exhausted)
 
     @staticmethod
-    async def _status(displayer: EventDisplayer, state: ToolLoopState, t: LocaleHandler, phase: str, done: bool) -> None:
+    async def _status(
+        displayer: EventDisplayer, state: ToolLoopState, t: LocaleHandler, phase: str, done: bool
+    ) -> None:
         await displayer.display_event(
             ToolLoopStatusEvent(loop=state.loop, description=t(f"agent.tool_loop.status.{phase}"), done=done)
         )

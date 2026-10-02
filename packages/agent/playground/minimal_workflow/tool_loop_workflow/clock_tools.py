@@ -17,6 +17,8 @@ class ClockTools(BaseToolSpec):
         self.context = context
 
     @ToolOptions.of(label=LocaleString(en="Clock", de="Uhr", fr="Horloge", it="Orologio"))
-    async def current_time(self, timezone: Annotated[str, "IANA time zone, e.g. Europe/Zurich"] = "Europe/Zurich") -> str:
+    async def current_time(
+        self, timezone: Annotated[str, "IANA time zone, e.g. Europe/Zurich"] = "Europe/Zurich"
+    ) -> str:
         """The current date and time in a time zone. Use it whenever the answer depends on today."""
         return datetime.now(ZoneInfo(timezone)).isoformat(timespec="minutes")
