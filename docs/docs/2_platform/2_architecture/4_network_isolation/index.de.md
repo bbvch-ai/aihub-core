@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 78d0ee5d8d7ae1029648e0d12b70e6c2bd936199953304d7565eb48cd993e8ab
+source_sha: 7ccf65ab2f223f315771514b5d2ae26cfc6fa77da7034b741eb1cd3325423ba1
 ---
 
 # Docker-Netzwerkisolation
@@ -28,8 +28,9 @@ deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinande
 nur für den ausgehenden Internetzugriff nutzen.
 
 Das `code-sandbox`-Netzwerk ist eine Single-Tenant-Zone für die `open-terminal` Code-Execution-Sandbox, die beliebigen,
-von Benutzern übermittelten Code ausführt. Ihre Mitglieder sind die Sandbox plus **genau ihre Caller** (`open-webui` und
-`universal-agent`, der einzige AI-Hub Agent, der Code ausführt). Da Docker-Netzwerke bidirektional sind, verhindert der
+von Benutzern übermittelten Code ausführt. Ihre Mitglieder sind die Sandbox plus **genau ihre Caller** (`open-webui`,
+`universal-agent`, der einzige AI-Hub Agent, der Code ausführt, und `api`, das die eigenen Dateien jedes Benutzers
+ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der
 Ausschluss der Sandbox aus `backend`, dass ein Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`,
 `speaches` oder `otel-collector` erreichen kann. ICC bleibt aktiviert (die Caller müssen `open-terminal:8000`
 erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
@@ -110,7 +111,9 @@ Die Single-Tenant-Zone für die Code-Execution-Sandbox:
 Die Sandbox ist der **einzige** Bewohner; ihre Caller treten diesem Netzwerk zusätzlich zu ihren eigenen bei.
 `open-webui` ist an `code-sandbox` angebunden (neben `proxy`/`backend`/`data`/`storage`), damit es
 `open-terminal:8000` erreichen kann, und `universal-agent` tritt ihm bei (neben `backend`/`data`/`storage`), um Code im
-Sandbox-Home des anfragenden Benutzers auszuführen. Da die Sandbox ein Netzwerk nur mit ihren Callern teilt, hat ein
+Sandbox-Home des anfragenden Benutzers auszuführen, und `api` tritt ihm bei, um die eigenen Dateien jedes Benutzers von
+dort auszuliefern. Der `sandbox-mirror`-Sidecar, der die Homes nach S3 kopiert, liest das Homes-Volume und befindet sich
+ausschließlich in `backend`, nie in `code-sandbox`. Da die Sandbox ein Netzwerk nur mit ihren Callern teilt, hat ein
 Breakout keinen Netzwerkpfad zu den `backend`- oder `data`-Tiers. Im Dev-Stage verwendet `open-webui`
 `network_mode: host` und die Agents laufen lokal außerhalb von Docker, sodass beide die Sandbox stattdessen über den
 veröffentlichten Port `localhost:8200` erreichen.
@@ -234,7 +237,7 @@ flowchart TB
 
 \*ICC im Egress-Netzwerk deaktiviert – Container können über dieses Netzwerk nicht miteinander kommunizieren.
 
-\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`) befinden sich in `code-sandbox`, sodass die
+\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`, `api`) befinden sich in `code-sandbox`, sodass die
 Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
 
 \*\*\*`internal: true` in Nicht-Dev-Stages blockiert ausgehenden Internetzugriff aus der Sandbox; im `dev`-Stage ist das
