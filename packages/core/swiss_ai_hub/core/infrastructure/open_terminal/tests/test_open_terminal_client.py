@@ -81,5 +81,24 @@ async def test_a_refusal_carries_the_sandbox_reason(sandbox: _Sandbox) -> None:
 
 
 @pytest.mark.asyncio
+async def test_a_refusal_carries_the_sandbox_status(sandbox: _Sandbox) -> None:
+    client = _client()
+
+    with pytest.raises(OpenTerminalError) as refused:
+        await client.read_file("missing.txt")
+
+    assert refused.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_a_file_over_the_size_limit_is_refused(sandbox: _Sandbox) -> None:
+    settings = OpenTerminalSettings(BASE_URL="http://sandbox:8000", API_KEY=SecretStr("key"), MAX_FILE_BYTES=3)
+    client = OpenTerminalClient("owui-user-1", settings)
+
+    with pytest.raises(OpenTerminalError, match="larger than 3 bytes"):
+        await client.view("report.pdf")
+
+
+@pytest.mark.asyncio
 async def test_viewing_returns_the_raw_bytes_of_any_file(sandbox: _Sandbox) -> None:
     assert await _client().view("report.pdf") == (b"%PDF", "application/pdf")
