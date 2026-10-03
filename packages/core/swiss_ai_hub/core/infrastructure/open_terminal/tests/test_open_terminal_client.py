@@ -28,6 +28,8 @@ def sandbox(monkeypatch: pytest.MonkeyPatch) -> _Sandbox:
 
     def respond(request: httpx.Request) -> httpx.Response:
         recorded.requests.append(request)
+        if "unreachable" in str(request.url):
+            raise httpx.ConnectError("Connection refused", request=request)
         if request.url.path == "/files/view":
             return httpx.Response(200, content=b"%PDF", headers={"content-type": "application/pdf"})
         if request.url.params.get("path") == "missing.txt":
@@ -102,3 +104,14 @@ async def test_a_file_over_the_size_limit_is_refused(sandbox: _Sandbox) -> None:
 @pytest.mark.asyncio
 async def test_viewing_returns_the_raw_bytes_of_any_file(sandbox: _Sandbox) -> None:
     assert await _client().view("report.pdf") == (b"%PDF", "application/pdf")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("call", ["list_files", "view"])
+async def test_an_unreachable_sandbox_is_a_failure_not_a_refusal(sandbox: _Sandbox, call: str) -> None:
+    operation = getattr(_client(), call)
+
+    with pytest.raises(OpenTerminalError) as failed:
+        await operation("unreachable")
+
+    assert failed.value.status_code == 502
