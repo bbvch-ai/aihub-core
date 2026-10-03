@@ -19164,6 +19164,12 @@ export type ToolLoopState = {
    */
   messages: Array<Message>;
   /**
+   * Question
+   *
+   * What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.
+   */
+  question?: string | null;
+  /**
    * Tools
    *
    * The tools offered to the model in this run.
@@ -31916,6 +31922,12 @@ export type ToolLoopStateWritable = {
    * The loop's conversation so far, tool calls and results.
    */
   messages: Array<MessageWritable>;
+  /**
+   * Question
+   *
+   * What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.
+   */
+  question?: string | null;
   /**
    * Tools
    *

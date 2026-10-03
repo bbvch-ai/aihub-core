@@ -28700,6 +28700,19 @@ export const ToolLoopStateSchema = {
       title: "Messages",
       description: "The loop's conversation so far, tool calls and results.",
     },
+    question: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Question",
+      description:
+        "What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.",
+    },
     tools: {
       items: {
         $ref: "#/components/schemas/ToolDefinition",
@@ -48720,6 +48733,19 @@ export const ToolLoopStateWritableSchema = {
       type: "array",
       title: "Messages",
       description: "The loop's conversation so far, tool calls and results.",
+    },
+    question: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Question",
+      description:
+        "What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.",
     },
     tools: {
       items: {
