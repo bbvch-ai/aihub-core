@@ -28,6 +28,15 @@ class SandboxHomePath:
         return relative
 
     @staticmethod
+    def shown(path: str, base: str = ".") -> str:
+        """A path as `of` gives it, through no hidden file or folder: those are the sandbox's and tools' own, so the
+        user's file space neither shows nor reaches them."""
+        relative = SandboxHomePath.of(path, base)
+        if any(part.startswith(".") for part in relative.split("/") if part != "."):
+            raise OpenTerminalError(f"{path} is a hidden file or folder, which your files do not include.")
+        return relative
+
+    @staticmethod
     def name(name: str) -> str:
         """A single file or folder name, as given for an upload, a new folder or a rename."""
         if not name or name in (".", "..") or "/" in name or "\0" in name:

@@ -153,6 +153,9 @@ async def test_an_upload_lands_in_the_chosen_folder(client: AsyncClient, sandbox
         ("post", f"{ENDPOINT}/folders", {"json": {"path": "~/../other"}}),
         ("post", f"{ENDPOINT}/move", {"json": {"source": "a.txt", "destination": "/tmp/a.txt"}}),
         ("delete", ENDPOINT, {"params": {"path": "."}}),
+        ("get", f"{ENDPOINT}/content", {"params": {"path": ".ssh/id_rsa"}}),
+        ("delete", ENDPOINT, {"params": {"path": f"conversations/{THREAD}/.attached_files.json"}}),
+        ("post", f"{ENDPOINT}/files", {"params": {"folder": "."}, "files": {"file": (".bashrc", b"x")}}),
     ],
 )
 async def test_a_path_outside_the_home_or_the_top_itself_is_refused(
@@ -162,8 +165,20 @@ async def test_a_path_outside_the_home_or_the_top_itself_is_refused(
 
     assert response.status_code == 400
     sandbox.view.assert_not_awaited()
+    sandbox.upload.assert_not_awaited()
     sandbox.move.assert_not_awaited()
     sandbox.delete.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_an_upload_over_the_limit_is_refused_before_it_reaches_the_sandbox(
+    client: AsyncClient, sandbox: Any
+) -> None:
+    with patch.object(user_knowledge_service.UserKnowledgeService, "MAX_UPLOAD_BYTES", 3):
+        response = await client.post(f"{ENDPOINT}/files", files={"file": ("a.txt", b"four")})
+
+    assert response.status_code == 413
+    sandbox.upload.assert_not_awaited()
 
 
 @pytest.mark.asyncio

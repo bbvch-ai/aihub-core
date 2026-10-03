@@ -247,11 +247,13 @@ class TestUserFiles:
         assert "25 days" in result
 
     @pytest.mark.asyncio
-    async def test_a_path_outside_the_user_s_files_is_refused(self, sandbox: Any) -> None:
+    @pytest.mark.parametrize("path", ["/proc/1/environ", ".ssh/id_rsa", f"conversations/{THREAD}/.attached_files.json"])
+    async def test_a_path_outside_the_user_s_files_is_refused(self, sandbox: Any, path: str) -> None:
         sandbox.read_file = AsyncMock()
+        tools = UserFilesTools(_context())
 
         with pytest.raises(OpenTerminalError):
-            await UserFilesTools(_context()).read_my_file("/proc/1/environ")
+            await tools.read_my_file(path)
         sandbox.read_file.assert_not_awaited()
 
     def test_the_tools_need_my_files_switched_on(self) -> None:

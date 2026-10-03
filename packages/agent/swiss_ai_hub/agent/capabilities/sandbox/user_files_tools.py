@@ -36,7 +36,7 @@ class UserFilesTools(BaseToolSpec):
         """The files and folders in a folder of the user's own files, with sizes. Chat attachments lie under
         conversations/<conversation>/."""
         client = SandboxWorkspace.of(self.context).client
-        listing = await client.list_files(SandboxHomePath.of(folder))
+        listing = await client.list_files(SandboxHomePath.shown(folder))
         entries = [entry for entry in listing.get("entries", []) if not entry["name"].startswith(".")]
         return json.dumps(entries, ensure_ascii=False)
 
@@ -49,4 +49,4 @@ class UserFilesTools(BaseToolSpec):
     ) -> str:
         """Read one of the user's own files; PDF and office documents come back as their text."""
         client = SandboxWorkspace.of(self.context).client
-        return json.dumps(await client.read_file(SandboxHomePath.of(path), start_line, end_line), ensure_ascii=False)
+        return json.dumps(await client.read_file(SandboxHomePath.shown(path), start_line, end_line), ensure_ascii=False)

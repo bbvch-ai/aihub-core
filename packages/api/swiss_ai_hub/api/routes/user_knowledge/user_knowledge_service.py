@@ -39,7 +39,7 @@ class UserKnowledgeService:
     @staticmethod
     @trace_fn
     async def list_folder(user: UserIdentity, folder: str) -> FolderListingDTO:
-        relative = SandboxHomePath.of(folder)
+        relative = SandboxHomePath.shown(folder)
         listing = await UserKnowledgeService.client_for(user).list_files(relative)
         entries = [entry for entry in listing.get("entries", []) if not entry["name"].startswith(".")]
         titles = (
@@ -68,7 +68,7 @@ class UserKnowledgeService:
         An HTML or SVG file shown inline would run its script on the API's origin; every other type is sent as a
         download, and the response forbids sniffing and scripting either way.
         """
-        relative = SandboxHomePath.of(path)
+        relative = SandboxHomePath.shown(path)
         content, content_type = await UserKnowledgeService.client_for(user).view(relative)
         media_type = content_type.split(";")[0].strip().lower()
         shown = not download and media_type in UserKnowledgeService.SHOWN_IN_PLACE
@@ -86,13 +86,12 @@ class UserKnowledgeService:
     @staticmethod
     @trace_fn
     async def upload(user: UserIdentity, folder: str, file: UploadFile) -> FilePathDTO:
-        relative = SandboxHomePath.of(folder)
+        relative = SandboxHomePath.shown(folder)
         name = SandboxHomePath.name(file.filename or "")
-        content = await file.read()
-        if len(content) > UserKnowledgeService.MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="The file is too large.")
+        path = SandboxHomePath.shown(name, relative)
+        content = await UserKnowledgeService._read_bounded(file)
         await UserKnowledgeService.client_for(user).upload(relative, name, content)
-        return FilePathDTO(path=posixpath.normpath(posixpath.join(relative, name)))
+        return FilePathDTO(path=path)
 
     @staticmethod
     @trace_fn
@@ -132,9 +131,20 @@ class UserKnowledgeService:
         return FilePathDTO(path=posixpath.join(folder, name))
 
     @staticmethod
+    async def _read_bounded(file: UploadFile) -> bytes:
+        """The upload's bytes, refused once past the limit, so an oversized body is never held in memory whole."""
+        too_large = HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="The file is too large.")
+        if file.size is not None and file.size > UserKnowledgeService.MAX_UPLOAD_BYTES:
+            raise too_large
+        content = await file.read(UserKnowledgeService.MAX_UPLOAD_BYTES + 1)
+        if len(content) > UserKnowledgeService.MAX_UPLOAD_BYTES:
+            raise too_large
+        return content
+
+    @staticmethod
     def _below_top(path: str) -> str:
         """A path inside the file space other than its top, which is not renamed, moved or deleted."""
-        relative = SandboxHomePath.of(path)
+        relative = SandboxHomePath.shown(path)
         if relative == ".":
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The top folder cannot be changed.")
         return relative

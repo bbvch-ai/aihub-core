@@ -33,3 +33,14 @@ def test_a_name_is_a_single_plain_segment(name: str) -> None:
 
 def test_a_plain_name_is_kept() -> None:
     assert SandboxHomePath.name("Q1 report.pdf") == "Q1 report.pdf"
+
+
+@pytest.mark.parametrize("path", [".ssh/id_rsa", "notes/.env", "~/.config", "conversations/t1/.attached_files.json"])
+def test_a_hidden_path_is_outside_the_user_s_files(path: str) -> None:
+    with pytest.raises(OpenTerminalError, match="hidden"):
+        SandboxHomePath.shown(path)
+
+
+def test_a_shown_path_is_kept() -> None:
+    assert SandboxHomePath.shown("reports/q1.pdf") == "reports/q1.pdf"
+    assert SandboxHomePath.shown(".") == "."
