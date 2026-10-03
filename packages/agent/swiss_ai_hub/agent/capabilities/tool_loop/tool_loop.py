@@ -172,7 +172,8 @@ class ToolLoop(Capability):
         """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has.
 
         A tool the user declined is no longer offered in this run, since models ask for it again regardless of being
-        told not to, and the user would be prompted until they gave in.
+        told not to, and the user would be prompted until they gave in. Offered no tools, for whatever reason, the
+        model sees the earlier tool turns as plain text and is told to answer now.
         """
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
@@ -181,15 +182,17 @@ class ToolLoop(Capability):
             if exhausted:
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
-        history = ToolLoop._tool_turns_as_text(state.messages) if exhausted else state.messages
-        messages = [message.to_llama_index() for message in history]
-        if exhausted:
-            # A user turn: chat templates such as Qwen's reject any system message after the first.
-            messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
         available = [
             tool for tool in state.tools if not await run_context.get(DECLINED_KEY.format(tool=tool.name), False)
         ]
         tools = [tool.to_openai() for tool in available] if available and not exhausted else None
+        history = ToolLoop._tool_turns_as_text(state.messages) if tools is None else state.messages
+        messages = [message.to_llama_index() for message in history]
+        if tools is None:
+            # A user turn: chat templates such as Qwen's reject any system message after the first. Without it, a
+            # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
+            note = "limit_reached" if exhausted else "no_tools"
+            messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
         assistant = turn.output_messages[-1]
@@ -482,7 +485,7 @@ class ToolLoop(Capability):
 
     @staticmethod
     def _tool_turns_as_text(messages: list[Message]) -> list[Message]:
-        """The loop's calls and results as one plain assistant turn, for the answer at the limits.
+        """The loop's calls and results as one plain assistant turn, for an answer offered no tools.
 
         Offered no tools after a tool-call history, Gemma answers with nothing at all; in plain text it answers.
         """
