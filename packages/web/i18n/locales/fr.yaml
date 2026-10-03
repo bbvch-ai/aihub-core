@@ -310,6 +310,63 @@ event:
       delegations: Délégations
       delegatedTaskAgentInTheLoop: Tâche déléguée (Agent dans la boucle)
       allEvents: Tous les événements
+  parts:
+    noMessages: Aucun message
+    yes: Oui
+    no: Non
+  capability:
+    userQuery: Message de l'utilisateur
+    historyMessages: Messages dans l'historique
+    condensed: Condensée à partir de l'historique
+    query: Requête
+    block: Bloc {number}
+    blocks: Blocs de contexte
+    namespaces: Portées de la mémoire d'organisation
+    toolCall: Appel d'outil
+    userMemories: Souvenirs de l'utilisateur
+    organizationMemories: Souvenirs de l'organisation
+    references: Collections référencées
+    citeSources: Citer les sources
+    sections: Sections trouvées
+    notSearched: Non recherchées (pas d'accès)
+    files: Fichiers
+    reserveTokens: Jetons réservés
+    fileStatus:
+      read: Lu
+      truncated: Raccourci
+      failed: Échec
+    citationId: Identifiant de citation
+    pages: Pages
+    error: Erreur
+    stop: Se termine par
+    targetAgent: Rédacteur de mémoire
+  toolLoop:
+    loop: Ensemble d'outils
+    mode: Mode
+    modes:
+      answer: Répondre
+      gather: Rassembler le contexte
+    iteration: Décisions
+    toolCallsMade: Appels d'outils jusqu'ici
+    messages: Messages dans la boucle
+    offeredTools: Outils proposés
+    condensedResults: Résultats condensés
+    needsCondensing: Doit être condensé
+    decidedCalls: Un appel d'outil décidé | {count} appels d'outils décidés
+    narrowedTools: Limité à
+    maxIterations: Limite de décisions
+    tool: Outil
+    kind: Type
+    kinds:
+      function: Fonction
+      capability: Capacité
+    failed: Échec
+    resultContext: Contexte renvoyé
+    stoppedEarly: Arrêtée à ses limites
+    gathered: Contexte rassemblé
+    gatheredMessages: Messages rassemblés
+    tokens: Jetons
+    condensedTurns: Tours condensés
 costs:
   table:
     count: Nombre

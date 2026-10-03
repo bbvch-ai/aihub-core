@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -47,6 +47,8 @@ from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
     do_detect_meta_question,
 )
 from swiss_ai_hub.agent.workflow.decorators.step import step
+
+_ROLES_THAT_CANNOT_LEAD = (MessageRole.ASSISTANT, MessageRole.TOOL)
 
 
 class Conversation(Capability):
@@ -255,23 +257,29 @@ class Conversation(Capability):
         request: ComposeContextEvent,
         conversation: ConversationFields,
     ) -> ContextComposedEvent:
-        """Merge the blocks behind the leading system messages, within budget.
+        """Merge the blocks behind the leading system messages, within budget, as `Conversation.fit` does."""
+        return ContextComposedEvent(history=Conversation.fit(request.history, request.blocks, conversation))
 
-        Re-limited before it leaves this step so the result carries the same "fits the budget" guarantee the
-        limited history does. The leading system messages leave as one: served models (Gemma behind vLLM) lose
-        context spread over several, answering from only some of the blocks. The blocks sit at the front of the
-        trimmed part, so they are what gives way when the result does not fit — never the turn the user asked
-        about, and never the system head, which is held out of the trim altogether.
+    @staticmethod
+    def fit(
+        history: list[ChatMessage], blocks: Sequence[list[ChatMessage]], conversation: ConversationFields
+    ) -> list[ChatMessage]:
+        """The history with the blocks merged behind its leading system messages, re-limited to the input budget.
+
+        Every part is measured with the model's own count, so the result keeps the "fits the budget" guarantee
+        the limited history carries, also when the caller added instructions to it. Consecutive messages of one
+        role leave merged, as the model receives them: served models (Gemma behind vLLM) lose context spread
+        over several system messages, and strict chat templates (Qwen) reject a system message anywhere else.
+        What gives way when the result does not fit is the oldest turns first, since the blocks were asked for
+        this turn; then whole blocks from the front, never part of one, and never the question or the system head.
         """
-        system_head, turns = _split_system_head(request.history)
-        block_messages = [message for block in request.blocks for message in block]
-        if not block_messages:
-            return ContextComposedEvent(history=request.history)
-
-        budget = conversation.input_budget() - estimate_prompt_tokens(system_head, conversation.llm.token_counter)
-        limited = limit_chat_history(chat_history=[*block_messages, *turns], number_of_input_tokens=max(budget, 1))
-        merged_head, rest = _split_system_head([*system_head, *limited])
-        return ContextComposedEvent(history=[*merge_consecutive_messages(merged_head), *rest])
+        counter = conversation.llm.token_counter
+        system_head, turns = _split_system_head(history)
+        earlier, question = turns[:-1], turns[-1:]
+        room = conversation.input_budget() - estimate_prompt_tokens([*system_head, *question], counter)
+        fitted_blocks = _fit_whole_blocks(blocks, room, counter)
+        kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
+        return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
 
     @staticmethod
     @step(
@@ -305,6 +313,37 @@ def _split_system_head(messages: list[ChatMessage]) -> tuple[list[ChatMessage], 
             break
         head_length += 1
     return messages[:head_length], messages[head_length:]
+
+
+def _fit_whole_blocks(
+    blocks: Sequence[list[ChatMessage]], room: int, counter: Callable[[str], list[int]]
+) -> list[ChatMessage]:
+    """The blocks that fit `room`, the last first. A block goes in whole or not at all: an attached-file block cut in
+    part would keep its citation rule and notes without the content they describe."""
+    kept: list[list[ChatMessage]] = []
+    for block in reversed(blocks):
+        cost = estimate_prompt_tokens(block, counter)
+        if block and cost <= room:
+            kept.insert(0, block)
+            room -= cost
+    return [message for block in kept for message in block]
+
+
+def _fit_newest_turns(turns: list[ChatMessage], room: int, counter: Callable[[str], list[int]]) -> list[ChatMessage]:
+    """The newest turns that fit `room` by the model's own count. `limit_chat_history` counts with another tokenizer
+    and keeps its newest message even when that alone is too long, so its result is cut again here."""
+    if room <= 0:
+        return []
+    kept = limit_chat_history(chat_history=turns, number_of_input_tokens=room)
+    costs = [estimate_prompt_tokens([message], counter) for message in kept]
+    total, start = sum(costs), 0
+    while total > room and start < len(kept):
+        total -= costs[start]
+        start += 1
+        while start < len(kept) and kept[start].role in _ROLES_THAT_CANNOT_LEAD:
+            total -= costs[start]
+            start += 1
+    return kept[start:]
 
 
 async def _refuse_empty_condensation(

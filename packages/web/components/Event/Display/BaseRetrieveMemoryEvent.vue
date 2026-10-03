@@ -80,10 +80,10 @@
 </template>
 
 <script setup lang="ts">
-import type { BaseRetrieveMemoryEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { BaseRetrieveMemoryEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: BaseRetrieveMemoryEventReadable }
+  event: ContextualizedAgentEvent & { event: BaseRetrieveMemoryEvent }
   thread: ThreadDto
 }>()
 

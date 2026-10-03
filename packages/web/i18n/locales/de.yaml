@@ -312,6 +312,63 @@ event:
       delegations: Delegationen
       delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
       allEvents: Alle Ereignisse
+  parts:
+    noMessages: Keine Nachrichten
+    yes: Ja
+    no: Nein
+  capability:
+    userQuery: Nachricht des Benutzers
+    historyMessages: Nachrichten im Verlauf
+    condensed: Aus dem Verlauf verdichtet
+    query: Anfrage
+    block: Block {number}
+    blocks: Kontextblöcke
+    namespaces: Bereiche des Organisationsgedächtnisses
+    toolCall: Werkzeugaufruf
+    userMemories: Benutzererinnerungen
+    organizationMemories: Organisationserinnerungen
+    references: Referenzierte Sammlungen
+    citeSources: Quellen zitieren
+    sections: Gefundene Abschnitte
+    notSearched: Nicht durchsucht (kein Zugriff)
+    files: Dateien
+    reserveTokens: Reservierte Tokens
+    fileStatus:
+      read: Gelesen
+      truncated: Gekürzt
+      failed: Fehlgeschlagen
+    citationId: Zitier-ID
+    pages: Seiten
+    error: Fehler
+    stop: Endet mit
+    targetAgent: Gedächtnisschreiber
+  toolLoop:
+    loop: Werkzeugsatz
+    mode: Modus
+    modes:
+      answer: Antworten
+      gather: Kontext sammeln
+    iteration: Entscheidungen
+    toolCallsMade: Bisherige Werkzeugaufrufe
+    messages: Nachrichten in der Schleife
+    offeredTools: Angebotene Werkzeuge
+    condensedResults: Verdichtete Ergebnisse
+    needsCondensing: Muss verdichtet werden
+    decidedCalls: Ein Werkzeugaufruf entschieden | {count} Werkzeugaufrufe entschieden
+    narrowedTools: Eingeschränkt auf
+    maxIterations: Entscheidungslimit
+    tool: Werkzeug
+    kind: Art
+    kinds:
+      function: Funktion
+      capability: Fähigkeit
+    failed: Fehlgeschlagen
+    resultContext: Zurückgegebener Kontext
+    stoppedEarly: An den Limits gestoppt
+    gathered: Gesammelter Kontext
+    gatheredMessages: Gesammelte Nachrichten
+    tokens: Tokens
+    condensedTurns: Verdichtete Runden
 costs:
   table:
     count: Anzahl

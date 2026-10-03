@@ -309,6 +309,63 @@ event:
       delegations: Delegations
       delegatedTaskAgentInTheLoop: Delegated Task (Agent in the Loop)
       allEvents: All Events
+  parts:
+    noMessages: No messages
+    yes: 'Yes'
+    no: 'No'
+  capability:
+    userQuery: User message
+    historyMessages: Messages in history
+    condensed: Condensed from the history
+    query: Query
+    block: Block {number}
+    blocks: Context blocks
+    namespaces: Organization memory scopes
+    toolCall: Tool call
+    userMemories: User memories
+    organizationMemories: Organization memories
+    references: Referenced collections
+    citeSources: Cite sources
+    sections: Sections found
+    notSearched: Not searched (no access)
+    files: Files
+    reserveTokens: Tokens reserved
+    fileStatus:
+      read: Read
+      truncated: Shortened
+      failed: Failed
+    citationId: Citation id
+    pages: Pages
+    error: Error
+    stop: Ends with
+    targetAgent: Memory writer
+  toolLoop:
+    loop: Tool set
+    mode: Mode
+    modes:
+      answer: Answer
+      gather: Gather context
+    iteration: Decisions
+    toolCallsMade: Tool calls so far
+    messages: Messages in the loop
+    offeredTools: Offered tools
+    condensedResults: Condensed results
+    needsCondensing: Needs condensing
+    decidedCalls: One tool call decided | {count} tool calls decided
+    narrowedTools: Narrowed to
+    maxIterations: Decision limit
+    tool: Tool
+    kind: Kind
+    kinds:
+      function: Function
+      capability: Capability
+    failed: Failed
+    resultContext: Context returned
+    stoppedEarly: Stopped at its limits
+    gathered: Gathered context
+    gatheredMessages: Gathered messages
+    tokens: Tokens
+    condensedTurns: Condensed turns
 costs:
   table:
     count: Count

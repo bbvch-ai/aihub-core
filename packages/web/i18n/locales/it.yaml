@@ -311,6 +311,64 @@ event:
       delegations: Deleghe
       delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
       allEvents: Tutti gli eventi
+  parts:
+    noMessages: Nessun messaggio
+    yes: Sì
+    no: 'No'
+  capability:
+    userQuery: Messaggio dell'utente
+    historyMessages: Messaggi nella cronologia
+    condensed: Condensata dalla cronologia
+    query: Richiesta
+    block: Blocco {number}
+    blocks: Blocchi di contesto
+    namespaces: Ambiti della memoria dell'organizzazione
+    toolCall: Chiamata di strumento
+    userMemories: Ricordi dell'utente
+    organizationMemories: Ricordi dell'organizzazione
+    references: Raccolte referenziate
+    citeSources: Citare le fonti
+    sections: Sezioni trovate
+    notSearched: Non cercate (nessun accesso)
+    files: File
+    reserveTokens: Token riservati
+    fileStatus:
+      read: Letto
+      truncated: Abbreviato
+      failed: Non riuscito
+    citationId: ID di citazione
+    pages: Pagine
+    error: Errore
+    stop: Termina con
+    targetAgent: Scrittore di memoria
+  toolLoop:
+    loop: Insieme di strumenti
+    mode: Modalità
+    modes:
+      answer: Rispondere
+      gather: Raccogliere il contesto
+    iteration: Decisioni
+    toolCallsMade: Chiamate di strumenti finora
+    messages: Messaggi nel ciclo
+    offeredTools: Strumenti offerti
+    condensedResults: Risultati condensati
+    needsCondensing: Da condensare
+    decidedCalls: Una chiamata di strumento decisa | {count} chiamate di strumenti
+      decise
+    narrowedTools: Limitato a
+    maxIterations: Limite di decisioni
+    tool: Strumento
+    kind: Tipo
+    kinds:
+      function: Funzione
+      capability: Capacità
+    failed: Non riuscito
+    resultContext: Contesto restituito
+    stoppedEarly: Fermato ai suoi limiti
+    gathered: Contesto raccolto
+    gatheredMessages: Messaggi raccolti
+    tokens: Token
+    condensedTurns: Turni condensati
 costs:
   table:
     count: Conteggio
@@ -932,8 +990,8 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona almeno uno spazio dei nomi
       help: Vengono cercati solo gli spazi dei nomi selezionati
-      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli spazi
-        dei nomi». Altrimenti la configurazione non può essere salvata.
+      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli
+        spazi dei nomi». Altrimenti la configurazione non può essere salvata.
     allNamespaces:
       label: Cerca in tutti gli spazi dei nomi
       help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
