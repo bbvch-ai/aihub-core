@@ -59,8 +59,8 @@ const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const { fetchBlob, download } = useUserFileContent()
 
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp']
-const TEXT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'log', 'py', 'yaml', 'yml', 'xml', 'html', 'js', 'ts', 'sql']
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp'])
+const TEXT_EXTENSIONS = new Set(['txt', 'md', 'csv', 'json', 'log', 'py', 'yaml', 'yml', 'xml', 'html', 'js', 'ts', 'sql'])
 const MAX_TEXT_BYTES = 2 * 1024 * 1024
 
 const objectUrl = ref<string | null>(null)
@@ -69,9 +69,9 @@ const isLoading = ref(false)
 
 const kind = computed(() => {
   const extension = props.entry.name.split('.').pop()?.toLowerCase() ?? ''
-  if (IMAGE_EXTENSIONS.includes(extension)) return 'image'
+  if (IMAGE_EXTENSIONS.has(extension)) return 'image'
   if (extension === 'pdf') return 'pdf'
-  if (TEXT_EXTENSIONS.includes(extension) && (props.entry.size ?? 0) <= MAX_TEXT_BYTES) return 'text'
+  if (TEXT_EXTENSIONS.has(extension) && (props.entry.size ?? 0) <= MAX_TEXT_BYTES) return 'text'
   return 'none'
 })
 

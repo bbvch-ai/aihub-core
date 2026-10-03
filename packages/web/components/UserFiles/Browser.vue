@@ -38,7 +38,12 @@
           text
           @click="refresh()"
         />
+        <label
+          :for="fileInputId"
+          class="sr-only"
+        >{{ t('userFiles.actions.upload') }}</label>
         <input
+          :id="fileInputId"
           ref="fileInput"
           type="file"
           multiple
@@ -133,6 +138,7 @@
               <div
                 class="flex justify-end"
                 @click.stop
+                @keydown.stop
               >
                 <Button
                   v-if="data.kind === 'file'"
@@ -219,6 +225,7 @@ const { download } = useUserFileContent()
 
 const selected = ref<FileEntryDto | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+const fileInputId = useId()
 const isDragging = ref(false)
 const nameDialog = reactive<{ visible: boolean, mode: 'folder' | 'rename', entry?: FileEntryDto }>({
   visible: false,
@@ -280,8 +287,8 @@ const uploadFiles = async (files: File[]) => {
     await uploadUserFiles({ folder: folder.value, files })
     toast.add({ severity: 'success', summary: t('userFiles.toast.uploaded', { count: files.length }), life: 3000 })
   }
-  catch (failure) {
-    notifyFailure(t('userFiles.toast.uploadFailed'), failure)
+  catch (error_) {
+    notifyFailure(t('userFiles.toast.uploadFailed'), error_)
   }
 }
 
@@ -311,8 +318,8 @@ const onNameSubmitted = async (name: string) => {
       if (selected.value?.path === nameDialog.entry.path) selected.value = null
     }
   }
-  catch (failure) {
-    notifyFailure(t('userFiles.toast.changeFailed'), failure)
+  catch (error_) {
+    notifyFailure(t('userFiles.toast.changeFailed'), error_)
   }
 }
 
@@ -327,8 +334,8 @@ const onMoveSubmitted = async (targetFolder: string) => {
     await moveUserFile({ source: entry.path, destination: targetFolder === '.' ? entry.name : `${targetFolder}/${entry.name}` })
     if (selected.value?.path === entry.path) selected.value = null
   }
-  catch (failure) {
-    notifyFailure(t('userFiles.toast.changeFailed'), failure)
+  catch (error_) {
+    notifyFailure(t('userFiles.toast.changeFailed'), error_)
   }
 }
 
@@ -343,8 +350,8 @@ const confirmDelete = (entry: FileEntryDto) => {
         await deleteUserFile(entry.path)
         if (selected.value?.path === entry.path) selected.value = null
       }
-      catch (failure) {
-        notifyFailure(t('userFiles.toast.changeFailed'), failure)
+      catch (error_) {
+        notifyFailure(t('userFiles.toast.changeFailed'), error_)
       }
     },
   })

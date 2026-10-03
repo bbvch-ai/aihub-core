@@ -235,7 +235,8 @@ class TestUserFiles:
         result = await UserFilesTools(_context()).list_my_files()
 
         sandbox.list_files.assert_awaited_once_with(".")
-        assert "conversations" in result and ".cache" not in result
+        assert "conversations" in result
+        assert ".cache" not in result
 
     @pytest.mark.asyncio
     async def test_a_file_is_read_relative_to_the_top_not_the_conversation(self, sandbox: Any) -> None:
