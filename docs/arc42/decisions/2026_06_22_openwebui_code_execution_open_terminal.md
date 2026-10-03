@@ -92,10 +92,11 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
     manually until a janitor/TTL is added (a follow-up).
   - The image is ~1.19 GB; the Jupyter container keeps running, unused, until a later cleanup. See network isolation
     (`2025_12_22_docker_network_isolation.md`).
-- **Deployment prerequisite** — publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**
-  (`make -C infra/deployment build-and-push-open-terminal-image`). `nightly`/`latest` pull this exact tag; if it is
-  absent, `open-webui`'s `depends_on: open-terminal (service_healthy)` gate fails and the stack will not start. Bump the
-  tag deliberately and re-publish whenever the base tag or baked-in libraries change.
+- **Deployment prerequisite** — publish `open-terminal-office:0.11.34-1` (the patched image, see the amendment below) to
+  ghcr **before any non-dev stage pulls it** (`make -C infra/deployment build-and-push-open-terminal-image`).
+  `nightly`/`latest` pull this exact tag; if it is absent, `open-webui`'s `depends_on: open-terminal (service_healthy)`
+  gate fails and the stack will not start. Bump the tag deliberately and re-publish whenever the base tag or baked-in
+  libraries change.
 - **Licensing** — Open Terminal is **MIT** (standard, OSI-approved; no branding clause and no end-user threshold). This
   is distinct from `open-webui`, whose modified-BSD "Open WebUI License" carries the branding/≤50-user clause — that
   obligation comes from open-webui, not from adding this sandbox.
@@ -103,6 +104,30 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 > **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
 > service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
 > from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.
+
+> **Amendment 2026-10-02 — the file API is confined to the user's home.** open-terminal's multi-user file API checks a
+> path as written and then opens it with the server's own rights, which reach every user's home. A user could therefore
+> read and overwrite another user's files through a symlink in their own home, and read paths outside `/home` such as
+> `/proc/1/environ`, which holds `OPEN_TERMINAL_API_KEY` and with it the means to act as any user
+> ([open-webui/open-terminal#123](https://github.com/open-webui/open-terminal/issues/123)). Upstream treats cross-user
+> access inside one container as out of scope (its `SECURITY.md`, as of v0.14.0), so our image patches it:
+> `confine_file_api_to_home.py` resolves links and lets the file API, its search and glob endpoints included, reach only
+> the user's real home, and the image build fails when the patched code changed upstream. Shell commands still run as
+> the user and see the rest of the system under normal permissions. A window remains between the check and the open, in
+> which a user who swaps a link at the right moment could still escape; closing it needs every file operation to verify
+> the opened file instead. One container per user, upstream's recommendation, is what removes the shared boundary
+> altogether.
+>
+> Listing, deleting and moving an entry are checked by the entry's own location rather than its link target, so a user's
+> own link that points outside their home (a virtualenv's `python`, say) stays visible and removable while reads through
+> it are still refused; a link is never followed when it is removed or moved.
+>
+> Two further paths around this confinement are closed here as well. The notebook endpoints
+> (`OPEN_TERMINAL_ENABLE_NOTEBOOKS`) run cells with an in-process Jupyter kernel as the root-capable server user, never
+> through the per-user file layer, so they are disabled in the compose template — we drive the sandbox through
+> `/execute` only. And the file layer only confines a request that carries an `X-User-Id`; without one it falls back to
+> an unrestricted account, so every direct caller of the sandbox (OpenWebUI's terminal proxy today, agents under #2033)
+> must send that header.
 
 > **Amendment 2026-10-02 — our agents use the sandbox.** The deferred agent support is done (#1570), and only the
 > Universal Agent joins `code-sandbox`; the other agents stay off it. It sits on `code-sandbox`, `backend`, `data` and

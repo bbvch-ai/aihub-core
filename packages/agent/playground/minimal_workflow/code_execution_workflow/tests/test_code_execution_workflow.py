@@ -74,7 +74,7 @@ def test_a_message_without_python_has_nothing_to_run():
 async def test_each_block_runs_as_its_own_script_and_the_output_is_kept_as_a_file():
     workspace = _workspace()
 
-    report, kept = await PythonBlocks.run(workspace, PythonBlocks.in_text(MESSAGE))
+    report, kept = await PythonBlocks.run(workspace, PythonBlocks.in_text(MESSAGE), "en")
 
     assert [call.args for call in workspace.client.write_file.await_args_list[:2]] == [
         ("conversations/t1/python_block_1.py", "print(6 * 7)"),
@@ -88,6 +88,30 @@ async def test_each_block_runs_as_its_own_script_and_the_output_is_kept_as_a_fil
     workspace.client.write_file.assert_awaited_with("conversations/t1/python_output.txt", report)
     workspace.keep.assert_awaited_once_with("python_output.txt")
     assert kept.filename == "python_output.txt"
+
+
+@pytest.mark.asyncio
+async def test_a_block_still_running_after_the_wait_is_stopped_before_the_next_runs():
+    workspace = _workspace()
+    workspace.client.kill = AsyncMock()
+    workspace.client.execute = AsyncMock(
+        side_effect=[
+            {"status": "running", "id": "p1", "output": [{"data": "working\n"}]},
+            {"exit_code": 0, "output": [{"data": "3\n"}]},
+        ]
+    )
+
+    report, _ = await PythonBlocks.run(workspace, ["while True: pass", "print(3)"], "en")
+
+    workspace.client.kill.assert_awaited_once_with("p1", force=True)
+    assert report == "Block 1 (stopped after 60 seconds):\nworking\n\nBlock 2 (exit code 0):\n3\n"
+
+
+@pytest.mark.asyncio
+async def test_the_report_is_written_in_the_run_locale():
+    report, _ = await PythonBlocks.run(_workspace(), ["print(6 * 7)", "print(3)"], "de")
+
+    assert report.startswith("Block 1 (Exit-Code 0):\n42")
 
 
 @pytest.mark.asyncio

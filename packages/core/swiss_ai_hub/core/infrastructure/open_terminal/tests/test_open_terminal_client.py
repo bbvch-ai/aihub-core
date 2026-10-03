@@ -74,8 +74,29 @@ async def test_a_command_may_take_its_wait_on_top_of_the_timeout(sandbox: _Sandb
 
 @pytest.mark.asyncio
 async def test_a_refusal_carries_the_sandbox_reason(sandbox: _Sandbox) -> None:
+    client = _client()
+
     with pytest.raises(OpenTerminalError, match="404: File not found"):
-        await _client().read_file("missing.txt")
+        await client.read_file("missing.txt")
+
+
+@pytest.mark.asyncio
+async def test_a_refusal_carries_the_sandbox_status(sandbox: _Sandbox) -> None:
+    client = _client()
+
+    with pytest.raises(OpenTerminalError) as refused:
+        await client.read_file("missing.txt")
+
+    assert refused.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_a_file_over_the_size_limit_is_refused(sandbox: _Sandbox) -> None:
+    settings = OpenTerminalSettings(BASE_URL="http://sandbox:8000", API_KEY=SecretStr("key"), MAX_FILE_BYTES=3)
+    client = OpenTerminalClient("owui-user-1", settings)
+
+    with pytest.raises(OpenTerminalError, match="larger than 3 bytes"):
+        await client.view("report.pdf")
 
 
 @pytest.mark.asyncio

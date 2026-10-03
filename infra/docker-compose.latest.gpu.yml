@@ -1702,12 +1702,15 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Notebook endpoints run cells in-process as the root-capable server user, bypassing the
+      # per-user file confinement; we use /execute only, so keep them off. See the ADR amendment.
+      OPEN_TERMINAL_ENABLE_NOTEBOOKS: 'false'
       # Tool-context guidance: files surface in the Files panel; use read-file for documents
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common

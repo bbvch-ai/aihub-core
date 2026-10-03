@@ -1,6 +1,7 @@
 """How agents work in the user's code sandbox: in a folder per conversation that holds its attached files, and with
 every file shown to the user copied into our storage so the answer keeps it."""
 
+import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -39,12 +40,20 @@ def _topic() -> AgentInstanceTopic:
     )
 
 
-def _client(present: list[str] | None = None) -> MagicMock:
+def _client(present: list[str] | None = None, staged: dict[str, str] | None = None) -> MagicMock:
+    async def view(path: str) -> tuple[bytes, str]:
+        if not path.endswith(SandboxWorkspace.STAGED_FILES):
+            return b"\x89PNG", "image/png"
+        if staged is None:
+            raise OpenTerminalError("404: File not found", 404)
+        return json.dumps(staged).encode(), "application/json"
+
     client = MagicMock()
     client.list_files = AsyncMock(return_value={"entries": [{"name": name} for name in present or []]})
     client.upload = AsyncMock(return_value={})
+    client.write_file = AsyncMock(return_value={})
     client.execute = AsyncMock(return_value={"status": "done", "exit_code": 0, "output": [{"data": "42\r\n"}]})
-    client.view = AsyncMock(return_value=(b"\x89PNG", "image/png"))
+    client.view = AsyncMock(side_effect=view)
     return client
 
 
@@ -108,14 +117,44 @@ class TestAttachedFiles:
             Bucket="agent-files", Key=f"UniversalAgent/assistant/{REPORT.file_id}/sales.csv"
         )
         client.upload.assert_awaited_once_with(f"conversations/{THREAD}", "sales.csv", b"a,b\n1,2")
+        client.write_file.assert_awaited_once_with(
+            f"conversations/{THREAD}/.attached_files.json", json.dumps({REPORT.file_id: "sales.csv"})
+        )
 
     @pytest.mark.asyncio
-    async def test_a_file_already_there_is_not_placed_again(self, s3: Any) -> None:
-        client = _client(present=["sales.csv"])
+    async def test_a_staged_file_is_not_placed_again_even_after_the_code_deleted_it(self, s3: Any) -> None:
+        client = _client(present=[], staged={REPORT.file_id: "sales.csv"})
 
         await SandboxWorkspace(client, _topic(), [REPORT]).prepare()
 
         client.upload.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_a_new_file_with_a_taken_name_is_placed_beside_the_first(self, s3: Any) -> None:
+        newer = REPORT.model_copy(update={"file_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7"})
+        client = _client(present=["sales.csv"], staged={REPORT.file_id: "sales.csv"})
+
+        await SandboxWorkspace(client, _topic(), [REPORT, newer]).prepare()
+
+        client.upload.assert_awaited_once_with(f"conversations/{THREAD}", "sales (2).csv", b"a,b\n1,2")
+
+    @pytest.mark.asyncio
+    async def test_two_files_with_one_name_on_one_message_both_stay(self, s3: Any) -> None:
+        other = REPORT.model_copy(update={"file_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7"})
+        client = _client()
+
+        await SandboxWorkspace(client, _topic(), [REPORT, other]).prepare()
+
+        assert [call.args[1] for call in client.upload.await_args_list] == ["sales.csv", "sales (2).csv"]
+
+    @pytest.mark.asyncio
+    async def test_a_message_without_files_does_not_touch_the_sandbox(self) -> None:
+        client = _client()
+
+        await SandboxWorkspace(client, _topic(), []).prepare()
+
+        client.view.assert_not_awaited()
+        client.list_files.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_a_new_conversation_starts_with_no_folder(self, s3: Any) -> None:
@@ -155,7 +194,8 @@ class TestTools:
         sandbox.view.assert_awaited_once_with(f"conversations/{THREAD}/chart.png")
         put = s3.put_object.call_args.kwargs
         assert put["Bucket"] == "agent-files"
-        assert put["Key"].startswith("UniversalAgent/assistant/") and put["Key"].endswith("/chart.png")
+        assert put["Key"].startswith("UniversalAgent/assistant/")
+        assert put["Key"].endswith("/chart.png")
         assert put["Body"] == b"\x89PNG"
         shown = context.displayer.display_event.await_args.args[0]
         assert isinstance(shown, SandboxFileDisplayedEvent)
@@ -164,11 +204,13 @@ class TestTools:
 
     @pytest.mark.asyncio
     async def test_a_user_without_a_chat_account_has_no_sandbox(self) -> None:
+        tools = SandboxTools(_context())
+
         with (
             patch.object(sandbox_workspace.OpenWebuiAccountEntity, "openwebui_id_of", return_value=None),
             pytest.raises(OpenTerminalError, match="no code sandbox"),
         ):
-            await SandboxTools(_context()).list_files()
+            await tools.list_files()
 
 
 class TestOffer:

@@ -98,9 +98,21 @@ class OpenTerminalClient:
         return await self._json("DELETE", "/files/delete", params={"path": path})
 
     async def view(self, path: str) -> tuple[bytes, str]:
-        """A file's raw bytes and type; unlike reading, this works for any file, binary documents included."""
-        response = await self._request("GET", "/files/view", params={"path": path})
-        return response.content, response.headers.get("content-type", "application/octet-stream")
+        """A file's raw bytes and type; unlike reading, this works for any file, binary documents included.
+
+        Streamed and stopped at the size limit, so a huge file the code made is refused instead of filling memory."""
+        async with self._http() as http, http.stream("GET", "/files/view", params={"path": path}) as response:
+            if response.is_error:
+                await response.aread()
+                raise self._error(response)
+            content = bytearray()
+            async for chunk in response.aiter_bytes():
+                content.extend(chunk)
+                if len(content) > self._settings.MAX_FILE_BYTES:
+                    raise OpenTerminalError(
+                        f"{path} is larger than {self._settings.MAX_FILE_BYTES} bytes, the most a file may have here."
+                    )
+            return bytes(content), response.headers.get("content-type", "application/octet-stream")
 
     async def _json(self, method: str, path: str, wait: float | None = None, **kwargs: Any) -> Any:
         return (await self._request(method, path, wait=wait, **kwargs)).json()
@@ -108,12 +120,19 @@ class OpenTerminalClient:
     async def _request(self, method: str, path: str, wait: float | None = None, **kwargs: Any) -> httpx.Response:
         if "params" in kwargs:
             kwargs["params"] = {key: value for key, value in kwargs["params"].items() if value is not None}
-        timeout = self._settings.TIMEOUT + (wait or 0)
-        async with httpx.AsyncClient(base_url=self._settings.BASE_URL, headers=self._headers, timeout=timeout) as http:
+        async with self._http(wait) as http:
             response = await http.request(method, path, **kwargs)
         if response.is_error:
-            raise OpenTerminalError(f"{response.status_code}: {self._reason(response)}", response.status_code)
+            raise self._error(response)
         return response
+
+    def _http(self, wait: float | None = None) -> httpx.AsyncClient:
+        timeout = self._settings.TIMEOUT + (wait or 0)
+        return httpx.AsyncClient(base_url=self._settings.BASE_URL, headers=self._headers, timeout=timeout)
+
+    @classmethod
+    def _error(cls, response: httpx.Response) -> OpenTerminalError:
+        return OpenTerminalError(f"{response.status_code}: {cls._reason(response)}", response.status_code)
 
     @staticmethod
     def _reason(response: httpx.Response) -> str:

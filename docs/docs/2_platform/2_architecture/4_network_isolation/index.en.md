@@ -111,7 +111,8 @@ to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach
 `sandbox-mirror` sidecar that copies the homes to S3 reads the homes volume and sits on `backend` only, never on
 `code-sandbox`. Because
 the sandbox shares a network only with its callers, a breakout has no network path to the `backend` or `data` tiers. In
-dev, `open-webui` uses `network_mode: host` and reaches the sandbox via the published `localhost:8200` port instead.
+dev, `open-webui` uses `network_mode: host` and the agents run locally outside Docker, so both reach the sandbox via the
+published `localhost:8200` port instead.
 
 ## Network Topology
 

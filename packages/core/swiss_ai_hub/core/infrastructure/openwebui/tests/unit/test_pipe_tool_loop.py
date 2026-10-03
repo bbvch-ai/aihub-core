@@ -171,3 +171,11 @@ def test_an_earlier_answer_reaches_the_agent_without_its_tool_blocks(pipe: Any) 
 
     assert [block["text"].strip() for block in converted[0]["blocks"]] == ["The chart is attached."]
     assert converted[1]["blocks"] == [{"block_type": "text", "text": question}]
+
+
+def test_an_earlier_answer_keeps_a_details_block_it_wrote_itself(pipe: Any) -> None:
+    answer = 'Here are the steps:\n<details type="note"><summary>Steps</summary>Open the file.</details>'
+
+    converted = pipe.MessageConverter.convert_to_event_format([{"role": "assistant", "content": answer}])
+
+    assert "Open the file." in converted[0]["blocks"][0]["text"]

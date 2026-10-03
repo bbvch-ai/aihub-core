@@ -324,7 +324,10 @@ class MessageConverter:
     # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
     # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
     # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
-    _DETAILS_BLOCK = re.compile(r"\n?<details\b[^>]*>.*?</details>\n?", re.DOTALL)
+    # Only the generated block types match, so a ``<details>`` an answer itself contains keeps its content.
+    _DETAILS_BLOCK = re.compile(
+        r'\n?<details\b[^>]*\btype="(?:reasoning|tool_calls|code_interpreter)"[^>]*>.*?</details>\n?', re.DOTALL
+    )
     # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
     # reasoning text, which closes the match above early and leaves a stray tag behind.
     _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
