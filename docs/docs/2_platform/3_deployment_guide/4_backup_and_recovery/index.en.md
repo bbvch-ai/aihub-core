@@ -148,6 +148,46 @@ Treat a Langfuse version bump as a one-way door: take a backup beforehand for da
 rather than downgrade.
 :::
 
+### Users' sandbox files (My Files)
+
+The users' homes in the code sandbox (the files behind My Files) live on the host volume mounted at
+`<VOLUME_ROOT>/open-terminal`. The `sandbox-mirror` service copies them one way into the `sandbox-files` bucket every
+`SANDBOX_MIRROR_INTERVAL_SECONDS`, keeping each file's owner, group, mode and modification time, and keeps a deleted or
+overwritten file under `.deleted/<timestamp>/` for a week. The mirror protects against losing the homes volume, not
+SeaweedFS itself; see [What is NOT backed up](#what-is-not-backed-up-by-the-platform).
+
+To bring the homes back after the volume is lost:
+
+1. Stop the mirror **first**, then the sandbox. A running mirror would copy the empty volume over the bucket and move
+   every file into `.deleted/`.
+
+   ```bash
+   docker compose stop sandbox-mirror open-terminal
+   ```
+
+2. Copy the homes back, with the mirror's own credentials and the volume mounted writable:
+
+   ```bash
+   docker compose run --rm --no-deps \
+     -v "<VOLUME_ROOT>/open-terminal:/restore" \
+     --entrypoint rclone sandbox-mirror \
+     copy mirror:sandbox-files /restore --metadata --exclude "/.deleted/**"
+   ```
+
+   Files come back with their owner and mode. Folders do not: the bucket holds no folder metadata, so each home comes
+   back owned by `root` with mode `755` until the next step.
+
+3. Recreate the sandbox, then start the mirror again. The new container provisions each user's account on their next
+   request, which makes them the owner of their home again and sets it to `2770`, so only they can read it.
+
+   ```bash
+   docker compose up -d --force-recreate open-terminal
+   docker compose up -d sandbox-mirror
+   ```
+
+   Skipping the recreate leaves every home owned by `root`: users cannot write to their own files, and other users can
+   list them.
+
 ______________________________________________________________________
 
 ## VM snapshots
