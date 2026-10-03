@@ -69,10 +69,10 @@ The `infra/docker-compose.dev.yml` runs ~30 containers. Key services by role:
 **User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3333, run locally outside Docker)
 
 **API & Gateway**: FastAPI REST + WebSocket (:8000, run locally), LiteLLM universal LLM proxy (:4000), Traefik reverse
-proxy (production only)
+proxy (production only), Keycloak identity provider (:8180)
 
-**AI Inference**: Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for
-local chat, embedding, and reranking. Non-GPU deployments route all inference to Swiss LLM Cloud.
+**AI Inference**: Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for local chat, embedding,
+and reranking, and Speaches STT/TTS (:8185). Non-GPU deployments route all inference to Swiss LLM Cloud.
 
 **Databases**: PostgreSQL with pgvector (:5432, 4 DBs: openwebui/langfuse/dagster/litellm), FerretDB (:27017,
 MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j graph DB (:7474/:7687), Valkey/Redis
@@ -83,15 +83,16 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 
 **Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
-**Document Processing**: MinerU OCR + parsing (:5001)
+**Document Processing**: MinerU OCR + parsing (:8002)
 
 **Backup**: Backup Dagster webserver (:3004), gRPC code server, daemon — independent Dagster instance for scheduled
 backup/restore
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
-**Utility**: Open Terminal (:8200 in dev, code execution sandbox for OpenWebUI — plain LLM models only), Playwright
-(:3036, browser automation), Attu (:3003, Milvus admin UI)
+**Utility**: Open Terminal (:8200 in dev, code-execution sandbox for plain LLM chats and for agents' code tools, each
+user confined to their own home), SearXNG (:8881, web search), Playwright (:3036, browser automation), Attu (:3003,
+Milvus admin UI)
 
 ## Package Architecture
 
@@ -269,7 +270,7 @@ Some findings are deliberately left open; check `git log` and existing comments 
 
 **Create ADR if**: Adding major dependencies, introducing new tools/frameworks, or altering fundamental patterns.
 
-**ADR Format**: `YYYY_MM_DD_short-decision-summary.md` (Context → Decision Drivers → Decision → Consequences)
+**ADR Format**: `YYYY_MM_DD_short_decision_summary.md` (Context → Decision Drivers → Decision → Consequences)
 
 ## Package Dependencies
 

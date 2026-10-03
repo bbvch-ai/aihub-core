@@ -23,6 +23,14 @@ like "We deploy to production on Fridays." Retrieval works the same way.
 Both scopes retrieve from the vector store only. `MemorySearchResult.relations` still exists on the model but is always
 empty.
 
+## Memory in chat agents
+
+Chat blueprints do not write the steps below. They call the `Memory` capability: `Memory.recall(query)` returns a block
+per scope that `Conversation.compose` merges into the model's system instructions, and `Memory.remember(...)` returns
+the storage request, which belongs ahead of the completion in the list the answering step returns so it is published
+before the run ends. See [Capabilities and Tools](../12_capabilities_and_tools/). The explicit workflow below is the
+pattern for a custom agent that wires memory by hand.
+
 ## Memory workflow pattern
 
 Both memory types follow a common four-step workflow:

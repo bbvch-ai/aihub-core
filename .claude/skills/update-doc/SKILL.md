@@ -92,7 +92,7 @@ done
 
 ## Example
 
-If you modified `packages/api/swiss_ai_hub/api/routes/agent/AgentController.py`, check:
+If you modified `packages/api/swiss_ai_hub/api/routes/agent/agent_controller.py`, check:
 
 - `packages/api/README.md` — API endpoint docs
 - `packages/api/CLAUDE.md` — route patterns, key classes

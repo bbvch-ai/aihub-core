@@ -40,6 +40,8 @@ This guide is structured to build your knowledge progressively:
 11. [**Events Reference**](./10_events_reference/) - Complete event hierarchy, choosing the right base event, and
     available events catalog.
 12. [**Using MCP Tools**](./11_using_mcp_tools/) - Connecting agents to external MCP servers to call their tools.
+13. [**Capabilities and Tools**](./12_capabilities_and_tools/) - Reusing the steps every chat agent needs and letting
+    the model choose tools with the tool loop.
 
 ## Key Principles of the SDK
 

@@ -13,16 +13,16 @@ Generate a detail wrapper page with tab navigation and tab content pages. The re
 
 1. Read the frontend scope guide: `packages/web/CLAUDE.md`
 2. Study these reference files:
-   - Detail wrapper with tabs: `packages/web/pages/service/agents/[agent_class]-[agent_id].vue`
-   - Tab content page: `packages/web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`
-   - Another wrapper: `packages/web/pages/service/threads/[thread_id].vue`
+   - Detail wrapper with tabs: `packages/web/pages/[tenant]/service/agents/[agent_class]-[agent_id].vue`
+   - Tab content page: `packages/web/pages/[tenant]/service/agents/[agent_class]-[agent_id]/overview.vue`
+   - Another wrapper: `packages/web/pages/[tenant]/service/threads/[thread_id].vue`
    - NavItem type: `packages/web/types/NavItem.ts`
 
 ## Architecture: How Nested Routing Works
 
 ```
-pages/service/{resource}s.vue           <- List page (has NuxtPage outlet)
-  pages/service/{resource}s/
+pages/[tenant]/service/{resource}s.vue           <- List page (has NuxtPage outlet)
+  pages/[tenant]/service/{resource}s/
     [{resource}_id].vue                 <- Detail WRAPPER (tab bar + NuxtPage)
       overview.vue                      <- Tab content page
       configuration.vue                 <- Tab content page
@@ -64,7 +64,7 @@ export const use<Resource> = defineQuery(() => {
 
 ## Step 2: Create the Detail Wrapper
 
-Create `packages/web/pages/service/{resource}s/[{resource}_id].vue`:
+Create `packages/web/pages/[tenant]/service/{resource}s/[{resource}_id].vue`:
 
 ```vue
 <template>
@@ -89,7 +89,7 @@ import type { NavItem } from '@core/types/NavItem'
 
 const router = useRouter()
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 const { <resource> } = use<Resource>()
@@ -100,7 +100,7 @@ const subPath = (path: string) => {
 
 const isActive = (path: string) => {
   return () => {
-    const localizedPath = localePath(subPath(path))
+    const localizedPath = tenantPath(subPath(path))
     return route.path.startsWith(localizedPath)
   }
 }
@@ -115,7 +115,7 @@ const navItems = computed<NavItem[]>(() => {
 
 const toNavItem = (navItem: NavItem | null) => {
   if (navItem) {
-    router.push(localePath(navItem.path))
+    router.push(tenantPath(navItem.path))
   }
 }
 
@@ -155,7 +155,7 @@ const subPath = (path: string) => {
 
 ## Step 3: Create Tab Content Pages
 
-Create tab pages in `packages/web/pages/service/{resource}s/[{resource}_id]/`:
+Create tab pages in `packages/web/pages/[tenant]/service/{resource}s/[{resource}_id]/`:
 
 ### Overview Tab (`overview.vue`)
 
@@ -226,7 +226,7 @@ Final directory structure:
 
 ```
 packages/web/
-├── pages/service/
+├── pages/[tenant]/service/
 │   ├── {resource}s.vue                    <- List page (from /scaffold-frontend-page)
 │   └── {resource}s/
 │       └── [{resource}_id].vue            <- Detail wrapper (tab bar)
@@ -240,8 +240,8 @@ packages/web/
 
 ## Step 6: Verify
 
-1. Check the nested route resolves: `pages/service/{resource}s/[{resource}_id].vue` must be inside a directory matching
-   the parent list page filename (`{resource}s/`)
+1. Check the nested route resolves: `pages/[tenant]/service/{resource}s/[{resource}_id].vue` must be inside a directory
+   matching the parent list page filename (`{resource}s/`)
 2. Verify tab navigation works: each NavItem `path` must match a `.vue` file in the `[{resource}_id]/` directory
 3. Verify `isActive()` returns a closure (function returning boolean), not a boolean value
 4. Verify i18n keys exist in ALL 4 locale files for navigation labels and field labels
@@ -263,9 +263,9 @@ packages/web/
 
 **Output files created**:
 
-1. `packages/web/pages/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
-2. `packages/web/pages/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
-3. `packages/web/pages/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
+1. `packages/web/pages/[tenant]/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
+2. `packages/web/pages/[tenant]/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
+3. `packages/web/pages/[tenant]/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
 4. `packages/web/composables/pipeline/usePipeline.ts` -- Single-item query composable
 5. i18n keys added for navigation labels and field labels in all 4 locales
 

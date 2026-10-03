@@ -114,7 +114,7 @@ Use the error information from Step 1 to match against these known patterns.
 2. **Hash unchanged**: Content hash matches previous observation
 
    - Data versions are content-based -- if file content didn't change, no version change
-   - Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/data_version_by_partition_for_data_lake_files.py`
+   - Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/data_version_by_partition_for_data_lake.py`
 
 3. **Partition limit reached**: `max_partitions` caps how many partitions are processed per run
 
@@ -157,43 +157,47 @@ Use the error information from Step 1 to match against these known patterns.
 **Symptoms**: `parse_document_from_data_lake` fails
 
 - Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/parse_document_from_data_lake.py`
-- Read: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/DocumentParserResource.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/document_parser_resource.py`
 - MinerU service not running (if using remote MinerU)
 - Unsupported file type
 - Corrupted file content
 - Large file timeout
+- MinerU conversions are cached by content hash in the `parse-cache` bucket (`MineruParseCache`,
+  `packages/core/swiss_ai_hub/core/generative_ai/document/loaders/mineru_parse_cache.py`); a stale or wrong result for
+  the same bytes means the cache entry (keyed also by MinerU settings) is the thing to inspect or delete, entries expire
+  by lifecycle rule
 
 ______________________________________________________________________
 
 ## Step 3: Check Infrastructure Connections
 
-### S3/MinIO
+### S3 (SeaweedFS)
 
 **Symptoms**: `botocore.exceptions.ClientError`, `EndpointConnectionError`
 
-Settings: `packages/core/swiss_ai_hub/core/infrastructure/s3/S3StorageSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/s3/s3_storage_settings.py`
 
-| Env Variable    | Purpose                     |
-| --------------- | --------------------------- |
-| `S3_ENDPOINT`   | MinIO endpoint URL          |
-| `S3_ACCESS_KEY` | Access key                  |
-| `S3_SECRET_KEY` | Secret key                  |
-| `S3_REGION`     | Region (default: us-east-1) |
+| Env Variable            | Purpose                                       |
+| ----------------------- | --------------------------------------------- |
+| `S3_STORAGE_ENDPOINT`   | S3 endpoint URL (SeaweedFS S3 gateway in dev) |
+| `S3_STORAGE_ACCESS_KEY` | Access key                                    |
+| `S3_STORAGE_SECRET_KEY` | Secret key                                    |
+| `S3_STORAGE_REGION`     | Region (default: us-east-1)                   |
 
-Common issues: MinIO not running (`docker compose -f infra/docker-compose.dev.yml ps minio`), bucket doesn't exist,
-wrong endpoint (inside Docker use `http://minio:9000`, not `localhost`).
+Common issues: SeaweedFS not running (`docker compose -f infra/docker-compose.dev.yml ps seaweedfs-s3`), bucket doesn't
+exist, wrong endpoint (inside Docker use `http://seaweedfs-s3:9000`, not `localhost`).
 
 ### Milvus
 
 **Symptoms**: `MilvusException`, connection timeout
 
-Settings: `packages/core/swiss_ai_hub/core/infrastructure/milvus/MilvusSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/milvus/milvus_settings.py`
 
-| Env Variable       | Purpose                      |
-| ------------------ | ---------------------------- |
-| `MILVUS_URL`       | Milvus endpoint              |
-| `MILVUS_TOKEN`     | Auth token                   |
-| `MILVUS_DIMENSION` | Default embedding dimensions |
+| Env Variable           | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| `MILVUS_URL`           | Milvus endpoint                                      |
+| `MILVUS_ROOT_PASSWORD` | Root password (optional; token is `root:<password>`) |
+| `MILVUS_DIMENSION`     | Default embedding dimensions                         |
 
 Common issues: Milvus not running, dimension mismatch (embedding model dimensions must match collection dimensions),
 collection not found (auto-created on first insert).
@@ -202,7 +206,7 @@ collection not found (auto-created on first insert).
 
 **Symptoms**: `ConnectionFailure`, `OperationFailure`
 
-Settings: `packages/core/swiss_ai_hub/core/infrastructure/mongo/MongoSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/mongo/mongo_settings.py`
 
 Common issues: FerretDB not running, database name mismatch (derived from bucket name via
 `get_db_name_from_bucket_name()` in `packages/pipeline/swiss_ai_hub/pipeline/util/bucket_utils.py`).
@@ -229,7 +233,7 @@ multi-line credential; Google Drive JSON and SFTP PEM keys are normalised, other
 
 ### NATS
 
-Settings: `packages/core/swiss_ai_hub/core/infrastructure/nats/NatsSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/nats/nats_settings.py`
 
 Common issues: NATS not running, JetStream not enabled, stream/consumer not created.
 
@@ -257,10 +261,10 @@ non-partitioned cases.
 S3DataLakeIOManager received wrong type. Check asset's `io_manager_key` matches the correct IO manager and op return
 type matches expectations.
 
-### "Cannot connect to host minio:9000"
+### "Cannot connect to host seaweedfs-s3:9000"
 
-S3/MinIO unreachable. Check MinIO Docker service is running, `S3_ENDPOINT` env var is correct, network connectivity
-between Dagster and MinIO containers.
+S3 unreachable. Check the SeaweedFS S3 gateway is running, `S3_STORAGE_ENDPOINT` is correct, network connectivity
+between Dagster and SeaweedFS containers.
 
 ### "No nodes found for document after retrying for 30 seconds"
 
