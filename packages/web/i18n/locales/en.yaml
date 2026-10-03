@@ -283,6 +283,11 @@ event:
       identity: Identity
       capabilities: Capabilities
       behavior: Behaviour
+  sandboxFileDisplayed:
+    file: File
+    type: Type
+    size: Size
+    path: In the sandbox
   humanInTheLoopResponse:
     confirmed: Confirmed
     declined: Declined
@@ -1078,3 +1083,44 @@ support:
   send_failed_detail: Your answers are still here — try sending again.
   unavailable: Reporting is not configured on this deployment. Please contact your
     administrator.
+userFiles:
+  title: "My Files"
+  description: "The files you and your agents work with: chat attachments, files agents made for you and your own uploads."
+  conversation: "Chat"
+  actions:
+    move: "Move"
+    upload: "Upload"
+    newFolder: "New folder"
+    refresh: "Refresh"
+    download: "Download"
+    rename: "Rename"
+    delete: "Delete"
+    close: "Close"
+    cancel: "Cancel"
+    save: "Save"
+    openFolder: "Open folder {name}"
+    preview: "Preview {name}"
+  columns:
+    name: "Name"
+    size: "Size"
+    modified: "Changed"
+  empty:
+    folder: "This folder is empty. Drop files here to upload them."
+    noSpace: "Your file space is set up with your chat account. Open the chat once, then come back."
+  error:
+    load: "This folder could not be loaded. Try again with Refresh."
+  move:
+    header: "Move {name} to"
+    noTargets: "No folder to move it to."
+  preview:
+    unavailable: "No preview for this file type. Download it to open it."
+  name:
+    invalid: "A name must not be empty or contain a slash."
+  delete:
+    header: "Delete"
+    file: "Delete {name}?"
+    folder: "Delete the folder {name} with everything in it?"
+  toast:
+    uploaded: "Uploaded {count} file(s)"
+    uploadFailed: "Upload failed"
+    changeFailed: "The change failed"

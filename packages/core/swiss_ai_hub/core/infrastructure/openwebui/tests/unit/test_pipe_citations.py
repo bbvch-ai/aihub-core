@@ -210,7 +210,7 @@ class TestReferencedKnowledge:
         service = pipe.FileProcessingService.__new__(pipe.FileProcessingService)
 
         files, owui_file_ids = await service.prepare_files_for_event(
-            [{"type": "collection", "id": "k1", "name": "HR / Policies"}], "RAGAgent", "hr", {}
+            [{"type": "collection", "id": "k1", "name": "HR / Policies"}], "RAGAgent", "hr", {}, "t1"
         )
 
         assert (files, owui_file_ids) == ([], {})

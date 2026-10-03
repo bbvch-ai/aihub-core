@@ -30,6 +30,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
     from swiss_ai_hub.core.infrastructure.nats.nats_settings import NatsSettings
     from swiss_ai_hub.core.infrastructure.notification.notification_settings import NotificationSettings
+    from swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments import ConversationAttachments
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client import OpenTerminalClient
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error import OpenTerminalError
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings import OpenTerminalSettings
+    from swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path import SandboxHomePath
     from swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor import AihubInstrumentor
     from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings import OpenTelemetrySettings
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -74,6 +79,11 @@ __all__ = [
     "LiteLLMService",
     "MilvusSettings",
     "MineruSettings",
+    "ConversationAttachments",
+    "OpenTerminalClient",
+    "OpenTerminalError",
+    "OpenTerminalSettings",
+    "SandboxHomePath",
     "MongoConnectionRegistry",
     "MongoSettings",
     "NatsSettings",
@@ -124,6 +134,11 @@ _LAZY_IMPORTS = {
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
     "MilvusSettings": "swiss_ai_hub.core.infrastructure.milvus.milvus_settings",
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
+    "ConversationAttachments": "swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments",
+    "OpenTerminalClient": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client",
+    "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
+    "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",
+    "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",

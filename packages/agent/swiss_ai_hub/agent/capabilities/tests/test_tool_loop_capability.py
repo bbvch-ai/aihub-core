@@ -3,6 +3,7 @@ and the user's toggles allow; every call it makes is approved as the tool's poli
 once per iteration; at its limits it answers with what it has.
 """
 
+import inspect
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -36,7 +37,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
-from swiss_ai_hub.core.topics import PartialAgentTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
@@ -58,6 +59,18 @@ from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
 MODULE = "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop"
 T = LocaleHandler("en")
 HISTORY = [ChatMessage(role=MessageRole.USER, content="What time is it, and how many vacation days do I get?")]
+
+
+TOPIC = AgentInstanceTopic(
+    agent_class="LoopAgent",
+    agent_id="loop-test",
+    thread_id="thread",
+    display_id="display",
+    run_id="run",
+    event_type="control_event",
+    event_name="ToolCallApprovedEvent",
+    event_id="event",
+)
 
 
 class Toolbox(BaseToolSpec):
@@ -205,6 +218,7 @@ class TestOfferedTools:
                     run_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
                     t=T,
+                    topic=TOPIC,
                 )
 
     @pytest.mark.asyncio
@@ -299,6 +313,37 @@ class TestDecisions:
         assert [message.role for message in messages] == [MessageRole.USER, MessageRole.ASSISTANT, MessageRole.USER]
         assert messages[1].content == "echo:\nA for loop-test"
         assert not any(message.additional_kwargs.get("tool_calls") for message in messages)
+
+    @pytest.mark.asyncio
+    async def test_with_every_tool_declined_the_tool_turns_reach_the_model_as_plain_text(self):
+        result = Message(role="tool", tool_call_id="c1", name="echo", contents=[TextContent(text="declined")])
+        state = _state()
+        state = state.model_copy(
+            update={"messages": [*state.messages, _calling(_tool_call("c1", "echo", '{"text": "a"}')), result]}
+        )
+
+        _, displayer = await _decide(state, ANSWER, run_context=_Context({"tool_loop:declined:echo": True}))
+
+        await_args = displayer.display_llm_stream.await_args
+        assert await_args.kwargs["tools"] is None
+        roles = [message.role for message in await_args.args[2]]
+        assert roles == [MessageRole.USER, MessageRole.ASSISTANT, MessageRole.USER]
+        assert not any(message.additional_kwargs.get("tool_calls") for message in await_args.args[2])
+
+    @pytest.mark.asyncio
+    async def test_tools_condensing_dropped_leave_the_model_told_to_answer_now(self):
+        _, displayer = await _decide(_state().model_copy(update={"tools": []}), ANSWER)
+
+        await_args = displayer.display_llm_stream.await_args
+        assert await_args.kwargs["tools"] is None
+        assert await_args.args[2][-1].role == MessageRole.USER
+        assert await_args.args[2][-1].content == T("agent.tool_loop.prompt.no_tools")
+
+    @pytest.mark.asyncio
+    async def test_a_model_offered_tools_gets_no_note_to_answer_now(self):
+        _, displayer = await _decide(_state(), ANSWER)
+
+        assert displayer.display_llm_stream.await_args.args[2][-1].content == HISTORY[-1].content
 
     @pytest.mark.asyncio
     async def test_gathering_at_the_limit_hands_back_what_it_has(self):
@@ -489,7 +534,13 @@ class TestFunctionTools:
             agent_config=_config(),
             displayer=MagicMock(spec=EventDisplayer),
             t=T,
+            topic=TOPIC,
         )
+
+    def test_the_steps_building_a_tool_context_receive_the_run_topic(self):
+        """The dispatcher injects a topic only into a parameter annotated exactly with a topic class."""
+        for step_function in (ToolLoop.start_step, ToolLoop.run_function_step):
+            assert inspect.signature(step_function).parameters["topic"].annotation is AgentInstanceTopic
 
     @pytest.mark.asyncio
     async def test_a_function_tool_returns_what_it_computed(self):

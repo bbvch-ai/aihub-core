@@ -1,6 +1,6 @@
 ---
 title: Sicherung und Wiederherstellung
-source_sha: 198e889b47930d4e1fd9afc4cf0859c5356d393a1d61ecbb36f2532d22af406a
+source_sha: 48f1f92dffa75fa34dc28be419cfe21c3208a1a22d9265a30b5ec59c635b0647
 ---
 
 # Sicherung und Wiederherstellung
@@ -160,6 +160,48 @@ vorwärts, wenn die Langfuse-Container das nächste Mal starten.
 Behandeln Sie eine Langfuse-Versionsanhebung als Einbahnstrasse: Erstellen Sie vorher ein Backup zur Datenrettung,
 planen Sie die Wiederherstellung aber vorwärts statt als Downgrade.
 :::
+
+### Sandbox-Dateien der Benutzer (My Files)
+
+Die Homes der Benutzer in der Code-Sandbox (die Dateien hinter My Files) liegen auf dem Host-Volume, das unter
+`<VOLUME_ROOT>/open-terminal` eingebunden ist. Der Service `sandbox-mirror` kopiert sie einseitig in den Bucket
+`sandbox-files`, und zwar alle `SANDBOX_MIRROR_INTERVAL_SECONDS`; dabei bleiben Eigentümer, Gruppe, Modus und
+Änderungszeitpunkt jeder Datei erhalten. Eine gelöschte oder überschriebene Datei wird eine Woche lang unter
+`.deleted/<timestamp>/` aufbewahrt. Der Mirror schützt vor dem Verlust des Homes-Volumes, nicht vor dem Verlust von
+SeaweedFS selbst; siehe [Was NICHT gesichert wird](#was-von-der-plattform-nicht-gesichert-wird).
+
+So stellen Sie die Homes nach dem Verlust des Volumes wieder her:
+
+1. Stoppen Sie **zuerst** den Mirror, dann die Sandbox. Ein laufender Mirror würde das leere Volume über den Bucket
+   kopieren und jede Datei nach `.deleted/` verschieben.
+
+   ```bash
+   docker compose stop sandbox-mirror open-terminal
+   ```
+
+2. Kopieren Sie die Homes zurück, mit den eigenen Zugangsdaten des Mirrors und dem schreibbar eingebundenen Volume:
+
+   ```bash
+   docker compose run --rm --no-deps \
+     -v "<VOLUME_ROOT>/open-terminal:/restore" \
+     --entrypoint rclone sandbox-mirror \
+     copy mirror:sandbox-files /restore --metadata --exclude "/.deleted/**"
+   ```
+
+   Dateien kommen mit ihrem Eigentümer und Modus zurück. Ordner nicht: Der Bucket enthält keine Ordner-Metadaten,
+   weshalb jedes Home bis zum nächsten Schritt `root` gehört und den Modus `755` hat.
+
+3. Erstellen Sie die Sandbox neu und starten Sie dann den Mirror wieder. Der neue Container richtet das Konto jedes
+   Benutzers bei dessen nächster Anfrage ein; dadurch wird er wieder Eigentümer seines Homes und der Modus wird auf
+   `2770` gesetzt, sodass nur er es lesen kann.
+
+   ```bash
+   docker compose up -d --force-recreate open-terminal
+   docker compose up -d sandbox-mirror
+   ```
+
+   Wenn Sie das Neuerstellen überspringen, gehört jedes Home weiterhin `root`: Benutzer können nicht in ihre eigenen
+   Dateien schreiben, und andere Benutzer können sie auflisten.
 
 ______________________________________________________________________
 

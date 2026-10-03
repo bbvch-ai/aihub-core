@@ -624,6 +624,12 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
+  /**
+   * Thread Id
+   *
+   * The conversation the file is attached in; it is also placed in the user's files there.
+   */
+  thread_id?: string | null;
 };
 
 /**
@@ -2047,6 +2053,18 @@ export type BodyCreateTranscription = {
 };
 
 /**
+ * Body_upload_user_file
+ */
+export type BodyUploadUserFile = {
+  /**
+   * File
+   *
+   * The file to add; one with the same name is replaced.
+   */
+  file: Blob | File;
+};
+
+/**
  * BucketMetadataFilters
  *
  * The metadata filters a publisher wants applied to one bucket at retrieval time.
@@ -3252,6 +3270,7 @@ export const ChatFeature = {
   WEB_SEARCH: "web_search",
   CODE_INTERPRETER: "code_interpreter",
   IMAGE_GENERATION: "image_generation",
+  USER_FILES: "user_files",
 } as const;
 
 /**
@@ -4387,6 +4406,7 @@ export type ContextualizedAgentEvent = {
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
+    | SandboxFileDisplayedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -4640,6 +4660,18 @@ export type CreateDatabaseRequest = {
   source_configuration?: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * CreateFolderRequest
+ */
+export type CreateFolderRequest = {
+  /**
+   * Path
+   *
+   * The new folder's path in the user's file space.
+   */
+  path: string;
 };
 
 /**
@@ -6526,6 +6558,48 @@ export type File = {
 };
 
 /**
+ * FileEntryDTO
+ */
+export type FileEntryDto = {
+  /**
+   * Name
+   *
+   * The file or folder name.
+   */
+  name: string;
+  /**
+   * Path
+   *
+   * Its path relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Kind
+   *
+   * Whether it is a file or a folder.
+   */
+  kind: "file" | "folder";
+  /**
+   * Size
+   *
+   * The file's size in bytes; none for a folder.
+   */
+  size?: number | null;
+  /**
+   * Modified
+   *
+   * When it last changed, as seconds since the epoch.
+   */
+  modified: number;
+  /**
+   * Conversation Title
+   *
+   * The title of the chat a conversation folder belongs to.
+   */
+  conversation_title?: string | null;
+};
+
+/**
  * FileFile
  */
 export type FileFile = {
@@ -6545,6 +6619,18 @@ export type FileFile = {
 };
 
 /**
+ * FilePathDTO
+ */
+export type FilePathDto = {
+  /**
+   * Path
+   *
+   * The affected path, relative to the user's file space.
+   */
+  path: string;
+};
+
+/**
  * FilePromptCacheBreakpoint
  *
  * Marks the exact end of a reusable prompt prefix.
@@ -6557,6 +6643,30 @@ export type FilePromptCacheBreakpoint = {
    */
   mode: "explicit";
   [key: string]: unknown;
+};
+
+/**
+ * FolderListingDTO
+ */
+export type FolderListingDto = {
+  /**
+   * Folder
+   *
+   * The listed folder, relative to the user's file space; '.' is its top.
+   */
+  folder: string;
+  /**
+   * Entries
+   *
+   * Its folders first, then its files, each by name.
+   */
+  entries: Array<FileEntryDto>;
+  /**
+   * Folder Title
+   *
+   * The title of the chat, when the folder is a conversation's own.
+   */
+  folder_title?: string | null;
 };
 
 /**
@@ -12776,6 +12886,24 @@ export type ModerationOutputModerationResultsResult = {
 };
 
 /**
+ * MoveFileRequest
+ */
+export type MoveFileRequest = {
+  /**
+   * Source
+   *
+   * The file or folder to move or rename.
+   */
+  source: string;
+  /**
+   * Destination
+   *
+   * Its new path; a rename keeps the folder and changes the name.
+   */
+  destination: string;
+};
+
+/**
  * MultiSelect
  *
  * https://formkit-primevue.netlify.app/inputs/MultiSelect
@@ -15804,6 +15932,84 @@ export type RunToolLoopEvent = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
   /**
    * Event Name
    *
@@ -19003,12 +19209,6 @@ export type ToolLoopState = {
    * Whether the conversation outgrew the prompt and is condensed before the model decides.
    */
   needs_condensing?: boolean;
-  /**
-   * Condensed Tool Call Ids
-   *
-   * Tool results already condensed or dropped, which are not condensed again.
-   */
-  condensed_tool_call_ids?: Array<string>;
 };
 
 /**
@@ -22600,6 +22800,7 @@ export type ContextualizedAgentEventWritable = {
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
+    | SandboxFileDisplayedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -29276,6 +29477,71 @@ export type RunToolLoopEventWritable = {
 };
 
 /**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
+  [key: string]: unknown;
+};
+
+/**
  * SearchKnowledgeEvent
  *
  * Asks the knowledge capability to search the collections the user referenced for the turn's query.
@@ -31696,12 +31962,6 @@ export type ToolLoopStateWritable = {
    * Whether the conversation outgrew the prompt and is condensed before the model decides.
    */
   needs_condensing?: boolean;
-  /**
-   * Condensed Tool Call Ids
-   *
-   * Tool results already condensed or dropped, which are not condensed again.
-   */
-  condensed_tool_call_ids?: Array<string>;
 };
 
 /**
@@ -36215,6 +36475,239 @@ export type CreateIncidentResponses = {
 
 export type CreateIncidentResponse =
   CreateIncidentResponses[keyof CreateIncidentResponses];
+
+export type DeleteUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file, or folder with everything in it, to delete.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type DeleteUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteUserFileError =
+  DeleteUserFileErrors[keyof DeleteUserFileErrors];
+
+export type DeleteUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type DeleteUserFileResponse =
+  DeleteUserFileResponses[keyof DeleteUserFileResponses];
+
+export type ListUserFilesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to list; '.' is the top.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type ListUserFilesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ListUserFilesError = ListUserFilesErrors[keyof ListUserFilesErrors];
+
+export type ListUserFilesResponses = {
+  /**
+   * Successful Response
+   */
+  200: FolderListingDto;
+};
+
+export type ListUserFilesResponse =
+  ListUserFilesResponses[keyof ListUserFilesResponses];
+
+export type GetUserFileContentData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file to read.
+     */
+    path: string;
+    /**
+     * Download
+     *
+     * Whether the browser saves the file instead of showing it.
+     */
+    download?: boolean;
+  };
+  url: "/{tenant_id}/user-knowledge/content";
+};
+
+export type GetUserFileContentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetUserFileContentError =
+  GetUserFileContentErrors[keyof GetUserFileContentErrors];
+
+export type GetUserFileContentResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type UploadUserFileData = {
+  body: BodyUploadUserFile;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to add it to.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge/files";
+};
+
+export type UploadUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UploadUserFileError =
+  UploadUserFileErrors[keyof UploadUserFileErrors];
+
+export type UploadUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type UploadUserFileResponse =
+  UploadUserFileResponses[keyof UploadUserFileResponses];
+
+export type CreateUserFolderData = {
+  body: CreateFolderRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/folders";
+};
+
+export type CreateUserFolderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateUserFolderError =
+  CreateUserFolderErrors[keyof CreateUserFolderErrors];
+
+export type CreateUserFolderResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type CreateUserFolderResponse =
+  CreateUserFolderResponses[keyof CreateUserFolderResponses];
+
+export type MoveUserFileData = {
+  body: MoveFileRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/move";
+};
+
+export type MoveUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type MoveUserFileError = MoveUserFileErrors[keyof MoveUserFileErrors];
+
+export type MoveUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type MoveUserFileResponse =
+  MoveUserFileResponses[keyof MoveUserFileResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;

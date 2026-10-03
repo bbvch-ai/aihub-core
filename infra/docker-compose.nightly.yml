@@ -211,6 +211,8 @@ services:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+      SANDBOX_MIRROR_S3_ACCESS_KEY: ${SANDBOX_MIRROR_S3_ACCESS_KEY}
+      SANDBOX_MIRROR_S3_SECRET_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
 
       # Internal JWT Authentication
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -1135,6 +1137,46 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # License: MIT — rclone (see LICENSES.md)
+  sandbox-mirror:
+    container_name: sandbox-mirror
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    restart: unless-stopped
+    depends_on:
+      seaweedfs-s3:
+        condition: service_started
+    # One-way copy of every user's sandbox home into the sandbox-files bucket. The homes volume is read-only here and
+    # every write goes through the sandbox's API, so the volume stays the only place anything is written. Links are
+    # skipped rather than followed, so a link in a home cannot make the mirror copy anything outside it.
+    entrypoint: [/bin/sh, -c]
+    command:
+      - >-
+        while true; do
+        rclone sync /home mirror:sandbox-files
+        --metadata --skip-links --max-size 200M
+        --exclude "/.deleted/**" --exclude "/user/**"
+        --exclude ".cache/**" --exclude ".local/**" --exclude ".npm/**"
+        --exclude "**/.venv/**" --exclude "**/node_modules/**" --exclude "**/__pycache__/**"
+        --backup-dir "mirror:sandbox-files/.deleted/$$(date +%Y-%m-%dT%H%M%S)"
+        --log-level NOTICE;
+        sleep ${SANDBOX_MIRROR_INTERVAL_SECONDS};
+        done
+    environment:
+      RCLONE_CONFIG_MIRROR_TYPE: s3
+      RCLONE_CONFIG_MIRROR_PROVIDER: SeaweedFS
+      RCLONE_CONFIG_MIRROR_ENDPOINT: http://seaweedfs-s3:9000
+      RCLONE_CONFIG_MIRROR_ACCESS_KEY_ID: ${SANDBOX_MIRROR_S3_ACCESS_KEY}
+      RCLONE_CONFIG_MIRROR_SECRET_ACCESS_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
+      RCLONE_CONFIG_MIRROR_NO_CHECK_BUCKET: 'true'
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home:ro']
+    networks:
+      - backend  # reaches seaweedfs-s3; never code-sandbox, so the sandbox has no path to it
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
   # ===================================================================
   # Backup Services (Dagster-based Automated Database Backups)
   # ===================================================================
@@ -1481,12 +1523,15 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
     restart: always
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Notebook endpoints run cells in-process as the root-capable server user, bypassing the
+      # per-user file confinement; we use /execute only, so keep them off. See the ADR amendment.
+      OPEN_TERMINAL_ENABLE_NOTEBOOKS: 'false'
       # Tool-context guidance: files surface in the Files panel; use read-file for documents
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
@@ -2354,6 +2399,9 @@ services:
       AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
+      # Open Terminal (the user's own file space)
+      OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPENWEBUI_BASE_URL: http://open-webui:8080
       OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
@@ -2443,6 +2491,7 @@ services:
       - proxy
       - backend
       - data
+      - code-sandbox  # serves the user's own files from their sandbox home
       - storage
   # ===================================================================
   # Suite UI Stack (Frontend)
@@ -2832,6 +2881,10 @@ services:
       MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
       MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
 
+      # Open Terminal (code sandbox)
+      OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+
       # Mem0
       MEM0_LLM_NAME: ${MEM0_LLM_NAME}
       MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
@@ -2860,6 +2913,7 @@ services:
       - backend
       - data
       - storage
+      - code-sandbox
   # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent

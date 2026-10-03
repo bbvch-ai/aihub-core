@@ -29,6 +29,7 @@ prompt:
   condensed_turns: "Résumé de la conversation précédente : %{summary}"
   dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte. Rappelle l'outil si tu en as besoin.]"
   limit_reached: "Tu as utilisé tous les appels d'outils disponibles pour cette réponse. Réponds maintenant avec ce que tu as trouvé."
+  no_tools: "Aucun outil n'est disponible pour le reste de cette réponse, n'essaie donc pas d'en appeler un. Réponds maintenant à partir de la conversation et de ce que tu sais déjà, et dis-le lorsque la réponse dépend de documents que tu n'as pas pu consulter."
   unknown_tool: "Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés."
   declined: "Non exécuté : l'utilisateur a refusé %{tool}. Commence ta réponse en disant que tu n'as pas utilisé %{tool} parce que l'utilisateur l'a refusé, puis réponds avec ce que tu sais déjà et propose de l'utiliser s'il l'autorise. L'information peut très bien exister ; ne dis jamais que tu n'y as pas accès."
 approval:

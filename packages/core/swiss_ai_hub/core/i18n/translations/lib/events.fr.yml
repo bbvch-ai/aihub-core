@@ -16,6 +16,9 @@ tool_result_event:
 tool_loop_status_event:
   name: État de la boucle d'outils
   description: Ce que fait la boucle d'outils de l'agent.
+sandbox_file_displayed_event:
+  name: Fichier affiché
+  description: L'agent a montré à l'utilisateur un fichier de son bac à sable de code en pièce jointe.
 tool_loop_condensed_event:
   name: Boucle d'outils condensée
   description: L'agent a condensé les résultats d'outils et les échanges précédents
