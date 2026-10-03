@@ -3,6 +3,7 @@ and the user's toggles allow; every call it makes is approved as the tool's poli
 once per iteration; at its limits it answers with what it has.
 """
 
+import inspect
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -36,7 +37,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
-from swiss_ai_hub.core.topics import PartialAgentTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
@@ -58,6 +59,18 @@ from swiss_ai_hub.agent.workflow.workflow_validation import WorkflowValidation
 MODULE = "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop"
 T = LocaleHandler("en")
 HISTORY = [ChatMessage(role=MessageRole.USER, content="What time is it, and how many vacation days do I get?")]
+
+
+TOPIC = AgentInstanceTopic(
+    agent_class="LoopAgent",
+    agent_id="loop-test",
+    thread_id="thread",
+    display_id="display",
+    run_id="run",
+    event_type="control_event",
+    event_name="ToolCallApprovedEvent",
+    event_id="event",
+)
 
 
 class Toolbox(BaseToolSpec):
@@ -205,6 +218,7 @@ class TestOfferedTools:
                     run_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
                     t=T,
+                    topic=TOPIC,
                 )
 
     @pytest.mark.asyncio
@@ -489,7 +503,13 @@ class TestFunctionTools:
             agent_config=_config(),
             displayer=MagicMock(spec=EventDisplayer),
             t=T,
+            topic=TOPIC,
         )
+
+    def test_the_steps_building_a_tool_context_receive_the_run_topic(self):
+        """The dispatcher injects a topic only into a parameter annotated exactly with a topic class."""
+        for step_function in (ToolLoop.start_step, ToolLoop.run_function_step):
+            assert inspect.signature(step_function).parameters["topic"].annotation is AgentInstanceTopic
 
     @pytest.mark.asyncio
     async def test_a_function_tool_returns_what_it_computed(self):

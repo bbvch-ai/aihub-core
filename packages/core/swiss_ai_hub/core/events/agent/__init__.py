@@ -138,6 +138,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
     from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
     from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
+    from swiss_ai_hub.core.events.agent.sandbox.sandbox_file_displayed_event import SandboxFileDisplayedEvent
     from swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event import MetaQuestionDetectedEvent
     from swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event import NotAMetaQuestionEvent
     from swiss_ai_hub.core.events.agent.semantic.agent.agent_event import AgentEvent
@@ -292,6 +293,7 @@ __all__ = [
     "ToolLoopIterationEvent",
     "ToolLoopMode",
     "ToolLoopState",
+    "SandboxFileDisplayedEvent",
     "ToolLoopCondensedEvent",
     "ToolLoopStatusEvent",
     "ToolResultEvent",
@@ -423,6 +425,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolLoopFinishedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event",
     "ToolLoopIterationEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event",
     "ToolLoopMode": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode",
+    "SandboxFileDisplayedEvent": "swiss_ai_hub.core.events.agent.sandbox.sandbox_file_displayed_event",
     "ToolLoopCondensedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_condensed_event",
     "ToolLoopStatusEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event",
     "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",

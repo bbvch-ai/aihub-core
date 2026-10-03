@@ -153,3 +153,29 @@ async def test_condensing_shows_as_a_finished_status(pipe: Any) -> None:
     assert emitter.statuses == [
         {"action": None, "description": "Condensed earlier results to fit the conversation", "done": True}
     ]
+
+
+def test_an_earlier_answer_reaches_the_agent_without_its_tool_blocks(pipe: Any) -> None:
+    """A model handed its own earlier tool blocks writes one as text instead of calling the tool."""
+    answer = (
+        '<details type="reasoning" done="true"><summary>Thought</summary>\n&gt; plan</details>\n'
+        '<details type="tool_calls" done="true" id="c1" name="Run Command" arguments="{&quot;command&quot;: '
+        '&quot;python3 run.py&quot;}" result="&quot;Exit code 0.&quot;"><summary>Tool Executed</summary></details>\n'
+        "The chart is attached."
+    )
+    question = 'Keep <details type="note">this</details> as I wrote it.'
+
+    converted = pipe.MessageConverter.convert_to_event_format(
+        [{"role": "assistant", "content": answer}, {"role": "user", "content": question}]
+    )
+
+    assert [block["text"].strip() for block in converted[0]["blocks"]] == ["The chart is attached."]
+    assert converted[1]["blocks"] == [{"block_type": "text", "text": question}]
+
+
+def test_an_earlier_answer_keeps_a_details_block_it_wrote_itself(pipe: Any) -> None:
+    answer = 'Here are the steps:\n<details type="note"><summary>Steps</summary>Open the file.</details>'
+
+    converted = pipe.MessageConverter.convert_to_event_format([{"role": "assistant", "content": answer}])
+
+    assert "Open the file." in converted[0]["blocks"][0]["text"]

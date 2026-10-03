@@ -1,0 +1,38 @@
+---
+tools:
+  run_command:
+    label: "Befehl ausführen"
+    approval: "In der Code-Sandbox ausführen:\n{command}"
+  get_process_status:
+    label: "Befehl prüfen"
+    approval: "Befehl {process_id} prüfen"
+  send_process_input:
+    label: "In Befehl eingeben"
+    approval: "In Befehl {process_id} eingeben:\n{text}"
+  kill_process:
+    label: "Befehl stoppen"
+    approval: "Befehl {process_id} stoppen"
+  list_processes:
+    label: "Befehle auflisten"
+    approval: "Die Befehle in der Code-Sandbox auflisten"
+  list_files:
+    label: "Dateien auflisten"
+    approval: "Die Dateien in {directory} auflisten"
+  read_file:
+    label: "Datei lesen"
+    approval: "{path} lesen"
+  write_file:
+    label: "Datei schreiben"
+    approval: "{path} schreiben"
+  replace_file_content:
+    label: "Datei bearbeiten"
+    approval: "{path} bearbeiten"
+  grep_search:
+    label: "Dateien durchsuchen"
+    approval: "In {path} nach «{query}» suchen"
+  glob_search:
+    label: "Dateien finden"
+    approval: "Dateien namens {pattern} in {path} finden"
+  display_file:
+    label: "Datei zeigen"
+    approval: "{path} an die Antwort anhängen"

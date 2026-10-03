@@ -26,7 +26,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
-from swiss_ai_hub.core.topics import PartialAgentTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
@@ -127,11 +127,12 @@ class ToolLoop(Capability):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
-        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
         offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
@@ -327,11 +328,12 @@ class ToolLoop(Capability):
         agent_config: AgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolResultEvent:
         """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
-        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
         tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
         try:
             output = await tool.acall(**call.arguments)
@@ -433,6 +435,7 @@ class ToolLoop(Capability):
         t: LocaleHandler,
         user: UserIdentity | None,
         access: AccessChecker | None,
+        topic: AgentInstanceTopic | None,
     ) -> ToolContext:
         return ToolContext(
             agent_config=agent_config,
@@ -442,6 +445,7 @@ class ToolLoop(Capability):
             access=access,
             files=request.files,
             knowledge_references=request.knowledge_references,
+            topic=topic,
         )
 
     @staticmethod

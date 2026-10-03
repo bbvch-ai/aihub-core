@@ -46,7 +46,7 @@ def _message(*messages: ChatMessage) -> UserMessageEvent:
     )
 
 
-def test_the_blueprint_offers_knowledge_files_and_memory_in_one_loop():
+def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop():
     UniversalAgent.validate_workflow(UniversalAgentConfig)
 
     assert {capability.__name__ for capability in UniversalAgent.installed_capabilities()} == {
@@ -56,7 +56,23 @@ def test_the_blueprint_offers_knowledge_files_and_memory_in_one_loop():
         "AttachedFiles",
         "Memory",
     }
-    assert UniversalAgent.tools.names() == ["search_knowledge", "read_attached_files", "recall_memory"]
+    assert UniversalAgent.tools.names() == [
+        "search_knowledge",
+        "read_attached_files",
+        "recall_memory",
+        "run_command",
+        "get_process_status",
+        "send_process_input",
+        "kill_process",
+        "list_processes",
+        "list_files",
+        "read_file",
+        "write_file",
+        "replace_file_content",
+        "grep_search",
+        "glob_search",
+        "display_file",
+    ]
 
 
 @pytest.mark.asyncio

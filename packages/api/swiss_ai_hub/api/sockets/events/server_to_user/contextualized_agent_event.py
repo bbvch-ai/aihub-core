@@ -58,6 +58,7 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     RouterEvent,
+    SandboxFileDisplayedEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -109,6 +110,7 @@ DisplayEvents = (
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
     | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]
     | Annotated[ToolLoopCondensedEvent, Tag("ToolLoopCondensedEvent")]
+    | Annotated[SandboxFileDisplayedEvent, Tag("SandboxFileDisplayedEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]

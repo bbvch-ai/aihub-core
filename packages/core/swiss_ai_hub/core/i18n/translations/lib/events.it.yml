@@ -15,6 +15,9 @@ tool_result_event:
 tool_loop_status_event:
   name: "Stato del ciclo di strumenti"
   description: "Cosa sta facendo il ciclo di strumenti dell'agente."
+sandbox_file_displayed_event:
+  name: "File mostrato"
+  description: "L'agente ha mostrato all'utente un file della sua sandbox di codice come allegato."
 tool_loop_condensed_event:
   name: "Ciclo di strumenti condensato"
   description: "L'agente ha condensato i risultati degli strumenti e gli scambi precedenti per rientrare nel contesto del modello."

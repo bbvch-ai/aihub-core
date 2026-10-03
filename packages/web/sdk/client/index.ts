@@ -994,6 +994,8 @@ export {
   type RouterEventWritable,
   type RunStatistics,
   type RunStatisticsWritable,
+  type SandboxFileDisplayedEvent,
+  type SandboxFileDisplayedEventWritable,
   type SearchContextCostPerQueryDto,
   type SearchOrganizationMemoriesData,
   type SearchOrganizationMemoriesError,
