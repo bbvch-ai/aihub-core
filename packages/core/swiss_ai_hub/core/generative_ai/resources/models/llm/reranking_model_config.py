@@ -28,13 +28,14 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
     ] = 5
 
     @classmethod
-    def as_form(cls) -> Self:
-        """Factory method to create a form-mode RerankingModelConfig."""
+    def as_form(cls, model_name: str | None = None) -> Self:
+        """Factory method to create a form-mode RerankingModelConfig, its picker preset to `model_name` if given."""
         return cls(
             model_name=ModelSelect(
                 label=LocaleString.from_i18n_path("lib.reranking.config.model.label"),
                 help=LocaleString.from_i18n_path("lib.reranking.config.model.help"),
                 mode="rerank",
+                value=model_name,
             ),
             top_n=InputNumber(
                 label=LocaleString.from_i18n_path("lib.reranking.config.top_n.label"),

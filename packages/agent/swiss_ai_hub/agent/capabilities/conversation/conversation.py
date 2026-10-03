@@ -259,9 +259,9 @@ class Conversation(Capability):
 
         Re-limited before it leaves this step so the result carries the same "fits the budget" guarantee the
         limited history does. The leading system messages leave as one: served models (Gemma behind vLLM) lose
-        context spread over several, answering from only some of the blocks. The blocks sit at the front of the trimmed part, so they are what gives way when
-        the result does not fit — never the turn the user asked about, and never the system head, which is held
-        out of the trim altogether.
+        context spread over several, answering from only some of the blocks. The blocks sit at the front of the
+        trimmed part, so they are what gives way when the result does not fit — never the turn the user asked
+        about, and never the system head, which is held out of the trim altogether.
         """
         system_head, turns = _split_system_head(request.history)
         block_messages = [message for block in request.blocks for message in block]

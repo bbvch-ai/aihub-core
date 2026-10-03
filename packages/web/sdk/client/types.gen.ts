@@ -4155,6 +4155,7 @@ export type ContextualizedAgentEvent = {
     | KnowledgeSearchedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
+    | ToolLoopCondensedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -17714,6 +17715,82 @@ export type ToolEvent = {
 };
 
 /**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolLoopStatusEvent
  *
  * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
@@ -21122,6 +21199,7 @@ export type ContextualizedAgentEventWritable = {
     | KnowledgeSearchedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
+    | ToolLoopCondensedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -29387,6 +29465,69 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
   [key: string]: unknown;
 };
 

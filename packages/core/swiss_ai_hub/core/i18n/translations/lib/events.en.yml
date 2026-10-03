@@ -15,6 +15,9 @@ tool_result_event:
 tool_loop_status_event:
   name: "Tool Loop Status"
   description: "What the agent's tool loop is doing."
+tool_loop_condensed_event:
+  name: "Tool Loop Condensed"
+  description: "The agent condensed earlier tool results and turns to fit the model's context."
 conversation_title_event:
   name: Conversation Title
   description: The agent generated a title summarizing the topic of the conversation.

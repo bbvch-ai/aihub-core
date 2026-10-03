@@ -1,0 +1,20 @@
+---
+metadata:
+  name: "Universal Agent"
+  description: "Decides for itself whether to search our knowledge, read the attached files or recall memory, and keeps going until it can answer."
+steps:
+  contextualize:
+    name: "Prepare the Conversation"
+    description: "Puts the agent's instructions ahead of the conversation and limits its length"
+  loop:
+    name: "Work with Tools"
+    description: "Lets the model choose its tools and run them until it can answer"
+  complete:
+    name: "Complete the Answer"
+    description: "Remembers the turn and finishes with the model's reply"
+config:
+  instructions:
+    label: "Instructions"
+    help: "What this assistant is for and how it should answer, added after the built-in instructions on using its tools."
+prompt:
+  instructions: "You are a helpful assistant for the people of this organisation. Always answer in the language of the user's last message, even when it differs from the language of these instructions. Use your tools whenever the answer may depend on the organisation's documents, on files the user attached, or on what you remember about the user; do not guess where a tool could tell you. When a file or a tool result refers to something our documents may hold, such as a policy, a handbook or a contract, search our knowledge for it before answering; never ask the user to look up something you could search yourself. Call several tools in one turn when they are independent. Cite the documents you used by their id, as the tools ask. When the tools do not hold the answer, say so plainly."

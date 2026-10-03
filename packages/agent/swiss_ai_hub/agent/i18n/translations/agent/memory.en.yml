@@ -1,5 +1,11 @@
 ---
 steps:
+  recall_as_tool:
+    name: "Recall Memory as a Tool"
+    description: "Searches memory for what the model asked"
+  answer_tool_call:
+    name: "Return Memories to the Model"
+    description: "Hands what memory holds back to the model's tool loop"
   recall:
     name: Recall Memory
     description: Searches the user's and the organization's memories for the turn's query
@@ -23,3 +29,9 @@ config:
     help: Model that extracts and reconciles user memories. Extraction is short and mechanical,
       so a smaller model is usually enough. Leave it disabled to use the platform default;
       enabling starts from that same model.
+tool:
+  label: "Recall memory"
+  approval_summary: "Recall what is remembered about \"{query}\""
+  description: "Searches what is remembered about the user and the organization: preferences, facts and decisions from earlier conversations. Use it when the answer may depend on who the user is or on something agreed before."
+  query: "What to recall, as a short standalone question or keywords."
+  nothing_remembered: "Nothing is remembered for this."

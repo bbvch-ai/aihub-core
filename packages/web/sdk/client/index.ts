@@ -1082,6 +1082,8 @@ export {
   type ToolCallBlock,
   type ToolEvent,
   type ToolEventWritable,
+  type ToolLoopCondensedEvent,
+  type ToolLoopCondensedEventWritable,
   type ToolLoopStatusEvent,
   type ToolLoopStatusEventWritable,
   type ToolResultEvent,

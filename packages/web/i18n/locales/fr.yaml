@@ -284,6 +284,9 @@ event:
       identity: Identité
       capabilities: Capacités
       behavior: Comportement
+  humanInTheLoopResponse:
+    confirmed: Confirmé
+    declined: Refusé
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée

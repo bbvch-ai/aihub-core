@@ -18,6 +18,7 @@ from swiss_ai_hub.core.events.agent import (
     KnowledgeSearchedEvent,
     LLMEvent,
     Message,
+    RunToolLoopEvent,
     SearchKnowledgeEvent,
     TextContent,
     ToolApprovalRequestEvent,
@@ -34,12 +35,16 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 from swiss_ai_hub.core.topics import PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge, answers_a_tool_call
-from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_source import KnowledgeToolSource
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
@@ -99,17 +104,32 @@ class _Context:
         self.values[key] = value
 
 
-class _Config(KnowledgeFields, ToolLoopFields, AgentConfig):
+class _Config(KnowledgeToolFields, KnowledgeFields, ToolLoopFields, AgentConfig):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _live_collections():
+    with patch(
+        "swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_scope.UserScopedRetrievers.namespaces_of",
+        side_effect=lambda database: ["policies", "reports"] if database == "hr" else [],
+    ):
+        yield
+
+
+def _sources(*namespaces: str) -> KnowledgeToolConfig:
+    if not namespaces:
+        return KnowledgeToolConfig()
+    store = MilvusVectorStoreConfig(collection_name="hr", index_namespaces=list(namespaces))
+    return KnowledgeToolConfig(sources=[KnowledgeToolSource(vector_store=store)])
+
+
 def _config(collections: bool = True, **tool_loop: Any) -> _Config:
-    references = [KnowledgeReference(database="hr", namespace="policies")] if collections else []
     return _Config(
         agent_id="loop-test",
         name=LocaleString(en="Loop"),
         description=LocaleString(en="Loop fixture"),
-        knowledge=KnowledgeConfig(tool_collections=references),
+        knowledge_tool=_sources("policies") if collections else _sources(),
         tool_loop=ToolLoopConfig(**tool_loop),
     )
 
@@ -154,13 +174,16 @@ def _calling(*calls: dict) -> Message:
 ANSWER = Message.from_string(role="assistant", content="It is noon.")
 
 
-async def _decide(state: ToolLoopState, reply: Message, **tool_loop: Any) -> tuple[Any, MagicMock]:
+async def _decide(
+    state: ToolLoopState, reply: Message, run_context: "_Context | None" = None, **tool_loop: Any
+) -> tuple[Any, MagicMock]:
     displayer = _displayer(reply)
     result = await ToolLoop.decide_step(
         LoopAgent(),
         iteration=ToolLoopIterationEvent(state=state),
         conversation=_conversation(reply),
         loop=_config(**tool_loop),
+        run_context=run_context or _Context(),
         displayer=displayer,
         t=T,
     )
@@ -177,6 +200,7 @@ class TestOfferedTools:
                     LoopAgent(),
                     request=request,
                     loop=config,
+                    conversation=_conversation(ANSWER),
                     agent_config=config,
                     run_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
@@ -432,7 +456,16 @@ class TestApproval:
 
         assert isinstance(result, ToolResultEvent)
         assert result.is_error and "declined" in result.content
-        assert run_context.values == {}
+        assert run_context.values == {"tool_loop:declined:echo": True}
+
+    @pytest.mark.asyncio
+    async def test_a_declined_tool_is_not_offered_again_in_the_run(self):
+        run_context = _Context({"tool_loop:declined:echo": True})
+
+        _, displayer = await _decide(_state(), ANSWER, run_context=run_context)
+
+        offered = [tool["function"]["name"] for tool in displayer.display_llm_stream.await_args.kwargs["tools"] or []]
+        assert "echo" not in offered
 
     @pytest.mark.asyncio
     async def test_an_approved_call_runs_and_the_approval_is_remembered_as_the_policy_says(self):
@@ -452,6 +485,7 @@ class TestFunctionTools:
         return await ToolLoop.run_function_step(
             LoopAgent(),
             call=ToolCallApprovedEvent(tool_call_id="c1", name=name, arguments=arguments, kind="function"),
+            request=RunToolLoopEvent(),
             agent_config=_config(),
             displayer=MagicMock(spec=EventDisplayer),
             t=T,
@@ -543,14 +577,7 @@ class TestJoin:
 class TestKnowledgeAsATool:
     @pytest.mark.asyncio
     async def test_a_chosen_search_runs_the_regular_search_over_the_picked_collections(self):
-        config = KnowledgeFields(
-            knowledge=KnowledgeConfig(
-                tool_collections=[
-                    KnowledgeReference(database="hr", namespace="policies"),
-                    KnowledgeReference(database="hr", namespace="reports"),
-                ]
-            )
-        )
+        config = KnowledgeToolFields(knowledge_tool=_sources("policies", "reports"))
         call = ToolCallApprovedEvent(
             tool_call_id="c1",
             name="search_knowledge",
@@ -558,7 +585,7 @@ class TestKnowledgeAsATool:
             kind="capability",
         )
 
-        request = await Knowledge.tool_call_step(LoopAgent(), call=call, knowledge=config)
+        request = await Knowledge.search_tool_call_step(LoopAgent(), call=call, request=RunToolLoopEvent(), tool=config)
 
         assert isinstance(request, SearchKnowledgeEvent)
         assert (request.query, request.tool_call_id) == ("vacation days", "c1")
@@ -573,7 +600,7 @@ class TestKnowledgeAsATool:
         decided = ToolCallsDecidedEvent(state=_state(), tool_call_ids=["c1"])
 
         assert await answers_a_tool_call(searched, decided)
-        result = await Knowledge.tool_result_step(LoopAgent(), searched=searched, decided=decided)
+        result = await Knowledge.search_tool_result_step(LoopAgent(), searched=searched, decided=decided)
 
         assert (result.tool_call_id, result.block) == ("c1", block)
         assert "25 days" in result.content
@@ -592,11 +619,18 @@ class TestDeclaration:
 
         assert WorkflowValidation._tools_without_loop(ToolsButNoLoop)
 
-    def test_a_capability_that_offers_no_tool_cannot_be_declared(self):
-        from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+    def test_offering_knowledge_as_a_tool_needs_its_tool_settings(self):
+        class WithoutToolSettings(KnowledgeFields, ToolLoopFields, AgentConfig):
+            pass
 
+        problems = WorkflowValidation._missing_config_mixins(LoopAgent, WithoutToolSettings)
+
+        assert any("Knowledge is offered as a tool" in problem for problem in problems)
+        assert not WorkflowValidation._missing_config_mixins(LoopAgent, _Config)
+
+    def test_a_capability_that_offers_no_tool_cannot_be_declared(self):
         with pytest.raises(ValueError, match="is no tool"):
-            ToolLoop.over(Memory)
+            ToolLoop.over(Conversation)
 
     def test_tool_names_are_unique(self):
         with pytest.raises(ValueError, match="unique"):
@@ -613,9 +647,9 @@ class TestDeclaration:
 
     @pytest.mark.asyncio
     async def test_a_spec_method_is_offered_with_the_schema_of_its_signature(self):
-        context = ToolContext(agent_config=_config(), displayer=MagicMock(spec=EventDisplayer), t=T)
+        context = ToolContext(agent_config=_config(collections=False), displayer=MagicMock(spec=EventDisplayer), t=T)
 
-        definitions = await LoopAgent.tools.definitions(_config(collections=False), context)
+        definitions = await LoopAgent.tools.definitions(context)
 
         echo = definitions["echo"]
         assert echo.parameters["properties"]["text"]["description"] == "What to echo"

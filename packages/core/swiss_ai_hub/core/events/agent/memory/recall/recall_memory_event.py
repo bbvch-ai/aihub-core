@@ -18,3 +18,7 @@ class RecallMemoryEvent(ControlEvent):
         list[str],
         Field(description="Organization-memory namespaces to narrow the search to; empty means the profile's own."),
     ] = []
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call this answers when the model chose it in a tool loop; none otherwise."),
+    ] = None

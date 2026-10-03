@@ -25,3 +25,13 @@ tool:
   description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
   query: "Cosa cercare, come breve domanda autonoma o parole chiave."
   collections: "Le raccolte da consultare, per identificativo; ometti per consultarle tutte."
+config:
+  retrieve_k:
+    label: "Sezioni per database"
+    help: "Quante sezioni restituisce ogni database consultato prima che il riordinamento conservi le migliori."
+  every_readable_collection:
+    label: "Ogni raccolta leggibile dall'utente"
+    help: "Il modello può consultare ogni raccolta di conoscenza che l'utente può leggere, invece di quelle elencate sotto."
+  source:
+    label: "Database di conoscenza"
+    help: "Un database che il modello può consultare, intero o limitato ad alcune delle sue raccolte."

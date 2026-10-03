@@ -25,3 +25,13 @@ tool:
   description: "Durchsucht unsere Wissenssammlungen und liefert die relevantesten Dokumentabschnitte mit zitierbaren IDs. Verwende es, wenn die Frage mit den Dokumenten der Organisation beantwortet werden kann. Verfügbare Sammlungen:\n%{collections}"
   query: "Wonach gesucht wird, als kurze eigenständige Frage oder Stichworte."
   collections: "Die zu durchsuchenden Sammlungen nach Kennung; weglassen, um alle zu durchsuchen."
+config:
+  retrieve_k:
+    label: "Abschnitte pro Datenbank"
+    help: "Wie viele Abschnitte jede durchsuchte Datenbank liefert, bevor das Reranking die besten behält."
+  every_readable_collection:
+    label: "Jede Sammlung, die der Benutzer lesen darf"
+    help: "Das Modell darf jede Wissenssammlung durchsuchen, die der fragende Benutzer lesen darf, statt nur die unten aufgeführten."
+  source:
+    label: "Wissensdatenbank"
+    help: "Eine Datenbank, die das Modell durchsuchen darf, ganz oder auf einige ihrer Sammlungen beschränkt."

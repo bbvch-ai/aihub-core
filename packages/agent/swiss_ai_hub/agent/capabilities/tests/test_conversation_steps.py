@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from swiss_ai_hub.core.generative_ai import merge_consecutive_messages
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     CompleteConversationEvent,
@@ -17,7 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGSuccessStopEvent,
     StandaloneQuestionCondenserEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent

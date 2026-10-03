@@ -5,6 +5,8 @@ from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode import ToolLoopMode
+from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
+from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
 
 class RunToolLoopEvent(ControlEvent):
@@ -31,3 +33,10 @@ class RunToolLoopEvent(ControlEvent):
     cite_sources: Annotated[
         bool, Field(description="Whether tools tell the model to cite what they return, off where it cannot resolve.")
     ] = True
+    files: Annotated[
+        list[UserUploadedFile], Field(description="The files attached to the message, for tools that read them.")
+    ] = []
+    knowledge_references: Annotated[
+        list[KnowledgeReference],
+        Field(description="The collections the user referenced on the message, for tools that search knowledge."),
+    ] = []

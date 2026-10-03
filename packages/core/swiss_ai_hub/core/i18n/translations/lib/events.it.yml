@@ -15,6 +15,9 @@ tool_result_event:
 tool_loop_status_event:
   name: "Stato del ciclo di strumenti"
   description: "Cosa sta facendo il ciclo di strumenti dell'agente."
+tool_loop_condensed_event:
+  name: "Ciclo di strumenti condensato"
+  description: "L'agente ha condensato i risultati degli strumenti e gli scambi precedenti per rientrare nel contesto del modello."
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.

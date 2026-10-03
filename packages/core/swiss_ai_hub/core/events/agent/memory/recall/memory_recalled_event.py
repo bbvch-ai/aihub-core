@@ -15,6 +15,10 @@ class MemoryRecalledEvent(ControlEvent):
     organization_block: Annotated[
         list[ChatMessage], Field(description="System messages carrying the organization's memories, or none.")
     ] = []
+    tool_call_id: Annotated[
+        str | None,
+        Field(description="The tool call this answers when the model chose it in a tool loop; none otherwise."),
+    ] = None
 
     @property
     def blocks(self) -> list[list[ChatMessage]]:

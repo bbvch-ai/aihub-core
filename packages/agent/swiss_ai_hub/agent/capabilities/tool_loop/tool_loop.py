@@ -24,7 +24,6 @@ from swiss_ai_hub.core.events.agent import (
     ToolLoopStatusEvent,
     ToolResultEvent,
 )
-from swiss_ai_hub.core.generative_ai import estimate_prompt_tokens
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.core.topics import PartialAgentTopic
@@ -35,6 +34,7 @@ from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import Con
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_condenser import ToolLoopCondenser
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
@@ -47,11 +47,22 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 logger = logging.getLogger(__name__)
 
 CITE_SOURCES_KEY = "tool_loop:cite_sources"
+DECLINED_KEY = "tool_loop:declined:{tool}"
 
 
 @precondition()
 async def runs_in_the_loop(call: ToolCallApprovedEvent) -> bool:
     return call.kind == "function"
+
+
+@precondition()
+async def fits_the_prompt(iteration: ToolLoopIterationEvent) -> bool:
+    return not iteration.state.needs_condensing
+
+
+@precondition()
+async def outgrew_the_prompt(iteration: ToolLoopIterationEvent) -> bool:
+    return iteration.state.needs_condensing
 
 
 @precondition()
@@ -111,6 +122,7 @@ class ToolLoop(Capability):
         agent: Agent,
         request: RunToolLoopEvent,
         loop: ToolLoopFields,
+        conversation: ConversationFields,
         agent_config: AgentConfig,
         run_context: RunContext,
         displayer: EventDisplayer,
@@ -119,19 +131,23 @@ class ToolLoop(Capability):
         access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
-        context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
         offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
         await run_context.set(CITE_SOURCES_KEY, request.cite_sources)
+        messages = [Message.from_llama_index(message) for message in request.history]
         return ToolLoopIterationEvent(
             state=ToolLoopState(
                 loop=request.loop,
-                messages=[Message.from_llama_index(message) for message in request.history],
+                messages=messages,
                 tools=offered,
                 mode=request.mode,
                 max_iterations=request.max_iterations,
                 cite_sources=request.cite_sources,
+                needs_condensing=ToolLoopCondenser.outgrown(
+                    messages, offered, conversation.input_budget(), conversation.llm.token_counter
+                ),
             )
         )
 
@@ -140,17 +156,23 @@ class ToolLoop(Capability):
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.decide.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.decide.description"),
         icon="mage:light-bulb",
+        precondition=fits_the_prompt,
     )
     async def decide_step(
         agent: Agent,
         iteration: ToolLoopIterationEvent,
         conversation: ConversationFields,
         loop: ToolLoopFields,
+        run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[ToolCallsDecidedEvent | ToolEvent] | ToolLoopFinishedEvent:
-        """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has."""
+        """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has.
+
+        A tool the user declined is no longer offered in this run, since models ask for it again regardless of being
+        told not to, and the user would be prompted until they gave in.
+        """
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
         if state.mode == ToolLoopMode.GATHER:
@@ -163,7 +185,10 @@ class ToolLoop(Capability):
         if exhausted:
             # A user turn: chat templates such as Qwen's reject any system message after the first.
             messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
-        tools = [tool.to_openai() for tool in state.tools] if state.tools and not exhausted else None
+        available = [
+            tool for tool in state.tools if not await run_context.get(DECLINED_KEY.format(tool=tool.name), False)
+        ]
+        tools = [tool.to_openai() for tool in available] if available and not exhausted else None
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
         assistant = turn.output_messages[-1]
@@ -179,6 +204,25 @@ class ToolLoop(Capability):
             tool_call_ids=[call.tool_call_id for call in calls],
         )
         return [decided, *calls]
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.condense.name"),
+        description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.condense.description"),
+        icon="mdi:arrow-collapse-vertical",
+        precondition=outgrew_the_prompt,
+    )
+    async def condense_step(
+        agent: Agent,
+        iteration: ToolLoopIterationEvent,
+        conversation: ConversationFields,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity | None = None,
+    ) -> ToolLoopIterationEvent:
+        """Condense the loop's conversation to fit the prompt again before the model decides on it."""
+        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget(), displayer, t, user)
+        return ToolLoopIterationEvent(state=await condenser.condense(iteration.state))
 
     @staticmethod
     @step(
@@ -250,6 +294,7 @@ class ToolLoop(Capability):
         """Run an approved call, remembering the approval as the policy allows; tell the model about a declined one."""
         request = answer.request_event
         if not answer.response:
+            await run_context.set(DECLINED_KEY.format(tool=request.name), True)
             return ToolResultEvent(
                 tool_call_id=request.tool_call_id,
                 name=request.name,
@@ -278,6 +323,7 @@ class ToolLoop(Capability):
     async def run_function_step(
         agent: Agent,
         call: ToolCallApprovedEvent,
+        request: RunToolLoopEvent,
         agent_config: AgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -285,7 +331,7 @@ class ToolLoop(Capability):
         access: AccessChecker | None = None,
     ) -> ToolResultEvent:
         """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
-        context = ToolContext(agent_config=agent_config, displayer=displayer, t=t, user=user, access=access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
         tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
         try:
             output = await tool.acall(**call.arguments)
@@ -319,11 +365,12 @@ class ToolLoop(Capability):
         loop: ToolLoopFields,
         conversation: ConversationFields,
     ) -> ToolLoopIterationEvent:
-        """Hand every result of the iteration back to the model, each cut to fit the room left in the prompt."""
+        """Hand every result of the iteration back to the model, each within the profile's cap; a conversation that
+        outgrew the prompt is condensed before the model decides again."""
         by_id = {result.tool_call_id: result for result in results}
         answered = [by_id[tool_call_id] for tool_call_id in decided.tool_call_ids]
         state = decided.state
-        room = ToolLoop._room_per_result(state, len(answered), loop, conversation)
+        room = loop.tool_loop.max_result_tokens
         counter = conversation.llm.token_counter
         tool_messages = [
             Message(
@@ -345,13 +392,17 @@ class ToolLoop(Capability):
                 )
             ),
         ]
+        messages = [*state.messages, *tool_messages]
         return ToolLoopIterationEvent(
             state=state.model_copy(
                 update={
-                    "messages": [*state.messages, *tool_messages],
+                    "messages": messages,
                     "iteration": state.iteration + 1,
                     "tool_calls_made": state.tool_calls_made + len(answered),
                     "gathered": gathered,
+                    "needs_condensing": ToolLoopCondenser.outgrown(
+                        messages, state.tools, conversation.input_budget(), counter
+                    ),
                 }
             )
         )
@@ -363,7 +414,7 @@ class ToolLoop(Capability):
         """The set's tools, less those the profile disables, the call excludes or whose toggle is off."""
         blueprint = type(agent)
         tool_set = blueprint.tool_set(request.loop)
-        definitions = await tool_set.definitions(context.agent_config, context)
+        definitions = await tool_set.definitions(context)
         offered = []
         for name, definition in definitions.items():
             if name in loop.tool_loop.disabled_tools or (request.tools is not None and name not in request.tools):
@@ -373,6 +424,25 @@ class ToolLoop(Capability):
                 continue
             offered.append(definition)
         return offered
+
+    @staticmethod
+    def _context(
+        request: RunToolLoopEvent,
+        agent_config: AgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+        access: AccessChecker | None,
+    ) -> ToolContext:
+        return ToolContext(
+            agent_config=agent_config,
+            displayer=displayer,
+            t=t,
+            user=user,
+            access=access,
+            files=request.files,
+            knowledge_references=request.knowledge_references,
+        )
 
     @staticmethod
     async def _finish(
@@ -469,17 +539,6 @@ class ToolLoop(Capability):
             json_schema=definition.parameters if definition else None,
             parameters=arguments if isinstance(arguments, dict) else {},
         )
-
-    @staticmethod
-    def _room_per_result(
-        state: ToolLoopState, count: int, loop: ToolLoopFields, conversation: ConversationFields
-    ) -> int:
-        """Each result's share of the room left in the prompt, never more than the profile's cap."""
-        used = estimate_prompt_tokens(
-            [message.to_llama_index() for message in state.messages], conversation.llm.token_counter
-        )
-        left = max(conversation.input_budget() - used, 0)
-        return min(loop.tool_loop.max_result_tokens, left // max(count, 1))
 
     @staticmethod
     def _cut(content: str, room: int, counter) -> str:

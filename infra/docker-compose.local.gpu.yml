@@ -3019,6 +3019,92 @@ services:
       - data
       - storage
   # License: Apache-2.0 — own image (see LICENSES.md)
+  universal_agent:
+    container_name: universal-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/universal_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # S3 Storage (attached files, parse cache)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: universal-agent
+      OTEL_RESOURCE_SERVICE_VERSION: latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent
     restart: always

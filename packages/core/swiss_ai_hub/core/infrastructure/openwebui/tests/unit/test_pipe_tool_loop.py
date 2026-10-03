@@ -137,3 +137,19 @@ async def test_the_loop_says_what_it_does_while_nothing_else_shows(pipe: Any) ->
     await _process(pipe, _context(pipe, emitter), status)
 
     assert emitter.statuses == [{"action": None, "description": "Deciding", "done": False}]
+
+
+@pytest.mark.asyncio
+async def test_condensing_shows_as_a_finished_status(pipe: Any) -> None:
+    emitter = _Recorder()
+    condensed = {
+        "_event_name": "ToolLoopCondensedEvent",
+        "loop": "tools",
+        "description": "Condensed earlier results to fit the conversation",
+    }
+
+    await _process(pipe, _context(pipe, emitter), condensed)
+
+    assert emitter.statuses == [
+        {"action": None, "description": "Condensed earlier results to fit the conversation", "done": True}
+    ]

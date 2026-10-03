@@ -4,12 +4,18 @@ from collections.abc import Sequence
 from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pydantic import ValidationError
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import (
     AttachedFileEvent,
     AttachedFilesReadEvent,
     AttachedFileStatus,
     ReadAttachedFilesEvent,
+    RunToolLoopEvent,
+    ToolCallApprovedEvent,
+    ToolCallsDecidedEvent,
+    ToolDefinition,
+    ToolResultEvent,
     UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -27,12 +33,29 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import 
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files_tool_arguments import AttachedFilesToolArguments
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
+
+READ_ATTACHED_FILES_TOOL = "read_attached_files"
+
+
+@precondition()
+async def reads_attached_files(call: ToolCallApprovedEvent) -> bool:
+    return call.name == READ_ATTACHED_FILES_TOOL
+
+
+@precondition()
+async def answers_a_read_call(read: AttachedFilesReadEvent, decided: ToolCallsDecidedEvent) -> bool:
+    return read.tool_call_id is not None and read.tool_call_id in decided.tool_call_ids
 
 
 class AttachedFiles(Capability):
@@ -48,6 +71,9 @@ class AttachedFiles(Capability):
     answering later questions without being attached again, and an edited or regenerated message sees exactly its
     branch's files. A file that fits goes in whole, since questions about a file ("summarise section 4") need all of
     it; one that does not is cut down to the sections most relevant to the query.
+
+    In a tool set, the model sees which files are attached and reads the ones it needs when it needs them, through
+    the same read, within the room the loop leaves for one tool result.
     """
 
     calls: ClassVar[dict] = {ReadAttachedFilesEvent: (AttachedFilesReadEvent,)}
@@ -55,6 +81,27 @@ class AttachedFiles(Capability):
 
     ReadRequest = ReadAttachedFilesEvent
     Contents = AttachedFilesReadEvent
+
+    tool_name: ClassVar[str] = READ_ATTACHED_FILES_TOOL
+    tool_options: ClassVar[ToolOptions] = ToolOptions(
+        label=AgentLocaleString.from_i18n_path("agent.attached_files.tool.label"),
+        approval_summary=AgentLocaleString.from_i18n_path("agent.attached_files.tool.approval_summary"),
+    )
+
+    @classmethod
+    def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
+        """Offered when the message carries a readable file; the description lists them, so the model knows they
+        exist without their text taking room in every turn."""
+        files = [file for file in context.files if AttachedFileReader.is_readable_attachment(file)]
+        if not files:
+            return None
+        t = context.t
+        listing = "\n".join(f"- {file.file_id}: {file.filename} ({file.file_type})" for file in files)
+        return ToolDefinition(
+            name=READ_ATTACHED_FILES_TOOL,
+            description=t("agent.attached_files.tool.description", files=listing),
+            parameters=AttachedFilesToolArguments.schema_for([file.file_id for file in files], t),
+        )
 
     @staticmethod
     def read(
@@ -90,7 +137,7 @@ class AttachedFiles(Capability):
         """Read every attached document, size the texts to the room left, and answer with them as one block."""
         files = [file for file in request.files if AttachedFileReader.is_readable_attachment(file)]
         if not files:
-            return [AttachedFilesReadEvent()]
+            return [AttachedFilesReadEvent(tool_call_id=request.tool_call_id)]
 
         outcomes = await asyncio.gather(
             *(AttachedFileReader.read(file, topic.agent_class, topic.agent_id) for file in files)
@@ -119,7 +166,68 @@ class AttachedFiles(Capability):
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
         block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources)
-        return [*events, AttachedFilesReadEvent(block=block)]
+        return [*events, AttachedFilesReadEvent(block=block, tool_call_id=request.tool_call_id)]
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.attached_files.steps.read_as_tool.name"),
+        description=AgentLocaleString.from_i18n_path("agent.attached_files.steps.read_as_tool.description"),
+        icon="mdi:paperclip",
+        precondition=reads_attached_files,
+    )
+    async def read_tool_call_step(
+        agent: Agent,
+        call: ToolCallApprovedEvent,
+        request: RunToolLoopEvent,
+        conversation: ConversationFields,
+        loop: ToolLoopFields,
+        t: LocaleHandler,
+    ) -> ReadAttachedFilesEvent | ToolResultEvent:
+        """The model chose to read: the regular read of the files it picked, sized to one tool result's room.
+
+        A choice naming no attached file is refused rather than widened to every file, which the model did not ask
+        for."""
+        try:
+            arguments = AttachedFilesToolArguments.model_validate(call.arguments)
+        except ValidationError as error:
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
+            )
+        chosen = [file for file in request.files if not arguments.files or file.file_id in arguments.files]
+        if not chosen:
+            known = ", ".join(f"{file.file_id} ({file.filename})" for file in request.files)
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id,
+                name=call.name,
+                content=t("agent.attached_files.tool.unknown_files", files=known),
+                is_error=True,
+            )
+        return ReadAttachedFilesEvent(
+            files=chosen,
+            query=arguments.query,
+            reserve_tokens=max(conversation.input_budget() - loop.tool_loop.max_result_tokens, 0),
+            cite_sources=call.cite_sources,
+            tool_call_id=call.tool_call_id,
+        )
+
+    @staticmethod
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.attached_files.steps.answer_tool_call.name"),
+        description=AgentLocaleString.from_i18n_path("agent.attached_files.steps.answer_tool_call.description"),
+        icon="mdi:paperclip",
+        precondition=answers_a_read_call,
+    )
+    async def read_tool_result_step(
+        agent: Agent, read: AttachedFilesReadEvent, decided: ToolCallsDecidedEvent, t: LocaleHandler
+    ) -> ToolResultEvent:
+        """Hand what was read back to the loop: its text for the model, its block for a gathered answer."""
+        content = "\n\n".join(message.content for message in read.block if message.content)
+        return ToolResultEvent(
+            tool_call_id=read.tool_call_id,
+            name=READ_ATTACHED_FILES_TOOL,
+            content=content or t("agent.attached_files.tool.nothing_readable"),
+            block=read.block,
+        )
 
     @staticmethod
     async def _fit(
