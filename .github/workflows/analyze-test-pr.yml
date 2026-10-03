@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, release/**]
     types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   contents: write
