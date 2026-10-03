@@ -188,7 +188,11 @@ ANSWER = Message.from_string(role="assistant", content="It is noon.")
 
 
 async def _decide(
-    state: ToolLoopState, reply: Message, run_context: "_Context | None" = None, **tool_loop: Any
+    state: ToolLoopState,
+    reply: Message,
+    run_context: "_Context | None" = None,
+    thread_context: "_Context | None" = None,
+    **tool_loop: Any,
 ) -> tuple[Any, MagicMock]:
     displayer = _displayer(reply)
     result = await ToolLoop.decide_step(
@@ -197,6 +201,7 @@ async def _decide(
         conversation=_conversation(reply),
         loop=_config(**tool_loop),
         run_context=run_context or _Context(),
+        thread_context=thread_context or _Context(),
         displayer=displayer,
         t=T,
     )
@@ -216,6 +221,7 @@ class TestOfferedTools:
                     conversation=_conversation(ANSWER),
                     agent_config=config,
                     run_context=_Context(),
+                    thread_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
                     t=T,
                     topic=TOPIC,
@@ -226,6 +232,12 @@ class TestOfferedTools:
         event = await self._start(requested=[])
 
         assert [tool.name for tool in event.state.tools] == ["search_knowledge", "echo", "broken", "code"]
+
+    @pytest.mark.asyncio
+    async def test_the_question_s_calls_are_kept_under_a_key_taken_before_any_condensing(self):
+        event = await self._start(requested=[])
+
+        assert event.state.question == f"{HISTORY[-1].content} #1"
 
     @pytest.mark.asyncio
     async def test_a_toggled_tool_is_offered_once_the_user_switches_it_on(self):
@@ -356,6 +368,19 @@ class TestDecisions:
         assert (finished.block, finished.stopped_early) == (gathered, True)
         displayer.display_llm_stream.assert_not_awaited()
         assert displayer.display_event.await_args.args[0].done
+
+    @pytest.mark.asyncio
+    async def test_gathering_at_the_limit_keeps_its_calls_for_the_next_turns(self):
+        call = _calling(_tool_call("c1", "echo", '{"text": "A"}'))
+        result = Message.from_string(role="tool", content="A").model_copy(update={"tool_call_id": "c1", "name": "echo"})
+        state = _state(ToolLoopMode.GATHER, iteration=1, max_iterations=1, question="What time is it? #1")
+        state = state.model_copy(update={"messages": [*state.messages, call, result]})
+        thread_context = _Context()
+
+        await _decide(state, ANSWER, thread_context=thread_context)
+
+        kept = thread_context.values["tool_loop:tools:earlier_turns"]
+        assert [message["tool_call_id"] for message in kept["What time is it? #1"]] == [None, "c1"]
 
     @pytest.mark.asyncio
     async def test_stopping_early_is_always_said_in_the_same_words(self):

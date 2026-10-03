@@ -19,6 +19,13 @@ class ToolLoopState(BaseModel):
         str, Field(description="The blueprint's tool set this loop runs, telling two loops of one run apart.")
     ] = "tools"
     messages: Annotated[list[Message], Field(description="The loop's conversation so far, tool calls and results.")]
+    question: Annotated[
+        str | None,
+        Field(
+            description="What this run's tool calls are kept under for later turns, taken before any condensing "
+            "merges the earlier questions it counts."
+        ),
+    ] = None
     tools: Annotated[list[ToolDefinition], Field(description="The tools offered to the model in this run.")] = []
     mode: Annotated[ToolLoopMode, Field(description="Whether the loop answers or gathers context.")]
     iteration: Annotated[int, Field(description="How many decisions the model has made so far.", ge=0)] = 0

@@ -32,6 +32,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.tool_loop.earlier_tool_turns import EarlierToolTurns
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_condenser import ToolLoopCondenser
@@ -125,23 +126,28 @@ class ToolLoop(Capability):
         conversation: ConversationFields,
         agent_config: AgentConfig,
         run_context: RunContext,
+        thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
-        """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
+        """Work out which tools are on offer for this message; gathering with nothing to offer ends right away.
+
+        Earlier answers get their tool calls and results back, which the chat client does not send."""
         context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
         offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
         await run_context.set(CITE_SOURCES_KEY, request.cite_sources)
-        messages = [Message.from_llama_index(message) for message in request.history]
+        history = [Message.from_llama_index(message) for message in request.history]
+        messages = await EarlierToolTurns(thread_context, request.loop).restore(history)
         return ToolLoopIterationEvent(
             state=ToolLoopState(
                 loop=request.loop,
                 messages=messages,
+                question=EarlierToolTurns.last_question(history),
                 tools=offered,
                 mode=request.mode,
                 max_iterations=request.max_iterations,
@@ -165,6 +171,7 @@ class ToolLoop(Capability):
         conversation: ConversationFields,
         loop: ToolLoopFields,
         run_context: RunContext,
+        thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
@@ -180,6 +187,7 @@ class ToolLoop(Capability):
         if state.mode == ToolLoopMode.GATHER:
             await ToolLoop._status(displayer, state, t, "stopped_early" if exhausted else "deciding", done=exhausted)
             if exhausted:
+                await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
         available = [
@@ -197,6 +205,7 @@ class ToolLoop(Capability):
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
+            await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
             return await ToolLoop._finish(state, turn, exhausted, displayer, t)
 
         remaining = loop.tool_loop.max_tool_calls - state.tool_calls_made
