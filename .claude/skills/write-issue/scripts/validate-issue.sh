@@ -15,7 +15,7 @@ WARNINGS=0
 
 echo "=== Validating issue #$ISSUE ($REPO) ==="
 
-JSON=$(gh issue view "$ISSUE" -R "$REPO" --json title,body,labels,issueType 2>/dev/null) || {
+JSON=$(gh issue view "$ISSUE" -R "$REPO" --json title,body,labels 2>/dev/null) || {
   echo "ERROR: Issue #$ISSUE not found in $REPO" >&2
   exit 1
 }
@@ -48,7 +48,8 @@ if ! grep -qE '^[[:space:]]*- \[[ xX]\]' <<<"$BODY"; then
 fi
 
 # --- native issue type ---
-ISSUE_TYPE=$(jq -r '.issueType.name // ""' <<<"$JSON")
+# Read via the REST API: older gh releases reject `gh issue view --json issueType` as an unknown field.
+ISSUE_TYPE=$(gh api "repos/$REPO/issues/$ISSUE" --jq '.type.name // ""')
 if [ -z "$ISSUE_TYPE" ]; then
   echo "WARNING: No issue type set (Task/Bug/Feature/Epic/Spike/Tech Debt)." >&2
   WARNINGS=$((WARNINGS + 1))
@@ -67,7 +68,7 @@ BOARD_JSON=$(gh api graphql -F number="$ISSUE" -f query='
         }
       }
     }
-  }' 2>/dev/null || echo '{}')
+  }' 2>/dev/null) || BOARD_JSON='{}'
 
 ON_BOARD=$(jq -r --argjson pn "$PROJECT_NUMBER" \
   '[.data.repository.issue.projectItems.nodes[]? | select(.project.number == $pn)] | length' <<<"$BOARD_JSON")

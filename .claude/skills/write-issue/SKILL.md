@@ -1,6 +1,6 @@
 ---
 name: write-issue
-description: Author a new, convention-conformant GitHub issue for bbvch-ai/aihub-core — title format, the In scope / Out of scope / Accepted when body structure, area:* and version labels, sibling and blocked-by cross-references — then create it and add it to the AI-Scrum board (org project 37) with issue type, Priority, and Status set. Use when user says 'write an issue', 'create a GitHub issue', 'open an issue for X', 'file a bug', 'draft an epic', or 'add a story to the board'. Do NOT use for planning an existing issue's implementation (use plan-issue), breaking an issue into sub-issues (use splice-issue), or creating a PR (use create-pr).
+description: Author a new, convention-conformant GitHub issue for bbvch-ai/aihub-core — title format, the In scope / Out of scope / Accepted when body structure, area:* labels, sibling and blocked-by cross-references — then create it and add it to the AI-Scrum board (org project 37) with issue type, Priority, and Status set. Use when user says 'write an issue', 'create a GitHub issue', 'open an issue for X', 'file a bug', 'draft an epic', or 'add a story to the board'. Do NOT use for planning an existing issue's implementation (use plan-issue), breaking an issue into sub-issues (use splice-issue), or creating a PR (use create-pr).
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
