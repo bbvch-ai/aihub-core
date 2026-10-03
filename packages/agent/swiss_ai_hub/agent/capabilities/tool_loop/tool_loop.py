@@ -172,7 +172,7 @@ class ToolLoop(Capability):
 
         A tool the user declined is no longer offered in this run, since models ask for it again regardless of being
         told not to, and the user would be prompted until they gave in. Offered no tools, for whatever reason, the
-        model sees the earlier tool turns as plain text.
+        model sees the earlier tool turns as plain text and is told to answer now.
         """
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
@@ -187,9 +187,11 @@ class ToolLoop(Capability):
         tools = [tool.to_openai() for tool in available] if available and not exhausted else None
         history = ToolLoop._tool_turns_as_text(state.messages) if tools is None else state.messages
         messages = [message.to_llama_index() for message in history]
-        if exhausted:
-            # A user turn: chat templates such as Qwen's reject any system message after the first.
-            messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
+        if tools is None:
+            # A user turn: chat templates such as Qwen's reject any system message after the first. Without it, a
+            # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
+            note = "limit_reached" if exhausted else "no_tools"
+            messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
         assistant = turn.output_messages[-1]

@@ -312,8 +312,24 @@ class TestDecisions:
 
         await_args = displayer.display_llm_stream.await_args
         assert await_args.kwargs["tools"] is None
-        assert [message.role for message in await_args.args[2]] == [MessageRole.USER, MessageRole.ASSISTANT]
+        roles = [message.role for message in await_args.args[2]]
+        assert roles == [MessageRole.USER, MessageRole.ASSISTANT, MessageRole.USER]
         assert not any(message.additional_kwargs.get("tool_calls") for message in await_args.args[2])
+
+    @pytest.mark.asyncio
+    async def test_tools_condensing_dropped_leave_the_model_told_to_answer_now(self):
+        _, displayer = await _decide(_state().model_copy(update={"tools": []}), ANSWER)
+
+        await_args = displayer.display_llm_stream.await_args
+        assert await_args.kwargs["tools"] is None
+        assert await_args.args[2][-1].role == MessageRole.USER
+        assert await_args.args[2][-1].content == T("agent.tool_loop.prompt.no_tools")
+
+    @pytest.mark.asyncio
+    async def test_a_model_offered_tools_gets_no_note_to_answer_now(self):
+        _, displayer = await _decide(_state(), ANSWER)
+
+        assert displayer.display_llm_stream.await_args.args[2][-1].content == HISTORY[-1].content
 
     @pytest.mark.asyncio
     async def test_gathering_at_the_limit_hands_back_what_it_has(self):
