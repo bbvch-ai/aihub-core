@@ -109,7 +109,8 @@ The sandbox is the **only** resident; its callers join this network in addition 
 to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach `open-terminal:8000`, and
 `universal-agent` joins it (alongside `backend`/`data`/`storage`) to run code in the asking user's sandbox home. Because
 the sandbox shares a network only with its callers, a breakout has no network path to the `backend` or `data` tiers. In
-dev, `open-webui` uses `network_mode: host` and reaches the sandbox via the published `localhost:8200` port instead.
+dev, `open-webui` uses `network_mode: host` and the agents run locally outside Docker, so both reach the sandbox via the
+published `localhost:8200` port instead.
 
 ## Network Topology
 
