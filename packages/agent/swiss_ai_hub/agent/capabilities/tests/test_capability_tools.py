@@ -99,8 +99,10 @@ class TestAttachedFilesAsATool:
             t=T,
         )
 
-        assert isinstance(read, ToolResultEvent) and read.is_error
-        assert CitationId.of(F1) in read.content and CitationId.of(F2) in read.content
+        assert isinstance(read, ToolResultEvent)
+        assert read.is_error
+        assert CitationId.of(F1) in read.content
+        assert CitationId.of(F2) in read.content
         assert CitationId.of(F3) not in read.content
 
     @pytest.mark.asyncio
@@ -117,7 +119,8 @@ class TestAttachedFilesAsATool:
             t=T,
         )
 
-        assert isinstance(read, ToolResultEvent) and read.is_error
+        assert isinstance(read, ToolResultEvent)
+        assert read.is_error
 
     @pytest.mark.asyncio
     async def test_a_chosen_read_runs_the_regular_read_within_one_results_room(self):
