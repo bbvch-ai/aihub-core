@@ -188,7 +188,11 @@ ANSWER = Message.from_string(role="assistant", content="It is noon.")
 
 
 async def _decide(
-    state: ToolLoopState, reply: Message, run_context: "_Context | None" = None, **tool_loop: Any
+    state: ToolLoopState,
+    reply: Message,
+    run_context: "_Context | None" = None,
+    thread_context: "_Context | None" = None,
+    **tool_loop: Any,
 ) -> tuple[Any, MagicMock]:
     displayer = _displayer(reply)
     result = await ToolLoop.decide_step(
@@ -197,6 +201,7 @@ async def _decide(
         conversation=_conversation(reply),
         loop=_config(**tool_loop),
         run_context=run_context or _Context(),
+        thread_context=thread_context or _Context(),
         displayer=displayer,
         t=T,
     )
@@ -216,6 +221,7 @@ class TestOfferedTools:
                     conversation=_conversation(ANSWER),
                     agent_config=config,
                     run_context=_Context(),
+                    thread_context=_Context(),
                     displayer=MagicMock(spec=EventDisplayer),
                     t=T,
                     topic=TOPIC,

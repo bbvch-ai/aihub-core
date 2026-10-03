@@ -266,7 +266,10 @@ Every stage is an event: `ToolEvent` per call (with the localized `label`) and `
 `ToolLoopStatusEvent` while gathering decides. The loop's state travels on those events (`ToolLoopState`, carrying the
 set's name as `loop`), never in the run context, and the join fires once per iteration of its loop, because the
 dispatcher re-triggers a step for every event of a type it takes as a list. Several sets may run one after another in a
-run; a step consuming `ToolLoop.Finished` tells them apart by `finished.loop`. Approval policies: never, every call,
+run; a step consuming `ToolLoop.Finished` tells them apart by `finished.loop`. Chat clients send earlier answers as
+text only, so the calls and results behind each answer are kept per thread (`EarlierToolTurns` in `ThreadContext`,
+keyed by the question, the last five) and put back in front of that answer when the loop starts on a later turn;
+without them a model asked again about an attached file answers from its earlier wording instead of reading it. Approval policies: never, every call,
 once per run, once per conversation (remembered per tool); `approve_every_call` never lets one carry over. At the limits
 the model answers without tools and a fixed notice says it stopped early. The answering turn streams
 (`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed thought.
