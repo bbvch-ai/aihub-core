@@ -6,7 +6,7 @@ from urllib.parse import quote
 from bson import ObjectId
 from fastapi import HTTPException, Response, UploadFile, status
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.infrastructure import OpenTerminalClient, SandboxHomePath, trace_fn
+from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTerminalClient, SandboxHomePath, trace_fn
 from swiss_ai_hub.core.persistence import OpenWebuiAccountEntity, ThreadEntity
 
 from swiss_ai_hub.api.routes.user_knowledge.dto.file_entry_dto import FileEntryDTO
@@ -118,17 +118,19 @@ class UserKnowledgeService:
     @staticmethod
     @trace_fn
     async def place_attachment(
-        user: UserIdentity, thread_id: str, filename: str, read: Callable[[], bytes]
+        user: UserIdentity, thread_id: str, file_id: str, filename: str, read: Callable[[], bytes]
     ) -> FilePathDTO | None:
-        """A file attached in a chat also lands in that conversation's folder; a user without a file space yet has
-        none to place it in."""
+        """A file attached in a chat also lands in that conversation's folder, once: the chat client validates it on
+        every turn, and a file the user has since deleted or changed there is theirs to keep that way. A user without
+        a file space yet has none to place it in."""
         openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
         if openwebui_id is None:
             return None
-        folder = posixpath.join(UserKnowledgeService.CONVERSATIONS_FOLDER, thread_id)
-        name = SandboxHomePath.name(filename)
-        await OpenTerminalClient(openwebui_id).upload(folder, name, await asyncio.to_thread(read))
-        return FilePathDTO(path=posixpath.join(folder, name))
+        attachments = ConversationAttachments(OpenTerminalClient(openwebui_id), thread_id)
+        placed = await attachments.place(
+            {file_id: SandboxHomePath.name(filename)}, lambda _file_id, _filename: asyncio.to_thread(read)
+        )
+        return FilePathDTO(path=placed[file_id])
 
     @staticmethod
     async def _read_bounded(file: UploadFile) -> bytes:

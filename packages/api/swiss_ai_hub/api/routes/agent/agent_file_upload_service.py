@@ -83,6 +83,7 @@ class AgentFileUploadService:
         key = self.s3_key(agent_class, agent_id, file_id, filename)
         return self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)["Body"].read()
 
+    @trace_fn
     def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:
         """Check whether a file was successfully uploaded."""
         key = self.s3_key(agent_class, agent_id, file_id, filename)

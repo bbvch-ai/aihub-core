@@ -1,6 +1,7 @@
 """The user's own file space over the code sandbox: their home only, as their own account, with sandbox refusals passed
 on and every path kept inside the home."""
 
+import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -210,10 +211,25 @@ async def test_a_sandbox_refusal_is_passed_on_and_a_failure_is_a_bad_gateway(cli
     assert (broken.status_code, broken.json()["detail"]) == (502, "The code sandbox did not respond.")
 
 
+FILE_ID = "0f8fad5b-d9cb-469f-a165-70867728950e"
+
+
+def _record(sandbox: Any, placed: dict[str, str] | None) -> None:
+    """A fresh conversation folder and its record of placed attachments, or none yet."""
+    missing = OpenTerminalError("404: File not found", 404)
+    sandbox.view = AsyncMock(
+        side_effect=missing if placed is None else None, return_value=(json.dumps(placed).encode(), "text/plain")
+    )
+    sandbox.write_file = AsyncMock(return_value={})
+    sandbox.list_files = AsyncMock(return_value={"entries": []})
+
+
 @pytest.mark.asyncio
 async def test_an_attachment_is_placed_in_its_conversation_folder(sandbox: Any) -> None:
+    _record(sandbox, None)
+
     placed = await user_knowledge_service.UserKnowledgeService.place_attachment(
-        fake_user(), THREAD, "report.pdf", lambda: b"%PDF"
+        fake_user(), THREAD, FILE_ID, "report.pdf", lambda: b"%PDF"
     )
 
     sandbox.upload.assert_awaited_once_with(f"conversations/{THREAD}", "report.pdf", b"%PDF")
@@ -221,10 +237,23 @@ async def test_an_attachment_is_placed_in_its_conversation_folder(sandbox: Any) 
 
 
 @pytest.mark.asyncio
+async def test_an_attachment_already_placed_is_not_placed_again_on_a_later_turn(sandbox: Any) -> None:
+    _record(sandbox, {FILE_ID: "report.pdf"})
+
+    await user_knowledge_service.UserKnowledgeService.place_attachment(
+        fake_user(), THREAD, FILE_ID, "report.pdf", lambda: b"%PDF"
+    )
+
+    sandbox.upload.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_a_user_without_a_file_space_gets_no_attachment_placed(sandbox: Any) -> None:
     sandbox.id_of.return_value = None
 
-    assert (
-        await user_knowledge_service.UserKnowledgeService.place_attachment(fake_user(), THREAD, "a.pdf", bytes) is None
+    placed = await user_knowledge_service.UserKnowledgeService.place_attachment(
+        fake_user(), THREAD, FILE_ID, "a.pdf", bytes
     )
+
+    assert placed is None
     sandbox.upload.assert_not_awaited()

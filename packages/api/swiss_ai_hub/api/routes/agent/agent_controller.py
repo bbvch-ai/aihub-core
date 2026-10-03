@@ -322,6 +322,7 @@ class AgentController(TenantScopedController):
                     UserKnowledgeService.place_attachment,
                     user,
                     request.thread_id,
+                    request.file_id,
                     request.filename,
                     partial(upload_service.read_file, agent_class, agent_id, request.file_id, request.filename),
                 )

@@ -175,8 +175,8 @@ async def test_a_validated_upload_is_placed_in_the_conversation_s_folder(client,
         )
 
     assert response.status_code == 200, response.text
-    user, thread_id, filename, read = place.await_args.args
-    assert (user.id, thread_id, filename) == (TEST_USER_OID, THREAD, "report.pdf")
+    user, thread_id, file_id, filename, read = place.await_args.args
+    assert (user.id, thread_id, file_id, filename) == (TEST_USER_OID, THREAD, VALID_FILE_ID, "report.pdf")
     assert read() == b"%PDF"
     mock_upload_service.read_file.assert_called_once_with(AGENT_CLASS, AGENT_ID, VALID_FILE_ID, "report.pdf")
 

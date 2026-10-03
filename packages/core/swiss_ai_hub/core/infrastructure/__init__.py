@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
     from swiss_ai_hub.core.infrastructure.nats.nats_settings import NatsSettings
     from swiss_ai_hub.core.infrastructure.notification.notification_settings import NotificationSettings
+    from swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments import ConversationAttachments
     from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client import OpenTerminalClient
     from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error import OpenTerminalError
     from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings import OpenTerminalSettings
@@ -78,6 +79,7 @@ __all__ = [
     "LiteLLMService",
     "MilvusSettings",
     "MineruSettings",
+    "ConversationAttachments",
     "OpenTerminalClient",
     "OpenTerminalError",
     "OpenTerminalSettings",
@@ -132,6 +134,7 @@ _LAZY_IMPORTS = {
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
     "MilvusSettings": "swiss_ai_hub.core.infrastructure.milvus.milvus_settings",
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
+    "ConversationAttachments": "swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments",
     "OpenTerminalClient": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client",
     "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
     "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",

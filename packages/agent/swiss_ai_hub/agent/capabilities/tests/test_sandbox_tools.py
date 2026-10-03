@@ -10,7 +10,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ChatFeature, SandboxFileDisplayedEvent, UserUploadedFile
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import OpenTerminalError
+from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTerminalError
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -42,7 +42,7 @@ def _topic() -> AgentInstanceTopic:
 
 def _client(present: list[str] | None = None, staged: dict[str, str] | None = None) -> MagicMock:
     async def view(path: str) -> tuple[bytes, str]:
-        if not path.endswith(SandboxWorkspace.STAGED_FILES):
+        if not path.endswith(ConversationAttachments.RECORD):
             return b"\x89PNG", "image/png"
         if staged is None:
             raise OpenTerminalError("404: File not found", 404)
@@ -159,7 +159,7 @@ class TestAttachedFiles:
     @pytest.mark.asyncio
     async def test_a_new_conversation_starts_with_no_folder(self, s3: Any) -> None:
         client = _client()
-        client.list_files = AsyncMock(side_effect=OpenTerminalError("404: Directory not found"))
+        client.list_files = AsyncMock(side_effect=OpenTerminalError("404: Directory not found", 404))
 
         await SandboxWorkspace(client, _topic(), [REPORT]).prepare()
 
