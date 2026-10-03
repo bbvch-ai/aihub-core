@@ -251,9 +251,14 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
         ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+        """The verdict weighs the retrieved documents against everything else the answer will see: a recalled
+        memory, an attached file or a referenced collection may already answer the question."""
         return await do_context_sufficient_guard(
             ctx.query,
             event.context_message,
@@ -263,7 +268,7 @@ class RAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
-            chat_history=ctx.history,
+            chat_history=Conversation.fit(ctx.history, [*memories.blocks, knowledge.block, files.block], agent_config),
             user=user,
         )
 

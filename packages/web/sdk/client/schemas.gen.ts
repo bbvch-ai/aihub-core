@@ -880,6 +880,20 @@ export const AgentFileValidationRequestSchema = {
       description:
         "Original filename with extension. Must not contain path separators.",
     },
+    thread_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[0-9a-f]{24}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Thread Id",
+      description:
+        "The conversation the file is attached in; it is also placed in the user's files there.",
+    },
   },
   type: "object",
   required: ["file_id", "filename"],
@@ -2735,6 +2749,20 @@ export const Body_create_transcriptionSchema = {
   type: "object",
   required: ["file", "model"],
   title: "Body_create_transcription",
+} as const;
+
+export const Body_upload_user_fileSchema = {
+  properties: {
+    file: {
+      type: "string",
+      contentMediaType: "application/octet-stream",
+      title: "File",
+      description: "The file to add; one with the same name is replaced.",
+    },
+  },
+  type: "object",
+  required: ["file"],
+  title: "Body_upload_user_file",
 } as const;
 
 export const BucketMetadataFiltersSchema = {
@@ -4702,7 +4730,7 @@ export const ChatCompletionUserMessageParamSchema = {
 
 export const ChatFeatureSchema = {
   type: "string",
-  enum: ["web_search", "code_interpreter", "image_generation"],
+  enum: ["web_search", "code_interpreter", "image_generation", "user_files"],
   title: "ChatFeature",
   description:
     "A capability a user can request per message in a chat client, which the agent then decides how to serve.\n\nWeb search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI\nhas no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding\na member here is all a new feature needs on the contract side.",
@@ -6491,6 +6519,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/ToolLoopCondensedEvent",
         },
         {
+          $ref: "#/components/schemas/SandboxFileDisplayedEvent",
+        },
+        {
           $ref: "#/components/schemas/ConversationTitleEvent",
         },
         {
@@ -6895,6 +6926,19 @@ export const CreateDatabaseRequestSchema = {
   },
   type: "object",
   title: "CreateDatabaseRequest",
+} as const;
+
+export const CreateFolderRequestSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The new folder's path in the user's file space.",
+    },
+  },
+  type: "object",
+  required: ["path"],
+  title: "CreateFolderRequest",
 } as const;
 
 export const CreateNamespaceRequestSchema = {
@@ -9472,6 +9516,59 @@ export const FileSchema = {
     "Learn about [file inputs](https://platform.openai.com/docs/guides/text) for text generation.",
 } as const;
 
+export const FileEntryDTOSchema = {
+  properties: {
+    name: {
+      type: "string",
+      title: "Name",
+      description: "The file or folder name.",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Its path relative to the user's file space.",
+    },
+    kind: {
+      type: "string",
+      enum: ["file", "folder"],
+      title: "Kind",
+      description: "Whether it is a file or a folder.",
+    },
+    size: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Size",
+      description: "The file's size in bytes; none for a folder.",
+    },
+    modified: {
+      type: "number",
+      title: "Modified",
+      description: "When it last changed, as seconds since the epoch.",
+    },
+    conversation_title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Conversation Title",
+      description: "The title of the chat a conversation folder belongs to.",
+    },
+  },
+  type: "object",
+  required: ["name", "path", "kind", "modified"],
+  title: "FileEntryDTO",
+} as const;
+
 export const FileFileSchema = {
   properties: {
     file_data: {
@@ -9492,6 +9589,19 @@ export const FileFileSchema = {
   title: "FileFile",
 } as const;
 
+export const FilePathDTOSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The affected path, relative to the user's file space.",
+    },
+  },
+  type: "object",
+  required: ["path"],
+  title: "FilePathDTO",
+} as const;
+
 export const FilePromptCacheBreakpointSchema = {
   properties: {
     mode: {
@@ -9506,6 +9616,41 @@ export const FilePromptCacheBreakpointSchema = {
   title: "FilePromptCacheBreakpoint",
   description:
     "Marks the exact end of a reusable prompt prefix.\n\nThe breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.",
+} as const;
+
+export const FolderListingDTOSchema = {
+  properties: {
+    folder: {
+      type: "string",
+      title: "Folder",
+      description:
+        "The listed folder, relative to the user's file space; '.' is its top.",
+    },
+    entries: {
+      items: {
+        $ref: "#/components/schemas/FileEntryDTO",
+      },
+      type: "array",
+      title: "Entries",
+      description: "Its folders first, then its files, each by name.",
+    },
+    folder_title: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Folder Title",
+      description:
+        "The title of the chat, when the folder is a conversation's own.",
+    },
+  },
+  type: "object",
+  required: ["folder", "entries"],
+  title: "FolderListingDTO",
 } as const;
 
 export const FollowUpQuestionsEventSchema = {
@@ -19208,6 +19353,25 @@ export const ModerationOutputModerationResultsResultSchema = {
   description: "A moderation result produced for the response input or output.",
 } as const;
 
+export const MoveFileRequestSchema = {
+  properties: {
+    source: {
+      type: "string",
+      title: "Source",
+      description: "The file or folder to move or rename.",
+    },
+    destination: {
+      type: "string",
+      title: "Destination",
+      description:
+        "Its new path; a rename keeps the folder and changes the name.",
+    },
+  },
+  type: "object",
+  required: ["source", "destination"],
+  title: "MoveFileRequest",
+} as const;
+
 export const MultiSelectSchema = {
   properties: {
     is_formkit_element: {
@@ -23726,6 +23890,106 @@ export const RunToolLoopEventSchema = {
   title: "RunToolLoopEvent",
   description:
     "Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.\n\nBuilt with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's\ndeclaration, narrowed by the profile and by the features the user switched on for the message.",
+} as const;
+
+export const SandboxFileDisplayedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Where the file lies in the user's sandbox home.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name, as the attachment shows it.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's MIME type.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The bucket holding the copy.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The copy's key within the bucket.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "path",
+    "filename",
+    "content_type",
+    "size",
+    "bucket",
+    "key",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "SandboxFileDisplayedEvent",
+  description:
+    "The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.\n\nChat clients attach it to the answer: OpenWebUI registers it as one of the message's files.",
 } as const;
 
 export const SearchContextCostPerQueryDTOSchema = {
@@ -28497,16 +28761,6 @@ export const ToolLoopStateSchema = {
       description:
         "Whether the conversation outgrew the prompt and is condensed before the model decides.",
       default: false,
-    },
-    condensed_tool_call_ids: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Condensed Tool Call Ids",
-      description:
-        "Tool results already condensed or dropped, which are not condensed again.",
-      default: [],
     },
   },
   type: "object",
@@ -33797,6 +34051,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ToolLoopCondensedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/SandboxFileDisplayedEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -44618,6 +44875,80 @@ export const RunToolLoopEventWritableSchema = {
     "Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.\n\nBuilt with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's\ndeclaration, narrowed by the profile and by the features the user switched on for the message.",
 } as const;
 
+export const SandboxFileDisplayedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Where the file lies in the user's sandbox home.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name, as the attachment shows it.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's MIME type.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The bucket holding the copy.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The copy's key within the bucket.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["path", "filename", "content_type", "size", "bucket", "key"],
+  title: "SandboxFileDisplayedEvent",
+  description:
+    "The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.\n\nChat clients attach it to the answer: OpenWebUI registers it as one of the message's files.",
+} as const;
+
 export const SearchKnowledgeEventWritableSchema = {
   properties: {
     event_id: {
@@ -48451,16 +48782,6 @@ export const ToolLoopStateWritableSchema = {
       description:
         "Whether the conversation outgrew the prompt and is condensed before the model decides.",
       default: false,
-    },
-    condensed_tool_call_ids: {
-      items: {
-        type: "string",
-      },
-      type: "array",
-      title: "Condensed Tool Call Ids",
-      description:
-        "Tool results already condensed or dropped, which are not condensed again.",
-      default: [],
     },
   },
   type: "object",

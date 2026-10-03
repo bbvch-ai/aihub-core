@@ -21,8 +21,9 @@ that user's own home directory inside the sandbox.
   default in the LiteLLM configuration instead. Models without function-calling support cannot drive the sandbox at all.
 - **The terminal has to be active for the conversation.** The tools are resolved only when a terminal is selected in the
   chat.
-- **AI-Hub agents are not supported yet.** Agent chats own their own generation and do not expose OpenWebUI's
-  tool-calling handshake, so code execution does **not** engage for them. This is a planned follow-up.
+- **Among AI-Hub agents, only the [Universal Agent](../../5_agents/13_universal_agent/) runs code.** With Code
+  Interpreter switched on it works in the same sandbox home as your plain-model chats, in a folder per conversation, and
+  attaches the files it shows you to its answer. Other agents do not run code.
 :::
 
 There are two main ways to use code execution.

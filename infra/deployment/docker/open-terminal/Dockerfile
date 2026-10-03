@@ -18,6 +18,10 @@
 # works: it ships sudo + useradd and runs as the non-root `user` with passwordless
 # sudo, giving per-user home isolation. Its WORKDIR is already the writable /home/user.
 #
+# confine_file_api_to_home.py patches the file API so a user can only reach their own home: upstream's check lets
+# symlinks into other homes and paths such as /proc/1/environ (holding the API key) through. Rebuilding against a
+# changed upstream fails until the patch is re-checked.
+#
 # Pinned to an explicit version (not `latest`) for reproducible builds — bump this tag
 # deliberately. Re-publish via `make -C infra/deployment build-and-push-open-terminal-image`
 # after editing this file. Non-build stages then pick it up via `docker compose pull`.
@@ -25,4 +29,6 @@ FROM ghcr.io/open-webui/open-terminal:0.11.34
 
 USER root
 RUN pip install --no-cache-dir reportlab fpdf2
+COPY confine_file_api_to_home.py /tmp/confine_file_api_to_home.py
+RUN python3 /tmp/confine_file_api_to_home.py && rm /tmp/confine_file_api_to_home.py
 USER user

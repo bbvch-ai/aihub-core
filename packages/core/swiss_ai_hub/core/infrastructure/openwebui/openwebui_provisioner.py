@@ -10,7 +10,6 @@ from redis.exceptions import LockError
 from scim2_client.engines.httpx import AsyncSCIMClient
 from scim2_models import Group, User
 
-from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
@@ -20,13 +19,13 @@ from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.available_model import AvailableModel
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_group_access import (
     AIHUB_GROUP_PREFIX,
     OpenWebuiGroupAccess,
     RoleAccessRules,
     TenantAccessRules,
 )
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_knowledge_sync import OpenWebuiKnowledgeSync
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -34,6 +33,7 @@ from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity impor
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.openwebui.openwebui_account_entity import OpenWebuiAccountEntity
 
 logger = logging.getLogger(__name__)
 
@@ -395,6 +395,7 @@ class OpenWebuiProvisioner:
             user_id_mapping |= await self._provision_missing_accounts(
                 keycloak_users, group_member_ids, user_id_mapping, scim=scim
             )
+            OpenWebuiAccountEntity.record_all(user_id_mapping)
 
             await self._sync_group_memberships(desired_members, aihub_groups, user_id_mapping, scim=scim)
 

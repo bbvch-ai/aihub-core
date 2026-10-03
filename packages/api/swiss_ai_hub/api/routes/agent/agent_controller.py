@@ -1,7 +1,8 @@
 import asyncio
+from functools import partial
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, Query, Security
+from fastapi import BackgroundTasks, Depends, HTTPException, Query, Security
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -28,6 +29,7 @@ from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import Crea
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.update_agent_instance_dto import UpdateAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
+from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_service import UserKnowledgeService
 
 
 class AgentController(TenantScopedController):
@@ -296,13 +298,18 @@ class AgentController(TenantScopedController):
             agent_class: str,
             agent_id: str,
             request: AgentFileValidationRequest,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity,
                 Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
             ],
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
+            background_tasks: BackgroundTasks,
         ) -> AgentFileValidationResponse:
-            """Validate that a file was successfully uploaded to the agent's dedicated bucket."""
+            """Validate that a file was successfully uploaded to the agent's dedicated bucket.
+
+            Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
+            slow or unavailable sandbox never holds up or fails the chat.
+            """
             exists = await asyncio.to_thread(
                 upload_service.verify_file_exists,
                 agent_class=agent_class,
@@ -310,6 +317,15 @@ class AgentController(TenantScopedController):
                 file_id=request.file_id,
                 filename=request.filename,
             )
+            if exists and request.thread_id:
+                background_tasks.add_task(
+                    UserKnowledgeService.place_attachment,
+                    user,
+                    request.thread_id,
+                    request.file_id,
+                    request.filename,
+                    partial(upload_service.read_file, agent_class, agent_id, request.file_id, request.filename),
+                )
             return AgentFileValidationResponse(
                 file_id=request.file_id,
                 exists=exists,

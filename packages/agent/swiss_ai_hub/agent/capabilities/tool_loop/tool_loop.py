@@ -26,7 +26,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
-from swiss_ai_hub.core.topics import PartialAgentTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic, PartialAgentTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
@@ -127,11 +127,12 @@ class ToolLoop(Capability):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolLoopIterationEvent | ToolLoopFinishedEvent:
         """Work out which tools are on offer for this message; gathering with nothing to offer ends right away."""
-        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
         offered = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
@@ -171,7 +172,8 @@ class ToolLoop(Capability):
         """Ask the model to answer or to call tools; at the loop's limits it must answer with what it has.
 
         A tool the user declined is no longer offered in this run, since models ask for it again regardless of being
-        told not to, and the user would be prompted until they gave in.
+        told not to, and the user would be prompted until they gave in. Offered no tools, for whatever reason, the
+        model sees the earlier tool turns as plain text and is told to answer now.
         """
         state = iteration.state
         exhausted = ToolLoop._exhausted(state, loop)
@@ -180,15 +182,17 @@ class ToolLoop(Capability):
             if exhausted:
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
-        history = ToolLoop._tool_turns_as_text(state.messages) if exhausted else state.messages
-        messages = [message.to_llama_index() for message in history]
-        if exhausted:
-            # A user turn: chat templates such as Qwen's reject any system message after the first.
-            messages.append(ChatMessage(role=MessageRole.USER, content=t("agent.tool_loop.prompt.limit_reached")))
         available = [
             tool for tool in state.tools if not await run_context.get(DECLINED_KEY.format(tool=tool.name), False)
         ]
         tools = [tool.to_openai() for tool in available] if available and not exhausted else None
+        history = ToolLoop._tool_turns_as_text(state.messages) if tools is None else state.messages
+        messages = [message.to_llama_index() for message in history]
+        if tools is None:
+            # A user turn: chat templates such as Qwen's reject any system message after the first. Without it, a
+            # model told by its instructions to use tools calls one anyway, and the gateway strips the call to nothing.
+            note = "limit_reached" if exhausted else "no_tools"
+            messages.append(ChatMessage(role=MessageRole.USER, content=t(f"agent.tool_loop.prompt.{note}")))
         turn = await ToolLoop._turn(messages, tools, state.mode, conversation, displayer, user)
 
         assistant = turn.output_messages[-1]
@@ -327,11 +331,12 @@ class ToolLoop(Capability):
         agent_config: AgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        topic: AgentInstanceTopic,
         user: UserIdentity | None = None,
         access: AccessChecker | None = None,
     ) -> ToolResultEvent:
         """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
-        context = ToolLoop._context(request, agent_config, displayer, t, user, access)
+        context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
         tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
         try:
             output = await tool.acall(**call.arguments)
@@ -433,6 +438,7 @@ class ToolLoop(Capability):
         t: LocaleHandler,
         user: UserIdentity | None,
         access: AccessChecker | None,
+        topic: AgentInstanceTopic | None,
     ) -> ToolContext:
         return ToolContext(
             agent_config=agent_config,
@@ -442,6 +448,7 @@ class ToolLoop(Capability):
             access=access,
             files=request.files,
             knowledge_references=request.knowledge_references,
+            topic=topic,
         )
 
     @staticmethod
@@ -478,7 +485,7 @@ class ToolLoop(Capability):
 
     @staticmethod
     def _tool_turns_as_text(messages: list[Message]) -> list[Message]:
-        """The loop's calls and results as one plain assistant turn, for the answer at the limits.
+        """The loop's calls and results as one plain assistant turn, for an answer offered no tools.
 
         Offered no tools after a tool-call history, Gemma answers with nothing at all; in plain text it answers.
         """

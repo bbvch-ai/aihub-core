@@ -351,7 +351,8 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     composed = agent_runner.get_event_of_class(ContextComposedEvent).history
     documents = agent_runner.get_event_of_class(InOrderNodeCombinerEvent).context_message.content
-    assert composed[0].role == "system" and documents in composed[0].content, "the documents are not in the prompt"
+    assert composed[0].role == "system", "the prompt does not open with a system message"
+    assert documents in composed[0].content, "the documents are not in the prompt"
     answer = agent_runner.get_event_of_class(CompleteConversationEvent).answer
     sent = [(message.role, " ".join((message.content or "").split())) for message in answer.input_messages or []]
     shown = [(message.role, " ".join((message.content or "").split())) for message in composed]

@@ -54,6 +54,7 @@ import {
   EventDisplayToolLoopStatusEvent,
   EventDisplayToolLoopCondensedEvent,
   EventDisplayToolLoopFinishedEvent,
+  EventDisplaySandboxFileDisplayedEvent,
 } from '#components'
 
 export const useEventComponent = () => {
@@ -119,6 +120,7 @@ export const useEventComponent = () => {
       ToolLoopStatusEvent: EventDisplayToolLoopStatusEvent,
       ToolLoopCondensedEvent: EventDisplayToolLoopCondensedEvent,
       ToolLoopFinishedEvent: EventDisplayToolLoopFinishedEvent,
+      SandboxFileDisplayedEvent: EventDisplaySandboxFileDisplayedEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

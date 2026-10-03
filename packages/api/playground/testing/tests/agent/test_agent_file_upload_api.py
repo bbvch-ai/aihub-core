@@ -1,13 +1,14 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_service import UserKnowledgeService
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 AGENT_CLASS = "TestAgent"
@@ -158,4 +159,49 @@ async def test_validate_upload_rejects_path_traversal_backslash(client):
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
         json={"file_id": VALID_FILE_ID, "filename": "..\\..\\secret.pdf"},
     )
+    assert response.status_code == 422
+
+
+THREAD = "65f1c0ffee00000000000001"
+
+
+@pytest.mark.asyncio
+async def test_a_validated_upload_is_placed_in_the_conversation_s_folder(client, mock_upload_service):
+    mock_upload_service.read_file.return_value = b"%PDF"
+    with patch.object(UserKnowledgeService, "place_attachment", new=AsyncMock()) as place:
+        response = await client.post(
+            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+            json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": THREAD},
+        )
+
+    assert response.status_code == 200, response.text
+    user, thread_id, file_id, filename, read = place.await_args.args
+    assert (user.id, thread_id, file_id, filename) == (TEST_USER_OID, THREAD, VALID_FILE_ID, "report.pdf")
+    assert read() == b"%PDF"
+    mock_upload_service.read_file.assert_called_once_with(AGENT_CLASS, AGENT_ID, VALID_FILE_ID, "report.pdf")
+
+
+@pytest.mark.asyncio
+async def test_an_upload_without_a_conversation_or_not_stored_is_not_placed(client, mock_upload_service):
+    with patch.object(UserKnowledgeService, "place_attachment", new=AsyncMock()) as place:
+        await client.post(
+            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+            json={"file_id": VALID_FILE_ID, "filename": "report.pdf"},
+        )
+        mock_upload_service.verify_file_exists.return_value = False
+        await client.post(
+            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+            json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": THREAD},
+        )
+
+    place.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_a_thread_id_that_is_not_one_is_refused(client):
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+        json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": "../../etc"},
+    )
+
     assert response.status_code == 422

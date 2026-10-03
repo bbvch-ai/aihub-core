@@ -107,10 +107,23 @@ async def test_the_conversation_before_the_request_becomes_one_summary_when_resu
     state, displayer = await _condense(_conversation(earlier_words=400), budget=200)
 
     roles = [message.role for message in state.messages]
-    assert roles[:3] == ["system", "system", "user"]
-    assert state.messages[1].content.startswith("Summary of the earlier conversation:")
-    assert state.messages[2].content == "What changed in Q1?"
+    assert roles[:2] == ["system", "user"]
+    assert "system" not in roles[1:]
+    assert state.messages[0].content.startswith("You are helpful.\n\nSummary of the earlier conversation:")
+    assert state.messages[1].content == "What changed in Q1?"
     assert displayer.display_event.await_args.args[0].condensed_turns == 2
+
+
+@pytest.mark.asyncio
+async def test_a_result_an_earlier_round_condensed_is_not_summarised_again():
+    messages = _conversation()
+    messages[3] = messages[3].model_copy(update={"contents": [TextContent(text="[Condensed earlier result] old")]})
+    condenser = ToolLoopCondenser(_llm(), 30, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+    condenser._summarise_result = AsyncMock(return_value="again")
+
+    await condenser.condense(_state(messages))
+
+    condenser._summarise_result.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -179,7 +192,43 @@ async def test_a_condensed_result_is_not_condensed_again_in_a_later_round():
     second = await condenser.condense(later)
 
     assert summarised == ["c2"]
-    assert set(second.condensed_tool_call_ids) == {"c1", "c2"}
+
+
+@pytest.mark.asyncio
+async def test_tool_schemas_that_leave_the_latest_result_no_room_give_way_to_it():
+    messages = [
+        Message.from_string(role="system", content="You are helpful."),
+        Message.from_string(role="user", content="What changed in Q1?"),
+        _calling("c1"),
+        _result("c1", 50),
+    ]
+    tool = ToolDefinition(name="search", description=" ".join(["search"] * 300), parameters={"type": "object"})
+    state = ToolLoopState(messages=messages, tools=[tool], mode=ToolLoopMode.ANSWER, needs_condensing=True)
+    condenser = ToolLoopCondenser(_llm(), 200, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+
+    condensed = await condenser.condense(state)
+
+    assert condensed.tools == []
+    assert condensed.messages[3].content == " ".join(["fact"] * 50)
+
+
+@pytest.mark.asyncio
+async def test_tool_schemas_that_leave_the_latest_result_some_room_stay_offered():
+    messages = [
+        Message.from_string(role="system", content="You are helpful."),
+        Message.from_string(role="user", content="What changed in Q1?"),
+        _calling("c1"),
+        _result("c1", 400),
+    ]
+    tool = ToolDefinition(name="search", description=" ".join(["search"] * 50), parameters={"type": "object"})
+    state = ToolLoopState(messages=messages, tools=[tool], mode=ToolLoopMode.ANSWER, needs_condensing=True)
+    condenser = ToolLoopCondenser(_llm(), 200, MagicMock(spec=EventDisplayer, display_event=AsyncMock()), T, user=None)
+
+    condensed = await condenser.condense(state)
+
+    assert condensed.tools == [tool]
+    assert "cut to fit the context" in condensed.messages[3].content
+    assert condensed.messages[3].content.startswith("fact")
 
 
 @pytest.mark.asyncio

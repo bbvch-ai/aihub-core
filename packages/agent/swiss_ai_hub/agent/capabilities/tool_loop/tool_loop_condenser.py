@@ -50,23 +50,23 @@ class ToolLoopCondenser:
         )
 
     async def condense(self, state: ToolLoopState) -> ToolLoopState:
-        """Condense until the prompt fits; when even the request and the tool schemas alone are too large, the model
+        """Condense until the prompt fits; when the tool schemas would leave the latest results no room, the model
         answers without tools, and a prompt that still does not fit is left to fail at the model gateway."""
         counter = self._llm.token_counter
         before = self.size(state.messages, state.tools, counter)
         request_at = self._last_request(state.messages)
-        done = set(state.condensed_tool_call_ids)
-        messages, condensed = await self._condense_results(state.messages, request_at, done)
-        done |= condensed
+        messages, results = await self._condense_results(state.messages, request_at)
         turns = 0
         if self.outgrown(messages, state.tools, self._budget, counter):
             messages, turns = await self._condense_turns(messages, request_at)
         if self.outgrown(messages, state.tools, self._budget, counter):
-            messages, dropped = self._drop_oldest_results(messages, state.tools)
-            done |= dropped
-        if self.outgrown(messages, state.tools, self._budget, counter):
-            messages = self._cut_latest_results(messages, state.tools)
-        tools = state.tools if not self.outgrown(messages, state.tools, self._budget, counter) else []
+            messages = self._drop_oldest_results(messages, state.tools)
+        tools = state.tools
+        if self.outgrown(messages, tools, self._budget, counter):
+            tools = self._tools_leaving_room(messages, tools)
+            messages = self._cut_latest_results(messages, tools)
+        if self.outgrown(messages, tools, self._budget, counter):
+            tools = []
         after = self.size(messages, tools, counter)
         if after < before:
             await self._displayer.display_event(
@@ -75,34 +75,25 @@ class ToolLoopCondenser:
                     description=self._t("agent.tool_loop.status.condensed"),
                     tokens_before=before,
                     tokens_after=after,
-                    condensed_results=len(condensed),
+                    condensed_results=results,
                     condensed_turns=turns,
                 )
             )
-        return state.model_copy(
-            update={
-                "messages": messages,
-                "tools": tools,
-                "needs_condensing": False,
-                "condensed_tool_call_ids": sorted(done),
-            }
-        )
+        return state.model_copy(update={"messages": messages, "tools": tools, "needs_condensing": False})
 
-    async def _condense_results(
-        self, messages: list[Message], request_at: int, done: set[str]
-    ) -> tuple[list[Message], set[str]]:
+    async def _condense_results(self, messages: list[Message], request_at: int) -> tuple[list[Message], int]:
         """Every tool result older than the latest round and not condensed before, summarised for the request in its
         place; a summary is not summarised again, which would lose more each round for another task-model call."""
-        earlier = [index for index in self._earlier_results(messages) if messages[index].tool_call_id not in done]
+        earlier = [index for index in self._earlier_results(messages) if not self._already_condensed(messages[index])]
         if not earlier:
-            return messages, set()
+            return messages, 0
         request = messages[request_at].content if request_at >= 0 else ""
         summaries = await asyncio.gather(*(self._summarise_result(request, messages[index]) for index in earlier))
         condensed = list(messages)
         for index, summary in zip(earlier, summaries, strict=True):
             text = self._t("agent.tool_loop.prompt.condensed_result", summary=summary)
             condensed[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
-        return condensed, {messages[index].tool_call_id for index in earlier if messages[index].tool_call_id}
+        return condensed, len(earlier)
 
     async def _condense_turns(self, messages: list[Message], request_at: int) -> tuple[list[Message], int]:
         """The conversation between the leading instructions and the request, as one summary."""
@@ -112,38 +103,38 @@ class ToolLoopCondenser:
             return messages, 0
         transcript = "\n\n".join(f"{message.role}: {message.content}" for message in earlier)
         summary = await self._ask(self._t("agent.tool_loop.prompt.condense_turns", words=SUMMARY_WORDS * 2), transcript)
-        summary_message = Message.from_string(
-            role="system", content=self._t("agent.tool_loop.prompt.condensed_turns", summary=summary)
+        # One system message: chat templates such as Qwen's reject any system message after the first.
+        leading = [message.content for message in messages[:head]]
+        system = Message.from_string(
+            role="system",
+            content="\n\n".join([*leading, self._t("agent.tool_loop.prompt.condensed_turns", summary=summary)]),
         )
-        return [*messages[:head], summary_message, *messages[request_at:]], len(earlier)
+        return [system, *messages[request_at:]], len(earlier)
 
-    def _drop_oldest_results(
-        self, messages: list[Message], tools: list[ToolDefinition]
-    ) -> tuple[list[Message], set[str]]:
+    def _drop_oldest_results(self, messages: list[Message], tools: list[ToolDefinition]) -> list[Message]:
         """The last resort: earlier results give way, oldest first, until the rest fits."""
         dropped = list(messages)
-        ids: set[str] = set()
         for index in self._earlier_results(messages):
             if not self.outgrown(dropped, tools, self._budget, self._llm.token_counter):
                 break
             text = self._t("agent.tool_loop.prompt.dropped_result")
             dropped[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
-            if messages[index].tool_call_id:
-                ids.add(messages[index].tool_call_id)
-        return dropped, ids
+        return dropped
+
+    def _tools_leaving_room(self, messages: list[Message], tools: list[ToolDefinition]) -> list[ToolDefinition]:
+        """The tools stay unless their schemas leave the latest results no room at all; a result cut to nothing to
+        keep offering tools leaves the model nothing to answer from."""
+        emptied = self._emptied(messages, self._latest_results(messages))
+        return [] if self.outgrown(emptied, tools, self._budget, self._llm.token_counter) else tools
 
     def _cut_latest_results(self, messages: list[Message], tools: list[ToolDefinition]) -> list[Message]:
         """The latest results share what is left of the prompt, each cut to its part."""
         counter = self._llm.token_counter
-        latest = [index for index, message in enumerate(messages) if message.role == "tool"]
-        latest = [index for index in latest if index not in self._earlier_results(messages)]
+        latest = self._latest_results(messages)
         if not latest:
             return messages
         note = self._t("agent.tool_loop.prompt.cut_result")
-        emptied = [
-            message.model_copy(update={"contents": [TextContent(text=note)]}) if index in latest else message
-            for index, message in enumerate(messages)
-        ]
+        emptied = self._emptied(messages, latest)
         room = max(self._budget - self.size(emptied, tools, counter), 0) // len(latest)
         cut = list(messages)
         for index in latest:
@@ -154,6 +145,13 @@ class ToolLoopCondenser:
                 )
         return cut
 
+    def _emptied(self, messages: list[Message], latest: list[int]) -> list[Message]:
+        note = self._t("agent.tool_loop.prompt.cut_result")
+        return [
+            message.model_copy(update={"contents": [TextContent(text=note)]}) if index in latest else message
+            for index, message in enumerate(messages)
+        ]
+
     @staticmethod
     def _shortened(content: str, room: int, counter: Callable[[str], list[int]]) -> str:
         """The longest start of `content` within `room` tokens, found by shrinking a character estimate."""
@@ -161,6 +159,13 @@ class ToolLoopCondenser:
         while text and len(counter(text)) > room:
             text = text[: int(len(text) * 0.9)]
         return text
+
+    def _already_condensed(self, result: Message) -> bool:
+        """A result an earlier round condensed or dropped: summarising it again costs a model call and loses more."""
+        condensed = self._t("agent.tool_loop.prompt.condensed_result", summary="")
+        return result.content.startswith(condensed) or result.content == self._t(
+            "agent.tool_loop.prompt.dropped_result"
+        )
 
     async def _summarise_result(self, request: str, result: Message) -> str:
         instruction = self._t("agent.tool_loop.prompt.condense_result", words=SUMMARY_WORDS)
@@ -182,6 +187,11 @@ class ToolLoopCondenser:
             (index for index in range(len(messages) - 1, -1, -1) if messages[index].tool_calls), len(messages)
         )
         return [index for index, message in enumerate(messages[:latest_calls]) if message.role == "tool"]
+
+    @staticmethod
+    def _latest_results(messages: list[Message]) -> list[int]:
+        earlier = ToolLoopCondenser._earlier_results(messages)
+        return [index for index, message in enumerate(messages) if message.role == "tool" and index not in earlier]
 
     @staticmethod
     def _last_request(messages: list[Message]) -> int:
