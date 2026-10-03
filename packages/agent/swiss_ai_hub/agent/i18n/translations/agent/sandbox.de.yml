@@ -36,3 +36,10 @@ tools:
   display_file:
     label: "Datei zeigen"
     approval: "{path} an die Antwort anhängen"
+user_files:
+  list_my_files:
+    label: "Meine Dateien auflisten"
+    approval: "Ihre Dateien in {folder} auflisten"
+  read_my_file:
+    label: "Meine Datei lesen"
+    approval: "Ihre Datei {path} lesen"

@@ -10,7 +10,7 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ChatFeature, SandboxFileDisplayedEvent, UserUploadedFile
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import OpenTerminalError
+from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTerminalError
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -18,6 +18,7 @@ from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalA
 from swiss_ai_hub.agent.capabilities.sandbox import sandbox_workspace
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
+from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -41,7 +42,7 @@ def _topic() -> AgentInstanceTopic:
 
 def _client(present: list[str] | None = None, staged: dict[str, str] | None = None) -> MagicMock:
     async def view(path: str) -> tuple[bytes, str]:
-        if not path.endswith(SandboxWorkspace.STAGED_FILES):
+        if not path.endswith(ConversationAttachments.RECORD):
             return b"\x89PNG", "image/png"
         if staged is None:
             raise OpenTerminalError("404: File not found", 404)
@@ -158,7 +159,7 @@ class TestAttachedFiles:
     @pytest.mark.asyncio
     async def test_a_new_conversation_starts_with_no_folder(self, s3: Any) -> None:
         client = _client()
-        client.list_files = AsyncMock(side_effect=OpenTerminalError("404: Directory not found"))
+        client.list_files = AsyncMock(side_effect=OpenTerminalError("404: Directory not found", 404))
 
         await SandboxWorkspace(client, _topic(), [REPORT]).prepare()
 
@@ -220,3 +221,44 @@ class TestOffer:
 
     def test_the_universal_agent_offers_the_code_interpreter_toggle(self) -> None:
         assert ChatFeature.CODE_INTERPRETER in UniversalAgent.supported_features()
+
+
+class TestUserFiles:
+    @pytest.mark.asyncio
+    async def test_the_listing_is_the_user_s_whole_file_space_without_dotfiles(self, sandbox: Any) -> None:
+        sandbox.list_files = AsyncMock(
+            return_value={
+                "entries": [{"name": "conversations", "type": "directory"}, {"name": ".cache", "type": "directory"}]
+            }
+        )
+
+        result = await UserFilesTools(_context()).list_my_files()
+
+        sandbox.list_files.assert_awaited_once_with(".")
+        assert "conversations" in result
+        assert ".cache" not in result
+
+    @pytest.mark.asyncio
+    async def test_a_file_is_read_relative_to_the_top_not_the_conversation(self, sandbox: Any) -> None:
+        sandbox.read_file = AsyncMock(return_value={"content": "25 days"})
+
+        result = await UserFilesTools(_context()).read_my_file("reports/q1.pdf")
+
+        sandbox.read_file.assert_awaited_once_with("reports/q1.pdf", None, None)
+        assert "25 days" in result
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("path", ["/proc/1/environ", ".ssh/id_rsa", f"conversations/{THREAD}/.attached_files.json"])
+    async def test_a_path_outside_the_user_s_files_is_refused(self, sandbox: Any, path: str) -> None:
+        sandbox.read_file = AsyncMock()
+        tools = UserFilesTools(_context())
+
+        with pytest.raises(OpenTerminalError):
+            await tools.read_my_file(path)
+        sandbox.read_file.assert_not_awaited()
+
+    def test_the_tools_need_my_files_switched_on(self) -> None:
+        tool_set = ToolSet.of((UserFilesTools,))
+
+        assert {tool_set.options(name).chat_feature for name in tool_set.names()} == {ChatFeature.USER_FILES}
+        assert ChatFeature.USER_FILES in UniversalAgent.supported_features()

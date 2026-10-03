@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
     from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
     from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
+    from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
     from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
@@ -33,6 +34,7 @@ __all__ = [
     "RequestedFeatures",
     "SandboxTools",
     "SandboxWorkspace",
+    "UserFilesTools",
     "ToolContext",
     "ToolLoop",
     "ToolLoopFields",
@@ -53,6 +55,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "RequestedFeatures": "swiss_ai_hub.agent.capabilities.requested_features",
     "SandboxTools": "swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools",
     "SandboxWorkspace": "swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace",
+    "UserFilesTools": "swiss_ai_hub.agent.capabilities.sandbox.user_files_tools",
     "ToolContext": "swiss_ai_hub.agent.capabilities.tool_loop.tool_context",
     "ToolLoop": "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop",
     "ToolLoopFields": "swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields",

@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Annotated, Any
 
 import httpx
@@ -87,22 +88,35 @@ class OpenTerminalClient:
         files = {"file": (filename, content)}
         return await self._json("POST", "/files/upload", params={"directory": directory}, files=files)
 
+    async def mkdir(self, path: str) -> dict[str, Any]:
+        return await self._json("POST", "/files/mkdir", json={"path": path})
+
+    async def move(self, source: str, destination: str) -> dict[str, Any]:
+        return await self._json("POST", "/files/move", json={"source": source, "destination": destination})
+
+    async def delete(self, path: str) -> dict[str, Any]:
+        """Removes a file, or a folder with everything in it."""
+        return await self._json("DELETE", "/files/delete", params={"path": path})
+
     async def view(self, path: str) -> tuple[bytes, str]:
         """A file's raw bytes and type; unlike reading, this works for any file, binary documents included.
 
         Streamed and stopped at the size limit, so a huge file the code made is refused instead of filling memory."""
-        async with self._http() as http, http.stream("GET", "/files/view", params={"path": path}) as response:
-            if response.is_error:
-                await response.aread()
-                raise self._error(response)
-            content = bytearray()
-            async for chunk in response.aiter_bytes():
-                content.extend(chunk)
-                if len(content) > self._settings.MAX_FILE_BYTES:
-                    raise OpenTerminalError(
-                        f"{path} is larger than {self._settings.MAX_FILE_BYTES} bytes, the most a file may have here."
-                    )
-            return bytes(content), response.headers.get("content-type", "application/octet-stream")
+        try:
+            async with self._http() as http, http.stream("GET", "/files/view", params={"path": path}) as response:
+                if response.is_error:
+                    await response.aread()
+                    raise self._error(response)
+                content = bytearray()
+                async for chunk in response.aiter_bytes():
+                    content.extend(chunk)
+                    if len(content) > self._settings.MAX_FILE_BYTES:
+                        raise OpenTerminalError(
+                            f"{path} is larger than {self._settings.MAX_FILE_BYTES} bytes, the most a file may have here."
+                        )
+                return bytes(content), response.headers.get("content-type", "application/octet-stream")
+        except httpx.TransportError as error:
+            raise self._unreachable(error) from error
 
     async def _json(self, method: str, path: str, wait: float | None = None, **kwargs: Any) -> Any:
         return (await self._request(method, path, wait=wait, **kwargs)).json()
@@ -110,11 +124,19 @@ class OpenTerminalClient:
     async def _request(self, method: str, path: str, wait: float | None = None, **kwargs: Any) -> httpx.Response:
         if "params" in kwargs:
             kwargs["params"] = {key: value for key, value in kwargs["params"].items() if value is not None}
-        async with self._http(wait) as http:
-            response = await http.request(method, path, **kwargs)
+        try:
+            async with self._http(wait) as http:
+                response = await http.request(method, path, **kwargs)
+        except httpx.TransportError as error:
+            raise self._unreachable(error) from error
         if response.is_error:
             raise self._error(response)
         return response
+
+    @staticmethod
+    def _unreachable(error: httpx.TransportError) -> OpenTerminalError:
+        """A sandbox that cannot be reached or does not answer in time is failing, not refusing the call."""
+        return OpenTerminalError(f"The code sandbox did not respond: {error!r}", HTTPStatus.BAD_GATEWAY)
 
     def _http(self, wait: float | None = None) -> httpx.AsyncClient:
         timeout = self._settings.TIMEOUT + (wait or 0)

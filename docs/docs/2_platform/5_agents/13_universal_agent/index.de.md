@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: 863a164af880306c11106f6590535de9c9bcd50bcc37bb2cca1e5a879a1bbb40
+source_sha: d1395f6d1f0b8f6cce6a038cab5f974560c4c4cb9fa36bf987920c321e6cafaf
 ---
 
 # Universal Agent
@@ -54,6 +54,7 @@ Suchen braucht, bekommt drei.
 | **Angehängte Dateien lesen**     | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind. | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).                   |
 | **Gedächtnis abrufen**           | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                             | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                                 |
 | **Code-Sandbox**                | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                                |
+| **Meine Dateien** | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend. | Der Benutzer hat im Chat **My Files** eingeschaltet. |
 
 Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten,
 Bildgenerierung und der eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.

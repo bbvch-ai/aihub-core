@@ -151,3 +151,13 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 >
 > The *Dev stays non-internal* bullet above names `OPEN_TERMINAL_ALLOWED_DOMAINS` for egress control; open-terminal
 > 0.11.34 has no such setting, so egress outside dev rests on `code-sandbox` being internal.
+
+> **Amendment 2026-10-02 — the API joins the sandbox network; the homes are mirrored.** User Knowledge (#1936) lets each
+> user browse and change their own sandbox home through our API, which joins `code-sandbox` as a further caller and sends
+> only paths inside the user's home, as that user's OpenWebUI id. A file attached in an agent chat is placed in that
+> conversation's folder by the API once the upload is validated. The homes are copied one way into the `sandbox-files`
+> bucket by a `sandbox-mirror` sidecar (#2031): it reads the homes volume read-only, skips links instead of following
+> them, uses an S3 identity limited to that bucket, and is on `backend` only, never on `code-sandbox`, so sandboxed
+> code has no path to it or to its credentials. What the sandbox deleted is kept under `.deleted/` for a week. The
+> volume stays the only place sandbox files are written, so a one-way copy is enough.
+
