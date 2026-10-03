@@ -1,0 +1,90 @@
+---
+name: Dispatch Image Builds And Wait
+description: Dispatch the per-image build workflows at a release ref and block until
+  every dispatched run has finished successfully.
+# `gh workflow run` returns as soon as the dispatch is accepted, so a caller that
+# only dispatches has no idea whether the images exist yet. Anything downstream
+# that publishes a release bundle (which the deploy VMs fetch and immediately
+# `docker compose pull`) must not run before the tags are in the registry, or the
+# deploy fails with "not found" for whichever image was still building.
+#
+# The release ref is a unique version tag, so a workflow_dispatch run on it
+# belongs to this fan-out. Run ids seen BEFORE the dispatch are recorded so a
+# re-dispatch at an existing tag waits for its own run instead of returning the
+# previous one immediately.
+inputs:
+  workflows:
+    description: Newline-separated build workflow filenames to dispatch.
+    required: true
+  ref:
+    description: Git ref (release tag) to dispatch the workflows at.
+    required: true
+  release_version:
+    description: Value for the build workflows' release_version input.
+    required: true
+  secondary_tag:
+    description: 'Value for the build workflows'' secondary_tag input: nightly, staging,
+      latest, or empty.'
+    required: false
+    default: ''
+  github_token:
+    description: Token used for the dispatch and the run lookups (needs actions:write).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Dispatch build workflows and wait for them
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        GH_REPO: ${{ github.repository }}
+        WORKFLOWS: ${{ inputs.workflows }}
+        REF: ${{ inputs.ref }}
+        RELEASE_VERSION: ${{ inputs.release_version }}
+        SECONDARY_TAG: ${{ inputs.secondary_tag }}
+      run: |-
+        set -euo pipefail
+
+        mapfile -t builds < <(printf '%s\n' "$WORKFLOWS" | sed '/^[[:space:]]*$/d')
+
+        newest_run() {
+          gh run list --workflow "$1" --branch "$REF" --event workflow_dispatch \
+            --limit 1 --json databaseId --jq '.[0].databaseId // empty'
+        }
+
+        declare -A previous_run
+        for wf in "${builds[@]}"; do
+          previous_run["$wf"]="$(newest_run "$wf")"
+        done
+
+        for wf in "${builds[@]}"; do
+          echo "Dispatching $wf @ $REF (secondary_tag='${SECONDARY_TAG}')"
+          gh workflow run "$wf" --ref "$REF" \
+            -f release_version="$RELEASE_VERSION" -f secondary_tag="$SECONDARY_TAG"
+        done
+
+        # The API needs a moment to materialise a run for an accepted dispatch;
+        # poll for a run id that is not the one seen before dispatching.
+        for wf in "${builds[@]}"; do
+          run_id=""
+          for _ in $(seq 1 40); do
+            candidate="$(newest_run "$wf")"
+            if [ -n "$candidate" ] && [ "$candidate" != "${previous_run["$wf"]}" ]; then
+              run_id="$candidate"
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "$run_id" ]; then
+            echo "::error::No workflow_dispatch run appeared for $wf @ $REF."
+            exit 1
+          fi
+          echo "Waiting for $wf: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id"
+          if ! gh run watch "$run_id" --interval 15 --exit-status >/dev/null; then
+            echo "::error::$wf did not succeed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$run_id"
+            exit 1
+          fi
+          echo "✅ $wf finished"
+        done
+
+        echo "All ${#builds[@]} image builds succeeded at $REF."
