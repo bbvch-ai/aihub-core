@@ -181,7 +181,8 @@ def test_protocol_events_are_displayed_under_their_own_tag():
     """Every capability and tool-loop call is a display event with its own tag, so the event history shows it."""
     for name in PROTOCOL_EVENTS:
         event = getattr(events, name).model_construct()
-        assert event.is_control_event and event.is_display_event, name
+        assert event.is_control_event, name
+        assert event.is_display_event, name
         assert event_discriminator(event) == name, name
 
 
