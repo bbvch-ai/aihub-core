@@ -187,19 +187,18 @@ class AttachedFiles(Capability):
     ) -> ReadAttachedFilesEvent | ToolResultEvent:
         """The model chose to read: the regular read of the files it picked, sized to one tool result's room.
 
-        A choice naming no attached file is refused rather than widened to every file, which the model did not ask
-        for."""
+        A choice naming no readable attached file is refused rather than widened to every file, which the model did
+        not ask for; the refusal lists only the files the tool offered."""
         try:
             arguments = AttachedFilesToolArguments.model_validate(call.arguments)
         except ValidationError as error:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
-        chosen = [
-            file for file in request.files if not arguments.files or CitationId.of(file.file_id) in arguments.files
-        ]
+        readable = [file for file in request.files if AttachedFileReader.is_readable_attachment(file)]
+        chosen = [file for file in readable if not arguments.files or CitationId.of(file.file_id) in arguments.files]
         if not chosen:
-            known = ", ".join(f"{CitationId.of(file.file_id)} ({file.filename})" for file in request.files)
+            known = ", ".join(f"{CitationId.of(file.file_id)} ({file.filename})" for file in readable)
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id,
                 name=call.name,
