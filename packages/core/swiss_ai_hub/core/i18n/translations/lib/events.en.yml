@@ -15,6 +15,9 @@ tool_result_event:
 tool_loop_status_event:
   name: "Tool Loop Status"
   description: "What the agent's tool loop is doing."
+sandbox_file_displayed_event:
+  name: "File Shown"
+  description: "The agent showed the user a file from their code sandbox as an attachment."
 tool_loop_condensed_event:
   name: "Tool Loop Condensed"
   description: "The agent condensed earlier tool results and turns to fit the model's context."

@@ -6122,6 +6122,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/ToolLoopCondensedEvent",
         },
         {
+          $ref: "#/components/schemas/SandboxFileDisplayedEvent",
+        },
+        {
           $ref: "#/components/schemas/ConversationTitleEvent",
         },
         {
@@ -22699,6 +22702,106 @@ export const RunStatisticsSchema = {
   description: "Statistics for a single run, intended for API response.",
 } as const;
 
+export const SandboxFileDisplayedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Where the file lies in the user's sandbox home.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name, as the attachment shows it.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's MIME type.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The bucket holding the copy.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The copy's key within the bucket.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: [
+    "path",
+    "filename",
+    "content_type",
+    "size",
+    "bucket",
+    "key",
+    "_event_name",
+    "_parent_event_names",
+  ],
+  title: "SandboxFileDisplayedEvent",
+  description:
+    "The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.\n\nChat clients attach it to the answer: OpenWebUI registers it as one of the message's files.",
+} as const;
+
 export const SearchContextCostPerQueryDTOSchema = {
   properties: {
     search_context_size_low: {
@@ -31775,6 +31878,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/ToolLoopCondensedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/SandboxFileDisplayedEventWritable",
         },
         {
           $ref: "#/components/schemas/ConversationTitleEventWritable",
@@ -42062,6 +42168,80 @@ export const RunStatisticsWritableSchema = {
   required: ["run_id", "agent"],
   title: "RunStatistics",
   description: "Statistics for a single run, intended for API response.",
+} as const;
+
+export const SandboxFileDisplayedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    path: {
+      type: "string",
+      title: "Path",
+      description: "Where the file lies in the user's sandbox home.",
+    },
+    filename: {
+      type: "string",
+      title: "Filename",
+      description: "The file's name, as the attachment shows it.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's MIME type.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The bucket holding the copy.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The copy's key within the bucket.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["path", "filename", "content_type", "size", "bucket", "key"],
+  title: "SandboxFileDisplayedEvent",
+  description:
+    "The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.\n\nChat clients attach it to the answer: OpenWebUI registers it as one of the message's files.",
 } as const;
 
 export const SecretFileInputWritableSchema = {

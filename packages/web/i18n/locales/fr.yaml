@@ -284,6 +284,11 @@ event:
       identity: Identité
       capabilities: Capacités
       behavior: Comportement
+  sandboxFileDisplayed:
+    file: Fichier
+    type: Type
+    size: Taille
+    path: Dans le bac à sable
   humanInTheLoopResponse:
     confirmed: Confirmé
     declined: Refusé

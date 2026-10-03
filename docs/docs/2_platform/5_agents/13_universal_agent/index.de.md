@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: f6fab6418e0973e1c8dbe6ec55c92e58ad909446d95645a4a23cd1b4c4e7a22d
+source_sha: 863a164af880306c11106f6590535de9c9bcd50bcc37bb2cca1e5a879a1bbb40
 ---
 
 # Universal Agent
@@ -53,8 +53,9 @@ Suchen braucht, bekommt drei.
 | **Unser Wissen durchsuchen**     | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf. | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann.       |
 | **Angehängte Dateien lesen**     | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind. | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).                   |
 | **Gedächtnis abrufen**           | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                             | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                                 |
+| **Code-Sandbox**                | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                                |
 
-Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten, Codeausführung,
+Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten,
 Bildgenerierung und der eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.
 
 Jeder Werkzeugaufruf ist im Chat sichtbar: Die Wissenssuche und die Dateien erscheinen als Quellen, jeder Aufruf als
@@ -85,6 +86,9 @@ Unterhaltung.
   ohne die Feinabstimmung pro Retriever und die Fundierungsprüfung des Document Intelligence Assistant.
 - **Er liest nie, was der Benutzer nicht darf.** Sammlungen, die der fragende Benutzer nicht lesen kann, werden nicht
   angeboten, auch wenn das Profil sie auflistet oder "jede Sammlung" erlaubt.
+- **Seine Code-Sandbox ist geteilte Hardware.** Das Sandbox-Home jedes Benutzers ist getrennt, aber alle Benutzer teilen
+  sich einen Container, daher ist sie keine harte Grenze zwischen Benutzern; siehe
+  [Programmierung](../../10_chat_ui/6_coding/).
 - **Noch keine Werkzeuge aus externen Systemen.** MCP-Werkzeugserver und die Übergabe an andere Agenten sind geplante
   Folgeschritte; verwenden Sie dafür heute den MCP Tool Agent.
 
@@ -126,8 +130,8 @@ ordnet.
 
 | Feld                              | Standard | Beschreibung                                                                                                    |
 | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| **Maximale Entscheidungen**       | `5`      | Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.                                              |
-| **Maximale Werkzeugaufrufe**      | `10`     | Wie viele Werkzeugaufrufe eine Antwort insgesamt machen darf.                                                   |
+| **Maximale Entscheidungen**       | `10`     | Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.                                              |
+| **Maximale Werkzeugaufrufe**      | `20`     | Wie viele Werkzeugaufrufe eine Antwort insgesamt machen darf.                                                   |
 | **Deaktivierte Werkzeuge**        | —        | Werkzeuge, die dieses Profil nie anbietet.                                                                      |
 | **Freigaben**                     | —        | Werkzeuge, deren Aufrufe der Benutzer zuerst freigeben muss: jeder Aufruf, einmal pro Antwort oder einmal pro Unterhaltung. |
 

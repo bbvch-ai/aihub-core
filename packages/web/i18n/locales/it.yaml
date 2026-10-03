@@ -285,6 +285,11 @@ event:
       identity: Identità
       capabilities: Capacità
       behavior: Comportamento
+  sandboxFileDisplayed:
+    file: File
+    type: Tipo
+    size: Dimensione
+    path: Nella sandbox
   humanInTheLoopResponse:
     confirmed: Confermato
     declined: Rifiutato

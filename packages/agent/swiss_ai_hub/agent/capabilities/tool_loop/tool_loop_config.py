@@ -16,10 +16,10 @@ class ToolLoopConfig(Form):
         int | InputNumber,
         Field(description="How many times the model may decide on tools before it must answer with what it has."),
         Ge(1),
-    ] = 5
+    ] = 10
     max_tool_calls: Annotated[
         int | InputNumber, Field(description="How many tool calls a run may make in total."), Ge(1)
-    ] = 10
+    ] = 20
     max_result_tokens: Annotated[
         int,
         Field(description="A tool result's size in tokens beyond which it is cut, so results cannot flood the prompt."),

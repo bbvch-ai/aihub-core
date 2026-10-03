@@ -92,10 +92,11 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
     manually until a janitor/TTL is added (a follow-up).
   - The image is ~1.19 GB; the Jupyter container keeps running, unused, until a later cleanup. See network isolation
     (`2025_12_22_docker_network_isolation.md`).
-- **Deployment prerequisite** — publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**
-  (`make -C infra/deployment build-and-push-open-terminal-image`). `nightly`/`latest` pull this exact tag; if it is
-  absent, `open-webui`'s `depends_on: open-terminal (service_healthy)` gate fails and the stack will not start. Bump the
-  tag deliberately and re-publish whenever the base tag or baked-in libraries change.
+- **Deployment prerequisite** — publish `open-terminal-office:0.11.34-1` (the patched image, see the amendment below) to
+  ghcr **before any non-dev stage pulls it** (`make -C infra/deployment build-and-push-open-terminal-image`).
+  `nightly`/`latest` pull this exact tag; if it is absent, `open-webui`'s `depends_on: open-terminal (service_healthy)`
+  gate fails and the stack will not start. Bump the tag deliberately and re-publish whenever the base tag or baked-in
+  libraries change.
 - **Licensing** — Open Terminal is **MIT** (standard, OSI-approved; no branding clause and no end-user threshold). This
   is distinct from `open-webui`, whose modified-BSD "Open WebUI License" carries the branding/≤50-user clause — that
   obligation comes from open-webui, not from adding this sandbox.
@@ -103,3 +104,50 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 > **Amendment 2026-09-10 — Jupyter has been removed.** The follow-up cleanup anticipated above is done: the `jupyter`
 > service, its `JUPYTER_TOKEN`/`JUPYTER_URL` variables, the `minimal-notebook` image pin, and its license entry are gone
 > from the compose template and all generated stages. Open Terminal is now the only code-execution runtime in the stack.
+
+> **Amendment 2026-10-02 — the file API is confined to the user's home.** open-terminal's multi-user file API checks a
+> path as written and then opens it with the server's own rights, which reach every user's home. A user could therefore
+> read and overwrite another user's files through a symlink in their own home, and read paths outside `/home` such as
+> `/proc/1/environ`, which holds `OPEN_TERMINAL_API_KEY` and with it the means to act as any user
+> ([open-webui/open-terminal#123](https://github.com/open-webui/open-terminal/issues/123)). Upstream treats cross-user
+> access inside one container as out of scope (its `SECURITY.md`, as of v0.14.0), so our image patches it:
+> `confine_file_api_to_home.py` resolves links and lets the file API, its search and glob endpoints included, reach only
+> the user's real home, and the image build fails when the patched code changed upstream. Shell commands still run as
+> the user and see the rest of the system under normal permissions. A window remains between the check and the open, in
+> which a user who swaps a link at the right moment could still escape; closing it needs every file operation to verify
+> the opened file instead. One container per user, upstream's recommendation, is what removes the shared boundary
+> altogether.
+>
+> Listing, deleting and moving an entry are checked by the entry's own location rather than its link target, so a user's
+> own link that points outside their home (a virtualenv's `python`, say) stays visible and removable while reads through
+> it are still refused; a link is never followed when it is removed or moved.
+>
+> Two further paths around this confinement are closed here as well. The notebook endpoints
+> (`OPEN_TERMINAL_ENABLE_NOTEBOOKS`) run cells with an in-process Jupyter kernel as the root-capable server user, never
+> through the per-user file layer, so they are disabled in the compose template — we drive the sandbox through
+> `/execute` only. And the file layer only confines a request that carries an `X-User-Id`; without one it falls back to
+> an unrestricted account, so every direct caller of the sandbox (OpenWebUI's terminal proxy today, agents under #2033)
+> must send that header.
+
+> **Amendment 2026-10-02 — our agents use the sandbox.** The deferred agent support is done (#1570), and only the
+> Universal Agent joins `code-sandbox`; the other agents stay off it. It sits on `code-sandbox`, `backend`, `data` and
+> `storage`, which is the bridge-node position described above. The sandbox still reaches only its callers, so sandboxed
+> code reaches nothing it could not reach before: it is not put on any other network, holds no storage credentials, and
+> the agent fetches and stores the files itself. Agents call the sandbox's API rather than OpenWebUI's terminal
+> integration, so each call is traced and checked against the asking user like any other agent step:
+>
+> - **The user's own home.** The sandbox keys homes by the `X-User-Id` header and falls back to a shared `/home/user`
+>   without one, so every agent call sends the user's OpenWebUI id. The group sync records the id it matches for each of
+>   our users (`OpenWebuiAccountEntity`), which puts agent work in the same home the user's chats and Files panel see.
+>   The sandbox keeps only the first 8 alphanumeric characters of that id as the account name, so two users whose ids
+>   share them would share a home; OpenWebUI's UUIDs make that unlikely but not impossible.
+> - **A folder per conversation.** Agents work in `~/conversations/<thread>/`, where the conversation's attached files
+>   are placed once before the first call. Every write goes through the sandbox's API, never through the volume, so the
+>   home stays the only place sandbox files are written (see #2031 for mirroring it to our storage).
+> - **Files shown to the user are copied out.** A file the model displays is read through the sandbox's raw file
+>   endpoint (`GET /files/view`, which returns binary documents that `/files/read` refuses), stored in the `agent-files`
+>   bucket and registered by the pipe as an OpenWebUI file on the answer, so the attachment outlives the sandbox file.
+>   `/files/view` is not in the sandbox's published schema; upgrades of `open-terminal` must keep it.
+>
+> The *Dev stays non-internal* bullet above names `OPEN_TERMINAL_ALLOWED_DOMAINS` for egress control; open-terminal
+> 0.11.34 has no such setting, so egress outside dev rests on `code-sandbox` being internal.

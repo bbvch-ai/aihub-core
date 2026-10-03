@@ -286,6 +286,11 @@ event:
       identity: Identität
       capabilities: Fähigkeiten
       behavior: Verhalten
+  sandboxFileDisplayed:
+    file: Datei
+    type: Typ
+    size: Grösse
+    path: In der Sandbox
   humanInTheLoopResponse:
     confirmed: Bestätigt
     declined: Abgelehnt

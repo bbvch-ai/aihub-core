@@ -192,7 +192,9 @@ class TestSyncGroupsOrchestration:
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_updates_group_membership(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_sync_updates_group_membership(
+        self, provisioner: OpenWebuiProvisioner, recorded_accounts: MagicMock
+    ) -> None:
         with (
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
@@ -236,6 +238,7 @@ class TestSyncGroupsOrchestration:
             await provisioner._sync_groups()
 
             mock_update_members.assert_called_once_with("grp-1", ["owui-1"], scim=ANY)
+            recorded_accounts.record_all.assert_called_once_with({"ah-user-1": "owui-1"})
 
     @pytest.mark.asyncio
     async def test_sync_excludes_user_with_different_active_tenant(self, provisioner: OpenWebuiProvisioner) -> None:
