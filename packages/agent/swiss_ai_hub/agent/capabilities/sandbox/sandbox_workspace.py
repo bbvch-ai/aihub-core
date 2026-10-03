@@ -1,6 +1,8 @@
 import asyncio
+import json
 import posixpath
 import uuid
+from http import HTTPStatus
 from typing import Self
 
 from swiss_ai_hub.core.auth import UserIdentity
@@ -20,6 +22,7 @@ class SandboxWorkspace:
     """
 
     CONVERSATIONS_FOLDER = "conversations"
+    STAGED_FILES = ".attached_files.json"
 
     def __init__(self, client: OpenTerminalClient, topic: AgentInstanceTopic, files: list[UserUploadedFile]) -> None:
         self.client = client
@@ -61,13 +64,27 @@ class SandboxWorkspace:
         return relative
 
     async def prepare(self) -> None:
-        """Place the conversation's attached files in its folder, each once."""
-        present = await self._present_names()
-        for file in self._files:
-            if file.filename not in present:
-                bucket, key = file.resolve_s3_location(self._topic.agent_class, self._topic.agent_id)
-                content = await asyncio.to_thread(self._download, bucket, key)
-                await self.client.upload(self.folder, file.filename, content)
+        """Place each file attached to the conversation in its folder once, under a name no other file there has.
+
+        Staged files are recorded by id in the folder, so a file the code deleted or changed is not put back on the
+        next call, and a later file with the same name is added beside the first instead of being skipped."""
+        if not self._files:
+            return
+        staged = await self._staged()
+        new_files = [file for file in self._files if file.file_id not in staged]
+        if not new_files:
+            return
+        taken = await self._present_names() | set(staged.values())
+        for file in new_files:
+            if file.file_id in staged:
+                continue
+            name = self._free_name(file.filename, taken)
+            bucket, key = file.resolve_s3_location(self._topic.agent_class, self._topic.agent_id)
+            content = await asyncio.to_thread(self._download, bucket, key)
+            await self.client.upload(self.folder, name, content)
+            staged[file.file_id] = name
+            taken.add(name)
+        await self.client.write_file(self.path(self.STAGED_FILES), json.dumps(staged))
 
     async def keep(self, path: str) -> SandboxFileDisplayedEvent:
         """Copy a sandbox file into our storage, so what the user was shown outlives the sandbox."""
@@ -90,6 +107,24 @@ class SandboxWorkspace:
     @staticmethod
     def _download(bucket: str, key: str) -> bytes:
         return create_s3_client().get_object(Bucket=bucket, Key=key)["Body"].read()
+
+    async def _staged(self) -> dict[str, str]:
+        try:
+            content, _ = await self.client.view(self.path(self.STAGED_FILES))
+        except OpenTerminalError as error:
+            if error.status_code == HTTPStatus.NOT_FOUND:
+                return {}
+            raise
+        return json.loads(content)
+
+    @staticmethod
+    def _free_name(filename: str, taken: set[str]) -> str:
+        stem, extension = posixpath.splitext(filename)
+        name, number = filename, 1
+        while name in taken:
+            number += 1
+            name = f"{stem} ({number}){extension}"
+        return name
 
     async def _present_names(self) -> set[str]:
         try:
