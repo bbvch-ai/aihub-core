@@ -74,8 +74,10 @@ async def test_a_command_may_take_its_wait_on_top_of_the_timeout(sandbox: _Sandb
 
 @pytest.mark.asyncio
 async def test_a_refusal_carries_the_sandbox_reason(sandbox: _Sandbox) -> None:
+    client = _client()
+
     with pytest.raises(OpenTerminalError, match="404: File not found"):
-        await _client().read_file("missing.txt")
+        await client.read_file("missing.txt")
 
 
 @pytest.mark.asyncio

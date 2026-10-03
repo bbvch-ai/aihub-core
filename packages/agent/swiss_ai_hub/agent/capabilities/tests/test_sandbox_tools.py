@@ -154,7 +154,8 @@ class TestTools:
         sandbox.view.assert_awaited_once_with(f"conversations/{THREAD}/chart.png")
         put = s3.put_object.call_args.kwargs
         assert put["Bucket"] == "agent-files"
-        assert put["Key"].startswith("UniversalAgent/assistant/") and put["Key"].endswith("/chart.png")
+        assert put["Key"].startswith("UniversalAgent/assistant/")
+        assert put["Key"].endswith("/chart.png")
         assert put["Body"] == b"\x89PNG"
         shown = context.displayer.display_event.await_args.args[0]
         assert isinstance(shown, SandboxFileDisplayedEvent)
