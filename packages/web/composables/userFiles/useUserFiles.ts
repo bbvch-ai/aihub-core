@@ -1,13 +1,16 @@
 import { listUserFiles } from '@core/sdk/client'
+import { minutesToMilliseconds } from 'date-fns'
 
-export const useUserFiles = (folder: Ref<string>) => {
+export const useUserFiles = defineQuery(() => {
   const { tenantId } = useTenant()
+  const folder = ref('.')
 
   const filesQuery = useQuery({
     key: () => ['tenant', tenantId.value, 'user-files', folder.value],
+    staleTime: minutesToMilliseconds(5),
     enabled: useTenantReady(),
-    query: () =>
-      listUserFiles({
+    query: async () =>
+      await listUserFiles({
         composable: '$fetch',
         path: { tenant_id: tenantId.value! },
         query: { folder: folder.value },
@@ -18,5 +21,5 @@ export const useUserFiles = (folder: Ref<string>) => {
   const folderTitle = computed(() => filesQuery.state.value?.data?.folder_title ?? null)
   const isLoading = computed(() => filesQuery.asyncStatus.value === 'loading')
 
-  return { entries, folderTitle, isLoading, error: filesQuery.error, refresh: filesQuery.refetch }
-}
+  return { folder, entries, folderTitle, isLoading, error: filesQuery.error, refresh: filesQuery.refetch }
+})

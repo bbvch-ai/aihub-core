@@ -18,10 +18,18 @@
       class="fixed top-1/2 -translate-y-1/2"
       :style="{ left: `${panelLeftPosition - 16}px` }"
     >
-      <i
-        class="pi pi-chevron-right cursor-pointer rounded-full border border-surface-200 bg-surface-0 p-3 hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-900 hover:dark:bg-surface-800"
+      <button
+        v-tooltip.left="t('userFiles.actions.close')"
+        type="button"
+        :aria-label="t('userFiles.actions.close')"
+        class="flex cursor-pointer rounded-full border border-surface-200 bg-surface-0 p-3 hover:bg-surface-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary dark:border-surface-700 dark:bg-surface-900 hover:dark:bg-surface-800"
         @click="closeFiles"
-      />
+      >
+        <i
+          class="pi pi-chevron-right"
+          aria-hidden="true"
+        />
+      </button>
     </div>
   </div>
 </template>

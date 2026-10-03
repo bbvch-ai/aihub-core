@@ -56,6 +56,14 @@
       {{ t('userFiles.empty.noSpace') }}
     </Message>
 
+    <Message
+      v-else-if="loadFailed"
+      severity="error"
+      :closable="false"
+    >
+      {{ t('userFiles.error.load') }}
+    </Message>
+
     <div
       v-else
       class="flex flex-col gap-4"
@@ -85,17 +93,23 @@
           </template>
           <Column :header="t('userFiles.columns.name')">
             <template #body="{ data }">
-              <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="flex max-w-full items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-label="t(data.kind === 'folder' ? 'userFiles.actions.openFolder' : 'userFiles.actions.preview', { name: data.conversation_title ?? data.name })"
+                @click.stop="onRowClick(data)"
+              >
                 <Icon
                   :name="data.kind === 'folder' ? 'mage:folder' : 'mage:file'"
                   class="shrink-0 text-lg text-surface-500"
+                  aria-hidden="true"
                 />
                 <span class="truncate font-medium">{{ data.conversation_title ?? data.name }}</span>
                 <span
                   v-if="data.conversation_title"
                   class="truncate text-xs text-surface-400"
                 >{{ t('userFiles.conversation') }}</span>
-              </div>
+              </button>
             </template>
           </Column>
           <Column
@@ -195,15 +209,17 @@ const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
 
-const folder = ref(props.initialFolder)
-watch(() => props.initialFolder, value => (folder.value = value))
-const { entries, folderTitle, isLoading, error, refresh } = useUserFiles(folder)
-const { upload, createFolder, move, remove, download } = useUserFileActions()
+const { folder, entries, folderTitle, isLoading, error, refresh } = useUserFiles()
+watch(() => props.initialFolder, value => (folder.value = value), { immediate: true })
+const { uploadUserFiles, isUploading } = useUploadUserFiles()
+const { createUserFolder } = useCreateUserFolder()
+const { moveUserFile } = useMoveUserFile()
+const { deleteUserFile } = useDeleteUserFile()
+const { download } = useUserFileContent()
 
 const selected = ref<FileEntryDto | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
-const isUploading = ref(false)
 const nameDialog = reactive<{ visible: boolean, mode: 'folder' | 'rename', entry?: FileEntryDto }>({
   visible: false,
   mode: 'folder',
@@ -211,7 +227,10 @@ const nameDialog = reactive<{ visible: boolean, mode: 'folder' | 'rename', entry
 const moveDialog = reactive<{ visible: boolean, entry?: FileEntryDto }>({ visible: false })
 const titles = reactive<Record<string, string>>({})
 
-const noFileSpace = computed(() => (error.value as { statusCode?: number } | null)?.statusCode === 404 && folder.value === '.')
+const errorStatus = computed(() => (error.value as { statusCode?: number } | null)?.statusCode)
+const noFileSpace = computed(() => errorStatus.value === 404 && folder.value === '.')
+// A conversation's folder only exists once a file lands in it, so a missing folder below the top is shown empty.
+const loadFailed = computed(() => error.value != null && errorStatus.value !== 404)
 
 watch(entries, (list) => {
   for (const entry of list) if (entry.conversation_title) titles[entry.path] = entry.conversation_title
@@ -257,16 +276,12 @@ const notifyFailure = (summary: string, failure: unknown) => {
 
 const uploadFiles = async (files: File[]) => {
   if (files.length === 0) return
-  isUploading.value = true
   try {
-    await upload(folder.value, files)
+    await uploadUserFiles({ folder: folder.value, files })
     toast.add({ severity: 'success', summary: t('userFiles.toast.uploaded', { count: files.length }), life: 3000 })
   }
   catch (failure) {
     notifyFailure(t('userFiles.toast.uploadFailed'), failure)
-  }
-  finally {
-    isUploading.value = false
   }
 }
 
@@ -288,11 +303,11 @@ const openNameDialog = (mode: 'folder' | 'rename', entry?: FileEntryDto) => {
 const onNameSubmitted = async (name: string) => {
   try {
     if (nameDialog.mode === 'folder') {
-      await createFolder(join(name))
+      await createUserFolder(join(name))
     }
     else if (nameDialog.entry) {
       const parent = parentOf(nameDialog.entry.path)
-      await move(nameDialog.entry.path, parent === '.' ? name : `${parent}/${name}`)
+      await moveUserFile({ source: nameDialog.entry.path, destination: parent === '.' ? name : `${parent}/${name}` })
       if (selected.value?.path === nameDialog.entry.path) selected.value = null
     }
   }
@@ -309,7 +324,7 @@ const onMoveSubmitted = async (targetFolder: string) => {
   const entry = moveDialog.entry
   if (!entry) return
   try {
-    await move(entry.path, targetFolder === '.' ? entry.name : `${targetFolder}/${entry.name}`)
+    await moveUserFile({ source: entry.path, destination: targetFolder === '.' ? entry.name : `${targetFolder}/${entry.name}` })
     if (selected.value?.path === entry.path) selected.value = null
   }
   catch (failure) {
@@ -325,7 +340,7 @@ const confirmDelete = (entry: FileEntryDto) => {
     acceptClass: 'p-button-danger',
     accept: async () => {
       try {
-        await remove(entry.path)
+        await deleteUserFile(entry.path)
         if (selected.value?.path === entry.path) selected.value = null
       }
       catch (failure) {

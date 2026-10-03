@@ -57,7 +57,7 @@ import type { FileEntryDto } from '@core/sdk/client'
 const props = defineProps<{ entry: FileEntryDto }>()
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
-const { fetchBlob, download } = useUserFileActions()
+const { fetchBlob, download } = useUserFileContent()
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp']
 const TEXT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'log', 'py', 'yaml', 'yml', 'xml', 'html', 'js', 'ts', 'sql']
@@ -75,24 +75,36 @@ const kind = computed(() => {
   return 'none'
 })
 
-const load = async () => {
+// Only the latest load may touch the preview: one overtaken by another selection or by unmounting is dropped.
+let loadGeneration = 0
+
+const revokeObjectUrl = () => {
   if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
   objectUrl.value = null
+}
+
+const load = async () => {
+  const generation = ++loadGeneration
+  const previewKind = kind.value
+  revokeObjectUrl()
   text.value = ''
-  if (kind.value === 'none') return
-  isLoading.value = true
+  isLoading.value = previewKind !== 'none'
+  if (previewKind === 'none') return
   try {
     const blob = await fetchBlob(props.entry.path)
-    if (kind.value === 'text') text.value = await blob.text()
-    else objectUrl.value = URL.createObjectURL(blob)
+    const content = previewKind === 'text' ? await blob.text() : null
+    if (generation !== loadGeneration) return
+    if (content === null) objectUrl.value = URL.createObjectURL(blob)
+    else text.value = content
   }
   finally {
-    isLoading.value = false
+    if (generation === loadGeneration) isLoading.value = false
   }
 }
 
 watch(() => props.entry.path, load, { immediate: true })
 onBeforeUnmount(() => {
-  if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
+  loadGeneration++
+  revokeObjectUrl()
 })
 </script>

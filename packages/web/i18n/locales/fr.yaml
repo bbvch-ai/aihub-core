@@ -1057,6 +1057,8 @@ userFiles:
     close: "Fermer"
     cancel: "Annuler"
     save: "Enregistrer"
+    openFolder: "Ouvrir le dossier {name}"
+    preview: "Aperçu de {name}"
   columns:
     name: "Nom"
     size: "Taille"
@@ -1064,6 +1066,8 @@ userFiles:
   empty:
     folder: "Ce dossier est vide. Déposez des fichiers ici pour les envoyer."
     noSpace: "Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le chat une fois, puis revenez."
+  error:
+    load: "Impossible de charger ce dossier. Réessayez avec Actualiser."
   move:
     header: "Déplacer {name} vers"
     noTargets: "Aucun dossier vers lequel le déplacer."

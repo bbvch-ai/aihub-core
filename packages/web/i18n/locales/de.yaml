@@ -1057,6 +1057,8 @@ userFiles:
     close: "Schliessen"
     cancel: "Abbrechen"
     save: "Speichern"
+    openFolder: "Ordner {name} öffnen"
+    preview: "Vorschau von {name}"
   columns:
     name: "Name"
     size: "Grösse"
@@ -1064,6 +1066,8 @@ userFiles:
   empty:
     folder: "Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen."
     noSpace: "Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den Chat einmal und kommen Sie dann zurück."
+  error:
+    load: "Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren erneut."
   move:
     header: "{name} verschieben nach"
     noTargets: "Kein Ordner zum Verschieben vorhanden."

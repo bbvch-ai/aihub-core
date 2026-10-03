@@ -1053,6 +1053,8 @@ userFiles:
     close: "Chiudi"
     cancel: "Annulla"
     save: "Salva"
+    openFolder: "Apri la cartella {name}"
+    preview: "Anteprima di {name}"
   columns:
     name: "Nome"
     size: "Dimensione"
@@ -1060,6 +1062,8 @@ userFiles:
   empty:
     folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
     noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+  error:
+    load: "Impossibile caricare questa cartella. Riprova con Aggiorna."
   move:
     header: "Sposta {name} in"
     noTargets: "Nessuna cartella in cui spostarlo."

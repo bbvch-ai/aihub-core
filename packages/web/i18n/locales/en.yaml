@@ -1041,6 +1041,8 @@ userFiles:
     close: "Close"
     cancel: "Cancel"
     save: "Save"
+    openFolder: "Open folder {name}"
+    preview: "Preview {name}"
   columns:
     name: "Name"
     size: "Size"
@@ -1048,6 +1050,8 @@ userFiles:
   empty:
     folder: "This folder is empty. Drop files here to upload them."
     noSpace: "Your file space is set up with your chat account. Open the chat once, then come back."
+  error:
+    load: "This folder could not be loaded. Try again with Refresh."
   move:
     header: "Move {name} to"
     noTargets: "No folder to move it to."
