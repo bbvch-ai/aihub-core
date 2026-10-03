@@ -2,6 +2,7 @@ from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
 from swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error import EmptyCondensationError
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
@@ -36,8 +37,9 @@ async def condense_standalone_question(
     System messages are filtered out from the chat history before processing.
 
     Uses ``achat`` (not ``chat``): a synchronous LLM call inside the agent's async event loop blocks every
-    other coroutine for the whole request — on a reasoning model that is ~25s during which no other step,
-    fan-out, or concurrent run can make progress.
+    other coroutine for the whole request. Thinking is off, because rewriting one question needs none: on Qwen
+    it took 10-25s per turn, and in 2 of 6 probe calls it used up the output tokens before writing the question,
+    which is the blank answer below.
 
     Raises `EmptyCondensationError` on a blank answer instead of returning one. This has been observed in
     production — 8 runs between 30 June and 14 July 2026 — and every caller treats the result as the turn's
@@ -53,7 +55,7 @@ async def condense_standalone_question(
     prompt_template = PromptTemplate(t("lib.prompt.condenser.standalone_question"))
     instruction_content = prompt_template.format(chat_history=chat_history_str)
     messages = [ChatMessage(role=MessageRole.SYSTEM, content=instruction_content), message]
-    response = await llm.achat(messages=messages)
+    response = await ReasoningFreeChat.achat(llm, messages)
 
     condensed = (response.message.content or "").strip()
     if not condensed:

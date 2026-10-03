@@ -129,3 +129,16 @@ later requires only re-adding the per-agent steps, not re-discovering how to mak
 - **The real fix is provider-side.** These are mitigations around a flaky managed endpoint. An instruct model (gemma-4 /
   Ministral / Apertus) makes all structured features work natively; reasoning models remain best-effort until Infomaniak
   corrects their tool-call/reasoning/structured-output handling.
+
+## Amendment 2026-10-03: one switch, which Qwen actually reads
+
+The guards sent only `{"chat_template_kwargs": {"thinking": false}}`. Qwen3.5 reads `enable_thinking` and ignores that
+key, so on a Qwen profile without a separate task model every guard verdict still came after up to 8192 tokens of
+thinking, and a verdict cut off at that limit failed open as "sufficient". The question condenser sent no switch at
+all. Measured on `Qwen3.5-122B-A10B-FP8` against the same prompts, uncached: the sufficiency guard went from 9.4 s to
+0.6 s at the median (43.9 s worst case) and from 17/18 to 18/18 correct verdicts; condensing went from 10.9 s to 0.5 s
+with equivalent questions. Gemma and Ministral do not think on these calls and were unchanged.
+
+The switch now lives in one place, core's `ReasoningFreeChat` (both keys, plain request for a model that rejects
+`chat_template_kwargs`). The guards, the condenser, meta-question detection, mail language detection and the
+structured-output path all use it, so the keys cannot drift apart again. Answer generation still thinks.
