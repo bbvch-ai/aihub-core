@@ -164,11 +164,13 @@ class TestTools:
 
     @pytest.mark.asyncio
     async def test_a_user_without_a_chat_account_has_no_sandbox(self) -> None:
+        tools = SandboxTools(_context())
+
         with (
             patch.object(sandbox_workspace.OpenWebuiAccountEntity, "openwebui_id_of", return_value=None),
             pytest.raises(OpenTerminalError, match="no code sandbox"),
         ):
-            await SandboxTools(_context()).list_files()
+            await tools.list_files()
 
 
 class TestOffer:
