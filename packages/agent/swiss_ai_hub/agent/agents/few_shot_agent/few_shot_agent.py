@@ -30,6 +30,7 @@ from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewSh
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
@@ -88,7 +89,15 @@ class FewShotAgent(Agent):
         irreducible = [*system_messages, *conversation[-1:]]
         irreducible_tokens = estimate_prompt_tokens(irreducible, agent_config.llm.token_counter)
         if irreducible_tokens > budget:
-            return await self._refuse_oversized_input(irreducible_tokens, budget, agent_config, displayer, t)
+            return await OversizedInputRefusal.refuse(
+                irreducible_tokens,
+                budget,
+                agent_config.llm.model_name,
+                displayer,
+                t,
+                thought_key="agent.few_shot_agent.thoughts.input_too_large",
+                message_key="agent.few_shot_agent.messages.input_too_large",
+            )
 
         # Trim only what precedes the last turn: handing the trimmer a list that still holds it charges it twice, and
         # `ChatMemoryBuffer` then drops the whole earlier conversation.
@@ -99,31 +108,6 @@ class FewShotAgent(Agent):
             else []
         )
         return Conversation.contextualize(history=[*system_messages, *older, *conversation[-1:]], message=event)
-
-    @staticmethod
-    async def _refuse_oversized_input(
-        needed: int,
-        budget: int,
-        agent_config: FewShotAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> RefusalStopEvent:
-        """Stop the run with a reply rather than an error, keeping the token arithmetic to the thought.
-
-        The wording differs from the other blueprints on purpose: this agent answers from its examples and a condensed
-        question, never from the document itself, so advising a smaller file would promise something it cannot do.
-        """
-        await displayer.display_thought(
-            t("agent.few_shot_agent.thoughts.input_too_large", tokens=needed, budget=budget)
-        )
-        refusal = t("agent.few_shot_agent.messages.input_too_large")
-        model_name = agent_config.llm.model_name
-        await displayer.display_chunk(refusal, model_name=model_name)
-        return RefusalStopEvent(
-            reason=RefusalReason.INPUT_TOO_LARGE,
-            output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
-            chat_model_name=model_name,
-        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
