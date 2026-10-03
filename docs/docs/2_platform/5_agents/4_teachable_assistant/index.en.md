@@ -48,8 +48,8 @@ flowchart LR
    streamed back to the user.
 
 Before any of this, the assistant checks that the message fits the model's context window. A message that cannot fit,
-for example a very long pasted text, gets a short reply saying so that points the user to an assistant built for
-documents.
+for example a very long pasted text, gets a short reply asking the user to shorten it or attach the text as a file
+instead, since attached files are cut down to the sections that matter.
 
 ::: warning The examples replace the raw chat history
 At the answering step the assistant deliberately uses your **examples** as the conversational context rather than the
