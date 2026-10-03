@@ -4,11 +4,11 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import ValidationError
-from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.events.agent import (
     KnowledgeReference,
     KnowledgeSearchedEvent,
+    RunToolLoopEvent,
     SearchKnowledgeEvent,
     ToolCallApprovedEvent,
     ToolCallsDecidedEvent,
@@ -31,6 +31,9 @@ from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_config import KnowledgeConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_search_arguments import KnowledgeSearchArguments
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_scope import KnowledgeToolScope
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
@@ -53,13 +56,15 @@ async def answers_a_tool_call(searched: KnowledgeSearchedEvent, decided: ToolCal
 
 class Knowledge(Capability):
     """
-    The knowledge collections the user referenced on the message, as one call:
+    Searching our knowledge collections, as one call and as a tool any agent can offer:
 
     - `search(references, query)` is answered with `KnowledgeSearchedEvent`, one context block with what those
       collections hold for the query, empty when nothing was referenced. Pass the block to `Conversation.compose(...)`
-      next to the memories and attached files.
+      next to the memories and attached files; a blueprint passes the collections the user referenced.
+    - In a tool set, the model chooses when to search and which of the offered collections: the profile's
+      (`KnowledgeToolFields`), or every collection the user can read, plus those referenced on the message.
 
-    It is independent of a knowledge agent's own configured retrieval: a reference adds a search on top. Only
+    It is independent of a knowledge agent's own configured retrieval workflow, which keeps its own steps. Only
     collections the asking user may read are searched; the others are named in the block so the answer says so.
     """
 
@@ -70,20 +75,25 @@ class Knowledge(Capability):
     Searched = KnowledgeSearchedEvent
 
     tool_name: ClassVar[str] = SEARCH_KNOWLEDGE_TOOL
+    tool_config: ClassVar[type[KnowledgeToolFields]] = KnowledgeToolFields
     tool_options: ClassVar[ToolOptions] = ToolOptions(
         label=AgentLocaleString.from_i18n_path("agent.knowledge.tool.label"),
         approval_summary=AgentLocaleString.from_i18n_path("agent.knowledge.tool.approval_summary"),
     )
 
     @classmethod
-    def tool_definition(cls, config: AgentConfig, locale: str) -> ToolDefinition | None:
-        """Offered when the profile names collections the model may search; the model picks among them."""
-        if not isinstance(config, KnowledgeFields) or not config.knowledge.tool_collections:
+    def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
+        """Offered when there is something the user may read to search; the model picks among those collections."""
+        config = context.agent_config
+        if not isinstance(config, KnowledgeToolFields):
             return None
-        t = LocaleHandler(locale)
+        offered = KnowledgeToolScope.collections(config.knowledge_tool, context.knowledge_references, context.access)
+        if not offered:
+            return None
+        t = context.t
         collections = {
-            f"{reference.database}/{reference.namespace}": KnowledgeCollectionLabel.of_reference(reference, locale)
-            for reference in config.knowledge.tool_collections
+            f"{reference.database}/{reference.namespace}": KnowledgeCollectionLabel.of_reference(reference, t.locale)
+            for reference in offered
         }
         listing = "\n".join(f"- {identifier}: {label}" for identifier, label in collections.items())
         return ToolDefinition(
@@ -136,17 +146,23 @@ class Knowledge(Capability):
         icon="mdi:bookshelf",
         precondition=searches_knowledge,
     )
-    async def tool_call_step(
-        agent: Agent, call: ToolCallApprovedEvent, knowledge: KnowledgeFields
+    async def search_tool_call_step(
+        agent: Agent,
+        call: ToolCallApprovedEvent,
+        request: RunToolLoopEvent,
+        tool: KnowledgeToolFields,
+        access: AccessChecker | None = None,
     ) -> SearchKnowledgeEvent | ToolResultEvent:
-        """The model chose to search: the same search as a `#` reference, over the collections it picked."""
+        """The model chose to search: the same search as a `#` reference, over the offered collections it picked."""
         try:
             arguments = KnowledgeSearchArguments.model_validate(call.arguments)
         except ValidationError as error:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
-        offered = knowledge.knowledge.tool_collections
+        offered = await asyncio.to_thread(
+            KnowledgeToolScope.collections, tool.knowledge_tool, request.knowledge_references, access
+        )
         chosen = [
             reference
             for reference in offered
@@ -166,7 +182,7 @@ class Knowledge(Capability):
         icon="mdi:bookshelf",
         precondition=answers_a_tool_call,
     )
-    async def tool_result_step(
+    async def search_tool_result_step(
         agent: Agent, searched: KnowledgeSearchedEvent, decided: ToolCallsDecidedEvent
     ) -> ToolResultEvent:
         """Hand what the search found back to the loop: its text for the model, its block for a gathered answer."""

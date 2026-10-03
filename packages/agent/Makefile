@@ -47,6 +47,9 @@ run-llm-wrapping-agent:
 run-namespace-selection-agent:
 	uv run python app/namespace_selection_agent/main.py
 
+run-universal-agent:
+	uv run python app/universal_agent/main.py
+
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
 

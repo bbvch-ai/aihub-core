@@ -503,8 +503,8 @@ class AgentDispatcher(BaseDispatcher):
         (own thread/display/run ids), so the caller's stop-time cleanup never touches it. Unlike
         `trigger_agent_in_the_loop`, NO response subscription is opened — the writer runs to its own StopEvent
         and cleans itself up, with nothing routed back to the caller. The `MemoryStorageRequestedEvent` itself
-        is still published to the caller topic by `publish_event` (control-only, no display), where it serves
-        as the stop-gate marker.
+        is still published to the caller topic by `publish_event`, where its control copy serves as the
+        stop-gate marker and its display copy shows the delegation in the event history.
 
         The publish is done in a **detached OTEL context** so the writer starts its own root Langfuse trace.
         Otherwise `js_publisher.with_trace_context()` would inject the caller's span context into the message

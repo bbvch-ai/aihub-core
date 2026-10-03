@@ -167,12 +167,21 @@ class WorkflowValidation:
 
     @staticmethod
     def _missing_config_mixins(blueprint: type[Agent], agent_config_type: type[AgentConfig]) -> list[str]:
-        return [
+        called = [
             f"{capability.__name__} is called, so {agent_config_type.__name__} must list "
             f"{capability.required_config.__name__} as a base"
             for capability in blueprint.installed_capabilities()
             if not issubclass(agent_config_type, capability.required_config)
         ]
+        offered = [
+            f"{capability.__name__} is offered as a tool, so {agent_config_type.__name__} must list "
+            f"{capability.tool_config.__name__} as a base"
+            for capability in dict.fromkeys(
+                capability for tool_set in blueprint.tool_sets() for capability in tool_set.capabilities
+            )
+            if capability.tool_config is not None and not issubclass(agent_config_type, capability.tool_config)
+        ]
+        return [*called, *offered]
 
     @staticmethod
     def _no_start(blueprint: type[Agent], steps: list[Callable]) -> list[str]:

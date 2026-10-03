@@ -1,5 +1,8 @@
 ---
 steps:
+  condense:
+    name: "Gespräch verdichten"
+    description: "Verdichtet frühere Werkzeugergebnisse und Gesprächsrunden, wenn das Gespräch nicht mehr in den Kontext des Modells passt"
   start:
     name: "Werkzeuge anbieten"
     description: "Ermittelt, welche Werkzeuge das Modell für diese Nachricht nutzen darf"
@@ -19,9 +22,16 @@ steps:
     name: "Werkzeugergebnisse sammeln"
     description: "Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück"
 prompt:
+  cut_result: "\n[…gekürzt, damit es in den Kontext passt]"
+  condense_result: "Verdichte das folgende Werkzeugergebnis auf das, was für die vorangehende Anfrage des Benutzers zählt. Übernimm Fakten, Zahlen, Namen, Daten und Dokument-IDs wie [s3f9a1c] genau so, wie sie stehen. Lass alles andere weg. Höchstens %{words} Wörter, ohne Einleitung."
+  condensed_result: "[Verdichtetes früheres Ergebnis] %{summary}"
+  condense_turns: "Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung."
+  condensed_turns: "Zusammenfassung des bisherigen Gesprächs: %{summary}"
+  dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst.]"
   limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
+  no_tools: "Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche also nicht, eines aufzurufen. Antworte jetzt mit dem Gesprächsverlauf und dem, was du bereits weisst, und sag es, wenn die Antwort von Dokumenten abhängt, die du nicht durchsuchen konntest."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
-  declined: "Der Benutzer hat die Ausführung von %{tool} abgelehnt. Antworte ohne dieses Werkzeug und rufe es für diese Anfrage nicht erneut auf."
+  declined: "Nicht ausgeführt: Der Benutzer hat %{tool} abgelehnt. Beginne deine Antwort damit, dass du %{tool} nicht verwendet hast, weil der Benutzer es abgelehnt hat, antworte dann mit dem, was du bereits weisst, und biete an, es zu verwenden, wenn er es erlaubt. Die Information kann durchaus vorhanden sein; sag nie, dass du keinen Zugriff darauf hast."
 approval:
   question: "Der Assistent möchte «%{tool}» verwenden:
 %{summary}
@@ -50,6 +60,7 @@ config:
 notice:
   stopped_early: "Ich habe aufgehört, dem nachzugehen, bevor ich fertig war, weil diese Antwort ihre Grenze an Werkzeugaufrufen erreicht hat."
 status:
+  condensed: "Frühere Ergebnisse verdichtet, damit das Gespräch passt"
   deciding: "Entscheide, was nachzuschlagen ist"
   gathered: "Alles Nötige für die Antwort gesammelt"
   stopped_early: "Keine weitere Suche, die Grenze für diese Antwort ist erreicht"

@@ -217,6 +217,8 @@ services:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+      SANDBOX_MIRROR_S3_ACCESS_KEY: ${SANDBOX_MIRROR_S3_ACCESS_KEY}
+      SANDBOX_MIRROR_S3_SECRET_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
 
       # Internal JWT Authentication
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
@@ -1158,6 +1160,46 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # License: MIT — rclone (see LICENSES.md)
+  sandbox-mirror:
+    container_name: sandbox-mirror
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    restart: unless-stopped
+    depends_on:
+      seaweedfs-s3:
+        condition: service_started
+    # One-way copy of every user's sandbox home into the sandbox-files bucket. The homes volume is read-only here and
+    # every write goes through the sandbox's API, so the volume stays the only place anything is written. Links are
+    # skipped rather than followed, so a link in a home cannot make the mirror copy anything outside it.
+    entrypoint: [/bin/sh, -c]
+    command:
+      - >-
+        while true; do
+        rclone sync /home mirror:sandbox-files
+        --metadata --skip-links --max-size 200M
+        --exclude "/.deleted/**" --exclude "/user/**"
+        --exclude ".cache/**" --exclude ".local/**" --exclude ".npm/**"
+        --exclude "**/.venv/**" --exclude "**/node_modules/**" --exclude "**/__pycache__/**"
+        --backup-dir "mirror:sandbox-files/.deleted/$$(date +%Y-%m-%dT%H%M%S)"
+        --log-level NOTICE;
+        sleep ${SANDBOX_MIRROR_INTERVAL_SECONDS};
+        done
+    environment:
+      RCLONE_CONFIG_MIRROR_TYPE: s3
+      RCLONE_CONFIG_MIRROR_PROVIDER: SeaweedFS
+      RCLONE_CONFIG_MIRROR_ENDPOINT: http://seaweedfs-s3:9000
+      RCLONE_CONFIG_MIRROR_ACCESS_KEY_ID: ${SANDBOX_MIRROR_S3_ACCESS_KEY}
+      RCLONE_CONFIG_MIRROR_SECRET_ACCESS_KEY: ${SANDBOX_MIRROR_S3_SECRET_KEY}
+      RCLONE_CONFIG_MIRROR_NO_CHECK_BUCKET: 'true'
+    volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home:ro']
+    networks:
+      - backend  # reaches seaweedfs-s3; never code-sandbox, so the sandbox has no path to it
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
   # ===================================================================
   # Backup Services (Dagster-based Automated Database Backups)
   # ===================================================================
@@ -1506,13 +1548,16 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   open-terminal:
     container_name: open-terminal
-    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
+    image: ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
     restart: always
     ports: [8200:8000]
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-terminal:/home']
     environment:
       OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPEN_TERMINAL_MULTI_USER: 'true'  # Per-user home directories (/home/<user>)
+      # Notebook endpoints run cells in-process as the root-capable server user, bypassing the
+      # per-user file confinement; we use /execute only, so keep them off. See the ADR amendment.
+      OPEN_TERMINAL_ENABLE_NOTEBOOKS: 'false'
       # Tool-context guidance: files surface in the Files panel; use read-file for documents
       OPEN_TERMINAL_SYSTEM_PROMPT: >-
         You have access to a sandboxed Linux computer with Python and common
@@ -2386,6 +2431,9 @@ services:
       AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
 
       # OpenWebUI (agent visibility provisioning)
+      # Open Terminal (the user's own file space)
+      OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
       OPENWEBUI_BASE_URL: http://open-webui:8080
       OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
@@ -2475,6 +2523,7 @@ services:
       - proxy
       - backend
       - data
+      - code-sandbox  # serves the user's own files from their sandbox home
       - storage
   # ===================================================================
   # Suite UI Stack (Frontend)
@@ -2806,6 +2855,97 @@ services:
       - backend
       - data
       - storage
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  universal_agent:
+    container_name: universal-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/universal_agent:latest
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # S3 Storage (attached files, parse cache)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # Open Terminal (code sandbox)
+      OPEN_TERMINAL_BASE_URL: http://open-terminal:8000
+      OPEN_TERMINAL_API_KEY: ${OPEN_TERMINAL_API_KEY}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: universal-agent
+      OTEL_RESOURCE_SERVICE_VERSION: latest
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - storage
+      - code-sandbox
   # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent

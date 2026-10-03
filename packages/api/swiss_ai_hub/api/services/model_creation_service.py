@@ -1,5 +1,6 @@
 import copy
-from typing import Any
+import types
+from typing import Any, Union, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
@@ -77,14 +78,69 @@ class ModelCreationService:
         """
         schema = copy.deepcopy(event_specs.event_schema)
         schema["title"] = event_specs.event_name
+        original = copy.deepcopy(schema)
 
         map_fields = ModelCreationService._extract_free_form_map_fields(schema)
         event_class = SchemaConverter.build(schema)
+        if map_fields:
+            event_class = ModelCreationService._reattach_map_fields(event_class, map_fields)
+        return ModelCreationService._restore_nested_maps(event_class, original, original.get("$defs", {}))
 
-        if not map_fields:
-            return event_class
+    @staticmethod
+    def _restore_nested_maps(
+        model: type[BaseModel], node: dict[str, Any], definitions: dict[str, Any]
+    ) -> type[BaseModel]:
+        """The same repair for maps inside nested models, such as the call arguments a tool approval response
+        carries on its request event, which jambo builds from the schema's definitions."""
+        properties = node.get("properties", {})
+        replaced: dict[str, tuple[Any, FieldInfo]] = {}
+        for name, field_info in model.model_fields.items():
+            nested = ModelCreationService._nested_model(field_info.annotation)
+            nested_node = ModelCreationService._resolve(properties.get(name, {}), definitions)
+            if nested is None or not nested_node.get("properties"):
+                continue
+            nested_maps = {
+                key: ModelCreationService._map_field(key, value, nested_node.get("required", []))
+                for key, value in nested_node["properties"].items()
+                if ModelCreationService._is_free_form_map(value)
+            }
+            restored = ModelCreationService._restore_nested_maps(nested, nested_node, definitions)
+            if nested_maps:
+                restored = ModelCreationService._reattach_map_fields(restored, nested_maps)
+            if restored is not nested:
+                annotation = restored | None if type(None) in get_args(field_info.annotation) else restored
+                replaced[name] = (annotation, field_info)
+        if not replaced:
+            return model
+        fields = {name: (info.annotation, info) for name, info in model.model_fields.items()}
+        fields.update(replaced)
+        return create_model(model.__name__, **fields, __config__=ModelCreationService._model_config_dict)
 
-        return ModelCreationService._reattach_map_fields(event_class, map_fields)
+    @staticmethod
+    def _map_field(name: str, property_schema: dict[str, Any], required: list[str]) -> tuple[type, FieldInfo]:
+        value_type = ModelCreationService._resolve_map_value_type(property_schema.get("additionalProperties"))
+        default = ... if name in required and "default" not in property_schema else property_schema.get("default", {})
+        return dict[str, value_type], Field(
+            default=default, title=property_schema.get("title"), description=property_schema.get("description")
+        )
+
+    @staticmethod
+    def _nested_model(annotation: Any) -> type[BaseModel] | None:
+        if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+            return annotation
+        if get_origin(annotation) in (Union, types.UnionType):
+            models = [arg for arg in get_args(annotation) if isinstance(arg, type) and issubclass(arg, BaseModel)]
+            return models[0] if len(models) == 1 else None
+        return None
+
+    @staticmethod
+    def _resolve(property_schema: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
+        reference = property_schema.get("$ref") or next(
+            (member["$ref"] for member in property_schema.get("anyOf", []) if "$ref" in member), None
+        )
+        if reference:
+            return definitions.get(reference.rsplit("/", 1)[-1], {})
+        return property_schema
 
     @staticmethod
     def _extract_free_form_map_fields(schema: dict[str, Any]) -> dict[str, tuple[type, FieldInfo]]:

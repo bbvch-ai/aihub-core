@@ -4,9 +4,10 @@ from swiss_ai_hub.core.agents import AgentConfig
 
 from swiss_ai_hub.agent.capabilities import ConversationFields, ToolLoopFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
 
 
-class ToolLoopPlaygroundConfig(KnowledgeFields, ToolLoopFields, ConversationFields, AgentConfig):
+class ToolLoopPlaygroundConfig(KnowledgeToolFields, KnowledgeFields, ToolLoopFields, ConversationFields, AgentConfig):
     """The collections the knowledge tool may search and the answering model; the loop's own settings are published
     by the runner with the blueprint's tools as options."""
 
@@ -20,4 +21,5 @@ class ToolLoopPlaygroundConfig(KnowledgeFields, ToolLoopFields, ConversationFiel
             icon=base.icon,
             **cls.conversation_form_elements(),
             **cls.knowledge_form_elements(),
+            **cls.knowledge_tool_form_elements(),
         )

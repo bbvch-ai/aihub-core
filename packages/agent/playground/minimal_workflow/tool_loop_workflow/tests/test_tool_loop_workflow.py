@@ -14,7 +14,14 @@ def test_the_blueprint_validates_with_both_tool_kinds(agent):
     agent.validate_workflow(ToolLoopPlaygroundConfig)
 
     steps = {step.__name__ for step in agent.get_steps()}
-    assert {"decide_step", "gate_step", "join_step", "run_function_step", "tool_call_step", "search_step"} <= steps
+    assert {
+        "decide_step",
+        "gate_step",
+        "join_step",
+        "run_function_step",
+        "search_tool_call_step",
+        "search_step",
+    } <= steps
     assert agent.tools.names() == ["search_knowledge", "current_time"]
 
 

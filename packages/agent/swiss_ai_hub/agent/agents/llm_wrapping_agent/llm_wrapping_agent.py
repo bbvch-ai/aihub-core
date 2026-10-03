@@ -5,13 +5,10 @@ from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     MemoryStorageRequestedEvent,
-    Message,
-    RefusalReason,
     RefusalStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
-    LLMConfig,
     estimate_prompt_tokens,
     limit_chat_history,
     merge_consecutive_messages,
@@ -24,6 +21,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
@@ -106,7 +104,9 @@ class LLMWrappingAgent(Agent):
         irreducible = [*system_head, *conversation[-1:]]
         irreducible_tokens = estimate_prompt_tokens(irreducible, agent_config.llm.token_counter)
         if irreducible_tokens > budget:
-            return await self._refuse_oversized_input(irreducible_tokens, budget, agent_config.llm, displayer, t)
+            return await OversizedInputRefusal.refuse(
+                irreducible_tokens, budget, agent_config.llm.model_name, displayer, t
+            )
 
         # Trim only what sits between them, then put both back. Handing the trimmer a list that still holds the
         # last turn charges it twice: no subset containing it fits the reduced limit, so `ChatMemoryBuffer` falls
@@ -118,28 +118,6 @@ class LLMWrappingAgent(Agent):
             else []
         )
         return Conversation.contextualize(history=[*system_head, *older, *conversation[-1:]], message=event)
-
-    @staticmethod
-    async def _refuse_oversized_input(
-        needed: int,
-        budget: int,
-        llm_config: LLMConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> RefusalStopEvent:
-        """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
-
-        Shaped exactly like the stop event `display_llm_stream` returns for a real answer, so the refusal reaches
-        non-streaming consumers too -- `OpenaiService` reads the terminal text off `output_messages`.
-        """
-        await displayer.display_thought(t("agent.conversation.thoughts.input_too_large", tokens=needed, budget=budget))
-        refusal = t("agent.conversation.messages.input_too_large")
-        await displayer.display_chunk(refusal, model_name=llm_config.model_name)
-        return RefusalStopEvent(
-            reason=RefusalReason.INPUT_TOO_LARGE,
-            output_messages=[Message.from_string(role="assistant", content=refusal, name=llm_config.model_name)],
-            chat_model_name=llm_config.model_name,
-        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),

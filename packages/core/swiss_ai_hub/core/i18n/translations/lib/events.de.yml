@@ -9,13 +9,21 @@ attached_file_event:
     angehängt hat.
 knowledge_searched_event:
   name: Wissen durchsucht
-  description: "Der Agent hat die Wissenssammlungen durchsucht, auf die der Benutzer verwiesen hat."
+  description: Der Agent hat die Wissenssammlungen durchsucht, auf die der Benutzer
+    verwiesen hat.
 tool_result_event:
-  name: "Werkzeugergebnis"
-  description: "Was ein vom Agenten gewähltes Werkzeug zurückgegeben hat."
+  name: Werkzeugergebnis
+  description: Was ein vom Agenten gewähltes Werkzeug zurückgegeben hat.
 tool_loop_status_event:
-  name: "Status der Werkzeugschleife"
-  description: "Was die Werkzeugschleife des Agenten gerade tut."
+  name: Status der Werkzeugschleife
+  description: Was die Werkzeugschleife des Agenten gerade tut.
+sandbox_file_displayed_event:
+  name: Datei angezeigt
+  description: Der Agent hat dem Benutzer eine Datei aus seiner Code-Sandbox als Anhang gezeigt.
+tool_loop_condensed_event:
+  name: Werkzeugschleife verdichtet
+  description: Der Agent hat frühere Werkzeugergebnisse und Gesprächsrunden verdichtet,
+    damit sie in den Kontext des Modells passen.
 conversation_title_event:
   name: Gesprächstitel
   description: Der Agent hat einen Titel erstellt, der das Thema des Gesprächs zusammenfasst.
@@ -278,3 +286,51 @@ refusal_stop_event:
   name: Zug abgelehnt
   description: Der Assistent hat diesen Zug wegen der Eingabe abgelehnt und dem Benutzer
     den Grund genannt.
+contextualize_conversation_event:
+  name: Konversation einordnen
+  description: Frage wird verstanden
+conversation_contextualized_event:
+  name: Konversation eingeordnet
+  description: Frage verstanden
+compose_context_event:
+  name: Kontext zusammenstellen
+  description: Stelle zusammen, was das Modell liest
+recall_memory_event:
+  name: Erinnerungen abrufen
+  description: Erinnerungen werden abgerufen
+memory_recalled_event:
+  name: Erinnerungen abgerufen
+  description: Erinnerungen abgerufen
+search_knowledge_event:
+  name: Wissen durchsuchen
+  description: Wissenssammlungen werden durchsucht
+read_attached_files_event:
+  name: Angehängte Dateien lesen
+  description: Angehängte Dateien werden gelesen
+attached_files_read_event:
+  name: Angehängte Dateien gelesen
+  description: Angehängte Dateien gelesen
+complete_conversation_event:
+  name: Konversation abschliessen
+  description: Folgefragen werden vorgeschlagen
+run_tool_loop_event:
+  name: Werkzeugschleife starten
+  description: Entscheide, welche Werkzeuge genutzt werden
+tool_calls_decided_event:
+  name: Werkzeugaufrufe entschieden
+  description: Gewählte Werkzeuge werden ausgeführt
+tool_call_approved_event:
+  name: Werkzeugaufruf freigegeben
+  description: Ein Werkzeug wird ausgeführt
+tool_loop_iteration_event:
+  name: Durchlauf der Werkzeugschleife
+  description: Nächster Schritt wird entschieden
+tool_loop_finished_event:
+  name: Werkzeugschleife beendet
+  description: Werkzeuge abgeschlossen
+memory_storage_requested_event:
+  name: Speichern von Erinnerungen angefordert
+  description: Erinnerungen werden gespeichert
+not_a_meta_question_event:
+  name: Keine Metafrage
+  description: Anfrage wird beantwortet

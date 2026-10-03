@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
@@ -14,11 +13,9 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
-    Message,
     RAGFailureReason,
     RAGFailureStopEvent,
     RAGSuccessStopEvent,
-    RefusalReason,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
@@ -33,8 +30,6 @@ from swiss_ai_hub.core.generative_ai import (
     estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
-    limit_chat_history_with_context,
-    merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
     usable_input_budget,
@@ -47,9 +42,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
-    LimitChatHistoryWithContextEvent,
-)
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
@@ -112,82 +105,59 @@ async def do_limit_chat_history(
     answering_config = next(config for config in llm_configs if config is not None)
     last_turn_tokens = estimate_prompt_tokens([last_user_message], answering_config.token_counter)
     if last_turn_tokens > budget:
-        return await _refuse_oversized_input(last_turn_tokens, budget, answering_config.model_name, displayer, t)
+        return await OversizedInputRefusal.refuse(last_turn_tokens, budget, answering_config.model_name, displayer, t)
 
-    # Trim only what precedes the last turn, then put it back -- the same shape `limit_chat_history_with_context`
-    # uses. Reserving room for the turn and then handing the trimmer a list that still contains it charges the turn
-    # twice: no subset holding it fits the reduced limit, so `ChatMemoryBuffer` falls through to its most-recent-
+    # Trim only what precedes the last turn, then put it back -- the same shape `Conversation.compose` uses for
+    # the turns. Reserving room for the turn and then handing the trimmer a list that still contains it charges the
+    # turn twice: no subset holding it fits the reduced limit, so `ChatMemoryBuffer` falls through to its most-recent-
     # message branch and the whole earlier conversation is dropped for any turn past half the budget.
     older_limit = min(number_of_input_tokens, budget - last_turn_tokens)
     limited = [*limit_chat_history(chat_history=messages[:-1], number_of_input_tokens=older_limit), *messages[-1:]]
     return LimitChatHistoryEvent(limited_history=limited)
 
 
-async def _refuse_oversized_input(
-    needed: int,
-    budget: int,
-    model_name: str,
-    displayer: EventDisplayer,
+def do_answer_instructions(
+    outcome: FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent | None,
+    context_insufficient_prompt: LocaleString | None,
+    system_prompt: LocaleString | None,
     t: LocaleHandler,
-) -> RefusalStopEvent:
-    """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
+    cite_sources: bool = True,
+) -> list[ChatMessage]:
+    """The system messages the answer is written under: the profile's prompt, the citation rule, and on a
+    rejection the reason the answer cannot come from the documents.
 
-    The chunk is what the chat renders; `output_messages` carries the same text for non-streaming consumers.
+    With `cite_sources` the model is told to cite documents by their `id` attribute; chat clients turn those
+    markers into their own source references.
     """
-    await displayer.display_thought(t("agent.conversation.thoughts.input_too_large", tokens=needed, budget=budget))
-    refusal = t("agent.conversation.messages.input_too_large")
-    await displayer.display_chunk(refusal, model_name=model_name)
-    return RefusalStopEvent(
-        reason=RefusalReason.INPUT_TOO_LARGE,
-        output_messages=[Message.from_string(role="assistant", content=refusal, name=model_name)],
-        chat_model_name=model_name,
-    )
+    system_prompt_text = t.extract(system_prompt) if system_prompt else None
+    instructions = [
+        text for text in (system_prompt_text, t("lib.prompt.citations.instruction") if cite_sources else None) if text
+    ]
+    messages = [ChatMessage(role=MessageRole.SYSTEM, content="\n\n".join(instructions))] if instructions else []
+    if outcome is not None:
+        reject_prompt = t("agent.prompt.guard.reject").format(
+            prompt=t.extract(context_insufficient_prompt), reason=outcome.reason
+        )
+        messages.append(ChatMessage(role=MessageRole.SYSTEM, content=reject_prompt))
+    return messages
+
+
+def do_context_block(context_message: ChatMessage) -> list[ChatMessage]:
+    """Retrieved or expert context as a block of the system head. A profile's context prompt may render it as a
+    user message, which would otherwise land ahead of the conversation as a turn of its own."""
+    return [ChatMessage(role=MessageRole.SYSTEM, blocks=context_message.blocks)]
 
 
 async def do_respond_with_llm(
-    event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent,
-    limited_history_without_context: list[ChatMessage],
-    context_insufficient_prompt: LocaleString | None,
-    system_prompt: LocaleString | None,
+    messages: list[ChatMessage],
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity | None,
     as_stop_step: bool = True,
-    cite_sources: bool = True,
 ) -> LLMStopEvent | LLMEvent:
-    """Generate LLM response with proper message building and streaming.
-
-    With `cite_sources` the model is told to cite documents by their `id` attribute; chat clients turn those
-    markers into their own source references.
-    """
+    """Stream the answer to the composed prompt, exactly as the composed-context event shows it."""
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
-
-    if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
-        context_insufficient_prompt_text = t.extract(context_insufficient_prompt)
-        prompt_text = t("agent.prompt.guard.reject").format(
-            prompt=context_insufficient_prompt_text, reason=event.reason
-        )
-        messages = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=prompt_text,
-            ),
-        ] + limited_history_without_context
-    else:
-        messages = event.limited_history_with_context
-
-    system_prompt_text = t.extract(system_prompt) if system_prompt else None
-    instructions = [
-        text for text in (system_prompt_text, t("lib.prompt.citations.instruction") if cite_sources else None) if text
-    ]
-    if instructions:
-        system_message = ChatMessage(role=MessageRole.SYSTEM, content="\n\n".join(instructions))
-        messages = [system_message] + messages
-
-    # Merge consecutive messages with the same role (required by LiteLLM)
-    messages = merge_consecutive_messages(messages)
-
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
@@ -351,26 +321,6 @@ async def do_context_sufficient_guard(
     await run_context.set("prev_queries", prev_queries)
     await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
     return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
-
-
-def do_limit_chat_history_with_context(
-    context_message: ChatMessage,
-    chat_history: list[ChatMessage],
-    last_user_message: ChatMessage | None,
-    tokenizer: Callable[[str], list[int]],
-    number_of_input_tokens: int,
-) -> LimitChatHistoryWithContextEvent:
-    """Limit chat history including context and return event."""
-    system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
-    limited_history = limit_chat_history_with_context(
-        chat_history=chat_history,
-        context_messages=[context_message],
-        system_messages=system_messages,
-        last_user_message=last_user_message or ChatMessage(role=MessageRole.USER, content=""),
-        tokenizer=tokenizer,
-        number_of_input_tokens=number_of_input_tokens,
-    )
-    return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
 
 
 def do_finalize_rag_stop(

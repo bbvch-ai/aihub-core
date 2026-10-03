@@ -43,4 +43,8 @@ class AttachedFilesConfig(Form):
 
     @classmethod
     def as_form(cls) -> Self:
-        return cls(embedding_model=EmbeddingModelConfig.as_form(), reranking_model=RerankingModelConfig.as_form())
+        defaults = cls()
+        return cls(
+            embedding_model=EmbeddingModelConfig.as_form(defaults.embedding_model.model_name),
+            reranking_model=RerankingModelConfig.as_form(defaults.reranking_model.model_name),
+        )
