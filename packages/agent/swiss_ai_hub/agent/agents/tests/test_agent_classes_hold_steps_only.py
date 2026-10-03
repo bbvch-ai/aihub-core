@@ -1,4 +1,4 @@
-"""An agent class declares its workflow and nothing else (#2011): a helper on a blueprint ties reusable logic to that
+"""An agent class declares its workflow and nothing else: a helper on a blueprint ties reusable logic to that
 blueprint, so another one copies it or subclasses to reach it."""
 
 import importlib

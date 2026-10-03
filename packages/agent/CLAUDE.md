@@ -105,7 +105,7 @@ validation, building a prompt, filing mail) lives in its own class that the step
 dispatcher injects, never in a method called through `self`. A helper on a blueprint ties reusable logic to that one
 blueprint, so another one copies it or subclasses to reach it. Examples: `OversizedInputRefusal`, `AnswerPrompt`,
 `AnswerHandBack`, and the email classification agent's `MailTriageValidator`, `MailFiler`, `ReplyDrafting` and
-`GroundingDelegation` (#2011).
+`GroundingDelegation`.
 
 ```python
 class MyAgent(Agent):

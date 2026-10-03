@@ -351,8 +351,8 @@ class EmailClassificationAgent(Agent):
         """Turn every delegated answer into a threaded draft and append the whole batch in one pass.
 
         Both outcome kinds arrive on one parameter because the join has to wait for all of them and a message whose
-        delegation failed still gets a draft — see `GroundingDelegation._body_for`. A `list[...]` re-executes this
-        step on every arrival, so the precondition is what makes it run once, when the last one lands.
+        delegation failed still gets a draft — see `GroundingDelegation.bodies_from_answers`. A `list[...]`
+        re-executes this step on every arrival, so the precondition is what makes it run once, when the last one lands.
 
         Reads each message back from the S3 archive rather than from IMAP or from the event, exactly as the
         single-step drafting chain did: the UID died with the `MOVE` that filed it, and a body has no business on an
