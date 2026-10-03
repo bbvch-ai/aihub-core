@@ -2,6 +2,8 @@
 the model answers from: the retrieved documents on acceptance, the rejection's reason otherwise, and for the expert
 blueprint the expert's reply."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
@@ -30,6 +32,7 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
     ContextSufficientGuardStepConfig,
 )
 
+RAG_MODULE = "swiss_ai_hub.agent.agents.rag_agent.rag_agent"
 T = AgentLocaleHandler("en")
 QUESTION = ChatMessage(role=MessageRole.USER, content="What is AI Hub?")
 DOCUMENTS = InOrderNodeCombinerEvent(
@@ -112,3 +115,29 @@ async def test_the_expert_reply_is_the_context_of_an_escalated_answer():
 
     assert request.blocks[-1][0].content == "The expert says X."
     assert "AI Hub is a platform." not in _texts([message for block in request.blocks for message in block])
+
+
+@pytest.mark.parametrize("agent", [RAGAgent(), ExpertRAGAgent()], ids=lambda agent: type(agent).__name__)
+@pytest.mark.asyncio
+async def test_the_sufficiency_guard_weighs_the_documents_against_the_gathered_context(agent):
+    """A recalled memory or an attached file may already answer the question, so the guard sees them too."""
+    attached_file = [ChatMessage(role=MessageRole.SYSTEM, content="<REFERENCE_DOCUMENT>The handbook says Y.")]
+
+    with patch(f"{RAG_MODULE}.do_context_sufficient_guard", new=AsyncMock()) as guard:
+        await agent.context_sufficient_guard_step(
+            agent_config=_config(),
+            guard_config=ContextSufficientGuardStepConfig(),
+            displayer=MagicMock(),
+            t=T,
+            event=DOCUMENTS,
+            ctx=ConversationContextualizedEvent(history=[QUESTION], query="What is AI Hub?"),
+            memories=MemoryRecalledEvent(user_block=MEMORY),
+            files=AttachedFilesReadEvent(block=attached_file),
+            knowledge=KnowledgeSearchedEvent(),
+            run_context=MagicMock(),
+        )
+
+    seen = _texts(guard.await_args.kwargs["chat_history"])
+    assert "The user works in Bern." in seen
+    assert "The handbook says Y." in seen
+    assert guard.await_args.kwargs["chat_history"][-1] == QUESTION

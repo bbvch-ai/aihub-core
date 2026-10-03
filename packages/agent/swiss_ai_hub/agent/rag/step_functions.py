@@ -32,7 +32,6 @@ from swiss_ai_hub.core.generative_ai import (
     estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
-    merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
     usable_input_budget,
@@ -182,9 +181,7 @@ async def do_respond_with_llm(
     """Stream the answer to the composed prompt, exactly as the composed-context event shows it."""
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        return await displayer.display_llm_stream(
-            llm_config, llm, merge_consecutive_messages(messages), as_stop_step=as_stop_step
-        )
+        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
 
 async def do_few_shot_guard(

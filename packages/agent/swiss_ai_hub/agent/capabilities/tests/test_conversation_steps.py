@@ -172,6 +172,70 @@ async def test_compose_passes_the_history_through_when_every_block_is_empty():
 
 
 @pytest.mark.asyncio
+async def test_compose_re_limits_instructions_added_to_the_history_even_without_blocks():
+    """A rejection prompt ahead of an already-limited history must not push the prompt past the budget."""
+    instructions = _message(MessageRole.SYSTEM, 200)
+    older = [_message(MessageRole.USER, 100), _message(MessageRole.ASSISTANT, 100)]
+    question = _message(MessageRole.USER, 20)
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=ComposeContextEvent(history=[instructions, *older, question], blocks=[[], []]),
+            conversation=_config(number_of_input_tokens=300),
+        )
+
+    assert composed.history == [instructions, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_drops_a_block_whole_rather_than_keeping_its_notes_without_the_content():
+    system = _message(MessageRole.SYSTEM, 10)
+    question = _message(MessageRole.USER, 20)
+    citation_rule = ChatMessage(role=MessageRole.SYSTEM, content="Cite by id.")
+    attached_file = [_message(MessageRole.SYSTEM, 300), citation_rule]
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, question], blocks=[attached_file]),
+            conversation=_config(number_of_input_tokens=200),
+        )
+
+    assert composed.history == [system, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_drops_an_earlier_turn_too_long_for_the_room_left():
+    system = _message(MessageRole.SYSTEM, 10)
+    oversized = _message(MessageRole.USER, 500)
+    question = _message(MessageRole.USER, 20)
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, oversized, question], blocks=[]),
+            conversation=_config(number_of_input_tokens=200),
+        )
+
+    assert composed.history == [system, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_shows_consecutive_turns_of_one_role_merged_as_the_model_receives_them():
+    first, second = _message(MessageRole.USER, 5), _message(MessageRole.USER, 5)
+
+    composed = await Conversation.compose_context_step(
+        LLMWrappingAgent(),
+        request=Conversation.compose([first, second], blocks=[]),
+        conversation=_config(),
+    )
+
+    assert composed.history == merge_consecutive_messages([first, second])
+    assert len(composed.history) == 1
+
+
+@pytest.mark.asyncio
 async def test_complete_generates_follow_ups_and_ends_with_the_given_stop_or_the_answer():
     answer = LLMEvent(output_messages=[Message.from_string(role="assistant", content="25 days")], chat_model_name="m")
 

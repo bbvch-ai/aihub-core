@@ -98,7 +98,7 @@ class ExpertRAGAgent(RAGAgent):
         documents: InOrderNodeCombinerEvent | None = None,
     ) -> Conversation.ComposeRequest:
         """An insufficient verdict goes to the expert rather than to an answer, so the expert's reply is the
-        context when there is one, and a declined escalation answers with the verdict's reason."""
+        context when there is one, and a declined escalation answers with the decline as its reason."""
         match outcome:
             case ExpertAnswerContextEvent():
                 rejection, context = None, do_context_block(outcome.context_message)

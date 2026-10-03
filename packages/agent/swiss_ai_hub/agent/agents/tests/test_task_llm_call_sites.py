@@ -9,7 +9,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import ConversationContextualizedEvent, LLMEvent, NotAMetaQuestionEvent
+from swiss_ai_hub.core.events.agent import (
+    AttachedFilesReadEvent,
+    ConversationContextualizedEvent,
+    KnowledgeSearchedEvent,
+    LLMEvent,
+    MemoryRecalledEvent,
+    NotAMetaQuestionEvent,
+)
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -139,6 +146,9 @@ async def test_context_sufficient_guard_uses_task_llm(request, config_fixture: s
             user=fake_user(),
             event=_event(),
             ctx=TURN,
+            memories=MemoryRecalledEvent(),
+            files=AttachedFilesReadEvent(),
+            knowledge=KnowledgeSearchedEvent(),
             run_context=MagicMock(),
         )
 

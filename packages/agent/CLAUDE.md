@@ -170,8 +170,10 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
 - `compose(history, blocks)` → `ContextComposedEvent`, the history with the blocks merged behind the leading system
   messages within the input budget, in the order given. Displayed in the chat as what the model saw, so compose the
   prompt the model is actually sent: instructions in the leading system messages of `history`, never added after.
-  When it does not fit, the oldest turns give way first, then the blocks from the front; the system head and the last
-  turn never do.
+  When it does not fit, the oldest turns give way first, then whole blocks from the front (never part of one); the
+  system head and the last turn never do. Consecutive messages of one role leave merged, so send the history unchanged.
+  `Conversation.fit(history, blocks, config)` is the same composition without the event, for a step that must reason
+  over the context before the prompt is composed (RAG's context-sufficiency guard).
 - `complete(answer, stop=None)` → generates the follow-up questions and ends the run with the given stop event (RAG's
   outcome events) or an `LLMStopEvent` carrying the answer. Return it **last** from the step, behind anything that must
   be published before teardown.
