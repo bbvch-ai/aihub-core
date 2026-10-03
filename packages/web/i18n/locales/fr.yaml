@@ -310,6 +310,63 @@ event:
       delegations: Délégations
       delegatedTaskAgentInTheLoop: Tâche déléguée (Agent dans la boucle)
       allEvents: Tous les événements
+  parts:
+    noMessages: Aucun message
+    yes: Oui
+    no: Non
+  capability:
+    userQuery: Message de l'utilisateur
+    historyMessages: Messages dans l'historique
+    condensed: Condensée à partir de l'historique
+    query: Requête
+    block: Bloc {number}
+    blocks: Blocs de contexte
+    namespaces: Portées de la mémoire d'organisation
+    toolCall: Appel d'outil
+    userMemories: Souvenirs de l'utilisateur
+    organizationMemories: Souvenirs de l'organisation
+    references: Collections référencées
+    citeSources: Citer les sources
+    sections: Sections trouvées
+    notSearched: Non recherchées (pas d'accès)
+    files: Fichiers
+    reserveTokens: Jetons réservés
+    fileStatus:
+      read: Lu
+      truncated: Raccourci
+      failed: Échec
+    citationId: Identifiant de citation
+    pages: Pages
+    error: Erreur
+    stop: Se termine par
+    targetAgent: Rédacteur de mémoire
+  toolLoop:
+    loop: Ensemble d'outils
+    mode: Mode
+    modes:
+      answer: Répondre
+      gather: Rassembler le contexte
+    iteration: Décisions
+    toolCallsMade: Appels d'outils jusqu'ici
+    messages: Messages dans la boucle
+    offeredTools: Outils proposés
+    condensedResults: Résultats condensés
+    needsCondensing: Doit être condensé
+    decidedCalls: Un appel d'outil décidé | {count} appels d'outils décidés
+    narrowedTools: Limité à
+    maxIterations: Limite de décisions
+    tool: Outil
+    kind: Type
+    kinds:
+      function: Fonction
+      capability: Capacité
+    failed: Échec
+    resultContext: Contexte renvoyé
+    stoppedEarly: Arrêtée à ses limites
+    gathered: Contexte rassemblé
+    gatheredMessages: Messages rassemblés
+    tokens: Jetons
+    condensedTurns: Tours condensés
 costs:
   table:
     count: Nombre
@@ -1042,3 +1099,44 @@ support:
   send_failed_detail: Vos réponses sont toujours là — réessayez.
   unavailable: Le signalement n'est pas configuré sur cette installation. Contactez
     votre administrateur.
+userFiles:
+  title: "Mes fichiers"
+  description: "Les fichiers avec lesquels vous et vos agents travaillez : pièces jointes des chats, fichiers créés pour vous par les agents et vos propres envois."
+  conversation: "Chat"
+  actions:
+    move: "Déplacer"
+    upload: "Envoyer"
+    newFolder: "Nouveau dossier"
+    refresh: "Actualiser"
+    download: "Télécharger"
+    rename: "Renommer"
+    delete: "Supprimer"
+    close: "Fermer"
+    cancel: "Annuler"
+    save: "Enregistrer"
+    openFolder: "Ouvrir le dossier {name}"
+    preview: "Aperçu de {name}"
+  columns:
+    name: "Nom"
+    size: "Taille"
+    modified: "Modifié"
+  empty:
+    folder: "Ce dossier est vide. Déposez des fichiers ici pour les envoyer."
+    noSpace: "Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le chat une fois, puis revenez."
+  error:
+    load: "Impossible de charger ce dossier. Réessayez avec Actualiser."
+  move:
+    header: "Déplacer {name} vers"
+    noTargets: "Aucun dossier vers lequel le déplacer."
+  preview:
+    unavailable: "Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir."
+  name:
+    invalid: "Un nom ne doit pas être vide ni contenir de barre oblique."
+  delete:
+    header: "Supprimer"
+    file: "Supprimer {name} ?"
+    folder: "Supprimer le dossier {name} et tout son contenu ?"
+  toast:
+    uploaded: "{count} fichier(s) envoyé(s)"
+    uploadFailed: "Échec de l'envoi"
+    changeFailed: "La modification a échoué"

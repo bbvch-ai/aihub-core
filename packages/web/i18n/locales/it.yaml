@@ -311,6 +311,64 @@ event:
       delegations: Deleghe
       delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
       allEvents: Tutti gli eventi
+  parts:
+    noMessages: Nessun messaggio
+    yes: Sì
+    no: 'No'
+  capability:
+    userQuery: Messaggio dell'utente
+    historyMessages: Messaggi nella cronologia
+    condensed: Condensata dalla cronologia
+    query: Richiesta
+    block: Blocco {number}
+    blocks: Blocchi di contesto
+    namespaces: Ambiti della memoria dell'organizzazione
+    toolCall: Chiamata di strumento
+    userMemories: Ricordi dell'utente
+    organizationMemories: Ricordi dell'organizzazione
+    references: Raccolte referenziate
+    citeSources: Citare le fonti
+    sections: Sezioni trovate
+    notSearched: Non cercate (nessun accesso)
+    files: File
+    reserveTokens: Token riservati
+    fileStatus:
+      read: Letto
+      truncated: Abbreviato
+      failed: Non riuscito
+    citationId: ID di citazione
+    pages: Pagine
+    error: Errore
+    stop: Termina con
+    targetAgent: Scrittore di memoria
+  toolLoop:
+    loop: Insieme di strumenti
+    mode: Modalità
+    modes:
+      answer: Rispondere
+      gather: Raccogliere il contesto
+    iteration: Decisioni
+    toolCallsMade: Chiamate di strumenti finora
+    messages: Messaggi nel ciclo
+    offeredTools: Strumenti offerti
+    condensedResults: Risultati condensati
+    needsCondensing: Da condensare
+    decidedCalls: Una chiamata di strumento decisa | {count} chiamate di strumenti
+      decise
+    narrowedTools: Limitato a
+    maxIterations: Limite di decisioni
+    tool: Strumento
+    kind: Tipo
+    kinds:
+      function: Funzione
+      capability: Capacità
+    failed: Non riuscito
+    resultContext: Contesto restituito
+    stoppedEarly: Fermato ai suoi limiti
+    gathered: Contesto raccolto
+    gatheredMessages: Messaggi raccolti
+    tokens: Token
+    condensedTurns: Turni condensati
 costs:
   table:
     count: Conteggio
@@ -932,8 +990,8 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona almeno uno spazio dei nomi
       help: Vengono cercati solo gli spazi dei nomi selezionati
-      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli spazi
-        dei nomi». Altrimenti la configurazione non può essere salvata.
+      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli
+        spazi dei nomi». Altrimenti la configurazione non può essere salvata.
     allNamespaces:
       label: Cerca in tutti gli spazi dei nomi
       help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
@@ -1038,3 +1096,44 @@ support:
   send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
   unavailable: La segnalazione non è configurata su questa installazione. Contatta
     l'amministratore.
+userFiles:
+  title: "I miei file"
+  description: "I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file creati per te dagli agenti e i tuoi caricamenti."
+  conversation: "Chat"
+  actions:
+    move: "Sposta"
+    upload: "Carica"
+    newFolder: "Nuova cartella"
+    refresh: "Aggiorna"
+    download: "Scarica"
+    rename: "Rinomina"
+    delete: "Elimina"
+    close: "Chiudi"
+    cancel: "Annulla"
+    save: "Salva"
+    openFolder: "Apri la cartella {name}"
+    preview: "Anteprima di {name}"
+  columns:
+    name: "Nome"
+    size: "Dimensione"
+    modified: "Modificato"
+  empty:
+    folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
+    noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+  error:
+    load: "Impossibile caricare questa cartella. Riprova con Aggiorna."
+  move:
+    header: "Sposta {name} in"
+    noTargets: "Nessuna cartella in cui spostarlo."
+  preview:
+    unavailable: "Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo."
+  name:
+    invalid: "Un nome non può essere vuoto né contenere una barra."
+  delete:
+    header: "Elimina"
+    file: "Eliminare {name}?"
+    folder: "Eliminare la cartella {name} con tutto il contenuto?"
+  toast:
+    uploaded: "{count} file caricati"
+    uploadFailed: "Caricamento non riuscito"
+    changeFailed: "La modifica non è riuscita"

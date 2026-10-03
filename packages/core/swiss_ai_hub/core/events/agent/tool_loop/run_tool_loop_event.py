@@ -1,21 +1,27 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
 
-from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode import ToolLoopMode
 from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
-class RunToolLoopEvent(ControlEvent):
+class RunToolLoopEvent(ControlAndDisplayEvent):
     """
     Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.
 
     Built with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's
     declaration, narrowed by the profile and by the features the user switched on for the message.
     """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.run_tool_loop_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.run_tool_loop_event.description"
+    )
 
     loop: Annotated[
         str, Field(description="The blueprint's tool set this loop runs, telling two loops of one run apart.")

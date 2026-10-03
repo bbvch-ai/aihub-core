@@ -13,13 +13,18 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
     AttachedFileEvent,
+    AttachedFilesReadEvent,
     BaseRetrieveMemoryEvent,
     BaseStoreMemoryEvent,
     ChainEvent,
     ChunkEvent,
+    CompleteConversationEvent,
+    ComposeContextEvent,
     ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     ConversationTitleEvent,
     CronStartEvent,
     DisplayEvent,
@@ -48,17 +53,24 @@ from swiss_ai_hub.core.events.agent import (
     MailBatchDraftedEvent,
     MailFetchedEvent,
     MailMovedEvent,
+    MemoryRecalledEvent,
+    MemoryStorageRequestedEvent,
     MetaQuestionDetectedEvent,
+    NotAMetaQuestionEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
+    ReadAttachedFilesEvent,
+    RecallMemoryEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     RouterEvent,
+    RunToolLoopEvent,
     SandboxFileDisplayedEvent,
+    SearchKnowledgeEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -70,8 +82,12 @@ from swiss_ai_hub.core.events.agent import (
     ThoughtEvent,
     ToolApprovalRequestEvent,
     ToolApprovalResponseEvent,
+    ToolCallApprovedEvent,
+    ToolCallsDecidedEvent,
     ToolEvent,
     ToolLoopCondensedEvent,
+    ToolLoopFinishedEvent,
+    ToolLoopIterationEvent,
     ToolLoopStatusEvent,
     ToolResultEvent,
     UnreadMailListedEvent,
@@ -99,6 +115,22 @@ DisplayEvents = (
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
     | Annotated[ContextComposedEvent, Tag("ContextComposedEvent")]
+    | Annotated[ContextualizeConversationEvent, Tag("ContextualizeConversationEvent")]
+    | Annotated[ConversationContextualizedEvent, Tag("ConversationContextualizedEvent")]
+    | Annotated[ComposeContextEvent, Tag("ComposeContextEvent")]
+    | Annotated[CompleteConversationEvent, Tag("CompleteConversationEvent")]
+    | Annotated[NotAMetaQuestionEvent, Tag("NotAMetaQuestionEvent")]
+    | Annotated[RecallMemoryEvent, Tag("RecallMemoryEvent")]
+    | Annotated[MemoryRecalledEvent, Tag("MemoryRecalledEvent")]
+    | Annotated[MemoryStorageRequestedEvent, Tag("MemoryStorageRequestedEvent")]
+    | Annotated[SearchKnowledgeEvent, Tag("SearchKnowledgeEvent")]
+    | Annotated[ReadAttachedFilesEvent, Tag("ReadAttachedFilesEvent")]
+    | Annotated[AttachedFilesReadEvent, Tag("AttachedFilesReadEvent")]
+    | Annotated[RunToolLoopEvent, Tag("RunToolLoopEvent")]
+    | Annotated[ToolLoopIterationEvent, Tag("ToolLoopIterationEvent")]
+    | Annotated[ToolCallsDecidedEvent, Tag("ToolCallsDecidedEvent")]
+    | Annotated[ToolCallApprovedEvent, Tag("ToolCallApprovedEvent")]
+    | Annotated[ToolLoopFinishedEvent, Tag("ToolLoopFinishedEvent")]
     | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
     | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]

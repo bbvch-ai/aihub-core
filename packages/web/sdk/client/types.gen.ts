@@ -624,6 +624,12 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
+  /**
+   * Thread Id
+   *
+   * The conversation the file is attached in; it is also placed in the user's files there.
+   */
+  thread_id?: string | null;
 };
 
 /**
@@ -1655,6 +1661,58 @@ export type AttachedFileStatus =
   (typeof AttachedFileStatus)[keyof typeof AttachedFileStatus];
 
 /**
+ * AttachedFilesReadEvent
+ *
+ * The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.
+ */
+export type AttachedFilesReadEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the attached files' text, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * Audio
  *
  * Data about a previous audio response from the model.
@@ -1992,6 +2050,18 @@ export type BodyCreateTranscription = {
    * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
    */
   timestamp_granularities?: Array<"word" | "segment"> | null;
+};
+
+/**
+ * Body_upload_user_file
+ */
+export type BodyUploadUserFile = {
+  /**
+   * File
+   *
+   * The file to add; one with the same name is replaced.
+   */
+  file: Blob | File;
 };
 
 /**
@@ -3200,6 +3270,7 @@ export const ChatFeature = {
   WEB_SEARCH: "web_search",
   CODE_INTERPRETER: "code_interpreter",
   IMAGE_GENERATION: "image_generation",
+  USER_FILES: "user_files",
 } as const;
 
 /**
@@ -3823,6 +3894,58 @@ export type ColorPicker = {
 };
 
 /**
+ * CompleteConversationEvent
+ *
+ * Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then
+ * emit the stop event.
+ *
+ * Built with `Conversation.complete(...)`. Anything that must be published before the run tears down, such
+ * as a memory-storage delegation, is returned from the same step ahead of this event.
+ */
+export type CompleteConversationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The answer the follow-up questions are grounded on.
+   */
+  answer: LlmEvent;
+  /**
+   * The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.
+   */
+  stop?: StopEvent | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * CompletionTokensDetails
  *
  * Breakdown of tokens used in a completion.
@@ -3867,6 +3990,61 @@ export type CompletionUsage = {
   total_tokens: number;
   completion_tokens_details?: CompletionTokensDetails | null;
   prompt_tokens_details?: PromptTokensDetails | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ComposeContextEvent
+ *
+ * Asks the conversation capability to merge context blocks into a chat history, in the given order, behind
+ * the leading system messages and within the input budget.
+ *
+ * Built with `Conversation.compose(...)`; answered with `ContextComposedEvent`.
+ */
+export type ComposeContextEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history to merge the blocks into.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Blocks
+   *
+   * Context blocks in the order they should reach the model. Empty blocks are skipped.
+   */
+  blocks?: Array<Array<ChatMessage>>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -4047,6 +4225,62 @@ export type ContextSufficientAcceptEvent = {
 };
 
 /**
+ * ContextualizeConversationEvent
+ *
+ * Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the
+ * message for a meta question, derive the query the turn is answered for, and title the thread.
+ *
+ * Built with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a
+ * stop event when the message was a meta question or could not be condensed.
+ */
+export type ContextualizeConversationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history, already limited to the budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * User Query
+   *
+   * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
+   */
+  user_query?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextualizedAgentEvent
  *
  * Wraps an agent event with context information like the agent's class, ID, and thread ID.
@@ -4145,6 +4379,22 @@ export type ContextualizedAgentEvent = {
     | LimitChatHistoryEvent
     | AddMemoryToChatHistoryEvent
     | ContextComposedEvent
+    | ContextualizeConversationEvent
+    | ConversationContextualizedEvent
+    | ComposeContextEvent
+    | CompleteConversationEvent
+    | NotAMetaQuestionEvent
+    | RecallMemoryEvent
+    | MemoryRecalledEvent
+    | MemoryStorageRequestedEvent
+    | SearchKnowledgeEvent
+    | ReadAttachedFilesEvent
+    | AttachedFilesReadEvent
+    | RunToolLoopEvent
+    | ToolLoopIterationEvent
+    | ToolCallsDecidedEvent
+    | ToolCallApprovedEvent
+    | ToolLoopFinishedEvent
     | AddUserMemoryToChatHistoryEvent
     | AddOrganizationMemoryToChatHistoryEvent
     | StandaloneQuestionCondenserEvent
@@ -4229,6 +4479,65 @@ export type ControlEvent = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationContextualizedEvent
+ *
+ * The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query
+ * every capability and the blueprint answer it for.
+ */
+export type ConversationContextualizedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The limited chat history the request carried.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The question this turn is answered for. Blank when the message carried no text.
+   */
+  query: string;
+  /**
+   * Condensed
+   *
+   * Whether the query was condensed from the history rather than taken verbatim.
+   */
+  condensed?: boolean;
   /**
    * Event Name
    *
@@ -4351,6 +4660,18 @@ export type CreateDatabaseRequest = {
   source_configuration?: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * CreateFolderRequest
+ */
+export type CreateFolderRequest = {
+  /**
+   * Path
+   *
+   * The new folder's path in the user's file space.
+   */
+  path: string;
 };
 
 /**
@@ -6237,6 +6558,48 @@ export type File = {
 };
 
 /**
+ * FileEntryDTO
+ */
+export type FileEntryDto = {
+  /**
+   * Name
+   *
+   * The file or folder name.
+   */
+  name: string;
+  /**
+   * Path
+   *
+   * Its path relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Kind
+   *
+   * Whether it is a file or a folder.
+   */
+  kind: "file" | "folder";
+  /**
+   * Size
+   *
+   * The file's size in bytes; none for a folder.
+   */
+  size?: number | null;
+  /**
+   * Modified
+   *
+   * When it last changed, as seconds since the epoch.
+   */
+  modified: number;
+  /**
+   * Conversation Title
+   *
+   * The title of the chat a conversation folder belongs to.
+   */
+  conversation_title?: string | null;
+};
+
+/**
  * FileFile
  */
 export type FileFile = {
@@ -6256,6 +6619,18 @@ export type FileFile = {
 };
 
 /**
+ * FilePathDTO
+ */
+export type FilePathDto = {
+  /**
+   * Path
+   *
+   * The affected path, relative to the user's file space.
+   */
+  path: string;
+};
+
+/**
  * FilePromptCacheBreakpoint
  *
  * Marks the exact end of a reusable prompt prefix.
@@ -6268,6 +6643,30 @@ export type FilePromptCacheBreakpoint = {
    */
   mode: "explicit";
   [key: string]: unknown;
+};
+
+/**
+ * FolderListingDTO
+ */
+export type FolderListingDto = {
+  /**
+   * Folder
+   *
+   * The listed folder, relative to the user's file space; '.' is its top.
+   */
+  folder: string;
+  /**
+   * Entries
+   *
+   * Its folders first, then its files, each by name.
+   */
+  entries: Array<FileEntryDto>;
+  /**
+   * Folder Title
+   *
+   * The title of the chat, when the folder is a conversation's own.
+   */
+  folder_title?: string | null;
 };
 
 /**
@@ -11269,6 +11668,64 @@ export type MemoryMetadata = {
 };
 
 /**
+ * MemoryRecalledEvent
+ *
+ * The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.
+ */
+export type MemoryRecalledEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Block
+   *
+   * System messages carrying the user's memories, or none.
+   */
+  user_block?: Array<ChatMessage>;
+  /**
+   * Organization Block
+   *
+   * System messages carrying the organization's memories, or none.
+   */
+  organization_block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MemoryRelation
  *
  * Represents a knowledge graph triple
@@ -11350,6 +11807,72 @@ export type MemorySearchResponse = {
    * Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.
    */
   relations: Array<MemoryRelationDto>;
+};
+
+/**
+ * MemoryStorageRequestedEvent
+ *
+ * Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to
+ * persist user memory, WITHOUT awaiting a response (issue #1179).
+ *
+ * ### Why a dedicated event (not AgentInTheLoop)?
+ * `AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact
+ * symptom #1179 removes — and it opens a response subscription that would route a result back into the
+ * caller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the
+ * writer's subject and nothing is routed back. It is displayed like every protocol event, so the event
+ * history shows the delegation; chat clients show no more than a passing status. Its control copy lands in the
+ * caller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the
+ * run finalizes as soon as this cheap marker exists, not when storage completes.
+ */
+export type MemoryStorageRequestedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The start event published to the writer agent to begin its independent run.
+   */
+  start_event: StoreUserMemoryRequestedEvent;
+  /**
+   * Target Agent Class
+   *
+   * Writer agent class to route the start event to.
+   */
+  target_agent_class: string;
+  /**
+   * Target Agent Id
+   *
+   * Writer agent id (fixed system id) to route to.
+   */
+  target_agent_id: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -12363,6 +12886,24 @@ export type ModerationOutputModerationResultsResult = {
 };
 
 /**
+ * MoveFileRequest
+ */
+export type MoveFileRequest = {
+  /**
+   * Source
+   *
+   * The file or folder to move or rename.
+   */
+  source: string;
+  /**
+   * Destination
+   *
+   * Its new path; a rename keeps the folder and changes the name.
+   */
+  destination: string;
+};
+
+/**
  * MultiSelect
  *
  * https://formkit-primevue.netlify.app/inputs/MultiSelect
@@ -12702,6 +13243,54 @@ export type NodeSummaryDto = {
    * List of nodes in the summary
    */
   nodes: Array<IngestedNode>;
+};
+
+/**
+ * NotAMetaQuestionEvent
+ *
+ * Internal "all-clear" gate signal: the user's message is a normal task, not a meta
+ * question about the agent. It releases the agent's normal entry steps, which depend
+ * on it so they cannot start until meta-question detection has cleared the message.
+ */
+export type NotAMetaQuestionEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a normal (non-meta) request.
+   */
+  reasoning: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -14241,6 +14830,147 @@ export type Rating = {
 };
 
 /**
+ * ReadAttachedFilesEvent
+ *
+ * Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.
+ *
+ * Built with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is
+ * attached. It carries the history the files will be composed into, since that is what decides how much room
+ * the files have.
+ */
+export type ReadAttachedFilesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Files
+   *
+   * The files attached to the current branch.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * History
+   *
+   * The history the files will be composed into, for sizing them.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The turn's query, for picking the relevant sections of a file too large to fit.
+   */
+  query?: string;
+  /**
+   * Reserve Tokens
+   *
+   * Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.
+   */
+  reserve_tokens?: number;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the files by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * RecallMemoryEvent
+ *
+ * Asks the memory capability for what the profile remembers about the user and the organization, for a query.
+ *
+ * Built with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the
+ * profile or the run has no identity to read for.
+ */
+export type RecallMemoryEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Query
+   *
+   * The question to search memories with.
+   */
+  query: string;
+  /**
+   * Org Memory Namespaces
+   *
+   * Organization-memory namespaces to narrow the search to; empty means the profile's own.
+   */
+  org_memory_namespaces?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalReason
  *
  * Why a conversational turn was refused before any answer was attempted.
@@ -15130,6 +15860,95 @@ export type RunStatistics = {
 };
 
 /**
+ * RunToolLoopEvent
+ *
+ * Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.
+ *
+ * Built with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's
+ * declaration, narrowed by the profile and by the features the user switched on for the message.
+ */
+export type RunToolLoopEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * History
+   *
+   * The conversation the model decides on.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode?: ToolLoopMode;
+  /**
+   * Tools
+   *
+   * Narrows the offered tools to these names for this call, if given.
+   */
+  tools?: Array<string> | null;
+  /**
+   * Max Iterations
+   *
+   * An iteration limit tighter than the profile's, e.g. 1 for routing.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return, off where it cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Files
+   *
+   * The files attached to the message, for tools that read them.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Knowledge References
+   *
+   * The collections the user referenced on the message, for tools that search knowledge.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SandboxFileDisplayedEvent
  *
  * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
@@ -15231,6 +16050,72 @@ export type SearchContextCostPerQueryDto = {
    * Cost per query with high search context size
    */
   search_context_size_high?: number | null;
+};
+
+/**
+ * SearchKnowledgeEvent
+ *
+ * Asks the knowledge capability to search the collections the user referenced for the turn's query.
+ *
+ * Built with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.
+ */
+export type SearchKnowledgeEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * References
+   *
+   * The collections the user referenced on this message.
+   */
+  references?: Array<KnowledgeReference>;
+  /**
+   * Query
+   *
+   * The turn's query the collections are searched for.
+   */
+  query?: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the documents by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -16467,6 +17352,115 @@ export type StoreUserMemoryEvent = {
 };
 
 /**
+ * StoreUserMemoryRequestedEvent
+ *
+ * Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's
+ * critical path (issue #1179).
+ *
+ * It runs in a different execution context than the originating RAG run and cannot read that run's
+ * `run_context`, so it carries everything the writer needs as plain serializable data. The originating
+ * agent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*
+ * `AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.
+ *
+ * Scope: user memory only. Organization memory has a different API shape and is not on #1179's critical
+ * path; if it is decoupled later, add a `memory_type` discriminator here.
+ */
+export type StoreUserMemoryRequestedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * Originating run's locale, so extraction prompts stay in the user's language.
+   */
+  locale?: string;
+  /**
+   * User the memories belong to.
+   */
+  user: UserIdentity;
+  /**
+   * Messages
+   *
+   * Conversation the writer extracts user memories from.
+   */
+  messages: Array<ChatMessage>;
+  /**
+   * Origin Thread Id
+   *
+   * Originating run's thread id, kept as memory metadata.
+   */
+  origin_thread_id: string;
+  /**
+   * Origin Display Id
+   *
+   * Originating run's display id, kept as memory metadata.
+   */
+  origin_display_id: string;
+  /**
+   * Origin Run Id
+   *
+   * Originating run's run id, kept as memory metadata.
+   */
+  origin_run_id: string;
+  /**
+   * Origin Agent Class
+   *
+   * Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).
+   */
+  origin_agent_class: string;
+  /**
+   * Origin Agent Id
+   *
+   * Originating agent's id — part of the _agent_id scoping tag.
+   */
+  origin_agent_id: string;
+  /**
+   * Originating agent's name — used in the fact-extraction prompt.
+   */
+  origin_agent_name: LocaleString;
+  /**
+   * Originating agent's description — used in the fact-extraction prompt.
+   */
+  origin_agent_description: LocaleString;
+  /**
+   * Origin Memory Llm
+   *
+   * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
+   */
+  origin_memory_llm?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SubmittedFormDTO
  */
 export type SubmittedFormDto = {
@@ -17684,6 +18678,81 @@ export type ToolApprovalResponseEvent = {
 };
 
 /**
+ * ToolCallApprovedEvent
+ *
+ * A tool call cleared to run, either because it needs no approval or because the user approved it.
+ *
+ * Function tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own
+ * request, so the call runs the same sub-workflow, with the same events, as an explicit call would.
+ */
+export type ToolCallApprovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call's id, which its result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: "function" | "capability";
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolCallBlock
  */
 export type ToolCallBlock = {
@@ -17713,6 +18782,84 @@ export type ToolCallBlock = {
         [key: string]: unknown;
       }
     | string;
+};
+
+/**
+ * ToolCallsDecidedEvent
+ *
+ * The model chose tools in this iteration; the loop continues once every one of them has a result.
+ */
+export type ToolCallsDecidedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state including the model's tool-calling turn.
+   */
+  state: ToolLoopState;
+  /**
+   * Tool Call Ids
+   *
+   * The calls this iteration waits for.
+   */
+  tool_call_ids: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolDefinition
+ *
+ * A tool as the model is offered it: what it is called, what it does and which arguments it takes.
+ */
+export type ToolDefinition = {
+  /**
+   * Name
+   *
+   * The name the model calls the tool by.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the tool does and when to use it, for the model.
+   */
+  description: string;
+  /**
+   * Parameters
+   *
+   * JSON schema of the tool's arguments.
+   */
+  parameters: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -17867,6 +19014,201 @@ export type ToolLoopCondensedEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * ToolLoopFinishedEvent
+ *
+ * The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.
+ */
+export type ToolLoopFinishedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * The model's final reply, in answering mode.
+   */
+  answer?: LlmEvent | null;
+  /**
+   * Block
+   *
+   * The tool results as context for the blueprint's answer, gathering mode.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Stopped Early
+   *
+   * Whether the loop stopped at its limits.
+   */
+  stopped_early?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopIterationEvent
+ *
+ * The model's turn to decide: answer, or call tools. One per iteration of the loop.
+ */
+export type ToolLoopIterationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state at the start of this iteration.
+   */
+  state: ToolLoopState;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopMode
+ *
+ * What the loop's last turn is for.
+ *
+ * ANSWER: the model's final turn is the reply, for blueprints that let the loop answer. GATHER: the loop collects
+ * tool results as context and the blueprint answers itself, keeping its own prompt, citations and checks.
+ */
+export const ToolLoopMode = { ANSWER: "answer", GATHER: "gather" } as const;
+
+/**
+ * ToolLoopMode
+ *
+ * What the loop's last turn is for.
+ *
+ * ANSWER: the model's final turn is the reply, for blueprints that let the loop answer. GATHER: the loop collects
+ * tool results as context and the blueprint answers itself, keeping its own prompt, citations and checks.
+ */
+export type ToolLoopMode = (typeof ToolLoopMode)[keyof typeof ToolLoopMode];
+
+/**
+ * ToolLoopState
+ *
+ * Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.
+ *
+ * Steps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it
+ * gathered travel with the iteration; the trace then shows the loop's full state at every step.
+ */
+export type ToolLoopState = {
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * Messages
+   *
+   * The loop's conversation so far, tool calls and results.
+   */
+  messages: Array<Message>;
+  /**
+   * Tools
+   *
+   * The tools offered to the model in this run.
+   */
+  tools?: Array<ToolDefinition>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode: ToolLoopMode;
+  /**
+   * Iteration
+   *
+   * How many decisions the model has made so far.
+   */
+  iteration?: number;
+  /**
+   * Tool Calls Made
+   *
+   * How many tool calls ran so far.
+   */
+  tool_calls_made?: number;
+  /**
+   * Max Iterations
+   *
+   * The call's own iteration limit, if any.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return.
+   */
+  cite_sources?: boolean;
+  /**
+   * Gathered
+   *
+   * The tool results as context, for the blueprint's own answer.
+   */
+  gathered?: Array<ChatMessage>;
+  /**
+   * Needs Condensing
+   *
+   * Whether the conversation outgrew the prompt and is condensed before the model decides.
+   */
+  needs_condensing?: boolean;
 };
 
 /**
@@ -20300,6 +21642,45 @@ export type AttachedFileEventWritable = {
 };
 
 /**
+ * AttachedFilesReadEvent
+ *
+ * The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.
+ */
+export type AttachedFilesReadEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the attached files' text, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * BaseRetrieveMemoryEvent
  *
  * A control and display event emitted when an agent retrieves memories from long-term storage.
@@ -21058,6 +22439,87 @@ export type ColorPickerWritable = {
 };
 
 /**
+ * CompleteConversationEvent
+ *
+ * Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then
+ * emit the stop event.
+ *
+ * Built with `Conversation.complete(...)`. Anything that must be published before the run tears down, such
+ * as a memory-storage delegation, is returned from the same step ahead of this event.
+ */
+export type CompleteConversationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The answer the follow-up questions are grounded on.
+   */
+  answer: LlmEventWritable;
+  /**
+   * The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.
+   */
+  stop?: StopEventWritable | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ComposeContextEvent
+ *
+ * Asks the conversation capability to merge context blocks into a chat history, in the given order, behind
+ * the leading system messages and within the input budget.
+ *
+ * Built with `Conversation.compose(...)`; answered with `ContextComposedEvent`.
+ */
+export type ComposeContextEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history to merge the blocks into.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Blocks
+   *
+   * Context blocks in the order they should reach the model. Empty blocks are skipped.
+   */
+  blocks?: Array<Array<ChatMessage>>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextComposedEvent
  *
  * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
@@ -21170,6 +22632,49 @@ export type ContextSufficientAcceptEventWritable = {
 };
 
 /**
+ * ContextualizeConversationEvent
+ *
+ * Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the
+ * message for a meta question, derive the query the turn is answered for, and title the thread.
+ *
+ * Built with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a
+ * stop event when the message was a meta question or could not be condensed.
+ */
+export type ContextualizeConversationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history, already limited to the budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * User Query
+   *
+   * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
+   */
+  user_query?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * ContextualizedAgentEvent
  *
  * Wraps an agent event with context information like the agent's class, ID, and thread ID.
@@ -21268,6 +22773,22 @@ export type ContextualizedAgentEventWritable = {
     | LimitChatHistoryEventWritable
     | AddMemoryToChatHistoryEventWritable
     | ContextComposedEventWritable
+    | ContextualizeConversationEventWritable
+    | ConversationContextualizedEventWritable
+    | ComposeContextEventWritable
+    | CompleteConversationEventWritable
+    | NotAMetaQuestionEventWritable
+    | RecallMemoryEventWritable
+    | MemoryRecalledEventWritable
+    | MemoryStorageRequestedEventWritable
+    | SearchKnowledgeEventWritable
+    | ReadAttachedFilesEventWritable
+    | AttachedFilesReadEventWritable
+    | RunToolLoopEventWritable
+    | ToolLoopIterationEventWritable
+    | ToolCallsDecidedEventWritable
+    | ToolCallApprovedEventWritable
+    | ToolLoopFinishedEventWritable
     | AddUserMemoryToChatHistoryEventWritable
     | AddOrganizationMemoryToChatHistoryEventWritable
     | StandaloneQuestionCondenserEventWritable
@@ -21352,6 +22873,52 @@ export type ControlEventWritable = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationContextualizedEvent
+ *
+ * The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query
+ * every capability and the blueprint answer it for.
+ */
+export type ConversationContextualizedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The limited chat history the request carried.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The question this turn is answered for. Blank when the message carried no text.
+   */
+  query: string;
+  /**
+   * Condensed
+   *
+   * Whether the query was condensed from the history rather than taken verbatim.
+   */
+  condensed?: boolean;
   [key: string]: unknown;
 };
 
@@ -25560,6 +27127,104 @@ export type MailMovedEventWritable = {
 };
 
 /**
+ * MemoryRecalledEvent
+ *
+ * The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.
+ */
+export type MemoryRecalledEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Block
+   *
+   * System messages carrying the user's memories, or none.
+   */
+  user_block?: Array<ChatMessage>;
+  /**
+   * Organization Block
+   *
+   * System messages carrying the organization's memories, or none.
+   */
+  organization_block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MemoryStorageRequestedEvent
+ *
+ * Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to
+ * persist user memory, WITHOUT awaiting a response (issue #1179).
+ *
+ * ### Why a dedicated event (not AgentInTheLoop)?
+ * `AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact
+ * symptom #1179 removes — and it opens a response subscription that would route a result back into the
+ * caller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the
+ * writer's subject and nothing is routed back. It is displayed like every protocol event, so the event
+ * history shows the delegation; chat clients show no more than a passing status. Its control copy lands in the
+ * caller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the
+ * run finalizes as soon as this cheap marker exists, not when storage completes.
+ */
+export type MemoryStorageRequestedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The start event published to the writer agent to begin its independent run.
+   */
+  start_event: StoreUserMemoryRequestedEventWritable;
+  /**
+   * Target Agent Class
+   *
+   * Writer agent class to route the start event to.
+   */
+  target_agent_class: string;
+  /**
+   * Target Agent Id
+   *
+   * Writer agent id (fixed system id) to route to.
+   */
+  target_agent_id: string;
+  [key: string]: unknown;
+};
+
+/**
  * Message
  */
 export type MessageWritable = {
@@ -26061,6 +27726,41 @@ export type NodeSummaryDtoWritable = {
    * List of nodes in the summary
    */
   nodes: Array<IngestedNodeWritable>;
+};
+
+/**
+ * NotAMetaQuestionEvent
+ *
+ * Internal "all-clear" gate signal: the user's message is a normal task, not a meta
+ * question about the agent. It releases the agent's normal entry steps, which depend
+ * on it so they cannot start until meta-question detection has cleared the message.
+ */
+export type NotAMetaQuestionEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a normal (non-meta) request.
+   */
+  reasoning: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -26937,6 +28637,121 @@ export type RatingWritable = {
 };
 
 /**
+ * ReadAttachedFilesEvent
+ *
+ * Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.
+ *
+ * Built with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is
+ * attached. It carries the history the files will be composed into, since that is what decides how much room
+ * the files have.
+ */
+export type ReadAttachedFilesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Files
+   *
+   * The files attached to the current branch.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * History
+   *
+   * The history the files will be composed into, for sizing them.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The turn's query, for picking the relevant sections of a file too large to fit.
+   */
+  query?: string;
+  /**
+   * Reserve Tokens
+   *
+   * Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.
+   */
+  reserve_tokens?: number;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the files by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * RecallMemoryEvent
+ *
+ * Asks the memory capability for what the profile remembers about the user and the organization, for a query.
+ *
+ * Built with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the
+ * profile or the run has no identity to read for.
+ */
+export type RecallMemoryEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Query
+   *
+   * The question to search memories with.
+   */
+  query: string;
+  /**
+   * Org Memory Namespaces
+   *
+   * Organization-memory namespaces to narrow the search to; empty means the profile's own.
+   */
+  org_memory_namespaces?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalStopEvent
  *
  * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
@@ -27586,6 +29401,82 @@ export type RunStatisticsWritable = {
 };
 
 /**
+ * RunToolLoopEvent
+ *
+ * Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.
+ *
+ * Built with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's
+ * declaration, narrowed by the profile and by the features the user switched on for the message.
+ */
+export type RunToolLoopEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * History
+   *
+   * The conversation the model decides on.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode?: ToolLoopMode;
+  /**
+   * Tools
+   *
+   * Narrows the offered tools to these names for this call, if given.
+   */
+  tools?: Array<string> | null;
+  /**
+   * Max Iterations
+   *
+   * An iteration limit tighter than the profile's, e.g. 1 for routing.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return, off where it cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Files
+   *
+   * The files attached to the message, for tools that read them.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Knowledge References
+   *
+   * The collections the user referenced on the message, for tools that search knowledge.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  [key: string]: unknown;
+};
+
+/**
  * SandboxFileDisplayedEvent
  *
  * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
@@ -27647,6 +29538,59 @@ export type SandboxFileDisplayedEventWritable = {
    * The copy's key within the bucket.
    */
   key: string;
+  [key: string]: unknown;
+};
+
+/**
+ * SearchKnowledgeEvent
+ *
+ * Asks the knowledge capability to search the collections the user referenced for the turn's query.
+ *
+ * Built with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.
+ */
+export type SearchKnowledgeEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * References
+   *
+   * The collections the user referenced on this message.
+   */
+  references?: Array<KnowledgeReference>;
+  /**
+   * Query
+   *
+   * The turn's query the collections are searched for.
+   */
+  query?: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the documents by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -28692,6 +30636,102 @@ export type StoreUserMemoryEventWritable = {
 };
 
 /**
+ * StoreUserMemoryRequestedEvent
+ *
+ * Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's
+ * critical path (issue #1179).
+ *
+ * It runs in a different execution context than the originating RAG run and cannot read that run's
+ * `run_context`, so it carries everything the writer needs as plain serializable data. The originating
+ * agent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*
+ * `AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.
+ *
+ * Scope: user memory only. Organization memory has a different API shape and is not on #1179's critical
+ * path; if it is decoupled later, add a `memory_type` discriminator here.
+ */
+export type StoreUserMemoryRequestedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * Originating run's locale, so extraction prompts stay in the user's language.
+   */
+  locale?: string;
+  /**
+   * User the memories belong to.
+   */
+  user: UserIdentity;
+  /**
+   * Messages
+   *
+   * Conversation the writer extracts user memories from.
+   */
+  messages: Array<ChatMessage>;
+  /**
+   * Origin Thread Id
+   *
+   * Originating run's thread id, kept as memory metadata.
+   */
+  origin_thread_id: string;
+  /**
+   * Origin Display Id
+   *
+   * Originating run's display id, kept as memory metadata.
+   */
+  origin_display_id: string;
+  /**
+   * Origin Run Id
+   *
+   * Originating run's run id, kept as memory metadata.
+   */
+  origin_run_id: string;
+  /**
+   * Origin Agent Class
+   *
+   * Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).
+   */
+  origin_agent_class: string;
+  /**
+   * Origin Agent Id
+   *
+   * Originating agent's id — part of the _agent_id scoping tag.
+   */
+  origin_agent_id: string;
+  /**
+   * Originating agent's name — used in the fact-extraction prompt.
+   */
+  origin_agent_name: LocaleString;
+  /**
+   * Originating agent's description — used in the fact-extraction prompt.
+   */
+  origin_agent_description: LocaleString;
+  /**
+   * Origin Memory Llm
+   *
+   * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
+   */
+  origin_memory_llm?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * TenantSelect
  *
  * A FormKit element for selecting one of the tenants the user belongs to.
@@ -29549,6 +31589,105 @@ export type ToolApprovalResponseEventWritable = {
 };
 
 /**
+ * ToolCallApprovedEvent
+ *
+ * A tool call cleared to run, either because it needs no approval or because the user approved it.
+ *
+ * Function tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own
+ * request, so the call runs the same sub-workflow, with the same events, as an explicit call would.
+ */
+export type ToolCallApprovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call's id, which its result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: "function" | "capability";
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolCallsDecidedEvent
+ *
+ * The model chose tools in this iteration; the loop continues once every one of them has a result.
+ */
+export type ToolCallsDecidedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state including the model's tool-calling turn.
+   */
+  state: ToolLoopStateWritable;
+  /**
+   * Tool Call Ids
+   *
+   * The calls this iteration waits for.
+   */
+  tool_call_ids: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventWritable = {
@@ -29674,6 +31813,155 @@ export type ToolLoopCondensedEventWritable = {
    */
   condensed_turns?: number;
   [key: string]: unknown;
+};
+
+/**
+ * ToolLoopFinishedEvent
+ *
+ * The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.
+ */
+export type ToolLoopFinishedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * The model's final reply, in answering mode.
+   */
+  answer?: LlmEventWritable | null;
+  /**
+   * Block
+   *
+   * The tool results as context for the blueprint's answer, gathering mode.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Stopped Early
+   *
+   * Whether the loop stopped at its limits.
+   */
+  stopped_early?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopIterationEvent
+ *
+ * The model's turn to decide: answer, or call tools. One per iteration of the loop.
+ */
+export type ToolLoopIterationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state at the start of this iteration.
+   */
+  state: ToolLoopStateWritable;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopState
+ *
+ * Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.
+ *
+ * Steps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it
+ * gathered travel with the iteration; the trace then shows the loop's full state at every step.
+ */
+export type ToolLoopStateWritable = {
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * Messages
+   *
+   * The loop's conversation so far, tool calls and results.
+   */
+  messages: Array<MessageWritable>;
+  /**
+   * Tools
+   *
+   * The tools offered to the model in this run.
+   */
+  tools?: Array<ToolDefinition>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode: ToolLoopMode;
+  /**
+   * Iteration
+   *
+   * How many decisions the model has made so far.
+   */
+  iteration?: number;
+  /**
+   * Tool Calls Made
+   *
+   * How many tool calls ran so far.
+   */
+  tool_calls_made?: number;
+  /**
+   * Max Iterations
+   *
+   * The call's own iteration limit, if any.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return.
+   */
+  cite_sources?: boolean;
+  /**
+   * Gathered
+   *
+   * The tool results as context, for the blueprint's own answer.
+   */
+  gathered?: Array<ChatMessage>;
+  /**
+   * Needs Condensing
+   *
+   * Whether the conversation outgrew the prompt and is condensed before the model decides.
+   */
+  needs_condensing?: boolean;
 };
 
 /**
@@ -34187,6 +36475,239 @@ export type CreateIncidentResponses = {
 
 export type CreateIncidentResponse =
   CreateIncidentResponses[keyof CreateIncidentResponses];
+
+export type DeleteUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file, or folder with everything in it, to delete.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type DeleteUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteUserFileError =
+  DeleteUserFileErrors[keyof DeleteUserFileErrors];
+
+export type DeleteUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type DeleteUserFileResponse =
+  DeleteUserFileResponses[keyof DeleteUserFileResponses];
+
+export type ListUserFilesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to list; '.' is the top.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type ListUserFilesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ListUserFilesError = ListUserFilesErrors[keyof ListUserFilesErrors];
+
+export type ListUserFilesResponses = {
+  /**
+   * Successful Response
+   */
+  200: FolderListingDto;
+};
+
+export type ListUserFilesResponse =
+  ListUserFilesResponses[keyof ListUserFilesResponses];
+
+export type GetUserFileContentData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file to read.
+     */
+    path: string;
+    /**
+     * Download
+     *
+     * Whether the browser saves the file instead of showing it.
+     */
+    download?: boolean;
+  };
+  url: "/{tenant_id}/user-knowledge/content";
+};
+
+export type GetUserFileContentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetUserFileContentError =
+  GetUserFileContentErrors[keyof GetUserFileContentErrors];
+
+export type GetUserFileContentResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type UploadUserFileData = {
+  body: BodyUploadUserFile;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to add it to.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge/files";
+};
+
+export type UploadUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UploadUserFileError =
+  UploadUserFileErrors[keyof UploadUserFileErrors];
+
+export type UploadUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type UploadUserFileResponse =
+  UploadUserFileResponses[keyof UploadUserFileResponses];
+
+export type CreateUserFolderData = {
+  body: CreateFolderRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/folders";
+};
+
+export type CreateUserFolderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateUserFolderError =
+  CreateUserFolderErrors[keyof CreateUserFolderErrors];
+
+export type CreateUserFolderResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type CreateUserFolderResponse =
+  CreateUserFolderResponses[keyof CreateUserFolderResponses];
+
+export type MoveUserFileData = {
+  body: MoveFileRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/move";
+};
+
+export type MoveUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type MoveUserFileError = MoveUserFileErrors[keyof MoveUserFileErrors];
+
+export type MoveUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type MoveUserFileResponse =
+  MoveUserFileResponses[keyof MoveUserFileResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;

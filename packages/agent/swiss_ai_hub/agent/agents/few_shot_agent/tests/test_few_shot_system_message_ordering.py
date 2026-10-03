@@ -11,8 +11,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AttachedFilesReadEvent,
-    KnowledgeSearchedEvent,
     ConversationContextualizedEvent,
+    KnowledgeSearchedEvent,
     MemoryRecalledEvent,
     UserMessageEvent,
 )
