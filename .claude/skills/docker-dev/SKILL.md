@@ -121,7 +121,7 @@ Read `infra/deployment/CLAUDE.md` for full details. Quick overview:
 
 - `infra/deployment/compose-config.yml` — image tags + stage-specific values (SINGLE SOURCE OF TRUTH)
 - `infra/deployment/generate_compose.py` — Jinja2 renderer
-- `infra/deployment/templates/docker-compose.yml.j2` — main template (~4400 lines)
+- `infra/deployment/templates/docker-compose.yml.j2` — main template (~4800 lines)
 - `infra/deployment/templates/configs/` — service config templates (NATS, LiteLLM, Traefik, Milvus, etc.)
 
 **5 Stages**:

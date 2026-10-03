@@ -50,8 +50,9 @@ Universal Agent.
 
 ## What it does *not* do
 
-- **No knowledge base / RAG.** It doesn't search your documents. For grounded document answers, use the
-  [Document Intelligence Assistant](../5_document_intelligence_assistant/).
+- **No knowledge base / RAG of its own.** It has no configured collections to search; beyond the MCP tools it only reads
+  the files attached to a message and the collections referenced with `#`. For grounded answers over a fixed knowledge
+  base, use the [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **No human escalation.** It doesn't hand off to a colleague — its "hands" are the tools on the MCP server.
 - **It's only as capable as the server it connects to.** The tools, their behaviour, and their permissions all live on
   the MCP server, not in this agent. The agent discovers and orchestrates them; it doesn't define them.

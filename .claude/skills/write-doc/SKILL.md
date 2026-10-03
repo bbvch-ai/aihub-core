@@ -1,6 +1,6 @@
 ---
 name: write-doc
-description: Write new documentation pages for the VitePress docs site at docs/docs/. Ensures correct file structure (index.en.md only), frontmatter, heading hierarchy, media references, VitePress containers, and adherence to writing guidelines. Use when user says "write documentation", "create a doc page", "add documentation for X", "document this feature", "new docs page", or "write a guide for X". Do NOT use for ADR creation (use document-decision), feature deep-dives from code analysis (use document-feature),.
+description: Write new documentation pages for the VitePress docs site at docs/docs/. Ensures correct file structure (index.en.md only), frontmatter, heading hierarchy, media references, VitePress containers, and adherence to writing guidelines. Use when user says "write documentation", "create a doc page", "add documentation for X", "document this feature", "new docs page", or "write a guide for X". Do NOT use for ADR creation (use document-decision) or feature deep-dives from code analysis (use document-feature).
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 

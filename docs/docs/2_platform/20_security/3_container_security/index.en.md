@@ -46,9 +46,10 @@ Images follow immutable infrastructure principles and are never patched in place
 
 User code runs in `open-terminal`, the one container that executes arbitrary code. It is isolated in three ways.
 
-- **Network.** It sits alone in the `code-sandbox` network, shared only with the services that call it. A breakout has
-  no network path to the application or data tiers, and outside development the network has no outbound internet access
-  (see [Network Isolation](../../2_architecture/4_network_isolation/)).
+- **Network.** It sits alone in the `code-sandbox` network, shared only with the services that call it (`open-webui`,
+  `universal-agent` and `api`). A breakout can reach those callers, but has no direct network path to the rest of the
+  application tier or to the data tier, and outside development the network has no outbound internet access (see
+  [Network Isolation](../../2_architecture/4_network_isolation/)).
 - **Per-user homes.** Each user works in their own home directory. The platform ships a patched sandbox image
   (`open-terminal-office`) whose file API resolves links and only reaches the requesting user's own home. Without the
   patch, a link inside one home could read or overwrite another user's files, or reach the server's environment. The

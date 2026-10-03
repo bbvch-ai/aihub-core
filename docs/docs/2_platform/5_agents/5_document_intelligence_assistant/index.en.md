@@ -228,11 +228,11 @@ Lets the assistant draw on shared knowledge captured for the whole organization 
 
 Two sections with preset models cover material users bring into the chat. Most profiles never change them.
 
-| Field                                      | Default            | Description                                                                                                   |
-| ------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| **Attached Files > Embedding Model**       | `embedding/bge-m3` | Shortlists the sections of an attached file that is too long to fit whole.                                    |
-| **Attached Files > Reranking Model**       | `reranker/bge`     | Orders the shortlisted sections by relevance before they fill the room left in the prompt.                    |
-| **Referenced Knowledge > Reranking Model** | `reranker/bge`     | Orders what the collections a user referenced with `#` return. Each is searched with its own embedding model. |
+| Field                                  | Default            | Description                                                                                                   |
+| -------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **Attached Files > Embedding Model**   | `embedding/bge-m3` | Shortlists the sections of an attached file that is too long to fit whole.                                    |
+| **Attached Files > Reranking Model**   | `reranker/bge`     | Orders the shortlisted sections by relevance before they fill the room left in the prompt.                    |
+| **Knowledge Search > Reranking Model** | `reranker/bge`     | Orders what the collections a user referenced with `#` return. Each is searched with its own embedding model. |
 
 The agent reserves room for its retrieved passages before it sizes attached files, so a large attachment cannot crowd
 out the knowledge search.

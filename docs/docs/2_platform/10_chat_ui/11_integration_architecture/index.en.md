@@ -126,7 +126,7 @@ Agent answers link each statement to the source it came from, the way Open WebUI
   over from an earlier turn, not every search hit. Each is labelled with its title or file name, and links to the
   document when its source provides a reference URL.
 
-## Referencing our knowledge with
+## Referencing our knowledge with `#`
 
 In an agent chat, typing `#` lists the knowledge collections the user may read, named "Database / Collection", next to
 Open WebUI's own knowledge bases. Open WebUI stays a picker: the entries hold no content and it runs no retrieval on
@@ -153,8 +153,8 @@ including when a long conversation is being condensed to fit the model.
 
 - **Approvals**: a tool an admin marked for approval asks a yes/no confirmation in the chat that names the tool and what
   the call does. A declined tool is not requested again for that answer, and the model answers without it.
-- **Toggles decide what is offered**: a tool that needs Web Search, Code Interpreter or Image Generation is offered only
-  while that toggle is on. See [Chat toggles for agents](#chat-toggles-for-agents).
+- **Toggles decide what is offered**: a tool that needs Code Interpreter or My Files is offered only while that toggle
+  is on. See [Chat toggles for agents](#chat-toggles-for-agents).
 - **Limits**: a profile caps how often the model may decide and how many calls it may make. At the cap the model answers
   with what it has and says it stopped early.
 - **Sources**: a knowledge search the model chose produces the same citation chips as a `#` reference.

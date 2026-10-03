@@ -178,8 +178,8 @@ brings the same building blocks, each with its own section in the form:
   whole; a longer one is cut down to the sections most relevant to the question, and the answer says so. The embedding
   and reranking models that pick those sections are preset (`embedding/bge-m3`, `reranker/bge`) and rarely need a
   change.
-- **Referenced Knowledge**: the reranking model used when a user points the chat at a collection with `#`. It is preset
-  to `reranker/bge`. Only collections the user may read are searched.
+- **Knowledge Search**: the reranking model used when a user points the chat at a collection with `#`, or when the model
+  chooses to search one itself. It is preset to `reranker/bge`. Only collections the user may read are searched.
 - **Condense question** and **Task LLM**: described above.
 
 All of them cite what they read as sources in the chat. If a message alone, such as a very long pasted text, is larger
@@ -188,7 +188,7 @@ narrower of the answering model and the Task LLM.
 
 ### Tool loop settings
 
-Agents that let the model choose its own tools, such as the Universal Agent, add a **Tool loop** section:
+Agents that let the model choose its own tools, such as the Universal Agent, add a **Tools** section:
 
 | Setting                | What it does                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------- |
@@ -198,8 +198,7 @@ Agents that let the model choose its own tools, such as the Universal Agent, add
 | **Approvals**          | Per tool: never ask, ask for every call, ask once per answer, or ask once per conversation. |
 
 At either limit the model answers without tools and the chat says that it stopped early. A tool is also offered only
-while the chat toggle it needs (Web Search, Code Interpreter, Image Generation) is on. See
-[Agents overview](../#tools-the-model-chooses).
+while the chat toggle it needs (Code Interpreter or My Files) is on. See [Agents overview](../#tools-the-model-chooses).
 
 ### System Prompt
 

@@ -29,7 +29,7 @@ packages/web/
 │   ├── tenant/              # useTenant — reads tenant id from either route shape (`[tenant]` or `[tenant_id]`)
 │   ├── tenant-admin/        # useTenantAdminList, useConfigureTenant, useUpdateTenant, useDeleteTenant, useUnconfiguredTenantIds
 │   ├── form/                # useFormKitTransform (backend schema → FormKit nodes)
-│   ├── userFiles/           # useUserFiles, useUserFileActions (My Files; components in `components/UserFiles/`)
+│   ├── userFiles/           # useUserFiles, useUserFileContent, useUploadUserFiles, useCreateUserFolder, useMoveUserFile, useDeleteUserFile (My Files; components in `components/UserFiles/`)
 │   ├── event/               # useEventComponent (event → display component resolver)
 │   └── ...                  # auth, chat, dashboard, document, evaluation, file, etc.
 ├── i18n/locales/            # de.yaml, en.yaml, fr.yaml, it.yaml

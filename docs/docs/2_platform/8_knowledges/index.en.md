@@ -77,8 +77,9 @@ stored ones, so a rotation is a matter of editing the source. The system then:
 - Disables manual uploads, hand-made collections and manual document deletion for that database
 
 If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
-name and the second is skipped: its files are not synced, and the sync run reports which folders were skipped and why.
-Other folders and the database's other files are unaffected; renaming the folder at the source fixes it.
+name and the second is skipped: its files reach the data lake but are never ingested, and the ingestion run names the
+skipped files and the reason in its metadata and logs. Other folders and the database's other files are unaffected;
+renaming the folder at the source fixes it.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Giving a database that already holds uploaded documents a source asks for

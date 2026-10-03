@@ -261,7 +261,8 @@ A capability (`packages/agent/swiss_ai_hub/agent/capabilities/`) is called with 
 result event; see `/scaffold-agent` ("Step 4b") for the calling side. Requests are imperative, results are past
 participles. **Protocol events are control and display**: every one of them is a `ControlAndDisplayEvent` so it appears
 in the event history, and each has its own frontend component (`/scaffold-event-display`). Only high-frequency or purely
-cosmetic events stay `DisplayEvent` (`ChunkEvent`, `AttachedFileEvent`, `ToolLoopStatusEvent`).
+cosmetic events stay `DisplayEvent` (`ChunkEvent`, `AttachedFileEvent`, `ToolLoopStatusEvent`, `ToolLoopCondensedEvent`,
+`SandboxFileDisplayedEvent`).
 
 | Capability      | Request event                    | Result event                                              |
 | --------------- | -------------------------------- | --------------------------------------------------------- |
@@ -277,7 +278,8 @@ cosmetic events stay `DisplayEvent` (`ChunkEvent`, `AttachedFileEvent`, `ToolLoo
 Tool-loop internals (`events/agent/tool_loop/`): `ToolLoopIterationEvent` per round, `ToolCallsDecidedEvent` (the
 model's choice), `ToolApprovalRequestEvent` / `ToolApprovalResponseEvent` (a `HumanInTheLoopConfirmationRequestEvent`
 and its response, shown as a yes/no in chat), `ToolCallApprovedEvent`, `ToolResultEvent`, `ToolEvent` per call and
-`ToolLoopStatusEvent`. The loop's state travels on the events (`ToolLoopState`), never in the run context. Code
+`ToolLoopStatusEvent`. The loop's messages and counters travel on the events (`ToolLoopState`); declined tools,
+`cite_sources` and remembered approvals live in `RunContext` (once-per-conversation approvals in `ThreadContext`). Code
 execution adds `SandboxFileDisplayedEvent` (`events/agent/sandbox/`) when an agent shows a sandbox file to the user.
 
 #### Memory Events

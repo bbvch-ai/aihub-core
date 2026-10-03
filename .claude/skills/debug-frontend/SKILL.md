@@ -1,6 +1,6 @@
 ---
 name: debug-frontend
-description: Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection, console error analysis, and network request tracing. Use when user says 'UI is broken', 'page not loading', 'frontend bug', 'console errors', 'API call failing in UI', 'component not rendering', 'blank page', 'verify my UI changes', or 'check the admin interface'. Do NOT use for static code quality audits (use audit-frontend), backend agent debugging (use debug-agent), or bot platform issues (use debug-bot).
+description: Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection, console error analysis, and network request tracing. Use when user says 'UI is broken', 'page not loading', 'frontend bug', 'console errors', 'API call failing in UI', 'component not rendering', 'blank page', 'verify my UI changes', or 'check the admin interface'. Do NOT use for static code quality audits (use audit-frontend), backend agent debugging (use debug-agent), or bot platform issues (use bot-framework).
 allowed-tools: Read, Bash, Grep, Glob, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_select_option, mcp__playwright__browser_press_key, mcp__playwright__browser_evaluate
 ---
 

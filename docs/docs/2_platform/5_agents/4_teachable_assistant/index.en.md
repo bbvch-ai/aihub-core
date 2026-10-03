@@ -48,8 +48,8 @@ flowchart LR
    streamed back to the user.
 
 Before any of this, the assistant checks that the message fits the model's context window. A message that cannot fit,
-for example a very long pasted text, gets a short reply saying so, and since the assistant answers from its examples and
-does not read documents, the reply points the user to an assistant built for documents.
+for example a very long pasted text, gets a short reply saying so that points the user to an assistant built for
+documents.
 
 ::: warning The examples replace the raw chat history
 At the answering step the assistant deliberately uses your **examples** as the conversational context rather than the
@@ -59,8 +59,10 @@ influential: they are effectively the conversation the model thinks it is contin
 
 ## What it does *not* do
 
-- **No knowledge base.** It never searches your documents; answers come from the model plus your examples. For grounded,
-  cited answers use the [Document Intelligence Assistant](../5_document_intelligence_assistant/).
+- **No knowledge base of its own.** It has no configured collections to search; answers come from the model plus your
+  examples, and only the files attached to a message and the collections referenced with `#` are read. For grounded,
+  cited answers over a fixed knowledge base use the
+  [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **No tools or actions, no human escalation.** Same boundaries as the Instructed Assistant.
 - **No real "training".** Despite the name, nothing is fine-tuned. "Teaching" here means supplying examples in the
   configuration — they take effect immediately and can be changed at any time. See the [Agents overview](../) for why

@@ -16,14 +16,14 @@ A capability is called the way human-in-the-loop requests are: a step returns th
 with a typed helper, and a later step declares the **result event** as a parameter. Returning a list fans out, and
 declaring several parameters waits for all of them.
 
-| Capability      | Call                                                      | Result                          | Config mixin         |
-| --------------- | --------------------------------------------------------- | ------------------------------- | -------------------- |
-| `Conversation`  | `contextualize(history, message)`                         | `Conversation.Contextualized`   | `ConversationFields` |
-| `Conversation`  | `compose(history, blocks)`                                | `Conversation.Composed`         | `ConversationFields` |
-| `Conversation`  | `complete(answer, stop=None)`                             | ends the run                    | `ConversationFields` |
-| `Memory`        | `recall(query)`; `remember(...)` stores in the background | `Memory.Recalled`               | `MemoryFields`       |
-| `AttachedFiles` | `read(files, history, query)`                             | `AttachedFiles.Contents`        | `AttachedFilesFields` |
-| `Knowledge`     | `search(references, query)`                               | `Knowledge.Searched`            | `KnowledgeFields`    |
+| Capability      | Call                                                      | Result                        | Config mixin          |
+| --------------- | --------------------------------------------------------- | ----------------------------- | --------------------- |
+| `Conversation`  | `contextualize(history, message)`                         | `Conversation.Contextualized` | `ConversationFields`  |
+| `Conversation`  | `compose(history, blocks)`                                | `Conversation.Composed`       | `ConversationFields`  |
+| `Conversation`  | `complete(answer, stop=None)`                             | ends the run                  | `ConversationFields`  |
+| `Memory`        | `recall(query)`; `remember(...)` stores in the background | `Memory.Recalled`             | `MemoryFields`        |
+| `AttachedFiles` | `read(files, history, query)`                             | `AttachedFiles.Contents`      | `AttachedFilesFields` |
+| `Knowledge`     | `search(references, query)`                               | `Knowledge.Searched`          | `KnowledgeFields`     |
 
 The blueprint's config lists the mixins of the capabilities it calls before `AgentConfig`, and the dispatcher injects
 the run's config into any step parameter annotated with one. The chat blueprints in
@@ -81,16 +81,18 @@ class AnsweringToolLoopAgent(Agent):
         return Conversation.complete(answer=finished.answer)
 ```
 
-`tools.run(history)` ends with the model's reply (`ANSWER` mode). `tools.route(history)` makes one gathering decision and
-returns the results as a context block for the blueprint's own answer. Every event of a loop carries the set's name, so
-a blueprint can run several sets in a row.
+`tools.run(history)` ends with the model's reply (`ANSWER` mode). `tools.route(history)` makes one gathering decision
+and returns the results as a context block for the blueprint's own answer. Every event of a loop carries the set's name,
+so a blueprint can run several sets in a row.
 
 ### Three kinds of tool
 
 All look the same to the model.
 
-- **Capability tools.** A capability that offers itself as a tool, such as `Knowledge` (which searches the profile's
-  `tool_collections`). A model-chosen call produces the same events and citation chips as an explicit one.
+- **Capability tools.** A capability that offers itself as a tool, such as `Knowledge` (which searches the collections
+  in the profile's `knowledge_tool` settings, or every collection the user can read, plus those referenced on the
+  message, limited to what the user may read). A model-chosen call produces the same events and citation chips as an
+  explicit one. The config must also list the capability's tool mixin, `KnowledgeToolFields` for `Knowledge`.
 - **LlamaIndex tool specs.** A `BaseToolSpec` subclass whose listed methods are the tools; the schema is read from
   signatures and docstrings, so LlamaHub specs work unchanged. It is built per run with a `ToolContext` (config, user,
   locale, displayer).

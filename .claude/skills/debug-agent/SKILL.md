@@ -66,9 +66,10 @@ ______________________________________________________________________
 event (`Conversation.contextualize(...)`, `Memory.recall(...)`, `Knowledge.search(...)`, `AttachedFiles.read(...)`,
 `<Agent>.tools.run(...)`) and the capability's steps (`packages/agent/swiss_ai_hub/agent/capabilities/`) are composed
 into `get_steps()` only when the blueprint's calls can reach them. Map the DAG from `Agent.get_steps()`, not from the
-class body alone. Tool-loop state travels on the `ToolLoop*` events, never in the run context. Startup failures with
-messages naming an obligation (step waiting for an event nothing produces, call outcome no step consumes, config missing
-a capability mixin such as `MemoryFields`) come from `Agent.validate_workflow`; see
+class body alone. Tool-loop messages and counters travel on the `ToolLoop*` events (`ToolLoopState`); declined tools,
+`cite_sources` and remembered approvals live in `RunContext` (once-per-conversation approvals in `ThreadContext`).
+Startup failures with messages naming an obligation (step waiting for an event nothing produces, call outcome no step
+consumes, config missing a capability mixin such as `MemoryFields`) come from `Agent.validate_workflow`; see
 `capabilities/tests/test_capability_composition.py`. An agent class may define `@step` methods only
 (`agents/tests/test_agent_classes_hold_steps_only.py`).
 

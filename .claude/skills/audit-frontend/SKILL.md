@@ -1,6 +1,6 @@
 ---
 name: audit-frontend
-description: Run a comprehensive frontend code audit of the Nuxt 3 admin interface. Checks Pinia-Colada query/mutation patterns, TypeScript strictness, component architecture, SDK freshness, i18n coverage, and Tailwind usage. Use when user says 'audit the frontend', 'check frontend code quality', 'find unused components', 'composable health check', 'pinia-colada audit', 'typescript errors', or 'frontend code review'. Do NOT use for backend API audits (use scaffold-api-endpoint) or bot UI issues (use debug-bot). Reports issues with file locations and severity levels.
+description: Run a comprehensive frontend code audit of the Nuxt 3 admin interface. Checks Pinia-Colada query/mutation patterns, TypeScript strictness, component architecture, SDK freshness, i18n coverage, and Tailwind usage. Use when user says 'audit the frontend', 'check frontend code quality', 'find unused components', 'composable health check', 'pinia-colada audit', 'typescript errors', or 'frontend code review'. Do NOT use for backend API audits (use scaffold-api-endpoint) or bot UI issues (use bot-framework). Reports issues with file locations and severity levels.
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -213,7 +213,7 @@ Check that every file directly under `pages/[tenant]/service/*.vue` wraps conten
 `NuxtPage` for detail routing.
 
 ```bash
-grep -rL "StructuralScreen" packages/web/pages/[tenant]/service/*.vue
+grep -rL "StructuralScreen" packages/web/pages/\[tenant\]/service/*.vue
 ```
 
 ### 4b. tenantPath for all navigation (ERROR)

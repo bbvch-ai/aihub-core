@@ -46,7 +46,8 @@ tenant that already relies on an agent outside the set. Granting one takes effec
 
 ## What every chat agent can do
 
-Whichever blueprint a profile is built from, a chat agent shares the same behaviour in the conversation:
+The conversational blueprints built on the shared capabilities (Instructed, Teachable, Document Intelligence, Company
+Knowledge, MCP Tool and Universal) share the same behaviour in the conversation:
 
 - **Attached files.** Files attached in the chat are read by the agent itself and listed as sources. A long file is cut
   down to the sections that matter for the question, and the answer says so.
@@ -54,8 +55,8 @@ Whichever blueprint a profile is built from, a chat agent shares the same behavi
   limited to what the user may read.
 - **Inline citations.** Statements link to the document they came from, as numbered chips in the answer.
 - **Memory.** What the agent remembers about the user and the organization joins the model's instructions.
-- **Chat toggles.** Web Search, Code Interpreter and Image Generation are requests to the agent, which runs them as
-  traced, cost-attributed steps. An agent shows a toggle only if it can serve it.
+- **Chat toggles.** A chat toggle is a request to the agent, which runs it as traced, cost-attributed steps. An agent
+  shows a toggle only if it can serve it; today that is Code Interpreter and My Files, on the Universal Agent.
 - **Refusals instead of errors.** A message larger than the model's context window, or a request outside a Teachable
   Assistant's remit, is answered with a short explanation in the chat rather than an error.
 
@@ -72,7 +73,7 @@ can answer. This is the tool loop, and it is how the Universal Agent works.
 The loop stays inside controls an admin sets per profile:
 
 - **Only what is offered runs.** A tool is offered only if the profile enables it, the user's access allows it and, for
-  Web Search, Code Interpreter or Image Generation, the chat toggle is on. A call to anything else is refused.
+  Code Interpreter or My Files, the chat toggle is on. A call to anything else is refused.
 - **Approvals.** A tool can ask the user to confirm first: on every call, once per answer or once per conversation. A
   declined tool is not requested again for that answer.
 - **Limits.** The profile caps the number of decisions and tool calls. At the cap the model answers with what it has and

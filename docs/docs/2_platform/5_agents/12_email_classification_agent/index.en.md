@@ -263,10 +263,10 @@ selection.
 :::
 
 **Grounded drafts are written in the sender's language.** The agent detects the language of each incoming message
-(German, English, French or Italian) and has the knowledge agent answer, and the draft read, in it; scheduled runs have
-no user locale of their own, so without this every grounded draft would come out in German. Detection is a model call
-and can misjudge mixed-language mail, for instance an English reply above a quoted German thread. When the language
-cannot be determined, the previous behaviour applies.
+(German, English, French or Italian) and has the knowledge agent answer in that language, so the draft is written in it;
+scheduled runs have no user locale of their own, so without this every grounded draft would come out in German.
+Detection is a model call and can misjudge mixed-language mail, for instance an English reply above a quoted German
+thread. When the language cannot be determined, the previous behaviour applies.
 
 **Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
 model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest

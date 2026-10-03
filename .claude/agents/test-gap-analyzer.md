@@ -34,15 +34,17 @@ the future, incorporate `coverage report --show-missing` into your analysis alon
 
 ### Test Locations
 
-| Scope               | Test Location                                               | Pattern                                   |
-| ------------------- | ----------------------------------------------------------- | ----------------------------------------- |
-| `packages/core`     | inline `*/tests/` dirs next to code in `swiss_ai_hub/core/` | pytest + BDD                              |
-| `packages/agent`    | `swiss_ai_hub/agent/agents/{name}/tests/` per agent         | BDD with `AgentTestRunner`                |
-| `packages/api`      | `packages/api/playground/testing/tests/`                    | pytest with `SimulatedAgentApiTestRunner` |
-| `packages/process`  | `packages/process/playground/*/tests/`                      | BDD with `ProcessTestRunner`              |
-| `packages/pipeline` | inline `swiss_ai_hub/pipeline/**/tests/` dirs               | pytest                                    |
-| `packages/bot`      | `packages/bot/playground/testing/tests/`                    | pytest with `BotTestRunner`               |
-| `packages/web`      | None                                                        | No test framework configured              |
+| Scope                   | Test Location                                               | Pattern                                   |
+| ----------------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| `packages/core`         | inline `*/tests/` dirs next to code in `swiss_ai_hub/core/` | pytest + BDD                              |
+| `packages/agent`        | `swiss_ai_hub/agent/agents/{name}/tests/` per agent         | BDD with `AgentTestRunner`                |
+| `packages/api`          | `packages/api/playground/testing/tests/`                    | pytest with `SimulatedAgentApiTestRunner` |
+| `packages/process`      | `packages/process/playground/*/tests/`                      | BDD with `ProcessTestRunner`              |
+| `packages/pipeline`     | inline `swiss_ai_hub/pipeline/**/tests/` dirs               | pytest                                    |
+| `packages/bot`          | `packages/bot/playground/testing/tests/`                    | pytest with `BotTestRunner`               |
+| `packages/sysadmin-api` | `packages/sysadmin-api/tests/`                              | pytest                                    |
+| `packages/backup`       | `packages/backup/tests/{unit,integration}/`                 | pytest                                    |
+| `packages/web`          | None                                                        | No test framework configured              |
 
 ### What Counts as "Testable"
 
@@ -105,7 +107,7 @@ grep -rn "@op" packages/pipeline/swiss_ai_hub/pipeline/ops --include="*.py" | gr
 
 ```bash
 # Find all test files by scope
-for scope in packages/core packages/agent packages/api packages/process packages/pipeline packages/bot; do
+for scope in packages/core packages/agent packages/api packages/process packages/pipeline packages/bot packages/sysadmin-api packages/backup; do
   echo "=== $scope ==="
   find "$scope" -name "test_*.py" -not -path "*/__pycache__/*" -not -path "*/.venv/*" 2>/dev/null
 done

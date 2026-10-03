@@ -811,11 +811,12 @@ Rules:
 - A model that picks its own tools (Universal Agent pattern): declare
   `tools = ToolLoop.over(Knowledge, AttachedFiles, Memory, MyToolSpec)` on the class and call
   `MyAgent.tools.run(history)`; capabilities are offered as tools and `BaseToolSpec` classes (LlamaIndex) add custom
-  ones. Example: `playground/minimal_workflow/tool_loop_workflow/`.
+  ones. The config then also lists `ToolLoopFields`, the `*Fields` mixin of every capability in the tool set, and
+  `KnowledgeToolFields` when `Knowledge` is offered. Example: `playground/minimal_workflow/tool_loop_workflow/`.
 - All validation is in `Agent.validate_workflow` (run by `AgentRunner`);
   `capabilities/tests/test_capability_composition.py` shows what it rejects.
 - Protocol events of capabilities and the tool loop are `ControlAndDisplayEvent`s with their own frontend component (see
-  `/scaffold-event-display`).
+  `/scaffold-event-display`), except the display-only `ToolLoopStatusEvent` and `ToolLoopCondensedEvent`.
 
 ______________________________________________________________________
 
@@ -1061,8 +1062,7 @@ Feature: {Agent Display Name}
   Scenario: Happy path
     Given a {AgentName} runner
     When the start event is sent with payload "test message"
-    Then a StartEvent is present with payload "test message"
-    And a StopEvent is present
+    Then a StopEvent is present
 ```
 
 ### Test Implementation
