@@ -10,10 +10,10 @@ class ReasoningFreeChat:
     """A chat call with the model's thinking switched off, for steps whose answer is a label or a one-line rewrite
     (guards, classification, question condensing), where thinking only adds latency.
 
-    Model families read different keys: Qwen3 honours only ``enable_thinking`` and keeps thinking under
-    ``thinking`` alone, often until it runs out of output tokens without an answer; other vLLM templates honour
-    ``thinking``. Both are sent. Mistral-tokenizer models (Ministral) reject ``chat_template_kwargs`` with a 400
-    and have no thinking to switch off, so they get a plain request.
+    Reasoning models read the switch from different chat-template keys, and ignore the one they do not know: some
+    read ``enable_thinking`` (Qwen), others ``thinking`` (Kimi). Both are sent, so the switch reaches whichever
+    reasoning model a profile picks. Models without a thinking mode ignore it, and Mistral-tokenizer models
+    (Ministral) that reject ``chat_template_kwargs`` with a 400 get a plain request.
     """
 
     EXTRA_BODY: ClassVar[dict[str, Any]] = {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}

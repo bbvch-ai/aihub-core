@@ -37,9 +37,9 @@ async def condense_standalone_question(
     System messages are filtered out from the chat history before processing.
 
     Uses ``achat`` (not ``chat``): a synchronous LLM call inside the agent's async event loop blocks every
-    other coroutine for the whole request. Thinking is off, because rewriting one question needs none: on Qwen
-    it took 10-25s per turn, and in 2 of 6 probe calls it used up the output tokens before writing the question,
-    which is the blank answer below.
+    other coroutine for the whole request. Thinking is off, because rewriting one question needs none: on a
+    reasoning model it took 2-25s per turn, and can use up the output tokens before writing the question, which
+    is the blank answer below.
 
     Raises `EmptyCondensationError` on a blank answer instead of returning one. This has been observed in
     production — 8 runs between 30 June and 14 July 2026 — and every caller treats the result as the turn's

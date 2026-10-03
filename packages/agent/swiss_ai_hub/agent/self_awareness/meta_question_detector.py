@@ -68,7 +68,7 @@ async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> M
     message = ChatMessage(role=MessageRole.USER, content=prompt.format(user_query=user_query))
 
     try:
-        # A single-token classification needs no thinking (≈13s of it on Qwen3.5).
+        # A single-token classification needs no thinking; on a reasoning model it would be pure latency.
         response = await ReasoningFreeChat.achat(llm, [message])
         raw_answer = str(response.message.content)
         label = _parse_label(raw_answer)

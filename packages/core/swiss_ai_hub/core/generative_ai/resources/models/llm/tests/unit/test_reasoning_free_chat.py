@@ -29,7 +29,7 @@ def _bad_request() -> BadRequestError:
 
 
 @pytest.mark.asyncio
-async def test_switches_thinking_off_under_both_keys_because_qwen_reads_only_enable_thinking():
+async def test_switches_thinking_off_under_every_key_a_reasoning_model_reads():
     llm = _llm(_reply("SUFFICIENT"))
 
     await ReasoningFreeChat.achat(llm, QUESTION)

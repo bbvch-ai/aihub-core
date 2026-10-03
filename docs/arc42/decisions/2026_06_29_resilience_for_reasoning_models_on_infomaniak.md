@@ -130,14 +130,22 @@ later requires only re-adding the per-agent steps, not re-discovering how to mak
   Ministral / Apertus) makes all structured features work natively; reasoning models remain best-effort until Infomaniak
   corrects their tool-call/reasoning/structured-output handling.
 
-## Amendment 2026-10-03: one switch, which Qwen actually reads
+## Amendment 2026-10-03: one switch that every reasoning model reads
 
-The guards sent only `{"chat_template_kwargs": {"thinking": false}}`. Qwen3.5 reads `enable_thinking` and ignores that
-key, so on a Qwen profile without a separate task model every guard verdict still came after up to 8192 tokens of
-thinking, and a verdict cut off at that limit failed open as "sufficient". The question condenser sent no switch at
-all. Measured on `Qwen3.5-122B-A10B-FP8` against the same prompts, uncached: the sufficiency guard went from 9.4 s to
-0.6 s at the median (43.9 s worst case) and from 17/18 to 18/18 correct verdicts; condensing went from 10.9 s to 0.5 s
-with equivalent questions. Gemma and Ministral do not think on these calls and were unchanged.
+Reasoning models read the thinking switch from different chat-template keys and ignore the others: Qwen reads
+`enable_thinking`, Kimi reads `thinking`. The guards sent only `thinking: false`, so they still thought on Qwen, and
+the question condenser sent no switch at all, so it thought on every reasoning model. Measured uncached against the
+same prompts, per call, median before → after:
+
+| Model | Sufficiency guard | Question condenser |
+|---|---|---|
+| Qwen3.5-122B | 9.4 s → 0.6 s (17/18 → 18/18 correct) | 10.9 s → 0.5 s |
+| Kimi-K2.6 | 0.7 s → 0.6 s (already off) | 2.6 s → 0.4 s |
+| Gemma-4, Ministral, Apertus | unchanged (no thinking) | unchanged |
+
+Thinking also cost correctness: a guard that reached the 8192-token limit gave no verdict and failed open as
+"sufficient", and a condenser that reached it returned a blank question, which the chat answers with "please
+rephrase".
 
 The switch now lives in one place, core's `ReasoningFreeChat` (both keys, plain request for a model that rejects
 `chat_template_kwargs`). The guards, the condenser, meta-question detection, mail language detection and the
