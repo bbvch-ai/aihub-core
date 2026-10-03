@@ -141,13 +141,13 @@ class ToolLoop(Capability):
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
         await run_context.set(CITE_SOURCES_KEY, request.cite_sources)
-        messages = await EarlierToolTurns(thread_context, request.loop).restore(
-            [Message.from_llama_index(message) for message in request.history]
-        )
+        history = [Message.from_llama_index(message) for message in request.history]
+        messages = await EarlierToolTurns(thread_context, request.loop).restore(history)
         return ToolLoopIterationEvent(
             state=ToolLoopState(
                 loop=request.loop,
                 messages=messages,
+                question=EarlierToolTurns.last_question(history),
                 tools=offered,
                 mode=request.mode,
                 max_iterations=request.max_iterations,
@@ -187,6 +187,7 @@ class ToolLoop(Capability):
         if state.mode == ToolLoopMode.GATHER:
             await ToolLoop._status(displayer, state, t, "stopped_early" if exhausted else "deciding", done=exhausted)
             if exhausted:
+                await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
                 return ToolLoopFinishedEvent(loop=state.loop, block=state.gathered, stopped_early=True)
 
         available = [
@@ -204,7 +205,7 @@ class ToolLoop(Capability):
 
         assistant = turn.output_messages[-1]
         if not assistant.tool_calls:
-            await EarlierToolTurns(thread_context, state.loop).keep(state.messages)
+            await EarlierToolTurns(thread_context, state.loop).keep(state.question, state.messages)
             return await ToolLoop._finish(state, turn, exhausted, displayer, t)
 
         remaining = loop.tool_loop.max_tool_calls - state.tool_calls_made
