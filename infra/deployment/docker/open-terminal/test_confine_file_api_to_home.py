@@ -69,8 +69,11 @@ def test_searching_through_a_link_into_another_home_is_refused(victim_file: str)
     assert grep.status_code == 403 and b"private" not in grep.content
     glob = attacker.get("/files/glob", params={"pattern": "*", "path": "victimdir"})
     assert glob.status_code == 403
+    # Globbing the attacker's own home must drop the outward link, since it resolves into another home. The link is
+    # reported by its own name ("link.txt"), never the target's ("secret.txt"), so asserting on "link.txt" is what
+    # actually fails on the unpatched image — "secret.txt" would be absent there too.
     own = attacker.get("/files/glob", params={"pattern": "*", "path": "."})
-    assert "secret.txt" not in own.text
+    assert "link.txt" not in own.text
 
 
 def test_searching_the_server_environment_is_refused() -> None:
@@ -95,6 +98,39 @@ def test_the_user_still_works_freely_in_their_own_home() -> None:
     assert user.get("/files/view", params={"path": "work/notes.txt"}).content == b"mine"
     assert user.get("/files/view", params={"path": "shortcut.txt"}).content == b"mine"
     assert {entry["name"] for entry in user.get("/files/list").json()["entries"]} >= {"work", "shortcut.txt"}
+
+
+def test_a_users_own_outward_link_stays_visible_and_removable() -> None:
+    user = _user("venv")
+    _run(user, "ln -s /usr/bin/python3 pythonlink")
+
+    names = {entry["name"] for entry in user.get("/files/list").json()["entries"]}
+    assert "pythonlink" in names
+
+    assert user.get("/files/view", params={"path": "pythonlink"}).status_code == 403
+
+    assert user.request("DELETE", "/files/delete", params={"path": "pythonlink"}).is_success
+    assert "pythonlink" not in {entry["name"] for entry in user.get("/files/list").json()["entries"]}
+
+
+def test_deleting_an_outward_dir_link_does_not_touch_its_target() -> None:
+    user = _user("dirl")
+    outside = f"/tmp/{uuid.uuid4().hex}"
+    _run(user, f"mkdir -p {outside} && echo keep > {outside}/keep.txt && ln -s {outside} dirlink")
+
+    assert user.request("DELETE", "/files/delete", params={"path": "dirlink"}).is_success
+    assert _run(user, f"cat {outside}/keep.txt").strip() == "keep"
+
+
+def test_moving_an_outward_link_does_not_follow_it() -> None:
+    user = _user("movl")
+    outside = f"/tmp/{uuid.uuid4().hex}.txt"
+    _run(user, f"echo target > {outside} && ln -s {outside} before.txt")
+
+    assert user.post("/files/move", json={"source": "before.txt", "destination": "after.txt"}).is_success
+    assert _run(user, "readlink after.txt").strip() == outside
+    assert _run(user, f"cat {outside}").strip() == "target"
+    assert _run(user, f"stat -c %U {outside}").strip() == _run(user, "whoami").strip()
 
 
 def test_shell_commands_still_see_the_system() -> None:

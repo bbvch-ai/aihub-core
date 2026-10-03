@@ -117,3 +117,14 @@ Route OpenWebUI's code-execution path to a new **`open-terminal`** service:
 > which a user who swaps a link at the right moment could still escape; closing it needs every file operation to verify
 > the opened file instead. One container per user, upstream's recommendation, is what removes the shared boundary
 > altogether.
+>
+> Listing, deleting and moving an entry are checked by the entry's own location rather than its link target, so a user's
+> own link that points outside their home (a virtualenv's `python`, say) stays visible and removable while reads through
+> it are still refused; a link is never followed when it is removed or moved.
+>
+> Two further paths around this confinement are closed here as well. The notebook endpoints
+> (`OPEN_TERMINAL_ENABLE_NOTEBOOKS`) run cells with an in-process Jupyter kernel as the root-capable server user, never
+> through the per-user file layer, so they are disabled in the compose template — we drive the sandbox through
+> `/execute` only. And the file layer only confines a request that carries an `X-User-Id`; without one it falls back to
+> an unrestricted account, so every direct caller of the sandbox (OpenWebUI's terminal proxy today, agents under #2033)
+> must send that header.
