@@ -96,6 +96,18 @@ class AttachedFileSections:
                 remaining -= tokens
         return sorted(chosen, key=lambda section: section.index or 0)
 
+    def fill_leading(self, sections: list[IngestedNode], room: int) -> list[IngestedNode]:
+        """The sections that fit `room`, from the first on and without a gap, for pages read in order."""
+        chosen: list[IngestedNode] = []
+        remaining = room
+        for section in sections:
+            tokens = len(self._token_counter(section.content))
+            if tokens > remaining:
+                break
+            chosen.append(section)
+            remaining -= tokens
+        return chosen
+
     @staticmethod
     def cosine(left: list[float], right: list[float]) -> float:
         norm = math.sqrt(sum(value * value for value in left)) * math.sqrt(sum(value * value for value in right))

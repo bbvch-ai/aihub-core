@@ -30,6 +30,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode import FitMode
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_page_range import AttachedFilePageRange
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
@@ -64,7 +65,8 @@ class AttachedFiles(Capability):
     The files the user attached to the conversation, as one call:
 
     - `read(files, history, query, reserve_tokens)` is answered with `AttachedFilesReadEvent`, one context block
-      holding each file's text, empty when nothing readable is attached. Pass the block to `Conversation.compose(...)`
+      holding each file's text, empty when nothing readable is attached. `first_page`/`last_page` read those pages of
+      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to `Conversation.compose(...)`
       behind the memories. `reserve_tokens` is room the caller still needs afterwards, such as RAG's retrieved
       knowledge, which the files leave free.
 
@@ -112,6 +114,8 @@ class AttachedFiles(Capability):
         query: str = "",
         reserve_tokens: int = 0,
         cite_sources: bool = True,
+        first_page: int | None = None,
+        last_page: int | None = None,
     ) -> ReadAttachedFilesEvent:
         return ReadAttachedFilesEvent(
             files=list(files or []),
@@ -119,6 +123,8 @@ class AttachedFiles(Capability):
             query=query,
             reserve_tokens=max(reserve_tokens, 0),
             cite_sources=cite_sources,
+            first_page=first_page,
+            last_page=last_page,
         )
 
     @staticmethod
@@ -145,29 +151,22 @@ class AttachedFiles(Capability):
             *(AttachedFileReader.read(file, topic.agent_class, topic.agent_id) for file in files)
         )
         readable = {event.file_id: (document, event) for document, event in outcomes if document is not None}
-        sections = dict(
-            zip(
-                readable,
-                await asyncio.gather(
-                    *(
-                        asyncio.to_thread(AttachedFileSections.parse, document, event.file_id, event.filename)
-                        for document, event in readable.values()
-                    )
-                ),
-                strict=True,
-            )
-        )
+        pages = AttachedFilePageRange.of(request.first_page, request.last_page)
+        by_page = {file_id for file_id, (document, _) in readable.items() if pages and document.is_paged}
+        sections = AttachedFiles._on_pages(await AttachedFiles._parse(readable), pages, by_page)
         counter = conversation.llm.token_counter
         available = (
             conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
         )
         budget = AttachedFilesBudget(available, files_config.attached_files.share_of_input_budget, counter)
-        rooms = budget.allocate({file_id: document.content for file_id, (document, _) in readable.items()})
+        rooms = budget.allocate(
+            {file_id: "\n\n".join(section.content for section in found) for file_id, found in sections.items()}
+        )
         picker = AttachedFileSections(files_config.attached_files, counter, user)
-        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query)
+        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page)
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
-        block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources)
+        block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages)
         return [*events, AttachedFilesReadEvent(block=block, tool_call_id=request.tool_call_id)]
 
     @staticmethod
@@ -208,6 +207,8 @@ class AttachedFiles(Capability):
         return ReadAttachedFilesEvent(
             files=chosen,
             query=arguments.query,
+            first_page=arguments.first_page,
+            last_page=arguments.last_page,
             reserve_tokens=max(conversation.input_budget() - loop.tool_loop.max_result_tokens, 0),
             cite_sources=call.cite_sources,
             tool_call_id=call.tool_call_id,
@@ -233,14 +234,42 @@ class AttachedFiles(Capability):
         )
 
     @staticmethod
+    async def _parse(
+        readable: dict[str, tuple[ExtractedDocument, AttachedFileEvent]],
+    ) -> dict[str, list[IngestedNode]]:
+        parsed = await asyncio.gather(
+            *(
+                asyncio.to_thread(AttachedFileSections.parse, document, event.file_id, event.filename)
+                for document, event in readable.values()
+            )
+        )
+        return dict(zip(readable, parsed, strict=True))
+
+    @staticmethod
+    def _on_pages(
+        sections: dict[str, list[IngestedNode]], pages: AttachedFilePageRange | None, by_page: set[str]
+    ) -> dict[str, list[IngestedNode]]:
+        """The sections on the pages asked for, of each file that knows its pages; a file that does not keeps all."""
+        if pages is None:
+            return sections
+        return {file_id: pages.select(found) if file_id in by_page else found for file_id, found in sections.items()}
+
+    @staticmethod
     async def _fit(
         sections: dict[str, list[IngestedNode]],
         rooms: dict[str, int | None],
         picker: AttachedFileSections,
         query: str,
+        by_page: set[str],
     ) -> dict[str, tuple[list[IngestedNode], FitMode]]:
+        """Pages asked for are kept in order up to the room, since they are read through, not searched."""
+
         async def fit_one(file_id: str) -> tuple[str, tuple[list[IngestedNode], FitMode]]:
             room = rooms[file_id]
+            if file_id in by_page:
+                if room is None:
+                    return file_id, (sections[file_id], FitMode.PAGES)
+                return file_id, (picker.fill_leading(sections[file_id], room), FitMode.PAGES_CUT)
             if room is None:
                 return file_id, (sections[file_id], FitMode.WHOLE)
             return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query)
@@ -269,6 +298,7 @@ class AttachedFiles(Capability):
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
         cite_sources: bool,
+        pages: AttachedFilePageRange | None = None,
     ) -> list[ChatMessage]:
         """The files as retrieved knowledge is rendered, followed by what the model must tell the user about them."""
         chosen = [section for sections, _ in fitted.values() for section in sections]
@@ -281,21 +311,64 @@ class AttachedFiles(Capability):
             )
             if cite_sources:
                 block.append(ChatMessage(role=MessageRole.SYSTEM, content=t("lib.prompt.citations.instruction")))
-        notes = [AttachedFiles._note(event, fitted, t) for _, event in outcomes]
+        notes = [AttachedFiles._note(event, fitted, t, pages) for _, event in outcomes]
         if any(notes):
             block.append(ChatMessage(role=MessageRole.SYSTEM, content="\n".join(note for note in notes if note)))
         return block
 
     @staticmethod
-    def _note(event: AttachedFileEvent, fitted: dict[str, tuple[list[IngestedNode], FitMode]], t: LocaleHandler) -> str:
+    def _note(
+        event: AttachedFileEvent,
+        fitted: dict[str, tuple[list[IngestedNode], FitMode]],
+        t: LocaleHandler,
+        pages: AttachedFilePageRange | None = None,
+    ) -> str:
         if event.file_id not in fitted:
             return t("agent.attached_files.prompt.unreadable", filename=event.filename, error=event.error)
-        match fitted[event.file_id][1]:
+        sections, mode = fitted[event.file_id]
+        if mode in (FitMode.PAGES, FitMode.PAGES_CUT) and pages:
+            return AttachedFiles._pages_note(event, sections, mode, pages, t)
+        unknown_pages = t("agent.attached_files.prompt.pages_unknown", filename=event.filename) if pages else ""
+        match mode:
             case FitMode.EXCERPTS:
-                return t("agent.attached_files.prompt.excerpted", filename=event.filename)
+                fit = t("agent.attached_files.prompt.excerpted", filename=event.filename)
             case FitMode.BEGINNING:
-                return t("agent.attached_files.prompt.truncated", filename=event.filename)
-        return ""
+                fit = t("agent.attached_files.prompt.truncated", filename=event.filename)
+            case _:
+                fit = ""
+        return "\n".join(note for note in (unknown_pages, fit) if note)
+
+    @staticmethod
+    def _pages_note(
+        event: AttachedFileEvent,
+        sections: list[IngestedNode],
+        mode: FitMode,
+        pages: AttachedFilePageRange,
+        t: LocaleHandler,
+    ) -> str:
+        total = event.number_of_pages
+        if not sections and total is not None and pages.first > total:
+            return t(
+                "agent.attached_files.prompt.pages_missing", filename=event.filename, total=total, first=pages.first
+            )
+        shown = pages.within(total)
+        if mode == FitMode.PAGES_CUT:
+            last_shown = max((AttachedFilePageRange.page_of(section) for section in sections), default=shown.first)
+            return t(
+                "agent.attached_files.prompt.pages_cut",
+                filename=event.filename,
+                first=shown.first,
+                shown=last_shown,
+                last=shown.last,
+                next=last_shown + 1,
+            )
+        return t(
+            "agent.attached_files.prompt.pages",
+            filename=event.filename,
+            first=shown.first,
+            last=shown.last,
+            total=total or shown.last,
+        )
 
     @staticmethod
     def _with_status(

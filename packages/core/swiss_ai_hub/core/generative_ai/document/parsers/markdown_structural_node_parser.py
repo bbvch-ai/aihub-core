@@ -256,51 +256,55 @@ class NodeCreatorFromSplits:
 
         page = 1
         for split in splits:
-            split.metadata.update({PAGE: page})
-
-            text_chunks: list[TextChunk] = []
-            soup = bs4.BeautifulSoup(split.content, "html.parser")
-            buffer = ""
-
-            for child in soup.children:
-                if isinstance(child, bs4.element.Tag) and child.name in [
-                    NODE_CONTENT_TYPE_TABLE,
-                    NODE_CONTENT_TYPE_FIGURE,
-                ]:
-                    if buffer.strip():
-                        text_chunks.extend(
-                            [
-                                TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
-                                for text_split in self.sentence_splitter.split_text(buffer)
-                            ]
-                        )
-                        buffer = ""
-                    if child.name == NODE_CONTENT_TYPE_TABLE:
-                        text_chunks = self._chunk_table(child, text_chunks)
-                    else:
-                        text_chunks.append(TextChunk(child.text, child.name))
-                else:
-                    buffer += str(child)
-
-            if buffer.strip():
-                text_chunks.extend(
-                    [
-                        TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
-                        for text_split in self.sentence_splitter.split_text(buffer)
-                    ]
+            split_nodes: list[TextNode] = []
+            # A chunk never spans a page break, so every node carries the page it is on, not the page its section
+            # started on; the marker itself is no content.
+            for page_offset, page_content in enumerate(split.content.split(PAGE_BREAK)):
+                text_chunks = self.size_limiter.enforce(self._chunk_content(page_content))
+                page_metadata = split.metadata | {PAGE: page + page_offset}
+                split_nodes.extend(
+                    self._build_node_from_split(text_chunk, node, page_metadata) for text_chunk in text_chunks
                 )
-
-            text_chunks = self.size_limiter.enforce(text_chunks)
-
-            split_nodes = [self._build_node_from_split(text_chunk, node, split.metadata) for text_chunk in text_chunks]
             self._set_relationships_within_split(split_nodes)
             self._set_relationships_between_splits(split_nodes, split.level, last_nodes_stack)
             nodes.extend(split_nodes)
-
-            if PAGE_BREAK in split.content:
-                page += 1
+            page += split.content.count(PAGE_BREAK)
 
         return nodes
+
+    def _chunk_content(self, content: str) -> list[TextChunk]:
+        text_chunks: list[TextChunk] = []
+        soup = bs4.BeautifulSoup(content, "html.parser")
+        buffer = ""
+
+        for child in soup.children:
+            if isinstance(child, bs4.element.Tag) and child.name in [
+                NODE_CONTENT_TYPE_TABLE,
+                NODE_CONTENT_TYPE_FIGURE,
+            ]:
+                if buffer.strip():
+                    text_chunks.extend(
+                        [
+                            TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+                            for text_split in self.sentence_splitter.split_text(buffer)
+                        ]
+                    )
+                    buffer = ""
+                if child.name == NODE_CONTENT_TYPE_TABLE:
+                    text_chunks = self._chunk_table(child, text_chunks)
+                else:
+                    text_chunks.append(TextChunk(child.text, child.name))
+            else:
+                buffer += str(child)
+
+        if buffer.strip():
+            text_chunks.extend(
+                [
+                    TextChunk(text_split, NODE_CONTENT_TYPE_TEXT)
+                    for text_split in self.sentence_splitter.split_text(buffer)
+                ]
+            )
+        return text_chunks
 
     def _build_node_from_split(self, text_chunk: TextChunk, node: BaseNode, metadata: dict) -> TextNode:
         node = build_nodes_from_splits([text_chunk.content], node, id_func=self.id_func)[0]

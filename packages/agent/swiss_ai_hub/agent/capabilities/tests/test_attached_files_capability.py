@@ -63,12 +63,14 @@ async def _read(
     query: str = "",
     reserve_tokens: int = 0,
     cite_sources: bool = True,
+    first_page: int | None = None,
+    last_page: int | None = None,
 ) -> list:
     config = _config()
     with patch.object(ConversationFields, "input_budget", return_value=budget):
         return await AttachedFiles.read_step(
             LLMWrappingAgent(),
-            request=AttachedFiles.read(files, HISTORY, query, reserve_tokens, cite_sources),
+            request=AttachedFiles.read(files, HISTORY, query, reserve_tokens, cite_sources, first_page, last_page),
             topic=AgentInstanceTopic(
                 agent_class="LLMWrappingAgent",
                 agent_id="files-test",
@@ -280,3 +282,65 @@ class TestAttachedFileSections:
     def test_cosine(self):
         assert AttachedFileSections.cosine([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
         assert AttachedFileSections.cosine([1.0, 0.0], [0.0, 1.0]) == pytest.approx(0.0)
+
+
+PAGE_BREAK = "<!-- PageBreak -->"
+
+
+def _paged_document(pages: int, words_per_page: int = 5) -> ExtractedDocument:
+    texts = [" ".join([f"page{page}text"] * words_per_page) for page in range(1, pages + 1)]
+    return _document(f"\n{PAGE_BREAK}\n".join(texts), pages=pages)
+
+
+@pytest.mark.asyncio
+async def test_pages_asked_for_are_read_instead_of_searched():
+    document = _paged_document(5)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=document)):
+        source, read = await _read([_file("handbook.pdf")], query="what is on page 3", first_page=3, last_page=4)
+
+    content = read.block[0].content or ""
+    assert "page3text" in content and "page4text" in content
+    assert "page2text" not in content and "page5text" not in content
+    assert 'These are pages 3 to 4 of "handbook.pdf", which has 5 pages.' in (read.block[-1].content or "")
+    assert source.status == AttachedFileStatus.TRUNCATED
+
+
+@pytest.mark.asyncio
+async def test_a_single_page_needs_no_last_page():
+    document = _paged_document(3)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=document)):
+        _, read = await _read([_file("handbook.pdf")], first_page=2)
+
+    content = read.block[0].content or ""
+    assert "page2text" in content and "page1text" not in content and "page3text" not in content
+
+
+@pytest.mark.asyncio
+async def test_pages_that_do_not_fit_are_cut_in_order_and_the_model_is_told_where():
+    document = _paged_document(10, words_per_page=200)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=document)):
+        _, read = await _read([_file("handbook.pdf")], budget=1_000, first_page=2, last_page=9)
+
+    content = read.block[0].content or ""
+    note = read.block[-1].content or ""
+    assert "page2text" in content and "page9text" not in content
+    assert "of the requested pages 2 to 9" in note and "continue from page" in note
+
+
+@pytest.mark.asyncio
+async def test_a_page_past_the_end_is_reported():
+    document = _paged_document(3)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=document)):
+        _, read = await _read([_file("handbook.pdf")], first_page=7)
+
+    assert '"handbook.pdf" has only 3 pages, so there is no page 7.' in (read.block[-1].content or "")
+
+
+@pytest.mark.asyncio
+async def test_a_file_without_page_marks_is_read_whole_and_the_model_is_told():
+    document = _document("Office text without pages.", pages=4)
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=AsyncMock(return_value=document)):
+        _, read = await _read([_file("handbook.docx")], first_page=2)
+
+    assert "Office text without pages." in (read.block[0].content or "")
+    assert 'The pages of "handbook.docx" are not known' in (read.block[-1].content or "")

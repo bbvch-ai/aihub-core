@@ -9,6 +9,7 @@ import pytest
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ChatFeature, SandboxFileDisplayedEvent, UserUploadedFile
+from swiss_ai_hub.core.generative_ai import ExtractedDocument
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTerminalError
 from swiss_ai_hub.core.testing.auth_utils import fake_user
@@ -24,6 +25,7 @@ from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 THREAD = "65f1c0ffee00000000000001"
+USER_FILE_PAGES = "swiss_ai_hub.agent.capabilities.sandbox.user_file_pages"
 REPORT = UserUploadedFile(filename="sales.csv", file_type="text/csv", file_id="0f8fad5b-d9cb-469f-a165-70867728950e")
 
 
@@ -37,6 +39,17 @@ def _topic() -> AgentInstanceTopic:
         event_type="control_event",
         event_name="ToolCallApprovedEvent",
         event_id="65f1c0ffee00000000000004",
+    )
+
+
+def _extracted(content: str, pages: int) -> ExtractedDocument:
+    return ExtractedDocument(
+        title="Report",
+        content=content,
+        content_type="application/pdf",
+        source_filename="q1.pdf",
+        document_parser="MineruLoader",
+        number_of_pages=pages,
     )
 
 
@@ -256,6 +269,37 @@ class TestUserFiles:
         with pytest.raises(OpenTerminalError):
             await tools.read_my_file(path)
         sandbox.read_file.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_pages_of_a_pdf_are_read_through_the_platform_s_extraction(self, sandbox: Any) -> None:
+        sandbox.view = AsyncMock(return_value=(b"%PDF", "application/pdf"))
+        sandbox.read_file = AsyncMock()
+        document = _extracted("one\n<!-- PageBreak -->\ntwo\n<!-- PageBreak -->\nthree", pages=3)
+
+        with patch(
+            f"{USER_FILE_PAGES}.DocumentExtractor.extract_from_bytes", AsyncMock(return_value=document)
+        ) as extract:
+            result = json.loads(
+                await UserFilesTools(_context()).read_my_file("reports/q1.pdf", first_page=2, last_page=9)
+            )
+
+        extract.assert_awaited_once_with(b"%PDF", "q1.pdf", "application/pdf")
+        sandbox.read_file.assert_not_awaited()
+        assert result == {
+            "path": "reports/q1.pdf",
+            "number_of_pages": 3,
+            "pages": [{"page": 2, "text": "two"}, {"page": 3, "text": "three"}],
+        }
+
+    @pytest.mark.asyncio
+    async def test_a_document_without_page_marks_is_sent_back_to_reading_by_line(self, sandbox: Any) -> None:
+        sandbox.view = AsyncMock(return_value=(b"PK", "application/vnd.openxmlformats-officedocument.wordprocessingml"))
+        document = _extracted("all the text", pages=4)
+
+        with patch(f"{USER_FILE_PAGES}.DocumentExtractor.extract_from_bytes", AsyncMock(return_value=document)):
+            result = json.loads(await UserFilesTools(_context()).read_my_file("notes.docx", first_page=2))
+
+        assert "read it by lines" in result["error"]
 
     def test_the_tools_need_my_files_switched_on(self) -> None:
         tool_set = ToolSet.of((UserFilesTools,))
