@@ -5,9 +5,8 @@ manual_upload:
     ; rien ne les synchronise.
 rclone:
   display_name: Synchronisation de stockage cloud (rclone)
-  description: Maintient la base synchronisée avec un site SharePoint, OneDrive, Google
-    Drive, un bucket S3, un conteneur Azure Blob ou un serveur SFTP. Chaque dossier
-    de premier niveau devient un espace de noms.
+  description: Maintient la base synchronisée avec un dossier Google Drive ou un bucket
+    S3. Chaque dossier de premier niveau devient un espace de noms.
   config:
     backend_type:
       label: Backend de stockage
@@ -59,9 +58,9 @@ rclone:
         label: Jeton OAuth
         help: JSON de jeton rclone préobtenu. Stocké chiffré.
       service_account_credentials:
-        label: JSON du compte de service
-        help: Contenu du fichier de clé du compte de service, en alternative à un
-          jeton OAuth. Stocké chiffré.
+        label: Fichier de clé du compte de service
+        help: Fichier de clé JSON téléchargé depuis la console Google Cloud, en alternative
+          à un jeton OAuth. Stocké chiffré.
       root_folder_id:
         label: ID du dossier racine
         help: ID du dossier Drive à traiter comme racine ; vide pour tout le lecteur.

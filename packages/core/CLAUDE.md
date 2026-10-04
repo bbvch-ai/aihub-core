@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
-│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password fields in an announced form
+│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 29 concrete form elements
+│   └── elements/                    # 30 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -79,7 +79,7 @@ packages/core/swiss_ai_hub/core/
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
 ├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
-│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from Password elements
+│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
 │   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
@@ -215,10 +215,10 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   ├── RerankerEvent, ToolEvent, ChainEvent
 │   │   ├── GuardEvent, AgentEvent
 │   │   └── ExceptionEvent
-│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
-│
-├── ControlEvent (drives workflow execution)
-│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
+│   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
+│   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
+│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
+│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -239,7 +239,12 @@ Events are organized by which system they belong to:
 
 ### Creating a New Event
 
-1. Choose the correct base class from the hierarchy above
+1. Choose the correct base class from the hierarchy above. An event that is part of the protocol — a call between steps
+   or capabilities that an admin reading a run would want to see — is a `ControlAndDisplayEvent`, because the event
+   history lists display events only. Plain `ControlEvent` is for internal bookkeeping no reader needs. Give it
+   `_display_name`/`_display_description` from `lib.events.*` (the description is a short progress phrase: chat clients
+   show it as a live status), a component in `packages/web/components/Event/Display/`, and an entry in the
+   `DisplayEvents` union
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors
@@ -277,12 +282,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput.
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
 
 ### Nested Forms
 
@@ -295,6 +300,11 @@ VectorStoreInput, IconSelector, CronInput.
 - A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
   nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
   empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
+- A nested element's pre-filled `value` comes from the **parent field's default instance** first (e.g.
+  `knowledge: KnowledgeConfig = KnowledgeConfig()` whose `reranking_model` names `reranker/bge`), then from the leaf
+  field's own class default. The UI falls back to these values for keys a stored profile lacks, so a profile saved
+  before a sub-form existed opens with the declared model instead of an empty select. `default_factory` values are not
+  inherited — they come from deployment settings at build time, and the admin picks them (e.g. the org-memory tenant).
 
 ## NATS Messaging
 
@@ -531,7 +541,7 @@ Real-time event emission for streaming LLM output to the UI:
 | `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
 | `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
 | `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
-| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                                                         |
+| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                    |
 | `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
 | `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
 | `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
@@ -605,7 +615,7 @@ events report `None` for organization memory, which stores its text verbatim.
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 29 form elements
+- `core/form/elements/` — 30 form elements
 
 **Workflow engine**:
 

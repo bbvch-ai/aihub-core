@@ -6,7 +6,7 @@ Feature: Expert RAG Agent
     When a query is sent and user declines expert escalation with query "What is quantum entanglement in advanced medicine?"
     Then a HumanInTheLoopConfirmationRequestEvent is present
     * an ExpertRejectEvent is present
-    * an LLMEvent is present with a generated response
+    * the answer is handed to the completion
     * a StopEvent is present
     * a RAGFailureStopEvent with reason context_insufficient is present
 
@@ -16,6 +16,6 @@ Feature: Expert RAG Agent
     Then a HumanInTheLoopConfirmationRequestEvent is present
     * a UserRequestsExpertEvent is present
     * an AgentInTheLoopRequestEvent is present
-    * an LLMEvent is present with a generated response
+    * the answer is handed to the completion
     * a StopEvent is present
     * a RAGSuccessStopEvent is present

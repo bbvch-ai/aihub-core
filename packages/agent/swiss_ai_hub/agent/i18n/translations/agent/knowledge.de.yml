@@ -1,0 +1,37 @@
+---
+steps:
+  search_knowledge:
+    name: "Referenziertes Wissen durchsuchen"
+    description: "Durchsucht die Wissenssammlungen, auf die der Benutzer verwiesen hat, und ergänzt den Kontext des Modells um die Fundstellen"
+  search_as_tool:
+    name: "Wissen als Werkzeug durchsuchen"
+    description: "Führt die vom Modell gewählte Wissenssuche aus"
+  answer_tool_call:
+    name: "Wissen an das Modell zurückgeben"
+    description: "Gibt die Fundstellen an die Werkzeugschleife des Modells zurück"
+prompt:
+  context: |
+    {% chat role="system" %}
+    Die folgenden Dokumente stammen aus unseren Wissenssammlungen. Beantworte die Frage anhand dieser Dokumente, soweit sie dafür relevant sind. Jedes Dokument ist ein Block `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, seine Abschnitte stehen unter ihren Überschriften.
+    <referenced_knowledge>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </referenced_knowledge>
+    {% endchat %}
+  refused: "%{collections} konnten nicht durchsucht werden, weil diese Sammlungen dem Benutzer nicht zur Verfügung stehen. Sage dem Benutzer, dass du sie nicht verwenden konntest."
+  nothing_found: "Nichts in den durchsuchten Wissenssammlungen passte zur Frage. Sage dem Benutzer das, wenn die Frage davon abhing."
+tool:
+  label: "Unser Wissen durchsuchen"
+  approval_summary: "Unser Wissen nach «{query}» durchsuchen"
+  description: "Durchsucht unsere Wissenssammlungen und liefert die relevantesten Dokumentabschnitte mit zitierbaren IDs. Verwende es, wenn die Frage mit den Dokumenten der Organisation beantwortet werden kann. Verfügbare Sammlungen:\n%{collections}"
+  query: "Wonach gesucht wird, als kurze eigenständige Frage oder Stichworte."
+  collections: "Die zu durchsuchenden Sammlungen nach Kennung; weglassen, um alle zu durchsuchen."
+config:
+  retrieve_k:
+    label: "Abschnitte pro Datenbank"
+    help: "Wie viele Abschnitte jede durchsuchte Datenbank liefert, bevor das Reranking die besten behält."
+  every_readable_collection:
+    label: "Jede Sammlung, die der Benutzer lesen darf"
+    help: "Das Modell darf jede Wissenssammlung durchsuchen, die der fragende Benutzer lesen darf, statt nur die unten aufgeführten."
+  source:
+    label: "Wissensdatenbank"
+    help: "Eine Datenbank, die das Modell durchsuchen darf, ganz oder auf einige ihrer Sammlungen beschränkt."

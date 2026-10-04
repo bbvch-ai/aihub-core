@@ -1,3 +1,4 @@
+---
 # The incident report form, in GitHub's issue-form schema.
 #
 # This file is the form. Editing it is how a question is added, reworded or
@@ -21,37 +22,30 @@
 name: Report a problem
 description: Tell us what went wrong so support can reproduce and investigate it.
 title: '[INC] '
-labels:
-  - incident
-
+labels: [incident]
 body:
   - type: markdown
     attributes:
       value: How to reach you if support needs more detail.
-
   - type: input
     id: reporter_name
     attributes:
       label: Your name
-
   - type: input
     id: reporter_email
     attributes:
       label: Contact email
     validations:
       required: true
-
   - type: input
     id: reporter_phone
     attributes:
       label: Phone
       description: Optional, if you would rather be called back.
-
   - type: markdown
     attributes:
       value: Describe the problem in your own words. The technical details further
         down are filled in for you — correct them only if they look wrong.
-
   - type: textarea
     id: what_went_wrong
     attributes:
@@ -59,7 +53,6 @@ body:
       placeholder: What you were doing, and what the system did.
     validations:
       required: true
-
   - type: dropdown
     id: problem_type
     attributes:
@@ -73,7 +66,6 @@ body:
         - Something else
     validations:
       required: true
-
   - type: dropdown
     id: impact
     attributes:
@@ -85,7 +77,6 @@ body:
         - The whole team is affected
     validations:
       required: true
-
   - type: dropdown
     id: frequency
     attributes:
@@ -97,7 +88,6 @@ body:
         - Random, unpredictable
     validations:
       required: true
-
   - type: textarea
     id: steps_to_reproduce
     attributes:
@@ -106,22 +96,18 @@ body:
         1.
         2.
         3.
-
   - type: textarea
     id: expected_result
     attributes:
       label: What did you expect to happen?
-
   - type: textarea
     id: actual_result
     attributes:
       label: What happened instead?
-
   - type: markdown
     attributes:
-      value: 'Technical details — filled in automatically. Correct them only if
-        they look wrong.'
-
+      value: Technical details — filled in automatically. Correct them only if they
+        look wrong.
   - type: input
     id: occurred_at
     attributes:
@@ -129,66 +115,55 @@ body:
       description: Carries your UTC offset, because the logs are in UTC.
     validations:
       required: true
-
   - type: input
     id: page_url
     attributes:
       label: Page you were on
-
   - type: input
     id: tenant
     attributes:
       label: Tenant
     validations:
       required: true
-
   - type: input
     id: version
     attributes:
       label: AI Hub version
     validations:
       required: true
-
   - type: input
     id: environment
     attributes:
       label: Environment
       description: Which deployment this is — the version alone does not say where.
-
   - type: input
     id: agent_class
     attributes:
       label: Agent type
       description: Empty when you were talking to a model rather than an agent.
-
   - type: input
     id: agent_name
     attributes:
       label: Agent name
-
   - type: input
     id: model
     attributes:
       label: LLM model
       description: The model behind the answer, where the platform knows it.
-
   - type: input
     id: conversation_id
     attributes:
       label: Conversation ID
       description: Lets support replay the exact conversation this is about.
-
   - type: input
     id: browser
     attributes:
       label: Browser and version
-
   - type: input
     id: locale
     attributes:
       label: Interface language
       description: Some problems only appear in one language.
-
   - type: upload
     attributes:
       label: Screenshots or files

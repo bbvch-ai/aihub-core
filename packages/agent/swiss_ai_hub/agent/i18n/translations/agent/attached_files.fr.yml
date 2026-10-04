@@ -1,0 +1,34 @@
+---
+steps:
+  read_as_tool:
+    name: "Lire les fichiers joints comme outil"
+    description: "Lit les fichiers joints choisis par le modèle"
+  answer_tool_call:
+    name: "Rendre les fichiers au modèle"
+    description: "Renvoie ce qui a été lu à la boucle d'outils du modèle"
+  read_attached_files:
+    name: Lire les fichiers joints
+    description: Lit les fichiers que l'utilisateur a joints à la conversation et
+      ajoute leur texte au contexte du modèle
+prompt:
+  context: |
+    {% chat role="system" %}
+    L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque la question s'y rapporte, répondez à partir de leur contenu et nommez le fichier utilisé. Chaque fichier est un bloc `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ses sections sous leurs titres.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Seules les parties de « %{filename} » les plus pertinentes pour la question tiennent dans votre contexte. Indiquez à l''utilisateur que votre réponse repose sur des extraits de ce fichier.'
+  truncated: Seul le début de « %{filename} » a tenu dans ton contexte. Indique
+    à l'utilisateur que ta réponse repose sur une partie de ce fichier.
+  unreadable: L'utilisateur a joint « %{filename} », mais ce fichier n'a pas pu
+    être lu (%{error}). Indique-lui que ce fichier n'a pas pu être lu et propose
+    de le joindre dans un autre format ou d'en coller le texte.
+tool:
+  label: "Lire les fichiers joints"
+  approval_summary: "Lire les fichiers joints"
+  description: "Lit les fichiers que l'utilisateur a joints à cette conversation et renvoie leur texte, avec des identifiants à citer. Pour un fichier trop grand pour être lu en entier, renvoie les sections les plus pertinentes pour la requête. Fichiers joints :\n%{files}"
+  files: "Les fichiers à lire, par identifiant ; omettre pour les lire tous."
+  query: "Ce que tu cherches dans les fichiers, pour qu'un long fichier garde les sections qui en parlent."
+  nothing_readable: "Aucun des fichiers choisis n'a pu être lu."
+  unknown_files: "Aucun des ids indiqués n'est un fichier joint. Fichiers joints : %{files}"

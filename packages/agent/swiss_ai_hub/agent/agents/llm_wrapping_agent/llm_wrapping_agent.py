@@ -4,133 +4,44 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
-    LimitChatHistoryEvent,
-    LLMStopEvent,
-    Message,
-    MetaQuestionDetectedEvent,
-    NotAMetaQuestionEvent,
+    MemoryStorageRequestedEvent,
+    RefusalStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
-    LLMConfig,
     estimate_prompt_tokens,
     limit_chat_history,
     merge_consecutive_messages,
     usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
-from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
-from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
-    generate_conversation_metadata,
-    generate_follow_up_questions,
-    generate_title,
-)
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
-from swiss_ai_hub.agent.self_awareness.meta_question_workflow_summary import summarize_workflow_for_meta_answer
-from swiss_ai_hub.agent.self_awareness.self_awareness_step_functions import (
-    do_answer_meta_question,
-    do_detect_meta_question,
-)
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class LLMWrappingAgent(Agent):
-    """A simple agent that wraps an LLM and streams responses to user messages."""
+    """A simple agent that wraps an LLM and streams responses to user messages.
+
+    Four steps of its own: limit the history and hand it to the conversation, ask memory for what it knows,
+    ask for the prompt with the memories merged in, and answer. The meta-question gate, the query, the title,
+    the follow-ups and the stop are the conversation capability's; the memories are the memory capability's.
+    """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
         "agent.llm_wrapping_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:message"
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.detect.description"),
-        icon="mdi:help-circle-outline",
-    )
-    async def detect_meta_question_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
-        """Gate every chat message: classify it as a meta question or release the normal pipeline."""
-        return await do_detect_meta_question(
-            user_query=event.user_query,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.self_awareness.steps.answer.description"),
-        icon="mdi:account-voice",
-    )
-    async def answer_meta_question_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
-        """Answer a meta question from the agent's own identity and workflow, then stop the run."""
-        stop_event = await do_answer_meta_question(
-            event=event,
-            agent_name=t.extract(agent_config.name),
-            agent_description=t.extract(agent_config.description),
-            workflow_summary=summarize_workflow_for_meta_answer(type(self), t),
-            chat_history=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            user=user,
-            t=t,
-        )
-        # Follow-ups only — the title runs in parallel via generate_meta_question_title_step, since it
-        # only needs the topic and doesn't need to wait for this answer to finish.
-        await generate_follow_up_questions(stop_event.chat_messages, agent_config.task_llm, displayer, t, user)
-        return stop_event
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation_metadata.steps.title.description"),
-        icon="mdi:format-title",
-        stop_on_error=False,
-    )
-    async def generate_meta_question_title_step(
-        self,
-        event: MetaQuestionDetectedEvent,
-        user_message_event: UserMessageEvent,
-        agent_config: LLMWrappingAgentConfig,
-        thread_context: ThreadContext,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-        user: UserIdentity,
-    ) -> None:
-        """Generate the thread's title in parallel with the meta answer.
-
-        Triggered by the same `MetaQuestionDetectedEvent` as `answer_meta_question_step`, so the
-        dispatcher runs both concurrently — the title only needs the user's question, not the meta
-        answer, so it must not wait for it (that would add post-answer latency for no reason: the answer
-        is already fully streamed to the user by the time the step returns, but the client's
-        "generation done" signal — and thus the stop event — would still be held back).
-        """
-        await generate_title(
-            chat_messages=user_message_event.messages,
-            llm_config=agent_config.task_llm,
-            displayer=displayer,
-            t=t,
-            thread_context=thread_context,
-            user=user,
-        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.limit_chat_history.name"),
@@ -143,8 +54,7 @@ class LLMWrappingAgent(Agent):
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        _clear: NotAMetaQuestionEvent,
-    ) -> LimitChatHistoryEvent | LLMStopEvent:
+    ) -> Conversation.ContextualizeRequest | RefusalStopEvent:
         """Truncate the history to the model's own window, refusing a turn that cannot fit it.
 
         Truncation alone cannot bound the prompt: `ChatMemoryBuffer.get` falls through to `chat_history[-1:]`
@@ -183,15 +93,10 @@ class LLMWrappingAgent(Agent):
 
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            return LimitChatHistoryEvent(
-                limited_history=[
-                    *system_head,
-                    *limit_chat_history(
-                        chat_history=conversation,
-                        number_of_input_tokens=agent_config.number_of_input_tokens,
-                    ),
-                ]
+            limited = limit_chat_history(
+                chat_history=conversation, number_of_input_tokens=agent_config.number_of_input_tokens
             )
+            return Conversation.contextualize(history=[*system_head, *limited], message=event)
 
         # The system prompt and the last turn are what must be sent; everything between them is negotiable. Note
         # the merged last message rather than `event.last_user_message` -- this is the turn that actually goes out,
@@ -199,7 +104,9 @@ class LLMWrappingAgent(Agent):
         irreducible = [*system_head, *conversation[-1:]]
         irreducible_tokens = estimate_prompt_tokens(irreducible, agent_config.llm.token_counter)
         if irreducible_tokens > budget:
-            return await self._refuse_oversized_input(irreducible_tokens, budget, agent_config.llm, displayer, t)
+            return await OversizedInputRefusal.refuse(
+                irreducible_tokens, budget, agent_config.llm.model_name, displayer, t
+            )
 
         # Trim only what sits between them, then put both back. Handing the trimmer a list that still holds the
         # last turn charges it twice: no subset containing it fits the reduced limit, so `ChatMemoryBuffer` falls
@@ -210,52 +117,70 @@ class LLMWrappingAgent(Agent):
             if older_limit > 0
             else []
         )
-        return LimitChatHistoryEvent(limited_history=[*system_head, *older, *conversation[-1:]])
+        return Conversation.contextualize(history=[*system_head, *older, *conversation[-1:]], message=event)
 
-    @staticmethod
-    async def _refuse_oversized_input(
-        needed: int,
-        budget: int,
-        llm_config: LLMConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> LLMStopEvent:
-        """Stop the run with a message the user can act on, keeping the token arithmetic to the thought.
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
+        icon="mdi:brain",
+    )
+    async def gather_context_step(
+        self, ctx: Conversation.Contextualized, event: UserMessageEvent, config: KnowledgeFields
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        references = event.knowledge_references
+        reserve = config.knowledge.context_reserve() if references else 0
+        return [
+            Memory.recall(ctx.query),
+            AttachedFiles.read(event.files, ctx.history, ctx.query, reserve_tokens=reserve),
+            Knowledge.search(references, ctx.query),
+        ]
 
-        Shaped exactly like the stop event `display_llm_stream` returns for a real answer, so the refusal reaches
-        non-streaming consumers too -- `OpenaiService` reads the terminal text off `output_messages`.
-        """
-        await displayer.display_thought(
-            t("agent.llm_wrapping_agent.thoughts.input_too_large", tokens=needed, budget=budget)
-        )
-        refusal = t("agent.llm_wrapping_agent.messages.input_too_large")
-        await displayer.display_chunk(refusal, model_name=llm_config.model_name)
-        return LLMStopEvent(
-            output_messages=[Message.from_string(role="assistant", content=refusal, name=llm_config.model_name)],
-            chat_model_name=llm_config.model_name,
-        )
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.description"),
+        icon="mdi:database-plus",
+    )
+    async def assemble_prompt_step(
+        self,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
+    ) -> Conversation.ComposeRequest:
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.name"),
         description=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.description"),
         icon="mage:message",
     )
-    async def start_step(
+    async def respond_step(
         self,
-        event: LimitChatHistoryEvent,
+        event: Conversation.Composed,
+        ctx: Conversation.Contextualized,
         agent_config: LLMWrappingAgentConfig,
         displayer: EventDisplayer,
+        topic: AgentInstanceTopic,
         t: LocaleHandler,
-        thread_context: ThreadContext,
-        user: UserIdentity,
-    ) -> LLMStopEvent:
-        async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            stop_event = await displayer.display_llm_stream(
-                agent_config.llm, llm, event.limited_history, as_stop_step=True
-            )
+        user: UserIdentity | None = None,
+    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
+        """Stream the answer, then hand the turn back: the memory delegation first, so it is published before
+        the run tears down, and the completion last.
 
-        # Inline, not a @step: the dispatcher won't dispatch steps waiting on a stop event. See ADR 2026_06_18.
-        await generate_conversation_metadata(
-            stop_event.chat_messages, agent_config.task_llm, displayer, t, thread_context, user
+        The composed history carries each recalled block as its own system message behind the system prompt;
+        merged here so it reaches strict providers (e.g. Qwen3.5 on Infomaniak) as the single leading system
+        message they accept.
+        """
+        history = merge_consecutive_messages(event.history)
+        async with agent_config.llm.cost_reporting_llm(displayer, user=user) as llm:
+            answer = await displayer.display_llm_stream(agent_config.llm, llm, history, as_stop_step=False)
+        remember = Memory.remember(
+            query=ctx.query,
+            answer=answer,
+            user=user,
+            topic=topic,
+            agent_config=agent_config,
+            memory=agent_config,
+            locale=t.locale,
         )
-        return stop_event
+        return [*([remember] if remember else []), Conversation.complete(answer=answer)]

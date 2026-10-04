@@ -70,8 +70,9 @@ serves every database whose source is `rclone`, and nothing about a source lives
   ingestion pipeline.
 - **Key Assets**: `remote_files` (observable), `data_lake_files`, `removed_data_lake_files` in the
   `rclone_source_to_datalake` group.
-- **Supported Backends**: OneDrive / SharePoint, Google Drive, AWS S3 (and S3-compatible), Azure Blob, SFTP, and a local
-  path inside the rclone container.
+- **Backends**: the dialog offers Google Drive and AWS S3 (and S3-compatible), the two verified end to end, plus a local
+  path inside the rclone container where enabled. OneDrive / SharePoint, Azure Blob and SFTP are implemented but hidden
+  (see below).
 
 ### Two Axes of a Knowledge Database
 
@@ -89,7 +90,9 @@ rotate; a change takes effect on the pipeline's next run.
 
 1. In the create-database dialog, pick a **Source**. The selector offers every source pipeline that is currently
    deployed and has announced its form (`GET /knowledge/source-pipelines`).
-2. Choose the **Storage backend** and fill in the backend's options; only the fields of the selected backend are shown.
+2. Choose the **Storage backend** (`s3` or `drive`) and fill in the backend's options; only the fields of the selected
+   backend are shown. For a Google Drive service account, upload the JSON key file downloaded from the Google Cloud
+   console, and share the Drive folder with the `client_email` the dialog shows for it.
 3. Set the **Root folder** inside the source and, optionally, include/exclude patterns in
    [rclone filter syntax](https://rclone.org/filtering/) (for example `*.pdf`, `**/~$*`).
 4. Save. The database is synced daily; the first observation creates a partition per file and the next one downloads
@@ -101,19 +104,24 @@ the sync; the files already in the data lake stay until the database is deleted.
 ### What a Database Stores
 
 `source_configuration` holds the `backend_type`, `root_path`, `include_patterns`, `exclude_patterns`, and one option
-group per backend:
+group per backend. The dialog offers only the backends verified end to end (`s3`, `drive`, and `local` where enabled);
+the others remain configured and synced for databases that already use them, and through the API:
 
-| `backend_type` | Source                           | Options                                                                                    |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
-| `onedrive`     | OneDrive, SharePoint             | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`   |
-| `drive`        | Google Drive                     | `client_id`, `client_secret`, `token` or `service_account_credentials`, `root_folder_id`   |
-| `s3`           | AWS S3, MinIO, S3-compatible     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                     |
-| `azureblob`    | Azure Blob Storage               | `account`, `key` or `sas_url`, `endpoint`                                                  |
-| `sftp`         | SFTP servers                     | `host`, `port`, `user`, `password` or `key_pem`                                            |
-| `local`        | Path inside the rclone container | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory |
+| `backend_type` | Source                                           | Options                                                                                                      |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `onedrive`     | OneDrive, SharePoint (not offered in the dialog) | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
+| `drive`        | Google Drive                                     | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
+| `s3`           | AWS S3, MinIO, S3-compatible                     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
+| `azureblob`    | Azure Blob Storage (not offered in the dialog)   | `account`, `key` or `sas_url`, `endpoint`                                                                    |
+| `sftp`         | SFTP servers (not offered in the dialog)         | `host`, `port`, `user`, `password` or `key_pem`                                                              |
+| `local`        | Path inside the rclone container                 | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
 
 A SharePoint document library is `onedrive` with `drive_type=documentLibrary`. OAuth backends accept a pre-obtained
 rclone `token` JSON instead of client credentials; OneDrive without a token uses client credentials.
+
+Replacing a Drive key is safe while the new service account sees the same folder. A valid key whose account sees a
+different or empty tree (for example no `root_folder_id` and only a shared folder) makes the next sync remove every
+document it no longer lists.
 
 Credentials are secrets: the API encrypts them with the platform's `AIHUB_CONFIG_ENCRYPTION_KEY` before storing them,
 returns them masked, and keeps the stored value when a form is resubmitted with the mask. The pipeline decrypts them per
@@ -128,6 +136,14 @@ are therefore generated from the folders under the root path.
 ::: warning Root-level files are skipped
 Files directly in the chosen root folder have no folder to become a namespace and are not synced. The observation
 reports how many were skipped. Move them into a folder or point the root one level up.
+:::
+
+::: warning Colliding folder names are skipped, not merged
+Two top-level folders that sanitise to the same namespace (`hr docs` and `hr_docs` both become `hr_docs`) cannot share
+it: a namespace stores one folder, and teardown acts on that folder only. The first folder keeps the name; the files of
+the second get no partition. The ingestion observation reports them (`Skipped files (namespace collision)` count and a
+`Skipped files` table naming both folders), and removal compares URIs only, so a collision never blocks ingestion or
+removal for the rest of the database. Renaming the losing folder at the source repairs it.
 :::
 
 A sourced database has one owner of its content: it refuses manual upload, hand-made namespaces and manual document
@@ -166,10 +182,11 @@ values in production deployments.
 ### Extending the Source Pipeline
 
 **Adding a backend** rclone supports but the form does not yet offer is a change in `packages/pipeline` and
-`packages/core` only: one `Form` subclass with the backend's options (credentials as `Password` fields) and one field on
-`RcloneSyncConfig` in `source_pipelines/rclone_sync_config.py`, the backend in `RcloneBackendType`, and labels in the
-`lib/source_pipelines.*.yml` translations. The registration sensor re-announces the form; the API and the UI need no
-change.
+`packages/core` only: one `Form` subclass with the backend's options (credentials as `Password` fields, or
+`SecretFileInput` where the provider hands out a key file) and one field on `RcloneSyncConfig` in
+`source_pipelines/rclone_sync_config.py`, the backend in `RcloneBackendType`, and labels in the
+`lib/source_pipelines.*.yml` translations. Once verified end to end, add it to `_TESTED_BACKENDS` so the dialog offers
+it. The registration sensor re-announces the form; the API and the UI need no change.
 
 **A second source pipeline type** registers the way the rclone one does: a `SourcePipelineConfig` subclass declares its
 form, and a `rclone_pipeline_definitions`-style factory with its own `source` token, display name and description wires
@@ -214,8 +231,11 @@ defs = document_ingestion_pipeline_definitions(
 `settings` carries the text, embedding and vision models, the three enrichment switches and the observation schedule.
 Those are deployment defaults, not fixed behaviour. The pipeline announces a configuration form pre-filled with them,
 each knowledge database created for this ingestor chooses its own values in the create dialog, and the pipeline reads
-those values per run. See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add
-a setting of your own.
+those values per run. Settings you pass in code win over the `DOCUMENT_INGESTION_*` environment variables, both for the
+form's pre-filled defaults and for databases that store no value of their own; the environment is read only when no
+settings were passed. If you point the text model at a provider without image input, also set the vision model
+(`DOCUMENT_INGESTION_VISION_MODEL`); it defaults to the text model, and nothing checks that the model can read images.
+See [Building Pipelines](../index.en.md#making-your-pipeline-selectable-in-the-ui) for how to add a setting of your own.
 
 ## Default Data Mapping
 

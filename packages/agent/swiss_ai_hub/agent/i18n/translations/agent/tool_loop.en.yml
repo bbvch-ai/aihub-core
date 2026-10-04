@@ -1,0 +1,78 @@
+---
+steps:
+  condense:
+    name: "Condense the Conversation"
+    description: "Condenses earlier tool results and turns when the conversation no longer fits the model's context"
+  start:
+    name: "Offer Tools"
+    description: "Works out which tools the model may use for this message"
+  decide:
+    name: "Decide on Tools"
+    description: "The model answers, or chooses the tools that help answer"
+  gate:
+    name: "Check Approval"
+    description: "Lets a tool call run, or asks the user to approve it first"
+  approval:
+    name: "Apply Approval"
+    description: "Runs an approved tool call, or tells the model it was declined"
+  run_function:
+    name: "Run Tool"
+    description: "Runs a tool the model chose"
+  join:
+    name: "Collect Tool Results"
+    description: "Hands every result of the model's tool calls back to it"
+prompt:
+  cut_result: "\n[…cut to fit the context]"
+  condense_result: "Condense the tool result below to what matters for the user's request, which precedes it. Keep facts, figures, names, dates and document ids such as [s3f9a1c] exactly as written. Leave out everything else. At most %{words} words, no preamble."
+  condensed_result: "[Condensed earlier result] %{summary}"
+  condense_turns: "Summarise the conversation below so it can continue without it: what the user asked, what was answered, and what was decided or is still open. Keep facts, figures, names and document ids such as [s3f9a1c] exactly. At most %{words} words, no preamble."
+  condensed_turns: "Summary of the earlier conversation: %{summary}"
+  dropped_result: "[This earlier result was removed to fit the context. Call the tool again if you need it.]"
+  limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found."
+  no_tools: "No tools are available for the rest of this answer, so do not try to call one. Answer now from the conversation and what you already know, and say so when the answer depends on documents you could not search."
+  unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
+  declined: "Not run: the user declined %{tool}. Begin your answer by telling the user that you did not use %{tool} because they declined it, then answer from what you already know and offer to use it if they allow it. The information may well exist; never say you have no access to it."
+  withheld:
+    intro: "Some tools that could help with this message are not available to you right now. If the user's request needs one of them, do not say that what they refer to is missing, such as a file they attached; tell them which tool is needed and how it can be turned on. Do not mention these tools otherwise."
+    by_profile: "- %{tool}: turned off for this assistant. Only an administrator can turn it on, in the assistant's settings."
+    by_toggle: "- %{toggle}: the user can switch it on in the chat and ask again."
+    toggles:
+      web_search: "Web Search"
+      code_interpreter: "Code Interpreter"
+      image_generation: "Image Generation"
+      user_files: "My Files"
+approval:
+  question: "The assistant wants to use \"%{tool}\":
+%{summary}
+
+Allow it?"
+  question_plain: "The assistant wants to use \"%{tool}\". Allow it?"
+config:
+  max_iterations:
+    label: "Maximum Decisions"
+    help: "How often the model may choose tools before it must answer."
+  max_tool_calls:
+    label: "Maximum Tool Calls"
+    help: "How many tool calls one answer may make."
+  disable_tools:
+    label: "Disable Tools"
+    help: "Withhold some of this agent's tools."
+  disabled_tools:
+    label: "Disabled Tools"
+    help: "Tools this agent never offers."
+  approval_tool:
+    label: "Tool"
+  approval_policy:
+    label: "Approval"
+  policies:
+    never: "Never ask"
+    every_call: "Ask for every call"
+    once_per_run: "Ask once per answer"
+    once_per_thread: "Ask once per conversation"
+notice:
+  stopped_early: "I stopped looking into this before I was done, because this answer reached its limit of tool calls."
+status:
+  condensed: "Condensed earlier results to fit the conversation"
+  deciding: "Deciding what to look up"
+  gathered: "Gathered what the answer needs"
+  stopped_early: "Stopped looking up more, the limit for this answer is reached"

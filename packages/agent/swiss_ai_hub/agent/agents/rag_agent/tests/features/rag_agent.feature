@@ -5,7 +5,7 @@ Feature: RAG Agent
     Given a RAGAgent runner with a valid self hosted configuration
     * with multi-language system prompt for locale <locale> and prompt "<prompt>"
     When the start event is sent with a user query "<query>" and locale <locale>
-    Then an LLMEvent is present with a generated response
+    Then the answer is handed to the completion
     * the LLM received the system prompt "<prompt>"
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
@@ -20,12 +20,12 @@ Feature: RAG Agent
     Given a RAGAgent runner with a valid self hosted configuration
     When the start event is sent with a user query "What is AI?"
     Then a StartEvent is present with payload "What is AI?"
-    * a LimitChatHistoryEvent is present
+    * a ContextualizeConversationEvent is present
     * a StandaloneQuestionCondenserEvent is present with condensed question
     * a RetrieverEvent is present with retrieved nodes
     * an InOrderNodeCombinerEvent is present with ordered context message
-    * a LimitChatHistoryWithContextEvent is present with limited history and context
-    * an LLMEvent is present with a generated response
+    * the composed prompt holds the retrieved documents and is what the model answered from
+    * the answer is handed to the completion
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
 
@@ -37,7 +37,7 @@ Feature: RAG Agent
     * a RerankerEvent is present with reranked nodes
     * the RerankerEvent model name should be "reranker/bge"
     * the RerankerEvent should limit results to "2" nodes
-    * an LLMEvent is present with a generated response
+    * the answer is handed to the completion
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
 
@@ -46,9 +46,9 @@ Feature: RAG Agent
     * organization memories are pre-seeded in the system
     When the start event is sent with a user query "What is machine learning?"
     Then a RetrieveOrganizationMemoryEvent is present
-    * an AddOrganizationMemoryToChatHistoryEvent is present
+    * an organization memory context block is present
     * a RetrieverEvent is present with retrieved nodes
-    * an LLMEvent is present with a generated response
+    * the answer is handed to the completion
     * a StopEvent is present
     * a RAGSuccessStopEvent is present
 
@@ -56,7 +56,7 @@ Feature: RAG Agent
     Given a RAGAgent runner with a valid self hosted configuration
     When the start event is sent with a user query "What can you do?"
     Then a MetaQuestionDetectedEvent is present
-    * an LLMEvent is present with a generated response
+    * the meta answer ends the run directly
     * a StopEvent is present
     * no RetrieverEvent is present
 

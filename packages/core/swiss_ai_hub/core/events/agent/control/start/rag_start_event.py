@@ -69,6 +69,15 @@ class RAGStartEvent(StartEvent):
             ),
         ),
     ] = []
+    cite_sources: Annotated[
+        bool,
+        Field(
+            description=(
+                "Whether the answer cites its documents inline as [id] markers. A caller that renders the answer "
+                "somewhere citations cannot be resolved, such as an e-mail draft, switches it off."
+            ),
+        ),
+    ] = True
 
     @property
     def user_query(self) -> str:

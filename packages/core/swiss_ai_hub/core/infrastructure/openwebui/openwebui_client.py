@@ -5,7 +5,8 @@ from typing import Any, cast
 
 import httpx
 from scim2_client.engines.httpx import AsyncSCIMClient
-from scim2_models import Group, GroupMember, ListResponse, Resource, SearchRequest, User
+from scim2_client.errors import SCIMResponseError
+from scim2_models import Email, Group, GroupMember, ListResponse, Resource, SearchRequest, User
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 SCIM_BASE_PATH = "/api/v1/scim/v2"
 MODELS_ENDPOINT = "/api/v1/models"
+KNOWLEDGE_ENDPOINT = "/api/v1/knowledge"
 
 # SCIM list endpoints are paginated; OpenWebUI defaults to a small page size, so a
 # bare query returns only the first page. Request this many per page (the server may
@@ -25,6 +27,7 @@ MAX_SCIM_PAGES = 10_000
 
 # Backstop so a server that ignores the page parameter can't spin the provisioner forever.
 MODELS_MAX_PAGES = 10_000
+KNOWLEDGE_MAX_PAGES = 10_000
 
 
 def _raise_with_detail(response: httpx.Response) -> None:
@@ -163,6 +166,58 @@ class OpenWebuiClient:
         async with self.scim_session() as s:
             return await self._query_all(s, User)
 
+    async def create_user(
+        self, email: str, display_name: str, external_id: str, scim: AsyncSCIMClient | None = None
+    ) -> User:
+        """Creates an OpenWebUI account ahead of the user's first chat, or returns the one that already exists.
+
+        OpenWebUI answers 409 with a non-SCIM body, which scim2-client only surfaces as a generic
+        ``SCIMResponseError``, so the existing account is looked up before the error is re-raised. The
+        lookup goes by ``external_id`` (the Keycloak ``sub``) first: OpenWebUI matches it against the OAuth
+        sub too, so it finds both an account a concurrent chat login just created and one whose email
+        changed in Keycloak afterwards — OpenWebUI never updates the email on login, so an email lookup
+        alone would miss the latter on every sync and abort the group sync for all users.
+        """
+
+        async def _create(client: AsyncSCIMClient) -> User:
+            user = User(
+                user_name=email,
+                external_id=external_id,
+                display_name=display_name,
+                emails=[Email(value=email, primary=True)],
+                active=True,
+            )
+            try:
+                created = await client.create(user)
+            except SCIMResponseError:
+                existing = await self._find_first_user(
+                    client, f'externalId eq "{external_id}"'
+                ) or await self._find_first_user(client, f'userName eq "{email}"')
+                if existing is None:
+                    raise
+                logger.info(
+                    "OpenWebUI account for '%s' already exists (id=%s, userName=%s); reusing it",
+                    email,
+                    existing.id,
+                    existing.user_name,
+                )
+                return existing
+            logger.info("OpenWebUI: Provisioned account for '%s' (id=%s)", email, created.id)
+            return created
+
+        if scim:
+            return await _create(scim)
+        async with self.scim_session() as s:
+            return await _create(s)
+
+    @staticmethod
+    async def _find_first_user(client: AsyncSCIMClient, scim_filter: str) -> User | None:
+        response = cast(
+            ListResponse[User],
+            await client.query(User, search_request=SearchRequest(filter=scim_filter)),
+        )
+        return next(iter(response.resources or []), None)
+
     # ------------------------------------------------------------------
     # Model methods (proprietary API + JWT auth)
     # ------------------------------------------------------------------
@@ -280,6 +335,15 @@ class OpenWebuiClient:
         )
         _raise_with_detail(response)
 
+    async def update_retrieval_config(self, http: httpx.AsyncClient, settings: dict[str, Any]) -> None:
+        """Partial update: OpenWebUI keeps every retrieval setting the form leaves out."""
+        response = await http.post(
+            f"{self._base_url}/api/v1/retrieval/config/update",
+            headers=self._jwt_headers,
+            json=settings,
+        )
+        _raise_with_detail(response)
+
     async def get_model(self, http: httpx.AsyncClient, model_id: str) -> dict[str, Any]:
         response = await http.get(
             f"{self._base_url}{MODELS_ENDPOINT}/model",
@@ -315,3 +379,60 @@ class OpenWebuiClient:
         )
         _raise_with_detail(response)
         return response.json()
+
+    async def list_own_knowledge(self, http: httpx.AsyncClient) -> list[dict[str, Any]]:
+        """Every knowledge entry the service account created, with its access grants.
+
+        Ordered by creation with OpenWebUI's id tiebreaker, so paging is stable while the sync runs; it ends on the
+        reported total or an empty page, never on a short one, as ``list_models`` does.
+        """
+        by_id: dict[str, dict[str, Any]] = {}
+        for page in range(1, KNOWLEDGE_MAX_PAGES + 1):
+            response = await http.get(
+                f"{self._base_url}{KNOWLEDGE_ENDPOINT}/search",
+                headers=self._jwt_headers,
+                params={"view_option": "created", "order_by": "created_at", "direction": "asc", "page": page},
+            )
+            _raise_with_detail(response)
+            data = response.json()
+            items = data.get("items", [])
+            for item in items:
+                by_id.setdefault(item["id"], item)
+            if not items or len(by_id) >= data.get("total", 0):
+                return list(by_id.values())
+        raise RuntimeError(f"OpenWebUI knowledge pagination exceeded {KNOWLEDGE_MAX_PAGES} pages")
+
+    async def create_knowledge(
+        self, http: httpx.AsyncClient, name: str, description: str, access_grants: list[AccessGrant]
+    ) -> dict[str, Any]:
+        response = await http.post(
+            f"{self._base_url}{KNOWLEDGE_ENDPOINT}/create",
+            headers=self._jwt_headers,
+            json={"name": name, "description": description, "access_grants": [g.model_dump() for g in access_grants]},
+        )
+        _raise_with_detail(response)
+        return response.json()
+
+    async def update_knowledge(
+        self,
+        http: httpx.AsyncClient,
+        knowledge_id: str,
+        name: str,
+        description: str,
+        access_grants: list[AccessGrant],
+    ) -> None:
+        """Replaces name, description and grants; an explicit [] clears the grants, as for models."""
+        response = await http.post(
+            f"{self._base_url}{KNOWLEDGE_ENDPOINT}/{knowledge_id}/update",
+            headers=self._jwt_headers,
+            json={"name": name, "description": description, "access_grants": [g.model_dump() for g in access_grants]},
+        )
+        _raise_with_detail(response)
+
+    async def delete_knowledge(self, http: httpx.AsyncClient, knowledge_id: str) -> None:
+        response = await http.delete(
+            f"{self._base_url}{KNOWLEDGE_ENDPOINT}/{knowledge_id}/delete", headers=self._jwt_headers
+        )
+        if response.status_code == httpx.codes.NOT_FOUND:
+            return
+        _raise_with_detail(response)

@@ -271,11 +271,27 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
+  contextComposed:
+    summary: 'Contexte assemblé pour le modèle : {count} message | Contexte assemblé
+      pour le modèle : {count} messages'
+    description: L'historique de chat reçu par le modèle, avec tous les blocs de contexte
+      récupérés
+    assistant: Assistant
+    system: Système
+    user: Utilisateur
   metaQuestionDetected:
     category:
       identity: Identité
       capabilities: Capacités
       behavior: Comportement
+  sandboxFileDisplayed:
+    file: Fichier
+    type: Type
+    size: Taille
+    path: Dans le bac à sable
+  humanInTheLoopResponse:
+    confirmed: Confirmé
+    declined: Refusé
   standaloneQuestionCondenser:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
@@ -294,6 +310,63 @@ event:
       delegations: Délégations
       delegatedTaskAgentInTheLoop: Tâche déléguée (Agent dans la boucle)
       allEvents: Tous les événements
+  parts:
+    noMessages: Aucun message
+    yes: Oui
+    no: Non
+  capability:
+    userQuery: Message de l'utilisateur
+    historyMessages: Messages dans l'historique
+    condensed: Condensée à partir de l'historique
+    query: Requête
+    block: Bloc {number}
+    blocks: Blocs de contexte
+    namespaces: Portées de la mémoire d'organisation
+    toolCall: Appel d'outil
+    userMemories: Souvenirs de l'utilisateur
+    organizationMemories: Souvenirs de l'organisation
+    references: Collections référencées
+    citeSources: Citer les sources
+    sections: Sections trouvées
+    notSearched: Non recherchées (pas d'accès)
+    files: Fichiers
+    reserveTokens: Jetons réservés
+    fileStatus:
+      read: Lu
+      truncated: Raccourci
+      failed: Échec
+    citationId: Identifiant de citation
+    pages: Pages
+    error: Erreur
+    stop: Se termine par
+    targetAgent: Rédacteur de mémoire
+  toolLoop:
+    loop: Ensemble d'outils
+    mode: Mode
+    modes:
+      answer: Répondre
+      gather: Rassembler le contexte
+    iteration: Décisions
+    toolCallsMade: Appels d'outils jusqu'ici
+    messages: Messages dans la boucle
+    offeredTools: Outils proposés
+    condensedResults: Résultats condensés
+    needsCondensing: Doit être condensé
+    decidedCalls: Un appel d'outil décidé | {count} appels d'outils décidés
+    narrowedTools: Limité à
+    maxIterations: Limite de décisions
+    tool: Outil
+    kind: Type
+    kinds:
+      function: Fonction
+      capability: Capacité
+    failed: Échec
+    resultContext: Contexte renvoyé
+    stoppedEarly: Arrêtée à ses limites
+    gathered: Contexte rassemblé
+    gatheredMessages: Messages rassemblés
+    tokens: Jetons
+    condensedTurns: Tours condensés
 costs:
   table:
     count: Nombre
@@ -519,8 +592,8 @@ knowledge:
     title: Ajouter une base de connaissances
     description: Créer une nouvelle base de connaissances en libre-service
   source:
-    description: 'Synchronisé depuis {name}'
-    edit: 'Modifier la source'
+    description: Synchronisé depuis {name}
+    edit: Modifier la source
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'
@@ -558,16 +631,18 @@ knowledge:
         un pipeline est en cours d'exécution.
       steps:
         basic_info: Informations de base
-        source: 'Source'
+        source: Source
     edit_source:
-      title: 'Source de {name}'
-      success: 'Source mise à jour'
-      error: 'Échec de la mise à jour de la source'
-      switch_to_manual: 'Passer au téléversement manuel'
+      title: Source de {name}
+      success: Source mise à jour
+      error: Échec de la mise à jour de la source
+      switch_to_manual: Passer au téléversement manuel
       replace_documents:
-        header: 'Confier le contenu à la source ?'
-        message: '{name} contient déjà {count} document(s) téléversé(s) manuellement. Dès qu''une source alimente cette base, chaque fichier absent de la source est supprimé lors de la prochaine synchronisation.'
-        accept: 'Remplacer les documents existants'
+        header: Confier le contenu à la source ?
+        message: "{name} contient déjà {count} document(s) téléversé(s) manuellement.\
+          \ Dès qu'une source alimente cette base, chaque fichier absent de la source\
+          \ est supprimé lors de la prochaine synchronisation."
+        accept: Remplacer les documents existants
     edit:
       title: Modifier la collection
     database:
@@ -582,12 +657,14 @@ knowledge:
         minuscule et ne contenir que des lettres minuscules et des chiffres, entre
         3 et 63 caractères
     source:
-      label: 'Source'
-      placeholder: 'Choisissez d''où proviennent les documents'
-      help: 'Un pipeline source maintient cette base synchronisée avec un système externe ; chaque dossier de premier niveau devient un espace de noms.'
+      label: Source
+      placeholder: Choisissez d'où proviennent les documents
+      help: Un pipeline source maintient cette base synchronisée avec un système externe
+        ; chaque dossier de premier niveau devient un espace de noms.
       manual_upload:
-        label: 'Téléversement manuel'
-        description: 'Les documents sont téléversés à la main dans des espaces de noms que vous créez.'
+        label: Téléversement manuel
+        description: Les documents sont téléversés à la main dans des espaces de noms
+          que vous créez.
     ingestor:
       label: Pipeline d'ingestion
       placeholder: Sélectionner un pipeline d'ingestion
@@ -858,6 +935,16 @@ process:
       done: Terminé
       steps: Progression
 form:
+  secret_file_input:
+    drop_hint: Déposez le fichier ici ou cliquez pour le choisir
+    limits: "{accept}, jusqu'à {size}"
+    selected: Fichier sélectionné
+    stored: Fichier de clé enregistré (chiffré)
+    client_email: 'Compte de service : {email}'
+    replace: Remplacer
+    remove: Supprimer
+    too_large: Le fichier dépasse {size}.
+    invalid_json: Le fichier n'est pas un JSON valide.
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
   warnings:
@@ -905,6 +992,8 @@ lib:
       label: Espaces de noms
       placeholder: Sélectionner au moins un espace de noms
       help: Seuls les espaces de noms sélectionnés sont recherchés
+      required: Sélectionner au moins un espace de noms ou activer « Rechercher dans
+        tous les espaces de noms ». Sinon, la configuration ne peut pas être enregistrée.
     allNamespaces:
       label: Rechercher dans tous les espaces de noms
       help: Chaque espace de noms de cette base est recherché, y compris ceux ajoutés
@@ -975,6 +1064,7 @@ memory:
       title: Suppression échouée
       message: Échec de la suppression de tous les souvenirs. Veuillez réessayer.
 openwebui:
+  default_disclaimer: L’IA peut faire des erreurs. Veuillez vérifier les réponses.
   memories:
     title: Souvenirs de l'Agent
     select_agent: Sélectionner l'Agent
@@ -1003,7 +1093,50 @@ support:
   submit: Envoyer le signalement
   submitting: Envoi…
   sent: Signalement envoyé
-  sent_detail: 'Référence {reference}, signalement #{number}. Le support vous répondra par e-mail.'
+  sent_detail: 'Référence {reference}, signalement #{number}. Le support vous répondra
+    par e-mail.'
   send_failed: Signalement non envoyé
   send_failed_detail: Vos réponses sont toujours là — réessayez.
-  unavailable: Le signalement n'est pas configuré sur cette installation. Contactez votre administrateur.
+  unavailable: Le signalement n'est pas configuré sur cette installation. Contactez
+    votre administrateur.
+userFiles:
+  title: "Mes fichiers"
+  description: "Les fichiers avec lesquels vous et vos agents travaillez : pièces jointes des chats, fichiers créés pour vous par les agents et vos propres envois."
+  conversation: "Chat"
+  actions:
+    move: "Déplacer"
+    upload: "Envoyer"
+    newFolder: "Nouveau dossier"
+    refresh: "Actualiser"
+    download: "Télécharger"
+    rename: "Renommer"
+    delete: "Supprimer"
+    close: "Fermer"
+    cancel: "Annuler"
+    save: "Enregistrer"
+    openFolder: "Ouvrir le dossier {name}"
+    preview: "Aperçu de {name}"
+  columns:
+    name: "Nom"
+    size: "Taille"
+    modified: "Modifié"
+  empty:
+    folder: "Ce dossier est vide. Déposez des fichiers ici pour les envoyer."
+    noSpace: "Votre espace de fichiers est créé avec votre compte de chat. Ouvrez le chat une fois, puis revenez."
+  error:
+    load: "Impossible de charger ce dossier. Réessayez avec Actualiser."
+  move:
+    header: "Déplacer {name} vers"
+    noTargets: "Aucun dossier vers lequel le déplacer."
+  preview:
+    unavailable: "Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir."
+  name:
+    invalid: "Un nom ne doit pas être vide ni contenir de barre oblique."
+  delete:
+    header: "Supprimer"
+    file: "Supprimer {name} ?"
+    folder: "Supprimer le dossier {name} et tout son contenu ?"
+  toast:
+    uploaded: "{count} fichier(s) envoyé(s)"
+    uploadFailed: "Échec de l'envoi"
+    changeFailed: "La modification a échoué"

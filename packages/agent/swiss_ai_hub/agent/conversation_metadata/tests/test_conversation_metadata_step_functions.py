@@ -11,7 +11,6 @@ from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functio
     TITLE_GENERATED_KEY,
     do_generate_follow_up_questions,
     do_generate_title,
-    generate_conversation_metadata,
     generate_follow_up_questions,
     generate_title,
 )
@@ -170,22 +169,6 @@ async def test_metadata_uses_only_user_assistant_messages(displayer, locale_hand
     forwarded = llm.astructured_predict.call_args.kwargs["chat_history"]
     assert [m.role for m in forwarded] == [MessageRole.USER, MessageRole.ASSISTANT]
     assert all(str(m.content or "").strip() for m in forwarded)
-
-
-@pytest.mark.asyncio
-async def test_generate_metadata_is_best_effort_on_failure(displayer, locale_handler):
-    """A failing generator must not propagate — metadata is non-essential and must never fail the run."""
-    llm = MagicMock()
-    llm.astructured_predict = AsyncMock(side_effect=RuntimeError("LLM unavailable"))
-    thread_context = FakeThreadContext()
-
-    # Must not raise.
-    await generate_conversation_metadata(
-        _conversation(), _llm_config(llm), displayer, locale_handler, thread_context, fake_user()
-    )
-
-    displayer.display_event.assert_not_awaited()
-    assert await thread_context.get(TITLE_GENERATED_KEY) is None
 
 
 @pytest.mark.asyncio

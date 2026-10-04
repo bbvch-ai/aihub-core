@@ -69,6 +69,9 @@ import type {
   CreateTranscriptionData,
   CreateTranscriptionError,
   CreateTranscriptionResponse,
+  CreateUserFolderData,
+  CreateUserFolderError,
+  CreateUserFolderResponse,
   DeleteAgentInstanceData,
   DeleteAgentInstanceError,
   DeleteAgentInstanceResponse,
@@ -91,6 +94,9 @@ import type {
   DeleteRoleData,
   DeleteRoleError,
   DeleteRoleResponse2,
+  DeleteUserFileData,
+  DeleteUserFileError,
+  DeleteUserFileResponse,
   DeleteUserMemoryData,
   DeleteUserMemoryError,
   DeleteUserMemoryResponse,
@@ -135,6 +141,8 @@ import type {
   GetAnonymousFileUrlError,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
+  GetChatDisclaimerData,
+  GetChatDisclaimerResponse,
   GetDatabasesData,
   GetDatabasesResponse,
   GetDatasetData,
@@ -252,6 +260,8 @@ import type {
   GetThreadResponse,
   GetUserData,
   GetUserError,
+  GetUserFileContentData,
+  GetUserFileContentError,
   GetUserMemoriesData,
   GetUserMemoriesError,
   GetUserMemoriesResponse,
@@ -270,6 +280,12 @@ import type {
   InitiateFileUploadResponse,
   ListTokensEndpointData,
   ListTokensEndpointResponse,
+  ListUserFilesData,
+  ListUserFilesError,
+  ListUserFilesResponse,
+  MoveUserFileData,
+  MoveUserFileError,
+  MoveUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -282,6 +298,9 @@ import type {
   RemoveUserFromThreadData,
   RemoveUserFromThreadError,
   RemoveUserFromThreadResponse,
+  ResolveOpenwebuiReferencesData,
+  ResolveOpenwebuiReferencesError,
+  ResolveOpenwebuiReferencesResponse,
   ResolveThreadForDisplayData,
   ResolveThreadForDisplayError,
   ResolveThreadForDisplayResponse,
@@ -345,6 +364,9 @@ import type {
   UpdateUserMemoryData,
   UpdateUserMemoryError,
   UpdateUserMemoryResponse,
+  UploadUserFileData,
+  UploadUserFileError,
+  UploadUserFileResponse,
   ValidateDocumentUploadData,
   ValidateDocumentUploadError,
   ValidateDocumentUploadResponse,
@@ -1672,6 +1694,9 @@ export const initiateFileUpload = <
  * Validate File Upload
  *
  * Validate that a file was successfully uploaded to the agent's dedicated bucket.
+ *
+ * Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
+ * slow or unavailable sandbox never holds up or fails the chat.
  */
 export const validateFileUpload = <
   TComposable extends Composable = "$fetch",
@@ -2443,6 +2468,36 @@ export const getDefaultTenantRules = <
   });
 
 /**
+ * Get Chat Disclaimer
+ *
+ * Read the current tenant's chat disclaimer in the user's requested language.
+ */
+export const getChatDisclaimer = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetChatDisclaimerResponse = GetChatDisclaimerResponse,
+>(
+  options: Options<
+    TComposable,
+    GetChatDisclaimerData,
+    GetChatDisclaimerResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetChatDisclaimerResponse | DefaultT,
+    unknown,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/openai/chat-disclaimer",
+    ...options,
+  });
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -3068,6 +3123,44 @@ export const getDatabases = <
   });
 
 /**
+ * Resolve Openwebui References
+ *
+ * The collections behind the OpenWebUI knowledge entries a chat message referenced with `#`.
+ *
+ * Resolved for anyone signed in, without checking access: the agent checks what the asking user may read and
+ * tells them about the rest, which it could not if unreadable references were dropped here.
+ */
+export const resolveOpenwebuiReferences = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ResolveOpenwebuiReferencesResponse =
+    ResolveOpenwebuiReferencesResponse,
+>(
+  options: Options<
+    TComposable,
+    ResolveOpenwebuiReferencesData,
+    ResolveOpenwebuiReferencesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    ResolveOpenwebuiReferencesResponse | DefaultT,
+    ResolveOpenwebuiReferencesError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/knowledge/openwebui-references",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
  * Delete multiple documents
  *
  * Best-effort scheduling of multiple document deletions with a per-document result.
@@ -3660,6 +3753,182 @@ export const createIncident = <
     ...options,
     headers: {
       "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete User File
+ */
+export const deleteUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends DeleteUserFileResponse = DeleteUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    DeleteUserFileData,
+    DeleteUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).delete<
+    TComposable,
+    DeleteUserFileResponse | DefaultT,
+    DeleteUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge",
+    ...options,
+  });
+
+/**
+ * List User Files
+ */
+export const listUserFiles = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends ListUserFilesResponse = ListUserFilesResponse,
+>(
+  options: Options<
+    TComposable,
+    ListUserFilesData,
+    ListUserFilesResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    ListUserFilesResponse | DefaultT,
+    ListUserFilesError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge",
+    ...options,
+  });
+
+/**
+ * Get User File Content
+ */
+export const getUserFileContent = <
+  TComposable extends Composable = "$fetch",
+  DefaultT = undefined,
+>(
+  options: Options<TComposable, GetUserFileContentData, unknown, DefaultT>,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    unknown | DefaultT,
+    GetUserFileContentError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/content",
+    ...options,
+  });
+
+/**
+ * Upload User File
+ */
+export const uploadUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends UploadUserFileResponse = UploadUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    UploadUserFileData,
+    UploadUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    UploadUserFileResponse | DefaultT,
+    UploadUserFileError,
+    DefaultT
+  >({
+    ...formDataBodySerializer,
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/files",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create User Folder
+ */
+export const createUserFolder = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends CreateUserFolderResponse = CreateUserFolderResponse,
+>(
+  options: Options<
+    TComposable,
+    CreateUserFolderData,
+    CreateUserFolderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    CreateUserFolderResponse | DefaultT,
+    CreateUserFolderError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/folders",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Move User File
+ */
+export const moveUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends MoveUserFileResponse = MoveUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    MoveUserFileData,
+    MoveUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).post<
+    TComposable,
+    MoveUserFileResponse | DefaultT,
+    MoveUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/move",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
       ...options.headers,
     },
   });

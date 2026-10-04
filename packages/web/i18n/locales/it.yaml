@@ -272,11 +272,27 @@ event:
     assistant: Assistente
     system: Sistema
     user: Utente
+  contextComposed:
+    summary: 'Contesto assemblato per il modello: {count} messaggio | Contesto assemblato
+      per il modello: {count} messaggi'
+    description: La cronologia della chat ricevuta dal modello, con tutti i blocchi
+      di contesto recuperati
+    assistant: Assistente
+    system: Sistema
+    user: Utente
   metaQuestionDetected:
     category:
       identity: Identità
       capabilities: Capacità
       behavior: Comportamento
+  sandboxFileDisplayed:
+    file: File
+    type: Tipo
+    size: Dimensione
+    path: Nella sandbox
+  humanInTheLoopResponse:
+    confirmed: Confermato
+    declined: Rifiutato
   standaloneQuestionCondenser:
     summary: Domanda rifinita e condensata
     condensedQuestion: Domanda Condensata
@@ -295,6 +311,64 @@ event:
       delegations: Deleghe
       delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
       allEvents: Tutti gli eventi
+  parts:
+    noMessages: Nessun messaggio
+    yes: Sì
+    no: 'No'
+  capability:
+    userQuery: Messaggio dell'utente
+    historyMessages: Messaggi nella cronologia
+    condensed: Condensata dalla cronologia
+    query: Richiesta
+    block: Blocco {number}
+    blocks: Blocchi di contesto
+    namespaces: Ambiti della memoria dell'organizzazione
+    toolCall: Chiamata di strumento
+    userMemories: Ricordi dell'utente
+    organizationMemories: Ricordi dell'organizzazione
+    references: Raccolte referenziate
+    citeSources: Citare le fonti
+    sections: Sezioni trovate
+    notSearched: Non cercate (nessun accesso)
+    files: File
+    reserveTokens: Token riservati
+    fileStatus:
+      read: Letto
+      truncated: Abbreviato
+      failed: Non riuscito
+    citationId: ID di citazione
+    pages: Pagine
+    error: Errore
+    stop: Termina con
+    targetAgent: Scrittore di memoria
+  toolLoop:
+    loop: Insieme di strumenti
+    mode: Modalità
+    modes:
+      answer: Rispondere
+      gather: Raccogliere il contesto
+    iteration: Decisioni
+    toolCallsMade: Chiamate di strumenti finora
+    messages: Messaggi nel ciclo
+    offeredTools: Strumenti offerti
+    condensedResults: Risultati condensati
+    needsCondensing: Da condensare
+    decidedCalls: Una chiamata di strumento decisa | {count} chiamate di strumenti
+      decise
+    narrowedTools: Limitato a
+    maxIterations: Limite di decisioni
+    tool: Strumento
+    kind: Tipo
+    kinds:
+      function: Funzione
+      capability: Capacità
+    failed: Non riuscito
+    resultContext: Contesto restituito
+    stoppedEarly: Fermato ai suoi limiti
+    gathered: Contesto raccolto
+    gatheredMessages: Messaggi raccolti
+    tokens: Token
+    condensedTurns: Turni condensati
 costs:
   table:
     count: Conteggio
@@ -518,8 +592,8 @@ knowledge:
     title: Aggiungi database di conoscenza
     description: Crea un nuovo database di conoscenza self-service
   source:
-    description: 'Sincronizzato da {name}'
-    edit: 'Modifica sorgente'
+    description: Sincronizzato da {name}
+    edit: Modifica sorgente
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -559,16 +633,18 @@ knowledge:
         una pipeline sia in esecuzione.
       steps:
         basic_info: Informazioni di base
-        source: 'Sorgente'
+        source: Sorgente
     edit_source:
-      title: 'Sorgente di {name}'
-      success: 'Sorgente aggiornata'
-      error: 'Impossibile aggiornare la sorgente'
-      switch_to_manual: 'Passa al caricamento manuale'
+      title: Sorgente di {name}
+      success: Sorgente aggiornata
+      error: Impossibile aggiornare la sorgente
+      switch_to_manual: Passa al caricamento manuale
       replace_documents:
-        header: 'Affidare il contenuto alla sorgente?'
-        message: '{name} contiene già {count} documento/i caricato/i manualmente. Quando una sorgente alimenta questo database, alla prossima sincronizzazione viene rimosso ogni file che la sorgente non possiede.'
-        accept: 'Sostituisci i documenti esistenti'
+        header: Affidare il contenuto alla sorgente?
+        message: '{name} contiene già {count} documento/i caricato/i manualmente.
+          Quando una sorgente alimenta questo database, alla prossima sincronizzazione
+          viene rimosso ogni file che la sorgente non possiede.'
+        accept: Sostituisci i documenti esistenti
     edit:
       title: Modifica collezione
     database:
@@ -582,12 +658,13 @@ knowledge:
       validation_error: Il nome del database deve iniziare con una lettera minuscola
         e può contenere solo lettere minuscole e cifre, tra 3 e 63 caratteri
     source:
-      label: 'Sorgente'
-      placeholder: 'Scegli da dove provengono i documenti'
-      help: 'Una pipeline sorgente mantiene questa base sincronizzata con un sistema esterno; ogni cartella di primo livello diventa un namespace.'
+      label: Sorgente
+      placeholder: Scegli da dove provengono i documenti
+      help: Una pipeline sorgente mantiene questa base sincronizzata con un sistema
+        esterno; ogni cartella di primo livello diventa un namespace.
       manual_upload:
-        label: 'Caricamento manuale'
-        description: 'I documenti vengono caricati a mano in namespace creati da te.'
+        label: Caricamento manuale
+        description: I documenti vengono caricati a mano in namespace creati da te.
     ingestor:
       label: Pipeline di ingestione
       placeholder: Seleziona una pipeline di ingestione
@@ -856,6 +933,16 @@ process:
       done: Completato
       steps: Progresso
 form:
+  secret_file_input:
+    drop_hint: Trascina qui il file o fai clic per sceglierlo
+    limits: '{accept}, fino a {size}'
+    selected: File selezionato
+    stored: File chiave salvato (cifrato)
+    client_email: 'Account di servizio: {email}'
+    replace: Sostituisci
+    remove: Rimuovi
+    too_large: Il file supera {size}.
+    invalid_json: Il file non è un JSON valido.
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
   warnings:
@@ -903,6 +990,8 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona almeno uno spazio dei nomi
       help: Vengono cercati solo gli spazi dei nomi selezionati
+      required: Seleziona almeno uno spazio dei nomi o attiva «Cerca in tutti gli
+        spazi dei nomi». Altrimenti la configurazione non può essere salvata.
     allNamespaces:
       label: Cerca in tutti gli spazi dei nomi
       help: Viene cercato ogni spazio dei nomi di questo database, inclusi quelli
@@ -973,6 +1062,7 @@ memory:
       title: Eliminazione fallita
       message: Impossibile eliminare tutti i ricordi. Riprova.
 openwebui:
+  default_disclaimer: L’IA può commettere errori. Verifica le risposte.
   memories:
     title: Ricordi dell'Agente
     select_agent: Seleziona Agente
@@ -1000,7 +1090,50 @@ support:
   submit: Invia segnalazione
   submitting: Invio…
   sent: Segnalazione inviata
-  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà via e-mail.'
+  sent_detail: 'Riferimento {reference}, segnalazione #{number}. Il supporto ti risponderà
+    via e-mail.'
   send_failed: Segnalazione non inviata
   send_failed_detail: 'Le tue risposte sono ancora qui: riprova a inviare.'
-  unavailable: La segnalazione non è configurata su questa installazione. Contatta l'amministratore.
+  unavailable: La segnalazione non è configurata su questa installazione. Contatta
+    l'amministratore.
+userFiles:
+  title: "I miei file"
+  description: "I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file creati per te dagli agenti e i tuoi caricamenti."
+  conversation: "Chat"
+  actions:
+    move: "Sposta"
+    upload: "Carica"
+    newFolder: "Nuova cartella"
+    refresh: "Aggiorna"
+    download: "Scarica"
+    rename: "Rinomina"
+    delete: "Elimina"
+    close: "Chiudi"
+    cancel: "Annulla"
+    save: "Salva"
+    openFolder: "Apri la cartella {name}"
+    preview: "Anteprima di {name}"
+  columns:
+    name: "Nome"
+    size: "Dimensione"
+    modified: "Modificato"
+  empty:
+    folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
+    noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+  error:
+    load: "Impossibile caricare questa cartella. Riprova con Aggiorna."
+  move:
+    header: "Sposta {name} in"
+    noTargets: "Nessuna cartella in cui spostarlo."
+  preview:
+    unavailable: "Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo."
+  name:
+    invalid: "Un nome non può essere vuoto né contenere una barra."
+  delete:
+    header: "Elimina"
+    file: "Eliminare {name}?"
+    folder: "Eliminare la cartella {name} con tutto il contenuto?"
+  toast:
+    uploaded: "{count} file caricati"
+    uploadFailed: "Caricamento non riuscito"
+    changeFailed: "La modifica non è riuscita"

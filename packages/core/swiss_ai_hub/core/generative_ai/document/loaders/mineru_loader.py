@@ -22,6 +22,8 @@ from tenacity import (
     wait_exponential,
 )
 
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache import MineruParseCache
 from swiss_ai_hub.core.generative_ai.document.tables.html_table_converter import HtmlTableConverter
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import wrap_markdown_tables
 from swiss_ai_hub.core.generative_ai.utils.image_processor import embed_images_as_base64, extract_and_upload_images
@@ -54,16 +56,6 @@ class MineruParseResponse(BaseModel):
     results: dict[str, dict[str, Any]]
 
 
-class MineruFileResult(BaseModel):
-    """Extracted per-file fields from one or more /file_parse responses."""
-
-    backend: str
-    version: str
-    md_content: str
-    num_pages: int
-    images: dict[str, str]
-
-
 class MineruLoader(BaseReader):
     """
     Document loader using MinerU's HTTP API.
@@ -88,6 +80,7 @@ class MineruLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.config = MineruSettings()
+        self.parse_cache = MineruParseCache(self.config)
 
     @trace_fn
     def load_data(
@@ -189,6 +182,24 @@ class MineruLoader(BaseReader):
         return documents
 
     async def _convert_document(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        include_images: bool,
+    ) -> MineruFileResult:
+        """
+        The single place every caller converts through, so the cache sits here: below the per-caller choice of
+        how images come back (dropped, embedded, uploaded), which makes one entry serve all of them.
+        """
+        cached = await self.parse_cache.get(file_bytes, filename, include_images)
+        if cached is not None:
+            logger.info(f"[MineruLoader] {filename}: served from the parse cache")
+            return cached
+        result = await self._convert_uncached(file_bytes, filename, include_images)
+        await self.parse_cache.put(file_bytes, filename, include_images, result)
+        return result
+
+    async def _convert_uncached(
         self,
         file_bytes: bytes,
         filename: str,

@@ -26,10 +26,17 @@ steps:
   respond_with_llm:
     name: Répondre avec LLM
     description: Génère une réponse en utilisant le LLM basé sur des exemples Few-Shot.
-  stop:
-    name: Arrêter
-    description: Arrête l'agent lorsque la demande est rejetée par la vérification
-      d'adéquation.
+  reject_unsuitable_request:
+    name: Refuser une demande inadaptée
+    description: Termine l'exécution par un refus diffusé lorsque le garde d'adéquation
+      rejette la demande.
+thoughts:
+  input_too_large: "L'entrée ne tient pas dans la fenêtre de contexte du modèle :\
+    \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
+    \ modèle est refusé."
 messages:
+  input_too_large: "Ce message est trop long pour que je puisse le traiter. Veuillez\
+    \ le raccourcir ou joindre plutôt le texte sous forme de fichier : je lis moi-même\
+    \ les fichiers joints et j'utilise les parties utiles à votre question."
   unsuitable_request: Je ne suis pas le bon assistant pour cette demande, je ne peux
     donc pas y répondre. %{reason}

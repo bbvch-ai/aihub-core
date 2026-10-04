@@ -5,6 +5,7 @@ from pydantic import Field
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.input_text import InputText
 from swiss_ai_hub.core.form.elements.password import Password
+from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.secret_field_walker import SecretFieldWalker
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -28,11 +29,20 @@ class _Connection(Form):
         return cls(host=InputText(label=LocaleString(en="Host")), password=Password(label=LocaleString(en="Pw")))
 
 
+class _KeyFile(Form):
+    key_file: Annotated[str | SecretFileInput, Field(description="Key file")] = ""
+
+    @classmethod
+    def as_form(cls) -> Self:
+        return cls(key_file=SecretFileInput(label=LocaleString(en="Key file"), accept=".json"))
+
+
 class _Config(Form):
     name: Annotated[str | InputText, Field(description="Name")] = ""
     token: Annotated[str | Password, Field(description="Token")] = ""
     connection: Annotated[_Connection, Field(description="Connection")] = Field(default_factory=_Connection)
     servers: Annotated[list[_Server], Field(description="Servers")] = Field(default_factory=list)
+    service_account: Annotated[_KeyFile, Field(description="Service account")] = Field(default_factory=_KeyFile)
 
     @classmethod
     def as_form(cls) -> Self:
@@ -41,14 +51,15 @@ class _Config(Form):
             token=Password(label=LocaleString(en="Token")),
             connection=_Connection.as_form(),
             servers=[_Server.as_form()],
+            service_account=_KeyFile.as_form(),
         )
 
 
 class TestSecretPaths:
-    def test_password_fields_are_found_at_the_top_level_in_groups_and_in_repeaters(self):
+    def test_secret_fields_are_found_at_the_top_level_in_groups_and_in_repeaters(self):
         paths = SecretFieldWalker.secret_paths(_Config.as_form().to_formkit_form())
 
-        assert paths == {"token", "connection.password", "servers.api_key"}
+        assert paths == {"token", "connection.password", "servers.api_key", "service_account.key_file"}
 
     def test_a_form_without_passwords_has_no_secret_paths(self):
         assert SecretFieldWalker.secret_paths(_Connection(host=InputText(label="Host")).to_formkit_form()) == set()

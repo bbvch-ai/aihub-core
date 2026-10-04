@@ -1,0 +1,34 @@
+---
+steps:
+  read_as_tool:
+    name: "Read Attached Files as a Tool"
+    description: "Reads the attached files the model chose"
+  answer_tool_call:
+    name: "Return Files to the Model"
+    description: "Hands what was read back to the model's tool loop"
+  read_attached_files:
+    name: Read Attached Files
+    description: Reads the files the user attached to the conversation and adds their
+      text to the model's context
+prompt:
+  context: |
+    {% chat role="system" %}
+    The user attached the following files to this conversation. When the question refers to them, answer from their content and name the file you used. Each file is a `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>` block, its sections under their headings.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: 'Only the parts of "%{filename}" most relevant to the question fit into your context. Tell the user that your answer is based on excerpts of this file.'
+  truncated: Only the beginning of "%{filename}" fit into your context. Tell the
+    user that your answer is based on part of this file.
+  unreadable: The user attached "%{filename}", but it could not be read (%{error}).
+    Tell the user that this file could not be read, and suggest attaching it in another
+    format or pasting its text.
+tool:
+  label: "Read attached files"
+  approval_summary: "Read the attached files"
+  description: "Reads files the user attached to this conversation and returns their text, with ids to cite. A file too large to read whole returns the sections most relevant to the query. Attached files:\n%{files}"
+  files: "The files to read, by id; leave out to read all of them."
+  query: "What you are looking for in the files, so a long file keeps the sections about it."
+  nothing_readable: "None of the chosen files could be read."
+  unknown_files: "None of the given ids is an attached file. Attached files: %{files}"

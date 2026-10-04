@@ -4,6 +4,9 @@ metadata:
   description: Assistant IA qui recherche et analyse vos documents pour fournir des
     réponses éclairées et contextuelles
 config:
+  restrict_to_user_access:
+    label: "Limiter aux droits de l'utilisateur"
+    help: "Ne rechercher que dans les collections configurées que la personne qui pose la question peut lire dans l'espace de connaissances. Sans ce réglage, toute personne pouvant utiliser cet agent reçoit des réponses issues de toutes ses collections."
   number_of_input_tokens:
     label: Tokens d'entrée max
     help: Nombre maximum de tokens autorisés dans l'entrée du LLM. Limite la taille
@@ -100,9 +103,6 @@ steps:
     name: Conserver les documents de référence
     description: Conserve les principaux documents ayant fondé cette réponse afin
       qu'une question de suivi puisse les réutiliser.
-  limit_chat_history_with_context:
-    name: Limiter l'historique avec contexte
-    description: Inclut le contexte combiné et tronque à nouveau l'historique du chat.
   respond_with_llm:
     name: Répondre avec LLM
     description: Génère une réponse en utilisant le LLM configuré.
@@ -121,6 +121,7 @@ thoughts:
     \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
     \ modèle est refusé."
 messages:
+  no_accessible_knowledge: "Les connaissances de cet agent ne vous sont pas accessibles : vous n'avez accès à aucune des collections à partir desquelles il répond. Demandez un accès à un administrateur si vous en avez besoin."
   condensation_empty: Je n'ai pas réussi à déterminer ce qu'il fallait rechercher
     à partir de ce message. Veuillez reformuler votre question et réessayer.
   input_too_large: Ce fichier est trop volumineux pour que je le lise en une seule

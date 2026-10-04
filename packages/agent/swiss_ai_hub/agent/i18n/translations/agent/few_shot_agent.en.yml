@@ -24,9 +24,16 @@ steps:
   respond_with_llm:
     name: Respond with LLM
     description: Generates a response using the LLM based on few-shot examples.
-  stop:
-    name: Stop
-    description: Stops the agent when request is rejected by suitability guard.
+  reject_unsuitable_request:
+    name: Reject Unsuitable Request
+    description: Ends the run with a streamed refusal when the suitability guard rejects
+      the request.
+thoughts:
+  input_too_large: 'The input does not fit the model context window: about %{tokens}
+    tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
 messages:
+  input_too_large: 'This message is too long for me to process. Please shorten it,
+    or attach the text as a file instead: I read attached files myself and use the
+    parts that matter for your question.'
   unsuitable_request: I am not the right assistant for this request, so I cannot answer
     it. %{reason}

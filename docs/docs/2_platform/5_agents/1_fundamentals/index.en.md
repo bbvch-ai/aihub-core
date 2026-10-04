@@ -10,7 +10,9 @@ Workflows, context management, and event handling operate in the background.
 ## Structured workflows
 
 Each agent follows a predefined workflow that defines its exact sequence of operations. Instead of giving an agent tools
-and letting it decide how to use them, workflows specify each step the agent takes.
+and letting it decide how to use them, workflows specify each step the agent takes. Where open-ended work needs it, a
+workflow can include a tool loop, in which the model chooses among the tools the profile enables. The loop is one
+bounded part of the workflow, with limits, approvals and an event for every decision, so it stays inspectable.
 
 Workflows provide:
 
@@ -21,6 +23,16 @@ Workflows provide:
 Steps can use language models when needed for reasoning and natural language tasks, but many steps perform deterministic
 operations like data validation, formatting, or conditional routing without any LLM involvement. The workflow controls
 the overall execution path.
+
+## Shared building blocks
+
+Chat agents do not each reimplement the same steps. Shared building blocks, called capabilities, provide them: turning
+the conversation into a query and titling the thread, recalling and storing memory, reading attached files, searching
+referenced knowledge, composing everything the model sees into one set of system instructions, and completing the answer
+with follow-up suggestions. A blueprint calls them in the order that fits it, so reading its workflow shows which
+context reaches the model and what runs after the answer. The Instructed, Teachable, Document Intelligence, Company
+Knowledge and MCP Tool agents all work this way, and the event history shows each call and the exact context the model
+was given.
 
 ## Context management
 

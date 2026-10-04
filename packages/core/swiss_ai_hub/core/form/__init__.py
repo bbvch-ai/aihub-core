@@ -18,8 +18,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
     from swiss_ai_hub.core.form.elements.model_select import ModelSelect
+    from swiss_ai_hub.core.form.elements.multi_select import MultiSelect
     from swiss_ai_hub.core.form.elements.password import Password
     from swiss_ai_hub.core.form.elements.repeater import Repeater
+    from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
     from swiss_ai_hub.core.form.elements.slider import Slider
@@ -54,9 +56,11 @@ __all__ = [
     "KnowledgeDatabaseSelector",
     "LocaleInput",
     "ModelSelect",
+    "MultiSelect",
     "Password",
     "Repeater",
     "SecretFieldWalker",
+    "SecretFileInput",
     "Select",
     "SelectButton",
     "Slider",
@@ -88,9 +92,11 @@ _LAZY_IMPORTS = {
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
+    "MultiSelect": "swiss_ai_hub.core.form.elements.multi_select",
     "Password": "swiss_ai_hub.core.form.elements.password",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
+    "SecretFileInput": "swiss_ai_hub.core.form.elements.secret_file_input",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

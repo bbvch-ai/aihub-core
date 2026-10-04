@@ -176,9 +176,11 @@ to the instance. That is what lets a second pipeline *type* be deployed alongsid
 `settings` is a `DocumentIngestionPipelineSettings` (`DOCUMENT_INGESTION_*`, read from the environment when omitted)
 carrying the text, embedding and vision models, the three enrichment flags and the observation schedule. The models and
 enrichment flags are **deployment defaults**, not the graph's shape: they pre-fill the form the pipeline announces, and
-are what a database that stores no value of its own falls back to at run time. The asset graph is identical for every
-database (`summary_nodes` always exists, and table refinement and figure descriptions are always in the `documents`
-graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
+are what a database that stores no value of its own falls back to at run time. The builder registers them under its
+`ingestor` (`model_builders.register_deployment_defaults`), so a run falls back to the settings the pipeline was built
+with rather than re-reading the environment: a model named in code wins over the deployment's variables. The asset graph
+is identical for every database (`summary_nodes` always exists, and table refinement and figure descriptions are always
+in the `documents` graph), and each enrichment op decides per run from the bucket's configuration whether it has work.
 
 Every pipeline built here registers itself: a sensor upserts an `IngestorEntity` carrying labels, form and schema, so
 the API's `GET /knowledge/ingestors` can offer it in the create-database dialog and validate what users submit. See
@@ -316,7 +318,10 @@ Option groups are non-nullable with primitive defaults, so a hidden group submit
 SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str | Password`;
 `SourcePipelineConfig.secret_field_paths()` derives their dotted paths from the form, the API encrypts them with
 `SecretEncryptionService` (`AIHUB_CONFIG_ENCRYPTION_KEY`, shared with the pipeline) and returns a mask; a resubmitted
-mask keeps the stored value. Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
+mask keeps the stored value. The dialog offers only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`,
+`drive`, plus `local` when `RCLONE_LOCAL_SOURCE_ROOT` is set); the other backends stay in the form and runtime so
+existing databases keep syncing. The Drive service-account key is a `SecretFileInput` (core form element, treated as a
+secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
 `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
@@ -338,8 +343,10 @@ one bucket-tagged run per owned database daily (`owned_by_ingestor` is the Stage
 
 **Namespaces are generated.** Files land at `s3://{bucket}/{top-level folder}/…` and the ingestion pipeline maps the
 first path segment to a namespace. Files directly at the root of `root_path` are skipped and counted in the observation
-metadata. A sourced database refuses manual upload, hand-made namespaces and manual document deletion; it may be deleted
-as a whole.
+metadata. A folder whose name sanitises to a namespace another folder already owns (`hr docs` next to `hr_docs`) is
+skipped too (`NamespaceCollisionError`, listed in the ingestion observation's metadata); removal compares URIs only
+(`list_ingestible_uris`), so renaming that folder at the source repairs the database. A sourced database refuses manual
+upload, hand-made namespaces and manual document deletion; it may be deleted as a whole.
 
 **Reaching the ingestion pipeline.** After every written or removed file `util/source_updated_notifier.py` publishes a
 `SourceUpdatedEvent` on the owning ingestor's subject through the core `SourceUpdatedPublisher` (the same publisher the
@@ -371,7 +378,10 @@ more than a store can. `util/model_builders.py` resolves it from the bucket, per
   which is every key added after that database was created, falls back to the default, so old databases keep ingesting
   unchanged. A custom pipeline passes its own subclass to read its extra settings typed.
 - `llm_model_name_for_bucket` / `embedding_model_name_for_bucket` / `vision_model_name_for_bucket` read the model slots
-  of that config. The vision model falls back to the text model.
+  of that config. The vision model falls back to the text model, deliberately: the platform has no dedicated vision
+  model, and gemma reads images. A deployment that points the text model at a provider without image input must set
+  `DOCUMENT_INGESTION_VISION_MODEL` too — nothing checks this, because LiteLLM's `supports_vision` is undeclared for
+  gemma and `true` for the OCR-only MinerU model, so it cannot tell a suitable model apart.
 - `embedding_dimension_for_bucket` derives the collection's vector width from the embedding model's declared
   `output_vector_size`, **not** from a `MILVUS_DIMENSION` setting. A dimension configured independently of the model is
   not rejected by Milvus, it silently truncates or pads every vector. The API refuses an embedding model that declares

@@ -27,6 +27,7 @@ from swiss_ai_hub.core.form.elements.password import Password
 from swiss_ai_hub.core.form.elements.radio_button import RadioButton
 from swiss_ai_hub.core.form.elements.rating import Rating
 from swiss_ai_hub.core.form.elements.repeater import Repeater
+from swiss_ai_hub.core.form.elements.secret_file_input import SecretFileInput
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.elements.select_button import SelectButton
 from swiss_ai_hub.core.form.elements.slider import Slider
@@ -67,6 +68,7 @@ _FORMKIT_TYPE_MAP: dict[str, str] = {
     "primeToggleButton": "ToggleButton",
     "primeToggleSwitch": "ToggleSwitch",
     "repeater": "Repeater",
+    "secretFileInput": "SecretFileInput",
     "tenantSelect": "TenantSelect",
     "vectorStoreInput": "VectorStoreInput",
 }
@@ -112,6 +114,7 @@ _FormElementUnion = (
     | Annotated[RadioButton, Tag("RadioButton")]
     | Annotated[Rating, Tag("Rating")]
     | Annotated[Repeater, Tag("Repeater")]
+    | Annotated[SecretFileInput, Tag("SecretFileInput")]
     | Annotated[Select, Tag("Select")]
     | Annotated[SelectButton, Tag("SelectButton")]
     | Annotated[Slider, Tag("Slider")]

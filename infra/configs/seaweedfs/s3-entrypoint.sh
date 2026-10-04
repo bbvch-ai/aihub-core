@@ -8,6 +8,8 @@ set -e
 # SeaweedFS S3 credentials
 SEAWEEDFS_S3_USER=${SEAWEEDFS_S3_USER}
 SEAWEEDFS_S3_PASSWORD=${SEAWEEDFS_S3_PASSWORD}
+SANDBOX_MIRROR_S3_ACCESS_KEY=${SANDBOX_MIRROR_S3_ACCESS_KEY}
+SANDBOX_MIRROR_S3_SECRET_KEY=${SANDBOX_MIRROR_S3_SECRET_KEY}
 
 S3_PORT=${S3_PORT:-9000}
 S3_FILER=${S3_FILER:-seaweedfs-filer:8888}
@@ -34,6 +36,21 @@ cat > /tmp/s3.json <<EOF
         "WriteAcp",
         "List",
         "Tagging"
+      ]
+    },
+    {
+      "name": "sandbox-mirror",
+      "credentials": [
+        {
+          "accessKey": "${SANDBOX_MIRROR_S3_ACCESS_KEY}",
+          "secretKey": "${SANDBOX_MIRROR_S3_SECRET_KEY}"
+        }
+      ],
+      "actions": [
+        "Read:sandbox-files",
+        "Write:sandbox-files",
+        "List:sandbox-files",
+        "Tagging:sandbox-files"
       ]
     }
   ]

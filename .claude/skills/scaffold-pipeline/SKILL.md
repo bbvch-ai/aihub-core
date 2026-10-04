@@ -38,14 +38,14 @@ Sources are configured **per knowledge database in the create dialog** through t
 (`app/rclone_pipeline`, one deployment for every database whose `source` is `rclone`). The user picks a **Source**,
 selects a backend and enters credentials, root folder and patterns; nothing is deployed and no env var is set.
 
-| Backend (`backend_type`) | Source                            | Options `Form`        |
-| ------------------------ | --------------------------------- | --------------------- |
-| `onedrive`               | OneDrive / SharePoint (`drive_type=documentLibrary`) | `OneDriveOptions`     |
-| `drive`                  | Google Drive                      | `GoogleDriveOptions`  |
-| `s3`                     | AWS S3 / MinIO / S3-compatible    | `S3Options`           |
-| `azureblob`              | Azure Blob Storage                | `AzureBlobOptions`    |
-| `sftp`                   | SFTP                              | `SftpOptions`         |
-| `local`                  | Path inside the rclone container  | `LocalOptions`        |
+| Backend (`backend_type`) | Source                                               | Options `Form`       |
+| ------------------------ | ---------------------------------------------------- | -------------------- |
+| `onedrive`               | OneDrive / SharePoint (`drive_type=documentLibrary`) | `OneDriveOptions`    |
+| `drive`                  | Google Drive                                         | `GoogleDriveOptions` |
+| `s3`                     | AWS S3 / MinIO / S3-compatible                       | `S3Options`          |
+| `azureblob`              | Azure Blob Storage                                   | `AzureBlobOptions`   |
+| `sftp`                   | SFTP                                                 | `SftpOptions`        |
+| `local`                  | Path inside the rclone container                     | `LocalOptions`       |
 
 If the source is one of these, **stop here**: create the database from the UI with that source. Each top-level folder
 under the root becomes a namespace; root-level files are skipped.
@@ -61,8 +61,8 @@ form is re-announced by the registration sensor.
 observable factory that resolves the bucket from the `aihub/bucket` run tag, a read-only routed IO manager, per-run
 resolution in the style of `util/source_builders.py`, and a `rclone_pipeline_definitions`-style factory with its own
 `source` token that wires `source_pipeline_registration_sensor`, `source_bucket_cleanup_sensor`,
-`per_bucket_observe_schedule(owns=owned_by_source(source))` and the routed `source_to_data_lake` factories. Ingestor
-and source tokens reserve each other; the factory raises at build time for a reserved id or missing labels.
+`per_bucket_observe_schedule(owns=owned_by_source(source))` and the routed `source_to_data_lake` factories. Ingestor and
+source tokens reserve each other; the factory raises at build time for a reserved id or missing labels.
 
 For SharePoint via native MS Graph API (not rclone), the deploy-time `default_sharepoint_to_datalake_definitions` from
 `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` still exists and binds one bucket.
@@ -193,7 +193,7 @@ Reference: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/data_lake_t
 
 Create resources in `packages/pipeline/swiss_ai_hub/pipeline/resources/<category>/`. Extend `ConfigurableResource`:
 
-Reference: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/DocumentParserResource.py`.
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/document_parser_resource.py`.
 
 Add the resource to the factory dict in `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`.
 

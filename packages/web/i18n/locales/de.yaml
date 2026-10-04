@@ -239,6 +239,14 @@ event:
     assistant: Assistent
     system: System
     user: Benutzer/in
+  contextComposed:
+    summary: 'Kontext für das Modell zusammengestellt: {count} Nachricht | Kontext
+      für das Modell zusammengestellt: {count} Nachrichten'
+    description: Der Chat-Verlauf, den das Modell erhalten hat, mit allen abgerufenen
+      Kontextblöcken
+    assistant: Assistent
+    system: System
+    user: Benutzer/in
   reranker:
     topDocuments: 'Top {count} relevanteste Dokumente:'
     query: Suchanfrage
@@ -278,6 +286,14 @@ event:
       identity: Identität
       capabilities: Fähigkeiten
       behavior: Verhalten
+  sandboxFileDisplayed:
+    file: Datei
+    type: Typ
+    size: Grösse
+    path: In der Sandbox
+  humanInTheLoopResponse:
+    confirmed: Bestätigt
+    declined: Abgelehnt
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
@@ -296,6 +312,63 @@ event:
       delegations: Delegationen
       delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
       allEvents: Alle Ereignisse
+  parts:
+    noMessages: Keine Nachrichten
+    yes: Ja
+    no: Nein
+  capability:
+    userQuery: Nachricht des Benutzers
+    historyMessages: Nachrichten im Verlauf
+    condensed: Aus dem Verlauf verdichtet
+    query: Anfrage
+    block: Block {number}
+    blocks: Kontextblöcke
+    namespaces: Bereiche des Organisationsgedächtnisses
+    toolCall: Werkzeugaufruf
+    userMemories: Benutzererinnerungen
+    organizationMemories: Organisationserinnerungen
+    references: Referenzierte Sammlungen
+    citeSources: Quellen zitieren
+    sections: Gefundene Abschnitte
+    notSearched: Nicht durchsucht (kein Zugriff)
+    files: Dateien
+    reserveTokens: Reservierte Tokens
+    fileStatus:
+      read: Gelesen
+      truncated: Gekürzt
+      failed: Fehlgeschlagen
+    citationId: Zitier-ID
+    pages: Seiten
+    error: Fehler
+    stop: Endet mit
+    targetAgent: Gedächtnisschreiber
+  toolLoop:
+    loop: Werkzeugsatz
+    mode: Modus
+    modes:
+      answer: Antworten
+      gather: Kontext sammeln
+    iteration: Entscheidungen
+    toolCallsMade: Bisherige Werkzeugaufrufe
+    messages: Nachrichten in der Schleife
+    offeredTools: Angebotene Werkzeuge
+    condensedResults: Verdichtete Ergebnisse
+    needsCondensing: Muss verdichtet werden
+    decidedCalls: Ein Werkzeugaufruf entschieden | {count} Werkzeugaufrufe entschieden
+    narrowedTools: Eingeschränkt auf
+    maxIterations: Entscheidungslimit
+    tool: Werkzeug
+    kind: Art
+    kinds:
+      function: Funktion
+      capability: Fähigkeit
+    failed: Fehlgeschlagen
+    resultContext: Zurückgegebener Kontext
+    stoppedEarly: An den Limits gestoppt
+    gathered: Gesammelter Kontext
+    gatheredMessages: Gesammelte Nachrichten
+    tokens: Tokens
+    condensedTurns: Verdichtete Runden
 costs:
   table:
     count: Anzahl
@@ -518,8 +591,8 @@ knowledge:
     title: Wissensdatenbank hinzufügen
     description: Eine neue Self-Service-Wissensdatenbank erstellen
   source:
-    description: 'Synchronisiert aus {name}'
-    edit: 'Quelle bearbeiten'
+    description: Synchronisiert aus {name}
+    edit: Quelle bearbeiten
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -559,16 +632,18 @@ knowledge:
         eine Pipeline läuft.
       steps:
         basic_info: Grundinformationen
-        source: 'Quelle'
+        source: Quelle
     edit_source:
-      title: 'Quelle von {name}'
-      success: 'Quelle aktualisiert'
-      error: 'Quelle konnte nicht aktualisiert werden'
-      switch_to_manual: 'Auf manuellen Upload umstellen'
+      title: Quelle von {name}
+      success: Quelle aktualisiert
+      error: Quelle konnte nicht aktualisiert werden
+      switch_to_manual: Auf manuellen Upload umstellen
       replace_documents:
-        header: 'Inhalt an die Quelle übergeben?'
-        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e). Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation jede Datei entfernt, die die Quelle nicht hat.'
-        accept: 'Bestehende Dokumente ersetzen'
+        header: Inhalt an die Quelle übergeben?
+        message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e).
+          Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation
+          jede Datei entfernt, die die Quelle nicht hat.'
+        accept: Bestehende Dokumente ersetzen
     edit:
       title: Sammlung bearbeiten
     database:
@@ -582,12 +657,13 @@ knowledge:
       validation_error: Der Datenbankname muss mit einem Kleinbuchstaben beginnen
         und darf nur Kleinbuchstaben und Ziffern enthalten, zwischen 3 und 63 Zeichen
     source:
-      label: 'Quelle'
-      placeholder: 'Wählen Sie, woher die Dokumente kommen'
-      help: 'Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron; jeder Ordner der obersten Ebene wird zu einem Namespace.'
+      label: Quelle
+      placeholder: Wählen Sie, woher die Dokumente kommen
+      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron;
+        jeder Ordner der obersten Ebene wird zu einem Namespace.
       manual_upload:
-        label: 'Manueller Upload'
-        description: 'Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.'
+        label: Manueller Upload
+        description: Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.
     ingestor:
       label: Ingestion-Pipeline
       placeholder: Ingestion-Pipeline auswählen
@@ -858,6 +934,16 @@ process:
       done: Abgeschlossen
       steps: Fortschritt
 form:
+  secret_file_input:
+    drop_hint: Datei hier ablegen oder zum Auswählen klicken
+    limits: '{accept}, bis {size}'
+    selected: Datei ausgewählt
+    stored: Schlüsseldatei gespeichert (verschlüsselt)
+    client_email: 'Dienstkonto: {email}'
+    replace: Ersetzen
+    remove: Entfernen
+    too_large: Die Datei ist grösser als {size}.
+    invalid_json: Die Datei ist kein gültiges JSON.
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
   warnings:
@@ -904,6 +990,8 @@ lib:
       label: Namensräume
       placeholder: Mindestens einen Namensraum auswählen
       help: Nur die ausgewählten Namensräume werden durchsucht
+      required: Mindestens einen Namensraum auswählen oder „Alle Namensräume durchsuchen“
+        aktivieren. Sonst kann die Konfiguration nicht gespeichert werden.
     allNamespaces:
       label: Alle Namensräume durchsuchen
       help: Jeder Namensraum dieser Datenbank wird durchsucht, auch später hinzugefügte
@@ -976,6 +1064,7 @@ memory:
       message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
         es erneut.
 openwebui:
+  default_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
   memories:
     title: Agent-Erinnerungen
     select_agent: Agent auswählen
@@ -1004,8 +1093,50 @@ support:
   submit: Meldung senden
   submitting: Wird gesendet…
   sent: Meldung gesendet
-  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per E-Mail.'
+  sent_detail: 'Referenz {reference}, Meldung #{number}. Der Support meldet sich per
+    E-Mail.'
   send_failed: Meldung nicht gesendet
   send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
-  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte wenden Sie
-    sich an Ihre Administration.
+  unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte
+    wenden Sie sich an Ihre Administration.
+userFiles:
+  title: "Meine Dateien"
+  description: "Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Chat-Anhänge, Dateien, die Agenten für Sie erstellt haben, und Ihre eigenen Uploads."
+  conversation: "Chat"
+  actions:
+    move: "Verschieben"
+    upload: "Hochladen"
+    newFolder: "Neuer Ordner"
+    refresh: "Aktualisieren"
+    download: "Herunterladen"
+    rename: "Umbenennen"
+    delete: "Löschen"
+    close: "Schliessen"
+    cancel: "Abbrechen"
+    save: "Speichern"
+    openFolder: "Ordner {name} öffnen"
+    preview: "Vorschau von {name}"
+  columns:
+    name: "Name"
+    size: "Grösse"
+    modified: "Geändert"
+  empty:
+    folder: "Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen."
+    noSpace: "Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den Chat einmal und kommen Sie dann zurück."
+  error:
+    load: "Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren erneut."
+  move:
+    header: "{name} verschieben nach"
+    noTargets: "Kein Ordner zum Verschieben vorhanden."
+  preview:
+    unavailable: "Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter, um sie zu öffnen."
+  name:
+    invalid: "Ein Name darf nicht leer sein und keinen Schrägstrich enthalten."
+  delete:
+    header: "Löschen"
+    file: "{name} löschen?"
+    folder: "Den Ordner {name} mit allem Inhalt löschen?"
+  toast:
+    uploaded: "{count} Datei(en) hochgeladen"
+    uploadFailed: "Hochladen fehlgeschlagen"
+    changeFailed: "Die Änderung ist fehlgeschlagen"

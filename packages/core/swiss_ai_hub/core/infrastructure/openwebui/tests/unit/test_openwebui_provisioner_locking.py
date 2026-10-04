@@ -29,14 +29,33 @@ class TestDistributedLocking:
             mock_models.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_access_skipped_when_lock_held(
+    async def test_sync_access_waits_for_running_sync_instead_of_dropping(
         self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        """The running sync may predate the change that triggered this one, so this one must still run."""
+        mock_lock = _make_lock(acquired=True)
+        mock_redis.lock.return_value = mock_lock
+
+        with (
+            patch.object(provisioner, "_sync_groups"),
+            patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
+        ):
+            await provisioner.sync_access()
+
+        assert mock_lock.acquire.await_args.kwargs["blocking"] is True
+
+    @pytest.mark.asyncio
+    async def test_sync_access_warns_when_waiting_for_lock_times_out(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         mock_redis.lock.return_value = _make_lock(acquired=False)
 
-        with patch.object(provisioner, "_sync_groups") as mock_groups:
+        with patch.object(provisioner, "_sync_groups") as mock_groups, caplog.at_level("WARNING"):
             await provisioner.sync_access()
-            mock_groups.assert_not_called()
+
+        mock_groups.assert_not_called()
+        assert "timed out waiting for the access-sync lock" in caplog.text
 
     @pytest.mark.asyncio
     async def test_provision_skipped_when_lock_held(
@@ -56,6 +75,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
         ):
             await provisioner.sync_agents([_RAG_AGENT])
             mock_lock.release.assert_awaited_once()
@@ -84,6 +104,7 @@ class TestDistributedLocking:
         with (
             patch.object(provisioner, "_sync_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_knowledge_entries"),
             patch.object(provisioner, "_sync_groups"),
         ):
             await provisioner.sync_agents([_RAG_AGENT])

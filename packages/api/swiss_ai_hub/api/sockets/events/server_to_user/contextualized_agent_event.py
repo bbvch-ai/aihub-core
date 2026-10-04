@@ -12,12 +12,19 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopResponseEvent,
     AgentSuitabilityAcceptEvent,
     AgentSuitabilityRejectEvent,
+    AttachedFileEvent,
+    AttachedFilesReadEvent,
     BaseRetrieveMemoryEvent,
     BaseStoreMemoryEvent,
     ChainEvent,
     ChunkEvent,
+    CompleteConversationEvent,
+    ComposeContextEvent,
+    ContextComposedEvent,
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ContextualizeConversationEvent,
+    ConversationContextualizedEvent,
     ConversationTitleEvent,
     CronStartEvent,
     DisplayEvent,
@@ -37,6 +44,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopInputResponseEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
+    KnowledgeSearchedEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
@@ -45,15 +53,24 @@ from swiss_ai_hub.core.events.agent import (
     MailBatchDraftedEvent,
     MailFetchedEvent,
     MailMovedEvent,
+    MemoryRecalledEvent,
+    MemoryStorageRequestedEvent,
     MetaQuestionDetectedEvent,
+    NotAMetaQuestionEvent,
     RAGFailureStopEvent,
     RAGStartEvent,
     RAGSuccessStopEvent,
+    ReadAttachedFilesEvent,
+    RecallMemoryEvent,
+    RefusalStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     RouterEvent,
+    RunToolLoopEvent,
+    SandboxFileDisplayedEvent,
+    SearchKnowledgeEvent,
     SemanticEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
@@ -63,7 +80,16 @@ from swiss_ai_hub.core.events.agent import (
     StoreOrganizationMemoryEvent,
     StoreUserMemoryEvent,
     ThoughtEvent,
+    ToolApprovalRequestEvent,
+    ToolApprovalResponseEvent,
+    ToolCallApprovedEvent,
+    ToolCallsDecidedEvent,
     ToolEvent,
+    ToolLoopCondensedEvent,
+    ToolLoopFinishedEvent,
+    ToolLoopIterationEvent,
+    ToolLoopStatusEvent,
+    ToolResultEvent,
     UnreadMailListedEvent,
     UserMessageEvent,
 )
@@ -75,23 +101,48 @@ DisplayEvents = (
     Annotated[StartEvent, Tag("StartEvent")]
     | Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")]
     | Annotated[HumanInTheLoopInputRequestEvent, Tag("HumanInTheLoopInputRequestEvent")]
+    | Annotated[ToolApprovalRequestEvent, Tag("ToolApprovalRequestEvent")]
     | Annotated[HumanInTheLoopConfirmationRequestEvent, Tag("HumanInTheLoopConfirmationRequestEvent")]
     | Annotated[HumanInTheLoopChatRequestEvent, Tag("HumanInTheLoopChatRequestEvent")]
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
     | Annotated[HumanInTheLoopInputResponseEvent, Tag("HumanInTheLoopInputResponseEvent")]
+    | Annotated[ToolApprovalResponseEvent, Tag("ToolApprovalResponseEvent")]
     | Annotated[HumanInTheLoopConfirmationResponseEvent, Tag("HumanInTheLoopConfirmationResponseEvent")]
     | Annotated[HumanInTheLoopChatResponseEvent, Tag("HumanInTheLoopChatResponseEvent")]
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
+    | Annotated[ContextComposedEvent, Tag("ContextComposedEvent")]
+    | Annotated[ContextualizeConversationEvent, Tag("ContextualizeConversationEvent")]
+    | Annotated[ConversationContextualizedEvent, Tag("ConversationContextualizedEvent")]
+    | Annotated[ComposeContextEvent, Tag("ComposeContextEvent")]
+    | Annotated[CompleteConversationEvent, Tag("CompleteConversationEvent")]
+    | Annotated[NotAMetaQuestionEvent, Tag("NotAMetaQuestionEvent")]
+    | Annotated[RecallMemoryEvent, Tag("RecallMemoryEvent")]
+    | Annotated[MemoryRecalledEvent, Tag("MemoryRecalledEvent")]
+    | Annotated[MemoryStorageRequestedEvent, Tag("MemoryStorageRequestedEvent")]
+    | Annotated[SearchKnowledgeEvent, Tag("SearchKnowledgeEvent")]
+    | Annotated[ReadAttachedFilesEvent, Tag("ReadAttachedFilesEvent")]
+    | Annotated[AttachedFilesReadEvent, Tag("AttachedFilesReadEvent")]
+    | Annotated[RunToolLoopEvent, Tag("RunToolLoopEvent")]
+    | Annotated[ToolLoopIterationEvent, Tag("ToolLoopIterationEvent")]
+    | Annotated[ToolCallsDecidedEvent, Tag("ToolCallsDecidedEvent")]
+    | Annotated[ToolCallApprovedEvent, Tag("ToolCallApprovedEvent")]
+    | Annotated[ToolLoopFinishedEvent, Tag("ToolLoopFinishedEvent")]
     | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
     | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
+    | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
+    | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
+    | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
+    | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]
+    | Annotated[ToolLoopCondensedEvent, Tag("ToolLoopCondensedEvent")]
+    | Annotated[SandboxFileDisplayedEvent, Tag("SandboxFileDisplayedEvent")]
     | Annotated[ConversationTitleEvent, Tag("ConversationTitleEvent")]
     | Annotated[FollowUpQuestionsEvent, Tag("FollowUpQuestionsEvent")]
     | Annotated[GuardEvent, Tag("GuardEvent")]
@@ -103,6 +154,7 @@ DisplayEvents = (
     | Annotated[EmbeddingEvent, Tag("EmbeddingEvent")]
     | Annotated[LLMEvent, Tag("LLMEvent")]
     | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
+    | Annotated[RefusalStopEvent, Tag("RefusalStopEvent")]
     | Annotated[MetaQuestionDetectedEvent, Tag("MetaQuestionDetectedEvent")]
     | Annotated[RerankerEvent, Tag("RerankerEvent")]
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]

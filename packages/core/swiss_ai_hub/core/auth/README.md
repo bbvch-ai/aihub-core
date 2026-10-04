@@ -132,6 +132,11 @@ The system supports two types of permission checks:
 - Active tenant is stored as a Keycloak user attribute (`active_tenant_id`)
 - Preferred UI language is stored the same way (`preferred_locale`), so it survives logout and follows the user across
   browsers and devices
+- Attribute writes resend the whole user (Keycloak has no per-attribute update) and trim single-valued attributes to one
+  value first: concurrent writes can leave Keycloak storing duplicates, which would otherwise fail every later write
+  with `error-invalid-multivalued-size`
+- `ensure_active_tenant` runs on every authenticated request; when it must write, it takes a per-user Redis lock (if the
+  caller has Redis) so the parallel requests after a login do not race each other
 - Tenant group membership is managed via Keycloak groups under `/tenants/`
 
 ### Multi-Tenant Roles

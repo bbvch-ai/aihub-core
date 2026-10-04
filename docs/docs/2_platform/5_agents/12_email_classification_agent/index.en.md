@@ -74,9 +74,14 @@ Create a profile from the **Email Processing Agent** blueprint in the Admin UI.
 
 ### Mailbox connection
 
-The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, username, password, TLS, inbox
-folder, and **Max Unread Messages**. There is no "processed folder" here — the classifier decides where each message
-goes.
+The same fields as the [Email Agent](../11_email_agent/#mailbox-connection): host, port, authentication, username and
+password or Entra ID credentials, TLS, inbox folder, and **Max Unread Messages**. There is no "processed folder" here —
+the classifier decides where each message goes.
+
+For a Microsoft 365 mailbox with basic authentication disabled, choose **Microsoft 365 (OAuth 2.0)** under
+**Authentication**. The tenant needs a one-time setup by an administrator — an app registration, the `IMAP.AccessAsApp`
+permission, and access granted per mailbox — described step by step in
+[Microsoft 365 with OAuth 2.0](../11_email_agent/#microsoft-365-with-oauth-2-0).
 
 ### Categories
 
@@ -215,11 +220,10 @@ no retrieval at all.
 
 With a knowledge agent picked, every drafted reply is answered from it. By default a category searches every collection
 the knowledge agent retrieves from. **Select Knowledge Collections** appears on a category once its **Draft a Reply**
-switch is on — collections only shape a drafted reply. Tick it and pick one or more
-collections, and its replies are answered from those and nothing else — so a message classified as `support_request` can
-be answered from your support material alone, with the category verdict making the lookup precise. Only the collections
-the knowledge agent you picked is actually configured for are offered, because a collection outside its scope would
-retrieve nothing at all.
+switch is on — collections only shape a drafted reply. Tick it and pick one or more collections, and its replies are
+answered from those and nothing else — so a message classified as `support_request` can be answered from your support
+material alone, with the category verdict making the lookup precise. Only the collections the knowledge agent you picked
+is actually configured for are offered, because a collection outside its scope would retrieve nothing at all.
 
 **The knowledge base layout this needs.** A collection is a top-level folder in your knowledge database — ingestion
 creates one collection per folder automatically. So the setup is: one folder per category, holding the documents that
@@ -250,11 +254,19 @@ and ignored until drafting is switched back on.
 ::: warning Upgrading a profile configured before this release
 Earlier releases named one collection per category in a plain text field, with the databases listed once on the
 classification section. Both fields were replaced by the per-category picker. A profile saved in the old shape is
-carried over on load — each category's old collection name is paired with the databases that were configured — so
-grounding keeps working without you re-entering it. Categories that named no collection now search all of the knowledge
-agent's collections. Open the profile and check the picker once after upgrading: a carried-over collection the knowledge
-agent you picked is not configured for is listed as unavailable, and that category needs a new selection.
+carried over when the API starts — each category's old collection name is paired with the databases that were configured
+— so grounding keeps working without you re-entering it. Categories that named no collection now search all of the
+knowledge agent's collections. The conversion runs once when the API starts, and a category whose selection you later
+switch off stays on all collections. Open the profile and check the picker once after upgrading: a carried-over
+collection the knowledge agent you picked is not configured for is listed as unavailable, and that category needs a new
+selection.
 :::
+
+**Grounded drafts are written in the sender's language.** The agent detects the language of each incoming message
+(German, English, French or Italian) and has the knowledge agent answer in that language, so the draft is written in it;
+scheduled runs have no user locale of their own, so without this every grounded draft would come out in German.
+Detection is a model call and can misjudge mixed-language mail, for instance an English reply above a quoted German
+thread. When the language cannot be determined, the previous behaviour applies.
 
 **Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
 model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest

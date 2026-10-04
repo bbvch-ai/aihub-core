@@ -6,6 +6,7 @@ import KnowledgeCollectionSelector from '@core/components/FormKit/KnowledgeColle
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
 import ModelSelect from '@core/components/FormKit/ModelSelect.vue'
+import SecretFileInput from '@core/components/FormKit/SecretFileInput.vue'
 import TenantSelect from '@core/components/FormKit/TenantSelect.vue'
 import VectorStoreInput from '@core/components/FormKit/VectorStoreInput.vue'
 import { en, de, fr, it } from '@formkit/i18n'
@@ -116,10 +117,13 @@ const config: DefaultConfigOptions = {
       props: ['options', 'placeholder'],
     }),
     localeInput: createInput(LocaleInput, {
-      props: ['inputType', 'rows', 'placeholder'],
+      props: ['inputType', 'rows', 'placeholder', 'allowTranslation'],
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],
+    }),
+    secretFileInput: createInput(SecretFileInput, {
+      props: ['accept', 'maxSizeBytes', 'placeholder'],
     }),
     tenantSelect: createInput(TenantSelect, {
       props: ['placeholder', 'filter'],

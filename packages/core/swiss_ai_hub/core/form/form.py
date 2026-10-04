@@ -137,7 +137,7 @@ class Form(BaseModel):
         logger.warning(f"Form {form_name} not found in registry. Using fallback Form.")
         return Form.model_validate(json_data)
 
-    def to_formkit_form(self, _id_prefix: str = "") -> list[FormkitElement]:
+    def to_formkit_form(self, _id_prefix: str = "", _defaults: BaseModel | None = None) -> list[FormkitElement]:
         """
         Recursively generates a list of FormkitElement objects from this form's fields.
 
@@ -150,6 +150,9 @@ class Form(BaseModel):
         Args:
             _id_prefix: Internal parameter for generating unique element IDs in nested forms.
                        Do not pass this manually - it's set automatically during recursion.
+            _defaults: Internal parameter carrying the parent field's data-mode default, so a nested
+                       element is pre-filled with what the parent declared (e.g. a default model name)
+                       rather than only its own class default. Set automatically during recursion.
 
         Returns:
             List of FormkitElement objects ready for frontend rendering.
@@ -194,13 +197,15 @@ class Form(BaseModel):
 
             # Case 1: Direct FormkitElement value
             if isinstance(field_value, FormkitElement):
-                element = self._prepare_formkit_element(field_value, field_name, field_info, _id_prefix)
+                element = self._prepare_formkit_element(field_value, field_name, field_info, _id_prefix, _defaults)
                 formkit_elements.append(element)
 
             # Case 2: Nested Form instance → recurse and wrap in Group
             elif isinstance(field_value, Form):
                 nested_prefix = f"{_id_prefix}{field_name}."
-                nested_elements = field_value.to_formkit_form(_id_prefix=nested_prefix)
+                nested_elements = field_value.to_formkit_form(
+                    _id_prefix=nested_prefix, _defaults=self._nested_defaults(field_name, field_info, _defaults)
+                )
                 # A data-mode nested Form contributes no elements; a non-nullable group has no
                 # enable toggle either, so it would render as an empty fieldset.
                 if not nested_elements and not allows_none:
@@ -249,6 +254,7 @@ class Form(BaseModel):
         field_name: str,
         field_info: FieldInfo,
         id_prefix: str = "",
+        defaults: BaseModel | None = None,
     ) -> FormkitElement:
         """
         Prepares a FormkitElement for inclusion in the form output.
@@ -256,7 +262,7 @@ class Form(BaseModel):
         For PrimeVueElement instances:
         - Auto-assigns the field name as the element's 'name'
         - Auto-assigns a unique 'id' using the prefix path (e.g., 'teams_config.channel_id')
-        - Determines 'required' based on whether None is in the field's type union
+        - Determines 'required' based on whether None is in the field's type union, unless set explicitly
         - Sets default value from Pydantic field if element has no explicit value
         """
         if isinstance(element, PrimeVueElement):
@@ -276,17 +282,19 @@ class Form(BaseModel):
             has_blank_default = field_info.default == ""
             allows_none = self._annotation_allows_none(field_info.annotation)
             is_required = not is_skip_required and not allows_none and not has_blank_default
-            element_copy.required = is_required
+            # An explicit `required=True` survives a nullable annotation: a field behind its enable toggle is
+            # only rendered while switched on, and may then still demand a value.
+            element_copy.required = is_required or element.required
             if allows_none and not is_skip_required:
                 element_copy.nullable = True
                 element_copy.default_enabled = self._default_is_non_null(field_info)
 
             # If element has no explicit value, use Pydantic field default
-            if element_copy.value is None and field_info.default is not PydanticUndefined:
+            default = self._data_default(field_name, field_info, defaults)
+            if element_copy.value is None and default is not PydanticUndefined:
                 # A BaseModel default (e.g. a LocaleString prompt) is dumped to its dict so it fits
                 # the primitive `value` type and doesn't trip the Pydantic serializer; FormkitElement
                 # and Form defaults are not values (they describe structure) so they are skipped.
-                default = field_info.default
                 if default is not None and not isinstance(default, FormkitElement | Form):
                     element_copy.value = default.model_dump() if isinstance(default, BaseModel) else default
 
@@ -314,6 +322,25 @@ class Form(BaseModel):
         """Whether the field's data default is a concrete non-null value. Drives a nullable
         element's initial toggle state on a fresh form (toggle on ⇔ default is non-null)."""
         return field_info.default is not PydanticUndefined and field_info.default is not None
+
+    @staticmethod
+    def _data_default(field_name: str, field_info: FieldInfo, defaults: BaseModel | None) -> Any:
+        """The value an element is pre-filled with: the parent's declared default for this field when it has
+        one, else the field's own class default. A profile stored before a sub-form existed is edited from these
+        values, so a sub-form whose parent default names a model must not render that model as unset.
+        A `default_factory` value is skipped: it is resolved from deployment settings at build time, not declared,
+        so the admin is left to choose it (e.g. the tenant of organization memory)."""
+        if defaults is not None and field_info.default_factory is None:
+            parent_default = getattr(defaults, field_name, PydanticUndefined)
+            if parent_default is not PydanticUndefined and not isinstance(parent_default, FormkitElement):
+                return parent_default
+        return field_info.default
+
+    @staticmethod
+    def _nested_defaults(field_name: str, field_info: FieldInfo, defaults: BaseModel | None) -> BaseModel | None:
+        """The data-mode default a nested sub-form's elements are pre-filled from, inherited down the tree."""
+        nested_default = Form._data_default(field_name, field_info, defaults)
+        return nested_default if isinstance(nested_default, BaseModel) else None
 
     @staticmethod
     def _extract_form_type(annotation: Any) -> type[Form] | None:

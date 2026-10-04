@@ -82,6 +82,16 @@ class TestBuildUserIdMapping:
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, [])
         assert result == {}
 
+    def test_user_id_mapping_falls_back_to_external_id_after_email_change(self) -> None:
+        """OpenWebUI keeps the email the account was created with, so only the Keycloak sub still matches."""
+        aihub_users = [{"id": "kc-sub-1", "email": "alice.new@example.com"}]
+        owui_user = _user("alice.old@example.com", "owui-1")
+        owui_user.external_id = "kc-sub-1"
+
+        result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, [owui_user])
+
+        assert result == {"kc-sub-1": "owui-1"}
+
 
 class TestSyncGroupsOrchestration:
     @pytest.mark.asyncio
@@ -182,7 +192,9 @@ class TestSyncGroupsOrchestration:
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_updates_group_membership(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_sync_updates_group_membership(
+        self, provisioner: OpenWebuiProvisioner, recorded_accounts: MagicMock
+    ) -> None:
         with (
             patch(
                 "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
@@ -226,6 +238,7 @@ class TestSyncGroupsOrchestration:
             await provisioner._sync_groups()
 
             mock_update_members.assert_called_once_with("grp-1", ["owui-1"], scim=ANY)
+            recorded_accounts.record_all.assert_called_once_with({"ah-user-1": "owui-1"})
 
     @pytest.mark.asyncio
     async def test_sync_excludes_user_with_different_active_tenant(self, provisioner: OpenWebuiProvisioner) -> None:

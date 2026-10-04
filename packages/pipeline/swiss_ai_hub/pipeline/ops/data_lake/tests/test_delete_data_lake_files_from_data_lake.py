@@ -6,7 +6,6 @@ from dagster import build_op_context
 from swiss_ai_hub.pipeline.ops.data_lake.delete_data_lake_files_from_data_lake import (
     delete_data_lake_files_from_data_lake,
 )
-from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 
 URI = "s3://researchdocs/reports/a.pdf"
 
@@ -16,9 +15,7 @@ class TestDeleteDataLakeFilesFromDataLake:
         data_lake_client = MagicMock()
         data_lake_client.directory_exists.return_value = True
 
-        delete_data_lake_files_from_data_lake(
-            build_op_context(), [DataLakeFile.from_content(URI, b"body", {})], data_lake_client
-        )
+        delete_data_lake_files_from_data_lake(build_op_context(), [URI], data_lake_client)
 
         data_lake_client.delete_file.assert_called_once_with(uri=URI)
         data_lake_client.delete_directory.assert_called_once()

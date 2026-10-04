@@ -11,6 +11,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
@@ -32,6 +33,12 @@ GPU_MODES = {False: "", True: ".gpu"}
 # Configs with `{variant}` in their name render once per entry; LITELLM_CONFIG_VARIANT picks one at runtime.
 LITELLM_VARIANTS = ["infomaniak", "stoney"]
 
+LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
+# The OpenWebUI provisioner rejects any other value at API startup, which aborts that whole provisioning run.
+# Keep in sync with AvailableModel.function_calling in packages/core (not importable here, see the note below).
+OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
+OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
+
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
@@ -43,7 +50,11 @@ CONFIG_SPECS = [
     # KEYCLOAK_BOOTSTRAP_TEMPLATES). Bootstrap changes stay reviewable via the
     # diff of the merged aihub-realm.{stage}.json output.
     # Keycloak managed configs - reconciled on every start by keycloak-config-cli.
-    ("templates/configs/keycloak/managed/10-roles.json.j2", "configs/keycloak/managed", "10-roles.{stage}{hardware}.json"),
+    (
+        "templates/configs/keycloak/managed/10-roles.json.j2",
+        "configs/keycloak/managed",
+        "10-roles.{stage}{hardware}.json",
+    ),
     (
         "templates/configs/keycloak/managed/20-client-scopes.json.j2",
         "configs/keycloak/managed",
@@ -115,6 +126,7 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # Static directories copied verbatim (no Jinja2 rendering).
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
+    ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
 ]
@@ -157,6 +169,7 @@ OWN_IMAGE_LICENSES = {
     "imap_agent": "Apache-2.0",
     "email_classification_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
+    "universal_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
@@ -245,7 +258,20 @@ def generate_config(template, context, output_path):
     """Render template and write to file"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = template.render(context)
+    if template.name == LITELLM_TEMPLATE:
+        _validate_openwebui_function_calling(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
+
+
+def _validate_openwebui_function_calling(rendered, output_path):
+    """Fail generation (and CI's compose-consistency job) on a mode the OpenWebUI provisioner would reject at runtime."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        mode = (entry.get("model_info") or {}).get(OPENWEBUI_FUNCTION_CALLING_KEY)
+        if mode is not None and mode not in OPENWEBUI_FUNCTION_CALLING_MODES:
+            raise ValueError(
+                f"{entry.get('model_name')}: {OPENWEBUI_FUNCTION_CALLING_KEY} is {mode!r} in {output_path.name}, "
+                f"expected one of {sorted(OPENWEBUI_FUNCTION_CALLING_MODES)}"
+            )
 
 
 def generate_keycloak_realm(env, context, output_path):
@@ -628,7 +654,7 @@ def main():
         stats = generate_default(env, config_data)
 
     # Print summary
-    print(f"\nGeneration complete!")
+    print("\nGeneration complete!")
     for name, count in stats.items():
         icon = "[]" if "docker-compose" in name else "  "
         print(f"   {icon} {count} {name} files")
