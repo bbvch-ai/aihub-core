@@ -45,6 +45,9 @@ config:
   max_tool_calls:
     label: "Maximale Werkzeugaufrufe"
     help: "Wie viele Werkzeugaufrufe eine Antwort machen darf."
+  disable_tools:
+    label: "Werkzeuge deaktivieren"
+    help: "Einige Werkzeuge dieses Agenten zurückhalten."
   disabled_tools:
     label: "Deaktivierte Werkzeuge"
     help: "Werkzeuge, die dieser Agent nie anbietet."

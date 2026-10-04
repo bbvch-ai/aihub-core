@@ -194,7 +194,8 @@ Agents that let the model choose its own tools, such as the Universal Agent, add
 | ---------------------- | ------------------------------------------------------------------------------------------- |
 | **Maximum Decisions**  | How often the model may choose tools before it must answer with what it has.                |
 | **Maximum Tool Calls** | How many tool calls one answer may make in total.                                           |
-| **Disabled Tools**     | Tools of the blueprint this profile never offers.                                           |
+| **Disable Tools**      | Turn on to withhold some tools; the Disabled Tools picker appears only while it is on.      |
+| **Disabled Tools**     | Tools of the blueprint this profile never offers, while Disable Tools is on.                |
 | **Approvals**          | Per tool: never ask, ask for every call, ask once per answer, or ask once per conversation. |
 
 At either limit the model answers without tools and the chat says that it stopped early. A tool is also offered only

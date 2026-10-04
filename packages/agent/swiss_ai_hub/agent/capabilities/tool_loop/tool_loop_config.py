@@ -1,7 +1,7 @@
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
-from pydantic import Field
-from swiss_ai_hub.core.form import InputNumber, MultiSelect
+from pydantic import Field, model_validator
+from swiss_ai_hub.core.form import Checkbox, InputNumber, MultiSelect
 from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.form.form import Form
 
@@ -25,8 +25,12 @@ class ToolLoopConfig(Form):
         Field(description="A tool result's size in tokens beyond which it is cut, so results cannot flood the prompt."),
         Ge(1),
     ] = 4000
+    disable_tools: Annotated[
+        bool | Checkbox, Field(description="Whether this profile withholds some of the blueprint's tools.")
+    ] = False
     disabled_tools: Annotated[
-        list[str] | MultiSelect, Field(description="Tools of the blueprint this profile never offers, by name.")
+        list[str] | MultiSelect,
+        Field(description="Tools of the blueprint this profile never offers, by name, while `disable_tools` is on."),
     ] = []
     approvals: Annotated[
         list[ToolApprovalRule],
@@ -35,6 +39,18 @@ class ToolLoopConfig(Form):
             title="Approvals",
         ),
     ] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def keep_stored_restrictions(cls, data: Any) -> Any:
+        """Profiles saved before the checkbox existed hold only the list, and must keep withholding those tools."""
+        if isinstance(data, dict) and "disable_tools" not in data and isinstance(data.get("disabled_tools"), list):
+            return {**data, "disable_tools": bool(data["disabled_tools"])}
+        return data
+
+    def is_disabled(self, tool: str) -> bool:
+        """The list only counts while its checkbox is ticked, so unticking it re-offers every tool."""
+        return self.disable_tools and tool in self.disabled_tools
 
     def approval_rule_for(self, tool: str) -> ToolApprovalRule | None:
         return next((rule for rule in self.approvals if rule.tool == tool), None)
@@ -57,12 +73,18 @@ class ToolLoopConfig(Form):
                 max=100,
                 step=1,
             ),
+            disable_tools=Checkbox(
+                label=AgentLocaleString.from_i18n_path("agent.tool_loop.config.disable_tools.label"),
+                help=AgentLocaleString.from_i18n_path("agent.tool_loop.config.disable_tools.help"),
+                ref="check_tool_loop_disable_tools",
+            ),
             disabled_tools=MultiSelect(
                 label=AgentLocaleString.from_i18n_path("agent.tool_loop.config.disabled_tools.label"),
                 help=AgentLocaleString.from_i18n_path("agent.tool_loop.config.disabled_tools.help"),
                 options=[{"label": name, "value": name} for name in tool_names],
                 option_label="label",
                 option_value="value",
+                condition_if="$get(check_tool_loop_disable_tools).value",
             ),
             approvals=[ToolApprovalRule.as_form(tool_names)],
         )

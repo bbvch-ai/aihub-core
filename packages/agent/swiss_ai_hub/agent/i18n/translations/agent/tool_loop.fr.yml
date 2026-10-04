@@ -45,6 +45,9 @@ config:
   max_tool_calls:
     label: "Appels d'outils maximaux"
     help: "Combien d'appels d'outils une réponse peut faire."
+  disable_tools:
+    label: "Désactiver des outils"
+    help: "Retenir certains outils de cet agent."
   disabled_tools:
     label: "Outils désactivés"
     help: "Outils que cet agent ne propose jamais."

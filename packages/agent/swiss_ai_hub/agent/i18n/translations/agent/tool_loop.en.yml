@@ -45,6 +45,9 @@ config:
   max_tool_calls:
     label: "Maximum Tool Calls"
     help: "How many tool calls one answer may make."
+  disable_tools:
+    label: "Disable Tools"
+    help: "Withhold some of this agent's tools."
   disabled_tools:
     label: "Disabled Tools"
     help: "Tools this agent never offers."

@@ -247,6 +247,20 @@ class TestOfferedTools:
 
     @pytest.mark.asyncio
     async def test_the_profile_and_the_call_narrow_the_tools(self):
+        event = await self._start(requested=[], disable_tools=True, disabled_tools=["broken"], tools=["echo", "broken"])
+
+        assert [tool.name for tool in event.state.tools] == ["echo"]
+
+    @pytest.mark.asyncio
+    async def test_the_disabled_tools_count_only_while_their_checkbox_is_ticked(self):
+        event = await self._start(
+            requested=[], disable_tools=False, disabled_tools=["broken"], tools=["echo", "broken"]
+        )
+
+        assert [tool.name for tool in event.state.tools] == ["echo", "broken"]
+
+    @pytest.mark.asyncio
+    async def test_a_profile_stored_before_the_checkbox_keeps_withholding_its_tools(self):
         event = await self._start(requested=[], disabled_tools=["broken"], tools=["echo", "broken"])
 
         assert [tool.name for tool in event.state.tools] == ["echo"]
@@ -490,7 +504,9 @@ class TestApproval:
 
     @pytest.mark.asyncio
     async def test_a_tool_of_the_blueprint_the_model_was_not_offered_does_not_run(self):
-        events, _ = await _decide(_state(), _calling(_tool_call("c1", "broken", "{}")), disabled_tools=["broken"])
+        events, _ = await _decide(
+            _state(), _calling(_tool_call("c1", "broken", "{}")), disable_tools=True, disabled_tools=["broken"]
+        )
         call = next(event for event in events if isinstance(event, ToolEvent))
 
         result = await ToolLoop.gate_step(
