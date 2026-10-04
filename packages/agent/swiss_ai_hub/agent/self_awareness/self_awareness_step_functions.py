@@ -6,16 +6,14 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import LLMStopEvent, MetaQuestionDetectedEvent, NotAMetaQuestionEvent
 from swiss_ai_hub.core.generative_ai import (
     LLMConfig,
+    ReasoningFreeChat,
     estimate_prompt_tokens,
     merge_consecutive_messages,
     usable_input_budget,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 
-from swiss_ai_hub.agent.self_awareness.meta_question_detector import (
-    REASONING_DISABLED_EXTRA_BODY,
-    detect_meta_question,
-)
+from swiss_ai_hub.agent.self_awareness.meta_question_detector import detect_meta_question
 
 
 async def do_detect_meta_question(
@@ -102,7 +100,7 @@ async def do_answer_meta_question(
 
 def _disable_reasoning(llm: LLM) -> None:
     """Merge the reasoning-off flag into the instance's per-request extra_body for the streaming path."""
-    extra_body = {**llm.additional_kwargs.get("extra_body", {}), **REASONING_DISABLED_EXTRA_BODY}
+    extra_body = {**llm.additional_kwargs.get("extra_body", {}), **ReasoningFreeChat.EXTRA_BODY}
     llm.additional_kwargs = {**llm.additional_kwargs, "extra_body": extra_body}
 
 
