@@ -104,6 +104,29 @@ async def test_a_conversation_folder_carries_its_own_chat_title(client: AsyncCli
 
 
 @pytest.mark.asyncio
+async def test_an_own_conversation_without_files_yet_is_empty_and_titled(client: AsyncClient, sandbox: Any) -> None:
+    sandbox.list_files.side_effect = OpenTerminalError("404: Directory not found", 404)
+    with patch.object(
+        user_knowledge_service.UserKnowledgeService, "_conversation_titles", return_value={THREAD: "Q1 sales"}
+    ):
+        response = await client.get(ENDPOINT, params={"folder": f"conversations/{THREAD}"})
+
+    assert response.status_code == 200
+    assert (response.json()["entries"], response.json()["folder_title"]) == ([], "Q1 sales")
+
+
+@pytest.mark.asyncio
+async def test_a_missing_folder_that_is_not_an_own_conversation_stays_missing(
+    client: AsyncClient, sandbox: Any
+) -> None:
+    sandbox.list_files.side_effect = OpenTerminalError("404: Directory not found", 404)
+    with patch.object(user_knowledge_service.UserKnowledgeService, "_conversation_titles", return_value={}):
+        response = await client.get(ENDPOINT, params={"folder": f"conversations/{THREAD}"})
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_a_download_returns_the_bytes_as_an_attachment(client: AsyncClient, sandbox: Any) -> None:
     response = await client.get(f"{ENDPOINT}/content", params={"path": "reports/Q1 report.pdf", "download": True})
 

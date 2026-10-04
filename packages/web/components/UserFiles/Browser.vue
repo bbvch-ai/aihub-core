@@ -149,6 +149,7 @@
                   @click="download(data.path, data.name)"
                 />
                 <Button
+                  v-if="!data.conversation_title"
                   v-tooltip.bottom="t('userFiles.actions.move')"
                   icon="pi pi-folder-open"
                   size="small"
@@ -156,6 +157,7 @@
                   @click="openMoveDialog(data)"
                 />
                 <Button
+                  v-if="!data.conversation_title"
                   v-tooltip.bottom="t('userFiles.actions.rename')"
                   icon="pi pi-pencil"
                   size="small"
@@ -342,7 +344,7 @@ const onMoveSubmitted = async (targetFolder: string) => {
 const confirmDelete = (entry: FileEntryDto) => {
   confirm.require({
     header: t('userFiles.delete.header'),
-    message: t(entry.kind === 'folder' ? 'userFiles.delete.folder' : 'userFiles.delete.file', { name: entry.name }),
+    message: t(entry.kind === 'folder' ? 'userFiles.delete.folder' : 'userFiles.delete.file', { name: entry.conversation_title ?? entry.name }),
     icon: 'pi pi-exclamation-triangle',
     acceptClass: 'p-button-danger',
     accept: async () => {
