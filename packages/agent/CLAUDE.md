@@ -245,7 +245,9 @@ class WeatherAgent(Agent):
 `ToolLoop.Finished` (`ToolLoopFinishedEvent`) carries the reply in `ANSWER` mode (for `Conversation.complete`) and the
 tool results as `block` in `GATHER` (for `Conversation.compose` and the blueprint's own answer). Declaring a capability
 in a set installs it (the one listing-based installation; validation refuses sets no step runs, and one name meaning two
-tools). The profile and the #590 toggles narrow a set per message. Three kinds of tool, the same to the model:
+tools). The profile and the #590 toggles narrow a set per message; the tools they withhold that would serve it are named in
+the leading system message (`WithheldTools`), so the model says which tool to turn on instead of denying what the user
+refers to (a disabled file reader otherwise answers that no file was attached). Three kinds of tool, the same to the model:
 
 - **Capability tools**: a capability sets `tool_name` and `tool_options`, overrides `tool_definition(context)` (the
   run's `ToolContext`: config, user, access, locale and the message's `files` and `knowledge_references`, which

@@ -210,7 +210,8 @@ async def _decide(
 
 class TestOfferedTools:
     async def _start(self, requested: list[str], mode: ToolLoopMode = ToolLoopMode.ANSWER, **kwargs: Any) -> Any:
-        request = LoopAgent.tools.run(HISTORY, mode=mode, tools=kwargs.pop("tools", None))
+        tools = kwargs.pop("tools", None)
+        request = kwargs.pop("request", None) or LoopAgent.tools.run(HISTORY, mode=mode, tools=tools)
         config = kwargs.pop("config", _config(**kwargs))
         with patch(f"{MODULE}.RequestedFeatures.contains", new=AsyncMock(side_effect=lambda f, *_: f in requested)):
             with patch("swiss_ai_hub.core.generative_ai.KnowledgeCollectionLabel.of_reference", return_value="HR"):
@@ -258,6 +259,30 @@ class TestOfferedTools:
         )
 
         assert [tool.name for tool in event.state.tools] == ["echo", "broken"]
+
+    @pytest.mark.asyncio
+    async def test_the_model_is_told_which_tools_the_profile_and_the_toggles_withhold(self):
+        event = await self._start(requested=[], disable_tools=True, disabled_tools=["echo"])
+
+        note = event.state.messages[0]
+        assert note.role == "system"
+        assert "- Echo: turned off for this assistant." in note.content
+        assert "- Image Generation: the user can switch it on" in note.content
+
+    @pytest.mark.asyncio
+    async def test_the_note_joins_the_leading_system_message(self):
+        request = LoopAgent.tools.run([ChatMessage(role=MessageRole.SYSTEM, content="Be brief."), *HISTORY])
+
+        event = await self._start(requested=[], request=request)
+
+        assert [message.role for message in event.state.messages] == ["system", "user"]
+        assert event.state.messages[0].content.startswith("Be brief.\n\n")
+
+    @pytest.mark.asyncio
+    async def test_nothing_is_noted_when_every_tool_is_offered_or_the_call_narrows_them(self):
+        event = await self._start(requested=[ChatFeature.IMAGE_GENERATION], tools=["echo"])
+
+        assert [message.role for message in event.state.messages] == ["user"]
 
     @pytest.mark.asyncio
     async def test_a_profile_stored_before_the_checkbox_keeps_withholding_its_tools(self):
@@ -757,6 +782,12 @@ class TestDeclaration:
             "draw",
             "code",
         ]
+
+    def test_the_tool_pickers_can_be_searched(self):
+        published = ToolLoop.published_config(_config(), LoopAgent)
+
+        assert published.tool_loop.disabled_tools.filter
+        assert published.tool_loop.approvals[0].tool.filter
 
     @pytest.mark.asyncio
     async def test_the_tool_call_carries_the_label_users_read(self):

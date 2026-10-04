@@ -84,6 +84,7 @@ class ToolLoopConfig(Form):
                 options=[{"label": name, "value": name} for name in tool_names],
                 option_label="label",
                 option_value="value",
+                filter=True,
                 condition_if="$get(check_tool_loop_disable_tools).value",
             ),
             approvals=[ToolApprovalRule.as_form(tool_names)],
