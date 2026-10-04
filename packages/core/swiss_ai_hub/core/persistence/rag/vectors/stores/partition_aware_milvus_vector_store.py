@@ -491,15 +491,20 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         Namespaces hash into shared partitions (collisions are expected — see milvus_partition_manager),
         so this MUST filter on ``namespace ==`` and MUST NOT drop the partition: a partition drop would
-        also wipe the vectors of any other namespace that hashed to the same partition.
+        also wipe the vectors of any other namespace that hashed to the same partition. ``_default`` is
+        covered too (see ``document_partition_names``), because all-namespaces retrieval still finds nodes
+        stranded there.
         """
-        partition_name = get_partition_name_for_namespace(namespace) if self._check_has_manual_partitions() else None
-        self._ensure_collection_loaded([partition_name] if partition_name else None)
-        self.client.delete(
-            collection_name=self.collection_name,
-            filter=f'{NAMESPACE} == "{namespace}"',
-            partition_name=partition_name,
+        partition_names = (
+            self.document_partition_names([namespace]) if self._check_has_manual_partitions() else [None]
         )
+        self._ensure_collection_loaded([name for name in partition_names if name])
+        for partition_name in partition_names:
+            self.client.delete(
+                collection_name=self.collection_name,
+                filter=f'{NAMESPACE} == "{namespace}"',
+                partition_name=partition_name,
+            )
 
     def drop_collection(self) -> None:
         """Drop the whole collection backing a knowledge database. Idempotent — a missing collection is fine."""

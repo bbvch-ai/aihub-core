@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -167,19 +167,28 @@ def test_extract_namespaces_from_metadata_filters_directly() -> None:
     assert store._extract_namespaces_from_metadata_filters(filters) == ["alpha"]
 
 
-def test_delete_by_namespace_is_a_filtered_delete_scoped_to_the_namespace_partition() -> None:
+def test_delete_by_namespace_is_a_filtered_delete_scoped_to_the_namespace_partition_and_default() -> None:
     """Shared-partition safety: namespace cleanup MUST filter by ``namespace ==`` and target only that
-    namespace's hashed partition — never drop the partition, which would wipe colliding namespaces."""
+    namespace's hashed partition and ``_default`` — never drop a partition, which would wipe colliding
+    namespaces. ``_default`` holds nodes stranded by #1923 that all-namespaces retrieval still finds."""
     client = MagicMock()
     store = _store_with_client(client, has_manual_partitions=True)
 
     store.delete_by_namespace("alpha")
 
-    client.delete.assert_called_once_with(
+    client.load_partitions.assert_called_once_with(
         collection_name="tenant_db",
-        filter=f'{NAMESPACE} == "alpha"',
-        partition_name=get_partition_name_for_namespace("alpha"),
+        partition_names=[get_partition_name_for_namespace("alpha"), DEFAULT_PARTITION_NAME],
     )
+    assert client.delete.call_args_list == [
+        call(
+            collection_name="tenant_db",
+            filter=f'{NAMESPACE} == "alpha"',
+            partition_name=get_partition_name_for_namespace("alpha"),
+        ),
+        call(collection_name="tenant_db", filter=f'{NAMESPACE} == "alpha"', partition_name=DEFAULT_PARTITION_NAME),
+    ]
+    client.load_collection.assert_not_called()
     client.drop_partition.assert_not_called()
 
 
