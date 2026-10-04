@@ -22,6 +22,8 @@ Review the conversation history. Check specifically for violations of these root
 - **#14 No loose functions**: Created standalone functions instead of service class methods
 - **#15 No backwards compat**: Added compatibility shims, re-exports, or renamed aliases
 - **#16 No new abstractions**: Introduced patterns not already in the codebase
+- **#18/#19 Import rules**: Imported through `__init__.py` within a package, or reached into another package's internals
+- **#20 Environment variables**: Assumed `BaseSettings` auto-loads from the environment
 
 Also look for:
 
@@ -37,8 +39,8 @@ For each issue, determine the right fix:
 
 | Category         | When to Use                                        | Target                                               |
 | ---------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| **Convention**   | Claude violated a coding convention                | Root `CLAUDE.md` (conventions 01-16)                 |
-| **Architecture** | Claude misunderstood how scopes/components connect | Scope CLAUDE.md (one of the 10 scope files)          |
+| **Convention**   | Claude violated a coding convention                | Root `CLAUDE.md` (conventions 01-20)                 |
+| **Architecture** | Claude misunderstood how scopes/components connect | Scope CLAUDE.md (one of the scope files)             |
 | **Skill fix**    | A skill gave wrong instructions or missed a step   | `.claude/skills/*/SKILL.md` (validate after editing) |
 | **New skill**    | A multi-step workflow keeps recurring              | New `.claude/skills/` directory                      |
 | **Agent fix**    | A subagent lacked necessary context                | `.claude/agents/*.md`                                |
@@ -48,10 +50,12 @@ Scope CLAUDE.md files that can be improved:
 
 - `packages/core/CLAUDE.md` — shared patterns, events, entities, NATS, auth
 - `packages/api/CLAUDE.md` — route patterns, FastAPI conventions, DTOs
-- `packages/agent/CLAUDE.md` — agent workflow, config/form duality, LlamaIndex
+- `packages/agent/CLAUDE.md` — agent workflow, config/form duality, capabilities, tool loop
 - `packages/pipeline/CLAUDE.md` — Dagster assets, resources, IO managers
 - `packages/process/CLAUDE.md` — process orchestration, work events, forms
 - `packages/bot/CLAUDE.md` — handler architecture, CompletionHandler pattern
+- `packages/backup/CLAUDE.md`, `packages/sysadmin-api/CLAUDE.md`, `packages/sysadmin-web/CLAUDE.md` — backup service,
+  sysadmin API and UI
 - `packages/web/CLAUDE.md` — Nuxt/Vue/PrimeVue conventions, composables
 - `docs/CLAUDE.md` — VitePress docs, translation rules
 - `infra/deployment/CLAUDE.md` — Docker Compose, Traefik, network zones
@@ -85,9 +89,10 @@ Present all proposals, then ask which to apply. When editing:
 Issues that have come up before:
 
 - Using `poetry` commands instead of `uv` (project migrated to uv in Feb 2026)
-- Using `gh` CLI instead of GitHub MCP tools (`mcp__github__issue_read`, `mcp__github__pull_request_read`)
+- Adding helper methods to agent classes (agent classes hold `@step` methods only; helpers go in imported classes)
+- Looking for a GitHub MCP server — there is none; use the `gh` CLI (`gh api` for endpoints without a subcommand)
 - Creating `controller/` directories instead of `routes/` in packages/api
-- Missing the double-nesting convention: `{scope}/{scope}/` for source code
+- Putting Python source outside `packages/{scope}/swiss_ai_hub/{scope}/`
 - Not reading scope CLAUDE.md before working in a scope
 - Adding backwards-compatible aliases when refactoring
 

@@ -19,6 +19,10 @@ When someone logs in for the first time:
 3. They automatically join the default tenant with standard user roles
 4. They see the default tenant's agents and resources
 
+The platform also creates the user's chat account in OpenWebUI as soon as they hold a role in their active tenant, and
+places it in that tenant's groups. The model picker is therefore populated at the first chat visit, without waiting for
+an administrator to change anything.
+
 **Important**: The platform doesn't import roles from your identity provider. It only imports identity information (who
 you are, not what you can do).
 :::

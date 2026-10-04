@@ -2,10 +2,9 @@ import logging
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from openai import APIError, BadRequestError
+from openai import APIError
+from swiss_ai_hub.core.generative_ai import ReasoningFreeChat
 from swiss_ai_hub.core.imap import MAX_SUBJECT_CHARACTERS, ParsedMessage
-
-from swiss_ai_hub.agent.self_awareness.meta_question_detector import REASONING_DISABLED_EXTRA_BODY
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +62,7 @@ class MailLanguageDetector:
         )
         message = ChatMessage(role=MessageRole.USER, content=prompt)
         try:
-            try:
-                response = await llm.achat([message], extra_body=REASONING_DISABLED_EXTRA_BODY)
-            except BadRequestError:
-                response = await llm.achat([message])
+            response = await ReasoningFreeChat.achat(llm, [message])
         except (APIError, ValueError, TypeError) as detection_failure:
             logger.warning(
                 "[draft] language detection for uid=%s failed (%s) — drafting without a language directive",

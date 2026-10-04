@@ -5,8 +5,8 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox
 
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
-from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
 

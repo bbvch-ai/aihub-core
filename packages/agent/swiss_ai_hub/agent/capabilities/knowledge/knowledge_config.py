@@ -1,15 +1,17 @@
 from typing import Annotated, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.events.agent import KnowledgeReference
+from swiss_ai_hub.core.form import InputNumber
 from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai import RerankingModelConfig
 
+from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+
 
 class KnowledgeConfig(Form):
-    """How the collections a user references are searched: the same for every collection, since nobody configured
-    them for this agent. Each database is embedded with its own model; only the ranking is chosen here."""
+    """How knowledge collections are searched, whether the user referenced them or the model chose the search: the
+    same for every collection. Each database is embedded with its own model; the ranking is chosen here."""
 
     reranking_model: Annotated[
         RerankingModelConfig,
@@ -19,8 +21,8 @@ class KnowledgeConfig(Form):
         ),
     ] = RerankingModelConfig(model_name="reranker/bge")
     retrieve_k: Annotated[
-        int,
-        Field(description="How many sections each referenced database returns before the reranker picks the best."),
+        int | InputNumber,
+        Field(description="How many sections each searched database returns before the reranker picks the best."),
         Ge(1),
     ] = 10
     tokens_per_section: Annotated[
@@ -32,18 +34,19 @@ class KnowledgeConfig(Form):
         Ge(1),
     ] = 800
 
-    tool_collections: Annotated[
-        list[KnowledgeReference],
-        Field(
-            description="The collections the model may search when it chooses to, in a tool loop; the tool is not "
-            "offered without any. Still narrowed to what the asking user may read."
-        ),
-    ] = []
-
     def context_reserve(self) -> int:
         """Tokens to keep free for what the search returns, so attached files cannot crowd it out."""
         return self.reranking_model.top_n * self.tokens_per_section
 
     @classmethod
     def as_form(cls) -> Self:
-        return cls(reranking_model=RerankingModelConfig.as_form())
+        return cls(
+            reranking_model=RerankingModelConfig.as_form(cls().reranking_model.model_name),
+            retrieve_k=InputNumber(
+                label=AgentLocaleString.from_i18n_path("agent.knowledge.config.retrieve_k.label"),
+                help=AgentLocaleString.from_i18n_path("agent.knowledge.config.retrieve_k.help"),
+                min=1,
+                max=100,
+                step=1,
+            ),
+        )

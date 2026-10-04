@@ -11,6 +11,7 @@ from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.form.form import Form
 
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 
 
@@ -41,10 +42,13 @@ class Capability(abc.ABC):
     # `ToolCallApprovedEvent` for `tool_name` into its request and its answer into a `ToolResultEvent`.
     tool_name: ClassVar[str | None] = None
     tool_options: ClassVar[ToolOptions] = ToolOptions()
+    # The form mixin a blueprint's config needs when it offers the tool, on top of `required_config`: settings that
+    # only mean something for a model-chosen call, such as which collections the knowledge tool may search.
+    tool_config: ClassVar[type[Form] | None] = None
 
     @classmethod
-    def tool_definition(cls, config: AgentConfig, locale: str) -> ToolDefinition | None:
-        """The tool as the model is offered it on this profile; none when the profile gives it nothing to do."""
+    def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
+        """The tool as the model is offered it in this run; none when the profile and message give it nothing to do."""
         return None
 
     @classmethod

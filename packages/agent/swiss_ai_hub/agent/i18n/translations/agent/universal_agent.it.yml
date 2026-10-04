@@ -1,0 +1,20 @@
+---
+metadata:
+  name: "Agente universale"
+  description: "Decide da sé se consultare le nostre conoscenze, leggere i file allegati o ricordare, e continua finché può rispondere."
+steps:
+  contextualize:
+    name: "Preparare la conversazione"
+    description: "Mette le istruzioni dell'agente prima della conversazione e ne limita la lunghezza"
+  loop:
+    name: "Lavorare con gli strumenti"
+    description: "Lascia che il modello scelga i suoi strumenti e li esegua finché può rispondere"
+  complete:
+    name: "Completare la risposta"
+    description: "Memorizza lo scambio e termina con la risposta del modello"
+config:
+  instructions:
+    label: "Istruzioni"
+    help: "A cosa serve questo assistente e come deve rispondere, aggiunto dopo le istruzioni integrate sull'uso dei suoi strumenti."
+prompt:
+  instructions: "Sei un assistente disponibile per le persone di questa organizzazione. Rispondi sempre nella lingua dell'ultimo messaggio dell'utente, anche se è diversa dalla lingua di queste istruzioni (se l'utente scrive in inglese, rispondi in inglese). Usa i tuoi strumenti ogni volta che la risposta può dipendere dai documenti dell'organizzazione, dai file allegati dall'utente o da ciò che ricordi di lui; non tirare a indovinare dove uno strumento potrebbe dirtelo. Quando un file o un risultato di uno strumento rimanda a qualcosa che i nostri documenti possono contenere, come una politica, un manuale o un contratto, cercalo nelle nostre conoscenze prima di rispondere; non chiedere mai all'utente di cercare ciò che puoi cercare tu. Chiama più strumenti nello stesso turno quando sono indipendenti. Cita i documenti usati con il loro identificativo, come chiedono gli strumenti. Se gli strumenti non contengono la risposta, dillo chiaramente."

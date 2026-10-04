@@ -25,3 +25,13 @@ tool:
   description: "Searches our knowledge collections and returns the most relevant document sections, with ids to cite. Use it when the question may be answered by the organisation's documents. Available collections:\n%{collections}"
   query: "What to search for, as a short standalone question or keywords."
   collections: "The collections to search, by identifier; leave out to search all of them."
+config:
+  retrieve_k:
+    label: "Sections per Database"
+    help: "How many sections each searched database returns before the reranker keeps the best."
+  every_readable_collection:
+    label: "Every Collection the User Can Read"
+    help: "Let the model search every knowledge collection the asking user may read, instead of the ones listed below."
+  source:
+    label: "Knowledge Database"
+    help: "A database the model may search, whole or narrowed to some of its collections."

@@ -108,6 +108,26 @@ unchanged.
 Major core updates with breaking changes require coordinated updates. Customer code must be updated to work with the new
 core version. Both core and customer code are updated together during a maintenance window.
 
+### New storage buckets
+
+`seaweedfs-init` creates every missing SeaweedFS bucket each time it runs, and `docker compose up -d` starts it again on
+every run, so the update above creates the buckets a release adds. Only an update that starts selected services, such as
+`docker compose up -d <service>` or `--no-deps`, skips it. Then run it yourself:
+
+```bash
+docker compose up seaweedfs-init
+```
+
+A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU document parse fails
+with `NoSuchBucket`. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired
+entry is parsed again, so nothing needs a backup.
+
+The `sandbox-files` bucket holds the one-way mirror of every user's code-sandbox home (the files behind **My Files**).
+It is created the same way, and needs `SANDBOX_MIRROR_S3_ACCESS_KEY`, `SANDBOX_MIRROR_S3_SECRET_KEY` and
+`SANDBOX_MIRROR_INTERVAL_SECONDS` in your `.env` (the review step above shows them). The mirror uses an S3 identity
+limited to this bucket, so recreate `seaweedfs-s3` for the identity to take effect. Files deleted or overwritten in the
+sandbox are kept under `.deleted/` for 7 days.
+
 ### Customer code updates
 
 Customer code can be updated independently when the core version pin remains unchanged. Update the customer image tags

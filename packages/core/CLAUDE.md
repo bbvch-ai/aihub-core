@@ -216,10 +216,10 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   ├── RerankerEvent, ToolEvent, ChainEvent
 │   │   ├── GuardEvent, AgentEvent
 │   │   └── ExceptionEvent
-│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
-│
-├── ControlEvent (drives workflow execution)
-│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
+│   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
+│   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
+│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
+│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -240,7 +240,12 @@ Events are organized by which system they belong to:
 
 ### Creating a New Event
 
-1. Choose the correct base class from the hierarchy above
+1. Choose the correct base class from the hierarchy above. An event that is part of the protocol — a call between steps
+   or capabilities that an admin reading a run would want to see — is a `ControlAndDisplayEvent`, because the event
+   history lists display events only. Plain `ControlEvent` is for internal bookkeeping no reader needs. Give it
+   `_display_name`/`_display_description` from `lib.events.*` (the description is a short progress phrase: chat clients
+   show it as a live status), a component in `packages/web/components/Event/Display/`, and an entry in the
+   `DisplayEvents` union
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors

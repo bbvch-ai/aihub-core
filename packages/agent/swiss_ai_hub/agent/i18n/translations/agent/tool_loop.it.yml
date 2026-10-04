@@ -1,5 +1,8 @@
 ---
 steps:
+  condense:
+    name: "Condensare la conversazione"
+    description: "Condensa i risultati degli strumenti e gli scambi precedenti quando la conversazione non entra più nel contesto del modello"
   start:
     name: "Offrire strumenti"
     description: "Determina quali strumenti il modello può usare per questo messaggio"
@@ -19,9 +22,25 @@ steps:
     name: "Raccogliere i risultati"
     description: "Restituisce al modello tutti i risultati delle sue chiamate"
 prompt:
+  cut_result: "\n[…tagliato per rientrare nel contesto]"
+  condense_result: "Condensa il risultato dello strumento qui sotto a ciò che conta per la richiesta dell'utente che lo precede. Mantieni esattamente fatti, cifre, nomi, date e identificativi di documenti come [s3f9a1c]. Ometti tutto il resto. Al massimo %{words} parole, senza preambolo."
+  condensed_result: "[Risultato precedente condensato] %{summary}"
+  condense_turns: "Riassumi la conversazione qui sotto in modo che possa continuare senza di essa: cosa ha chiesto l'utente, cosa è stato risposto e cosa è stato deciso o resta aperto. Mantieni esattamente fatti, cifre, nomi e identificativi di documenti come [s3f9a1c]. Al massimo %{words} parole, senza preambolo."
+  condensed_turns: "Riassunto della conversazione precedente: %{summary}"
+  dropped_result: "[Questo risultato precedente è stato rimosso per rientrare nel contesto. Richiama lo strumento se ti serve.]"
   limit_reached: "Hai usato tutte le chiamate agli strumenti disponibili per questa risposta. Rispondi ora con ciò che hai trovato."
+  no_tools: "Per il resto di questa risposta non è disponibile alcuno strumento, quindi non cercare di chiamarne uno. Rispondi ora in base alla conversazione e a ciò che sai già, e dillo quando la risposta dipende da documenti che non hai potuto consultare."
   unknown_tool: "Non esiste uno strumento chiamato %{tool}. Usa uno degli strumenti offerti."
-  declined: "L'utente ha rifiutato l'esecuzione di %{tool}. Rispondi senza di esso e non richiamarlo per questa richiesta."
+  declined: "Non eseguito: l'utente ha rifiutato %{tool}. Inizia la risposta dicendo che non hai usato %{tool} perché l'utente l'ha rifiutato, poi rispondi con ciò che sai già e offri di usarlo se lo consente. L'informazione può benissimo esistere; non dire mai che non hai accesso."
+  withheld:
+    intro: "Alcuni strumenti che potrebbero aiutare con questo messaggio non sono disponibili al momento. Se la richiesta dell'utente ne richiede uno, non dire che ciò a cui si riferisce manca, ad esempio un file allegato; indicagli quale strumento serve e come può essere attivato. Altrimenti non menzionare questi strumenti."
+    by_profile: "- %{tool}: disattivato per questo assistente. Solo un amministratore può attivarlo, nelle impostazioni dell'assistente."
+    by_toggle: "- %{toggle}: l'utente può attivarlo nella chat e chiedere di nuovo."
+    toggles:
+      web_search: "Ricerca web"
+      code_interpreter: "Interprete di codice"
+      image_generation: "Generazione di immagini"
+      user_files: "I miei file"
 approval:
   question: "L'assistente vuole usare «%{tool}»:
 %{summary}
@@ -35,6 +54,9 @@ config:
   max_tool_calls:
     label: "Chiamate massime"
     help: "Quante chiamate agli strumenti può fare una risposta."
+  disable_tools:
+    label: "Disattiva strumenti"
+    help: "Trattenere alcuni strumenti di questo agente."
   disabled_tools:
     label: "Strumenti disattivati"
     help: "Strumenti che questo agente non offre mai."
@@ -50,6 +72,7 @@ config:
 notice:
   stopped_early: "Ho smesso di approfondire prima di aver finito, perché questa risposta ha raggiunto il limite di chiamate agli strumenti."
 status:
+  condensed: "Risultati precedenti condensati per far rientrare la conversazione"
   deciding: "Decido cosa consultare"
   gathered: "Raccolto tutto il necessario per la risposta"
   stopped_early: "Ricerca interrotta, il limite per questa risposta è raggiunto"

@@ -83,6 +83,7 @@ if TYPE_CHECKING:
         LLMParameter,
     )
     from swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
     from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
         combine_nodes_in_order,
@@ -95,11 +96,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
     from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import BucketMetadataFilters
     from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+    from swiss_ai_hub.core.generative_ai.retrievers.knowledge_collection_label import KnowledgeCollectionLabel
     from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
     from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
-    from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
-    from swiss_ai_hub.core.generative_ai.retrievers.knowledge_collection_label import KnowledgeCollectionLabel
     from swiss_ai_hub.core.generative_ai.retrievers.referenced_knowledge import ReferencedKnowledge
+    from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
     from swiss_ai_hub.core.generative_ai.retrievers.user_scoped_retrievers import UserScopedRetrievers
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
     from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
@@ -143,6 +144,7 @@ __all__ = [
     "KnowledgeRetrieverConfig",
     "LLMConfig",
     "LLMParameter",
+    "ReasoningFreeChat",
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
     "DEFAULT_METADATA",
@@ -226,6 +228,7 @@ _LAZY_IMPORTS = {
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
+    "ReasoningFreeChat": "swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat",
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",

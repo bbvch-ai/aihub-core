@@ -14,7 +14,7 @@ DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
 SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
 
 # Always create core infrastructure buckets
-BUCKETS="open-webui milvus langfuse backups dagster parse-cache"
+BUCKETS="open-webui milvus langfuse backups dagster parse-cache sandbox-files"
 
 # Conditionally add knowledge buckets
 if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then
@@ -108,3 +108,23 @@ aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
   --bucket parse-cache \
   --lifecycle-configuration file:///tmp/lifecycle-parse-cache.json \
   || echo "Lifecycle configuration failed for parse-cache bucket (verify SeaweedFS lifecycle support)"
+
+# Expire what the sandbox mirror moved aside. The mirror copies each user's sandbox home one way into sandbox-files
+# and keeps a file deleted or overwritten in the sandbox under .deleted/ for this grace period.
+echo "Configuring lifecycle expiration for sandbox-files bucket..."
+cat > /tmp/lifecycle-sandbox-files.json <<EOF
+{
+  "Rules": [
+    {
+      "ID": "expire-sandbox-files-deleted",
+      "Status": "Enabled",
+      "Filter": { "Prefix": ".deleted/" },
+      "Expiration": { "Days": 7 }
+    }
+  ]
+}
+EOF
+aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
+  --bucket sandbox-files \
+  --lifecycle-configuration file:///tmp/lifecycle-sandbox-files.json \
+  || echo "Lifecycle configuration failed for sandbox-files bucket (verify SeaweedFS lifecycle support)"

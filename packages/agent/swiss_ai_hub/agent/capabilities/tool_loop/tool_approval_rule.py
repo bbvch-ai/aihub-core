@@ -22,6 +22,7 @@ class ToolApprovalRule(Form):
                 options=[{"label": name, "value": name} for name in tool_names],
                 option_label="label",
                 option_value="value",
+                filter=True,
             ),
             policy=Select(
                 label=AgentLocaleString.from_i18n_path("agent.tool_loop.config.approval_policy.label"),

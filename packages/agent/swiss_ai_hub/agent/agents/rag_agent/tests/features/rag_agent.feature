@@ -24,7 +24,7 @@ Feature: RAG Agent
     * a StandaloneQuestionCondenserEvent is present with condensed question
     * a RetrieverEvent is present with retrieved nodes
     * an InOrderNodeCombinerEvent is present with ordered context message
-    * a LimitChatHistoryWithContextEvent is present with limited history and context
+    * the composed prompt holds the retrieved documents and is what the model answered from
     * the answer is handed to the completion
     * a StopEvent is present
     * a RAGSuccessStopEvent is present

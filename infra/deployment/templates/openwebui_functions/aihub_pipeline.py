@@ -321,6 +321,35 @@ class AuthenticationService:
 class MessageConverter:
     """Handles message format conversions between Open WebUI and AI-Hub"""
 
+    # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
+    # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
+    # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
+    # Only the generated block types match, so a ``<details>`` an answer itself contains keeps its content.
+    _DETAILS_BLOCK = re.compile(
+        r'\n?<details\b[^>]*\btype="(?:reasoning|tool_calls|code_interpreter)"[^>]*>.*?</details>\n?', re.DOTALL
+    )
+    # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
+    # reasoning text, which closes the match above early and leaves a stray tag behind.
+    _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
+    # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
+    # does not end up glued into one line (nor separated by a growing gap).
+    _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
+
+    @classmethod
+    def strip_agent_markup(
+        cls, text: Annotated[str, "Agent answer or rendered MoA prompt"]
+    ) -> Annotated[str, "Plain text"]:
+        """Remove the reasoning/tool ``<details>`` blocks this pipeline embeds in its answers.
+
+        An earlier answer and a merged response both reach a model as raw message content, carrying this
+        pipeline's own HTML. A model handed it wastes context on it and imitates it: a merge model echoes the
+        markup into its prose, and an agent writes a tool block as text instead of calling the tool, making up
+        the result.
+        """
+        stripped = cls._DETAILS_BLOCK.sub("\n", text)
+        stripped = cls._ORPHAN_MARKUP.sub("", stripped)
+        return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
+
     @staticmethod
     def convert_to_event_format(
         messages: Annotated[list[dict[str, Any]], "Open WebUI messages"],
@@ -335,6 +364,13 @@ class MessageConverter:
         """Convert a single message"""
         content = msg.get("content")
         blocks = self._extract_blocks(content)
+        if msg.get("role") == "assistant":
+            blocks = [
+                {**block, "text": self.strip_agent_markup(block["text"])}
+                if block.get("block_type") == "text"
+                else block
+                for block in blocks
+            ]
 
         return {
             "role": msg.get("role", "user"),
@@ -659,8 +695,10 @@ class EventContext:
         message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
         owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
+        attachments: Annotated[Any, "Registers files the agent showed as Open WebUI files"] = None,
     ):
         self.owui_file_ids = owui_file_ids or {}
+        self.attachments = attachments
         self.state_manager = state_manager
         self.emitter = emitter
         self.caller = caller
@@ -838,12 +876,14 @@ class ToolResultEventHandler(EventHandler):
 
 
 class ToolLoopStatusEventHandler(EventHandler):
-    """What the agent's tool loop is doing when nothing else shows it, such as deciding in the background."""
+    """What the agent's tool loop is doing when nothing else shows it: deciding in the background, or condensing
+    earlier results to fit the model's context."""
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
     ) -> Annotated[bool, "True if tool loop status event"]:
-        return "ToolLoopStatusEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        names = [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        return "ToolLoopStatusEvent" in names or "ToolLoopCondensedEvent" in names
 
     async def handle(
         self,
@@ -853,7 +893,11 @@ class ToolLoopStatusEventHandler(EventHandler):
         await context.emitter(
             {
                 "type": "status",
-                "data": {"action": None, "description": event.get("description", ""), "done": bool(event.get("done"))},
+                "data": {
+                    "action": None,
+                    "description": event.get("description", ""),
+                    "done": bool(event.get("done", event.get("_event_name") == "ToolLoopCondensedEvent")),
+                },
             }
         )
         return True
@@ -1154,6 +1198,27 @@ class AttachedFileEventHandler(EventHandler):
         return True
 
 
+class SandboxFileDisplayedEventHandler(EventHandler):
+    """Attaches a file the agent showed from the user's code sandbox to the answer, as an Open WebUI file."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if sandbox file displayed event"]:
+        return event.get("_event_name") == "SandboxFileDisplayedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        attached = await context.attachments.attach(event, context.chat_id, context.message_id)
+        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
+        # so the new file is persisted on its own and the browser then gets every file of the answer.
+        await context.emitter({"type": "files", "data": {"files": [attached]}})
+        await context.emitter({"type": "chat:message:files", "data": {"files": context.attachments.attached}})
+        return True
+
+
 class RetrieveUserMemoryEventHandler(EventHandler):
     """Handler for user memory retrieval events"""
 
@@ -1423,6 +1488,7 @@ class EventProcessorFactory:
             RetrieverEventHandler(),
             GroundingNodesEventHandler(),
             AttachedFileEventHandler(),
+            SandboxFileDisplayedEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
             ConversationTitleEventHandler(),
@@ -1484,6 +1550,7 @@ class StreamingService:
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
         owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
+        attachments: Annotated[Any, "Registers files the agent showed as Open WebUI files"] = None,
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1504,6 +1571,7 @@ class StreamingService:
             message_id=message_id,
             redis=redis,
             owui_file_ids=owui_file_ids,
+            attachments=attachments,
         )
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -1522,6 +1590,9 @@ class StreamingService:
                     state_manager.finalize_all_blocks()
                     await self._handle_http_error_from_info(result, event_emitter)
                 else:
+                    if attachments and (links := attachments.download_links()):
+                        state_manager.close_current_block()
+                        state_manager.start_text_block(links)
                     # Finalize any open blocks when stream ends normally
                     state_manager.finalize_all_blocks()
                     # Emit final state if there were unclosed blocks
@@ -1710,6 +1781,7 @@ class StreamingService:
             message_id=context.message_id,
             redis=context.redis,
             owui_file_ids=context.owui_file_ids,
+            attachments=context.attachments,
         )
 
 
@@ -1786,6 +1858,68 @@ class AgentDiscoveryService:
 # ============================================================================
 
 
+class AgentFileAttachmentService:
+    """Registers files the agent produced as Open WebUI files on the answer, so they download like any upload.
+
+    The agent copied each file into our storage, which Open WebUI's own storage shares, and the copy is read from
+    there; the file is linked to the chat message the way Open WebUI links the images it generates.
+    """
+
+    def __init__(self, s3_client: Any, request: Any, user_id: str) -> None:
+        self._s3_client = s3_client
+        self._request = request
+        self._user_id = user_id
+        self.attached: list[dict[str, Any]] = []
+        self._linked = 0
+
+    async def attach(
+        self,
+        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        chat_id: Annotated[Optional[str], "Open WebUI chat id"],
+        message_id: Annotated[Optional[str], "Open WebUI message id"],
+    ) -> Annotated[dict[str, Any], "The file as a message file entry"]:
+        import io
+
+        from fastapi import UploadFile
+        from open_webui.routers.files import upload_file_handler
+
+        content = await asyncio.to_thread(self._read, event["bucket"], event["key"])
+        user = await Users.get_user_by_id(self._user_id)
+        upload = UploadFile(
+            file=io.BytesIO(content), filename=event["filename"], headers={"content-type": event["content_type"]}
+        )
+        item = await upload_file_handler(
+            self._request,
+            file=upload,
+            metadata={"chat_id": chat_id, "message_id": message_id},
+            process=False,
+            user=user,
+        )
+        if chat_id and message_id and not chat_id.startswith(("local:", "channel:")):
+            await Chats.insert_chat_files(chat_id=chat_id, message_id=message_id, file_ids=[item.id], user_id=user.id)
+        entry = {
+            "type": "file",
+            "id": item.id,
+            "url": self._request.app.url_path_for("get_file_content_by_id", id=item.id),
+            "name": event["filename"],
+            "content_type": event["content_type"],
+            "size": len(content),
+        }
+        self.attached.append(entry)
+        return entry
+
+    def download_links(self) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
+        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one."""
+        new = self.attached[self._linked :]
+        self._linked = len(self.attached)
+        if not new:
+            return ""
+        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in new)
+
+    def _read(self, bucket: str, key: str) -> bytes:
+        return self._s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
+
+
 class KnowledgeReferenceService:
     """Turns the knowledge entries the user referenced with `#` into references to our collections.
 
@@ -1827,6 +1961,10 @@ class FileProcessingService:
         self._base_url = base_url
         self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
 
+    @property
+    def s3_client(self) -> Any:
+        return self._owui_s3_client
+
     @staticmethod
     def _create_s3_client(endpoint: str, access_key: str, secret_key: str) -> Any:
         """Create a boto3 S3 client for reading files from OpenWebUI's storage."""
@@ -1848,6 +1986,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
+        thread_id: Annotated[str, "The conversation, whose folder in the user's files gets each file"],
     ) -> Annotated[
         tuple[list[dict[str, str]], dict[str, str]],
         "Prepared files for AI-Hub, and each agent file id mapped to the Open WebUI file id it came from",
@@ -1860,7 +1999,7 @@ class FileProcessingService:
             if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
                 continue
             try:
-                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
+                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers, thread_id)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
                 continue
@@ -1877,6 +2016,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
         """Upload a single file to the agent's bucket via initiate → PUT → validate, unless it is already there.
 
@@ -1888,7 +2028,9 @@ class FileProcessingService:
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
             filename = name if name.lower().endswith(".txt") else f"{name}.txt"
-            return await self._upload(file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers)
+            return await self._upload(
+                file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers, thread_id
+            )
 
         owui_file_id = file.get("id", "")
         file_obj = await Files.get_file_by_id(owui_file_id)
@@ -1903,11 +2045,11 @@ class FileProcessingService:
         known_uploads = file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}
 
         known_file_id = known_uploads.get(agent_key)
-        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers):
+        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers, thread_id):
             return {"filename": filename, "file_type": content_type, "file_id": known_file_id}
 
         file_content = await asyncio.to_thread(self._read_file_content, file_obj)
-        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers)
+        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers, thread_id)
         if prepared:
             await Files.update_file_metadata_by_id(
                 owui_file_id, {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: prepared["file_id"]}}
@@ -1924,12 +2066,13 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[bool, "Whether the agent bucket still holds it; uploads expire after 7 days"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
-                json={"file_id": file_id, "filename": filename},
+                json={"file_id": file_id, "filename": filename, "thread_id": thread_id},
             )
         return response.status_code == 200 and bool(response.json().get("exists"))
 
@@ -1941,6 +2084,7 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[Optional[dict[str, str]], "The uploaded file reference, or None when validation failed"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
             initiate_resp = await client.post(
@@ -1960,7 +2104,7 @@ class FileProcessingService:
             validate_resp = await client.post(
                 self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
-                json={"file_id": agent_file_id, "filename": filename},
+                json={"file_id": agent_file_id, "filename": filename, "thread_id": thread_id},
             )
             validate_resp.raise_for_status()
             if not validate_resp.json().get("exists"):
@@ -1991,17 +2135,6 @@ class ResponseMergeService:
     follow-up protocol events into the chat — let a merge overwrite the conversation's real title and
     follow-up questions.
     """
-
-    # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
-    # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
-    # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
-    _DETAILS_BLOCK = re.compile(r"\n?<details\b[^>]*>.*?</details>\n?", re.DOTALL)
-    # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
-    # reasoning text, which closes the match above early and leaves a stray tag behind.
-    _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
-    # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
-    # does not end up glued into one line (nor separated by a growing gap).
-    _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
 
     def __init__(
         self,
@@ -2110,7 +2243,7 @@ class ResponseMergeService:
 
         payload = {
             "model": self._model_name,
-            "messages": [{"role": "user", "content": self._strip_agent_markup(self._prompt_of(body))}],
+            "messages": [{"role": "user", "content": MessageConverter.strip_agent_markup(self._prompt_of(body))}],
             "stream": True,
             "metadata": {
                 "thread_id": self._str_to_object_id(metadata.get("chat_id"), salt=MOA_MERGE_THREAD_SALT),
@@ -2134,18 +2267,6 @@ class ResponseMergeService:
         if isinstance(content, str):
             return content
         return "\n".join(part.get("text", "") for part in content if isinstance(part, dict))
-
-    @classmethod
-    def _strip_agent_markup(cls, prompt: Annotated[str, "Rendered MoA prompt"]) -> Annotated[str, "Plain text"]:
-        """Remove the reasoning/tool ``<details>`` blocks the agent pipeline embeds in its answers.
-
-        The responses being merged are raw message content, so for agent branches they carry this
-        pipeline's own HTML. Feeding it to the merge model wastes context and invites it to echo the
-        markup into the merged prose, which OpenWebUI then renders as an empty collapsed block.
-        """
-        stripped = cls._DETAILS_BLOCK.sub("\n", prompt)
-        stripped = cls._ORPHAN_MARKUP.sub("", stripped)
-        return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
 
     @staticmethod
     def _str_to_object_id(
@@ -2503,7 +2624,7 @@ class Pipe:
 
                 # Process files — upload to agent's dedicated bucket
                 files, owui_file_ids = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers
+                    __files__, agent_class, agent_id, headers, thread_id
                 )
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers
@@ -2592,6 +2713,9 @@ class Pipe:
                     redis=getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None),
                     stream_start_callback=stream_start_callback,
                     owui_file_ids=owui_file_ids,
+                    attachments=AgentFileAttachmentService(
+                        self._file_service.s3_client, __request__, __user__["id"]
+                    ),
                 )
 
                 # Emit completion status

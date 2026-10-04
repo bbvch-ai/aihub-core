@@ -8,13 +8,20 @@ attached_file_event:
   description: L'agente ha letto un file che l'utente ha allegato alla conversazione.
 knowledge_searched_event:
   name: Conoscenza consultata
-  description: "L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente."
+  description: L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente.
 tool_result_event:
-  name: "Risultato dello strumento"
-  description: "Ciò che ha restituito uno strumento scelto dall'agente."
+  name: Risultato dello strumento
+  description: Ciò che ha restituito uno strumento scelto dall'agente.
 tool_loop_status_event:
-  name: "Stato del ciclo di strumenti"
-  description: "Cosa sta facendo il ciclo di strumenti dell'agente."
+  name: Stato del ciclo di strumenti
+  description: Cosa sta facendo il ciclo di strumenti dell'agente.
+sandbox_file_displayed_event:
+  name: File mostrato
+  description: L'agente ha mostrato all'utente un file della sua sandbox di codice come allegato.
+tool_loop_condensed_event:
+  name: Ciclo di strumenti condensato
+  description: L'agente ha condensato i risultati degli strumenti e gli scambi precedenti
+    per rientrare nel contesto del modello.
 conversation_title_event:
   name: Titolo della Conversazione
   description: L'agente ha generato un titolo che riassume l'argomento della conversazione.
@@ -276,3 +283,51 @@ refusal_stop_event:
   name: Turno rifiutato
   description: L'assistente ha rifiutato questo turno a causa dell'input e ne ha spiegato
     il motivo all'utente.
+contextualize_conversation_event:
+  name: Contestualizzare la conversazione
+  description: Comprensione della domanda
+conversation_contextualized_event:
+  name: Conversazione contestualizzata
+  description: Domanda compresa
+compose_context_event:
+  name: Comporre il contesto
+  description: Preparazione di ciò che il modello legge
+recall_memory_event:
+  name: Richiamare i ricordi
+  description: Richiamo dei ricordi
+memory_recalled_event:
+  name: Ricordi richiamati
+  description: Ricordi richiamati
+search_knowledge_event:
+  name: Cercare nella conoscenza
+  description: Ricerca nelle raccolte di conoscenza
+read_attached_files_event:
+  name: Leggere i file allegati
+  description: Lettura dei file allegati
+attached_files_read_event:
+  name: File allegati letti
+  description: File allegati letti
+complete_conversation_event:
+  name: Completare la conversazione
+  description: Suggerimento di domande di approfondimento
+run_tool_loop_event:
+  name: Avviare il ciclo di strumenti
+  description: Scelta degli strumenti da usare
+tool_calls_decided_event:
+  name: Chiamate di strumenti decise
+  description: Esecuzione degli strumenti scelti
+tool_call_approved_event:
+  name: Chiamata di strumento approvata
+  description: Esecuzione di uno strumento
+tool_loop_iteration_event:
+  name: Iterazione del ciclo di strumenti
+  description: Scelta del passo successivo
+tool_loop_finished_event:
+  name: Ciclo di strumenti terminato
+  description: Strumenti completati
+memory_storage_requested_event:
+  name: Salvataggio dei ricordi richiesto
+  description: Salvataggio dei ricordi
+not_a_meta_question_event:
+  name: Non una meta-domanda
+  description: Risposta alla richiesta

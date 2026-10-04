@@ -36,9 +36,8 @@ thoughts:
     %{tokens} Token gegenüber einem nutzbaren Budget von %{budget}. Der Aufruf des
     Modells wird abgelehnt.'
 messages:
-  input_too_large: Diese Nachricht ist zu lang, als dass ich sie verarbeiten könnte.
-    Ich antworte anhand meiner konfigurierten Beispiele und lese keine angehängten
-    Dokumente. Für Fragen zu einer Datei verwenden Sie bitte einen Assistenten, der
-    für Dokumente ausgelegt ist.
+  input_too_large: 'Diese Nachricht ist zu lang, als dass ich sie verarbeiten könnte.
+    Bitte kürzen Sie sie oder hängen Sie den Text stattdessen als Datei an: Angehängte
+    Dateien lese ich selbst und verwende die Teile, die für Ihre Frage relevant sind.'
   unsuitable_request: Ich bin nicht der richtige Assistent für diese Anfrage und kann
     sie daher nicht beantworten. %{reason}

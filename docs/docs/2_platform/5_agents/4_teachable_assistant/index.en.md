@@ -38,13 +38,18 @@ flowchart LR
 
 1. **Check fit (suitability guard).** The assistant compares the request against its own description. If the question is
    clearly outside what this assistant is for, it declines instead of answering badly. This is what keeps a narrowly
-   trained assistant from being dragged off-topic.
+   trained assistant from being dragged off-topic. The decline is written in the chat, with the guard's reason, so the
+   user is never left with an empty answer.
 2. **Condense the question.** The recent conversation and the latest message are folded into one self-contained
    question, so follow-ups like "and the second one?" still make sense on their own.
 3. **Prime with your examples.** Your system prompt and your example pairs are assembled into the context the model
    sees, followed by the condensed question.
 4. **Answer in your style.** The model responds, following the pattern your examples established, and the answer is
    streamed back to the user.
+
+Before any of this, the assistant checks that the message fits the model's context window. A message that cannot fit,
+for example a very long pasted text, gets a short reply asking the user to shorten it or attach the text as a file
+instead, since attached files are cut down to the sections that matter.
 
 ::: warning The examples replace the raw chat history
 At the answering step the assistant deliberately uses your **examples** as the conversational context rather than the
@@ -54,8 +59,10 @@ influential: they are effectively the conversation the model thinks it is contin
 
 ## What it does *not* do
 
-- **No knowledge base.** It never searches your documents; answers come from the model plus your examples. For grounded,
-  cited answers use the [Document Intelligence Assistant](../5_document_intelligence_assistant/).
+- **No knowledge base of its own.** It has no configured collections to search; answers come from the model plus your
+  examples, and only the files attached to a message and the collections referenced with `#` are read. For grounded,
+  cited answers over a fixed knowledge base use the
+  [Document Intelligence Assistant](../5_document_intelligence_assistant/).
 - **No tools or actions, no human escalation.** Same boundaries as the Instructed Assistant.
 - **No real "training".** Despite the name, nothing is fine-tuned. "Teaching" here means supplying examples in the
   configuration — they take effect immediately and can be changed at any time. See the [Agents overview](../) for why

@@ -1,6 +1,6 @@
 ---
 title: Programmierung / Softwareentwicklung
-source_sha: 9a40633fb3368d39acf2c3e882fca3ac64a683df7ef4be946a083569cca6af00
+source_sha: e3ee68163c9c3122de7bff3773bf1b10196b59ccbf94d3be36a21de36ef1d782
 ---
 
 # Programmierung / Softwareentwicklung
@@ -13,17 +13,21 @@ Benutzer, und zwar im Home-Verzeichnis dieses Benutzers innerhalb der Sandbox.
 ::: warning Voraussetzungen & aktuelle Einschränkungen
 - **Nur einfache LLM-Modelle, mit aktiviertem Native Function Calling.** OpenWebUI stellt dem Modell die Sandbox als
   eine Reihe von Tools bereit (`run_command`, `write_file`, `display_file` und weitere), die aus der
-  Terminal-Server-Integration aufgelöst werden — nicht über das eingebaute `execute_code`-Tool. **Native Function
-  Calling muss** für das Modell **aktiviert sein** (Admin → Settings → Models → die Advanced Params des Modells): Erst
-  dann werden diese Tools dem Modell als echte Function-Definitionen übergeben, was es ihm erlaubt, einen Schritt
-  auszuführen, das Ergebnis zu lesen und fortzufahren. Beim Standardwert fällt OpenWebUI auf einen einzelnen
-  prompt-basierten Tool-Auswahldurchlauf zurück, was für einen mehrstufigen Aufbau nicht ausreicht. Modelle ohne
+  Terminal-Server-Integration aufgelöst werden — nicht über das eingebaute `execute_code`-Tool. **Das Modell muss Native
+  Function Calling verwenden**: Nur dann werden diese Tools dem Modell als echte Function-Definitionen übergeben, was es
+  ihm erlaubt, einen Schritt auszuführen, das Ergebnis zu lesen und fortzufahren. Unter Legacy fällt OpenWebUI auf einen
+  einzelnen prompt-basierten Tool-Auswahldurchlauf zurück, was für einen mehrstufigen Aufbau nicht ausreicht.
+  **Kimi-K2.6 ist standardmäßig auf Native gesetzt**; jedes andere Modell steht standardmäßig auf Legacy. Um ein anderes
+  Modell zu verwenden, stellen Sie Function Calling für diese Konversation im Chat unter Controls → Advanced Params auf
+  Native um. Eine Änderung unter Admin → Settings → Models hat keinen Bestand: AI-Hub setzt sie beim nächsten Start der
+  API zurück, und ein Betreiber ändert den Standard eines Modells stattdessen in der LiteLLM-Konfiguration. Modelle ohne
   Function-Calling-Unterstützung können die Sandbox überhaupt nicht ansteuern.
 - **Das Terminal muss für die Konversation aktiv sein.** Die Tools werden nur aufgelöst, wenn im Chat ein Terminal
   ausgewählt ist.
-- **AI-Hub Agents werden noch nicht unterstützt.** Agent-Chats steuern ihre eigene Generierung und stellen den
-  Tool-Calling-Handshake von OpenWebUI nicht bereit, weshalb die Code-Ausführung für sie **nicht** aktiv wird. Dies ist
-  ein geplanter Follow-up.
+- **Unter den AI-Hub Agents führt nur der [Universal Agent](../../5_agents/13_universal_agent/) Code aus.** Mit
+  eingeschaltetem Code Interpreter arbeitet er im selben Sandbox-Home wie Ihre Chats mit einfachen Modellen, in einem
+  Ordner pro Konversation, und hängt die Dateien, die er Ihnen zeigt, an seine Antwort an. Andere Agents führen keinen
+  Code aus.
 :::
 
 Es gibt zwei Hauptwege, die Code-Ausführung zu nutzen.

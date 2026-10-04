@@ -48,6 +48,11 @@ packages/web/composables/{resource}/
 
 Only create files for SDK operations that actually exist.
 
+Tenant-scoped resources (everything under `pages/[tenant]/service/`) take `tenant_id` as a path parameter, put
+`['tenant', tenantId, ...]` at the start of every query key, and gate `enabled` with
+`useTenantReady(...routeParamNames)` (see `composables/agent/useAgentInstances.ts`). Omit the tenant parts only for
+resources that are not tenant-scoped.
+
 ## Step 3: List Query Pattern
 
 ```typescript
@@ -56,12 +61,14 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const use<Resource>s = defineQuery(() => {
+  const { tenantId } = useTenant()
+
   const { data: <resource>s, isPending: <resource>sAreLoading } = useQuery<Full<Resource>Dto[]>({
-    key: () => ['<resource>s'],
+    key: () => ['tenant', tenantId.value, '<resource>s'],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: useTenantReady(),
     query: async () => {
-      return await getAll<Resource>s({ composable: '$fetch' })
+      return await getAll<Resource>s({ composable: '$fetch', path: { tenant_id: tenantId.value! } })
     },
   })
   return {
@@ -80,16 +87,16 @@ import { minutesToMilliseconds } from 'date-fns'
 
 export const use<Resource> = defineQuery(() => {
   const route = useRoute()
-  const isRouteReady = useRouteReady('<resource>_id')
+  const { tenantId } = useTenant()
 
   const { data: <resource>, isPending: <resource>IsLoading } = useQuery<Full<Resource>Dto>({
-    key: () => ['<resource>s', route.params.<resource>_id as string],
+    key: () => ['tenant', tenantId.value, '<resource>s', route.params.<resource>_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: useTenantReady('<resource>_id'),
     query: async () => {
       return await get<Resource>({
         composable: '$fetch',
-        path: { <resource>_id: route.params.<resource>_id as string },
+        path: { tenant_id: tenantId.value!, <resource>_id: route.params.<resource>_id as string },
       })
     },
   })
@@ -113,12 +120,13 @@ export const useCreate<Resource> = defineMutation(() => {
     isPending: isCreating,
     error: createError,
   } = useMutation({
-    mutation: async (request: Create<Resource>Request) => {
+    mutation: async ({ request, tenantId }: { request: Create<Resource>Request, tenantId: string }) => {
       const result = await create<Resource>({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: request,
       })
-      queryCache.invalidateQueries({ key: ['<resource>s'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, '<resource>s'] })
       return result
     },
   })
@@ -151,21 +159,21 @@ export const useCreate<Resource> = defineMutation(() => {
 
 ## Troubleshooting
 
-| Problem                      | Solution                                                                      |
-| ---------------------------- | ----------------------------------------------------------------------------- |
-| SDK functions not found      | Run `/generate-sdk` first to regenerate the client SDK                        |
-| Query never resolves         | Check `enabled` flag — use `useRouteReady()` for route-dependent queries      |
-| Stale data after mutation    | Ensure `queryCache.invalidateQueries({ key: ['resources'] })` is called       |
-| Type errors on DTO imports   | Regenerate SDK — types may be outdated                                        |
-| Composable not auto-imported | Nuxt auto-imports from `composables/` — ensure file is in the right directory |
+| Problem                      | Solution                                                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| SDK functions not found      | Run `/generate-sdk` first to regenerate the client SDK                                                         |
+| Query never resolves         | Check `enabled` flag — use `useTenantReady()` (tenant-scoped) or `useRouteReady()` for route-dependent queries |
+| Stale data after mutation    | Ensure `queryCache.invalidateQueries({ key: ['resources'] })` is called                                        |
+| Type errors on DTO imports   | Regenerate SDK — types may be outdated                                                                         |
+| Composable not auto-imported | Nuxt auto-imports from `composables/` — ensure file is in the right directory                                  |
 
 ## Key Conventions
 
 - **`{ composable: '$fetch' }`**: Always pass this to SDK calls (uses Nuxt's `$fetch`)
 - **Query keys**: Hierarchical arrays `['{resource}s']`, `['{resource}s', id]`
 - **`staleTime`**: Use `minutesToMilliseconds(5)` for standard resources
-- **`enabled`**: Use `useRouteReady()` when query depends on route params (defined at
-  `packages/web/composables/useRouteReady.ts`)
+- **`enabled`**: Use `useTenantReady()` for tenant-scoped queries, `useRouteReady()` when a query only depends on route
+  params (defined at `packages/web/composables/useRouteReady.ts`)
 - **Cache invalidation**: Call `queryCache.invalidateQueries({ key: ['{resource}s'] })` after mutations
 - **Naming**: `use{Resource}s` (plural list), `use{Resource}` (single), `useCreate{Resource}` (mutation)
 - **Exports**: Always wrap in `defineQuery()` or `defineMutation()` (Pinia-Colada composable factories)

@@ -5,8 +5,14 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.tools import BaseTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from pydantic import BaseModel, ConfigDict, Field
-from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.events.agent import ChatFeature, RunToolLoopEvent, ToolDefinition, ToolLoopMode
+from swiss_ai_hub.core.events.agent import (
+    ChatFeature,
+    KnowledgeReference,
+    RunToolLoopEvent,
+    ToolDefinition,
+    ToolLoopMode,
+    UserUploadedFile,
+)
 
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
@@ -65,9 +71,23 @@ class ToolSet(BaseModel):
         mode: ToolLoopMode = ToolLoopMode.ANSWER,
         cite_sources: bool = True,
         tools: list[str] | None = None,
+        files: list[UserUploadedFile] | None = None,
+        knowledge_references: list[KnowledgeReference] | None = None,
     ) -> RunToolLoopEvent:
-        """Let the model decide which of these tools to use; `tools` narrows them for this call."""
-        return RunToolLoopEvent(loop=self.name, history=history, mode=mode, cite_sources=cite_sources, tools=tools)
+        """Let the model decide which of these tools to use; `tools` narrows them for this call.
+
+        Pass the message's `files` and `knowledge_references` for the tools that read attachments or search what
+        the user referenced.
+        """
+        return RunToolLoopEvent(
+            loop=self.name,
+            history=history,
+            mode=mode,
+            cite_sources=cite_sources,
+            tools=tools,
+            files=list(files or []),
+            knowledge_references=list(knowledge_references or []),
+        )
 
     def route(self, history: list[ChatMessage], cite_sources: bool = True) -> RunToolLoopEvent:
         """One decision: the model picks the tools worth running now, and their results come back as context."""
@@ -115,11 +135,11 @@ class ToolSet(BaseModel):
         tools = [*(tool for spec in self.specs for tool in spec(context).to_tool_list()), *self.functions]
         return {tool.metadata.name: tool for tool in tools}
 
-    async def definitions(self, agent_config: AgentConfig, context: ToolContext) -> dict[str, ToolDefinition]:
-        """Every tool the model could be offered on this profile; a capability with nothing to do offers none."""
+    async def definitions(self, context: ToolContext) -> dict[str, ToolDefinition]:
+        """Every tool the model could be offered in this run; a capability with nothing to do offers none."""
         definitions = {}
         for capability in self.capabilities:
-            definition = await asyncio.to_thread(capability.tool_definition, agent_config, context.t.locale)
+            definition = await asyncio.to_thread(capability.tool_definition, context)
             if definition is not None:
                 definitions[definition.name] = definition
         for name, tool in self.function_tools(context).items():

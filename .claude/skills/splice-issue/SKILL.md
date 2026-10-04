@@ -22,6 +22,7 @@ gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { i
 
 ```bash
 gh issue view $ISSUE_NUMBER -R bbvch-ai/aihub-core --json title,body,labels,milestone,assignees
+PARENT_TYPE=$(gh api "repos/bbvch-ai/aihub-core/issues/$ISSUE_NUMBER" --jq '.type.name // empty')
 ```
 
 Also fetch any existing sub-issues — the user may have started splicing already:
@@ -77,13 +78,18 @@ EOF
   --label "$PARENT_LABEL" \
   --milestone "$PARENT_MILESTONE" \
   --assignee "$PARENT_ASSIGNEE"
+
+# Set the native issue type over REST, as write-issue does; older gh has no --type flag
+# ($CHILD_NUMBER is the trailing number of the URL gh issue create printed)
+gh api -X PATCH "repos/bbvch-ai/aihub-core/issues/$CHILD_NUMBER" -f type="$CHILD_TYPE"
 ```
 
 **Metadata inheritance rules:**
 
-- Copy `--label` (version label: major/minor/patch) from parent
+- Copy `--label` (the `area:*` labels; never a major/minor/patch version label, those belong on PRs) from parent
 - Copy `--milestone` from parent
 - Copy `--assignee` from parent
+- Set `$CHILD_TYPE` to `$PARENT_TYPE`, except under an Epic, where each child is a `Feature` or `Task`
 - Body starts with `Parent: #$ISSUE_NUMBER`
 
 **Acceptance criteria rules:**
@@ -257,8 +263,8 @@ gh issue close $ISSUE_NUMBER -R bbvch-ai/aihub-core -r "not planned" -c "Spliced
    when all children are done.
 3. **Using `addSubIssue` for dependencies.** Sub-issue means "part of this work." Use `addBlockedBy` for "must be done
    before."
-4. **Forgetting to inherit metadata.** Every sub-issue must have the same label (major/minor/patch), milestone, and
-   assignee as the parent.
+4. **Forgetting to inherit metadata.** Every sub-issue must have the same `area:*` labels, milestone, and assignee as
+   the parent, plus the parent's native issue type (children of an Epic are Features or Tasks).
 5. **Creating issues before getting user confirmation.** Always present the proposed breakdown and wait for approval.
 6. **Adding redundant blocked-by relationships.** If A is blocked by B, and B is blocked by C, do NOT also add A blocked
    by C. Check the transitive chain first.
