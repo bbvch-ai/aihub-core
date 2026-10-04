@@ -33,10 +33,11 @@ _COLLECTIONS_DESCRIPTION = "Collections the caller may read; nothing outside the
 class KnowledgeDocumentReader:
     """Read access to the ingested documents of knowledge collections, independent of any agent.
 
-    Callers pass the collections they may read, and the reader trusts that list: it must come from the agent's profile,
-    whose collection picker checked access when the profile was saved, never from a model's tool arguments. Every query
-    is scoped to it, which is what rejects an id or path from any other collection, so the only argument safe to take
-    from a model is `collection` in `load_document_by_path`, which is checked against the list. Each knowledge
+    Callers pass the collections the run may read, and the reader trusts that list: it must be the agent's configured
+    collections narrowed to those the asking user may read (`AccessChecker.has_access_to_knowledge_namespace`), never a
+    model's tool arguments, because a profile is checked only against whoever saved it. Every query is scoped to the
+    list, which is what rejects an id or path from any other collection, so the only argument safe to take from a model
+    is `collection` in `load_document_by_path`, which is checked against the list. Each knowledge
     database's document store is reached through its own connection alias, registered on first use, so this works from
     any process that has the default connection.
     """

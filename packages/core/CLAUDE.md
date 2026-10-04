@@ -561,8 +561,9 @@ database, collection and path. `matching_glob()` and `matching_regex()` chain:
 `load_document()` and `load_document_by_path()` take the caller's allowed collections, so an id or path from any other
 collection is reported as not found. Pending documents raise `KnowledgeDocumentPendingError`. A collection that does not
 exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
-range, and `text_length` reports the full length. Nothing here reads agent configuration: deciding which collections an
-agent may read stays with its profile.
+range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
+passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
+against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
