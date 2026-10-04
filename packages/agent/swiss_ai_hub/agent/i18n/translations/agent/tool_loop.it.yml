@@ -45,6 +45,9 @@ config:
   max_tool_calls:
     label: "Chiamate massime"
     help: "Quante chiamate agli strumenti può fare una risposta."
+  disable_tools:
+    label: "Disattiva strumenti"
+    help: "Trattenere alcuni strumenti di questo agente."
   disabled_tools:
     label: "Strumenti disattivati"
     help: "Strumenti che questo agente non offre mai."

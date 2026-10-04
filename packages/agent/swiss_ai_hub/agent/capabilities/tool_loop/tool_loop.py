@@ -431,7 +431,7 @@ class ToolLoop(Capability):
         definitions = await tool_set.definitions(context)
         offered = []
         for name, definition in definitions.items():
-            if name in loop.tool_loop.disabled_tools or (request.tools is not None and name not in request.tools):
+            if loop.tool_loop.is_disabled(name) or (request.tools is not None and name not in request.tools):
                 continue
             feature = tool_set.options(name).chat_feature
             if feature and not await RequestedFeatures.contains(feature, run_context, blueprint):

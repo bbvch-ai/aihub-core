@@ -49,7 +49,7 @@ three lookups gets three.
 | **Read attached files**  | Reads the files attached to the conversation. The model sees which files are attached and reads the ones it needs; a file too long to read whole returns the sections most relevant to what the model is looking for.                                                    | The user attached a document (images reach the model directly).              |
 | **Recall memory**        | Searches what is remembered about the user and the organisation: preferences, facts and decisions from earlier conversations.                                                                                                                                            | User or organisation memory is enabled on the profile.                       |
 | **Code sandbox**         | Runs commands and reads and writes files in the user's own code sandbox, in a folder per conversation that holds the conversation's attached files. A file the agent shows the user, such as a chart or a spreadsheet, is attached to the answer and stays downloadable. | The user switched on **Code Interpreter** in the chat.                       |
-| **My files**             | Lists and reads the user's own files in [My Files](../../10_chat_ui/14_my_files/): their uploads, chat attachments and files agents made for them. Read-only. | The user switched on **My Files** in the chat. |
+| **My files**             | Lists and reads the user's own files in [My Files](../../10_chat_ui/14_my_files/): their uploads, chat attachments and files agents made for them. Read-only.                                                                                                            | The user switched on **My Files** in the chat.                               |
 
 More tools follow as the platform adds them: web search, web page fetch, image generation and the user's own file space
 each add their tool to this agent.
@@ -125,7 +125,8 @@ finds.
 | ---------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | **Maximum Decisions**  | `10`    | How often the model may choose tools before it must answer.                                           |
 | **Maximum Tool Calls** | `20`    | How many tool calls one answer may make in total.                                                     |
-| **Disabled Tools**     | —       | Tools this profile never offers.                                                                      |
+| **Disable Tools**      | Off     | Turn on to withhold some tools; the Disabled Tools picker appears only while it is on.                |
+| **Disabled Tools**     | —       | Tools this profile never offers, while Disable Tools is on.                                           |
 | **Approvals**          | —       | Tools whose calls the user must approve first: every call, once per answer, or once per conversation. |
 
 Memory and attached-file settings are the same as on the other chat agents; see [Memory](../../15_memory/).

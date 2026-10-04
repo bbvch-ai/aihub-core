@@ -11,9 +11,9 @@ Schritten zu folgen, betrachtet er jede Nachricht und entscheidet selbst, was er
 durchsuchen, eine vom Benutzer angehängte Datei lesen, sich an das erinnern, was er über den Benutzer weiss, oder direkt
 antworten. Er macht weiter, ein Werkzeug nach dem anderen, bis er antworten kann.
 
-Jeder andere Agent der Plattform folgt einem festen Ablauf. Ein Administrator wählt also pro Anwendungsfall den passenden
-aus, und Benutzer müssen wissen, welchen Assistenten sie fragen sollen. Ein Universal-Agent-Profil wird einmal mit dem
-Wissen konfiguriert, das es durchsuchen darf, und Benutzer fragen es alles.
+Jeder andere Agent der Plattform folgt einem festen Ablauf. Ein Administrator wählt also pro Anwendungsfall den
+passenden aus, und Benutzer müssen wissen, welchen Assistenten sie fragen sollen. Ein Universal-Agent-Profil wird einmal
+mit dem Wissen konfiguriert, das es durchsuchen darf, und Benutzer fragen es alles.
 
 ::: tip Wann Sie diesen Agenten einsetzen
 Setzen Sie den Universal Agent als allgemeinen Assistenten ein, der Ihr Wissen, die Anhänge des Benutzers und das
@@ -43,21 +43,21 @@ flowchart LR
 3. **Antworten.** Sobald das Modell hat, was es braucht, wird seine Antwort an den Benutzer gestreamt, mit Zitaten der
    verwendeten Dokumente.
 
-Nichts wird vorab in den Prompt geladen: Eine Frage, die keine Suche braucht, wird direkt beantwortet, und eine, die drei
-Suchen braucht, bekommt drei.
+Nichts wird vorab in den Prompt geladen: Eine Frage, die keine Suche braucht, wird direkt beantwortet, und eine, die
+drei Suchen braucht, bekommt drei.
 
 ### Die Werkzeuge
 
-| Werkzeug                         | Was es tut                                                                                                                                                                                                                                           | Angeboten, wenn                                                                                 |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Unser Wissen durchsuchen**     | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf. | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann.       |
-| **Angehängte Dateien lesen**     | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind. | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).                   |
-| **Gedächtnis abrufen**           | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                             | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                                 |
-| **Code-Sandbox**                | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                                |
-| **Meine Dateien** | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend. | Der Benutzer hat im Chat **My Files** eingeschaltet. |
+| Werkzeug                     | Was es tut                                                                                                                                                                                                                                                                                                                         | Angeboten, wenn                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Unser Wissen durchsuchen** | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf.                                      | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann. |
+| **Angehängte Dateien lesen** | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind.                                                                          | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).             |
+| **Gedächtnis abrufen**       | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                                                                                                          | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                           |
+| **Code-Sandbox**             | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                          |
+| **Meine Dateien**            | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend.                                                                                                                                           | Der Benutzer hat im Chat **My Files** eingeschaltet.                                      |
 
-Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten,
-Bildgenerierung und der eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.
+Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten, Bildgenerierung und der
+eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.
 
 Jeder Werkzeugaufruf ist im Chat sichtbar: Die Wissenssuche und die Dateien erscheinen als Quellen, jeder Aufruf als
 aufklappbarer Block mit dem, was das Werkzeug zurückgegeben hat, und der Agenten-Trace zeichnet jeden Schritt auf.
@@ -83,8 +83,8 @@ Unterhaltung.
 - **Er ist kein fester Ablauf.** Das Modell entscheidet, welche Werkzeuge es nutzt, daher können zwei ähnliche Fragen
   unterschiedliche Wege nehmen. Für eine garantierte Abfolge verwenden Sie die dafür vorgesehenen Blueprints.
 - **Er ersetzt nicht den Abruf des Document Intelligence Assistant.** Seine Wissenssuche ist einfacher: Jede Datenbank
-  wird mit dem Embedding-Modell durchsucht, mit dem sie indexiert wurde, und die Ergebnisse werden gemeinsam neu sortiert,
-  ohne die Feinabstimmung pro Retriever und die Fundierungsprüfung des Document Intelligence Assistant.
+  wird mit dem Embedding-Modell durchsucht, mit dem sie indexiert wurde, und die Ergebnisse werden gemeinsam neu
+  sortiert, ohne die Feinabstimmung pro Retriever und die Fundierungsprüfung des Document Intelligence Assistant.
 - **Er liest nie, was der Benutzer nicht darf.** Sammlungen, die der fragende Benutzer nicht lesen kann, werden nicht
   angeboten, auch wenn das Profil sie auflistet oder "jede Sammlung" erlaubt.
 - **Seine Code-Sandbox ist geteilte Hardware.** Das Sandbox-Home jedes Benutzers ist getrennt, aber alle Benutzer teilen
@@ -112,16 +112,16 @@ Unterhaltung.
 
 ### Verhalten
 
-| Feld                          | Standard  | Beschreibung                                                                                          |
-| ----------------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
-| **Anweisungen**               | *(leer)*  | Wofür dieser Assistent da ist und wie er antworten soll, nach den eingebauten Anweisungen hinzugefügt. |
-| **Maximale Eingabe-Tokens**   | `128000`  | Das Eingabebudget. Die Unterhaltung wird darauf gekürzt und in der Werkzeugschleife darauf verdichtet. |
+| Feld                        | Standard | Beschreibung                                                                                           |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| **Anweisungen**             | *(leer)* | Wofür dieser Assistent da ist und wie er antworten soll, nach den eingebauten Anweisungen hinzugefügt. |
+| **Maximale Eingabe-Tokens** | `128000` | Das Eingabebudget. Die Unterhaltung wird darauf gekürzt und in der Werkzeugschleife darauf verdichtet. |
 
 ### Wissenswerkzeug
 
-| Feld                                           | Standard | Beschreibung                                                                                    |
-| ---------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| **Jede Sammlung, die der Benutzer lesen kann** | Aus      | Jede Wissenssammlung anbieten, die der fragende Benutzer lesen darf, statt der aufgelisteten.   |
+| Feld                                           | Standard | Beschreibung                                                                                               |
+| ---------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| **Jede Sammlung, die der Benutzer lesen kann** | Aus      | Jede Wissenssammlung anbieten, die der fragende Benutzer lesen darf, statt der aufgelisteten.              |
 | **Sammlungen**                                 | —        | Datenbanken, die das Modell durchsuchen darf, jeweils ganz oder auf einige ihrer Sammlungen eingeschränkt. |
 
 Unter **Wissenssuche** legen **Abschnitte pro Datenbank** und das **Reranking-Modell** fest, wie die Suche ihre Funde
@@ -129,12 +129,13 @@ ordnet.
 
 ### Werkzeuge
 
-| Feld                              | Standard | Beschreibung                                                                                                    |
-| --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| **Maximale Entscheidungen**       | `10`     | Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.                                              |
-| **Maximale Werkzeugaufrufe**      | `20`     | Wie viele Werkzeugaufrufe eine Antwort insgesamt machen darf.                                                   |
-| **Deaktivierte Werkzeuge**        | —        | Werkzeuge, die dieses Profil nie anbietet.                                                                      |
-| **Freigaben**                     | —        | Werkzeuge, deren Aufrufe der Benutzer zuerst freigeben muss: jeder Aufruf, einmal pro Antwort oder einmal pro Unterhaltung. |
+| Feld                         | Standard | Beschreibung                                                                                                                |
+| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Maximale Entscheidungen**  | `10`     | Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.                                                          |
+| **Maximale Werkzeugaufrufe** | `20`     | Wie viele Werkzeugaufrufe eine Antwort insgesamt machen darf.                                                               |
+| **Werkzeuge deaktivieren**   | Aus      | Einschalten, um Werkzeuge zurückzuhalten; die Auswahl der deaktivierten Werkzeuge erscheint nur dann.                       |
+| **Deaktivierte Werkzeuge**   | —        | Werkzeuge, die dieses Profil nie anbietet, solange «Werkzeuge deaktivieren» eingeschaltet ist.                              |
+| **Freigaben**                | —        | Werkzeuge, deren Aufrufe der Benutzer zuerst freigeben muss: jeder Aufruf, einmal pro Antwort oder einmal pro Unterhaltung. |
 
 Die Einstellungen für Gedächtnis und angehängte Dateien sind dieselben wie bei den anderen Chat-Agenten; siehe
 [Gedächtnis](../../15_memory/).
