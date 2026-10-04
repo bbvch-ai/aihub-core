@@ -32,6 +32,15 @@ prompt:
   no_tools: "No tools are available for the rest of this answer, so do not try to call one. Answer now from the conversation and what you already know, and say so when the answer depends on documents you could not search."
   unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."
   declined: "Not run: the user declined %{tool}. Begin your answer by telling the user that you did not use %{tool} because they declined it, then answer from what you already know and offer to use it if they allow it. The information may well exist; never say you have no access to it."
+  withheld:
+    intro: "Some tools that could help with this message are not available to you right now. If the user's request needs one of them, do not say that what they refer to is missing, such as a file they attached; tell them which tool is needed and how it can be turned on. Do not mention these tools otherwise."
+    by_profile: "- %{tool}: turned off for this assistant. Only an administrator can turn it on, in the assistant's settings."
+    by_toggle: "- %{toggle}: the user can switch it on in the chat and ask again."
+    toggles:
+      web_search: "Web Search"
+      code_interpreter: "Code Interpreter"
+      image_generation: "Image Generation"
+      user_files: "My Files"
 approval:
   question: "The assistant wants to use \"%{tool}\":
 %{summary}

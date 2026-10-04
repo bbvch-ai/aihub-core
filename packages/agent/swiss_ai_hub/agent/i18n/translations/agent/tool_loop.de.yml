@@ -32,6 +32,15 @@ prompt:
   no_tools: "Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche also nicht, eines aufzurufen. Antworte jetzt mit dem Gesprächsverlauf und dem, was du bereits weisst, und sag es, wenn die Antwort von Dokumenten abhängt, die du nicht durchsuchen konntest."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
   declined: "Nicht ausgeführt: Der Benutzer hat %{tool} abgelehnt. Beginne deine Antwort damit, dass du %{tool} nicht verwendet hast, weil der Benutzer es abgelehnt hat, antworte dann mit dem, was du bereits weisst, und biete an, es zu verwenden, wenn er es erlaubt. Die Information kann durchaus vorhanden sein; sag nie, dass du keinen Zugriff darauf hast."
+  withheld:
+    intro: "Einige Werkzeuge, die bei dieser Nachricht helfen könnten, stehen dir gerade nicht zur Verfügung. Braucht die Anfrage des Benutzers eines davon, behaupte nicht, dass fehlt, worauf er sich bezieht, etwa eine angehängte Datei; sag ihm, welches Werkzeug nötig ist und wie es eingeschaltet werden kann. Erwähne diese Werkzeuge sonst nicht."
+    by_profile: "- %{tool}: für diesen Assistenten ausgeschaltet. Nur ein Administrator kann es in den Einstellungen des Assistenten einschalten."
+    by_toggle: "- %{toggle}: der Benutzer kann es im Chat einschalten und erneut fragen."
+    toggles:
+      web_search: "Websuche"
+      code_interpreter: "Code-Interpreter"
+      image_generation: "Bildgenerierung"
+      user_files: "Meine Dateien"
 approval:
   question: "Der Assistent möchte «%{tool}» verwenden:
 %{summary}

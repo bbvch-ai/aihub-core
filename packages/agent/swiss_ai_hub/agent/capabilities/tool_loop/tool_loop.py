@@ -39,6 +39,7 @@ from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_condenser import ToolLo
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
+from swiss_ai_hub.agent.capabilities.tool_loop.withheld_tools import WithheldTools
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -137,12 +138,12 @@ class ToolLoop(Capability):
 
         Earlier answers get their tool calls and results back, which the chat client does not send."""
         context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
-        offered = await ToolLoop._offered(agent, request, loop, context, run_context)
+        offered, withheld = await ToolLoop._offered(agent, request, loop, context, run_context)
         if not offered and request.mode == ToolLoopMode.GATHER:
             return ToolLoopFinishedEvent(loop=request.loop)
         await run_context.set(CITE_SOURCES_KEY, request.cite_sources)
         history = [Message.from_llama_index(message) for message in request.history]
-        messages = await EarlierToolTurns(thread_context, request.loop).restore(history)
+        messages = withheld.into(await EarlierToolTurns(thread_context, request.loop).restore(history), t)
         return ToolLoopIterationEvent(
             state=ToolLoopState(
                 loop=request.loop,
@@ -424,20 +425,30 @@ class ToolLoop(Capability):
     @staticmethod
     async def _offered(
         agent: Agent, request: RunToolLoopEvent, loop: ToolLoopFields, context: ToolContext, run_context: RunContext
-    ) -> list[ToolDefinition]:
-        """The set's tools, less those the profile disables, the call excludes or whose toggle is off."""
+    ) -> tuple[list[ToolDefinition], WithheldTools]:
+        """The set's tools, less those the profile disables, the call excludes or whose toggle is off.
+
+        The ones the profile or a toggle withholds are reported, so the model can name what is missing; the call's
+        own narrowing is the blueprint's choice and stays unmentioned."""
         blueprint = type(agent)
         tool_set = blueprint.tool_set(request.loop)
         definitions = await tool_set.definitions(context)
         offered = []
+        withheld = WithheldTools()
         for name, definition in definitions.items():
-            if loop.tool_loop.is_disabled(name) or (request.tools is not None and name not in request.tools):
+            if request.tools is not None and name not in request.tools:
                 continue
-            feature = tool_set.options(name).chat_feature
-            if feature and not await RequestedFeatures.contains(feature, run_context, blueprint):
+            options = tool_set.options(name)
+            if loop.tool_loop.is_disabled(name):
+                withheld.add_by_profile(options.label_in(name, context.t.locale))
+                continue
+            if options.chat_feature and not await RequestedFeatures.contains(
+                options.chat_feature, run_context, blueprint
+            ):
+                withheld.add_by_toggle(options.chat_feature)
                 continue
             offered.append(definition)
-        return offered
+        return offered, withheld
 
     @staticmethod
     def _context(

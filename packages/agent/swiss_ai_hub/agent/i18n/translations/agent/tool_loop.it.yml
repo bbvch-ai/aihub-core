@@ -32,6 +32,15 @@ prompt:
   no_tools: "Per il resto di questa risposta non è disponibile alcuno strumento, quindi non cercare di chiamarne uno. Rispondi ora in base alla conversazione e a ciò che sai già, e dillo quando la risposta dipende da documenti che non hai potuto consultare."
   unknown_tool: "Non esiste uno strumento chiamato %{tool}. Usa uno degli strumenti offerti."
   declined: "Non eseguito: l'utente ha rifiutato %{tool}. Inizia la risposta dicendo che non hai usato %{tool} perché l'utente l'ha rifiutato, poi rispondi con ciò che sai già e offri di usarlo se lo consente. L'informazione può benissimo esistere; non dire mai che non hai accesso."
+  withheld:
+    intro: "Alcuni strumenti che potrebbero aiutare con questo messaggio non sono disponibili al momento. Se la richiesta dell'utente ne richiede uno, non dire che ciò a cui si riferisce manca, ad esempio un file allegato; indicagli quale strumento serve e come può essere attivato. Altrimenti non menzionare questi strumenti."
+    by_profile: "- %{tool}: disattivato per questo assistente. Solo un amministratore può attivarlo, nelle impostazioni dell'assistente."
+    by_toggle: "- %{toggle}: l'utente può attivarlo nella chat e chiedere di nuovo."
+    toggles:
+      web_search: "Ricerca web"
+      code_interpreter: "Interprete di codice"
+      image_generation: "Generazione di immagini"
+      user_files: "I miei file"
 approval:
   question: "L'assistente vuole usare «%{tool}»:
 %{summary}
