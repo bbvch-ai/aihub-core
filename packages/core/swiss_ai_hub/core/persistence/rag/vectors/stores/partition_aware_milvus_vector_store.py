@@ -495,9 +495,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         covered too (see ``document_partition_names``), because all-namespaces retrieval still finds nodes
         stranded there.
         """
-        partition_names = (
-            self.document_partition_names([namespace]) if self._check_has_manual_partitions() else [None]
-        )
+        partition_names = self.document_partition_names([namespace]) if self._check_has_manual_partitions() else [None]
         self._ensure_collection_loaded([name for name in partition_names if name])
         for partition_name in partition_names:
             self.client.delete(
