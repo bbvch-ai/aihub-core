@@ -783,6 +783,12 @@ class TestDeclaration:
             "code",
         ]
 
+    def test_the_tool_pickers_can_be_searched(self):
+        published = ToolLoop.published_config(_config(), LoopAgent)
+
+        assert published.tool_loop.disabled_tools.filter
+        assert published.tool_loop.approvals[0].tool.filter
+
     @pytest.mark.asyncio
     async def test_the_tool_call_carries_the_label_users_read(self):
         events, _ = await _decide(_state(), _calling(_tool_call("c1", "echo", '{"text": "a"}')))
