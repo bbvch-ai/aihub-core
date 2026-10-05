@@ -1,4 +1,6 @@
 import pytest
+from dagster import AssetKey
+from dagster._core.storage.tags import PRIORITY_TAG
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence import IngestorType
 
@@ -25,8 +27,13 @@ class TestEveryNameDerivesFromTheSource:
         names = _names(rclone_pipeline_definitions())
 
         assert names["partitions"] == {"rclone_source_partitions"}
-        assert names["jobs"] == {"rclone_source_observation", "rclone_remove_source_files"}
+        assert names["jobs"] == {
+            "rclone_source_observation",
+            "rclone_remove_source_files",
+            "rclone_retry_unlanded_files",
+        }
         assert "SourcePipelineRegistrationSensorFor_rclone" in names["sensors"]
+        assert "retry_unlanded_partitions_after_rclone_source_observation" in names["sensors"]
         assert "SourceBucketCleanupSensorFor_rclone" in names["sensors"]
         assert names["assets"] == {
             "rclone_source_to_datalake/remote_files",
@@ -46,6 +53,21 @@ class TestEveryNameDerivesFromTheSource:
         for kind in ("assets", "jobs", "partitions"):
             assert rclone[kind].isdisjoint(acme[kind]), kind
             assert rclone[kind].isdisjoint(ingestion[kind]), kind
+
+
+class TestUnlandedFileRetries:
+    def test_the_retry_job_targets_only_the_data_lake_files_and_does_not_jump_the_queue(self):
+        repo = rclone_pipeline_definitions().get_repository_def()
+        retry_job = repo.get_job("rclone_retry_unlanded_files")
+
+        assert retry_job.asset_layer.selected_asset_keys == {AssetKey(["rclone_source_to_datalake", "data_lake_files"])}
+        assert PRIORITY_TAG not in retry_job.run_tags
+
+    def test_the_sensor_follows_the_observation_and_requests_the_retry_job(self):
+        repo = rclone_pipeline_definitions().get_repository_def()
+        sensor = repo.get_sensor_def("retry_unlanded_partitions_after_rclone_source_observation")
+
+        assert sensor.job_name == "rclone_retry_unlanded_files"
 
 
 class TestRegistrationGate:

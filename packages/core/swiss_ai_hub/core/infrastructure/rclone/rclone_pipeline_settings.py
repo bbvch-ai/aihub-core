@@ -8,8 +8,8 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 class RclonePipelineSettings(EnvironmentSettings):
     """Deployment-level knobs of the rclone source pipeline.
 
-    Only the schedule lives here: which databases to sync, from where and with which credentials is read
-    from the database per run, so a deployment has nothing source-specific to configure.
+    Only the schedule and the retry budget live here: which databases to sync, from where and with which
+    credentials is read from the database per run, so a deployment has nothing source-specific to configure.
     """
 
     model_config = EnvironmentSettings.create_settings_config("RCLONE_PIPELINE_")
@@ -30,4 +30,24 @@ class RclonePipelineSettings(EnvironmentSettings):
     MAX_PARTITIONS: Annotated[
         int,
         Field(default=1000, ge=1, description="Maximum partitions added or removed per database per observation."),
+    ]
+    RETRY_MAX_ATTEMPTS: Annotated[
+        int,
+        Field(
+            default=3,
+            ge=0,
+            le=20,
+            description="Re-requests of a source file whose data-lake write failed, counted since its last "
+            "successful write. A file that fails deterministically stops here until it changes at the source; 0 "
+            "disables the retries.",
+        ),
+    ]
+    RETRY_BASE_DELAY_MINUTES: Annotated[
+        int,
+        Field(
+            default=10,
+            ge=0,
+            le=1440,
+            description="Wait after the first re-request before the next one; doubles with every further attempt.",
+        ),
     ]
