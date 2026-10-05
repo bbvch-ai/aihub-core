@@ -127,6 +127,17 @@ class TestFailures:
         assert s3.put_attempts == 1
         assert _announced(notify) == []
 
+    def test_files_written_before_a_failing_write_are_still_announced(self, tmp_path, s3, notify):
+        """A retry would find them unchanged, and nothing else would announce them before the daily observation."""
+        s3.fail_next_puts_with = ["AccessDenied"]
+        s3.succeed_puts_before_failing = 1
+
+        with pytest.raises(Exception, match="refused"):
+            _sync(tmp_path)
+
+        assert len(s3.keys(_BUCKET)) == 1
+        assert _announced(notify) == s3.keys(_BUCKET)
+
     def test_a_passing_hiccup_is_retried_within_the_run(self, tmp_path, s3, notify):
         s3.fail_next_puts_with = ["SlowDown"]
 

@@ -13,11 +13,12 @@ class FakeS3Client:
         self.put_attempts = 0
         self.put_keys: list[tuple[str, str]] = []
         self.fail_next_puts_with: list[str] = []
+        self.succeed_puts_before_failing = 0
 
     def put_object(self, *, Bucket: str, Key: str, Body: bytes | str, Metadata: dict | None = None, **params: Any):
         self.put_attempts += 1
         self.put_keys.append((Bucket, Key))
-        if self.fail_next_puts_with:
+        if self.fail_next_puts_with and self.put_attempts > self.succeed_puts_before_failing:
             raise ClientError({"Error": {"Code": self.fail_next_puts_with.pop(0), "Message": "fake"}}, "PutObject")
         body = Body.encode() if isinstance(Body, str) else Body
         self.objects[(Bucket, Key)] = {"Body": body, "Metadata": dict(Metadata or {}), **params}

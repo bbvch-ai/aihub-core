@@ -58,11 +58,18 @@ class MarkdownDataLakeDestination:
         return markdown_data_lake
 
     def _write_batch(self, rows: TDataItems) -> None:
+        """Files written before a write fails are announced all the same: dlt's retry finds them unchanged and would
+        never announce them, leaving them to the ingestion pipeline's next daily observation."""
         client = build_s3_data_lake_client(self.bucket, ensure_bucket=False)
         key_column = AbstractStructuredSourceAdapter.OBJECT_KEY_COLUMN
-        written = [row[key_column] for row in rows if self._write_if_changed(client, row)]
-        notify_source_updated(self.bucket, written)
-        self.written_keys.extend(written)
+        written: list[str] = []
+        try:
+            for row in rows:
+                if self._write_if_changed(client, row):
+                    written.append(row[key_column])
+        finally:
+            self.written_keys.extend(written)
+            notify_source_updated(self.bucket, written)
 
     def _write_if_changed(self, client: S3DataLakeClient, row: dict) -> bool:
         object_key = row[AbstractStructuredSourceAdapter.OBJECT_KEY_COLUMN]
