@@ -635,6 +635,9 @@ knowledge:
         message: '{name} already holds {count} manually uploaded document(s). Once
           a source fills this database, every file the source does not have is removed
           on the next sync.'
+        message_from_source: '{name} holds {count} document(s) synced from {source}.
+          Once the new source fills this database, every file it does not have is
+          removed on its next sync.'
         accept: Replace existing documents
     edit:
       title: Edit Collection

@@ -644,6 +644,9 @@ knowledge:
         message: '{name} contiene già {count} documento/i caricato/i manualmente.
           Quando una sorgente alimenta questo database, alla prossima sincronizzazione
           viene rimosso ogni file che la sorgente non possiede.'
+        message_from_source: '{name} contiene {count} documento/i sincronizzato/i
+          da {source}. Quando la nuova sorgente alimenta questo database, alla sua
+          prossima sincronizzazione viene rimosso ogni file che non possiede.'
         accept: Sostituisci i documenti esistenti
     edit:
       title: Modifica collezione

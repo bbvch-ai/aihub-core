@@ -355,6 +355,44 @@ class TestUpdateSource:
             bucket_cls.update_source.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_handing_a_database_from_one_source_to_another_needs_an_acknowledgement(self, locale_handler):
+        """The new source removes every file it does not have, so the previous source's documents would go."""
+        request = UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=_sftp_configuration("pw"))
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.NamespaceEntity") as namespace_cls,
+            patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
+            patch(f"{_SERVICE_MODULE}.MongoConnectionRegistry"),
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="structured", source_configuration={"a": 1})
+            namespace_cls.get_namespaces_by_bucket.return_value = [MagicMock(namespace_name="ONB", deleting=False)]
+            ref_doc_cls.count_by_namespace.return_value = 5
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        assert exc_info.value.status_code == 409
+        assert "5 document(s) synced from source 'structured'" in exc_info.value.detail
+        bucket_cls.update_source.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_editing_the_current_sources_settings_never_asks(self, locale_handler, encryption):
+        """Narrowing the scope of the same source may drop records too, but that is the edit the admin is making."""
+        stored = _sftp_configuration(encryption.encrypt("pw"))
+        request = UpdateDatabaseSourceRequest(
+            source=RCLONE.id, source_configuration={**_sftp_configuration("pw"), "root_path": "/srv/other"}
+        )
+        with (
+            patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls,
+            patch(f"{_SERVICE_MODULE}.RefDoc") as ref_doc_cls,
+        ):
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
+            bucket_cls.update_source.return_value = _bucket(source="rclone")
+            await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        ref_doc_cls.count_by_namespace.assert_not_called()
+        bucket_cls.update_source.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_clearing_the_source_returns_the_database_to_manual_upload(self, locale_handler):
         with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
             bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration={"a": 1})
