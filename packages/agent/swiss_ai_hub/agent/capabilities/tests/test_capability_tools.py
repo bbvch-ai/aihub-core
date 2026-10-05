@@ -88,7 +88,7 @@ class TestAttachedFilesAsATool:
     def test_the_attached_documents_are_listed_for_the_model(self):
         definition = AttachedFiles.tool_definition(_context([REPORT, PHOTO]))
 
-        assert f"{CitationId.of(F1)}: report.pdf (application/pdf)" in definition.description
+        assert f"{CitationId.of(F1)}: report.pdf\n" in f"{definition.description}\n"
         assert F1 not in definition.description
         assert "photo.png" not in definition.description
         assert definition.parameters["properties"]["files"]["items"]["enum"] == [CitationId.of(F1)]

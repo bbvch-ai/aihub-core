@@ -35,7 +35,7 @@ prompt:
     n'ont donc pas pu être isolées. Dis à l'utilisateur que ta réponse ne repose pas
     uniquement sur ces pages.
 tool:
-  structured_hint: "(tableur, présentation ou CSV : traite-le avec du code lorsqu'un outil de code est proposé)"
+  structured_hint: "(à traiter avec du code)"
   label: Lire les fichiers joints
   approval_summary: Lire les fichiers joints
   description: "Lit les fichiers que l'utilisateur a joints à cette conversation et renvoie leur texte converti en Markdown, avec des identifiants à citer. Lis ici les documents comme les fichiers PDF et Word. Les tableurs, les présentations et les fichiers CSV perdent leur structure en Markdown : lorsqu'un outil de code est proposé, traite-les plutôt avec du code, où chaque fichier joint se trouve tel quel dans le dossier de la conversation. Pour un fichier trop grand pour être lu en entier, renvoie les sections les plus pertinentes pour la requête. Pour lire certaines pages d'un document, indique first_page et last_page. Fichiers joints :\n%{files}"

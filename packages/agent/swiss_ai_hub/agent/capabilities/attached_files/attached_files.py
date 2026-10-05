@@ -105,7 +105,7 @@ class AttachedFiles(Capability):
         t = context.t
         # Files go by their citation id: a model shown the upload id cites that instead, which no client links.
         listing = "\n".join(
-            f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})"
+            f"- {CitationId.of(file.file_id)}: {file.filename}"
             + (
                 f" {t('agent.attached_files.tool.structured_hint')}"
                 if StructuredFile.works_better_in_code(file.filename)
