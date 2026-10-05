@@ -188,7 +188,37 @@ class TestTools:
 
         sandbox.created.assert_called_once_with("owui-1")
         sandbox.execute.assert_awaited_once_with("python3 -c 'print(6*7)'", cwd=f"conversations/{THREAD}", wait=60)
-        assert result == "Exit code 0.\n42"
+        assert result == "Command finished successfully (exit code 0).\n42"
+
+    @pytest.mark.asyncio
+    async def test_a_failed_command_says_so_and_how_to_go_on(self, sandbox: Any) -> None:
+        sandbox.execute = AsyncMock(return_value={"status": "done", "exit_code": 1, "output": [{"data": "KeyError"}]})
+
+        result = await SandboxTools(_context()).run_command("python3 broken.py")
+
+        assert result.startswith("Command failed (exit code 1). Read the error below and fix the command.")
+        assert result.endswith("KeyError")
+
+    @pytest.mark.asyncio
+    async def test_the_files_a_command_made_or_changed_are_named_with_how_to_hand_them_over(self, sandbox: Any) -> None:
+        before = {"entries": [{"name": "orders.xlsx", "type": "file", "size": 2_200_000, "modified": 1.0}]}
+        after = {
+            "entries": [
+                {"name": "orders.xlsx", "type": "file", "size": 2_200_000, "modified": 1.0},
+                {"name": "orders-net.xlsx", "type": "file", "size": 3_100_000, "modified": 2.0},
+                {"name": ".attached_files.json", "type": "file", "size": 80, "modified": 2.0},
+                {"name": "charts", "type": "directory", "modified": 2.0},
+            ]
+        }
+        sandbox.list_files = AsyncMock(side_effect=[before, after])
+
+        result = await SandboxTools(_context()).run_command("python3 net.py")
+
+        assert result.endswith(
+            "Files created or changed in the conversation folder: orders-net.xlsx (3.0 MB). "
+            "Attach one for the user with display_file."
+        )
+        assert "orders.xlsx (" not in result
 
     @pytest.mark.asyncio
     async def test_a_command_still_running_says_how_to_follow_it(self, sandbox: Any) -> None:

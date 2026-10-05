@@ -11,6 +11,7 @@ steps:
     description: Liest die Dateien, die der Benutzer an die Unterhaltung angehängt
       hat, und fügt ihren Text dem Kontext des Modells hinzu
 prompt:
+  kept_for_code: "\"%{filename}\" ist eine Tabelle, Präsentation oder CSV-Datei und wurde deshalb nicht als Text gelesen: Als Markdown verlöre sie ihre Struktur, und von einer grossen Datei passte nur ein Ausschnitt. Sie liegt unverändert im Gesprächsordner der Code-Sandbox (list_files zeigt ihren genauen Namen). Bearbeite sie mit run_command, zum Beispiel mit pandas; was du dort berechnest, umfasst die ganze Datei."
   context: |
     {% chat role="system" %}
     Die Benutzerin oder der Benutzer hat diesem Gespräch die folgenden Dateien angehängt. Wenn sich die Frage darauf bezieht, antworten Sie aus ihrem Inhalt und nennen Sie die verwendete Datei. Jede Datei ist ein Block `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ihre Abschnitte stehen unter ihren Überschriften.
@@ -18,10 +19,8 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: Nur die für die Frage relevantesten Teile von "%{filename}" passen in
-    Ihren Kontext. Teilen Sie mit, dass Ihre Antwort auf Auszügen dieser Datei beruht.
-  truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Teile
-    dem Benutzer mit, dass deine Antwort auf einem Teil dieser Datei beruht.
+  excerpted: "Nur die für die Frage relevantesten Teile von \"%{filename}\" passen in deinen Kontext. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf Auszügen dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht unvollständig."
+  truncated: "Nur der Anfang von \"%{filename}\" hat in deinen Kontext gepasst. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf einem Teil dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht unvollständig."
   unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
     gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
     werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren
