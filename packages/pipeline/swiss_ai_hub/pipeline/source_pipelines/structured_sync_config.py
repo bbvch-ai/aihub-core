@@ -37,7 +37,9 @@ class StructuredSyncConfig(SourcePipelineConfig):
             source_kind=Select(
                 label=LocaleString.from_i18n_path(f"{_I18N}.source_kind.label"),
                 help=LocaleString.from_i18n_path(f"{_I18N}.source_kind.help"),
-                options=[adapter.kind for adapter in adapters],
+                options=[{"label": adapter.display_name, "value": adapter.kind} for adapter in adapters],
+                option_label="label",
+                option_value="value",
                 ref=KIND_REF,
                 required=True,
             ),

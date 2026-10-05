@@ -45,5 +45,6 @@ class TestDemoRecords:
     def test_the_demo_offers_its_kind_in_the_form(self):
         elements = {element.name: element for element in DemoStructuredSyncConfig.as_form().to_formkit_form()}
 
-        assert elements["source_kind"].options == ["demo_records"]
+        [option] = elements["source_kind"].options
+        assert (option["value"], option["label"].en) == ("demo_records", "Demo records")
         assert elements["demo_records"].condition_if == "$get(structured_source_kind).value === 'demo_records'"

@@ -5,6 +5,7 @@ from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.group import Group
 from swiss_ai_hub.core.form.elements.select import Select
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import (
     KIND_REF,
@@ -45,7 +46,8 @@ class TestAnnouncedForm:
         elements = {element.name: element for element in FakeStructuredSyncConfig.as_form().to_formkit_form()}
 
         assert isinstance(elements["source_kind"], Select)
-        assert elements["source_kind"].options == ["fake_tracker"]
+        assert elements["source_kind"].options == [{"label": LocaleString(en="Fake tracker"), "value": "fake_tracker"}]
+        assert (elements["source_kind"].option_label, elements["source_kind"].option_value) == ("label", "value")
         assert elements["source_kind"].ref == KIND_REF
         group = elements["fake_tracker"]
         assert isinstance(group, Group)

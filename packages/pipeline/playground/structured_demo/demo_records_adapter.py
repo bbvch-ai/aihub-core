@@ -20,6 +20,7 @@ class DemoRecordsAdapter(AbstractStructuredSourceAdapter[DemoRecordsOptions]):
     """
 
     kind = "demo_records"
+    display_name = LocaleString(en="Demo records", de="Demo-Datensätze", fr="Enregistrements de démo", it="Record demo")
 
     @classmethod
     def options_form(cls) -> DemoRecordsOptions:

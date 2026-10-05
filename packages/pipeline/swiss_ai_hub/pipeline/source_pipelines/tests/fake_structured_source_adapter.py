@@ -27,6 +27,7 @@ class FakeTrackerOptions(Form):
 
 class FakeTrackerAdapter(AbstractStructuredSourceAdapter[FakeTrackerOptions]):
     kind = "fake_tracker"
+    display_name = LocaleString(en="Fake tracker")
 
     @classmethod
     def options_form(cls) -> FakeTrackerOptions:

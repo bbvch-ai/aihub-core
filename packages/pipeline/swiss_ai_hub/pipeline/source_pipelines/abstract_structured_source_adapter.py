@@ -3,6 +3,7 @@ from typing import Any, ClassVar
 
 from dlt.extract import DltSource
 from swiss_ai_hub.core.form import Form
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
@@ -21,6 +22,8 @@ class AbstractStructuredSourceAdapter[TOptions: Form](abc.ABC):
     MARKDOWN_COLUMN: ClassVar[str] = "_aihub_markdown"
 
     kind: ClassVar[str]
+    display_name: ClassVar[LocaleString]
+    """The application's name as the source-kind dropdown shows it; the kind token is what gets stored."""
     layout_version: ClassVar[int] = 1
     """Raise when ``to_record_file`` changes where or how records are written: the cursor alone would never rewrite
     the records it already passed."""
