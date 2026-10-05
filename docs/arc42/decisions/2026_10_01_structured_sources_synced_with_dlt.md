@@ -213,7 +213,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   metadata. Its asset-per-resource model is not used. If it ever gets in the way, calling `pipeline.run()` directly
   changes nothing else in this decision.
 - **Losing the state is safe but expensive.** Deleting a database's state file makes the next run re-read every record.
-  The ETag check keeps writes and announcements at zero.
+  The ETag check keeps writes and announcements at zero. It also happens without anyone deleting anything: a record
+  created at the source while a run is between its fetch and its listing is listed without a file (rule 6), so on a busy
+  source an occasional night is a full re-read.
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.
