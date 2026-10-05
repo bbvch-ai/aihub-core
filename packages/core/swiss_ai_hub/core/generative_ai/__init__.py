@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example import FewShotGuardExample
     from swiss_ai_hub.core.generative_ai.rerank.rerank_nodes import rerank_nodes
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
     from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import (
         LLMConfig,
         LLMParameter,
@@ -134,6 +135,7 @@ __all__ = [
     "EmlLoader",
     "ExtractedDocument",
     "EmbeddingModelConfig",
+    "EmbeddingQueryClamp",
     "FIGURES_DIRECTORY_NAME",
     "FewShotExample",
     "FewShotGuardExample",
@@ -210,6 +212,7 @@ _LAZY_IMPORTS = {
     "ExtractedDocument": "swiss_ai_hub.core.generative_ai.document.extraction.extracted_document",
     "UnsupportedDocumentTypeError": "swiss_ai_hub.core.generative_ai.document.extraction.unsupported_document_type_error",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
+    "EmbeddingQueryClamp": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp",
     "FIGURES_DIRECTORY_NAME": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
     "FewShotGuardExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example",

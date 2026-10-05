@@ -13,6 +13,7 @@ from llama_index.core.vector_stores.types import (
 
 from swiss_ai_hub.core.generative_ai.processors.min_max_score_normalizer import MinMaxScoreNormalizer
 from swiss_ai_hub.core.generative_ai.processors.score_scaler_post_processor import ScoreScalerPostProcessor
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
 from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
@@ -70,7 +71,7 @@ def retrieve_nodes(
             condition=FilterCondition.OR,
         )
 
-    embedding = embed_model.get_text_embedding(message)
+    embedding = embed_model.get_text_embedding(EmbeddingQueryClamp.clamp(message, model_name=embed_model.model_name))
 
     question_query = vector_store.query(
         VectorStoreQuery(
