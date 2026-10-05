@@ -1,9 +1,10 @@
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import dlt
-from dlt.extract import DltSource
+from dlt.extract import DltResource, DltSource
 from swiss_ai_hub.core.form import InputText
 from swiss_ai_hub.core.i18n import LocaleString
 
@@ -36,9 +37,13 @@ class DemoRecordsAdapter(AbstractStructuredSourceAdapter[DemoRecordsOptions]):
         records_file = options.records_file()
 
         @dlt.source(name="demo_records")
-        def demo_records():
+        def demo_records() -> DltResource:
             @dlt.resource(name="records", primary_key="key")
-            def records(updated=dlt.sources.incremental("updated", initial_value="1970-01-01T00:00:00Z")):
+            def records(
+                updated: dlt.sources.incremental[str] = dlt.sources.incremental(
+                    "updated", initial_value="1970-01-01T00:00:00Z"
+                ),
+            ) -> Iterator[list[dict[str, Any]]]:
                 yield [record for record in self._read(records_file) if record["updated"] >= updated.last_value]
 
             return records

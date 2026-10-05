@@ -1,9 +1,10 @@
 """A structured source kind for tests: an issue tracker whose records live in memory, keyed by base URL."""
 
+from collections.abc import Iterator
 from typing import Annotated, Any
 
 import dlt
-from dlt.extract import DltSource
+from dlt.extract import DltResource, DltSource
 from pydantic import Field
 from swiss_ai_hub.core.form import Form, InputText, Password
 from swiss_ai_hub.core.i18n import LocaleString
@@ -42,9 +43,13 @@ class FakeTrackerAdapter(AbstractStructuredSourceAdapter[FakeTrackerOptions]):
         records = FAKE_TRACKERS[options.base_url]
 
         @dlt.source(name="fake_tracker")
-        def fake_tracker():
+        def fake_tracker() -> DltResource:
             @dlt.resource(name="issues", primary_key="key")
-            def issues(updated=dlt.sources.incremental("updated", initial_value="1970-01-01T00:00:00Z")):
+            def issues(
+                updated: dlt.sources.incremental[str] = dlt.sources.incremental(
+                    "updated", initial_value="1970-01-01T00:00:00Z"
+                ),
+            ) -> Iterator[list[dict[str, Any]]]:
                 yield [record for record in records if record["updated"] >= updated.last_value]
 
             return issues
