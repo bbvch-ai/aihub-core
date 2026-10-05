@@ -662,8 +662,8 @@ knowledge:
     source:
       label: Quelle
       placeholder: Wählen Sie, woher die Dokumente kommen
-      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron;
-        jeder Ordner der obersten Ebene wird zu einem Namespace.
+      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron.
+        Ihre Beschreibung sagt, wie der Inhalt in Namespaces gegliedert wird.
       manual_upload:
         label: Manueller Upload
         description: Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.

@@ -662,8 +662,8 @@ knowledge:
     source:
       label: Source
       placeholder: Choisissez d'où proviennent les documents
-      help: Un pipeline source maintient cette base synchronisée avec un système externe
-        ; chaque dossier de premier niveau devient un espace de noms.
+      help: Un pipeline source maintient cette base synchronisée avec un système externe.
+        Sa description indique comment le contenu est réparti en espaces de noms.
       manual_upload:
         label: Téléversement manuel
         description: Les documents sont téléversés à la main dans des espaces de noms

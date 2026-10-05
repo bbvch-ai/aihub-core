@@ -654,8 +654,8 @@ knowledge:
     source:
       label: Source
       placeholder: Select where documents come from
-      help: A source pipeline keeps this database in sync with an external system;
-        each top-level folder becomes a namespace.
+      help: A source pipeline keeps this database in sync with an external system.
+        Its description says how the content is grouped into namespaces.
       manual_upload:
         label: Manual upload
         description: Documents are uploaded by hand into namespaces you create.
