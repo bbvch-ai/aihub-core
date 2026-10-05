@@ -1204,6 +1204,10 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
+      # The openai SDK defers building its pydantic models. LiteLLM copies the upstream logprobs object as-is
+      # into a stream's final chunk, and serializing an unbuilt model there fails with "'MockValSer' object
+      # cannot be converted to 'SchemaSerializer'", so every logprobs stream that ends with "stop" breaks.
+      DEFER_PYDANTIC_BUILD: 'false'
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}
