@@ -22,7 +22,7 @@ prompt:
 tool:
   label: "Rechercher dans nos connaissances"
   approval_summary: "Rechercher « {query} » dans nos connaissances"
-  description: "Recherche dans nos collections de connaissances et renvoie les passages les plus pertinents, avec des identifiants à citer. Utilise-le lorsque la réponse peut se trouver dans les documents de l'organisation. Collections disponibles :\n%{collections}"
+  description: "Recherche dans nos collections de connaissances et renvoie les sections de documents les plus pertinentes, avec des identifiants à citer. Utilise-le lorsque la question peut trouver réponse dans les documents de l'organisation, comme des directives, des manuels, des rapports ou des contrats. Il renvoie des extraits, pas des documents entiers : pour une question large, cherche plusieurs fois avec des requêtes précises. Les fichiers joints par l'utilisateur ne sont pas dans ces collections ; lis-les avec l'outil des fichiers joints. Un résultat vide signifie que les collections ne couvrent pas la question. Collections disponibles :\n%{collections}"
   query: "Ce qu'il faut rechercher, sous forme de question autonome courte ou de mots-clés."
   collections: "Les collections à consulter, par identifiant ; omettre pour les consulter toutes."
 config:
