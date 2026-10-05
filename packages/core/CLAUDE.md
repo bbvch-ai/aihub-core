@@ -67,7 +67,8 @@ packages/core/swiss_ai_hub/core/
 │   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
-│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents
+│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents;
+│   │                                #   KnowledgeContentSearch: exact and regex search over their parsed text
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
@@ -538,7 +539,7 @@ Real-time event emission for streaming LLM output to the UI:
 | `memory/`              | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
 | `retrieval/`           | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
 | `retrievers/`          | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
-| `knowledge_documents/` | Whole-document read access            | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`                                                                                                                                                                                              |
+| `knowledge_documents/` | Whole-document read access            | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                           |
 | `rerank/`              | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
 | `guards/`              | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
 | `processors/`          | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
@@ -564,6 +565,26 @@ exist or is being deleted fails the whole call with `KnowledgeCollectionNotFound
 range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
 passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
 against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
+
+`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_glob=, offset=, limits=)` finds
+every fully ingested document whose parsed text contains an exact term or matches a regex. Unlike vector or BM25
+retrieval it is exhaustive: pages of `max_documents` (default 20) are walked with `next_offset` until it is None. Each
+`KnowledgeContentMatch` carries the summary, the first `max_lines_per_document` (5) matching lines, located by
+`start`/`end` offsets that `load_document` takes, and the total `matching_line_count`. It has the same trust rule and
+collection errors as the reader. How it works:
+
+- **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
+  passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
+- **Two engines.** The database (PCRE2, prefixed `(*UCP)` so `\w`/`\b` handle umlauts) only finds candidates; Python's
+  `regex` decides the lines, and a candidate without one is dropped. A pattern PCRE2 rejects raises
+  `InvalidSearchPatternError`; so do empty, empty-matching, over-500-character and fuzzy (`{e<=1}`) queries.
+- **Cost.** The backend decompresses the whole row, both text copies included, for every filter operator, projection and
+  sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
+  and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
+  s on PostgreSQL's default pglz (#1024).
+- **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
+  not by a class such as `[üu]`. `$` does not match before `\r\n`. PCRE2 reports hitting its backtracking limit as no
+  match, so ambiguous nested repetition such as `(x+x+)+` can silently miss documents.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
