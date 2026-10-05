@@ -111,25 +111,30 @@ configured, secured or ingested changes.**
 
    - sync the changed records
    - list every current path
-   - remove orphans, reusing `fetch_bucket_files_to_remove`, `delete_data_lake_files_from_bucket` and
-     `announce_removed_files` unchanged
+   - reconcile: the files to remove are those the bucket holds, minus the listed paths, minus the files this run wrote
+   - remove and announce them, reusing `delete_data_lake_files_from_bucket` and `announce_removed_files` unchanged
 
    dlt runs through dagster-dlt's `DagsterDltResource.run(context, dlt_source=…, dlt_pipeline=…)`, which the integration
    documents for ops. Its materialization events name an asset per dlt resource, shared by all databases, so the op
    folds their metadata (`rows_loaded`, `jobs`, timings) into the run's own asset instead of emitting them.
 
-4. **The destination writes only what changed.** For each file it compares a SHA-256 of the content with the
-   `content-sha256` metadata of the object already in the bucket. It writes only on a difference, then announces the
-   written keys through `notify_source_updated`. dlt delivers at least once, since a failed load job is retried and a
-   lost state re-delivers everything, so this comparison is what makes "no changes writes nothing" hold.
+4. **The destination writes only what changed.** For each file it compares the MD5 of the content with the ETag of the
+   object already in the bucket. It writes only on a difference, then announces the written keys through
+   `notify_source_updated`. dlt delivers at least once, since a failed load job is retried and a lost state re-delivers
+   everything, so this comparison is what makes "no changes writes nothing" hold. The ETag is used rather than a hash of
+   our own kept as object metadata, because the ingestion pipeline copies a file's metadata into its document and embeds
+   it with every chunk. A multipart ETag is not an MD5 and never matches, so such a file is simply rewritten; records
+   are far below the multipart threshold.
 
-5. **State is one small file per database, kept by us.** Each run creates its dlt pipeline as `structured_{bucket}` in a
+5. **State is one small file per database, kept by us.** Each run creates its dlt pipeline as `{source}_{bucket}` in a
    fresh temporary working directory. It restores `state.json` (about 1 KB, holding the incremental cursors) from
-   `s3://dagster/structured/state/{bucket}/state.json` before the run, and writes it back **only after the whole run has
-   succeeded**. A fingerprint of the non-secret configuration is kept beside it. When the scope changes, for example a
+   `s3://{bucket}/.{source}_dagster/state.json` before the run, and writes it back **only after the sync has
+   succeeded**, and only while the database still uses this source. The file lives in the database's own bucket, not in
+   the `dagster` bucket: that bucket expires its objects after a day, data-lake listings skip `.…dagster` folders, and
+   teardown deletes the file together with the bucket, so no cleanup sensor is needed. A fingerprint of the non-secret
+   configuration and the adapter's `layout_version` is kept with it. When the scope or the layout changes, for example a
    project key is added, the run does a full refresh, because the old cursor would skip everything older in the new
-   scope. Rotating credentials keeps the state. A cleanup sensor deletes the state of databases that no longer use this
-   source.
+   scope. Rotating credentials keeps the state.
 
 6. **Deletions are found by listing, after the sync.** dlt has no way to detect a record deleted at the source when it
    loads incrementally. After every successful sync, the adapter lists every path currently in scope, and whatever the
@@ -143,17 +148,19 @@ configured, secured or ingested changes.**
 8. **Switching a database between two sources needs the same acknowledgement as giving a manual database a source.**
    With two source types, rclone → structured is a real switch, and the new source's first removal pass deletes every
    file the old one wrote. `PUT /knowledge/databases/{database}/source` therefore requires `replace_existing_documents`
-   on any change of source, not only from manual upload.
+   on any change of source while the database holds documents, not only from manual upload, and the UI asks before it
+   sends it. Editing the current source's settings saves without asking, since the admin is changing that source's own
+   scope; switching back to manual upload removes nothing and needs nothing.
 
 ### Rules that are not optional
 
-Rules 1 and 2 guard failures the spike reproduced. Rules 3 to 5 follow from how Dagster stores outputs and from the
-order of the steps. All five failures are silent: the run succeeds, and the damage shows up later as missing documents,
-a database emptied by mistake, or a full re-read nobody notices.
+Rules 1 and 2 guard failures the spike reproduced. Rules 3 to 7 follow from how Dagster stores outputs, from the order
+of the steps and from the state being one file. All seven failures are silent: the run succeeds, and the damage shows up
+later as missing documents, a database emptied by mistake, or a full re-read nobody notices.
 
 1. **Turn off `restore_from_destination` on every pipeline.** When it is on, which is dlt's default,
    `DagsterDltResource` calls `pipeline.drop()` before every run. That deletes the state just restored, and every run
-   silently re-reads the whole source. The hash check hides it: nothing is written, but the run fetches everything.
+   silently re-reads the whole source. The ETag check hides it: nothing is written, but the run fetches everything.
 
 2. **Back up the state only after the run has succeeded.** dlt advances the cursor in the local `state.json` during
    extraction, before loading. In the spike, a load that failed left the local cursor past two records that never
@@ -169,7 +176,15 @@ a database emptied by mistake, or a full re-read nobody notices.
    an orphan, and never comes back, because the cursor has already moved past it.
 
 5. **A failed listing raises, it never returns empty.** An empty listing removes every file in the database. Wrong
-   credentials must fail the run, as they already do in the sync step, before any removal.
+   credentials must fail the run, as they already do in the sync step, before any removal. An empty listing while the
+   bucket holds files fails the run too.
+
+6. **A listed record without a file discards the state.** The cursor is then ahead of the data, after a lost file, a
+   source switch or a layout change, and would never fetch that record again. The next run re-reads everything, and the
+   ETag check keeps it from rewriting what is already there.
+
+7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds an
+   earlier sync of the same database still running gives way.
 
 ## Consequences
 
@@ -189,17 +204,18 @@ a database emptied by mistake, or a full re-read nobody notices.
 - **dlt brings no ready-made Jira or Confluence connector.** The verified Jira source has no incremental cursor, and
   there is no verified Confluence source. #1954 and #1955 build their adapters on dlt's REST API source, which declares
   pagination, authentication and incremental cursors.
-- **A sync is daily.** This is inherited from the source-pipelines ADR. An on-demand trigger is still a follow-up, and
-  it will need a guard against two concurrent runs of the same database, which would race on its state.
+- **A sync is daily.** This is inherited from the source-pipelines ADR. Creating a database or changing its source
+  triggers nothing, so a new database stays empty until the next scheduled run. A first-sync or on-demand trigger is a
+  follow-up; the guard against two concurrent runs of the same database (rule 7) is already in place for it.
 - **Deletion detection costs a full key listing per database per run**, on top of the incremental fetch. For Jira this
   is a paged search that returns only keys, and it is the price of driver 5.
 - **dagster-dlt contributes little in this shape.** It runs the pipeline, drops pending load packages and produces the
   metadata. Its asset-per-resource model is not used. If it ever gets in the way, calling `pipeline.run()` directly
   changes nothing else in this decision.
-- **Losing the state is safe but expensive.** Deleting the state prefix in the `dagster` bucket makes the next run
-  re-read every record. The hash check keeps writes and announcements at zero.
+- **Losing the state is safe but expensive.** Deleting a database's state file makes the next run re-read every record.
+  The ETag check keeps writes and announcements at zero.
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
-  batch each time, before the run fails. The hash check makes the re-delivery harmless. A permanent error should raise
+  batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.
 - **The code location needs outbound internet access.** The rclone code location reaches its sources through the rclone
   daemon and sits only on `backend`, `data` and `storage`. This one calls the source APIs itself, so it also joins

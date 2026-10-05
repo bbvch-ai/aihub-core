@@ -404,7 +404,8 @@ source nothing can be configured for. That is the shipped pipeline until the Jir
 
 **Adding a source kind** takes:
 
-- an `AbstractStructuredSourceAdapter[TOptions]` subclass with its `kind`
+- an `AbstractStructuredSourceAdapter[TOptions]` subclass with its `kind` and its `display_name` (what the kind dropdown
+  shows; the token is what gets stored)
 - an options `Form` whose every element carries `condition_if=Adapter.shown_for(kind)`
 - one field named after the kind on `StructuredSyncConfig`, and the adapter in its `adapters()`
 - labels under `lib.source_pipelines.structured.config.*`
@@ -433,9 +434,10 @@ database, tagged `aihub/bucket`. The single asset `[{source}_source_to_datalake,
 Steps hand their values over per run (`storage/{run_id}/…`). Never split them into assets: an asset's value is stored
 under its key, which every database shares.
 
-**Writes.** `MarkdownDataLakeDestination` writes a file only when its SHA-256 differs from the `content-sha256` metadata
-on the stored object, then announces the batch through `notify_source_updated`. dlt delivers at least once, so this is
-what keeps a run with no changes from writing or announcing anything.
+**Writes.** `MarkdownDataLakeDestination` writes a file only when the MD5 of its content differs from the stored
+object's ETag, then announces the batch through `notify_source_updated`. dlt delivers at least once, so this is what
+keeps a run with no changes from writing or announcing anything. Don't replace it with a hash kept as object metadata:
+ingestion copies every metadata key of a file into its document and embeds it with each chunk.
 
 Records become files in the extract step (`add_map` in `file_source`), because dlt coerces ISO timestamps into datetimes
 before loading. The mapped rows keep every field of the record, so the cursor and the primary key still resolve.
