@@ -24,6 +24,7 @@ def _client(present: list[str], placed: dict[str, str] | None) -> Any:
     client.list_files = AsyncMock(return_value={"entries": [{"name": name} for name in present]})
     client.upload = AsyncMock(return_value={})
     client.write_file = AsyncMock(return_value={})
+    client.mkdir = AsyncMock(return_value={})
     return client
 
 
@@ -63,11 +64,13 @@ async def test_a_file_whose_name_is_taken_is_placed_beside_the_other() -> None:
 
 
 @pytest.mark.asyncio
-async def test_nothing_to_place_touches_nothing() -> None:
+async def test_nothing_to_place_still_creates_the_folder_commands_run_in() -> None:
     client = _client(present=[], placed=None)
 
     assert await ConversationAttachments(client, THREAD).place({}, _read) == {}
+    client.mkdir.assert_awaited_once_with(FOLDER)
     client.view.assert_not_awaited()
+    client.upload.assert_not_awaited()
 
 
 @pytest.mark.asyncio

@@ -36,12 +36,10 @@ prompt:
     could not be picked out. Tell the user that your answer is not based on those
     pages alone.
 tool:
+  structured_hint: "(spreadsheet, presentation or CSV: work on it with code when a code tool is offered)"
   label: Read attached files
   approval_summary: Read the attached files
-  description: "Reads files the user attached to this conversation and returns their\
-    \ text, with ids to cite. A file too large to read whole returns the sections\
-    \ most relevant to the query. To read certain pages of a document, give first_page\
-    \ and last_page. Attached files:\n%{files}"
+  description: "Reads files the user attached to this conversation and returns their text converted to Markdown, with ids to cite. Read documents such as PDF and Word files here. Spreadsheets, presentations and CSV files lose their structure as Markdown: when a code tool is offered, work on them with code instead, where every attached file lies unchanged in the conversation folder. A file too large to read whole returns the sections most relevant to the query. To read certain pages of a document, give first_page and last_page. Attached files:\n%{files}"
   files: The files to read, by id; leave out to read all of them.
   query: What you are looking for in the files, so a long file keeps the sections
     about it.
