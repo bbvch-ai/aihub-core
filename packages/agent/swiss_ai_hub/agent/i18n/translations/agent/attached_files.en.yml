@@ -11,7 +11,11 @@ steps:
     description: Reads the files the user attached to the conversation and adds their
       text to the model's context
 prompt:
-  kept_for_code: "\"%{filename}\" is a spreadsheet, presentation or CSV file, so it was not read as text: as Markdown it would lose its structure, and of a large file only a slice would fit. It lies unchanged in the conversation folder of the code sandbox (list_files shows its exact name). Work on it with run_command, for example with pandas; what you compute there covers the whole file."
+  kept_for_code: '"%{filename}" is a spreadsheet, presentation or CSV file, so it
+    was not read as text: as Markdown it would lose its structure, and of a large
+    file only a slice would fit. It lies unchanged in the conversation folder of the
+    code sandbox (list_files shows its exact name). Work on it with run_command, for
+    example with pandas; what you compute there covers the whole file.'
   context: |
     {% chat role="system" %}
     The user attached the following files to this conversation. When the question refers to them, answer from their content and name the file you used. Each file is a `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>` block, its sections under their headings.
@@ -19,8 +23,13 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: "Only the parts of \"%{filename}\" most relevant to the question fit into your context. If your answer rests on this text, tell the user it is based on excerpts of this file; results you compute from the whole file with code are not partial."
-  truncated: "Only the beginning of \"%{filename}\" fit into your context. If your answer rests on this text, tell the user it is based on part of this file; results you compute from the whole file with code are not partial."
+  excerpted: Only the parts of "%{filename}" most relevant to the question fit into
+    your context. If your answer rests on this text, tell the user it is based on
+    excerpts of this file; results you compute from the whole file with code are not
+    partial.
+  truncated: Only the beginning of "%{filename}" fit into your context. If your answer
+    rests on this text, tell the user it is based on part of this file; results you
+    compute from the whole file with code are not partial.
   unreadable: The user attached "%{filename}", but it could not be read (%{error}).
     Tell the user that this file could not be read, and suggest attaching it in another
     format or pasting its text.
@@ -35,10 +44,16 @@ prompt:
     could not be picked out. Tell the user that your answer is not based on those
     pages alone.
 tool:
-  structured_hint: "(work on it with code)"
+  structured_hint: (work on it with code)
   label: Read attached files
   approval_summary: Read the attached files
-  description: "Reads files the user attached to this conversation and returns their text converted to Markdown, with ids to cite. Read documents such as PDF and Word files here. Spreadsheets, presentations and CSV files lose their structure as Markdown: when a code tool is offered, work on them with code instead, where every attached file lies unchanged in the conversation folder. A file too large to read whole returns the sections most relevant to the query. To read certain pages of a document, give first_page and last_page. Attached files:\n%{files}"
+  description: "Reads files the user attached to this conversation and returns their\
+    \ text converted to Markdown, with ids to cite. Read documents such as PDF and\
+    \ Word files here. Spreadsheets, presentations and CSV files lose their structure\
+    \ as Markdown: when a code tool is offered, work on them with code instead, where\
+    \ every attached file lies unchanged in the conversation folder. A file too large\
+    \ to read whole returns the sections most relevant to the query. To read certain\
+    \ pages of a document, give first_page and last_page. Attached files:\n%{files}"
   files: The files to read, by id; leave out to read all of them.
   query: What you are looking for in the files, so a long file keeps the sections
     about it.

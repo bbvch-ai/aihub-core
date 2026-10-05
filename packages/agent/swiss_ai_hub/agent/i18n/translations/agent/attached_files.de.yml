@@ -11,7 +11,12 @@ steps:
     description: Liest die Dateien, die der Benutzer an die Unterhaltung angehängt
       hat, und fügt ihren Text dem Kontext des Modells hinzu
 prompt:
-  kept_for_code: "\"%{filename}\" ist eine Tabelle, Präsentation oder CSV-Datei und wurde deshalb nicht als Text gelesen: Als Markdown verlöre sie ihre Struktur, und von einer grossen Datei passte nur ein Ausschnitt. Sie liegt unverändert im Gesprächsordner der Code-Sandbox (list_files zeigt ihren genauen Namen). Bearbeite sie mit run_command, zum Beispiel mit pandas; was du dort berechnest, umfasst die ganze Datei."
+  kept_for_code: '"%{filename}" ist eine Tabelle, Präsentation oder CSV-Datei und
+    wurde deshalb nicht als Text gelesen: Als Markdown verlöre sie ihre Struktur,
+    und von einer grossen Datei passte nur ein Ausschnitt. Sie liegt unverändert im
+    Gesprächsordner der Code-Sandbox (list_files zeigt ihren genauen Namen). Bearbeite
+    sie mit run_command, zum Beispiel mit pandas; was du dort berechnest, umfasst
+    die ganze Datei.'
   context: |
     {% chat role="system" %}
     Die Benutzerin oder der Benutzer hat diesem Gespräch die folgenden Dateien angehängt. Wenn sich die Frage darauf bezieht, antworten Sie aus ihrem Inhalt und nennen Sie die verwendete Datei. Jede Datei ist ein Block `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ihre Abschnitte stehen unter ihren Überschriften.
@@ -19,8 +24,14 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: "Nur die für die Frage relevantesten Teile von \"%{filename}\" passen in deinen Kontext. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf Auszügen dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht unvollständig."
-  truncated: "Nur der Anfang von \"%{filename}\" hat in deinen Kontext gepasst. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf einem Teil dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht unvollständig."
+  excerpted: Nur die für die Frage relevantesten Teile von "%{filename}" passen in
+    deinen Kontext. Beruht deine Antwort auf diesem Text, teile dem Benutzer mit,
+    dass sie auf Auszügen dieser Datei beruht; was du mit Code aus der ganzen Datei
+    berechnest, ist nicht unvollständig.
+  truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Beruht
+    deine Antwort auf diesem Text, teile dem Benutzer mit, dass sie auf einem Teil
+    dieser Datei beruht; was du mit Code aus der ganzen Datei berechnest, ist nicht
+    unvollständig.
   unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
     gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
     werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren
@@ -36,10 +47,18 @@ prompt:
     gefragten Seiten nicht herausgesucht werden. Teile dem Benutzer mit, dass deine
     Antwort nicht nur auf diesen Seiten beruht.
 tool:
-  structured_hint: "(mit Code bearbeiten)"
+  structured_hint: (mit Code bearbeiten)
   label: Angehängte Dateien lesen
   approval_summary: Die angehängten Dateien lesen
-  description: "Liest Dateien, die der Benutzer an dieses Gespräch angehängt hat, und gibt ihren Text in Markdown umgewandelt mit zitierbaren IDs zurück. Dokumente wie PDF- und Word-Dateien hier lesen. Tabellen, Präsentationen und CSV-Dateien verlieren als Markdown ihre Struktur: Steht ein Code-Werkzeug zur Verfügung, sie stattdessen mit Code bearbeiten, wo jede angehängte Datei unverändert im Ordner des Gesprächs liegt. Von einer Datei, die zu gross ist, um sie ganz zu lesen, kommen die zur Anfrage passendsten Abschnitte. Um bestimmte Seiten eines Dokuments zu lesen, first_page und last_page angeben. Angehängte Dateien:\n%{files}"
+  description: "Liest Dateien, die der Benutzer an dieses Gespräch angehängt hat,\
+    \ und gibt ihren Text in Markdown umgewandelt mit zitierbaren IDs zurück. Dokumente\
+    \ wie PDF- und Word-Dateien hier lesen. Tabellen, Präsentationen und CSV-Dateien\
+    \ verlieren als Markdown ihre Struktur: Steht ein Code-Werkzeug zur Verfügung,\
+    \ sie stattdessen mit Code bearbeiten, wo jede angehängte Datei unverändert im\
+    \ Ordner des Gesprächs liegt. Von einer Datei, die zu gross ist, um sie ganz zu\
+    \ lesen, kommen die zur Anfrage passendsten Abschnitte. Um bestimmte Seiten eines\
+    \ Dokuments zu lesen, first_page und last_page angeben. Angehängte Dateien:\n\
+    %{files}"
   files: Die zu lesenden Dateien nach ID; weglassen, um alle zu lesen.
   query: Was du in den Dateien suchst, damit von einer langen Datei die passenden
     Abschnitte bleiben.

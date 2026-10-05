@@ -12,17 +12,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from llama_index.core.utils import get_tokenizer
 
-from swiss_ai_hub.core.infrastructure.mem0.mem0_service import (
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import (
     MINIMUM_EMBEDDING_MAX_INPUT_TOKENS,
-    SEARCH_QUERY_BUDGET_SAFETY_FACTOR,
-    Mem0Service,
+    QUERY_BUDGET_SAFETY_FACTOR,
 )
+from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 
+CLAMP_MODULE = "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp"
 LIMIT = 64
-EFFECTIVE_LIMIT = int(LIMIT * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
+EFFECTIVE_LIMIT = int(LIMIT * QUERY_BUDGET_SAFETY_FACTOR)
 
 
 def _build_service(max_search_query_tokens: int | None) -> Mem0Service:
@@ -92,7 +93,7 @@ async def test_oversized_whitespace_only_query_does_not_crash(mem0_service, whit
 async def test_truncation_logs_warning_with_original_and_effective_lengths(mem0_service, caplog):
     query = "Document content sentence. " * 200
 
-    with caplog.at_level(logging.WARNING, logger="swiss_ai_hub.core.infrastructure.mem0.mem0_service"):
+    with caplog.at_level(logging.WARNING, logger=CLAMP_MODULE):
         await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     record = next(r for r in caplog.records if "truncating" in r.message)
@@ -106,7 +107,7 @@ async def test_truncation_logs_warning_with_original_and_effective_lengths(mem0_
 async def test_normal_query_passes_through_identical(mem0_service, caplog):
     query = "What is the retention period?"
 
-    with caplog.at_level(logging.WARNING, logger="swiss_ai_hub.core.infrastructure.mem0.mem0_service"):
+    with caplog.at_level(logging.WARNING, logger=CLAMP_MODULE):
         await mem0_service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     assert _forwarded_query(mem0_service) is query
@@ -147,50 +148,29 @@ async def test_query_under_the_default_window_is_clamped_to_a_smaller_resolved_w
     small_window = 512
     query = "Document content sentence. " * 200
 
-    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
+    with patch(f"{CLAMP_MODULE}.EmbeddingModelConfig") as config_cls:
         config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": small_window}}
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
 
     forwarded = _forwarded_query(service)
-    assert len(get_tokenizer()(query)) < int(8192 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
+    assert len(get_tokenizer()(query)) < int(8192 * QUERY_BUDGET_SAFETY_FACTOR)
     assert forwarded is not query
-    assert len(get_tokenizer()(forwarded)) <= int(small_window * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
+    assert len(get_tokenizer()(forwarded)) <= int(small_window * QUERY_BUDGET_SAFETY_FACTOR)
 
 
 @pytest.mark.asyncio
 async def test_query_within_the_minimum_window_budget_skips_resolution():
     service = _build_service(max_search_query_tokens=None)
-    budget = int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
+    budget = int(MINIMUM_EMBEDDING_MAX_INPUT_TOKENS * QUERY_BUDGET_SAFETY_FACTOR)
     query = "word " * budget
     while len(get_tokenizer()(query)) > budget:
         query = query[:-5]
 
-    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
+    with patch(f"{CLAMP_MODULE}.EmbeddingModelConfig") as config_cls:
         await service.search(query=query, owner_id="owner", memory_type=MemoryType.USER_MEMORY)
         config_cls.assert_not_called()
 
     assert _forwarded_query(service) is query
-
-
-def test_lazy_default_resolves_the_model_window():
-    service = _build_service(max_search_query_tokens=None)
-    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
-        config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": 100}}
-        assert service._effective_query_token_limit == int(100 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
-
-
-def test_null_model_window_falls_back_to_default():
-    service = _build_service(max_search_query_tokens=None)
-    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
-        config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": None}}
-        assert service._effective_query_token_limit == int(8192 * SEARCH_QUERY_BUDGET_SAFETY_FACTOR)
-
-
-def test_explicit_limit_never_resolves_model_info():
-    service = _build_service(max_search_query_tokens=LIMIT)
-    with patch("swiss_ai_hub.core.infrastructure.mem0.mem0_service.EmbeddingModelConfig") as config_cls:
-        assert service._effective_query_token_limit == EFFECTIVE_LIMIT
-        config_cls.assert_not_called()
 
 
 def test_settings_field_defaults_to_none():
