@@ -22,7 +22,7 @@ prompt:
 tool:
   label: "Unser Wissen durchsuchen"
   approval_summary: "Unser Wissen nach «{query}» durchsuchen"
-  description: "Durchsucht unsere Wissenssammlungen und liefert die relevantesten Dokumentabschnitte mit zitierbaren IDs. Verwende es, wenn die Frage mit den Dokumenten der Organisation beantwortet werden kann. Verfügbare Sammlungen:\n%{collections}"
+  description: "Durchsucht unsere Wissenssammlungen und liefert die relevantesten Dokumentabschnitte mit zitierbaren IDs. Verwende es, wenn die Frage mit den Dokumenten der Organisation beantwortet werden kann, etwa Richtlinien, Handbüchern, Berichten oder Verträgen. Es liefert Auszüge, nicht ganze Dokumente: Suche bei einer breiten Frage mehrmals mit engen Suchanfragen. Dateien, die der Benutzer angehängt hat, sind nicht in diesen Sammlungen; lies sie mit dem Werkzeug für angehängte Dateien. Ein leeres Ergebnis heisst, dass die Sammlungen die Frage nicht abdecken. Verfügbare Sammlungen:\n%{collections}"
   query: "Wonach gesucht wird, als kurze eigenständige Frage oder Stichworte."
   collections: "Die zu durchsuchenden Sammlungen nach Kennung; weglassen, um alle zu durchsuchen."
 config:
