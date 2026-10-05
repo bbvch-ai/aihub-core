@@ -26,6 +26,9 @@ class EmbeddingQueryClamp:
     """
     Fits a query into the embedding model's window. Chat clients inline whole attached documents into the
     user message, and an embedding model rejects an oversized input with a 400 instead of truncating it.
+
+    Also guards rerank calls: the window is resolved by model name, and a reranker spends its own window on
+    the query plus one document per pair, so the clamped query must leave room for a chunk.
     """
 
     @staticmethod
