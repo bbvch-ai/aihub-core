@@ -32,9 +32,11 @@ def test_a_spent_budget_raises_with_advice() -> None:
 def test_a_runaway_pattern_is_stopped_by_one_budget_for_all_lines() -> None:
     pattern = KnowledgeContentPattern(r"^(a|a)+$", is_regex=True)
     text = "\n".join("a" * 40 + "b" for _ in range(200))
+    limits = KnowledgeContentSearchLimits()
+    budget = KnowledgeSearchBudget(1)
     started = time.monotonic()
 
     with pytest.raises(KnowledgeContentSearchTimeoutError):
-        pattern.matching_lines(text, KnowledgeContentSearchLimits(), KnowledgeSearchBudget(1))
+        pattern.matching_lines(text, limits, budget)
 
     assert time.monotonic() - started < 1.5
