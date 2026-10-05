@@ -1,78 +1,101 @@
 ---
 steps:
   condense:
-    name: "Gespräch verdichten"
-    description: "Verdichtet frühere Werkzeugergebnisse und Gesprächsrunden, wenn das Gespräch nicht mehr in den Kontext des Modells passt"
+    name: Gespräch verdichten
+    description: Verdichtet frühere Werkzeugergebnisse und Gesprächsrunden, wenn das
+      Gespräch nicht mehr in den Kontext des Modells passt
   start:
-    name: "Werkzeuge anbieten"
-    description: "Ermittelt, welche Werkzeuge das Modell für diese Nachricht nutzen darf"
+    name: Werkzeuge anbieten
+    description: Ermittelt, welche Werkzeuge das Modell für diese Nachricht nutzen
+      darf
   decide:
-    name: "Über Werkzeuge entscheiden"
-    description: "Das Modell antwortet oder wählt die Werkzeuge, die bei der Antwort helfen"
+    name: Über Werkzeuge entscheiden
+    description: Das Modell antwortet oder wählt die Werkzeuge, die bei der Antwort
+      helfen
   gate:
-    name: "Freigabe prüfen"
-    description: "Lässt einen Werkzeugaufruf laufen oder fragt zuerst den Benutzer"
+    name: Freigabe prüfen
+    description: Lässt einen Werkzeugaufruf laufen oder fragt zuerst den Benutzer
   approval:
-    name: "Freigabe anwenden"
-    description: "Führt einen freigegebenen Aufruf aus oder teilt dem Modell mit, dass er abgelehnt wurde"
+    name: Freigabe anwenden
+    description: Führt einen freigegebenen Aufruf aus oder teilt dem Modell mit, dass
+      er abgelehnt wurde
   run_function:
-    name: "Werkzeug ausführen"
-    description: "Führt ein vom Modell gewähltes Werkzeug aus"
+    name: Werkzeug ausführen
+    description: Führt ein vom Modell gewähltes Werkzeug aus
   join:
-    name: "Werkzeugergebnisse sammeln"
-    description: "Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück"
+    name: Werkzeugergebnisse sammeln
+    description: Gibt dem Modell alle Ergebnisse seiner Werkzeugaufrufe zurück
 prompt:
   cut_result: "\n[…gekürzt, damit es in den Kontext passt]"
-  condense_result: "Verdichte das folgende Werkzeugergebnis auf das, was für die vorangehende Anfrage des Benutzers zählt. Übernimm Fakten, Zahlen, Namen, Daten und Dokument-IDs wie [s3f9a1c] genau so, wie sie stehen. Lass alles andere weg. Höchstens %{words} Wörter, ohne Einleitung."
-  condensed_result: "[Verdichtetes früheres Ergebnis] %{summary}"
-  condense_turns: "Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung."
-  condensed_turns: "Zusammenfassung des bisherigen Gesprächs: %{summary}"
-  dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst.]"
-  limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
-  no_tools: "Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche also nicht, eines aufzurufen. Antworte jetzt mit dem Gesprächsverlauf und dem, was du bereits weisst, und sag es, wenn die Antwort von Dokumenten abhängt, die du nicht durchsuchen konntest."
-  unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."
-  declined: "Nicht ausgeführt: Der Benutzer hat %{tool} abgelehnt. Beginne deine Antwort damit, dass du %{tool} nicht verwendet hast, weil der Benutzer es abgelehnt hat, antworte dann mit dem, was du bereits weisst, und biete an, es zu verwenden, wenn er es erlaubt. Die Information kann durchaus vorhanden sein; sag nie, dass du keinen Zugriff darauf hast."
+  condense_result: Verdichte das folgende Werkzeugergebnis auf das, was für die vorangehende
+    Anfrage des Benutzers zählt. Übernimm Fakten, Zahlen, Namen, Daten und Dokument-IDs
+    wie [s3f9a1c] genau so, wie sie stehen. Lass alles andere weg. Höchstens %{words}
+    Wörter, ohne Einleitung.
+  condensed_result: '[Verdichtetes früheres Ergebnis] %{summary}'
+  condense_turns: 'Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen
+    kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden
+    wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie
+    [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung.'
+  condensed_turns: 'Zusammenfassung des bisherigen Gesprächs: %{summary}'
+  dropped_result: '[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht.
+    Rufe das Werkzeug erneut auf, wenn du es brauchst.]'
+  limit_reached: Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht.
+    Antworte jetzt mit dem, was du gefunden hast.
+  no_tools: Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche
+    also nicht, eines aufzurufen. Antworte jetzt mit dem Gesprächsverlauf und dem,
+    was du bereits weisst, und sag es, wenn die Antwort von Dokumenten abhängt, die
+    du nicht durchsuchen konntest.
+  unknown_tool: Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen
+    Werkzeuge.
+  declined: 'Nicht ausgeführt: Der Benutzer hat %{tool} abgelehnt. Beginne deine Antwort
+    damit, dass du %{tool} nicht verwendet hast, weil der Benutzer es abgelehnt hat,
+    antworte dann mit dem, was du bereits weisst, und biete an, es zu verwenden, wenn
+    er es erlaubt. Die Information kann durchaus vorhanden sein; sag nie, dass du
+    keinen Zugriff darauf hast.'
   withheld:
-    intro: "Einige Werkzeuge, die bei dieser Nachricht helfen könnten, stehen dir gerade nicht zur Verfügung. Braucht die Anfrage des Benutzers eines davon, behaupte nicht, dass fehlt, worauf er sich bezieht, etwa eine angehängte Datei; sag ihm, welches Werkzeug nötig ist und wie es eingeschaltet werden kann. Erwähne diese Werkzeuge sonst nicht."
-    by_profile: "- %{tool}: für diesen Assistenten ausgeschaltet. Nur ein Administrator kann es in den Einstellungen des Assistenten einschalten."
-    by_toggle: "- %{toggle}: der Benutzer kann es im Chat einschalten und erneut fragen."
+    intro: Einige Werkzeuge, die bei dieser Nachricht helfen könnten, stehen dir gerade
+      nicht zur Verfügung. Braucht die Anfrage des Benutzers eines davon, behaupte
+      nicht, dass fehlt, worauf er sich bezieht, etwa eine angehängte Datei; sag ihm,
+      welches Werkzeug nötig ist und wie es eingeschaltet werden kann. Erwähne diese
+      Werkzeuge sonst nicht.
+    by_profile: '- %{tool}: für diesen Assistenten ausgeschaltet. Nur ein Administrator
+      kann es in den Einstellungen des Assistenten einschalten.'
+    by_toggle: '- %{toggle}: der Benutzer kann es im Chat einschalten und erneut fragen.'
     toggles:
-      web_search: "Websuche"
-      code_interpreter: "Code-Interpreter"
-      image_generation: "Bildgenerierung"
-      user_files: "Meine Dateien"
+      web_search: Websuche
+      code_interpreter: Code-Interpreter
+      image_generation: Bildgenerierung
+      user_files: Meine Dateien
 approval:
-  question: "Der Assistent möchte «%{tool}» verwenden:
-%{summary}
-
-Erlauben?"
-  question_plain: "Der Assistent möchte «%{tool}» verwenden. Erlauben?"
+  question: "Der Assistent möchte «%{tool}» verwenden: %{summary}\nErlauben?"
+  question_plain: Der Assistent möchte «%{tool}» verwenden. Erlauben?
 config:
   max_iterations:
-    label: "Maximale Entscheidungen"
-    help: "Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss."
+    label: Maximale Entscheidungen
+    help: Wie oft das Modell Werkzeuge wählen darf, bevor es antworten muss.
   max_tool_calls:
-    label: "Maximale Werkzeugaufrufe"
-    help: "Wie viele Werkzeugaufrufe eine Antwort machen darf."
+    label: Maximale Werkzeugaufrufe
+    help: Wie viele Werkzeugaufrufe eine Antwort machen darf.
   disable_tools:
-    label: "Werkzeuge deaktivieren"
-    help: "Einige Werkzeuge dieses Agenten zurückhalten."
+    label: Werkzeuge deaktivieren
+    help: Einige Werkzeuge dieses Agenten zurückhalten.
   disabled_tools:
-    label: "Deaktivierte Werkzeuge"
-    help: "Werkzeuge, die dieser Agent nie anbietet."
+    label: Deaktivierte Werkzeuge
+    help: Werkzeuge, die dieser Agent nie anbietet.
   approval_tool:
-    label: "Werkzeug"
+    label: Werkzeug
   approval_policy:
-    label: "Freigabe"
+    label: Freigabe
   policies:
-    never: "Nie fragen"
-    every_call: "Bei jedem Aufruf fragen"
-    once_per_run: "Einmal pro Antwort fragen"
-    once_per_thread: "Einmal pro Unterhaltung fragen"
+    never: Nie fragen
+    every_call: Bei jedem Aufruf fragen
+    once_per_run: Einmal pro Antwort fragen
+    once_per_thread: Einmal pro Unterhaltung fragen
 notice:
-  stopped_early: "Ich habe aufgehört, dem nachzugehen, bevor ich fertig war, weil diese Antwort ihre Grenze an Werkzeugaufrufen erreicht hat."
+  stopped_early: Ich habe aufgehört, dem nachzugehen, bevor ich fertig war, weil diese
+    Antwort ihre Grenze an Werkzeugaufrufen erreicht hat.
 status:
-  condensed: "Frühere Ergebnisse verdichtet, damit das Gespräch passt"
-  deciding: "Entscheide, was nachzuschlagen ist"
-  gathered: "Alles Nötige für die Antwort gesammelt"
-  stopped_early: "Keine weitere Suche, die Grenze für diese Antwort ist erreicht"
+  condensed: Frühere Ergebnisse verdichtet, damit das Gespräch passt
+  deciding: Entscheide, was nachzuschlagen ist
+  gathered: Alles Nötige für die Antwort gesammelt
+  stopped_early: Keine weitere Suche, die Grenze für diese Antwort ist erreicht

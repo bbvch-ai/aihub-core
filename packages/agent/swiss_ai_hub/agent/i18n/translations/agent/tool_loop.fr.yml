@@ -1,78 +1,97 @@
 ---
 steps:
   condense:
-    name: "Condenser la conversation"
-    description: "Condense les résultats d'outils et les échanges précédents quand la conversation ne tient plus dans le contexte du modèle"
+    name: Condenser la conversation
+    description: Condense les résultats d'outils et les échanges précédents quand
+      la conversation ne tient plus dans le contexte du modèle
   start:
-    name: "Proposer des outils"
-    description: "Détermine les outils que le modèle peut utiliser pour ce message"
+    name: Proposer des outils
+    description: Détermine les outils que le modèle peut utiliser pour ce message
   decide:
-    name: "Choisir des outils"
-    description: "Le modèle répond ou choisit les outils utiles à la réponse"
+    name: Choisir des outils
+    description: Le modèle répond ou choisit les outils utiles à la réponse
   gate:
-    name: "Vérifier l'autorisation"
-    description: "Laisse passer un appel d'outil ou demande d'abord l'accord de l'utilisateur"
+    name: Vérifier l'autorisation
+    description: Laisse passer un appel d'outil ou demande d'abord l'accord de l'utilisateur
   approval:
-    name: "Appliquer l'autorisation"
-    description: "Exécute un appel autorisé ou informe le modèle qu'il a été refusé"
+    name: Appliquer l'autorisation
+    description: Exécute un appel autorisé ou informe le modèle qu'il a été refusé
   run_function:
-    name: "Exécuter l'outil"
-    description: "Exécute un outil choisi par le modèle"
+    name: Exécuter l'outil
+    description: Exécute un outil choisi par le modèle
   join:
-    name: "Rassembler les résultats"
-    description: "Renvoie au modèle tous les résultats de ses appels d'outils"
+    name: Rassembler les résultats
+    description: Renvoie au modèle tous les résultats de ses appels d'outils
 prompt:
   cut_result: "\n[…coupé pour tenir dans le contexte]"
-  condense_result: "Condense le résultat d'outil ci-dessous à ce qui compte pour la demande de l'utilisateur qui le précède. Conserve exactement les faits, chiffres, noms, dates et identifiants de documents comme [s3f9a1c]. Omets tout le reste. Au plus %{words} mots, sans préambule."
-  condensed_result: "[Résultat précédent condensé] %{summary}"
-  condense_turns: "Résume la conversation ci-dessous pour qu'elle puisse continuer sans elle : ce que l'utilisateur a demandé, ce qui a été répondu et ce qui a été décidé ou reste ouvert. Conserve exactement les faits, chiffres, noms et identifiants de documents comme [s3f9a1c]. Au plus %{words} mots, sans préambule."
-  condensed_turns: "Résumé de la conversation précédente : %{summary}"
-  dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte. Rappelle l'outil si tu en as besoin.]"
-  limit_reached: "Tu as utilisé tous les appels d'outils disponibles pour cette réponse. Réponds maintenant avec ce que tu as trouvé."
-  no_tools: "Aucun outil n'est disponible pour le reste de cette réponse, n'essaie donc pas d'en appeler un. Réponds maintenant à partir de la conversation et de ce que tu sais déjà, et dis-le lorsque la réponse dépend de documents que tu n'as pas pu consulter."
-  unknown_tool: "Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés."
-  declined: "Non exécuté : l'utilisateur a refusé %{tool}. Commence ta réponse en disant que tu n'as pas utilisé %{tool} parce que l'utilisateur l'a refusé, puis réponds avec ce que tu sais déjà et propose de l'utiliser s'il l'autorise. L'information peut très bien exister ; ne dis jamais que tu n'y as pas accès."
+  condense_result: Condense le résultat d'outil ci-dessous à ce qui compte pour la
+    demande de l'utilisateur qui le précède. Conserve exactement les faits, chiffres,
+    noms, dates et identifiants de documents comme [s3f9a1c]. Omets tout le reste.
+    Au plus %{words} mots, sans préambule.
+  condensed_result: '[Résultat précédent condensé] %{summary}'
+  condense_turns: "Résume la conversation ci-dessous pour qu'elle puisse continuer\
+    \ sans elle : ce que l'utilisateur a demandé, ce qui a été répondu et ce qui a\
+    \ été décidé ou reste ouvert. Conserve exactement les faits, chiffres, noms et\
+    \ identifiants de documents comme [s3f9a1c]. Au plus %{words} mots, sans préambule."
+  condensed_turns: 'Résumé de la conversation précédente : %{summary}'
+  dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte.\
+    \ Rappelle l'outil si tu en as besoin.]"
+  limit_reached: Tu as utilisé tous les appels d'outils disponibles pour cette réponse.
+    Réponds maintenant avec ce que tu as trouvé.
+  no_tools: Aucun outil n'est disponible pour le reste de cette réponse, n'essaie
+    donc pas d'en appeler un. Réponds maintenant à partir de la conversation et de
+    ce que tu sais déjà, et dis-le lorsque la réponse dépend de documents que tu n'as
+    pas pu consulter.
+  unknown_tool: Il n'existe aucun outil nommé %{tool}. Utilise l'un des outils proposés.
+  declined: "Non exécuté : l'utilisateur a refusé %{tool}. Commence ta réponse en\
+    \ disant que tu n'as pas utilisé %{tool} parce que l'utilisateur l'a refusé, puis\
+    \ réponds avec ce que tu sais déjà et propose de l'utiliser s'il l'autorise. L'information\
+    \ peut très bien exister ; ne dis jamais que tu n'y as pas accès."
   withheld:
-    intro: "Certains outils qui pourraient aider pour ce message ne sont pas disponibles pour le moment. Si la demande de l'utilisateur en nécessite un, ne dis pas que ce à quoi il fait référence est absent, comme un fichier joint ; indique-lui quel outil est nécessaire et comment l'activer. Sinon, ne mentionne pas ces outils."
-    by_profile: "- %{tool} : désactivé pour cet assistant. Seul un administrateur peut l'activer, dans les paramètres de l'assistant."
-    by_toggle: "- %{toggle} : l'utilisateur peut l'activer dans le chat et reposer sa question."
+    intro: Certains outils qui pourraient aider pour ce message ne sont pas disponibles
+      pour le moment. Si la demande de l'utilisateur en nécessite un, ne dis pas que
+      ce à quoi il fait référence est absent, comme un fichier joint ; indique-lui
+      quel outil est nécessaire et comment l'activer. Sinon, ne mentionne pas ces
+      outils.
+    by_profile: "- %{tool} : désactivé pour cet assistant. Seul un administrateur\
+      \ peut l'activer, dans les paramètres de l'assistant."
+    by_toggle: "- %{toggle} : l'utilisateur peut l'activer dans le chat et reposer\
+      \ sa question."
     toggles:
-      web_search: "Recherche web"
-      code_interpreter: "Interpréteur de code"
-      image_generation: "Génération d'images"
-      user_files: "Mes fichiers"
+      web_search: Recherche web
+      code_interpreter: Interpréteur de code
+      image_generation: Génération d'images
+      user_files: Mes fichiers
 approval:
-  question: "L'assistant souhaite utiliser « %{tool} » :
-%{summary}
-
-L'autoriser ?"
-  question_plain: "L'assistant souhaite utiliser « %{tool} ». L'autoriser ?"
+  question: "L'assistant souhaite utiliser « %{tool} » : %{summary}\nL'autoriser ?"
+  question_plain: L'assistant souhaite utiliser « %{tool} ». L'autoriser ?
 config:
   max_iterations:
-    label: "Décisions maximales"
-    help: "Combien de fois le modèle peut choisir des outils avant de devoir répondre."
+    label: Décisions maximales
+    help: Combien de fois le modèle peut choisir des outils avant de devoir répondre.
   max_tool_calls:
-    label: "Appels d'outils maximaux"
-    help: "Combien d'appels d'outils une réponse peut faire."
+    label: Appels d'outils maximaux
+    help: Combien d'appels d'outils une réponse peut faire.
   disable_tools:
-    label: "Désactiver des outils"
-    help: "Retenir certains outils de cet agent."
+    label: Désactiver des outils
+    help: Retenir certains outils de cet agent.
   disabled_tools:
-    label: "Outils désactivés"
-    help: "Outils que cet agent ne propose jamais."
+    label: Outils désactivés
+    help: Outils que cet agent ne propose jamais.
   approval_tool:
-    label: "Outil"
+    label: Outil
   approval_policy:
-    label: "Autorisation"
+    label: Autorisation
   policies:
-    never: "Ne jamais demander"
-    every_call: "Demander à chaque appel"
-    once_per_run: "Demander une fois par réponse"
-    once_per_thread: "Demander une fois par conversation"
+    never: Ne jamais demander
+    every_call: Demander à chaque appel
+    once_per_run: Demander une fois par réponse
+    once_per_thread: Demander une fois par conversation
 notice:
-  stopped_early: "J'ai arrêté mes recherches avant d'avoir terminé, car cette réponse a atteint sa limite d'appels d'outils."
+  stopped_early: J'ai arrêté mes recherches avant d'avoir terminé, car cette réponse
+    a atteint sa limite d'appels d'outils.
 status:
-  condensed: "Résultats précédents condensés pour que la conversation tienne"
-  deciding: "Choix de ce qu'il faut consulter"
-  gathered: "Tout le nécessaire pour la réponse est réuni"
-  stopped_early: "Recherches arrêtées, la limite de cette réponse est atteinte"
+  condensed: Résultats précédents condensés pour que la conversation tienne
+  deciding: Choix de ce qu'il faut consulter
+  gathered: Tout le nécessaire pour la réponse est réuni
+  stopped_early: Recherches arrêtées, la limite de cette réponse est atteinte

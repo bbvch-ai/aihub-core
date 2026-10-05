@@ -1,14 +1,15 @@
 ---
 steps:
   search_knowledge:
-    name: "Search Referenced Knowledge"
-    description: "Searches the knowledge collections the user referenced and adds what it finds to the model's context"
+    name: Search Referenced Knowledge
+    description: Searches the knowledge collections the user referenced and adds what
+      it finds to the model's context
   search_as_tool:
-    name: "Search Knowledge as a Tool"
-    description: "Runs the knowledge search the model chose"
+    name: Search Knowledge as a Tool
+    description: Runs the knowledge search the model chose
   answer_tool_call:
-    name: "Return Knowledge to the Model"
-    description: "Hands what the search found back to the model's tool loop"
+    name: Return Knowledge to the Model
+    description: Hands what the search found back to the model's tool loop
 prompt:
   context: |
     {% chat role="system" %}
@@ -17,21 +18,28 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: "%{collections} could not be searched, because these collections are not available to the user. Tell the user that you could not use them."
-  nothing_found: "Nothing in the searched knowledge collections matched the question. Tell the user so if the question depended on them."
+  refused: '%{collections} could not be searched, because these collections are not
+    available to the user. Tell the user that you could not use them.'
+  nothing_found: Nothing in the searched knowledge collections matched the question.
+    Tell the user so if the question depended on them.
 tool:
-  label: "Search our knowledge"
-  approval_summary: "Search our knowledge for \"{query}\""
-  description: "Searches our knowledge collections and returns the most relevant document sections, with ids to cite. Use it when the question may be answered by the organisation's documents. Available collections:\n%{collections}"
-  query: "What to search for, as a short standalone question or keywords."
-  collections: "The collections to search, by identifier; leave out to search all of them."
+  label: Search our knowledge
+  approval_summary: Search our knowledge for "{query}"
+  description: "Searches our knowledge collections and returns the most relevant document\
+    \ sections, with ids to cite. Use it when the question may be answered by the\
+    \ organisation's documents. Available collections:\n%{collections}"
+  query: What to search for, as a short standalone question or keywords.
+  collections: The collections to search, by identifier; leave out to search all of
+    them.
 config:
   retrieve_k:
-    label: "Sections per Database"
-    help: "How many sections each searched database returns before the reranker keeps the best."
+    label: Sections per Database
+    help: How many sections each searched database returns before the reranker keeps
+      the best.
   every_readable_collection:
-    label: "Every Collection the User Can Read"
-    help: "Let the model search every knowledge collection the asking user may read, instead of the ones listed below."
+    label: Every Collection the User Can Read
+    help: Let the model search every knowledge collection the asking user may read,
+      instead of the ones listed below.
   source:
-    label: "Knowledge Database"
-    help: "A database the model may search, whole or narrowed to some of its collections."
+    label: Knowledge Database
+    help: A database the model may search, whole or narrowed to some of its collections.

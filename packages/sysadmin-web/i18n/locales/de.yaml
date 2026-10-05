@@ -34,7 +34,8 @@ tenant_admin:
       Sie, ob die Plattform-API und das Modell-Gateway erreichbar sind.
   form:
     chat_disclaimer: Hinweis im Chat
-    chat_disclaimer_help: Wird unter dem Chat-Eingabefeld angezeigt. Maximal 100 Zeichen pro Sprache.
+    chat_disclaimer_help: Wird unter dem Chat-Eingabefeld angezeigt. Maximal 100 Zeichen
+      pro Sprache.
     chat_disclaimer_too_long: Verwenden Sie höchstens 100 Zeichen pro Sprache.
     name: Tenant-Name
     description: Beschreibung
