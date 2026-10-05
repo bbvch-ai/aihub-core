@@ -2,8 +2,9 @@ import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 
 import { defineNuxtPlugin } from '#app'
 
-export default defineNuxtPlugin(async ({ $i18n, $router }) => {
+export default defineNuxtPlugin(async ({ $i18n }) => {
   const config = useRuntimeConfig()
+  const router = useRouter()
 
   // Keycloak-compatible OIDC configuration
   // Authority URL is the Keycloak realm URL (e.g., http://localhost:8180/realms/aihub)
@@ -50,10 +51,15 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
     // Refresh token rejected (e.g. Keycloak invalidated it): drop the dead
-    // session before redirecting so it is not reused.
+    // session, then re-run the route guard on the current page rather than
+    // pushing /auth/login, which on an instance with the welcome page offers no
+    // way back in. middleware/auth.global.ts then sends a tenant page to its
+    // identity provider and remembers the page for after login. isReady() lets
+    // an initial navigation that is still in flight finish first.
     await auth.removeUser()
-    const locale = $i18n.locale.value
-    $router.push(`/${locale}/auth/login`)
+    await router.isReady()
+    const { path, query, hash } = router.currentRoute.value
+    await router.replace({ path, query, hash, force: true })
   })
 
   // Session renewal is handled per-navigation by middleware/auth.global.ts;

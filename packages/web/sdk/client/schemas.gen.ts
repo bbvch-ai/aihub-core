@@ -26322,6 +26322,29 @@ export const TemplateDataSchema = {
     "Typed container for template data extracted from Form.to_template_data().\n\nEach agent/process type has different configurable fields, so extra fields\nare allowed and preserved through serialization.",
 } as const;
 
+export const TenantAuthProviderResponseSchema = {
+  properties: {
+    alias: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Alias",
+      description:
+        "Keycloak IDP alias to start the tenant's login with, or null when it has no login link",
+    },
+  },
+  type: "object",
+  required: ["alias"],
+  title: "TenantAuthProviderResponse",
+  description:
+    "Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.",
+} as const;
+
 export const TenantIdentitySchema = {
   properties: {
     id: {
