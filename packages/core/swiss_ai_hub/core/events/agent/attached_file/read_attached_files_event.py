@@ -29,6 +29,14 @@ class ReadAttachedFilesEvent(ControlAndDisplayEvent):
     query: Annotated[
         str, Field(description="The turn's query, for picking the relevant sections of a file too large to fit.")
     ] = ""
+    first_page: Annotated[
+        int | None,
+        Field(description="The first page to read when the question is about certain pages; any page otherwise.", ge=1),
+    ] = None
+    last_page: Annotated[
+        int | None,
+        Field(description="The last page to read; `first_page` alone when none.", ge=1),
+    ] = None
     reserve_tokens: Annotated[
         int,
         Field(

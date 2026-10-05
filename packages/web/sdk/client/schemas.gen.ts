@@ -22271,6 +22271,33 @@ export const ReadAttachedFilesEventSchema = {
         "The turn's query, for picking the relevant sections of a file too large to fit.",
       default: "",
     },
+    first_page: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "First Page",
+      description:
+        "The first page to read when the question is about certain pages; any page otherwise.",
+    },
+    last_page: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Last Page",
+      description: "The last page to read; `first_page` alone when none.",
+    },
     reserve_tokens: {
       type: "integer",
       minimum: 0,
@@ -43595,6 +43622,33 @@ export const ReadAttachedFilesEventWritableSchema = {
       description:
         "The turn's query, for picking the relevant sections of a file too large to fit.",
       default: "",
+    },
+    first_page: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "First Page",
+      description:
+        "The first page to read when the question is about certain pages; any page otherwise.",
+    },
+    last_page: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Last Page",
+      description: "The last page to read; `first_page` alone when none.",
     },
     reserve_tokens: {
       type: "integer",

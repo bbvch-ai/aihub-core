@@ -6,6 +6,7 @@ from swiss_ai_hub.core.events.agent import ChatFeature
 from swiss_ai_hub.core.infrastructure import SandboxHomePath
 
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
+from swiss_ai_hub.agent.capabilities.sandbox.user_file_pages import UserFilePages
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -46,7 +47,15 @@ class UserFilesTools(BaseToolSpec):
         path: Annotated[str, "The file's path in the user's files, e.g. reports/q1.pdf."],
         start_line: Annotated[int | None, "The first line to read, from 1."] = None,
         end_line: Annotated[int | None, "The last line to read."] = None,
+        first_page: Annotated[
+            int | None, "For a question about certain pages of a PDF: the first page, from 1."
+        ] = None,
+        last_page: Annotated[int | None, "The last page to read; the first page alone when omitted."] = None,
     ) -> str:
-        """Read one of the user's own files; PDF and office documents come back as their text."""
+        """Read one of the user's own files; PDF and office documents come back as their text. To read certain pages
+        of a PDF, give first_page and last_page instead of lines: line numbers say nothing about pages."""
         client = SandboxWorkspace.of(self.context).client
-        return json.dumps(await client.read_file(SandboxHomePath.shown(path), start_line, end_line), ensure_ascii=False)
+        shown = SandboxHomePath.shown(path)
+        if first_page is not None:
+            return await UserFilePages.read(client, shown, first_page, last_page)
+        return json.dumps(await client.read_file(shown, start_line, end_line), ensure_ascii=False)

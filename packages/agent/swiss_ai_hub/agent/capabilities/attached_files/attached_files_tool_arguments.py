@@ -13,6 +13,12 @@ class AttachedFilesToolArguments(BaseModel):
     query: Annotated[
         str, Field(description="What the model looks for, so a file too large to read whole keeps the sections on it.")
     ] = ""
+    first_page: Annotated[
+        int | None, Field(description="The first page to read, for a question about certain pages.", ge=1)
+    ] = None
+    last_page: Annotated[
+        int | None, Field(description="The last page to read; the first page alone when omitted.", ge=1)
+    ] = None
 
     @staticmethod
     def schema_for(file_ids: list[str], t: LocaleHandler) -> dict[str, Any]:
@@ -26,5 +32,11 @@ class AttachedFilesToolArguments(BaseModel):
                     "description": t("agent.attached_files.tool.files"),
                 },
                 "query": {"type": "string", "description": t("agent.attached_files.tool.query")},
+                "first_page": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": t("agent.attached_files.tool.first_page"),
+                },
+                "last_page": {"type": "integer", "minimum": 1, "description": t("agent.attached_files.tool.last_page")},
             },
         }

@@ -14876,6 +14876,18 @@ export type ReadAttachedFilesEvent = {
    */
   query?: string;
   /**
+   * First Page
+   *
+   * The first page to read when the question is about certain pages; any page otherwise.
+   */
+  first_page?: number | null;
+  /**
+   * Last Page
+   *
+   * The last page to read; `first_page` alone when none.
+   */
+  last_page?: number | null;
+  /**
    * Reserve Tokens
    *
    * Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.
@@ -28688,6 +28700,18 @@ export type ReadAttachedFilesEventWritable = {
    * The turn's query, for picking the relevant sections of a file too large to fit.
    */
   query?: string;
+  /**
+   * First Page
+   *
+   * The first page to read when the question is about certain pages; any page otherwise.
+   */
+  first_page?: number | null;
+  /**
+   * Last Page
+   *
+   * The last page to read; `first_page` alone when none.
+   */
+  last_page?: number | null;
   /**
    * Reserve Tokens
    *

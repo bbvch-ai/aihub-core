@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from pypdf import PdfWriter
 from tenacity import wait_none
 
+from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import (
     MineruLoader,
@@ -107,7 +108,7 @@ class TestMergeResults:
 
         merged = MineruLoader._merge_results(results)
 
-        assert merged.md_content == "first\n\nlast"
+        assert merged.md_content == f"first\n\n{PAGE_BREAK}\n\n{PAGE_BREAK}\n\nlast"
         assert merged.num_pages == 5
         assert merged.images == {"a.jpg": "1", "b.jpg": "2"}
         assert merged.backend == "vlm-http-client"
@@ -124,7 +125,7 @@ class TestBatching:
         assert mock.await_count == 1
         assert mock.await_args.args[3] is None
         assert mock.await_args.args[4] is None
-        assert documents[0].text == "content"
+        assert documents[0].text == f"content\n\n{PAGE_BREAK}"
         assert documents[0].metadata[NUMBER_OF_PAGES] == 2
 
     @pytest.mark.asyncio
@@ -167,7 +168,9 @@ class TestBatching:
         assert mock.await_count == 3
         requested_ranges = sorted((call.args[3], call.args[4]) for call in mock.await_args_list)
         assert requested_ranges == [(0, 1), (2, 3), (4, 4)]
-        assert documents[0].text == "pages0-1\n\npages2-3\n\npages4-4"
+        assert documents[0].text == "\n\n".join(
+            ["pages0-1", PAGE_BREAK, PAGE_BREAK, "pages2-3", PAGE_BREAK, PAGE_BREAK, "pages4-4"]
+        )
         assert documents[0].metadata[NUMBER_OF_PAGES] == 5
 
     @pytest.mark.asyncio
@@ -383,7 +386,7 @@ class TestSyncWrapper:
         with patch.object(loader, "_execute_conversion", mock):
             documents = loader.load_data(str(pdf_path))
 
-        assert documents[0].text == "content"
+        assert documents[0].text == f"content\n\n{PAGE_BREAK}"
         assert documents[0].metadata[NUMBER_OF_PAGES] == 2
 
 
@@ -418,7 +421,7 @@ class TestParseCache:
             first = await loader.aload_data_from_bytes(make_pdf(1), FILENAME, embed_base64=True)
             second = await loader.aload_data_from_bytes(make_pdf(2), FILENAME, embed_base64=True)
 
-        assert (first[0].text, second[0].text) == ("one", "two")
+        assert (first[0].text, second[0].text) == ("one", f"two\n\n{PAGE_BREAK}")
 
     @pytest.mark.asyncio
     async def test_text_only_request_is_served_by_a_conversion_with_images(self, loader: MineruLoader):
