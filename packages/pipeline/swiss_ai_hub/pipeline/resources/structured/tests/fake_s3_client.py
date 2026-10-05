@@ -1,5 +1,6 @@
 """The slice of boto3's S3 client the structured destination and state store use, kept in a dict."""
 
+import hashlib
 import io
 from typing import Any
 
@@ -22,7 +23,9 @@ class FakeS3Client:
         self.objects[(Bucket, Key)] = {"Body": body, "Metadata": dict(Metadata or {}), **params}
 
     def head_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
-        return {"Metadata": self._stored(Bucket, Key, "HeadObject", "404")["Metadata"]}
+        """The ETag as S3 and SeaweedFS report it for a single-part upload: the quoted hex MD5 of the body."""
+        stored = self._stored(Bucket, Key, "HeadObject", "404")
+        return {"Metadata": stored["Metadata"], "ETag": f'"{hashlib.md5(stored["Body"]).hexdigest()}"'}
 
     def get_object(self, *, Bucket: str, Key: str) -> dict[str, Any]:
         return {"Body": io.BytesIO(self._stored(Bucket, Key, "GetObject", "NoSuchKey")["Body"])}

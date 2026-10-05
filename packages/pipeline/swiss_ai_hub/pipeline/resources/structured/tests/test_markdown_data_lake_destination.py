@@ -89,7 +89,7 @@ class TestWrites:
         assert _announced(notify) == []
 
     def test_records_delivered_again_after_a_lost_state_are_not_rewritten(self, tmp_path, s3, notify):
-        """dlt delivers at least once; the hash kept on each object is what makes a re-delivery a no-op."""
+        """dlt delivers at least once; comparing with each object's ETag is what makes a re-delivery a no-op."""
         _sync(tmp_path / "first")
         puts_after_first_run = s3.put_attempts
         notify.reset_mock()
@@ -99,6 +99,12 @@ class TestWrites:
         assert destination.unchanged_count == 2
         assert s3.put_attempts == puts_after_first_run
         assert _announced(notify) == []
+
+    def test_written_files_carry_no_metadata_of_their_own(self, tmp_path, s3, notify):
+        """Ingestion copies a file's metadata into its document and embeds it with every chunk."""
+        _sync(tmp_path)
+
+        assert [s3.objects[(_BUCKET, key)]["Metadata"] for key in s3.keys(_BUCKET)] == [{}, {}]
 
     def test_an_edited_record_is_rewritten_alone(self, tmp_path, s3, notify, tracker):
         _sync(tmp_path)

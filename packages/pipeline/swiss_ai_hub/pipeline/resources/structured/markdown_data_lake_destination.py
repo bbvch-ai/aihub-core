@@ -24,11 +24,11 @@ class MarkdownDataLakeDestination:
     """dlt custom destination that lands rendered records in one knowledge database's data lake.
 
     dlt delivers at least once: it retries a failed load job and re-delivers everything after a lost state. A file is
-    therefore written only when its SHA-256 differs from the one kept on the stored object, which is what keeps a run
-    with no changes at the source from writing or announcing anything.
+    therefore written only when its MD5 differs from the stored object's ETag, which is what keeps a run with no
+    changes at the source from writing or announcing anything. The comparison uses the ETag rather than a hash kept as
+    object metadata, because ingestion copies a file's metadata into its document and into every chunk it embeds.
     """
 
-    HASH_METADATA_KEY = "content-sha256"
     BATCH_SIZE = 100
 
     def __init__(
@@ -67,27 +67,26 @@ class MarkdownDataLakeDestination:
     def _write_if_changed(self, client: S3DataLakeClient, row: dict) -> bool:
         object_key = row[AbstractStructuredSourceAdapter.OBJECT_KEY_COLUMN]
         content = row[AbstractStructuredSourceAdapter.MARKDOWN_COLUMN].encode()
-        digest = hashlib.sha256(content).hexdigest()
-        if self._stored_digest(client, object_key) == digest:
+        if self._stored_etag(client, object_key) == hashlib.md5(content, usedforsecurity=False).hexdigest():
             self.unchanged_count += 1
             return False
-        data_lake_file = DataLakeFile.from_content(
-            uri=client.build_uri(object_key), content=content, metadata={self.HASH_METADATA_KEY: digest}
-        )
+        data_lake_file = DataLakeFile.from_content(uri=client.build_uri(object_key), content=content)
         try:
             S3DataLakeIOManager.write_data_lake_file(client.raw_client, data_lake_file, self.context)
         except ClientError as error:
             self._reraise(error)
         return True
 
-    def _stored_digest(self, client: S3DataLakeClient, object_key: str) -> str | None:
+    def _stored_etag(self, client: S3DataLakeClient, object_key: str) -> str | None:
+        """A multipart upload's ETag is not an MD5 and never matches, so such a file is rewritten; records are small
+        enough to be uploaded in one part."""
         try:
-            metadata = client.get_file_metadata(object_key)
+            head = client.raw_client.head_object(Bucket=client.container_name, Key=object_key)
         except ClientError as error:
             if error.response["Error"]["Code"] in _NOT_FOUND:
                 return None
             self._reraise(error)
-        return metadata.get(self.HASH_METADATA_KEY)
+        return head["ETag"].strip('"')
 
     @staticmethod
     def _reraise(error: ClientError) -> NoReturn:
