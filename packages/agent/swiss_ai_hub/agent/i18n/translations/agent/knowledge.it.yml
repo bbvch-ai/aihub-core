@@ -1,14 +1,15 @@
 ---
 steps:
   search_knowledge:
-    name: "Cerca la conoscenza indicata"
-    description: "Cerca nelle raccolte di conoscenza indicate dall'utente e aggiunge i risultati al contesto del modello"
+    name: Cerca la conoscenza indicata
+    description: Cerca nelle raccolte di conoscenza indicate dall'utente e aggiunge
+      i risultati al contesto del modello
   search_as_tool:
-    name: "Cercare la conoscenza come strumento"
-    description: "Esegue la ricerca di conoscenza scelta dal modello"
+    name: Cercare la conoscenza come strumento
+    description: Esegue la ricerca di conoscenza scelta dal modello
   answer_tool_call:
-    name: "Restituire la conoscenza al modello"
-    description: "Restituisce i risultati della ricerca al ciclo di strumenti del modello"
+    name: Restituire la conoscenza al modello
+    description: Restituisce i risultati della ricerca al ciclo di strumenti del modello
 prompt:
   context: |
     {% chat role="system" %}
@@ -17,21 +18,29 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </referenced_knowledge>
     {% endchat %}
-  refused: "%{collections} non hanno potuto essere consultate, perché queste raccolte non sono accessibili all'utente. Di' all'utente che non hai potuto usarle."
-  nothing_found: "Nulla nelle raccolte consultate corrispondeva alla domanda. Diglielo se la domanda dipendeva da esse."
+  refused: "%{collections} non hanno potuto essere consultate, perché queste raccolte\
+    \ non sono accessibili all'utente. Di' all'utente che non hai potuto usarle."
+  nothing_found: Nulla nelle raccolte consultate corrispondeva alla domanda. Diglielo
+    se la domanda dipendeva da esse.
 tool:
-  label: "Cercare nella nostra conoscenza"
-  approval_summary: "Cercare «{query}» nella nostra conoscenza"
-  description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
-  query: "Cosa cercare, come breve domanda autonoma o parole chiave."
-  collections: "Le raccolte da consultare, per identificativo; ometti per consultarle tutte."
+  label: Cercare nella nostra conoscenza
+  approval_summary: Cercare «{query}» nella nostra conoscenza
+  description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni\
+    \ più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta\
+    \ nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
+  query: Cosa cercare, come breve domanda autonoma o parole chiave.
+  collections: Le raccolte da consultare, per identificativo; ometti per consultarle
+    tutte.
 config:
   retrieve_k:
-    label: "Sezioni per database"
-    help: "Quante sezioni restituisce ogni database consultato prima che il riordinamento conservi le migliori."
+    label: Sezioni per database
+    help: Quante sezioni restituisce ogni database consultato prima che il riordinamento
+      conservi le migliori.
   every_readable_collection:
-    label: "Ogni raccolta leggibile dall'utente"
-    help: "Il modello può consultare ogni raccolta di conoscenza che l'utente può leggere, invece di quelle elencate sotto."
+    label: Ogni raccolta leggibile dall'utente
+    help: Il modello può consultare ogni raccolta di conoscenza che l'utente può leggere,
+      invece di quelle elencate sotto.
   source:
-    label: "Database di conoscenza"
-    help: "Un database che il modello può consultare, intero o limitato ad alcune delle sue raccolte."
+    label: Database di conoscenza
+    help: Un database che il modello può consultare, intero o limitato ad alcune delle
+      sue raccolte.
