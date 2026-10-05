@@ -75,10 +75,9 @@ class KnowledgeContentSearch:
         except OperationFailure as operation_failure:
             if operation_failure.code != _PCRE_REJECTED:
                 raise
+            reason = (operation_failure.details or {}).get("errmsg", "")
             raise InvalidSearchPatternError(
-                query,
-                f"the database's regex engine (PCRE2) rejects it: {operation_failure.details.get('errmsg', '')}; "
-                "use syntax PCRE2 and Python share",
+                query, f"the database's regex engine (PCRE2) rejects it: {reason}; use syntax PCRE2 and Python share"
             ) from operation_failure
         return KnowledgeContentSearchResult(
             matches=matches,

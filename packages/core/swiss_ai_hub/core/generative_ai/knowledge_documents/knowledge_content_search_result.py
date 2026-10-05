@@ -9,7 +9,8 @@ class KnowledgeContentSearchResult(BaseModel):
     """One page of the documents a content search matched.
 
     Searching again with `next_offset` until it is None returns every matching document exactly once, whatever the
-    page size, which is what makes the search exhaustive rather than a top-k.
+    page size, which is what makes the search exhaustive rather than a top-k. Offsets index a live result, so a
+    document ingested or deleted between two calls can shift the boundary between their pages by one.
     """
 
     matches: Annotated[list[KnowledgeContentMatch], Field(description="Matching documents on this page")]
