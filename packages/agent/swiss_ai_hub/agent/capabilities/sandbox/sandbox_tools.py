@@ -156,7 +156,8 @@ class SandboxTools(BaseToolSpec):
         self, path: Annotated[str, "The file, relative to this conversation's folder or starting with ~/."]
     ) -> str:
         """Show the user a file from the sandbox, attached to your answer for them to open or download. Use it for
-        every file you made for the user, such as a chart, a spreadsheet or a document."""
+        every file you made for the user, such as a chart, a spreadsheet or a document. Its download link is added
+        below your answer by itself; never write a link or path to it yourself, since such links do not work."""
         workspace = await self._workspace()
         displayed = await workspace.keep(path)
         await self.context.displayer.display_event(displayed)
