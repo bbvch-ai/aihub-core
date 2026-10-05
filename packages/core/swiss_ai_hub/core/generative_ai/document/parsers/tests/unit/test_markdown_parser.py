@@ -740,6 +740,31 @@ def test_page_numbers_are_set_correctly(node_parser):
     assert nodes[2].text.startswith("# Page 3")
 
 
+def test_a_section_spanning_pages_gives_each_chunk_its_own_page(node_parser):
+    text = f"# Chapter 1\nText on page 1.\n{PAGE_BREAK}\nText on page 2.\n{PAGE_BREAK}\n{PAGE_BREAK}\nText on page 4."
+    nodes = node_parser.get_nodes_from_node(Document(text=text))
+
+    assert [(node.metadata["page"], node.metadata["h1"]) for node in nodes] == [
+        (1, "Chapter 1"),
+        (2, "Chapter 1"),
+        (4, "Chapter 1"),
+    ]
+    assert all(PAGE_BREAK not in node.text for node in nodes)
+    assert nodes[2].text.strip() == "Text on page 4."
+
+
+def test_pages_carry_on_counting_into_the_next_section(node_parser):
+    text = f"# One\nPage 1.\n{PAGE_BREAK}\nPage 2.\n# Two\nStill page 2.\n{PAGE_BREAK}\nPage 3."
+    nodes = node_parser.get_nodes_from_node(Document(text=text))
+
+    assert [(node.metadata["h1"], node.metadata["page"]) for node in nodes] == [
+        ("One", 1),
+        ("One", 2),
+        ("Two", 2),
+        ("Two", 3),
+    ]
+
+
 def test_table_extraction(node_parser):
     text = """# Section
     Some intro text.

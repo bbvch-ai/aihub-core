@@ -1,0 +1,37 @@
+---
+steps:
+  search_knowledge:
+    name: "Rechercher les connaissances référencées"
+    description: "Recherche dans les collections de connaissances référencées par l'utilisateur et ajoute les résultats au contexte du modèle"
+  search_as_tool:
+    name: "Rechercher les connaissances comme outil"
+    description: "Exécute la recherche de connaissances choisie par le modèle"
+  answer_tool_call:
+    name: "Renvoyer les connaissances au modèle"
+    description: "Renvoie les résultats de la recherche à la boucle d'outils du modèle"
+prompt:
+  context: |
+    {% chat role="system" %}
+    Les documents suivants proviennent de nos collections de connaissances. Réponds à partir de ces documents lorsqu'ils concernent la question. Chaque document est un bloc `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ses sections sous leurs titres.
+    <referenced_knowledge>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </referenced_knowledge>
+    {% endchat %}
+  refused: "%{collections} n'ont pas pu être consultées, car ces collections ne sont pas accessibles à l'utilisateur. Dis à l'utilisateur que tu n'as pas pu les utiliser."
+  nothing_found: "Rien dans les collections consultées ne correspondait à la question. Dis-le à l'utilisateur si la question en dépendait."
+tool:
+  label: "Rechercher dans nos connaissances"
+  approval_summary: "Rechercher « {query} » dans nos connaissances"
+  description: "Recherche dans nos collections de connaissances et renvoie les passages les plus pertinents, avec des identifiants à citer. Utilise-le lorsque la réponse peut se trouver dans les documents de l'organisation. Collections disponibles :\n%{collections}"
+  query: "Ce qu'il faut rechercher, sous forme de question autonome courte ou de mots-clés."
+  collections: "Les collections à consulter, par identifiant ; omettre pour les consulter toutes."
+config:
+  retrieve_k:
+    label: "Sections par base"
+    help: "Combien de sections chaque base consultée renvoie avant que le reclassement ne garde les meilleures."
+  every_readable_collection:
+    label: "Toutes les collections lisibles par l'utilisateur"
+    help: "Le modèle peut consulter toutes les collections de connaissances que l'utilisateur peut lire, au lieu de celles listées ci-dessous."
+  source:
+    label: "Base de connaissances"
+    help: "Une base que le modèle peut consulter, entière ou limitée à certaines de ses collections."

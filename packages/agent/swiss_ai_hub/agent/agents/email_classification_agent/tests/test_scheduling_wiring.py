@@ -14,6 +14,7 @@ from swiss_ai_hub.agent.agents.email_classification_agent.configs.email_classifi
     EmailClassificationAgentConfig,
 )
 from swiss_ai_hub.agent.agents.email_classification_agent.email_classification_agent import EmailClassificationAgent
+from swiss_ai_hub.agent.agents.email_classification_agent.reply_drafting import ReplyDrafting
 from swiss_ai_hub.agent.imap.mailbox_lease_lost_error import MailboxLeaseLostError
 from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
 from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
@@ -91,7 +92,7 @@ def test_drafting_runs_under_a_heartbeat_and_checks_the_lease_before_appending()
     heartbeat; and an append is a mutation, so a lease lost during the model calls has to stop the run before the
     first draft lands rather than after.
     """
-    source = inspect.getsource(EmailClassificationAgent._append_all_drafts)
+    source = inspect.getsource(ReplyDrafting.append_all_drafts)
 
     assert "lease.heartbeat(" in source, "one model call per message can outlive the TTL — renew across the pass"
 
@@ -109,7 +110,7 @@ def test_drafting_takes_the_lease_back_before_appending():
     mail is already filed so those drafts would never be retried. Reacquiring is only safe because filing closed the
     window the lease protects; a lease another run actually holds still refuses.
     """
-    source = inspect.getsource(EmailClassificationAgent._append_all_drafts)
+    source = inspect.getsource(ReplyDrafting.append_all_drafts)
 
     reacquire = source.index("reacquire")
     assert reacquire < source.index("lease.heartbeat("), "the lease has to be ours again before the heartbeat renews it"
@@ -123,13 +124,15 @@ def test_the_work_is_done_under_a_heartbeat_that_is_checked_before_filing():
     Renewing per classified message left the batch fetch and the filing pass either side of the loop unrenewed, so a
     slow mailbox could outlive the TTL in a phase where nothing was renewing — and losing the lease only logged,
     leaving the run to file mail another run already held. The heartbeat covers every phase, and the check before
-    `_file_all` is what turns a lost lease into a stopped run rather than a double-filed one.
+    `MailFiler.file_all` is what turns a lost lease into a stopped run rather than a double-filed one.
     """
     source = inspect.getsource(EmailClassificationAgent.classify_and_file_step)
 
     assert "lease.heartbeat(" in source, "the slow phases must run under a heartbeat, not per-message renewals"
 
     lease_check = source.index("lease.lost")
-    assert lease_check < source.index("_file_all"), "a lost lease has to be caught before anything is filed"
-    assert lease_check > source.index("_classify_all"), "checking before the work makes the heartbeat pointless"
+    assert lease_check < source.index("MailFiler.file_all"), "a lost lease has to be caught before anything is filed"
+    assert lease_check > source.index("MailFiler.classify_all"), (
+        "checking before the work makes the heartbeat pointless"
+    )
     assert MailboxLeaseLostError.__name__ in source, "a lost lease must stop the run, not only warn"

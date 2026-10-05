@@ -128,6 +128,10 @@ The same sandbox lets models produce files — reports, spreadsheets, slide deck
 model then opens in the user's file viewer. This needs no code from the user; see
 [File generation](../13_file_generation/) for the supported formats and the recommended model.
 
+Agents can use the sandbox too. With **Code Interpreter** switched on, the Universal Agent runs commands and writes
+files in the user's own sandbox home, and the files it makes are attached to its answer. Every user has My Files, one
+place for the files they attached, the files agents made for them and their own uploads.
+
 Mermaid diagram support enables AI-generated visualizations - flowcharts, sequence diagrams, state machines - rendered
 directly within conversations. This supports systems design, process documentation, and visual explanation.
 

@@ -52,6 +52,14 @@ documentation rather than automatic inference. You choose what information to pr
 This design prevents errors from propagating across the organization. An agent won't accidentally turn a one-time
 comment into permanent company policy.
 
+### Recall in a conversation
+
+For every message, a chat agent looks up the memories that bear on it, user and organization memory alike, and gives
+them to the model together with the other context it gathered (attached files, referenced knowledge) as part of its
+system instructions. The event history shows exactly which memories were recalled. An agent that lets the model choose
+its own tools can also offer memory as a tool, so it recalls only when the question calls for it. After the answer is
+delivered, new facts are stored in the background, so storing never delays the reply.
+
 ### Transparency
 
 The platform maintains full visibility into what agents remember. Every memory includes the conversation thread where it

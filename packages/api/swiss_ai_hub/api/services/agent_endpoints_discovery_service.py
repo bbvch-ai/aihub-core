@@ -134,6 +134,15 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
         await self._sync_agent_instances_to_provisioners()
 
+        # Step 5: Reconcile the OpenWebUI knowledge entries, since collections a pipeline creates signal nothing here
+        await self._sync_knowledge_to_openwebui()
+
+    async def _sync_knowledge_to_openwebui(self) -> None:
+        try:
+            await self._openwebui_provisioner.sync_knowledge()
+        except Exception as e:
+            logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
+
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
         Broadcasts a NATS discovery request to all agents and collects responses.
@@ -189,7 +198,11 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        current_set = {(inst.agent_class, inst.agent_id, inst.name) for inst in instances}
+        features_by_class = await to_thread(self._supported_features_by_class)
+        current_set = {
+            (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
+            for inst in instances
+        }
         current_hash = self._compute_agents_hash(current_set)
 
         await self._sync_target(SyncTarget.LANGFUSE, self._sync_agent_instances_to_langfuse, instances, current_hash)
@@ -212,9 +225,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             await self._store_agents_hash(target, current_hash)
 
     @staticmethod
-    def _compute_agents_hash(agent_set: set[tuple[str, str, str]]) -> str:
-        normalized = sorted(f"{ac}:{ai}:{name}" for ac, ai, name in agent_set)
+    def _compute_agents_hash(agent_set: set[tuple[str, str, str, str]]) -> str:
+        """The supported features are part of the hash, so a blueprint gaining one re-syncs its toggles."""
+        normalized = sorted(f"{ac}:{ai}:{name}:{features}" for ac, ai, name, features in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
+
+    @staticmethod
+    def _supported_features_by_class() -> dict[str, list[str]]:
+        return {entity.agent_class: sorted(entity.supported_features) for entity in AgentClassEntity.objects()}
 
     @classmethod
     def _agents_hash_key(cls, target: SyncTarget) -> str:
@@ -240,8 +258,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
+            features_by_class = await to_thread(self._supported_features_by_class)
             online_agents = [
-                OnlineAgent(agent_class=inst.agent_class, agent_id=inst.agent_id, display_name=inst.name)
+                OnlineAgent(
+                    agent_class=inst.agent_class,
+                    agent_id=inst.agent_id,
+                    display_name=inst.name,
+                    supported_features=features_by_class.get(inst.agent_class, []),
+                )
                 for inst in instances
                 if inst.is_conversational
             ]

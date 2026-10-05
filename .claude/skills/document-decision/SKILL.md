@@ -20,8 +20,7 @@ Read these files for context:
   Decision, Consequences)
 - **Exemplar**: `docs/arc42/decisions/2026_02_10_replace_phoenix_with_langfuse.md` — a well-written ADR with detailed
   decision drivers, specific consequences split into positive and trade-offs
-- **Existing ADRs**: Browse `docs/arc42/decisions/` (14 ADRs as of Feb 2026) to check for conflicts or decisions to
-  supersede
+- **Existing ADRs**: Browse `docs/arc42/decisions/` to check for conflicts or decisions to supersede
 
 ## Step 1: Analyze Changes
 

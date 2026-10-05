@@ -11,6 +11,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.aitl.response.agent_in_the_loop_response_event import (
         AgentInTheLoopResponseEvent,
     )
+    from swiss_ai_hub.core.events.agent.attached_file.attached_file_event import AttachedFileEvent
+    from swiss_ai_hub.core.events.agent.attached_file.attached_file_status import AttachedFileStatus
+    from swiss_ai_hub.core.events.agent.attached_file.attached_files_read_event import AttachedFilesReadEvent
+    from swiss_ai_hub.core.events.agent.attached_file.read_attached_files_event import ReadAttachedFilesEvent
     from swiss_ai_hub.core.events.agent.bitl.bot_in_the_loop import BotInTheLoop
     from swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event import (
         BotInTheLoopRequestEvent,
@@ -105,6 +109,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.imap.mail_moved_event import MailMovedEvent
     from swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event import UnreadMailListedEvent
     from swiss_ai_hub.core.events.agent.imap.unread_mail_summary import UnreadMailSummary
+    from swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event import KnowledgeSearchedEvent
+    from swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event import SearchKnowledgeEvent
     from swiss_ai_hub.core.events.agent.memory.history.add_memory_to_chat_history_event import (
         AddMemoryToChatHistoryEvent,
     )
@@ -132,6 +138,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
     from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
     from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
+    from swiss_ai_hub.core.events.agent.sandbox.sandbox_file_displayed_event import SandboxFileDisplayedEvent
     from swiss_ai_hub.core.events.agent.self_awareness.meta_question_detected_event import MetaQuestionDetectedEvent
     from swiss_ai_hub.core.events.agent.self_awareness.not_a_meta_question_event import NotAMetaQuestionEvent
     from swiss_ai_hub.core.events.agent.semantic.agent.agent_event import AgentEvent
@@ -146,6 +153,21 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.semantic.retriever.retriever_event import RetrieverEvent
     from swiss_ai_hub.core.events.agent.semantic.semantic_event import SemanticEvent
     from swiss_ai_hub.core.events.agent.semantic.tool.tool_event import ToolEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event import RunToolLoopEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event import ToolApprovalRequestEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_approval_response_event import ToolApprovalResponseEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_call_approved_event import ToolCallApprovedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_calls_decided_event import ToolCallsDecidedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_definition import ToolDefinition
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_condensed_event import ToolLoopCondensedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event import ToolLoopFinishedEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event import ToolLoopIterationEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode import ToolLoopMode
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state import ToolLoopState
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event import ToolLoopStatusEvent
+    from swiss_ai_hub.core.events.agent.tool_loop.tool_result_event import ToolResultEvent
+    from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
+    from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
     from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
     from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 
@@ -181,6 +203,10 @@ __all__ = [
     "ContextSufficientAcceptEvent",
     "ControlAndDisplayEvent",
     "ControlEvent",
+    "AttachedFileEvent",
+    "AttachedFileStatus",
+    "AttachedFilesReadEvent",
+    "ReadAttachedFilesEvent",
     "ConversationTitleEvent",
     "CostEvent",
     "CronStartEvent",
@@ -254,8 +280,26 @@ __all__ = [
     "ToolEvent",
     "UnreadMailListedEvent",
     "UnreadMailSummary",
+    "ChatFeature",
     "UserMessageEvent",
     "UserUploadedFile",
+    "RunToolLoopEvent",
+    "ToolApprovalRequestEvent",
+    "ToolApprovalResponseEvent",
+    "ToolCallApprovedEvent",
+    "ToolCallsDecidedEvent",
+    "ToolDefinition",
+    "ToolLoopFinishedEvent",
+    "ToolLoopIterationEvent",
+    "ToolLoopMode",
+    "ToolLoopState",
+    "SandboxFileDisplayedEvent",
+    "ToolLoopCondensedEvent",
+    "ToolLoopStatusEvent",
+    "ToolResultEvent",
+    "KnowledgeReference",
+    "KnowledgeSearchedEvent",
+    "SearchKnowledgeEvent",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -286,6 +330,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "BotInTheLoopResponseEvent": "swiss_ai_hub.core.events.agent.bitl.response.bot_in_the_loop_response_event",
     "ChainEvent": "swiss_ai_hub.core.events.agent.semantic.chain.chain_event",
     "ChunkEvent": "swiss_ai_hub.core.events.agent.display.chunk_event",
+    "AttachedFileEvent": "swiss_ai_hub.core.events.agent.attached_file.attached_file_event",
+    "AttachedFileStatus": "swiss_ai_hub.core.events.agent.attached_file.attached_file_status",
+    "AttachedFilesReadEvent": "swiss_ai_hub.core.events.agent.attached_file.attached_files_read_event",
+    "ReadAttachedFilesEvent": "swiss_ai_hub.core.events.agent.attached_file.read_attached_files_event",
     "ConversationTitleEvent": "swiss_ai_hub.core.events.agent.display.conversation_title_event",
     "ContextInsufficientRejectEvent": "swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event",
     "ContextSufficientAcceptEvent": "swiss_ai_hub.core.events.agent.guard.context_sufficient_accept_event",
@@ -365,8 +413,26 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
     "UnreadMailListedEvent": "swiss_ai_hub.core.events.agent.imap.unread_mail_listed_event",
     "UnreadMailSummary": "swiss_ai_hub.core.events.agent.imap.unread_mail_summary",
+    "ChatFeature": "swiss_ai_hub.core.events.agent.user.chat_feature",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
+    "RunToolLoopEvent": "swiss_ai_hub.core.events.agent.tool_loop.run_tool_loop_event",
+    "ToolApprovalRequestEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_request_event",
+    "ToolApprovalResponseEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_approval_response_event",
+    "ToolCallApprovedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_call_approved_event",
+    "ToolCallsDecidedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_calls_decided_event",
+    "ToolDefinition": "swiss_ai_hub.core.events.agent.tool_loop.tool_definition",
+    "ToolLoopFinishedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_finished_event",
+    "ToolLoopIterationEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_iteration_event",
+    "ToolLoopMode": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_mode",
+    "SandboxFileDisplayedEvent": "swiss_ai_hub.core.events.agent.sandbox.sandbox_file_displayed_event",
+    "ToolLoopCondensedEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_condensed_event",
+    "ToolLoopStatusEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_status_event",
+    "ToolLoopState": "swiss_ai_hub.core.events.agent.tool_loop.tool_loop_state",
+    "ToolResultEvent": "swiss_ai_hub.core.events.agent.tool_loop.tool_result_event",
+    "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
+    "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
+    "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",
 }
 
 

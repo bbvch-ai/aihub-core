@@ -10,17 +10,20 @@ from pydantic import ValidationError
 from pypdf import PdfWriter
 from tenacity import wait_none
 
+from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import (
-    MineruFileResult,
     MineruLoader,
     MineruParseResponse,
     MineruRequestError,
     MineruTransientError,
 )
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache import MineruParseCache
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
 FILENAME = "document.pdf"
 STEM = "document"
+READ_OBJECT_FROM_S3 = MineruParseCache._read_object
 
 
 def make_pdf(num_pages: int) -> bytes:
@@ -55,6 +58,14 @@ def fast_retry_kwargs(loader: MineruLoader) -> dict:
     kwargs = MineruLoader._retry_kwargs(loader)
     kwargs["wait"] = wait_none()
     return kwargs
+
+
+@pytest.fixture(autouse=True)
+def in_memory_parse_cache(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
+    store: dict[str, bytes] = {}
+    monkeypatch.setattr(MineruParseCache, "_read_object", lambda self, key: store.get(key))
+    monkeypatch.setattr(MineruParseCache, "_write_object", lambda self, key, content: store.__setitem__(key, content))
+    return store
 
 
 @pytest.fixture
@@ -97,7 +108,7 @@ class TestMergeResults:
 
         merged = MineruLoader._merge_results(results)
 
-        assert merged.md_content == "first\n\nlast"
+        assert merged.md_content == f"first\n\n{PAGE_BREAK}\n\n{PAGE_BREAK}\n\nlast"
         assert merged.num_pages == 5
         assert merged.images == {"a.jpg": "1", "b.jpg": "2"}
         assert merged.backend == "vlm-http-client"
@@ -114,7 +125,7 @@ class TestBatching:
         assert mock.await_count == 1
         assert mock.await_args.args[3] is None
         assert mock.await_args.args[4] is None
-        assert documents[0].text == "content"
+        assert documents[0].text == f"content\n\n{PAGE_BREAK}"
         assert documents[0].metadata[NUMBER_OF_PAGES] == 2
 
     @pytest.mark.asyncio
@@ -157,7 +168,9 @@ class TestBatching:
         assert mock.await_count == 3
         requested_ranges = sorted((call.args[3], call.args[4]) for call in mock.await_args_list)
         assert requested_ranges == [(0, 1), (2, 3), (4, 4)]
-        assert documents[0].text == "pages0-1\n\npages2-3\n\npages4-4"
+        assert documents[0].text == "\n\n".join(
+            ["pages0-1", PAGE_BREAK, PAGE_BREAK, "pages2-3", PAGE_BREAK, PAGE_BREAK, "pages4-4"]
+        )
         assert documents[0].metadata[NUMBER_OF_PAGES] == 5
 
     @pytest.mark.asyncio
@@ -373,5 +386,106 @@ class TestSyncWrapper:
         with patch.object(loader, "_execute_conversion", mock):
             documents = loader.load_data(str(pdf_path))
 
-        assert documents[0].text == "content"
+        assert documents[0].text == f"content\n\n{PAGE_BREAK}"
         assert documents[0].metadata[NUMBER_OF_PAGES] == 2
+
+
+class TestParseCache:
+    @pytest.mark.asyncio
+    async def test_second_parse_of_same_bytes_skips_mineru(self, loader: MineruLoader):
+        mock = AsyncMock(return_value=make_response("content", 2))
+        with patch.object(loader, "_execute_conversion", mock):
+            first = await loader.aload_data_from_bytes(make_pdf(2), FILENAME, embed_base64=True)
+            second = await MineruLoader().aload_data_from_bytes(make_pdf(2), FILENAME, embed_base64=True)
+
+        assert mock.await_count == 1
+        assert second[0].text == first[0].text
+        assert second[0].metadata == first[0].metadata
+
+    @pytest.mark.asyncio
+    async def test_cache_ignores_filename_but_not_extension(self, loader: MineruLoader):
+        mock = AsyncMock(
+            side_effect=lambda content, filename, *args: make_response("content", 1, stem=filename.rsplit(".", 1)[0])
+        )
+        with patch.object(loader, "_execute_conversion", mock):
+            await loader.aload_data_from_bytes(make_pdf(1), "first.pdf", embed_base64=True)
+            await loader.aload_data_from_bytes(make_pdf(1), "renamed.pdf", embed_base64=True)
+            await loader.aload_data_from_bytes(make_pdf(1), "first.png", embed_base64=True)
+
+        assert mock.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_different_bytes_are_parsed_separately(self, loader: MineruLoader):
+        mock = AsyncMock(side_effect=[make_response("one", 1), make_response("two", 2)])
+        with patch.object(loader, "_execute_conversion", mock):
+            first = await loader.aload_data_from_bytes(make_pdf(1), FILENAME, embed_base64=True)
+            second = await loader.aload_data_from_bytes(make_pdf(2), FILENAME, embed_base64=True)
+
+        assert (first[0].text, second[0].text) == ("one", f"two\n\n{PAGE_BREAK}")
+
+    @pytest.mark.asyncio
+    async def test_text_only_request_is_served_by_a_conversion_with_images(self, loader: MineruLoader):
+        cached = MineruFileResult(backend="b", version="v", md_content="cached", num_pages=1, images={})
+        await loader.parse_cache.put(b"bytes", FILENAME, True, cached)
+
+        assert await loader.parse_cache.get(b"bytes", FILENAME, include_images=False) == cached
+
+    @pytest.mark.asyncio
+    async def test_request_with_images_is_not_served_by_a_text_only_conversion(self, loader: MineruLoader):
+        cached = MineruFileResult(backend="b", version="v", md_content="cached", num_pages=1, images={})
+        await loader.parse_cache.put(b"bytes", FILENAME, False, cached)
+
+        assert await loader.parse_cache.get(b"bytes", FILENAME, include_images=True) is None
+
+    def test_changing_output_settings_changes_the_key(self, monkeypatch: pytest.MonkeyPatch):
+        before = MineruLoader().parse_cache.object_key(b"bytes", FILENAME, MineruParseCache.WITH_IMAGES)
+        monkeypatch.setenv("MINERU_TABLE_ENABLE", "false")
+        after = MineruLoader().parse_cache.object_key(b"bytes", FILENAME, MineruParseCache.WITH_IMAGES)
+
+        assert before != after
+
+    def test_service_urls_do_not_change_the_key(self, monkeypatch: pytest.MonkeyPatch):
+        before = MineruLoader().parse_cache.object_key(b"bytes", FILENAME, MineruParseCache.WITH_IMAGES)
+        monkeypatch.setenv("MINERU_API_BASE_URL", "http://elsewhere:8000")
+        after = MineruLoader().parse_cache.object_key(b"bytes", FILENAME, MineruParseCache.WITH_IMAGES)
+
+        assert before == after
+
+    @pytest.mark.asyncio
+    async def test_failed_conversion_is_not_cached(self, loader: MineruLoader, in_memory_parse_cache: dict[str, bytes]):
+        pdf = make_pdf(1)
+        with patch.object(loader, "_execute_conversion", AsyncMock(side_effect=MineruRequestError("rejected"))):
+            with pytest.raises(MineruRequestError):
+                await loader.aload_data_from_bytes(pdf, FILENAME, embed_base64=True)
+
+        assert in_memory_parse_cache == {}
+
+    def test_the_s3_body_is_closed_after_a_hit(self, monkeypatch: pytest.MonkeyPatch):
+        body = MagicMock()
+        body.read.return_value = b"cached"
+        client = MagicMock()
+        client.get_object.return_value = {"Body": body}
+        cache = MineruLoader().parse_cache
+        monkeypatch.setattr(cache, "_client", lambda: client)
+
+        assert READ_OBJECT_FROM_S3(cache, "mineru/key") == b"cached"
+        body.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_the_span_carries_the_key_not_the_document(
+        self, loader: MineruLoader, monkeypatch: pytest.MonkeyPatch
+    ):
+        span = MagicMock()
+        tracer = MagicMock()
+        tracer.start_as_current_span.return_value.__enter__.return_value = span
+        monkeypatch.setattr(
+            "swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache.get_tracer", lambda name: tracer
+        )
+        result = MineruFileResult(backend="b", version="v", md_content="secret text", num_pages=1, images={})
+        await loader.parse_cache.put(b"bytes", FILENAME, True, result)
+
+        await loader.parse_cache.get(b"bytes", FILENAME, True)
+
+        recorded = str(tracer.start_as_current_span.call_args_list) + str(span.mock_calls)
+        assert "secret text" not in recorded
+        span.set_attributes.assert_called_once()

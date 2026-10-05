@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 from types import UnionType
-from typing import Annotated, Union, get_args, get_origin
+from typing import Annotated, Any, Union, get_args, get_origin
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
@@ -888,3 +888,28 @@ class TestFreeFormMapFields:
 
     def test_optional_map_keeps_its_default(self, model: type[BaseModel]) -> None:
         assert model.model_validate({"scores": {}}).model_dump()["toggles"] == {}
+
+
+class _NestedMapRequest(BaseEvent):
+    name: Annotated[str, Field(description="The tool.")] = "search"
+    arguments: Annotated[dict[str, Any], Field(description="Free-form call arguments.")] = {}
+
+
+class _NestedMapResponse(BaseEvent):
+    response: Annotated[bool, Field(description="Approved or not.")]
+    request_event: Annotated[_NestedMapRequest, Field(description="The request answered.")]
+
+
+class TestNestedFreeFormMapFields:
+    """A map inside a nested model, such as an approval response's request arguments, used to vanish the same way."""
+
+    def test_a_nested_map_survives_validation(self) -> None:
+        model = ModelCreationService.create_input_model_from_event_specs(
+            EventSpecs.from_event_class(_NestedMapResponse)
+        )
+
+        dumped = model.model_validate(
+            {"response": True, "request_event": {"name": "search", "arguments": {"query": "vacation days"}}}
+        ).model_dump()
+
+        assert dumped["request_event"]["arguments"] == {"query": "vacation days"}

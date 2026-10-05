@@ -12,8 +12,9 @@ import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
-from swiss_ai_hub.core.form import FormkitElement, Group, InputText, Repeater
+from swiss_ai_hub.core.form import Checkbox, FormkitElement, Group, InputText, Repeater
 from swiss_ai_hub.core.form.base.html_element import HtmlElement
+from swiss_ai_hub.core.imap import EmailClassificationSettings, ImapClientConfig
 from swiss_ai_hub.core.processes.process_config import ProcessConfig
 from swiss_ai_hub.jambo import SchemaConverter
 
@@ -187,3 +188,179 @@ class TestUndeclaredFields:
         assert "bogus" in detail
         assert "enrichment.deep" in detail
         assert "sources.1.deeper" in detail
+
+
+class TestBlankRequiredFields:
+    """The walk that holds a submission to the `required` its owner announced (#219).
+
+    `required` on a form element is FormKit's — the user must put something here — while the generated
+    model only carries the schema's, which is that the key is present. `""` satisfies the second and not
+    the first, so an empty mandatory field validated and was stored; the browser's rule was the sole
+    thing rejecting it, and the import endpoint never ran that rule at all.
+
+    A blank also arrives in two different shapes depending on how it got there — an untouched fresh field
+    seeds to `None` (no Pydantic default to fall back to), a template's placeholder carries `""` (see
+    `test_the_mailbox_template_ships_a_connection_that_must_be_filled_in`) — and the guard has to treat
+    both as the same defect rather than leaning on whichever one Pydantic's own type check happens to
+    reject for free.
+    """
+
+    @staticmethod
+    def _elements() -> list[FormkitElement]:
+        return [
+            InputText(name="title", label="Title", required=True),
+            InputText(name="note", label="Note"),
+            Checkbox(name="agreed", label="Agreed", required=True),
+            HtmlElement(el="h2", children="Section"),
+            Group(name="enrichment", children=[InputText(name="model", label="Model", required=True)]),
+            Repeater(name="sources", children=[InputText(name="model", label="Model", required=True)]),
+        ]
+
+    @staticmethod
+    def _filled() -> dict:
+        return {
+            "title": "t",
+            "agreed": False,
+            "enrichment": {"model": "m"},
+            "sources": [{"model": "m"}],
+        }
+
+    @staticmethod
+    def _reject(config: dict) -> str:
+        with pytest.raises(HTTPException) as exc_info:
+            InstanceConfigHelper.reject_blank_required_fields(TestBlankRequiredFields._elements(), config)
+        assert exc_info.value.status_code == 400
+        return exc_info.value.detail
+
+    def test_a_fully_filled_configuration_is_accepted(self):
+        InstanceConfigHelper.reject_blank_required_fields(self._elements(), self._filled())
+
+    def test_an_empty_string_in_a_required_field_is_rejected(self):
+        """The template shape of the defect: present, typed correctly, and empty."""
+        assert "title" in self._reject({**self._filled(), "title": ""})
+
+    def test_a_null_in_a_required_field_is_rejected(self):
+        """The manual-create shape: an untouched field seeds to `None`, not `""` — Pydantic's own type
+        check happens to reject this one for a plain `str` field, but the guard must not depend on that
+        accident, since the same field can just as easily arrive as `""` instead (see the string test)."""
+        assert "title" in self._reject({**self._filled(), "title": None})
+
+    def test_a_missing_required_field_is_rejected_as_blank(self):
+        """Named the same way as an empty one — to the person filling the form they are one mistake."""
+        config = self._filled()
+        del config["title"]
+        assert "title" in self._reject(config)
+
+    def test_an_optional_field_may_be_blank(self):
+        InstanceConfigHelper.reject_blank_required_fields(self._elements(), {**self._filled(), "note": ""})
+
+    @pytest.mark.parametrize("value", [False, 0, 0.0], ids=["false", "zero", "zero-float"])
+    def test_a_falsy_value_is_a_value_and_not_a_blank(self, value):
+        """FormKit's `empty()` says the same, which is why an unchecked box satisfies `required` there."""
+        InstanceConfigHelper.reject_blank_required_fields(self._elements(), {**self._filled(), "agreed": value})
+
+    def test_whitespace_is_not_blank_because_the_browser_accepted_it(self):
+        """Plain `required` does not trim; `required:trim` is a separate opt-in rule. Being stricter here
+        would reject a submission the user watched pass validation in the form."""
+        InstanceConfigHelper.reject_blank_required_fields(self._elements(), {**self._filled(), "title": "   "})
+
+    def test_a_disabled_nullable_group_is_not_walked(self):
+        """A cleared sub-form submits `null`. Requiring the children it is not submitting would make the
+        section's toggle impossible to leave off."""
+        InstanceConfigHelper.reject_blank_required_fields(
+            self._elements(), {**self._filled(), "enrichment": None, "sources": []}
+        )
+
+    def test_a_conditional_field_is_skipped(self):
+        """Whether it is shown depends on a FormKit expression over the rest of the form, which only the
+        browser can evaluate. Rejecting a field the user was never offered is worse than the gap closed here."""
+        elements = [InputText(name="folder", label="Folder", required=True, condition_if="$get(enabled).value")]
+        InstanceConfigHelper.reject_blank_required_fields(elements, {"folder": ""})
+
+    def test_a_blank_required_field_inside_a_repeater_names_its_row(self):
+        config = {**self._filled(), "sources": [{"model": "m"}, {"model": ""}]}
+        assert "sources.1.model" in self._reject(config)
+
+    def test_every_offending_path_is_reported_in_one_exception(self):
+        detail = self._reject({"enrichment": {"model": ""}, "sources": [{"model": None}]})
+        assert "title" in detail
+        assert "enrichment.model" in detail
+        assert "sources.0.model" in detail
+
+    def test_the_mailbox_template_ships_a_connection_that_must_be_filled_in(self):
+        """The reported case, against the real announced form rather than a stand-in: the shared-mailbox
+        template ships `ImapClientConfig(host="", username="", password="")` as placeholders for the admin,
+        and until now nothing but the browser made them fill it in.
+
+        The password is not named: it is shown only for password auth and is one of two alternative
+        credentials to OAuth 2.0, so which of the two must be filled depends on the auth method."""
+        elements = ImapClientConfig.as_form().to_formkit_form()
+        connection = {"auth_method": "password", "port": 993, "inbox_folder": "INBOX", "max_messages": 50}
+
+        with pytest.raises(HTTPException) as exc_info:
+            InstanceConfigHelper.reject_blank_required_fields(
+                elements, {**connection, "host": "", "username": "", "password": ""}
+            )
+
+        detail = exc_info.value.detail
+        assert "host: required field is empty" in detail
+        assert "username: required field is empty" in detail
+        assert "password" not in detail
+
+        InstanceConfigHelper.reject_blank_required_fields(
+            elements, {**connection, "host": "imap.example.com", "username": "a@example.com", "password": "pw"}
+        )
+
+    def test_a_manual_create_seeds_the_same_fields_to_null_and_is_equally_rejected(self):
+        """The other shape the same fields arrive in when nobody used a template: an untouched field with
+        no Pydantic default seeds to `None`, not `""`. Both must be caught the same way."""
+        elements = ImapClientConfig.as_form().to_formkit_form()
+        connection = {"auth_method": "password", "port": 993, "inbox_folder": "INBOX", "max_messages": 50}
+
+        detail = self._detail_of(elements, {**connection, "host": None, "username": None, "password": ""})
+        assert "host: required field is empty" in detail
+        assert "username: required field is empty" in detail
+
+    def test_an_empty_submission_is_rejected_rather_than_crashing(self):
+        """`normalize_form_configuration` turns `{}` into `None`; that must be a 400 naming what is missing, not a
+        500 from the walk."""
+        detail = self._reject(InstanceConfigHelper.normalize_form_configuration({}))
+        assert "title: required field is empty" in detail
+
+    def test_a_repeater_in_formkit_numbered_dict_shape_is_walked(self):
+        """FormKit can submit a repeater as `{"0": {...}, "1": {...}}`; the runtime turns that back into a list
+        before validating, so a blank field in it must not slip past as an unrecognised shape."""
+        config = {**self._filled(), "sources": {"0": {"model": "m"}, "1": {"model": ""}}}
+        assert "sources.1.model" in self._reject(config)
+
+    @staticmethod
+    def _detail_of(elements: list[FormkitElement], config: dict) -> str:
+        with pytest.raises(HTTPException) as exc_info:
+            InstanceConfigHelper.reject_blank_required_fields(elements, config)
+        return exc_info.value.detail
+
+    def test_the_optional_classification_settings_are_not_demanded(self):
+        """Against the real announced form: a blank classifier model falls back to the agent's main model, and
+        a category with no knowledge collections is answered from all of them, so the guard must leave both
+        alone — while still reaching into the category rows for the fields that are required."""
+        elements = EmailClassificationSettings.as_form().to_formkit_form()
+        category = {
+            "category": "support_request",
+            "imap_folder": "Triage/Support",
+            "description": "d",
+            "draft_reply": False,
+            "knowledge_namespaces": None,
+        }
+        settings = {
+            "categories": [category],
+            "fallback_folder": "a",
+            "failure_folder": "b",
+            "number_of_input_tokens": 8192,
+            "model_name": "",
+            "classification_prompt": "p",
+        }
+
+        InstanceConfigHelper.reject_blank_required_fields(elements, settings)
+
+        blank_category = {**settings, "categories": [{**category, "category": ""}]}
+        assert "categories.0.category: required field is empty" in self._detail_of(elements, blank_category)

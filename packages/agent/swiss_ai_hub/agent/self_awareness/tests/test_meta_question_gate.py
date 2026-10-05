@@ -52,7 +52,7 @@ def test_memory_and_retrieval_hang_off_the_contextualized_turn():
     """Recall and retrieval consume the call's result, which only exists past the gate. A refactor that
     re-anchors them on the start event alone must restore an explicit gate."""
     on_turn = {s.__name__ for s in RAGAgent.get_steps_waiting_for_event(ConversationContextualizedEvent)}
-    assert {"recall_memory_step", "few_shot_guard_step", "retrieve_step", "assemble_prompt_step"} <= on_turn
+    assert {"gather_context_step", "few_shot_guard_step", "retrieve_step", "assemble_prompt_step"} <= on_turn
 
 
 def test_inspection_reads_the_call_never_a_start_event():

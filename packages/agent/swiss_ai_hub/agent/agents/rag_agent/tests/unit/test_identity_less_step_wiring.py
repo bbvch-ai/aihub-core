@@ -21,14 +21,14 @@ import inspect
 from typing import get_args
 
 import pytest
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 
 # Resolved by the dispatcher from RunContext rather than from an event, and legitimately absent on an
 # identity-less run. Mirrors the `UserIdentity in (annotation, *get_args(annotation))` match in
 # `AgentDispatcher._get_parameter_value`.
-_NONE_ABLE_TYPES = (UserIdentity,)
+_NONE_ABLE_TYPES = (UserIdentity, AccessChecker)
 
 
 def _none_able(annotation) -> bool:

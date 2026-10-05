@@ -112,7 +112,12 @@ def test_a_step_name_collision_is_refused():
 )
 def test_every_conversational_blueprint_validates(agent: type[Agent], config: type[AgentConfig]):
     agent.validate_workflow(config)
-    assert {capability.__name__ for capability in agent.installed_capabilities()} == {"Conversation", "Memory"}
+    assert {capability.__name__ for capability in agent.installed_capabilities()} == {
+        "Conversation",
+        "Memory",
+        "AttachedFiles",
+        "Knowledge",
+    }
 
 
 class SearchEvent(ControlEvent):

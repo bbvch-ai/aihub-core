@@ -329,7 +329,10 @@ Option groups are non-nullable with primitive defaults, so a hidden group submit
 SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str | Password`;
 `SourcePipelineConfig.secret_field_paths()` derives their dotted paths from the form, the API encrypts them with
 `SecretEncryptionService` (`AIHUB_CONFIG_ENCRYPTION_KEY`, shared with the pipeline) and returns a mask; a resubmitted
-mask keeps the stored value. Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
+mask keeps the stored value. The dialog offers only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`,
+`drive`, plus `local` when `RCLONE_LOCAL_SOURCE_ROOT` is set); the other backends stay in the form and runtime so
+existing databases keep syncing. The Drive service-account key is a `SecretFileInput` (core form element, treated as a
+secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on `RcloneSyncConfig` + labels in
 `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):

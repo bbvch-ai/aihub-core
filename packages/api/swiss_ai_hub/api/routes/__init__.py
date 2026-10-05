@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.token.token_controller import TokenController
     from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
     from swiss_ai_hub.api.routes.user.user_controller import UserController
+    from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller import UserKnowledgeController
     from swiss_ai_hub.api.routes.webhook.webhook_controller import WebhookController
 
 __all__ = [
@@ -55,6 +56,7 @@ __all__ = [
     "TokenController",
     "TranslationController",
     "UserController",
+    "UserKnowledgeController",
     "UserMemoryController",
     "WebhookController",
 ]
@@ -84,6 +86,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "TokenController": "swiss_ai_hub.api.routes.token.token_controller",
     "TranslationController": "swiss_ai_hub.api.routes.translation.translation_controller",
     "UserController": "swiss_ai_hub.api.routes.user.user_controller",
+    "UserKnowledgeController": "swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller",
     "UserMemoryController": "swiss_ai_hub.api.routes.memory.user_memory_controller",
     "WebhookController": "swiss_ai_hub.api.routes.webhook.webhook_controller",
 }

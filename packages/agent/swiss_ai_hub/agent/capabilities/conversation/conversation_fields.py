@@ -4,7 +4,7 @@ from pydantic import Field, model_validator
 from swiss_ai_hub.core.form import Checkbox, InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.form.form import Form
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig, usable_input_budget
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -55,6 +55,11 @@ class ConversationFields(Form):
             ),
         ),
     ] = False
+
+    def input_budget(self) -> int:
+        """The admin's cost ceiling capped by the narrowest model window that could receive the prompt."""
+        budget = usable_input_budget([self.llm, self.task_llm])
+        return self.number_of_input_tokens if budget is None else min(self.number_of_input_tokens, budget)
 
     @model_validator(mode="after")
     def derive_task_llm_from_main_llm(self) -> Self:

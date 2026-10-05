@@ -1,0 +1,56 @@
+---
+steps:
+  read_as_tool:
+    name: Angehängte Dateien als Werkzeug lesen
+    description: Liest die angehängten Dateien, die das Modell gewählt hat
+  answer_tool_call:
+    name: Dateien an das Modell zurückgeben
+    description: Gibt das Gelesene an die Werkzeugschleife des Modells zurück
+  read_attached_files:
+    name: Angehängte Dateien lesen
+    description: Liest die Dateien, die der Benutzer an die Unterhaltung angehängt
+      hat, und fügt ihren Text dem Kontext des Modells hinzu
+prompt:
+  context: |
+    {% chat role="system" %}
+    Die Benutzerin oder der Benutzer hat diesem Gespräch die folgenden Dateien angehängt. Wenn sich die Frage darauf bezieht, antworten Sie aus ihrem Inhalt und nennen Sie die verwendete Datei. Jede Datei ist ein Block `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ihre Abschnitte stehen unter ihren Überschriften.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: Nur die für die Frage relevantesten Teile von "%{filename}" passen in
+    Ihren Kontext. Teilen Sie mit, dass Ihre Antwort auf Auszügen dieser Datei beruht.
+  truncated: Nur der Anfang von "%{filename}" hat in deinen Kontext gepasst. Teile
+    dem Benutzer mit, dass deine Antwort auf einem Teil dieser Datei beruht.
+  unreadable: Der Benutzer hat "%{filename}" angehängt, die Datei konnte aber nicht
+    gelesen werden (%{error}). Teile dem Benutzer mit, dass diese Datei nicht gelesen
+    werden konnte, und schlage vor, sie in einem anderen Format anzuhängen oder ihren
+    Text einzufügen.
+  pages: Dies sind die Seiten %{first} bis %{last} von "%{filename}", das %{total}
+    Seiten hat.
+  pages_cut: Nur die Seiten %{first} bis %{shown} der angefragten Seiten %{first}
+    bis %{last} von "%{filename}" passen in deinen Kontext. Teile das dem Benutzer
+    mit und biete an, ab Seite %{next} weiterzulesen.
+  pages_missing: '"%{filename}" hat nur %{total} Seiten, eine Seite %{first} gibt
+    es nicht. Teile das dem Benutzer mit.'
+  pages_unknown: Die Seiten von "%{filename}" sind nicht bekannt, daher konnten die
+    gefragten Seiten nicht herausgesucht werden. Teile dem Benutzer mit, dass deine
+    Antwort nicht nur auf diesen Seiten beruht.
+tool:
+  label: Angehängte Dateien lesen
+  approval_summary: Die angehängten Dateien lesen
+  description: "Liest Dateien, die der Benutzer an dieses Gespräch angehängt hat,\
+    \ und gibt ihren Text mit zitierbaren IDs zurück. Von einer Datei, die zu gross\
+    \ ist, um sie ganz zu lesen, kommen die zur Anfrage passendsten Abschnitte. Um\
+    \ bestimmte Seiten eines Dokuments zu lesen, first_page und last_page angeben.\
+    \ Angehängte Dateien:\n%{files}"
+  files: Die zu lesenden Dateien nach ID; weglassen, um alle zu lesen.
+  query: Was du in den Dateien suchst, damit von einer langen Datei die passenden
+    Abschnitte bleiben.
+  first_page: Die erste zu lesende Seite, ab 1 gezählt, wenn sich die Frage auf bestimmte
+    Seiten bezieht. Die Seiten werden dann der Reihe nach gelesen statt nach der Anfrage
+    durchsucht.
+  last_page: Die letzte zu lesende Seite; weglassen, um nur die erste Seite zu lesen.
+  nothing_readable: Keine der gewählten Dateien konnte gelesen werden.
+  unknown_files: 'Keine der angegebenen ids ist eine angehängte Datei. Angehängte
+    Dateien: %{files}'

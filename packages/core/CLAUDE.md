@@ -67,6 +67,7 @@ packages/core/swiss_ai_hub/core/
 │   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
+│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
@@ -215,10 +216,10 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   ├── RerankerEvent, ToolEvent, ChainEvent
 │   │   ├── GuardEvent, AgentEvent
 │   │   └── ExceptionEvent
-│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
-│
-├── ControlEvent (drives workflow execution)
-│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
+│   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
+│   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
+│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
+│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -239,7 +240,12 @@ Events are organized by which system they belong to:
 
 ### Creating a New Event
 
-1. Choose the correct base class from the hierarchy above
+1. Choose the correct base class from the hierarchy above. An event that is part of the protocol — a call between steps
+   or capabilities that an admin reading a run would want to see — is a `ControlAndDisplayEvent`, because the event
+   history lists display events only. Plain `ControlEvent` is for internal bookkeeping no reader needs. Give it
+   `_display_name`/`_display_description` from `lib.events.*` (the description is a short progress phrase: chat clients
+   show it as a live status), a component in `packages/web/components/Event/Display/`, and an entry in the
+   `DisplayEvents` union
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors
@@ -295,6 +301,11 @@ VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a
 - A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
   nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
   empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
+- A nested element's pre-filled `value` comes from the **parent field's default instance** first (e.g.
+  `knowledge: KnowledgeConfig = KnowledgeConfig()` whose `reranking_model` names `reranker/bge`), then from the leaf
+  field's own class default. The UI falls back to these values for keys a stored profile lacks, so a profile saved
+  before a sub-form existed opens with the declared model instead of an empty select. `default_factory` values are not
+  inherited — they come from deployment settings at build time, and the admin picks them (e.g. the org-memory tenant).
 
 ## NATS Messaging
 
@@ -522,19 +533,37 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                                          |
-| --------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
-| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                                                         |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+| Module                 | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`              | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
+| `retrieval/`           | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
+| `retrievers/`          | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
+| `knowledge_documents/` | Whole-document read access            | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`                                                                                                                                                                                              |
+| `rerank/`              | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
+| `guards/`              | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
+| `processors/`          | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
+| `resources/`           | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
+| `document/`            | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                    |
+| `prompting/`           | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
+| `chat_history/`        | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
+| `routing/`             | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+
+`knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
+`KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
+(id, path relative to the collection's **folder**, filename, title, type), loaded without their text and sorted by
+database, collection and path. `matching_glob()` and `matching_regex()` chain:
+
+- **Glob:** the shell/ripgrep dialect, matched against the whole path, ignoring case, with `{a,b}` expanded.
+- **Regex:** searched anywhere in the path, on the `regex` engine with one time budget per call.
+- **Limits:** patterns over 500 characters and brace globs over 64 alternatives are rejected.
+- **Both:** NFC-normalised.
+
+`load_document()` and `load_document_by_path()` take the caller's allowed collections, so an id or path from any other
+collection is reported as not found. Pending documents raise `KnowledgeDocumentPendingError`. A collection that does not
+exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
+range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
+passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
+against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it

@@ -24,3 +24,10 @@ class AgentFileValidationRequest(BaseModel):
             description="Original filename with extension. Must not contain path separators.",
         ),
     ]
+    thread_id: Annotated[
+        str | None,
+        Field(
+            pattern=r"^[0-9a-f]{24}$",
+            description="The conversation the file is attached in; it is also placed in the user's files there.",
+        ),
+    ] = None

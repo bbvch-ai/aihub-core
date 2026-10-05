@@ -402,6 +402,11 @@ class AccessChecker:
         """
         return self.access_level(f"{_USER_PREFIX}agent.{agent_class}.?>") != AccessLevel.ACCESS_DENIED
 
+    def has_access_to_knowledge_database(self, database: str) -> bool:
+        """Whether the database shows up for the subject at all: any rule at or below it, a single namespace
+        included."""
+        return self.has_access(f"{self.knowledge_database_user_rule(database)}.?>")
+
     def has_access_to_knowledge_namespace(self, database: str, namespace: str) -> bool:
         return self.has_access(self.knowledge_namespace_user_rule(database, namespace))
 

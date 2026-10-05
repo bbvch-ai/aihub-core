@@ -16,7 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGSuccessStopEvent,
     StandaloneQuestionCondenserEvent,
 )
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
@@ -124,7 +124,10 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             request=Conversation.compose([system, turn], blocks=[first, second]),
             conversation=_config(number_of_input_tokens=1_000),
         )
-        assert composed.history == [system, first[0], second[0], turn]
+        assert composed.history == [*merge_consecutive_messages([system, first[0], second[0]]), turn]
+        assert [message.role for message in composed.history] == [MessageRole.SYSTEM, MessageRole.USER], (
+            "the context leaves as one system message, which served models read in full"
+        )
 
         trimmed = await Conversation.compose_context_step(
             LLMWrappingAgent(),
@@ -132,6 +135,29 @@ async def test_compose_puts_blocks_behind_the_system_head_in_order_and_trims_the
             conversation=_config(number_of_input_tokens=60),
         )
         assert trimmed.history == [system, turn], "the blocks give way, never the turn or the head"
+
+
+@pytest.mark.asyncio
+async def test_compose_trims_the_oldest_turns_before_any_block():
+    """A large attached file and the retrieved documents were asked for this turn; old turns are what gives way."""
+    system = _message(MessageRole.SYSTEM, 10)
+    older = [_message(MessageRole.USER if index % 2 == 0 else MessageRole.ASSISTANT, 100) for index in range(8)]
+    question = _message(MessageRole.USER, 20)
+    attached_file = [_message(MessageRole.SYSTEM, 300)]
+    documents = [_message(MessageRole.SYSTEM, 300)]
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, *older, question], blocks=[attached_file, documents]),
+            conversation=_config(number_of_input_tokens=900),
+        )
+
+    head, *turns = composed.history
+    assert head.content.count(TOKEN_WORD.strip()) == 610, "the file and the documents both stay in the prompt"
+    assert turns[-1] == question
+    assert 0 < len(turns) - 1 < len(older), "only the oldest turns gave way"
+    assert turns[:-1] == older[-(len(turns) - 1) :]
 
 
 @pytest.mark.asyncio
@@ -143,6 +169,70 @@ async def test_compose_passes_the_history_through_when_every_block_is_empty():
         conversation=_config(),
     )
     assert composed.history == history
+
+
+@pytest.mark.asyncio
+async def test_compose_re_limits_instructions_added_to_the_history_even_without_blocks():
+    """A rejection prompt ahead of an already-limited history must not push the prompt past the budget."""
+    instructions = _message(MessageRole.SYSTEM, 200)
+    older = [_message(MessageRole.USER, 100), _message(MessageRole.ASSISTANT, 100)]
+    question = _message(MessageRole.USER, 20)
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=ComposeContextEvent(history=[instructions, *older, question], blocks=[[], []]),
+            conversation=_config(number_of_input_tokens=300),
+        )
+
+    assert composed.history == [instructions, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_drops_a_block_whole_rather_than_keeping_its_notes_without_the_content():
+    system = _message(MessageRole.SYSTEM, 10)
+    question = _message(MessageRole.USER, 20)
+    citation_rule = ChatMessage(role=MessageRole.SYSTEM, content="Cite by id.")
+    attached_file = [_message(MessageRole.SYSTEM, 300), citation_rule]
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, question], blocks=[attached_file]),
+            conversation=_config(number_of_input_tokens=200),
+        )
+
+    assert composed.history == [system, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_drops_an_earlier_turn_too_long_for_the_room_left():
+    system = _message(MessageRole.SYSTEM, 10)
+    oversized = _message(MessageRole.USER, 500)
+    question = _message(MessageRole.USER, 20)
+
+    with _no_window():
+        composed = await Conversation.compose_context_step(
+            LLMWrappingAgent(),
+            request=Conversation.compose([system, oversized, question], blocks=[]),
+            conversation=_config(number_of_input_tokens=200),
+        )
+
+    assert composed.history == [system, question]
+
+
+@pytest.mark.asyncio
+async def test_compose_shows_consecutive_turns_of_one_role_merged_as_the_model_receives_them():
+    first, second = _message(MessageRole.USER, 5), _message(MessageRole.USER, 5)
+
+    composed = await Conversation.compose_context_step(
+        LLMWrappingAgent(),
+        request=Conversation.compose([first, second], blocks=[]),
+        conversation=_config(),
+    )
+
+    assert composed.history == merge_consecutive_messages([first, second])
+    assert len(composed.history) == 1
 
 
 @pytest.mark.asyncio

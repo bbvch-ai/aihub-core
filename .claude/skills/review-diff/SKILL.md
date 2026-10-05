@@ -21,24 +21,27 @@ Read the full diff carefully. Understand every change before reviewing.
 ## Step 2: Read Affected CLAUDE.md Files
 
 For each scope touched by the diff, read its `CLAUDE.md` to understand scope-specific conventions. The root `CLAUDE.md`
-has 16 Coding Conventions — use those as the baseline for all reviews.
+has 20 Coding Conventions — use those as the baseline for all reviews.
 
 ## Step 3: Review Checklist
 
 ### Architecture & Scope Boundaries
 
 - Code is in the correct scope (shared code in `packages/core`, scope-specific code in its scope)
-- No cross-scope imports (only through `packages/core`, exception: `packages/process` → `packages/agent`)
+- No cross-scope imports (only through `packages/core`; `packages/process` depends on `packages/agent` for tests only)
 - Controller → Service → Entity separation respected (see `packages/api/swiss_ai_hub/api/routes/agent/` for reference)
-- New entities use MongoEngine Documents in `packages/core/swiss_ai_hub/core/persistence/entities/`
-- New events follow Swiss AI Agent Protocol hierarchy (Control vs Display, see `/validate-events`)
+- New entities use MongoEngine Documents in `packages/core/swiss_ai_hub/core/persistence/<domain>/` (`*_entity.py`)
+- New events follow Swiss AI Agent Protocol hierarchy (Control vs Display, see `/nats-events`); events that are both
+  extend `ControlAndDisplayEvent` and ship their own event display component in `packages/web/components/Event/Display/`
+- Agent classes hold `@step` methods only; helpers live in standalone imported classes or dispatcher-injected
+  dependencies
 
-### Coding Standards (root CLAUDE.md rules 01-16)
+### Coding Standards (root CLAUDE.md rules 01-20)
 
-Review against ALL 16 Coding Conventions in the root `CLAUDE.md`. Flag any violations. Pay special attention to rules
+Review against ALL 20 Coding Conventions in the root `CLAUDE.md`. Flag any violations. Pay special attention to rules
 that are easy to miss in diffs:
 
-- Cross-scope imports bypassing `packages/core` (rule 11 — linter won't catch this)
+- Cross-scope imports bypassing `packages/core` (rules 18-19 — linter won't catch this)
 - Missing `@classmethod` factories on new Pydantic models (`from_entity()`, `from_request()`)
 - `try-except` wrappers that swallow errors instead of failing fast (rule 03)
 - Dataclasses or plain dicts used instead of Pydantic models (rule 02)
@@ -55,10 +58,11 @@ that are easy to miss in diffs:
 
 ### NATS & Event Patterns
 
-- New events inherit from correct base (`ControlEvent` vs `DisplayEvent`)
+- New events inherit from correct base (`ControlEvent`, `DisplayEvent`, or `ControlAndDisplayEvent`)
 - Event names follow `{Verb}{Noun}Event` convention
-- NATS subjects follow `aihub.{scope}.{class}.{id}.{event}` pattern
-- Subscribers use `AbstractSubscriber` / `AgentNCSubscriber` — not raw NATS subscriptions
+- NATS subjects follow the topic hierarchy classes in `packages/core/swiss_ai_hub/core/topics/` (agent events:
+  `agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}`)
+- Subscribers extend `AbstractSubscriber` (e.g. `AgentNCSubscriber`) — not raw NATS subscriptions
 
 ### Testing
 

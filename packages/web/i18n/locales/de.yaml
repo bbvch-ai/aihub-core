@@ -286,6 +286,14 @@ event:
       identity: Identität
       capabilities: Fähigkeiten
       behavior: Verhalten
+  sandboxFileDisplayed:
+    file: Datei
+    type: Typ
+    size: Grösse
+    path: In der Sandbox
+  humanInTheLoopResponse:
+    confirmed: Bestätigt
+    declined: Abgelehnt
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
@@ -304,6 +312,63 @@ event:
       delegations: Delegationen
       delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
       allEvents: Alle Ereignisse
+  parts:
+    noMessages: Keine Nachrichten
+    yes: Ja
+    no: Nein
+  capability:
+    userQuery: Nachricht des Benutzers
+    historyMessages: Nachrichten im Verlauf
+    condensed: Aus dem Verlauf verdichtet
+    query: Anfrage
+    block: Block {number}
+    blocks: Kontextblöcke
+    namespaces: Bereiche des Organisationsgedächtnisses
+    toolCall: Werkzeugaufruf
+    userMemories: Benutzererinnerungen
+    organizationMemories: Organisationserinnerungen
+    references: Referenzierte Sammlungen
+    citeSources: Quellen zitieren
+    sections: Gefundene Abschnitte
+    notSearched: Nicht durchsucht (kein Zugriff)
+    files: Dateien
+    reserveTokens: Reservierte Tokens
+    fileStatus:
+      read: Gelesen
+      truncated: Gekürzt
+      failed: Fehlgeschlagen
+    citationId: Zitier-ID
+    pages: Seiten
+    error: Fehler
+    stop: Endet mit
+    targetAgent: Gedächtnisschreiber
+  toolLoop:
+    loop: Werkzeugsatz
+    mode: Modus
+    modes:
+      answer: Antworten
+      gather: Kontext sammeln
+    iteration: Entscheidungen
+    toolCallsMade: Bisherige Werkzeugaufrufe
+    messages: Nachrichten in der Schleife
+    offeredTools: Angebotene Werkzeuge
+    condensedResults: Verdichtete Ergebnisse
+    needsCondensing: Muss verdichtet werden
+    decidedCalls: Ein Werkzeugaufruf entschieden | {count} Werkzeugaufrufe entschieden
+    narrowedTools: Eingeschränkt auf
+    maxIterations: Entscheidungslimit
+    tool: Werkzeug
+    kind: Art
+    kinds:
+      function: Funktion
+      capability: Fähigkeit
+    failed: Fehlgeschlagen
+    resultContext: Zurückgegebener Kontext
+    stoppedEarly: An den Limits gestoppt
+    gathered: Gesammelter Kontext
+    gatheredMessages: Gesammelte Nachrichten
+    tokens: Tokens
+    condensedTurns: Verdichtete Runden
 costs:
   table:
     count: Anzahl
@@ -1034,3 +1099,44 @@ support:
   send_failed_detail: Ihre Angaben sind noch vorhanden — versuchen Sie es erneut.
   unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte
     wenden Sie sich an Ihre Administration.
+userFiles:
+  title: "Meine Dateien"
+  description: "Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Chat-Anhänge, Dateien, die Agenten für Sie erstellt haben, und Ihre eigenen Uploads."
+  conversation: "Chat"
+  actions:
+    move: "Verschieben"
+    upload: "Hochladen"
+    newFolder: "Neuer Ordner"
+    refresh: "Aktualisieren"
+    download: "Herunterladen"
+    rename: "Umbenennen"
+    delete: "Löschen"
+    close: "Schliessen"
+    cancel: "Abbrechen"
+    save: "Speichern"
+    openFolder: "Ordner {name} öffnen"
+    preview: "Vorschau von {name}"
+  columns:
+    name: "Name"
+    size: "Grösse"
+    modified: "Geändert"
+  empty:
+    folder: "Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen."
+    noSpace: "Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den Chat einmal und kommen Sie dann zurück."
+  error:
+    load: "Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren erneut."
+  move:
+    header: "{name} verschieben nach"
+    noTargets: "Kein Ordner zum Verschieben vorhanden."
+  preview:
+    unavailable: "Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter, um sie zu öffnen."
+  name:
+    invalid: "Ein Name darf nicht leer sein und keinen Schrägstrich enthalten."
+  delete:
+    header: "Löschen"
+    file: "{name} löschen?"
+    folder: "Den Ordner {name} mit allem Inhalt löschen?"
+  toast:
+    uploaded: "{count} Datei(en) hochgeladen"
+    uploadFailed: "Hochladen fehlgeschlagen"
+    changeFailed: "Die Änderung ist fehlgeschlagen"

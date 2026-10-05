@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoop,
@@ -15,7 +15,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair, UserScopedRetrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import BucketEntity, NamespaceEntity
 
@@ -37,6 +37,7 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.events.namespace_approv
     NamespaceApprovalResponseEvent,
 )
 from swiss_ai_hub.agent.agents.namespace_selection_agent.llm.namespace_decision import NamespaceDecision
+from swiss_ai_hub.agent.agents.namespace_selection_agent.readable_selection import ReadableSelection
 from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
     format_approval_question,
     format_available_namespaces,
@@ -206,7 +207,8 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> DetermineNamespacesEvent:
+        access: AccessChecker | None = None,
+    ) -> DetermineNamespacesEvent | StopEvent:
         """Fetch namespaces, store original query, and start determination loop."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.fetching_namespaces"))
 
@@ -224,6 +226,11 @@ class NamespaceSelectionAgent(Agent):
                 continue
 
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
+
+        if agent_config.restrict_to_user_access and access is not None and available_namespaces:
+            available_namespaces = UserScopedRetrievers.readable_namespaces(access, available_namespaces)
+            if not available_namespaces:
+                return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
 
         # Store in RunContext
         logger.debug("Available namespaces fetched: %s", available_namespaces)
@@ -370,11 +377,16 @@ class NamespaceSelectionAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> AgentInTheLoop.request:
+        access: AccessChecker | None = None,
+    ) -> AgentInTheLoop.request | StopEvent:
         """Store selection and forward to RAG."""
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.selection_approved"))
 
-        selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        proposed: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        selected = ReadableSelection.narrow(proposed, agent_config, access)
+        if proposed and not selected:
+            await thread_context.delete(NAMESPACE_SELECTION_KEY)
+            return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
         await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
         namespace_pairs = [
@@ -485,9 +497,14 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
         _clear: NotAMetaQuestionEvent | None = None,
-    ) -> AgentInTheLoop.request:
+        access: AccessChecker | None = None,
+    ) -> AgentInTheLoop.request | StopEvent:
         """Forward message to RAG agent with stored namespace selection."""
-        selected: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
+        stored: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
+        selected = ReadableSelection.narrow(stored, agent_config, access)
+        if stored and not selected:
+            await thread_context.delete(NAMESPACE_SELECTION_KEY)
+            return await ReadableSelection.refuse(NamespaceSelectionAgent.__name__, displayer, t)
 
         await displayer.display_thought(t("agent.namespace_selection_agent.thoughts.forwarding_to_rag"))
 

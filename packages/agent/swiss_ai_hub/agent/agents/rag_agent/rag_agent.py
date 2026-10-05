@@ -1,22 +1,23 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    LLMEvent,
     MemoryStorageRequestedEvent,
+    RAGFailureStopEvent,
     RAGStartEvent,
+    RAGSuccessStopEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StopEvent,
     UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, narrow_retrievers
+from swiss_ai_hub.core.generative_ai import RetrievalRuntimeConfig, UserScopedRetrievers, narrow_retrievers
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -26,21 +27,24 @@ from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_
     ContextInsufficientWithQueryEvent,
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
-    LimitChatHistoryWithContextEvent,
-)
+from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
+from swiss_ai_hub.agent.rag.answer_prompt import AnswerPrompt
+from swiss_ai_hub.agent.rag.citation_policy import CitationPolicy
+from swiss_ai_hub.agent.rag.inaccessible_knowledge import InaccessibleKnowledge
 from swiss_ai_hub.agent.rag.preconditions import check_reranking_complete_or_disabled, check_reranking_enabled
 from swiss_ai_hub.agent.rag.step_functions import (
+    do_context_block,
     do_context_sufficient_guard,
     do_few_shot_guard,
     do_finalize_rag_stop,
     do_limit_chat_history,
-    do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
     do_persist_grounding_nodes,
     do_read_carried_grounding_nodes,
@@ -82,6 +86,7 @@ class RAGAgent(Agent):
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.description")
     icon: ClassVar[str] = "mage:file"
+    completion_stops: ClassVar[tuple[type[StopEvent], ...]] = (RAGSuccessStopEvent, RAGFailureStopEvent)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
@@ -113,26 +118,28 @@ class RAGAgent(Agent):
         return Conversation.contextualize(history=limited.limited_history, message=message)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.recall_memory.description"),
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.gather_context.description"),
         icon="mdi:brain",
     )
-    async def recall_memory_step(
-        self, ctx: Conversation.Contextualized, start_event: UserMessageEvent | RAGStartEvent
-    ) -> Memory.RecallRequest:
-        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's."""
+    async def gather_context_step(
+        self,
+        ctx: Conversation.Contextualized,
+        start_event: UserMessageEvent | RAGStartEvent,
+        agent_config: RAGAgentConfig,
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's and may
+        reference collections to search on top of the configured ones."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
-        return Memory.recall(ctx.query, namespaces)
-
-    @step(
-        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
-        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.description"),
-        icon="mdi:database-plus",
-    )
-    async def assemble_prompt_step(
-        self, ctx: Conversation.Contextualized, memories: Memory.Recalled
-    ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=memories.blocks)
+        references = start_event.knowledge_references if isinstance(start_event, UserMessageEvent) else []
+        cite_sources = CitationPolicy.cites_sources(start_event)
+        reserve = agent_config.retrieved_context_reserve()
+        if references:
+            reserve += agent_config.knowledge.context_reserve()
+        files = AttachedFiles.read(
+            start_event.files, ctx.history, ctx.query, reserve_tokens=reserve, cite_sources=cite_sources
+        )
+        return [Memory.recall(ctx.query, namespaces), files, Knowledge.search(references, ctx.query, cite_sources)]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
@@ -167,10 +174,13 @@ class RAGAgent(Agent):
         _: FewShotAcceptEvent,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
         t: LocaleHandler,
         user: UserIdentity | None = None,
-    ) -> RetrieverEvent:
-        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+        access: AccessChecker | None = None,
+    ) -> RetrieverEvent | Conversation.CompleteRequest:
+        """Retrieves relevant nodes from multiple knowledge sources in parallel, from what the asking user may read
+        when the profile restricts retrieval to it. A run without a user keeps the profile's scope."""
         if isinstance(start_event, RAGStartEvent):
             runtime_configs = narrow_retrievers(
                 agent_config.retrievers,
@@ -179,6 +189,10 @@ class RAGAgent(Agent):
             )
         else:
             runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
+        if agent_config.restrict_to_user_access and access is not None and runtime_configs:
+            runtime_configs = await UserScopedRetrievers.narrow(runtime_configs, access)
+            if not runtime_configs:
+                return await InaccessibleKnowledge.answer(agent_config.llm.model_name, displayer, t)
         return await do_retrieve(event, runtime_configs, t, user)
 
     @step(
@@ -237,10 +251,14 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
         ctx: Conversation.Contextualized,
-        composed: Conversation.Composed,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
         run_context: RunContext,
         user: UserIdentity | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+        """The verdict weighs the retrieved documents against everything else the answer will see: a recalled
+        memory, an attached file or a referenced collection may already answer the question."""
         return await do_context_sufficient_guard(
             ctx.query,
             event.context_message,
@@ -250,7 +268,7 @@ class RAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
-            chat_history=composed.history,
+            chat_history=Conversation.fit(ctx.history, [*memories.blocks, knowledge.block, files.block], agent_config),
             user=user,
         )
 
@@ -274,26 +292,35 @@ class RAGAgent(Agent):
         await do_persist_grounding_nodes(thread_context, nodes or [])
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
-        description=AgentLocaleString.from_i18n_path(
-            "agent.rag_agent.steps.limit_chat_history_with_context.description"
-        ),
-        icon="mage:edit",
+        name=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.name"),
+        description=AgentLocaleString.from_i18n_path("agent.conversation.steps.assemble_prompt.description"),
+        icon="mdi:database-plus",
     )
-    async def limit_chat_history_with_context_step(
+    async def assemble_prompt_step(
         self,
-        context_event: InOrderNodeCombinerEvent,
-        composed: Conversation.Composed,
-        _: ContextSufficientAcceptEvent,
+        outcome: ContextSufficientAcceptEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
+        ctx: Conversation.Contextualized,
+        memories: Memory.Recalled,
+        files: AttachedFiles.Contents,
+        knowledge: Knowledge.Searched,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
-    ) -> LimitChatHistoryWithContextEvent:
-        return do_limit_chat_history_with_context(
-            context_event.context_message,
-            composed.history,
-            start_event.last_user_message,
-            agent_config.llm.token_counter,
-            agent_config.number_of_input_tokens,
+        guard_config: ContextSufficientGuardStepConfig,
+        t: LocaleHandler,
+        documents: InOrderNodeCombinerEvent | None = None,
+    ) -> Conversation.ComposeRequest:
+        """One prompt per outcome, so the composed context is exactly what the model answers from: the retrieved
+        documents when the guard accepted them, the reason it cannot answer from them otherwise."""
+        accepted = isinstance(outcome, ContextSufficientAcceptEvent)
+        return AnswerPrompt.compose(
+            None if accepted else outcome,
+            do_context_block(documents.context_message) if accepted and documents else [],
+            ctx,
+            (memories, files, knowledge),
+            start_event,
+            agent_config.system_prompt,
+            guard_config.context_insufficient_prompt,
+            t,
         )
 
     @step(
@@ -303,54 +330,21 @@ class RAGAgent(Agent):
     )
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
+        outcome: ContextSufficientAcceptEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
         composed: Conversation.Composed,
         ctx: Conversation.Contextualized,
         agent_config: RAGAgentConfig,
-        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         topic: AgentInstanceTopic,
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
-        """Answer from the grounded context or a guard rejection, then hand the turn back with its outcome."""
-        answer = await do_respond_with_llm(
-            event,
-            composed.history,
-            guard_config.context_insufficient_prompt,
-            agent_config.system_prompt,
-            agent_config.llm,
-            displayer,
-            t,
-            user,
-            as_stop_step=False,
-        )
+        """Answer from the composed prompt, then hand the turn back with its outcome."""
+        answer = await do_respond_with_llm(composed.history, agent_config.llm, displayer, t, user, as_stop_step=False)
         stop = do_finalize_rag_stop(
             llm_event=answer,
             expert_answer_context=None,
-            few_shot_reject=event if isinstance(event, FewShotRejectEvent) else None,
-            context_insufficient_reject=event if isinstance(event, ContextInsufficientRejectEvent) else None,
+            few_shot_reject=outcome if isinstance(outcome, FewShotRejectEvent) else None,
+            context_insufficient_reject=outcome if isinstance(outcome, ContextInsufficientRejectEvent) else None,
         )
-        return self.hand_back(ctx, answer, stop, agent_config, topic, t, user)
-
-    @staticmethod
-    def hand_back(
-        ctx: Conversation.Contextualized,
-        answer: LLMEvent,
-        stop: StopEvent,
-        agent_config: RAGAgentConfig,
-        topic: AgentInstanceTopic,
-        t: LocaleHandler,
-        user: UserIdentity | None,
-    ) -> list[MemoryStorageRequestedEvent | Conversation.CompleteRequest]:
-        """The memory delegation first, so it is published before the run tears down, and the completion last."""
-        remember = Memory.remember(
-            query=ctx.query,
-            answer=answer,
-            user=user,
-            topic=topic,
-            agent_config=agent_config,
-            memory=agent_config,
-            locale=t.locale,
-        )
-        return [*([remember] if remember else []), Conversation.complete(answer=answer, stop=stop)]
+        return AnswerHandBack.of(ctx, answer, stop, agent_config, topic, t, user)

@@ -28,6 +28,14 @@ making these control events would cause unnecessary dispatcher overhead.
 **Combined events** need both behaviors — they influence workflow AND appear in the UI. Most semantic events
 (`LLMEvent`, `RetrieverEvent`, etc.) inherit from `ControlAndDisplayEvent`.
 
+**Protocol events are combined events.** Calls between steps and capabilities, such as a capability request and its
+result or a tool-loop decision, are part of the protocol, and an admin reading a run needs to see them. The event
+history lists display events only, so these inherit from `ControlAndDisplayEvent` and give themselves a `_display_name`
+and `_display_description`. The description is a short progress phrase ("Recalling memories"), since chat clients such
+as OpenWebUI show it as a live status while the agent works. Each one also has a component in the admin UI's event
+history. Keep plain `ControlEvent` for internal bookkeeping no reader needs. Only the dispatcher's JetStream copy
+triggers steps; the display copy goes out over NATS Core and never re-triggers anything.
+
 ```python
 from swiss_ai_hub.core.events.control.control_event import ControlEvent
 from swiss_ai_hub.core.events.display.display_event import DisplayEvent
@@ -276,6 +284,46 @@ class MyRetrieveEvent(ControlAndDisplayEvent):
 | `ContextInsufficientRejectEvent` | `guard`                     | Insufficient context         |
 | `SensitiveInfoAcceptEvent`       | `guard`                     | No sensitive info detected   |
 | `SensitiveInfoRejectEvent`       | `guard`                     | Sensitive info detected      |
+
+### Capability events
+
+Requests and results of the capabilities every chat blueprint calls (see the agent SDK's capabilities). All of them are
+`ControlAndDisplayEvent`s, unless noted otherwise.
+
+| Event                             | Module                           | Purpose                                                               |
+| --------------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| `ContextualizeConversationEvent`  | `conversation`                   | Asks for the turn's query, meta-question gate and title               |
+| `ConversationContextualizedEvent` | `conversation`                   | The limited history and the query the turn is answered for            |
+| `ComposeContextEvent`             | `conversation`                   | Asks for the prompt with context blocks merged in                     |
+| `ContextComposedEvent`            | `conversation`                   | The history the model receives, within the input budget               |
+| `CompleteConversationEvent`       | `conversation`                   | Ends the turn: follow-up questions, then the stop event               |
+| `NotAMetaQuestionEvent`           | `self_awareness`                 | The message is a normal request; releases the entry steps             |
+| `RecallMemoryEvent`               | `memory.recall`                  | Asks for the user and organization memories relevant to a query       |
+| `MemoryRecalledEvent`             | `memory.recall`                  | One block per memory scope                                            |
+| `MemoryStorageRequestedEvent`     | `memory.request`                 | Starts the memory writer's own run, without waiting for it            |
+| `SearchKnowledgeEvent`            | `knowledge`                      | Asks for the referenced collections' best sections for a query        |
+| `KnowledgeSearchedEvent`          | `knowledge`                      | The block found and its sections, listed as sources                   |
+| `ReadAttachedFilesEvent`          | `attached_file`                  | Asks for the message's files, fitted to the room left                 |
+| `AttachedFilesReadEvent`          | `attached_file`                  | The files' contents as one context block                              |
+| `AttachedFileEvent`               | `attached_file` (`DisplayEvent`) | One file: the text the model received, its status and its citation id |
+
+### Tool-loop events
+
+The model deciding which tools to use, until it is done. All of them are `ControlAndDisplayEvent`s unless noted. The
+loop's state travels on these events, so the history shows every iteration.
+
+| Event                       | Module                       | Purpose                                                         |
+| --------------------------- | ---------------------------- | --------------------------------------------------------------- |
+| `RunToolLoopEvent`          | `tool_loop`                  | Asks the loop to run a tool set, answering or gathering context |
+| `ToolLoopIterationEvent`    | `tool_loop`                  | The model's turn to decide, one per iteration                   |
+| `ToolCallsDecidedEvent`     | `tool_loop`                  | The tools the model chose this iteration                        |
+| `ToolCallApprovedEvent`     | `tool_loop`                  | One call cleared to run, after any approval                     |
+| `ToolResultEvent`           | `tool_loop`                  | One call's result, shown in the tool's block in the chat        |
+| `ToolLoopFinishedEvent`     | `tool_loop`                  | The reply (answering) or the gathered context (gathering)       |
+| `ToolLoopStatusEvent`       | `tool_loop` (`DisplayEvent`) | What the loop is doing while it gathers in the background       |
+| `ToolLoopCondensedEvent`    | `tool_loop` (`DisplayEvent`) | Earlier results or turns condensed to fit the model's context   |
+| `ToolApprovalRequestEvent`  | `tool_loop`                  | A yes/no confirmation before a tool runs (a HITL request)       |
+| `ToolApprovalResponseEvent` | `tool_loop`                  | The user's answer to it                                         |
 
 ### Utility events
 

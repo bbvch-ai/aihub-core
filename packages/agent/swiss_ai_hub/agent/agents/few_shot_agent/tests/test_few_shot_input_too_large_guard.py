@@ -136,15 +136,15 @@ class TestAnInputTooLargeForTheModelIsRefused:
         assert result.chat_model_name == "text-generation/gemma-4-31B-it"
 
     @pytest.mark.asyncio
-    async def test_the_refusal_does_not_promise_to_read_a_smaller_file(self):
-        """This blueprint answers from its examples, never from the document, so the other blueprints' advice to
-        upload a smaller file would be wrong here."""
+    async def test_the_refusal_suggests_attaching_the_text_as_a_file(self):
+        """Attached files reach this blueprint through `AttachedFiles.read`, which cuts a long file down to fit, so
+        attaching is the way out for a pasted text; only the turn itself has no such fallback."""
         result = await _run([_message(200_000)], _displayer())
 
         assert isinstance(result, LLMStopEvent)
         refusal = result.output_messages[-1].content
-        assert "do not read attached documents" in refusal
-        assert "smaller file" not in refusal
+        assert "attach the text as a file" in refusal
+        assert "do not read attached documents" not in refusal
 
     @pytest.mark.asyncio
     async def test_an_oversized_file_in_a_system_message_is_refused(self):

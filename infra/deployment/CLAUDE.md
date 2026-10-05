@@ -40,8 +40,8 @@ deployment/
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
-    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
-    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
+    ├── aihub_feature_filter.py         # Inlet filter (agent models only): chat toggles → requested features for the pipe
+    ├── aihub_title_filter.py           # Outlet filter (agent models only): restores agent title after OpenWebUI's first-turn fallback
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -105,6 +105,13 @@ changes AND the regenerated output files.
 Note that `make generate-compose` also runs `make format-yaml`, which is repo-wide: if any YAML outside `infra/` is not
 yamlfix-clean on `main`, it gets reformatted into your working tree. Revert that churn before committing so the diff
 stays reviewable.
+
+### Global and per-model OpenWebUI functions
+
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes
+the ids listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter
+runs only on the models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent
+filters (`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 
 ### Applying an OpenWebUI function change to a running stack
 
@@ -198,7 +205,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.

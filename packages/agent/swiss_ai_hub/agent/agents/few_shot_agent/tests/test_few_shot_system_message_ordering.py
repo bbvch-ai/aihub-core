@@ -10,7 +10,9 @@ Pure unit test — create_few_shot_examples touches no infrastructure.
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
+    AttachedFilesReadEvent,
     ConversationContextualizedEvent,
+    KnowledgeSearchedEvent,
     MemoryRecalledEvent,
     UserMessageEvent,
 )
@@ -42,6 +44,8 @@ async def _build_context(chat_history: list[ChatMessage]) -> list[ChatMessage]:
         ctx=ConversationContextualizedEvent(history=chat_history, query="What is Fight Club about?", condensed=True),
         _=AgentSuitabilityAcceptEvent(reason="fits"),
         memories=MemoryRecalledEvent(),
+        files=AttachedFilesReadEvent(),
+        knowledge=KnowledgeSearchedEvent(),
         start_event=UserMessageEvent(messages=chat_history, user=fake_user(), locale="en"),
         agent_config=_config(),
     )

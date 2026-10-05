@@ -74,6 +74,8 @@ class AgentRunner(HealthCheckProvider):
         # as the run's actual config, so overwriting a real `CronSchedule` there with the form element
         # would hand an agent its own form to execute against.
         self.published_config = agent_config.for_discovery(is_schedulable=self.is_schedulable)
+        for capability in agent_type.installed_capabilities():
+            self.published_config = capability.published_config(self.published_config, agent_type)
         self.templates = templates or []
         self.agent_config_type = agent_config.__class__
         agent_type.validate_workflow(self.agent_config_type)
@@ -181,6 +183,7 @@ class AgentRunner(HealthCheckProvider):
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             is_schedulable=self.is_schedulable,
+            supported_features=sorted(self.agent_type.supported_features()),
             start_events=start_event_specs,
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,

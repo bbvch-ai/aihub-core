@@ -32,6 +32,7 @@ from swiss_ai_hub.api.routes import (
     TokenController,
     TranslationController,
     UserController,
+    UserKnowledgeController,
     UserMemoryController,
     WebhookController,
 )
@@ -124,6 +125,7 @@ runner.mount(
     .create_namespace()
     .update_namespace()
     .get_databases()
+    .resolve_openwebui_references()
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()
@@ -139,6 +141,13 @@ runner.mount(
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
+    UserKnowledgeController(auth=auth)
+    .list_user_files()
+    .get_user_file_content()
+    .upload_user_file()
+    .create_user_folder()
+    .move_user_file()
+    .delete_user_file(),
     UserMemoryController(auth=auth)
     .get_user_memories()
     .search_user_memories()

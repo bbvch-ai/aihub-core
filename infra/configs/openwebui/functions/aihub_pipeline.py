@@ -53,6 +53,18 @@ logger = logging.getLogger(__name__)
 AIHUB_TITLE_REDIS_KEY = "aihub:title:{chat_id}"
 AIHUB_TITLE_REDIS_TTL_SECONDS = 600
 
+# Must stay in sync with ``aihub_feature_filter.py``, which stashes the chat features the selected agent supports
+# under this key before OpenWebUI would act on them.
+REQUESTED_FEATURES_METADATA_KEY = "aihub_requested_features"
+
+# The type Open WebUI gives a knowledge entry the user referenced with `#`. Ours hold no content: each stands for one
+# of our collections, which the agent searches itself.
+KNOWLEDGE_COLLECTION_TYPE = "collection"
+
+# OpenWebUI file meta key under which the pipe remembers each agent's upload of that file, keyed "{class}/{id}", so
+# a file forwarded again on a later turn is not copied into the agent bucket a second time.
+AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
+
 # OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
 # ``metadata["task"]`` by its ``/api/v1/tasks/moa/completions`` route when a user presses "Merge
 # Responses". Unlike every other task value this one is user-initiated — see the two predicates below.
@@ -62,6 +74,12 @@ MOA_RESPONSE_GENERATION_TASK = "moa_response_generation"
 # ``agent_class/agent_id``), while staying stable per chat so repeated merges group into one
 # LiteLLM/Langfuse session.
 MOA_MERGE_THREAD_SALT = "moa-merge"
+
+# Agents cite a source by the id on its ``REFERENCE_DOCUMENT`` tag (``CitationId`` in swiss_ai_hub.core), e.g.
+# ``[s3f9a1c]``. Open WebUI only links numbers, 1-based into the message's source list, so the pipe rewrites them.
+CITATION_MARKER_PATTERN = re.compile(r"(\s*)\[\s*(s[0-9a-f]{6}(?:\s*[,;]\s*s[0-9a-f]{6})*)\s*\]")
+CITATION_ID_PATTERN = re.compile(r"s[0-9a-f]{6}")
+UNFINISHED_CITATION_PATTERN = re.compile(r"\[\s*s[0-9a-f]{0,6}(?:\s*[,;]\s*s[0-9a-f]{0,6})*$")
 
 
 # ============================================================================
@@ -160,6 +178,7 @@ class ToolBlock(ContentBlock):
     tool_id: Annotated[str, "Unique identifier for the tool call"]
     tool_name: Annotated[str, "Name of the tool being called"]
     tool_params: Annotated[dict[str, Any], "Parameters passed to the tool"] = Field(default_factory=dict)
+    result: Annotated[Optional[str], "What the tool returned, once it has"] = None
     closed: Annotated[bool, "Whether tool execution is complete"] = False
     ended_at: Annotated[Optional[float], "Unix timestamp when tool finished"] = None
 
@@ -177,13 +196,15 @@ class ToolBlock(ContentBlock):
     def to_html(self) -> Annotated[str, "HTML details element for tool"]:
         """Convert to HTML details element for tool display"""
         escaped_params = html.escape(json.dumps(self.tool_params))
-        done_status = "true" if self.closed else "false"
+        done_status = "true" if self.closed or self.result is not None else "false"
+        # Open WebUI shows the result inside the tool's collapsible, in the attribute its own tools use.
+        result_attribute = f' result="{html.escape(json.dumps(self.result, ensure_ascii=False))}"' if self.result is not None else ""
 
-        status_text = "Tool Executed" if self.closed else f"Calling {self.tool_name}..."
+        status_text = "Tool Executed" if done_status == "true" else f"Calling {self.tool_name}..."
 
         return (
-            f'\n<details type="tool_calls" done="{done_status}" id="{self.tool_id}" '
-            f'name="{self.tool_name}" arguments="{escaped_params}">\n'
+            f'\n<details type="tool_calls" done="{done_status}" id="{html.escape(self.tool_id)}" '
+            f'name="{html.escape(self.tool_name)}" arguments="{escaped_params}"{result_attribute}>\n'
             f"<summary>{status_text}</summary>\n"
             f"</details>\n"
         )
@@ -300,6 +321,35 @@ class AuthenticationService:
 class MessageConverter:
     """Handles message format conversions between Open WebUI and AI-Hub"""
 
+    # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
+    # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
+    # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
+    # Only the generated block types match, so a ``<details>`` an answer itself contains keeps its content.
+    _DETAILS_BLOCK = re.compile(
+        r'\n?<details\b[^>]*\btype="(?:reasoning|tool_calls|code_interpreter)"[^>]*>.*?</details>\n?', re.DOTALL
+    )
+    # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
+    # reasoning text, which closes the match above early and leaves a stray tag behind.
+    _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
+    # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
+    # does not end up glued into one line (nor separated by a growing gap).
+    _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
+
+    @classmethod
+    def strip_agent_markup(
+        cls, text: Annotated[str, "Agent answer or rendered MoA prompt"]
+    ) -> Annotated[str, "Plain text"]:
+        """Remove the reasoning/tool ``<details>`` blocks this pipeline embeds in its answers.
+
+        An earlier answer and a merged response both reach a model as raw message content, carrying this
+        pipeline's own HTML. A model handed it wastes context on it and imitates it: a merge model echoes the
+        markup into its prose, and an agent writes a tool block as text instead of calling the tool, making up
+        the result.
+        """
+        stripped = cls._DETAILS_BLOCK.sub("\n", text)
+        stripped = cls._ORPHAN_MARKUP.sub("", stripped)
+        return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
+
     @staticmethod
     def convert_to_event_format(
         messages: Annotated[list[dict[str, Any]], "Open WebUI messages"],
@@ -314,6 +364,13 @@ class MessageConverter:
         """Convert a single message"""
         content = msg.get("content")
         blocks = self._extract_blocks(content)
+        if msg.get("role") == "assistant":
+            blocks = [
+                {**block, "text": self.strip_agent_markup(block["text"])}
+                if block.get("block_type") == "text"
+                else block
+                for block in blocks
+            ]
 
         return {
             "role": msg.get("role", "user"),
@@ -367,10 +424,91 @@ class MessageConverter:
 # ============================================================================
 
 
+class CitationRegistry:
+    """The message's source list as Open WebUI numbers it, and the rewrite of cited ids into those numbers.
+
+    Open WebUI resolves ``[n]`` to the n-th distinct source of the message, counted in the order sources arrived and
+    keyed the way ``getSourceIds`` keys them (``ContentRenderer.svelte``). Every source goes through here, memories
+    included, so the numbers stay aligned even for sources no agent cites. An id the pipe never emitted as a source
+    is dropped rather than shown as a dead marker. Two documents sharing a label, such as an attached
+    ``contract.pdf`` and a knowledge document of the same name, would share a number, so the later one is renamed
+    ``contract.pdf (2)``.
+    """
+
+    def __init__(self) -> None:
+        self._keys: list[str] = []
+        self._numbers: dict[str, int] = {}
+        self._label_owners: dict[str, str] = {}
+        self._labels_by_document: dict[str, str] = {}
+
+    @staticmethod
+    def key_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Dedupe key"]:
+        metadata = (source_data.get("metadata") or [{}])[0]
+        source_id = metadata.get("source") or "N/A"
+        if metadata.get("name"):
+            return metadata["name"]
+        if source_id.startswith(("http://", "https://")):
+            return source_id
+        return source_data.get("source", {}).get("name") or source_id
+
+    @staticmethod
+    def document_of(source_data: Annotated[dict[str, Any], "Open WebUI source payload"]) -> Annotated[str, "Identity"]:
+        """What Open WebUI's source modal groups by, so it tells two same-named documents apart."""
+        metadata = (source_data.get("metadata") or [{}])[0]
+        return metadata.get("source") or source_data.get("source", {}).get("id") or CitationRegistry.key_of(source_data)
+
+    def register(
+        self,
+        source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
+        citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
+    ) -> Annotated[dict[str, Any], "The payload to emit, relabelled when its label was taken"]:
+        source_data = self._with_unique_label(source_data)
+        key = self.key_of(source_data)
+        if key not in self._keys:
+            self._keys.append(key)
+        if citation_id and citation_id not in self._numbers:
+            self._numbers[citation_id] = self._keys.index(key) + 1
+        return source_data
+
+    def _with_unique_label(self, source_data: dict[str, Any]) -> dict[str, Any]:
+        document = self.document_of(source_data)
+        label = self._labels_by_document.get(document)
+        if label is None:
+            label = base = self.key_of(source_data)
+            suffix = 2
+            while self._label_owners.get(label, document) != document:
+                label = f"{base} ({suffix})"
+                suffix += 1
+            self._label_owners[label] = document
+            self._labels_by_document[document] = label
+        if label == self.key_of(source_data):
+            return source_data
+        return {
+            **source_data,
+            "source": {**source_data.get("source", {}), "name": label},
+            "metadata": [{**metadata, "name": label} for metadata in source_data.get("metadata") or [{}]],
+        }
+
+    def resolve(self, content: Annotated[str, "Rendered message content"]) -> Annotated[str, "Content Open WebUI links"]:
+        resolved = CITATION_MARKER_PATTERN.sub(self._numbered, content)
+        return UNFINISHED_CITATION_PATTERN.sub("", resolved)
+
+    def _numbered(self, match: re.Match) -> str:
+        numbers = []
+        for citation_id in CITATION_ID_PATTERN.findall(match.group(2)):
+            number = self._numbers.get(citation_id)
+            if number is not None and number not in numbers:
+                numbers.append(number)
+        if not numbers:
+            return ""
+        return match.group(1) + "".join(f"[{number}]" for number in numbers)
+
+
 class StreamingStateManager:
     """Manages streaming content state with proper encapsulation"""
 
     def __init__(self):
+        self.citations = CitationRegistry()
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
         self._deferred_thinking: Annotated[
@@ -420,6 +558,11 @@ class StreamingStateManager:
         tool_params: Annotated[dict[str, Any], "Tool parameters"],
     ) -> None:
         """Start a new tool execution block"""
+        # Text streamed right before a tool call is the model talking to itself ("let me check…"), not the answer,
+        # so it moves into a collapsed thought instead of staying at the top of the reply.
+        if isinstance(self._current_block, TextBlock) and self._current_block.content.strip():
+            thought = self._block_factory.create_thinking_block(self._current_block.content).with_closure()
+            self._current_block = thought
         # Close any open blocks
         self._close_open_blocks()
         self._finalize_current_block()
@@ -429,6 +572,19 @@ class StreamingStateManager:
         self._current_block = self._block_factory.create_tool_block(
             tool_id=tool_id, tool_name=tool_name, tool_params=tool_params
         )
+
+    def complete_tool_block(
+        self,
+        tool_id: Annotated[str, "Tool call identifier"],
+        result: Annotated[str, "What the tool returned"],
+    ) -> None:
+        """Put a tool's result into its block, wherever the block ended up while later content streamed"""
+        if isinstance(self._current_block, ToolBlock) and self._current_block.tool_id == tool_id:
+            self._current_block = self._current_block.model_copy(update={"result": result}).with_closure()
+            return
+        for index, block in enumerate(self._content_blocks):
+            if isinstance(block, ToolBlock) and block.tool_id == tool_id:
+                self._content_blocks[index] = block.model_copy(update={"result": result, "closed": True})
 
     def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
         """Append content to current block if it supports it"""
@@ -506,22 +662,15 @@ class StreamingStateManager:
 
     def serialize_to_html(self) -> Annotated[str, "Complete HTML representation"]:
         """Serialize all blocks to HTML"""
-        html_parts: list[str] = []
-
-        # Render finalized blocks
-        for block in self._content_blocks:
-            html_parts.append(block.to_html())
-
-        # Render current block if exists
-        if self._current_block:
-            html_parts.append(self._current_block.to_html())
-
+        blocks = [*self._content_blocks, *([self._current_block] if self._current_block else [])]
         # Deferred thoughts render live at the tail so reasoning stays visible while it happens; the
         # answer above them keeps growing, and flushing later lands them in this same position.
         if self._deferred_thinking:
-            html_parts.append(self._deferred_thinking.to_html())
-
-        return "".join(html_parts)
+            blocks.append(self._deferred_thinking)
+        return "".join(
+            block.to_html() if isinstance(block, ToolBlock) else self.citations.resolve(block.to_html())
+            for block in blocks
+        )
 
 
 # ============================================================================
@@ -545,7 +694,11 @@ class EventContext:
         chat_id: Annotated[Optional[str], "OpenWebUI chat id, for persisting title/follow-ups"] = None,
         message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
+        owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
+        attachments: Annotated[Any, "Registers files the agent showed as Open WebUI files"] = None,
     ):
+        self.owui_file_ids = owui_file_ids or {}
+        self.attachments = attachments
         self.state_manager = state_manager
         self.emitter = emitter
         self.caller = caller
@@ -557,6 +710,14 @@ class EventContext:
         self.chat_id = chat_id
         self.message_id = message_id
         self.redis = redis
+
+    async def emit_source(
+        self,
+        source_data: Annotated[dict[str, Any], "Open WebUI source payload"],
+        citation_id: Annotated[Optional[str], "Id the agent cites this source by"] = None,
+    ) -> None:
+        source_data = self.state_manager.citations.register(source_data, citation_id)
+        await self.emitter({"type": "source", "data": source_data})
 
 
 class EventHandler(ABC):
@@ -671,19 +832,14 @@ class ToolEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Tool event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        tool_name = event.get("name", "Unknown Tool")
-        tool_description = event.get("description", "")
-        parameters = event.get("parameters", {})
-        tool_id = event.get("event_id", "")
+        tool_name = event.get("label") or event.get("name") or "Unknown Tool"
+        parameters = event.get("parameters") or {}
+        tool_id = event.get("tool_call_id") or event.get("event_id", "")
 
         await context.emitter(
             {
                 "type": "status",
-                "data": {
-                    "action": None,
-                    "description": f"{tool_description}: {tool_name}",
-                    "done": False,
-                },
+                "data": {"action": None, "description": tool_name, "done": False},
             }
         )
 
@@ -693,6 +849,55 @@ class ToolEventHandler(EventHandler):
             {
                 "type": "replace",
                 "data": {"content": context.state_manager.serialize_to_html()},
+            }
+        )
+        return True
+
+
+class ToolResultEventHandler(EventHandler):
+    """Shows what a tool the agent chose returned, inside that tool's collapsible block."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if tool result event"]:
+        return "ToolResultEvent" in [event.get("_event_name"), *event.get("_parent_event_names", [])]
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Tool result event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        content = event.get("content", "")
+        result = f"Error: {content}" if event.get("is_error") and not content.startswith("Error") else content
+        context.state_manager.complete_tool_block(event.get("tool_call_id", ""), result)
+        await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
+        await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
+        return True
+
+
+class ToolLoopStatusEventHandler(EventHandler):
+    """What the agent's tool loop is doing when nothing else shows it: deciding in the background, or condensing
+    earlier results to fit the model's context."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if tool loop status event"]:
+        names = [event.get("_event_name"), *event.get("_parent_event_names", [])]
+        return "ToolLoopStatusEvent" in names or "ToolLoopCondensedEvent" in names
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Tool loop status event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        await context.emitter(
+            {
+                "type": "status",
+                "data": {
+                    "action": None,
+                    "description": event.get("description", ""),
+                    "done": bool(event.get("done", event.get("_event_name") == "ToolLoopCondensedEvent")),
+                },
             }
         )
         return True
@@ -847,7 +1052,7 @@ class EmbeddingEventHandler(EventHandler):
 
 
 class RetrieverEventHandler(EventHandler):
-    """Handler for document retrieval events"""
+    """Reports how many documents were found; the sources come from what the model is handed, see below."""
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
@@ -862,10 +1067,6 @@ class RetrieverEventHandler(EventHandler):
         nodes = event.get("nodes", [])
 
         if nodes:
-            for node in nodes:
-                source_data = self._build_source_data(node)
-                await context.emitter({"type": "source", "data": source_data})
-
             description = event.get("display_description", {}).get("en", f"Found {len(nodes)} relevant documents")
 
             await context.emitter(
@@ -881,43 +1082,141 @@ class RetrieverEventHandler(EventHandler):
 
         return True
 
+
+class GroundingNodesEventHandler(EventHandler):
+    """Lists the knowledge documents the answer is grounded in as sources, one per document: a knowledge agent's own
+    retrieval, and the collections the user referenced with `#`.
+
+    The grounding nodes are exactly what the model reads, after reranking and with carried prior-turn documents, so
+    every document it can cite is listed and none it never saw. Chunks of one document share the document's
+    citation id and become one source holding each chunk.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if grounding nodes event"]:
+        names = {event.get("_event_name"), *event.get("_parent_event_names", [])}
+        return bool(names & {"InOrderNodeCombinerEvent", "KnowledgeSearchedEvent"})
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Grounding nodes event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        documents: dict[str, list[dict[str, Any]]] = {}
+        for node in event.get("grounding_nodes") or []:
+            documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
+        for citation_id, nodes in documents.items():
+            await context.emit_source(self._build_source_data(nodes), citation_id)
+        return True
+
+    @staticmethod
     def _build_source_data(
-        self, node: Annotated[dict[str, Any], "Node data"]
+        nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
-        """Build source data structure from node"""
-        metadata = node.get("metadata", {})
-
-        source_data = {
+        first = nodes[0]
+        reference_url = (first.get("metadata") or {}).get("reference_url", "")
+        source_data: dict[str, Any] = {
             "source": {
-                "name": node.get("document_title", node.get("source", "Unknown Source")),
-                "id": node.get("id", ""),
+                "name": GroundingNodesEventHandler.display_name(first),
+                "id": first.get("document_id", ""),
             },
-            "document": [node.get("content", "")],
-            "metadata": [
-                {
-                    "source": node.get("source", ""),
-                    "document_title": node.get("document_title", ""),
-                    "namespace": node.get("namespace", ""),
-                    "language": node.get("language", ""),
-                    "document_id": node.get("document_id", ""),
-                    "reference_url": metadata.get("reference_url", ""),
-                    "created_at": node.get("created_at", ""),
-                    "name": node.get("source", ""),
-                }
-            ],
+            "document": [node.get("content", "") for node in nodes],
+            "metadata": [GroundingNodesEventHandler._node_metadata(node, reference_url) for node in nodes],
         }
-
-        # Add optional fields
-        if metadata.get("reference_url"):
-            source_data["source"]["url"] = metadata["reference_url"]
-
-        if node.get("index") is not None:
-            source_data["metadata"][0]["page"] = node["index"]
-
-        if "score" in node:
-            source_data["distances"] = [node["score"]]
-
+        if reference_url:
+            source_data["source"]["url"] = reference_url
+        if all("score" in node for node in nodes):
+            source_data["distances"] = [node["score"] for node in nodes]
         return source_data
+
+    @staticmethod
+    def display_name(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Label on the citation chip"]:
+        """The document's title or file name; its storage URL is not something a user can open."""
+        source = node.get("source", "")
+        return node.get("document_title") or source.rstrip("/").rsplit("/", 1)[-1] or "Unknown Source"
+
+    @staticmethod
+    def _node_metadata(
+        node: Annotated[dict[str, Any], "Node data"], reference_url: Annotated[str, "Document link"]
+    ) -> Annotated[dict[str, Any], "Open WebUI metadata of one chunk"]:
+        metadata = {
+            "source": node.get("source", ""),
+            "name": GroundingNodesEventHandler.display_name(node),
+            "document_title": node.get("document_title", ""),
+            "namespace": node.get("namespace", ""),
+            "language": node.get("language", ""),
+            "document_id": node.get("document_id", ""),
+            "reference_url": reference_url,
+            "created_at": node.get("created_at", ""),
+        }
+        if node.get("index") is not None:
+            metadata["page"] = node["index"]
+        return metadata
+
+
+class AttachedFileEventHandler(EventHandler):
+    """Shows each attached file the agent read as a source on the answer, or reports one it could not read.
+
+    The source links to the user's original upload in Open WebUI, which is why the agent's file id is mapped back
+    to the Open WebUI file it was copied from.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if attached file event"]:
+        return "AttachedFileEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Attached file event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        filename = event.get("filename", "")
+        if event.get("status") == "failed":
+            await context.emitter(
+                {
+                    "type": "status",
+                    "data": {"description": f"{filename}: {event.get('error') or ''}", "done": True, "error": True},
+                }
+            )
+            return True
+
+        owui_file_id = context.owui_file_ids.get(event.get("file_id", ""))
+        name = f"{filename} (partial)" if event.get("status") == "truncated" else filename
+        metadata: dict[str, Any] = {"source": owui_file_id or filename, "name": name}
+        if owui_file_id:
+            metadata["file_id"] = owui_file_id
+        await context.emit_source(
+            {
+                "source": {"id": owui_file_id or event.get("file_id", ""), "name": name},
+                "document": [event.get("content") or ""],
+                "metadata": [metadata],
+            },
+            event.get("citation_id"),
+        )
+        return True
+
+
+class SandboxFileDisplayedEventHandler(EventHandler):
+    """Attaches a file the agent showed from the user's code sandbox to the answer, as an Open WebUI file."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if sandbox file displayed event"]:
+        return event.get("_event_name") == "SandboxFileDisplayedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        attached = await context.attachments.attach(event, context.chat_id, context.message_id)
+        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
+        # so the new file is persisted on its own and the browser then gets every file of the answer.
+        await context.emitter({"type": "files", "data": {"files": [attached]}})
+        await context.emitter({"type": "chat:message:files", "data": {"files": context.attachments.attached}})
+        return True
 
 
 class RetrieveUserMemoryEventHandler(EventHandler):
@@ -938,7 +1237,7 @@ class RetrieveUserMemoryEventHandler(EventHandler):
         if memories:
             for memory in memories:
                 source_data = self._build_memory_source_data(memory, memory_type="user")
-                await context.emitter({"type": "source", "data": source_data})
+                await context.emit_source(source_data)
 
             description = event.get("display_description", {}).get("en", f"Retrieved {len(memories)} user memories")
 
@@ -966,14 +1265,16 @@ class RetrieveUserMemoryEventHandler(EventHandler):
         score = memory.get("score")
         created_at = memory.get("created_at", "")
 
+        name = f"💭 Memory: {memory_text[:100]}{'...' if len(memory_text) > 100 else ''}"
         source_data = {
             "source": {
-                "name": f"💭 Memory: {memory_text[:100]}{'...' if len(memory_text) > 100 else ''}",
+                "name": name,
                 "id": memory_id,
             },
             "document": [memory_text],
             "metadata": [
                 {
+                    "source": name,
                     "type": memory_type,
                     "memory_id": memory_id,
                     "created_at": created_at,
@@ -1009,7 +1310,7 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
         if memories:
             for memory in memories:
                 source_data = self._build_memory_source_data(memory, memory_type="organization")
-                await context.emitter({"type": "source", "data": source_data})
+                await context.emit_source(source_data)
 
             description = event.get("display_description", {}).get(
                 "en", f"Retrieved {len(memories)} organization memories"
@@ -1039,14 +1340,16 @@ class RetrieveOrganizationMemoryEventHandler(EventHandler):
         score = memory.get("score")
         created_at = memory.get("created_at", "")
 
+        name = f"🏢 Org Memory: {memory_id[:8]}..."
         source_data = {
             "source": {
-                "name": f"🏢 Org Memory: {memory_id[:8]}...",
+                "name": name,
                 "id": memory_id,
             },
             "document": [memory_text],
             "metadata": [
                 {
+                    "source": name,
                     "type": memory_type,
                     "memory_id": memory_id,
                     "created_at": created_at,
@@ -1177,10 +1480,15 @@ class EventProcessorFactory:
             ThoughtEventHandler(),
             ChunkEventHandler(),
             ToolEventHandler(),
+            ToolResultEventHandler(),
+            ToolLoopStatusEventHandler(),
             HumanInTheLoopHandler(),
             ExceptionEventHandler(),
             EmbeddingEventHandler(),
             RetrieverEventHandler(),
+            GroundingNodesEventHandler(),
+            AttachedFileEventHandler(),
+            SandboxFileDisplayedEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
             ConversationTitleEventHandler(),
@@ -1241,6 +1549,8 @@ class StreamingService:
         message_id: Annotated[Optional[str], "OpenWebUI message id, for persisting follow-ups"] = None,
         redis: Annotated[Any, "OpenWebUI async redis client, for stashing the agent title"] = None,
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        owui_file_ids: Annotated[Optional[dict[str, str]], "Agent file id -> Open WebUI file id"] = None,
+        attachments: Annotated[Any, "Registers files the agent showed as Open WebUI files"] = None,
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1260,6 +1570,8 @@ class StreamingService:
             chat_id=chat_id,
             message_id=message_id,
             redis=redis,
+            owui_file_ids=owui_file_ids,
+            attachments=attachments,
         )
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -1278,6 +1590,9 @@ class StreamingService:
                     state_manager.finalize_all_blocks()
                     await self._handle_http_error_from_info(result, event_emitter)
                 else:
+                    if attachments and (links := attachments.download_links()):
+                        state_manager.close_current_block()
+                        state_manager.start_text_block(links)
                     # Finalize any open blocks when stream ends normally
                     state_manager.finalize_all_blocks()
                     # Emit final state if there were unclosed blocks
@@ -1465,6 +1780,8 @@ class StreamingService:
             chat_id=context.chat_id,
             message_id=context.message_id,
             redis=context.redis,
+            owui_file_ids=context.owui_file_ids,
+            attachments=context.attachments,
         )
 
 
@@ -1541,6 +1858,98 @@ class AgentDiscoveryService:
 # ============================================================================
 
 
+class AgentFileAttachmentService:
+    """Registers files the agent produced as Open WebUI files on the answer, so they download like any upload.
+
+    The agent copied each file into our storage, which Open WebUI's own storage shares, and the copy is read from
+    there; the file is linked to the chat message the way Open WebUI links the images it generates.
+    """
+
+    def __init__(self, s3_client: Any, request: Any, user_id: str) -> None:
+        self._s3_client = s3_client
+        self._request = request
+        self._user_id = user_id
+        self.attached: list[dict[str, Any]] = []
+        self._linked = 0
+
+    async def attach(
+        self,
+        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        chat_id: Annotated[Optional[str], "Open WebUI chat id"],
+        message_id: Annotated[Optional[str], "Open WebUI message id"],
+    ) -> Annotated[dict[str, Any], "The file as a message file entry"]:
+        import io
+
+        from fastapi import UploadFile
+        from open_webui.routers.files import upload_file_handler
+
+        content = await asyncio.to_thread(self._read, event["bucket"], event["key"])
+        user = await Users.get_user_by_id(self._user_id)
+        upload = UploadFile(
+            file=io.BytesIO(content), filename=event["filename"], headers={"content-type": event["content_type"]}
+        )
+        item = await upload_file_handler(
+            self._request,
+            file=upload,
+            metadata={"chat_id": chat_id, "message_id": message_id},
+            process=False,
+            user=user,
+        )
+        if chat_id and message_id and not chat_id.startswith(("local:", "channel:")):
+            await Chats.insert_chat_files(chat_id=chat_id, message_id=message_id, file_ids=[item.id], user_id=user.id)
+        entry = {
+            "type": "file",
+            "id": item.id,
+            "url": self._request.app.url_path_for("get_file_content_by_id", id=item.id),
+            "name": event["filename"],
+            "content_type": event["content_type"],
+            "size": len(content),
+        }
+        self.attached.append(entry)
+        return entry
+
+    def download_links(self) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
+        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one."""
+        new = self.attached[self._linked :]
+        self._linked = len(self.attached)
+        if not new:
+            return ""
+        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in new)
+
+    def _read(self, bucket: str, key: str) -> bytes:
+        return self._s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
+
+
+class KnowledgeReferenceService:
+    """Turns the knowledge entries the user referenced with `#` into references to our collections.
+
+    Open WebUI assigns its own ids to knowledge entries, so the AI-Hub, which created them, resolves which collection
+    each one stands for. An entry nobody resolves, such as one a user created in Open WebUI, is left out.
+    """
+
+    def __init__(self, base_url: str) -> None:
+        self._base_url = base_url
+
+    async def references_for_event(
+        self,
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
+        headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
+    ) -> Annotated[list[dict[str, str]], "The referenced collections, as database and namespace"]:
+        openwebui_ids = list(
+            dict.fromkeys(file["id"] for file in files or [] if file.get("type") == KNOWLEDGE_COLLECTION_TYPE)
+        )
+        if not openwebui_ids:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self._base_url}/api/v1/active/knowledge/openwebui-references",
+                json={"openwebui_ids": openwebui_ids},
+                headers=headers,
+            )
+            response.raise_for_status()
+            return response.json()
+
+
 class FileProcessingService:
     """Handles file processing via the agent file upload API.
 
@@ -1551,6 +1960,10 @@ class FileProcessingService:
     def __init__(self, base_url: str, s3_endpoint: str, s3_access_key: str, s3_secret_key: str) -> None:
         self._base_url = base_url
         self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
+
+    @property
+    def s3_client(self) -> Any:
+        return self._owui_s3_client
 
     @staticmethod
     def _create_s3_client(endpoint: str, access_key: str, secret_key: str) -> Any:
@@ -1569,26 +1982,33 @@ class FileProcessingService:
 
     async def prepare_files_for_event(
         self,
-        files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"],
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
-    ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
-        """Upload Open WebUI files to the agent's bucket and return file references."""
-        if not files:
-            return []
-
+        thread_id: Annotated[str, "The conversation, whose folder in the user's files gets each file"],
+    ) -> Annotated[
+        tuple[list[dict[str, str]], dict[str, str]],
+        "Prepared files for AI-Hub, and each agent file id mapped to the Open WebUI file id it came from",
+    ]:
+        """Hand every file of the branch to the agent's bucket, reusing an upload the bucket still holds."""
         prepared_files: list[dict[str, str]] = []
+        owui_file_ids: dict[str, str] = {}
 
-        for file in files:
+        for file in files or []:
+            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
+                continue
             try:
-                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
-                if prepared_file:
-                    prepared_files.append(prepared_file)
+                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers, thread_id)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
+                continue
+            if prepared_file:
+                prepared_files.append(prepared_file)
+                if file.get("type", "file") == "file" and file.get("id"):
+                    owui_file_ids[prepared_file["file_id"]] = file["id"]
 
-        return prepared_files
+        return prepared_files, owui_file_ids
 
     async def _process_single_file(
         self,
@@ -1596,67 +2016,103 @@ class FileProcessingService:
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
-        """Upload a single file to the agent's bucket via initiate → PUT → validate."""
+        """Upload a single file to the agent's bucket via initiate → PUT → validate, unless it is already there.
+
+        A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead, so that text
+        is uploaded as a plain-text file for the agent to read like any other attachment.
+        """
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
-        owui_file_id = file.get("id", "")
-        file_obj = Files.get_file_by_id(owui_file_id)
+        if file.get("type") == "text" and file.get("content") is not None:
+            name = file.get("name") or "attachment"
+            filename = name if name.lower().endswith(".txt") else f"{name}.txt"
+            return await self._upload(
+                file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers, thread_id
+            )
 
+        owui_file_id = file.get("id", "")
+        file_obj = await Files.get_file_by_id(owui_file_id)
         if not file_obj:
             logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
             return None
 
-        file_meta = file_obj.meta
+        file_meta = file_obj.meta or {}
         filename = file_meta.get("name", "unnamed_file")
         content_type = file_meta.get("content_type", "application/octet-stream")
+        agent_key = f"{agent_class}/{agent_id}"
+        known_uploads = file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}
 
-        # Read file content from OpenWebUI's S3 storage (blocking I/O offloaded to thread)
+        known_file_id = known_uploads.get(agent_key)
+        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers, thread_id):
+            return {"filename": filename, "file_type": content_type, "file_id": known_file_id}
+
         file_content = await asyncio.to_thread(self._read_file_content, file_obj)
+        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers, thread_id)
+        if prepared:
+            await Files.update_file_metadata_by_id(
+                owui_file_id, {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: prepared["file_id"]}}
+            )
+        return prepared
 
+    def _files_url(self, agent_class: str, agent_id: str, action: str) -> str:
+        return f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/{action}"
+
+    async def _is_stored(
+        self,
+        file_id: Annotated[str, "Agent file id of an earlier upload"],
+        filename: Annotated[str, "Name it was uploaded under"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
+    ) -> Annotated[bool, "Whether the agent bucket still holds it; uploads expire after 7 days"]:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Step 1: Initiate upload — get presigned URL + file_id
-            initiate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
+            response = await client.post(
+                self._files_url(agent_class, agent_id, "validate"),
+                headers=headers,
+                json={"file_id": file_id, "filename": filename, "thread_id": thread_id},
+            )
+        return response.status_code == 200 and bool(response.json().get("exists"))
+
+    async def _upload(
+        self,
+        content: Annotated[bytes, "File bytes"],
+        filename: Annotated[str, "File name"],
+        content_type: Annotated[str, "MIME type"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the file is attached in"],
+    ) -> Annotated[Optional[dict[str, str]], "The uploaded file reference, or None when validation failed"]:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             initiate_resp = await client.post(
-                initiate_url,
+                self._files_url(agent_class, agent_id, "initiate"),
                 headers=headers,
                 json={"filename": filename, "content_type": content_type},
             )
             initiate_resp.raise_for_status()
             initiate_data = initiate_resp.json()
-
-            upload_url = initiate_data["upload_url"]
             agent_file_id = initiate_data["file_id"]
 
-            # Step 2: PUT file content to presigned URL
             put_resp = await client.put(
-                upload_url,
-                content=file_content,
-                headers={"Content-Type": content_type},
+                initiate_data["upload_url"], content=content, headers={"Content-Type": content_type}
             )
             put_resp.raise_for_status()
 
-            # Step 3: Validate upload
-            validate_url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
             validate_resp = await client.post(
-                validate_url,
+                self._files_url(agent_class, agent_id, "validate"),
                 headers=headers,
-                json={"file_id": agent_file_id, "filename": filename},
+                json={"file_id": agent_file_id, "filename": filename, "thread_id": thread_id},
             )
             validate_resp.raise_for_status()
-            validate_data = validate_resp.json()
-
-            if not validate_data.get("exists"):
+            if not validate_resp.json().get("exists"):
                 logger.warning(f"File validation failed for {filename} (file_id={agent_file_id})")
                 return None
 
         logger.debug(f"Successfully uploaded file: {filename} -> file_id={agent_file_id}")
-
-        return {
-            "filename": filename,
-            "file_type": content_type,
-            "file_id": agent_file_id,
-        }
+        return {"filename": filename, "file_type": content_type, "file_id": agent_file_id}
 
     def _read_file_content(self, file_obj: Any) -> bytes:
         """Read file content from OpenWebUI's S3 storage."""
@@ -1679,17 +2135,6 @@ class ResponseMergeService:
     follow-up protocol events into the chat — let a merge overwrite the conversation's real title and
     follow-up questions.
     """
-
-    # ``StreamingStateManager.serialize_to_html`` concatenates blocks flat, never nested, and both
-    # ThinkingBlock and ToolBlock always emit a closing tag, so a non-greedy match is sufficient.
-    # ``[^>]*`` is safe on the tool block because its ``arguments`` attribute is html-escaped.
-    _DETAILS_BLOCK = re.compile(r"\n?<details\b[^>]*>.*?</details>\n?", re.DOTALL)
-    # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
-    # reasoning text, which closes the match above early and leaves a stray tag behind.
-    _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
-    # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
-    # does not end up glued into one line (nor separated by a growing gap).
-    _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
 
     def __init__(
         self,
@@ -1798,7 +2243,7 @@ class ResponseMergeService:
 
         payload = {
             "model": self._model_name,
-            "messages": [{"role": "user", "content": self._strip_agent_markup(self._prompt_of(body))}],
+            "messages": [{"role": "user", "content": MessageConverter.strip_agent_markup(self._prompt_of(body))}],
             "stream": True,
             "metadata": {
                 "thread_id": self._str_to_object_id(metadata.get("chat_id"), salt=MOA_MERGE_THREAD_SALT),
@@ -1822,18 +2267,6 @@ class ResponseMergeService:
         if isinstance(content, str):
             return content
         return "\n".join(part.get("text", "") for part in content if isinstance(part, dict))
-
-    @classmethod
-    def _strip_agent_markup(cls, prompt: Annotated[str, "Rendered MoA prompt"]) -> Annotated[str, "Plain text"]:
-        """Remove the reasoning/tool ``<details>`` blocks the agent pipeline embeds in its answers.
-
-        The responses being merged are raw message content, so for agent branches they carry this
-        pipeline's own HTML. Feeding it to the merge model wastes context and invites it to echo the
-        markup into the merged prose, which OpenWebUI then renders as an empty collapsed block.
-        """
-        stripped = cls._DETAILS_BLOCK.sub("\n", prompt)
-        stripped = cls._ORPHAN_MARKUP.sub("", stripped)
-        return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
 
     @staticmethod
     def _str_to_object_id(
@@ -1985,6 +2418,9 @@ class Pipe:
             self.valves.S3_STORAGE_ACCESS_KEY,
             self.valves.S3_STORAGE_SECRET_KEY,
         )
+
+        # Referenced knowledge collections
+        self._knowledge_reference_service = KnowledgeReferenceService(self.valves.AIHUB_BASE_URL)
 
         # Message Conversion
         self._message_converter = MessageConverter()
@@ -2187,7 +2623,12 @@ class Pipe:
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
                 # Process files — upload to agent's dedicated bucket
-                files = await self._file_service.prepare_files_for_event(__files__, agent_class, agent_id, headers)
+                files, owui_file_ids = await self._file_service.prepare_files_for_event(
+                    __files__, agent_class, agent_id, headers, thread_id
+                )
+                knowledge_references = await self._knowledge_reference_service.references_for_event(
+                    __files__, headers
+                )
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -2213,10 +2654,15 @@ class Pipe:
                     # Normal flow - send UserMessageEvent
                     event_name = "UserMessageEvent"
                     hitl_display_id = display_id
-                    event_payload = {"messages": messages}
+                    event_payload = {
+                        "messages": messages,
+                        "requested_features": (__metadata__ or {}).get(REQUESTED_FEATURES_METADATA_KEY) or [],
+                    }
                     if files:
                         event_payload["files"] = files
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                    if knowledge_references:
+                        event_payload["knowledge_references"] = knowledge_references
 
                 # Emit initial status
                 await __event_emitter__(
@@ -2266,6 +2712,10 @@ class Pipe:
                     message_id=__metadata__.get("message_id"),
                     redis=getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None),
                     stream_start_callback=stream_start_callback,
+                    owui_file_ids=owui_file_ids,
+                    attachments=AgentFileAttachmentService(
+                        self._file_service.s3_client, __request__, __user__["id"]
+                    ),
                 )
 
                 # Emit completion status

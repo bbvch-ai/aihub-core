@@ -4,11 +4,15 @@ import inspect
 from collections.abc import Callable
 from typing import ClassVar
 
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.events.agent import ChatFeature, ToolDefinition
 from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.form.form import Form
 
 from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 
 
 class Capability(abc.ABC):
@@ -28,6 +32,32 @@ class Capability(abc.ABC):
     # composes the capability's steps into the blueprint's workflow; the blueprint must consume every outcome that
     # is not a stop event, and validation checks the outcomes against what the capability's steps can emit.
     calls: ClassVar[dict[type[ControlEvent], tuple[type[ControlEvent], ...]]] = {}
+
+    # The chat feature this capability serves, if any. A blueprint supports exactly the features of the
+    # capabilities it installs, which is what chat clients use to decide which toggles to show.
+    chat_feature: ClassVar[ChatFeature | None] = None
+
+    # The tool the capability offers a blueprint's tool loop, if any. A model-chosen call then runs the capability's
+    # own steps, with the same events as an explicit call: the capability's adapter steps turn a
+    # `ToolCallApprovedEvent` for `tool_name` into its request and its answer into a `ToolResultEvent`.
+    tool_name: ClassVar[str | None] = None
+    tool_options: ClassVar[ToolOptions] = ToolOptions()
+    # The form mixin a blueprint's config needs when it offers the tool, on top of `required_config`: settings that
+    # only mean something for a model-chosen call, such as which collections the knowledge tool may search.
+    tool_config: ClassVar[type[Form] | None] = None
+
+    @classmethod
+    def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
+        """The tool as the model is offered it in this run; none when the profile and message give it nothing to do."""
+        return None
+
+    @classmethod
+    def published_config[TConfig: AgentConfig](cls, config: TConfig, blueprint: type[Agent]) -> TConfig:
+        """The config as discovery publishes it for a blueprint installing this capability; unchanged by default.
+
+        For form elements only the blueprint can fill in, such as the options listing its own tools.
+        """
+        return config
 
     @classmethod
     def handles(cls) -> frozenset[type[ControlEvent]]:

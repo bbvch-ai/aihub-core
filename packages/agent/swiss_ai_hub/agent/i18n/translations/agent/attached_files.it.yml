@@ -1,0 +1,54 @@
+---
+steps:
+  read_as_tool:
+    name: Leggere i file allegati come strumento
+    description: Legge i file allegati scelti dal modello
+  answer_tool_call:
+    name: Restituire i file al modello
+    description: Restituisce quanto letto al ciclo di strumenti del modello
+  read_attached_files:
+    name: Leggi i file allegati
+    description: Legge i file che l'utente ha allegato alla conversazione e aggiunge
+      il loro testo al contesto del modello
+prompt:
+  context: |
+    {% chat role="system" %}
+    L'utente ha allegato i seguenti file a questa conversazione. Quando la domanda vi si riferisce, rispondi dal loro contenuto e indica il file usato. Ogni file è un blocco `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, con le sezioni sotto i rispettivi titoli.
+    <attached_files>
+    {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
+    </attached_files>
+    {% endchat %}
+  excerpted: Solo le parti di "%{filename}" più rilevanti per la domanda rientrano
+    nel tuo contesto. Comunica all'utente che la risposta si basa su estratti di questo
+    file.
+  truncated: Solo l'inizio di «%{filename}» è entrato nel tuo contesto. Comunica all'utente
+    che la tua risposta si basa su una parte di questo file.
+  unreadable: L'utente ha allegato «%{filename}», ma non è stato possibile leggerlo
+    (%{error}). Comunica all'utente che questo file non è stato letto e suggerisci
+    di allegarlo in un altro formato o di incollarne il testo.
+  pages: Queste sono le pagine da %{first} a %{last} di "%{filename}", che ha %{total}
+    pagine.
+  pages_cut: Solo le pagine da %{first} a %{shown} delle pagine richieste da %{first}
+    a %{last} di "%{filename}" entrano nel tuo contesto. Dillo all'utente e offri
+    di continuare dalla pagina %{next}.
+  pages_missing: "\"%{filename}\" ha solo %{total} pagine, quindi non esiste una pagina\
+    \ %{first}. Dillo all'utente."
+  pages_unknown: Le pagine di "%{filename}" non sono note, quindi le pagine richieste
+    non hanno potuto essere individuate. Di' all'utente che la tua risposta non si
+    basa solo su quelle pagine.
+tool:
+  label: Leggere i file allegati
+  approval_summary: Leggere i file allegati
+  description: "Legge i file che l'utente ha allegato a questa conversazione e ne\
+    \ restituisce il testo, con identificativi da citare. Per un file troppo grande\
+    \ per essere letto per intero, restituisce le sezioni più pertinenti alla richiesta.\
+    \ Per leggere certe pagine di un documento, indica first_page e last_page. File\
+    \ allegati:\n%{files}"
+  files: I file da leggere, per identificativo; ometti per leggerli tutti.
+  query: Cosa cerchi nei file, così che di un file lungo restino le sezioni pertinenti.
+  first_page: La prima pagina da leggere, contando da 1, quando la domanda riguarda
+    certe pagine. Le pagine vengono allora lette in ordine invece di essere cercate
+    in base alla richiesta.
+  last_page: L'ultima pagina da leggere; ometti per leggere solo la prima pagina.
+  nothing_readable: Nessuno dei file scelti ha potuto essere letto.
+  unknown_files: 'Nessuno degli id indicati è un file allegato. File allegati: %{files}'
