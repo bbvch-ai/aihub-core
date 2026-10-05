@@ -65,6 +65,7 @@ def _client(present: list[str] | None = None, staged: dict[str, str] | None = No
     client.list_files = AsyncMock(return_value={"entries": [{"name": name} for name in present or []]})
     client.upload = AsyncMock(return_value={})
     client.write_file = AsyncMock(return_value={})
+    client.mkdir = AsyncMock(return_value={})
     client.execute = AsyncMock(return_value={"status": "done", "exit_code": 0, "output": [{"data": "42\r\n"}]})
     client.view = AsyncMock(side_effect=view)
     return client
@@ -161,11 +162,12 @@ class TestAttachedFiles:
         assert [call.args[1] for call in client.upload.await_args_list] == ["sales.csv", "sales (2).csv"]
 
     @pytest.mark.asyncio
-    async def test_a_message_without_files_does_not_touch_the_sandbox(self) -> None:
+    async def test_a_message_without_files_only_creates_the_folder_commands_run_in(self) -> None:
         client = _client()
 
         await SandboxWorkspace(client, _topic(), []).prepare()
 
+        client.mkdir.assert_awaited_once_with(f"conversations/{THREAD}")
         client.view.assert_not_awaited()
         client.list_files.assert_not_awaited()
 
