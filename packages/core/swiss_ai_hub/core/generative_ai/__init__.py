@@ -46,6 +46,24 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
     from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error import (
+        KnowledgeCollectionNotFoundError,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing import (
+        KnowledgeDocumentListing,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_not_found_error import (
+        KnowledgeDocumentNotFoundError,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pending_error import (
+        KnowledgeDocumentPendingError,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_reader import KnowledgeDocumentReader
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import (
+        KnowledgeDocumentSummary,
+    )
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
     from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
@@ -100,6 +118,14 @@ __all__ = [
     "AgentMemory",
     "BucketMetadataFilters",
     "BucketNamespacePair",
+    "InvalidPathPatternError",
+    "KnowledgeCollectionNotFoundError",
+    "KnowledgeDocument",
+    "KnowledgeDocumentListing",
+    "KnowledgeDocumentNotFoundError",
+    "KnowledgeDocumentPendingError",
+    "KnowledgeDocumentReader",
+    "KnowledgeDocumentSummary",
     "DocumentIntelligenceLoader",
     "CitationId",
     "DocumentExtractor",
@@ -191,6 +217,14 @@ _LAZY_IMPORTS = {
     "ImageLoader": "swiss_ai_hub.core.generative_ai.document.loaders.image_loader",
     "IngestedDocument": "swiss_ai_hub.core.generative_ai.document.types.ingested_document",
     "IngestedNode": "swiss_ai_hub.core.generative_ai.document.types.ingested_node",
+    "InvalidPathPatternError": "swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error",
+    "KnowledgeCollectionNotFoundError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error",
+    "KnowledgeDocument": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document",
+    "KnowledgeDocumentListing": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing",
+    "KnowledgeDocumentNotFoundError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_not_found_error",
+    "KnowledgeDocumentPendingError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pending_error",
+    "KnowledgeDocumentReader": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_reader",
+    "KnowledgeDocumentSummary": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary",
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",

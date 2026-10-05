@@ -24,6 +24,11 @@ _IDX_NAMESPACE = "data.metadata.namespace"
 _IDX_IS_INGESTED = "data.metadata.is_ingested"
 _IDX_SOURCE = "data.metadata.source"
 
+# Stored field paths, for queries that bypass MongoEngine's field-name translation
+_RAW_NAMESPACE = "__data__.metadata.namespace"
+_RAW_IS_INGESTED = "__data__.metadata.is_ingested"
+_RAW_SOURCE = "__data__.metadata.source"
+
 
 class Metadata(DynamicEmbeddedDocument):
     source = StringField(required=True)
@@ -95,6 +100,38 @@ class RefDoc(Document):
     def by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self:
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return SwitchedRefDoc.objects.get(id=doc_id, data__metadata__namespace=namespace)
+
+    @classmethod
+    @trace_fn
+    def first_by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self | None:
+        """Safe to call from worker threads, unlike the `switch_db` readers: see `list_ingested_summaries`."""
+        son = get_db(db_alias)[cls._meta["collection"]].find_one({"_id": doc_id, _RAW_NAMESPACE: namespace})
+        return None if son is None else cls._from_son(son)
+
+    @classmethod
+    @trace_fn
+    def list_ingested_summaries(cls, db_alias: str, namespace: str) -> list["RefDoc"]:
+        """Every fully ingested document of a namespace, ordered by source and loaded with its metadata only.
+
+        Queries the alias's database directly instead of through `switch_db`, which rebinds `RefDoc` for the whole
+        process: two worker threads reading different knowledge databases at once were each handed the other's rows.
+        The parsed text is the bulk of every row, and llama-index stores it twice, in `text` and again in the
+        undeclared `text_resource`; projecting onto the fields a listing needs leaves out both. Legacy rows without
+        `is_ingested` count as ingested, as everywhere else.
+        """
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {
+                    _RAW_NAMESPACE: namespace,
+                    _RAW_IS_INGESTED: {"$ne": False},
+                    "__type__": {"$ne": "placeholder"},
+                },
+                {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1},
+            )
+            .sort(_RAW_SOURCE, 1)
+        )
+        return [cls._from_son(son) for son in rows]
 
     @classmethod
     @trace_fn
