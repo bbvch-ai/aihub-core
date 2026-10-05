@@ -82,6 +82,22 @@ class TestAttachedFilesAsATool:
         assert "photo.png" not in definition.description
         assert definition.parameters["properties"]["files"]["items"]["enum"] == [CitationId.of(F1)]
 
+    def test_a_spreadsheet_is_marked_for_code_and_a_document_is_not(self):
+        orders = UserUploadedFile(
+            filename="orders.xlsx",
+            file_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            file_id="33333333-3333-4333-8333-333333333333",
+        )
+
+        definition = AttachedFiles.tool_definition(_context([REPORT, orders]))
+
+        hint = T("agent.attached_files.tool.structured_hint")
+        listed = {
+            line.split(": ", 1)[1].split(" ")[0]: line for line in definition.description.splitlines() if ": " in line
+        }
+        assert listed["orders.xlsx"].endswith(hint)
+        assert hint not in listed["report.pdf"]
+
     def test_nothing_readable_attached_offers_no_tool(self):
         assert AttachedFiles.tool_definition(_context([PHOTO])) is None
 

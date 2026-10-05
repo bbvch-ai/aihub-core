@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import posixpath
 from collections.abc import Sequence
 from typing import ClassVar
 
@@ -48,6 +49,7 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 logger = logging.getLogger(__name__)
 
 READ_ATTACHED_FILES_TOOL = "read_attached_files"
+STRUCTURED_FILE_EXTENSIONS = frozenset({".xlsx", ".xlsm", ".xls", ".ods", ".csv", ".tsv", ".pptx", ".ppt", ".odp"})
 
 
 @precondition()
@@ -66,9 +68,9 @@ class AttachedFiles(Capability):
 
     - `read(files, history, query, reserve_tokens)` is answered with `AttachedFilesReadEvent`, one context block
       holding each file's text, empty when nothing readable is attached. `first_page`/`last_page` read those pages of
-      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to `Conversation.compose(...)`
-      behind the memories. `reserve_tokens` is room the caller still needs afterwards, such as RAG's retrieved
-      knowledge, which the files leave free.
+      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to
+      `Conversation.compose(...)` behind the memories. `reserve_tokens` is room the caller still needs afterwards, such
+      as RAG's retrieved knowledge, which the files leave free.
 
     Chat clients send every file of the current message branch on every turn, so a file attached earlier keeps
     answering later questions without being attached again, and an edited or regenerated message sees exactly its
@@ -100,12 +102,21 @@ class AttachedFiles(Capability):
             return None
         t = context.t
         # Files go by their citation id: a model shown the upload id cites that instead, which no client links.
-        listing = "\n".join(f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})" for file in files)
+        listing = "\n".join(
+            f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})"
+            + (f" {t('agent.attached_files.tool.structured_hint')}" if cls._works_better_in_code(file) else "")
+            for file in files
+        )
         return ToolDefinition(
             name=READ_ATTACHED_FILES_TOOL,
             description=t("agent.attached_files.tool.description", files=listing),
             parameters=AttachedFilesToolArguments.schema_for([CitationId.of(file.file_id) for file in files], t),
         )
+
+    @staticmethod
+    def _works_better_in_code(file: UserUploadedFile) -> bool:
+        """Spreadsheets, presentations and CSV files keep their structure only when code opens the file itself."""
+        return posixpath.splitext(file.filename.lower())[1] in STRUCTURED_FILE_EXTENSIONS
 
     @staticmethod
     def read(
