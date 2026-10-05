@@ -14,6 +14,7 @@ from pydantic import Field
 from swiss_ai_hub.pipeline.assets.factories.structured_to_data_lake.structured_sync_factory import (
     structured_sync_factory,
 )
+from swiss_ai_hub.pipeline.ops.structured.sync_structured_records import _refuse_a_second_sync_of
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3DataLakeClient
 from swiss_ai_hub.pipeline.resources.structured.tests.fake_s3_client import FakeS3Client
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
@@ -320,6 +321,19 @@ class TestGuards:
         assert not world.sync("db-a").success
         assert world.files("db-a") == []
         assert world.sync("db-b").success, "a sync of another database is no reason to wait"
+
+    def test_an_earlier_run_that_starts_after_a_later_one_gives_way_too(self):
+        """A run queued first can be overtaken; starting next to the run that overtook it would race on the state."""
+        own, later = MagicMock(), MagicMock()
+        own.dagster_run.run_id, later.dagster_run.run_id = "own", "later"
+        context = MagicMock(run_id="own", job_name="structured_source_sync")
+        context.instance.get_run_records.return_value = [own, later]
+
+        with pytest.raises(RuntimeError, match="Run later is already syncing 'db-a'"):
+            _refuse_a_second_sync_of(context, "db-a")
+
+        context.instance.get_run_records.return_value = [own]
+        _refuse_a_second_sync_of(context, "db-a")
 
     def test_a_database_that_left_the_source_during_the_sync_keeps_its_previous_state(self, world):
         issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])

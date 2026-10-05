@@ -94,14 +94,17 @@ def _run(
 
 
 def _refuse_a_second_sync_of(context: OpExecutionContext, bucket: str) -> None:
-    """Two syncs of one database would race on its state; the one that started later gives way."""
-    own = context.instance.get_run_record_by_id(context.run_id)
+    """Two syncs of one database would race on its state, so a run gives way to any other sync of it already running.
+
+    Creation order decides nothing: an earlier run can still be queued when a later one starts, and would then find
+    only a later run. Two runs that check in the same instant both give way, and the next scheduled run syncs.
+    """
     running = context.instance.get_run_records(
         RunsFilter(job_name=context.job_name, statuses=_RUNNING, tags={BUCKET_RUN_TAG: bucket})
     )
-    earlier = [record for record in running if record.create_timestamp < own.create_timestamp]
-    if earlier:
-        raise RuntimeError(f"Run {earlier[0].dagster_run.run_id} is already syncing '{bucket}'.")
+    others = [record for record in running if record.dagster_run.run_id != context.run_id]
+    if others:
+        raise RuntimeError(f"Run {others[0].dagster_run.run_id} is already syncing '{bucket}'.")
 
 
 def _still_filled_by(bucket: str, source: str) -> bool:

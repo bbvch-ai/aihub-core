@@ -183,8 +183,8 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    source switch or a layout change, and would never fetch that record again. The next run re-reads everything, and the
    ETag check keeps it from rewriting what is already there.
 
-7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds an
-   earlier sync of the same database still running gives way.
+7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
+   another sync of the same database running gives way, whichever was created first.
 
 ## Consequences
 

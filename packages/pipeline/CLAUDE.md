@@ -465,7 +465,8 @@ everything, while a rotated credential keeps the cursor.
 5. **Never remove a file the same run wrote.**
 6. **A listed record without a file means the cursor is ahead of the data.** The state is discarded, and the next run
    re-reads everything.
-7. **One sync per database at a time.** A run that finds an earlier sync of the same database still running gives way.
+7. **One sync per database at a time.** A run that finds another sync of the same database running gives way, whichever
+   was created first.
 8. **dlt telemetry stays off.** `structured_pipeline_definitions` sets `RUNTIME__DLTHUB_TELEMETRY=false`, and so does
    the Dockerfile.
 9. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
