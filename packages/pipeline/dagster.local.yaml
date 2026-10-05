@@ -25,6 +25,10 @@ run_coordinator:
     # unresolvable env var would break every Dagster process on the machine —
     # including ones started without the repo .env loaded. Tune it in place.
     max_concurrent_runs: 2
+# Mirrors the deployed stages: only runs tagged dagster/max_retries are retried.
+run_retries:
+  enabled: true
+  max_retries: 0
 telemetry:
   enabled: false
 python_logs:
