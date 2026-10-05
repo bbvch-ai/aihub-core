@@ -50,7 +50,9 @@ class SandboxTools(BaseToolSpec):
         wait: Annotated[int, "Seconds to wait for it to finish, at most 300; a longer run keeps going."] = 60,
     ) -> str:
         """Run a shell command in the user's code sandbox, in this conversation's folder, which holds the files
-        attached to the conversation. Use it to run code, e.g. `python3 analysis.py`."""
+        attached to the conversation unchanged. Use it to run code, e.g. `python3 analysis.py`. Work on attached
+        spreadsheets, presentations and CSV files here, where code reads them natively; documents such as PDF and
+        Word files read better with the tool that reads attached files, which returns them as Markdown."""
         workspace = await self._workspace()
         result = await workspace.client.execute(command, cwd=workspace.folder, wait=min(max(wait, 0), 300))
         return self._process(result)

@@ -37,13 +37,10 @@ prompt:
     non hanno potuto essere individuate. Di' all'utente che la tua risposta non si
     basa solo su quelle pagine.
 tool:
+  structured_hint: "(foglio di calcolo, presentazione o CSV: lavoralo con il codice quando è disponibile uno strumento per il codice)"
   label: Leggere i file allegati
   approval_summary: Leggere i file allegati
-  description: "Legge i file che l'utente ha allegato a questa conversazione e ne\
-    \ restituisce il testo, con identificativi da citare. Per un file troppo grande\
-    \ per essere letto per intero, restituisce le sezioni più pertinenti alla richiesta.\
-    \ Per leggere certe pagine di un documento, indica first_page e last_page. File\
-    \ allegati:\n%{files}"
+  description: "Legge i file che l'utente ha allegato a questa conversazione e ne restituisce il testo convertito in Markdown, con identificativi da citare. Leggi qui i documenti come i file PDF e Word. Fogli di calcolo, presentazioni e file CSV perdono la loro struttura in Markdown: quando è disponibile uno strumento per il codice, lavorali invece con il codice, dove ogni file allegato si trova invariato nella cartella della conversazione. Per un file troppo grande per essere letto per intero, restituisce le sezioni più pertinenti alla richiesta. Per leggere certe pagine di un documento, indica first_page e last_page. File allegati:\n%{files}"
   files: I file da leggere, per identificativo; ometti per leggerli tutti.
   query: Cosa cerchi nei file, così che di un file lungo restino le sezioni pertinenti.
   first_page: La prima pagina da leggere, contando da 1, quando la domanda riguarda
