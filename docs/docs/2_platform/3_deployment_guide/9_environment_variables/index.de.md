@@ -79,6 +79,7 @@ Diese Variablen werden als `${VAR}` (ohne einen `${VAR:-default}` Fallback) irge
 | `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` | |
 | `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `open-webui` | |
 | `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` | `KeycloakSettings.SHOW_KEYCLOAK_LOGIN` | `api`, `sysadmin-api` | Zeigt einen direkten Keycloak-Login-Button neben föderierten IDPs |
+| `KEYCLOAK_TENANT_IDP_ALIASES` | `KeycloakSettings.TENANT_IDP_ALIASES` | `api` | Tenant-Login-Links als kommagetrennte tenant_id=idp_alias-Paare (z. B. 'acme=acme-entra,beta=shared-idp'). Ein nicht angemeldeter Aufruf von /<tenant_id> führt direkt zu diesem Identity Provider. Leer schaltet Tenant-Login-Links aus. |
 | `LANGFUSE_ALLOWED_ORGANIZATION_CREATORS` | | `langfuse-web` | |
 | `LANGFUSE_CLICKHOUSE_PASSWORD` | | `backup-code`, `clickhouse`, `langfuse-web`, `langfuse-worker` | |
 | `LANGFUSE_ENCRYPTION_KEY` | | `langfuse-web`, `langfuse-worker` | |

@@ -5,6 +5,7 @@ import pytest
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import (
     CACHE_KEY,
     DEFAULT_ICON,
+    LOGIN_ALIASES_CACHE_KEY,
     AuthProviderService,
 )
 
@@ -227,3 +228,97 @@ def test_display_name_falls_back_to_alias():
 
     providers = AuthProviderService._filter_providers([idp])
     assert providers[0].display_name == "my-idp"
+
+
+@pytest.fixture
+def tenant_mapping(monkeypatch):
+    monkeypatch.setenv("KEYCLOAK_URL", "http://kc:8080")
+    monkeypatch.setenv("KEYCLOAK_TENANT_IDP_ALIASES", "acme=acme-entra,beta=shared-idp,gamma=shared-idp,delta=gone")
+
+
+def _patch_keycloak_idps(idps: list[dict]):
+    mock_admin = AsyncMock()
+    mock_admin.a_get_idps.return_value = idps
+    return patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin)
+
+
+@pytest.mark.asyncio
+async def test_tenant_lookup_returns_mapped_alias(mock_redis, tenant_mapping):
+    with _patch_keycloak_idps([_build_idp(alias="acme-entra")]):
+        response = await AuthProviderService.get_tenant_auth_provider(mock_redis, "acme")
+
+    assert response.alias == "acme-entra"
+
+
+@pytest.mark.asyncio
+async def test_tenants_sharing_an_idp_resolve_to_the_same_alias(mock_redis, tenant_mapping):
+    with _patch_keycloak_idps([_build_idp(alias="shared-idp")]):
+        beta = await AuthProviderService.get_tenant_auth_provider(mock_redis, "beta")
+        gamma = await AuthProviderService.get_tenant_auth_provider(mock_redis, "gamma")
+
+    assert beta.alias == gamma.alias == "shared-idp"
+
+
+@pytest.mark.asyncio
+async def test_tenant_lookup_accepts_provider_hidden_on_login_page(mock_redis, tenant_mapping):
+    hidden = _build_idp(alias="acme-entra", hide_on_login=True)
+    hidden["hideOnLogin"] = True
+
+    with _patch_keycloak_idps([hidden]):
+        response = await AuthProviderService.get_tenant_auth_provider(mock_redis, "acme")
+
+    assert response.alias == "acme-entra"
+
+
+@pytest.mark.parametrize(
+    "idp",
+    [
+        _build_idp(alias="acme-entra", enabled=False),
+        _build_idp(alias="acme-entra", link_only=True),
+        _build_idp(alias="someone-else"),
+    ],
+    ids=["disabled", "link-only", "missing"],
+)
+@pytest.mark.asyncio
+async def test_tenant_lookup_rejects_alias_that_cannot_log_in(mock_redis, tenant_mapping, idp):
+    with _patch_keycloak_idps([idp]):
+        response = await AuthProviderService.get_tenant_auth_provider(mock_redis, "acme")
+
+    assert response.alias is None
+
+
+@pytest.mark.asyncio
+async def test_unlisted_tenant_gets_null_without_reading_providers(mock_redis, tenant_mapping):
+    with _patch_keycloak_idps([_build_idp(alias="acme-entra")]) as keycloak_admin:
+        response = await AuthProviderService.get_tenant_auth_provider(mock_redis, "unknown-tenant")
+
+    assert response.alias is None
+    mock_redis.get.assert_not_called()
+    keycloak_admin.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_login_aliases_come_from_cache(mock_redis, tenant_mapping):
+    import json
+
+    mock_redis.get.return_value = json.dumps(["acme-entra"])
+
+    with _patch_keycloak_idps([]) as keycloak_admin:
+        response = await AuthProviderService.get_tenant_auth_provider(mock_redis, "acme")
+
+    assert response.alias == "acme-entra"
+    mock_redis.get.assert_called_once_with(LOGIN_ALIASES_CACHE_KEY)
+    keycloak_admin.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_login_aliases_are_cached(mock_redis, tenant_mapping):
+    import json
+
+    with _patch_keycloak_idps([_build_idp(alias="shared-idp"), _build_idp(alias="acme-entra")]):
+        await AuthProviderService.get_tenant_auth_provider(mock_redis, "acme")
+
+    mock_redis.set.assert_called_once()
+    key, value = mock_redis.set.call_args[0]
+    assert key == LOGIN_ALIASES_CACHE_KEY
+    assert json.loads(value) == ["acme-entra", "shared-idp"]

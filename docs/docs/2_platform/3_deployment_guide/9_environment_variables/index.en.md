@@ -85,6 +85,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` |  |
 | `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `open-webui` |  |
 | `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` | `KeycloakSettings.SHOW_KEYCLOAK_LOGIN` | `api`, `sysadmin-api` | Show a direct Keycloak login button alongside federated IDPs |
+| `KEYCLOAK_TENANT_IDP_ALIASES` | `KeycloakSettings.TENANT_IDP_ALIASES` | `api` | Tenant login links as comma-separated tenant_id=idp_alias pairs (e.g. 'acme=acme-entra,beta=shared-idp'). A logged-out visit to /<tenant_id> goes straight to that identity provider. Empty turns tenant login links off. |
 | `LANGFUSE_ALLOWED_ORGANIZATION_CREATORS` |  | `langfuse-web` |  |
 | `LANGFUSE_CLICKHOUSE_PASSWORD` |  | `backup-code`, `clickhouse`, `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_ENCRYPTION_KEY` |  | `langfuse-web`, `langfuse-worker` |  |
