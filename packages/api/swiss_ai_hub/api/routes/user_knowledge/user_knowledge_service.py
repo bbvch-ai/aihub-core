@@ -1,12 +1,19 @@
 import asyncio
 import posixpath
 from collections.abc import Callable
+from typing import Any
 from urllib.parse import quote
 
 from bson import ObjectId
 from fastapi import HTTPException, Response, UploadFile, status
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.infrastructure import ConversationAttachments, OpenTerminalClient, SandboxHomePath, trace_fn
+from swiss_ai_hub.core.infrastructure import (
+    ConversationAttachments,
+    OpenTerminalClient,
+    OpenTerminalError,
+    SandboxHomePath,
+    trace_fn,
+)
 from swiss_ai_hub.core.persistence import OpenWebuiAccountEntity, ThreadEntity
 
 from swiss_ai_hub.api.routes.user_knowledge.dto.file_entry_dto import FileEntryDTO
@@ -40,7 +47,13 @@ class UserKnowledgeService:
     @trace_fn
     async def list_folder(user: UserIdentity, folder: str) -> FolderListingDTO:
         relative = SandboxHomePath.shown(folder)
-        listing = await UserKnowledgeService.client_for(user).list_files(relative)
+        parent, name = posixpath.split(relative)
+        folder_title = (
+            UserKnowledgeService._conversation_titles(user, [name]).get(name)
+            if parent == UserKnowledgeService.CONVERSATIONS_FOLDER
+            else None
+        )
+        listing = await UserKnowledgeService._listing(user, relative, folder_title is not None)
         entries = [entry for entry in listing.get("entries", []) if not entry["name"].startswith(".")]
         titles = (
             UserKnowledgeService._conversation_titles(user, [entry["name"] for entry in entries])
@@ -48,12 +61,6 @@ class UserKnowledgeService:
             else {}
         )
         dtos = [FileEntryDTO.from_entry(relative, entry, titles.get(entry["name"])) for entry in entries]
-        parent, name = posixpath.split(relative)
-        folder_title = (
-            UserKnowledgeService._conversation_titles(user, [name]).get(name)
-            if parent == UserKnowledgeService.CONVERSATIONS_FOLDER
-            else None
-        )
         return FolderListingDTO(
             folder=relative,
             entries=sorted(dtos, key=lambda dto: (dto.kind != "folder", dto.name)),
@@ -150,6 +157,16 @@ class UserKnowledgeService:
         if relative == ".":
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The top folder cannot be changed.")
         return relative
+
+    @staticmethod
+    async def _listing(user: UserIdentity, relative: str, is_own_conversation: bool) -> dict[str, Any]:
+        """A conversation's folder only exists once a file lands in it, yet the user's own chat is theirs to open."""
+        try:
+            return await UserKnowledgeService.client_for(user).list_files(relative)
+        except OpenTerminalError as error:
+            if is_own_conversation and error.status_code == status.HTTP_404_NOT_FOUND:
+                return {"entries": []}
+            raise
 
     @staticmethod
     def _conversation_titles(user: UserIdentity, folder_names: list[str]) -> dict[str, str]:
