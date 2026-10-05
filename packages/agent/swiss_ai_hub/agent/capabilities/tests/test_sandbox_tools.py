@@ -191,6 +191,16 @@ class TestTools:
         assert result == "Command finished successfully (exit code 0).\n42"
 
     @pytest.mark.asyncio
+    async def test_a_spreadsheet_is_sent_to_code_instead_of_being_read_as_text(self, sandbox: Any) -> None:
+        sandbox.read_file = AsyncMock()
+
+        result = await SandboxTools(_context()).read_file("data/orders.xlsx")
+
+        sandbox.read_file.assert_not_awaited()
+        assert result.startswith("orders.xlsx is a spreadsheet or presentation")
+        assert "run_command" in result
+
+    @pytest.mark.asyncio
     async def test_a_failed_command_says_so_and_how_to_go_on(self, sandbox: Any) -> None:
         sandbox.execute = AsyncMock(return_value={"status": "done", "exit_code": 1, "output": [{"data": "KeyError"}]})
 
@@ -245,7 +255,10 @@ class TestTools:
         shown = context.displayer.display_event.await_args.args[0]
         assert isinstance(shown, SandboxFileDisplayedEvent)
         assert (shown.filename, shown.content_type, shown.size, shown.key) == ("chart.png", "image/png", 4, put["Key"])
-        assert result == "Attached chart.png (4 bytes) to your answer for the user."
+        assert result == (
+            "Attached chart.png (4 bytes) to your answer; the user gets it with a download link, "
+            "so do not attach it again."
+        )
 
     @pytest.mark.asyncio
     async def test_a_user_without_a_chat_account_has_no_sandbox(self) -> None:
