@@ -14,8 +14,8 @@ this decision OpenWebUI created that account itself, on the user's first chat lo
 2. The sync that `WebhookController` ran when OpenWebUI posted its signup webhook.
 
 When the chat login came after sync 1 had listed the accounts — the user lands on another Admin UI page first, or the
-iframe's OAuth round-trip is simply slower than two seconds — only sync 2 could place them. OpenWebUI 0.11.3
-silently removed that path, which was verified against the running image:
+iframe's OAuth round-trip is simply slower than two seconds — only sync 2 could place them. OpenWebUI 0.11.3 silently
+removed that path, which was verified against the running image:
 
 - `utils/webhook.py::post_webhook` now runs `validate_url`, which rejects every non-global address unless
   `ENABLE_LOCAL_WEB_FETCH` is set. `WEBHOOK_URL` points at `http://localhost:8000` (dev) or `http://api:8000` (every
@@ -69,8 +69,8 @@ who has none yet, over SCIM, inside the group sync, and adds it to its groups in
 - A provisioned account has role `user` until its owner's first chat login, where OAuth role management applies
   `AIHubSysAdmin` → `admin` as before.
 - `sync_access` callers can queue behind one another; the debounce in `AccessChangeHook` keeps bulk changes to one run.
-- The signup webhook (`WebhookController`, `WEBHOOK_URL`, `OPENWEBUI_WEBHOOK_SECRET`) no longer does anything and is left
-  for a separate removal.
+- The signup webhook (`WebhookController`, `WEBHOOK_URL`, `OPENWEBUI_WEBHOOK_SECRET`) no longer does anything and is
+  left for a separate removal.
 
 ### Risks
 
