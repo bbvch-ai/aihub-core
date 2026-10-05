@@ -27,10 +27,10 @@ cannot communicate with each other via this network—they can only use it for o
 
 The `code-sandbox` network is a single-tenant zone for the `open-terminal` code-execution sandbox, which runs arbitrary
 user-submitted code. Its membership is the sandbox plus **exactly its callers** (`open-webui`, `universal-agent`, the
-one AI-Hub agent that runs code, and `api`, which serves each user's own files). Because Docker networks are bidirectional, keeping the sandbox off `backend` is what
-prevents a sandbox breakout from laterally reaching `litellm`, `vLLM`, `mineru`, `presidio`, `speaches`, or
-`otel-collector`. ICC stays enabled (the callers must reach `open-terminal:8000`), and `internal: true` in non-dev
-stages also denies the sandbox any outbound internet.
+one AI-Hub agent that runs code, and `api`, which serves each user's own files). Because Docker networks are
+bidirectional, keeping the sandbox off `backend` is what prevents a sandbox breakout from laterally reaching `litellm`,
+`vLLM`, `mineru`, `presidio`, `speaches`, or `otel-collector`. ICC stays enabled (the callers must reach
+`open-terminal:8000`), and `internal: true` in non-dev stages also denies the sandbox any outbound internet.
 
 ## Service Network Assignments
 
@@ -107,12 +107,11 @@ The single-tenant zone for the code-execution sandbox:
 
 The sandbox is the **only** resident; its callers join this network in addition to their own. `open-webui` is attached
 to `code-sandbox` (alongside `proxy`/`backend`/`data`/`storage`) so it can reach `open-terminal:8000`, and
-`universal-agent` joins it (alongside `backend`/`data`/`storage`) to run code in the asking user's sandbox home, and `api` joins it to serve each user's own files from there. The
-`sandbox-mirror` sidecar that copies the homes to S3 reads the homes volume and sits on `backend` only, never on
-`code-sandbox`. Because
-the sandbox shares a network only with its callers, a breakout has no network path to the `backend` or `data` tiers. In
-dev, `open-webui` uses `network_mode: host` and the agents run locally outside Docker, so both reach the sandbox via the
-published `localhost:8200` port instead.
+`universal-agent` joins it (alongside `backend`/`data`/`storage`) to run code in the asking user's sandbox home, and
+`api` joins it to serve each user's own files from there. The `sandbox-mirror` sidecar that copies the homes to S3 reads
+the homes volume and sits on `backend` only, never on `code-sandbox`. Because the sandbox shares a network only with its
+callers, a breakout has no network path to the `backend` or `data` tiers. In dev, `open-webui` uses `network_mode: host`
+and the agents run locally outside Docker, so both reach the sandbox via the published `localhost:8200` port instead.
 
 ## Network Topology
 
@@ -233,8 +232,8 @@ flowchart TB
 
 \*ICC disabled on egress network - containers cannot communicate with each other via this network.
 
-\*\*Only `open-terminal` and its callers (`open-webui`, `universal-agent`, `api`) reside on `code-sandbox`, so the sandbox can
-reach its callers but no other tier.
+\*\*Only `open-terminal` and its callers (`open-webui`, `universal-agent`, `api`) reside on `code-sandbox`, so the
+sandbox can reach its callers but no other tier.
 
 \*\*\*`internal: true` in non-dev stages blocks outbound internet from the sandbox; in `dev` the network is non-internal
 (localhost access), so this guarantee applies to `local`/`build`/`nightly`/`latest` only.

@@ -222,6 +222,11 @@ litellm_settings:
     host: valkey
     port: 6379
     password: os.environ/REDIS_TOKEN
+    # Embeddings only: a cached chat completion carries the whole prompt, attached files included, and is
+    # almost never requested twice. Without a ttl every entry lives forever in a Valkey that has no maxmemory
+    # and snapshots every 30 s, so the cache grew with every chat and stalled the counters routing depends on.
+    supported_call_types: [embedding, aembedding]
+    ttl: 86400
   # Prompt injection detection settings
   prompt_injection_params:
     heuristics_check: false  # Disable simple pattern matching (too many false positives)
@@ -238,7 +243,9 @@ litellm_settings:
 # Router Settings
 # ===================================================================
 router_settings:
-  routing_strategy: usage-based-routing-v2
+  # Every model group has one deployment and none sets rpm/tpm, so usage-based routing had nothing to choose
+  # between and only added a Redis increment to every call.
+  routing_strategy: simple-shuffle
   retry_policy:
     TimeoutErrorRetries: 2
     RateLimitErrorRetries: 5

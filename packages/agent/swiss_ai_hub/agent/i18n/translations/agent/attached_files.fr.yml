@@ -11,7 +11,12 @@ steps:
     description: Lit les fichiers que l'utilisateur a joints à la conversation et
       ajoute leur texte au contexte du modèle
 prompt:
-  kept_for_code: "« %{filename} » est un tableur, une présentation ou un fichier CSV, il n'a donc pas été lu comme texte : en Markdown, il perdrait sa structure, et d'un gros fichier seule une partie tiendrait. Il se trouve tel quel dans le dossier de la conversation du bac à sable de code (list_files montre son nom exact). Traite-le avec run_command, par exemple avec pandas ; ce que tu y calcules couvre tout le fichier."
+  kept_for_code: "« %{filename} » est un tableur, une présentation ou un fichier CSV,\
+    \ il n'a donc pas été lu comme texte : en Markdown, il perdrait sa structure,\
+    \ et d'un gros fichier seule une partie tiendrait. Il se trouve tel quel dans\
+    \ le dossier de la conversation du bac à sable de code (list_files montre son\
+    \ nom exact). Traite-le avec run_command, par exemple avec pandas ; ce que tu\
+    \ y calcules couvre tout le fichier."
   context: |
     {% chat role="system" %}
     L'utilisateur a joint les fichiers suivants à cette conversation. Lorsque la question s'y rapporte, répondez à partir de leur contenu et nommez le fichier utilisé. Chaque fichier est un bloc `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, ses sections sous leurs titres.
@@ -19,8 +24,13 @@ prompt:
     {% for block in context_blocks %}{% if block.block_type == 'text' %}{{ block.text }}{% endif %}{% endfor %}
     </attached_files>
     {% endchat %}
-  excerpted: "Seules les parties de « %{filename} » les plus pertinentes pour la question tiennent dans ton contexte. Si ta réponse repose sur ce texte, indique à l'utilisateur qu'elle se fonde sur des extraits de ce fichier ; ce que tu calcules avec du code sur le fichier entier n'est pas partiel."
-  truncated: "Seul le début de « %{filename} » a tenu dans ton contexte. Si ta réponse repose sur ce texte, indique à l'utilisateur qu'elle se fonde sur une partie de ce fichier ; ce que tu calcules avec du code sur le fichier entier n'est pas partiel."
+  excerpted: Seules les parties de « %{filename} » les plus pertinentes pour la question
+    tiennent dans ton contexte. Si ta réponse repose sur ce texte, indique à l'utilisateur
+    qu'elle se fonde sur des extraits de ce fichier ; ce que tu calcules avec du code
+    sur le fichier entier n'est pas partiel.
+  truncated: Seul le début de « %{filename} » a tenu dans ton contexte. Si ta réponse
+    repose sur ce texte, indique à l'utilisateur qu'elle se fonde sur une partie de
+    ce fichier ; ce que tu calcules avec du code sur le fichier entier n'est pas partiel.
   unreadable: L'utilisateur a joint « %{filename} », mais ce fichier n'a pas pu être
     lu (%{error}). Indique-lui que ce fichier n'a pas pu être lu et propose de le
     joindre dans un autre format ou d'en coller le texte.
@@ -35,10 +45,18 @@ prompt:
     n'ont donc pas pu être isolées. Dis à l'utilisateur que ta réponse ne repose pas
     uniquement sur ces pages.
 tool:
-  structured_hint: "(à traiter avec du code)"
+  structured_hint: (à traiter avec du code)
   label: Lire les fichiers joints
   approval_summary: Lire les fichiers joints
-  description: "Lit les fichiers que l'utilisateur a joints à cette conversation et renvoie leur texte converti en Markdown, avec des identifiants à citer. Lis ici les documents comme les fichiers PDF et Word. Les tableurs, les présentations et les fichiers CSV perdent leur structure en Markdown : lorsqu'un outil de code est proposé, traite-les plutôt avec du code, où chaque fichier joint se trouve tel quel dans le dossier de la conversation. Pour un fichier trop grand pour être lu en entier, renvoie les sections les plus pertinentes pour la requête. Pour lire certaines pages d'un document, indique first_page et last_page. Fichiers joints :\n%{files}"
+  description: "Lit les fichiers que l'utilisateur a joints à cette conversation et\
+    \ renvoie leur texte converti en Markdown, avec des identifiants à citer. Lis\
+    \ ici les documents comme les fichiers PDF et Word. Les tableurs, les présentations\
+    \ et les fichiers CSV perdent leur structure en Markdown : lorsqu'un outil de\
+    \ code est proposé, traite-les plutôt avec du code, où chaque fichier joint se\
+    \ trouve tel quel dans le dossier de la conversation. Pour un fichier trop grand\
+    \ pour être lu en entier, renvoie les sections les plus pertinentes pour la requête.\
+    \ Pour lire certaines pages d'un document, indique first_page et last_page. Fichiers\
+    \ joints :\n%{files}"
   files: Les fichiers à lire, par identifiant ; omettre pour les lire tous.
   query: Ce que tu cherches dans les fichiers, pour qu'un long fichier garde les sections
     qui en parlent.

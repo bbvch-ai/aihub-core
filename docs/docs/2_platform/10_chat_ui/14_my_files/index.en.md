@@ -5,11 +5,11 @@ title: My Files
 # My Files
 
 **My Files** is your own file space: every file you attach in an agent chat, every file an agent makes for you, and
-everything you upload yourself, in one place. You can open, download, upload, rename, move into folders and delete
-them, and agents can read them when you let them.
+everything you upload yourself, in one place. You can open, download, upload, rename, move into folders and delete them,
+and agents can read them when you let them.
 
-The files live in your home in the code sandbox, the same place the [Universal Agent](../../5_agents/13_universal_agent/)
-runs code and OpenWebUI's terminal works. Nobody else sees them.
+The files live in your home in the code sandbox, the same place the
+[Universal Agent](../../5_agents/13_universal_agent/) runs code and OpenWebUI's terminal works. Nobody else sees them.
 
 ## Where to find it
 
@@ -27,16 +27,16 @@ Files whose names start with a dot are hidden; they belong to the sandbox and it
 
 ## What you can do
 
-| Action             | How                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| Open a folder      | Click it; the path above the list takes you back.                                        |
-| Preview a file     | Click it. Text, images and PDFs show beside the list.                                    |
-| Download           | The download icon. Every file downloads exactly as stored, office documents included.    |
-| Upload             | **Upload**, or drop files onto the list. A file with the same name is replaced.          |
-| New folder         | **New folder**.                                                                          |
-| Rename             | The pencil icon.                                                                         |
-| Move               | The folder icon: into a folder in the current one, or up one level.                      |
-| Delete             | The bin icon. A folder is deleted with everything in it.                                 |
+| Action         | How                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------- |
+| Open a folder  | Click it; the path above the list takes you back.                                     |
+| Preview a file | Click it. Text, images and PDFs show beside the list.                                 |
+| Download       | The download icon. Every file downloads exactly as stored, office documents included. |
+| Upload         | **Upload**, or drop files onto the list. A file with the same name is replaced.       |
+| New folder     | **New folder**.                                                                       |
+| Rename         | The pencil icon.                                                                      |
+| Move           | The folder icon: into a folder in the current one, or up one level.                   |
+| Delete         | The bin icon. A folder is deleted with everything in it.                              |
 
 Changes take effect right away: code an agent runs afterwards sees them.
 
