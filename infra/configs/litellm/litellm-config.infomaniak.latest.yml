@@ -142,6 +142,7 @@ model_list:
       drop_params: true
     model_info:
       mode: rerank
+      max_input_tokens: 8192
       input_cost_per_token: 0.0000000077
 
   # ===================================================================
