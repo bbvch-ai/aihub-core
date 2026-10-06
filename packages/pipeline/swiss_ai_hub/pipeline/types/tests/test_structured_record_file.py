@@ -50,8 +50,10 @@ class TestRender:
 
     def test_a_date_must_arrive_as_an_iso_string(self):
         """A datetime would render in YAML's own spelling, not the ISO-8601 the metadata reader expects."""
+        frontmatter = {"updated": datetime(2026, 9, 1, tzinfo=UTC)}
+
         with pytest.raises(ValidationError):
-            _record(frontmatter={"updated": datetime(2026, 9, 1, tzinfo=UTC)})
+            _record(frontmatter=frontmatter)
 
 
 class TestObjectKey:

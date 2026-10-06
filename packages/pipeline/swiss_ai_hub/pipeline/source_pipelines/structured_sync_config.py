@@ -47,10 +47,10 @@ class StructuredSyncConfig(SourcePipelineConfig):
         )
 
     def adapter(self) -> AbstractStructuredSourceAdapter:
-        for adapter_type in self.adapters():
-            if adapter_type.kind == self.source_kind:
-                return adapter_type()
-        raise ValueError(f"Structured source kind '{self.source_kind}' is not offered by this pipeline.")
+        adapter_type = {offered.kind: offered for offered in self.adapters()}.get(self.source_kind)
+        if adapter_type is None:
+            raise ValueError(f"Structured source kind '{self.source_kind}' is not offered by this pipeline.")
+        return adapter_type()
 
     def options(self) -> Form:
         return getattr(self, self.source_kind)

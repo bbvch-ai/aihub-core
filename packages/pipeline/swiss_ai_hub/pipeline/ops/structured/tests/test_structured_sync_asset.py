@@ -159,13 +159,16 @@ class TestWrites:
         world.database("db-a", [_issue("ABC", "ABC-1", 1, body="A's issue")])
         world.database("db-b", [_issue("ABC", "ABC-1", 2, body="B's issue"), _issue("XYZ", "XYZ-1", 3)])
 
-        assert world.sync("db-a").success and world.sync("db-b").success
+        assert world.sync("db-a").success
+        assert world.sync("db-b").success
 
         assert world.files("db-a") == ["ABC/ABC-1.md"]
         assert world.files("db-b") == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
         assert "A's issue" in world.body("db-a", "ABC/ABC-1.md")
         assert "B's issue" in world.body("db-b", "ABC/ABC-1.md")
-        assert world.state("db-a") and world.state("db-b") and world.state("db-a") != world.state("db-b")
+        assert world.state("db-a")
+        assert world.state("db-b")
+        assert world.state("db-a") != world.state("db-b")
 
     def test_a_rerun_with_nothing_new_writes_no_file_and_sends_no_event(self, world):
         world.database("db-a", [_issue("ABC", "ABC-1", 1), _issue("XYZ", "XYZ-1", 2)])
