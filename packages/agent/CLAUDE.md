@@ -192,7 +192,9 @@ completion is what guarantees it is published before the run tears down (ADR `20
 **`AttachedFiles`** (needs `AttachedFilesFields`: an embedding and a reranking model, preset to `embedding/bge-m3` and
 `reranker/bge`, plus the deployment-fixed `share_of_input_budget` and `shortlist_size`):
 `read(files, history, query, reserve_tokens)` → `AttachedFiles.Contents` (`AttachedFilesReadEvent`), empty when nothing
-readable is attached (images stay image content). Each file is split with the ingestion pipeline's
+readable is attached (images stay image content). Files are read two at a time (`AttachedFileReader.read_all`), since
+MinerU serves three conversions at once and a dozen PDFs sent together ran out of their 503 retries side by side. Each
+file is split with the ingestion pipeline's
 `MarkdownStructuralNodeParser`, so sections keep their headings and tables split between rows, and rendered with
 `combine_nodes_in_order` as a `REFERENCE_DOCUMENT`, exactly like retrieved knowledge; notes the model must pass on (a
 file cut down, or unreadable) follow in a second message. The files share the room left after `history` and

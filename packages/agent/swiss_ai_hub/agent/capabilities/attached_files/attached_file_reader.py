@@ -1,9 +1,16 @@
+import asyncio
 import logging
+from collections.abc import Sequence
 
 from swiss_ai_hub.core.events.agent import AttachedFileEvent, AttachedFileStatus, UserUploadedFile
 from swiss_ai_hub.core.generative_ai import CitationId, DocumentExtractor, ExtractedDocument
 
 logger = logging.getLogger(__name__)
+
+# MinerU serves MINERU_API_MAX_CONCURRENT_REQUESTS (3) conversions at once and answers the rest with 503. Reading a
+# turn's attachments all at once sent a dozen PDFs into it together, and they ran out of their ~35s retry budget side
+# by side. Two at a time leaves a slot for ingestion and other chats.
+MAX_CONCURRENT_READS = 2
 
 
 class AttachedFileReader:
@@ -17,6 +24,19 @@ class AttachedFileReader:
     def is_readable_attachment(file: UserUploadedFile) -> bool:
         """Images already reach the model as image content in the message, so they are not read as documents."""
         return not file.file_type.startswith("image/")
+
+    @staticmethod
+    async def read_all(
+        files: Sequence[UserUploadedFile], agent_class: str, agent_id: str
+    ) -> list[tuple[ExtractedDocument | None, AttachedFileEvent]]:
+        """The files in the order given, read a few at a time so a turn with many attachments cannot flood MinerU."""
+        slots = asyncio.Semaphore(MAX_CONCURRENT_READS)
+
+        async def read_one(file: UserUploadedFile) -> tuple[ExtractedDocument | None, AttachedFileEvent]:
+            async with slots:
+                return await AttachedFileReader.read(file, agent_class, agent_id)
+
+        return list(await asyncio.gather(*(read_one(file) for file in files)))
 
     @staticmethod
     async def read(
