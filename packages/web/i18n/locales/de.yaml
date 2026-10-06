@@ -702,6 +702,8 @@ auth:
     welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
     pleaseLoginWith: Bitte melden Sie sich mit {provider} an
+    useOrganisationLink: "Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls Sie ihn nicht haben, kontaktieren Sie Ihren Administrator."
+    adminLogin: Anmeldung für Administratoren
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens
