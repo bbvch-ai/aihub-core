@@ -47,7 +47,7 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
-    AuthProviderController(auth=auth).get_auth_providers(),
+    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider(),
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
     MyAccountController(auth=auth)
