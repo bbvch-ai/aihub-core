@@ -331,6 +331,14 @@ class MessageConverter:
     # Fallback for the pathological case of a model writing a literal ``</details>`` inside its own
     # reasoning text, which closes the match above early and leaves a stray tag behind.
     _ORPHAN_MARKUP = re.compile(r"</?(?:details|summary)\b[^>]*>")
+    # ``AgentFileAttachmentService.download_links`` ends an answer with links to the files it attached. A model
+    # handed that line copies it for the file it just made, keeping the earlier file's url, so its link downloads
+    # the earlier file. The whole line goes, with any copy a model already wrote, and any other link to a file
+    # loses its url.
+    _DOWNLOAD_LINE = re.compile(
+        r"\n*^Download: [^\n]*\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)[^\n]*$", re.MULTILINE
+    )
+    _FILE_LINK = re.compile(r"!?\[([^\]\n]*)\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)")
     # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
     # does not end up glued into one line (nor separated by a growing gap).
     _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
@@ -339,15 +347,17 @@ class MessageConverter:
     def strip_agent_markup(
         cls, text: Annotated[str, "Agent answer or rendered MoA prompt"]
     ) -> Annotated[str, "Plain text"]:
-        """Remove the reasoning/tool ``<details>`` blocks this pipeline embeds in its answers.
+        """Remove the reasoning/tool ``<details>`` blocks and the file downloads this pipeline adds to its answers.
 
         An earlier answer and a merged response both reach a model as raw message content, carrying this
-        pipeline's own HTML. A model handed it wastes context on it and imitates it: a merge model echoes the
-        markup into its prose, and an agent writes a tool block as text instead of calling the tool, making up
-        the result.
+        pipeline's own markup. A model handed it wastes context on it and imitates it: a merge model echoes the
+        markup into its prose, an agent writes a tool block as text instead of calling the tool, making up
+        the result, and it links a new file to an earlier file's download.
         """
         stripped = cls._DETAILS_BLOCK.sub("\n", text)
         stripped = cls._ORPHAN_MARKUP.sub("", stripped)
+        stripped = cls._DOWNLOAD_LINE.sub("", stripped)
+        stripped = cls._FILE_LINK.sub(r"\1", stripped)
         return cls._EXCESS_BLANK_LINES.sub("\n\n", stripped)
 
     @staticmethod
