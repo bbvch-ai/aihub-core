@@ -173,7 +173,9 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   gate** (inspection, the meta answer and its title), derives the query the turn is answered for (the last user message,
   or condensed when `condense_question` is on, then `StandaloneQuestionCondenserEvent` is displayed too), and titles the
   thread. The gate lives here on purpose: a blueprint cannot forget it, so detection can never race the pipeline. Pass
-  `message=None` for a programmatic start and inspection is skipped.
+  `message=None` for a programmatic start and inspection is skipped. The inspection is told the names of the message's
+  attached files: without them, a question about a file's content ("what does the User role do here?") reads as one
+  about the assistant, and the meta answer cannot see the file.
 - `compose(history, blocks)` → `ContextComposedEvent`, the history with the blocks merged behind the leading system
   messages within the input budget, in the order given. Displayed in the chat as what the model saw, so compose the
   prompt the model is actually sent: instructions in the leading system messages of `history`, never added after. When
