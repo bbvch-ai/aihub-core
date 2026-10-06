@@ -129,6 +129,34 @@ with Keycloak"-Button neben den Buttons der föderierten Provider. Dies ermögli
 Benutzername/Passwort über Keycloaks eigenen Benutzer-Store – nützlich für Entwicklungsumgebungen oder Deployments, bei
 denen einige Benutzer sich direkt mit Keycloak und nicht über einen externen IdP authentifizieren.
 
+### Login-Links pro Tenant
+
+`/{locale}/auth/login/<idp-alias>` zeigt einen einzigen Login-Button für einen Identity Provider. Die Seite löst den
+Alias über `GET /api/v1/auth-providers/<idp-alias>` auf. Der Endpunkt liefert den Provider, solange er aktiviert und
+nicht link-only ist, andernfalls `null`. Provider, die auf Keycloaks Login-Seite ausgeblendet sind, werden trotzdem
+aufgelöst, weil Keycloak `kc_idp_hint` für sie weiterhin berücksichtigt. Ein unbekannter Alias führt zurück zur
+allgemeinen Anmeldeseite. Tenants, die sich einen Identity Provider teilen, teilen sich auch dessen Link.
+
+### Willkommensseite für geteilte Instanzen
+
+Auf einer Instanz, die mehrere Organisationen bedient, würde die allgemeine Anmeldeseite jedem den Identity Provider
+jedes Tenants zeigen. Mit `KEYCLOAK_LOGIN_WELCOME_PAGE=true` (Umgebungsvariable auf `api` und `sysadmin-api`, Standard:
+`false`) ersetzt eine Willkommensnachricht die Provider-Buttons. Sie verweist Besucher auf den Login-Link ihrer
+Organisation oder an ihren Administrator.
+
+Der Schalter wirkt in der API, nicht nur auf der Seite. `GET /api/v1/auth-providers/` liefert dann `welcome_page: true`
+und keinen föderierten Provider und fragt Keycloak gar nicht erst ab. Login-Links pro Tenant funktionieren weiterhin.
+Ist zusätzlich `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` auf `true` gesetzt, zeigt die Willkommensseite einen kleinen Link
+"Anmeldung für Administratoren" zu Keycloaks eigener Login-Seite für Konten mit Benutzername/Passwort.
+
+Zwei Dinge deckt der Schalter nicht ab:
+
+- **Keycloaks Login-Seite** listet jeden Identity Provider auf, der dort nicht ausgeblendet ist. Der Administrator-Link,
+  die Anmeldung in OpenWebUI und jede von Hand gebaute Autorisierungs-URL führen dorthin. Aktivieren Sie auf einer
+  geteilten Instanz in der Keycloak Admin Console **Hide on login page** für den Identity Provider jedes Tenants.
+  Login-Links pro Tenant sind davon nicht betroffen.
+- **Tenants ohne Link** haben keinen Zugang. Geben Sie jedem Tenant seinen Link, bevor Sie den Schalter einschalten.
+
 ## Admin Service Authentifizierung über OAuth2 Proxy
 
 Interne Admin Services (Dagster, Attu, SeaweedFS) werden durch [OAuth2 Proxy](https://oauth2-proxy.github.io/)-Instanzen
