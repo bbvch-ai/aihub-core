@@ -94,6 +94,48 @@ async def test_lookalike_task_is_not_meta(displayer, locale_handler):
     assert isinstance(result, NotAMetaQuestionEvent)
 
 
+def _prompt_sent_to(llm: MagicMock) -> str:
+    return llm.achat.await_args.args[0][0].content
+
+
+@pytest.mark.asyncio
+async def test_the_classifier_is_told_which_files_are_attached(displayer, locale_handler):
+    """Without the file names, "what does the User role do here?" about an attached spreadsheet reads as a
+    question about the assistant, and the meta answer cannot see the file."""
+    llm = _llm_returning("NORMAL")
+
+    await do_detect_meta_question(
+        user_query="what does the User role do here?",
+        attached_file_names=["roles.xlsx", "handbook.pdf"],
+        llm_config=_llm_config(llm),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+
+    prompt = _prompt_sent_to(llm)
+    assert "attached these files to the conversation: roles.xlsx, handbook.pdf." in prompt
+    assert prompt.endswith('\n\nUser message: "what does the User role do here?"\nAnswer:')
+
+
+@pytest.mark.asyncio
+async def test_a_message_without_files_is_classified_without_an_attachment_note(displayer, locale_handler):
+    """The weak models the prompt was tuned on must see it unchanged when nothing is attached."""
+    llm = _llm_returning("META_IDENTITY")
+
+    await do_detect_meta_question(
+        user_query="who are you?",
+        llm_config=_llm_config(llm),
+        displayer=displayer,
+        t=locale_handler,
+        user=fake_user(),
+    )
+
+    prompt = _prompt_sent_to(llm)
+    assert "attached" not in prompt
+    assert 'pick NORMAL.\n\nUser message: "who are you?"\nAnswer:' in prompt
+
+
 @pytest.mark.asyncio
 async def test_unrecognized_label_falls_back_to_gate(displayer, locale_handler):
     """An unparseable classification (no known token) must not crash; degrade to a normal task."""
