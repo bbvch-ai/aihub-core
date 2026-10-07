@@ -47,8 +47,29 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error import (
+        InvalidSearchPatternError,
+    )
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error import (
         KnowledgeCollectionNotFoundError,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_line import (
+        KnowledgeContentLine,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_match import (
+        KnowledgeContentMatch,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search import (
+        KnowledgeContentSearch,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits import (
+        KnowledgeContentSearchLimits,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result import (
+        KnowledgeContentSearchResult,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error import (
+        KnowledgeContentSearchTimeoutError,
     )
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing import (
@@ -127,6 +148,13 @@ __all__ = [
     "KnowledgeDocumentPendingError",
     "KnowledgeDocumentReader",
     "KnowledgeDocumentSummary",
+    "InvalidSearchPatternError",
+    "KnowledgeContentLine",
+    "KnowledgeContentMatch",
+    "KnowledgeContentSearch",
+    "KnowledgeContentSearchLimits",
+    "KnowledgeContentSearchResult",
+    "KnowledgeContentSearchTimeoutError",
     "DocumentIntelligenceLoader",
     "CitationId",
     "DocumentExtractor",
@@ -228,6 +256,13 @@ _LAZY_IMPORTS = {
     "KnowledgeDocumentPendingError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pending_error",
     "KnowledgeDocumentReader": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_reader",
     "KnowledgeDocumentSummary": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary",
+    "InvalidSearchPatternError": "swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error",
+    "KnowledgeContentLine": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_line",
+    "KnowledgeContentMatch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_match",
+    "KnowledgeContentSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search",
+    "KnowledgeContentSearchLimits": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits",
+    "KnowledgeContentSearchResult": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result",
+    "KnowledgeContentSearchTimeoutError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error",
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
