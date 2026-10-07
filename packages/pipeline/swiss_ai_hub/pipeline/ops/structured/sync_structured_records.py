@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Annotated
 
 import dlt
-from dagster import DagsterRunStatus, OpDefinition, OpExecutionContext, Output, RunsFilter, op
+from dagster import AssetKey, DagsterRun, DagsterRunStatus, OpDefinition, OpExecutionContext, Output, RunsFilter, op
 from dagster_dlt import DagsterDltResource
 from dlt.common.configuration.container import Container
 from dlt.common.pipeline import PipelineContext
@@ -24,6 +24,7 @@ _RUNNING = [DagsterRunStatus.STARTING, DagsterRunStatus.STARTED]
 def sync_structured_records_op(
     source: Annotated[str, "Source pipeline id this code location runs as"],
     config_type: Annotated[type[StructuredSyncConfig], "Config class a database's source configuration is read as"],
+    key: Annotated[AssetKey, "The asset this step syncs, so a run launched from the asset page counts as a sync"],
 ) -> OpDefinition:
     """The step that writes one database's changed records to its data lake, the database taken from the run tag.
 
@@ -36,7 +37,7 @@ def sync_structured_records_op(
         context: OpExecutionContext, dagster_dlt: DagsterDltResource
     ) -> Output[StructuredSyncOutcome]:
         bucket = bucket_from_run_tag(context)
-        _refuse_a_second_sync_of(context, bucket)
+        _refuse_a_second_sync_of(context, bucket, key)
         config = source_config_for_bucket(bucket, source, config_type)
         fingerprint = config.scope_fingerprint()
         store = StructuredSourceStateStore(source, bucket)
@@ -93,18 +94,26 @@ def _run(
     return sum(event.metadata["rows_loaded"].value for event in events if "rows_loaded" in event.metadata)
 
 
-def _refuse_a_second_sync_of(context: OpExecutionContext, bucket: str) -> None:
+def _refuse_a_second_sync_of(context: OpExecutionContext, bucket: str, key: AssetKey) -> None:
     """Two syncs of one database would race on its state, so a run gives way to any other sync of it already running.
 
     Creation order decides nothing: an earlier run can still be queued when a later one starts, and would then find
     only a later run. Two runs that check in the same instant both give way, and the next scheduled run syncs.
     """
-    running = context.instance.get_run_records(
-        RunsFilter(job_name=context.job_name, statuses=_RUNNING, tags={BUCKET_RUN_TAG: bucket})
-    )
-    others = [record for record in running if record.dagster_run.run_id != context.run_id]
+    running = context.instance.get_run_records(RunsFilter(statuses=_RUNNING, tags={BUCKET_RUN_TAG: bucket}))
+    others = [
+        record.dagster_run
+        for record in running
+        if record.dagster_run.run_id != context.run_id and _syncs(record.dagster_run, context.job_name, key)
+    ]
     if others:
-        raise RuntimeError(f"Run {others[0].dagster_run.run_id} is already syncing '{bucket}'.")
+        raise RuntimeError(f"Run {others[0].run_id} is already syncing '{bucket}'.")
+
+
+def _syncs(run: DagsterRun, job_name: str, key: AssetKey) -> bool:
+    """A run of the sync job, or one launched from the asset page, which runs as ``__ASSET_JOB`` with the asset
+    selected. The bucket tag alone is not enough: the database's ingestion runs carry it too."""
+    return run.job_name == job_name or key in (run.asset_selection or ())
 
 
 def _still_filled_by(bucket: str, source: str) -> bool:

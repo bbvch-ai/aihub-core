@@ -26,7 +26,7 @@ def structured_sync_factory(
     value, the removed URIs, is stored that way and read by nobody. Build it once per code location, since Dagster
     refuses two steps of the same name.
     """
-    sync = sync_structured_records_op(source, config_type)
+    sync = sync_structured_records_op(source, config_type, key)
     list_record_paths = list_structured_record_paths_op(source, config_type)
     reconcile = reconcile_structured_bucket_op(source)
 

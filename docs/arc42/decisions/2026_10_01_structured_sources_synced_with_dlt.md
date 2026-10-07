@@ -184,7 +184,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    ETag check keeps it from rewriting what is already there.
 
 7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
-   another sync of the same database running gives way, whichever was created first.
+   another sync of the same database running gives way, whichever was created first and whether the schedule, the
+   job's launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not
+   count.
 
 ## Consequences
 

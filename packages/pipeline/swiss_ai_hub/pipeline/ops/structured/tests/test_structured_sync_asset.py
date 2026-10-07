@@ -325,18 +325,56 @@ class TestGuards:
         assert world.files("db-a") == []
         assert world.sync("db-b").success, "a sync of another database is no reason to wait"
 
+    def test_a_sync_launched_from_the_asset_page_counts_as_a_sync_too(self, world):
+        """The asset page runs the asset as ``__ASSET_JOB``, not as the sync job the schedule launches."""
+        world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.instance.add_run(
+            DagsterRun(
+                job_name="__ASSET_JOB",
+                asset_selection=frozenset({_KEY}),
+                status=DagsterRunStatus.STARTED,
+                tags={BUCKET_RUN_TAG: "db-a"},
+            )
+        )
+
+        assert not world.sync("db-a").success
+        assert world.files("db-a") == []
+
+    @pytest.mark.parametrize(
+        ("job_name", "asset_selection"),
+        [
+            ("document_ingestion_source_observation", None),
+            ("__ASSET_JOB", frozenset({AssetKey(["document_ingestion_datalake_to_vectorstore", "documents"])})),
+        ],
+    )
+    def test_an_ingestion_run_of_the_same_database_is_no_reason_to_wait(self, world, job_name, asset_selection):
+        """Ingestion runs carry the database's bucket tag as well, and never touch the sync's state."""
+        world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.instance.add_run(
+            DagsterRun(
+                job_name=job_name,
+                asset_selection=asset_selection,
+                status=DagsterRunStatus.STARTED,
+                tags={BUCKET_RUN_TAG: "db-a"},
+            )
+        )
+
+        assert world.sync("db-a").success
+        assert world.files("db-a") == ["ABC/ABC-1.md"]
+
     def test_an_earlier_run_that_starts_after_a_later_one_gives_way_too(self):
         """A run queued first can be overtaken; starting next to the run that overtook it would race on the state."""
         own, later = MagicMock(), MagicMock()
         own.dagster_run.run_id, later.dagster_run.run_id = "own", "later"
+        later.dagster_run.job_name = "structured_source_sync"
         context = MagicMock(run_id="own", job_name="structured_source_sync")
         context.instance.get_run_records.return_value = [own, later]
 
         with pytest.raises(RuntimeError, match="Run later is already syncing 'db-a'"):
-            _refuse_a_second_sync_of(context, "db-a")
+            _refuse_a_second_sync_of(context, "db-a", _KEY)
 
         context.instance.get_run_records.return_value = [own]
-        _refuse_a_second_sync_of(context, "db-a")
+        _refuse_a_second_sync_of(context, "db-a", _KEY)
 
     def test_a_database_that_left_the_source_during_the_sync_keeps_its_previous_state(self, world):
         issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])
