@@ -29,8 +29,8 @@ independent [Dagster](https://dagster.io/) instance (separate from the data pipe
   gracefully stopping and restarting the managed containers around each run for consistent snapshots.
 - **Restores** any service from a chosen backup timestamp.
 - **Maintains** the platform PostgreSQL online: prunes verbose Dagster `event_logs`, tunes autovacuum, and runs
-  `pg_repack` — so deployments stay bounded over time without downtime. A one-off job recompresses FerretDB's knowledge
-  stores with lz4.
+  `pg_repack` — so deployments stay bounded over time without downtime. A one-off job recompresses FerretDB's existing
+  rows with lz4.
 
 Each stateful service has a `BackupHandler` (`postgres`, `milvus`, `neo4j`, `clickhouse`, `valkey`, `nats`); the whole
 thing is wired into a Dagster asset graph by `backup_definitions()`. Because it operates on the storage layer and needs
@@ -54,7 +54,7 @@ standalone, embed its logic, or extend it** — for example, adding a `BackupHan
 | Restore (service ← chosen timestamp)     | on demand | Yes                        |
 | `event_logs` cleanup + autovacuum tuning | weekly    | No (online-safe)           |
 | `pg_repack` (reclaim disk)               | monthly   | No (online-safe)           |
-| FerretDB knowledge stores → lz4          | by hand   | No (online-safe)           |
+| FerretDB rows pglz → lz4                 | by hand   | No (online-safe)           |
 
 ## Installation
 

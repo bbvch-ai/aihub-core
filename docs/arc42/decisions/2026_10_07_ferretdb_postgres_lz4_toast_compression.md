@@ -35,11 +35,19 @@ rows read correctly side by side. A value keeps its method until it changes: an 
 
 1. `postgres-ferretdb` runs with `command: ["postgres", "-c", "default_toast_compression=lz4"]`. The image's command is
    plain `postgres`, and its DocumentDB settings live in the volume's `postgresql.conf`, so the flag adds to them.
-2. The backup Dagster instance gets `ferretdb_lz4_rewrite_job`, launched by hand and never scheduled. It rewrites the
-   rows of every `documents-data` collection that still has pglz rows. It sets a temporary top-level field and unsets it
-   again through FerretDB, in batches of 50, with a `VACUUM` every 500 rows so the replaced row versions' space is
-   reused, and `VACUUM (ANALYZE)` at the end. It refuses to run while the
+2. The backup Dagster instance gets `ferretdb_lz4_rewrite_job`, launched by hand and never scheduled. It recompresses
+   the pglz rows of **every** collection table in SQL, 50 rows at a time by primary key:
+   `SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. The round
+   trip builds a new value with the same bytes, which PostgreSQL compresses with the new default. It runs `VACUUM` every
+   500 rows so the replaced row versions' space is reused, and `VACUUM (ANALYZE)` at the end. It refuses to run while the
    server default is not lz4, and it skips collections that have no pglz rows left.
+
+The rewrite writes DocumentDB's tables directly instead of going through FerretDB. A FerretDB-level rewrite would need a
+visible change to each document (set a temporary field, then remove it). MongoEngine entities reject unknown fields
+unless they opt out (`AgentConfigEntityDocument` does not), so a reader catching a row in between, or a run interrupted
+in between, would break reads. Going through FerretDB was also about ten times slower per MB on the dev stack (258 s for
+534 MB against 31 s for 690 MB). The SQL round trip changes no byte of any document, which the integration test
+checks against raw BSON, and selecting only pglz rows makes an interrupted run resume where it stopped.
 
 Rejected alternatives:
 
@@ -47,8 +55,9 @@ Rejected alternatives:
 - **`ALTER SYSTEM SET default_toast_compression`**: works, but lives only in the volume's `postgresql.auto.conf`, where
   no review or redeploy sees it.
 - **Re-ingestion alone**: old documents that never change would stay pglz forever.
-- **A job over every FerretDB collection**: the measured win is in the knowledge stores; other collections convert as
-  their rows are written.
+- **A `$set`/`$unset` rewrite through FerretDB**: see above.
+- **Knowledge stores only**: the measured win is there, but agent events and configurations are read on every request
+  too, and the SQL rewrite is cheap enough to cover everything once.
 
 ## Consequences
 
@@ -63,12 +72,14 @@ Rejected alternatives:
 
 - **Recreating `postgres-ferretdb`** on the first deploy makes FerretDB unavailable for a few seconds. A
   `docker restart` does not apply the flag; the container has to be recreated.
-- **Rows outside the knowledge stores** stay pglz until they are written again. They read correctly, just slower.
+- **The rewrite job bypasses FerretDB.** It depends on DocumentDB's table layout (`documentdb_data.documents_<id>`,
+  `shard_key_value`, `object_id`, `document`) and on `documentdb_core.bson_to_bytea`/`bson_from_bytea`. Re-check it
+  against the integration test before running it after a DocumentDB upgrade.
 - **The rewrite job's cost:**
-  - write load and WAL of about twice each rewritten table: 5,400 rows (534 MB) took 4.3 minutes on the dev stack;
-  - the tables grow by about a quarter (534 to 673 MB) and keep that size, since plain VACUUM does not return space to
-    the OS. A single VACUUM at the end let them grow by 84%;
-  - it holds the backup instance's Postgres mutex while it runs.
+  - one write per pglz row: 18,900 rows in 8 collections (690 MB) took 31 seconds on the dev stack;
+  - the tables grow by about a tenth (690 to 761 MB) and keep that size, since plain VACUUM does not return space to the
+    OS;
+  - it competes for PostgreSQL's cache while it runs, and it holds the backup instance's Postgres mutex.
 - **Future images must be built with lz4.** A server without it cannot read lz4 rows and refuses to start with the flag.
   Check `pg_config --configure | grep lz4` on every `postgres_ferretdb` image bump.
 - **Rollback** is removing the flag. New rows are then pglz again, and lz4 rows stay readable, so nothing needs

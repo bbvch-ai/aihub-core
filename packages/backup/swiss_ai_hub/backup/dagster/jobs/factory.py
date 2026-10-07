@@ -91,8 +91,8 @@ def ferretdb_lz4_rewrite_asset_job(assets: list[AssetsDefinition]) -> Unresolved
         name="ferretdb_lz4_rewrite_job",
         selection=assets,
         description=(
-            "One-off, launched by hand: recompress the knowledge doc stores' existing rows with lz4 after "
-            "postgres-ferretdb runs with default_toast_compression=lz4. Online; collections already on lz4 are skipped."
+            "One-off, launched by hand: recompress every FerretDB collection's existing pglz rows with lz4 after "
+            "postgres-ferretdb runs with default_toast_compression=lz4. Online and resumable; lz4 rows are skipped."
         ),
         tags=POSTGRES_MUTEX_TAG,
     )
