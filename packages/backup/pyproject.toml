@@ -31,6 +31,7 @@ dependencies = [
     "pydantic>=2.10.3",
     "pydantic-settings>=2.13.1",
     "pymilvus>=2.6.9",
+    "pymongo>=4.16.0",
     "redis>=7.3.0",
     "sqlalchemy>=2.0.48",
 ]
@@ -38,7 +39,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "dagster-graphql>=1.12.18",
-    "pymongo>=4.16.0",
     "pytest>=8.4.1",
     "pytest-postgresql>=8.0.0",
     "pytest-timeout>=2.4.0",

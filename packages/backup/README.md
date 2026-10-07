@@ -29,7 +29,8 @@ independent [Dagster](https://dagster.io/) instance (separate from the data pipe
   gracefully stopping and restarting the managed containers around each run for consistent snapshots.
 - **Restores** any service from a chosen backup timestamp.
 - **Maintains** the platform PostgreSQL online: prunes verbose Dagster `event_logs`, tunes autovacuum, and runs
-  `pg_repack` — so deployments stay bounded over time without downtime.
+  `pg_repack` — so deployments stay bounded over time without downtime. A one-off job recompresses FerretDB's knowledge
+  stores with lz4.
 
 Each stateful service has a `BackupHandler` (`postgres`, `milvus`, `neo4j`, `clickhouse`, `valkey`, `nats`); the whole
 thing is wired into a Dagster asset graph by `backup_definitions()`. Because it operates on the storage layer and needs
@@ -53,6 +54,7 @@ standalone, embed its logic, or extend it** — for example, adding a `BackupHan
 | Restore (service ← chosen timestamp)     | on demand | Yes                        |
 | `event_logs` cleanup + autovacuum tuning | weekly    | No (online-safe)           |
 | `pg_repack` (reclaim disk)               | monthly   | No (online-safe)           |
+| FerretDB knowledge stores → lz4          | by hand   | No (online-safe)           |
 
 ## Installation
 
@@ -74,7 +76,7 @@ The backup plane is a Dagster code location built by `backup_definitions()`:
 # my_backup/__init__.py
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
-defs = backup_definitions()  # 26 assets, 4 jobs: backup, restore, cleanup, repack
+defs = backup_definitions()  # 28 assets, 5 jobs: backup, restore, cleanup, repack, lz4 rewrite
 ```
 
 Inspect and run it with the Dagster UI (it keeps its own state in `DAGSTER_HOME`):
@@ -85,7 +87,7 @@ set -a && source .env && set +a          # S3 + DB credentials, BACKUP_* setting
 dagster dev -m my_backup                 # http://localhost:3000
 ```
 
-From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`) against a running stack
+From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`, the lz4 rewrite) against a running stack
 without disruption. The **full backup/restore jobs stop and restart containers**, so run those deliberately — and note
 they need access to the Docker socket and to all the stateful services. `dagster definitions validate -m my_backup`
 loads the whole code location without running anything (a fast CI/sanity check).

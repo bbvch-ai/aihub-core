@@ -22,6 +22,8 @@ class BackupSettings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
 
     POSTGRES_FERRETDB_HOST: str = "postgres-ferretdb"
+    FERRETDB_HOST: str = "ferretdb"
+    FERRETDB_PORT: Annotated[int, Field(gt=0)] = 27017
     MONGO_USERNAME: str = "admin"
     MONGO_PASSWORD: SecretStr
 

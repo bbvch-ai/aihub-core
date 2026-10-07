@@ -84,3 +84,15 @@ def repack_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefini
         ),
         tags=POSTGRES_MUTEX_TAG,
     )
+
+
+def ferretdb_lz4_rewrite_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="ferretdb_lz4_rewrite_job",
+        selection=assets,
+        description=(
+            "One-off, launched by hand: recompress the knowledge doc stores' existing rows with lz4 after "
+            "postgres-ferretdb runs with default_toast_compression=lz4. Online; collections already on lz4 are skipped."
+        ),
+        tags=POSTGRES_MUTEX_TAG,
+    )

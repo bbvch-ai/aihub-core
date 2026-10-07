@@ -257,6 +257,107 @@ Dagster UI.
 
 ______________________________________________________________________
 
+## One-off: recompress knowledge stores with lz4
+
+FerretDB's PostgreSQL (`postgres-ferretdb`) runs with `default_toast_compression=lz4`. DocumentDB decompresses a whole
+document for every filter, projection and sort, and lz4 does that about three times faster than PostgreSQL's default
+`pglz`. Knowledge content search and document listing get 2–4× faster. See the ADR
+`2026_10_07_ferretdb_postgres_lz4_toast_compression`.
+
+The setting applies to every row written after it is active. Rows written before keep pglz. They read correctly, just
+more slowly, until they change. **`ferretdb_lz4_rewrite_job`** recompresses the existing rows of every knowledge store
+(`documents-data` in each knowledge database). Run it once per deployment, after the first deploy with the setting. It
+is launched by hand and never scheduled.
+
+### Before you start
+
+1. **Check that the setting is active.** This must print `lz4`:
+
+   ```bash
+   docker exec postgres-ferretdb psql -U "$MONGO_USERNAME" -d postgres -Atc 'show default_toast_compression'
+   ```
+
+   If it prints `pglz`, recreate the container with the same compose file, project directory and env file your
+   deployment always uses, for example `docker compose -f infra/docker-compose.<stage>.yml --env-file .env up -d
+   postgres-ferretdb` from the repository root. FerretDB is unavailable for a few seconds while it is recreated.
+   `docker restart` is not enough, because it keeps the container's old command.
+
+   ::: warning
+   The data directory (`VOLUME_ROOT`, by default `./.docker-volumes`) is resolved relative to the compose file's
+   folder. A compose file from another checkout or folder mounts an **empty** data directory, and FerretDB then serves
+   an empty instance. Afterwards, check in the output of `docker inspect postgres-ferretdb` that `Mounts` → `Source`
+   is your usual data directory.
+   :::
+
+2. **Check how much work there is and how much disk it needs.** Run this inside
+   `docker exec -it postgres-ferretdb psql -U "$MONGO_USERNAME" -d postgres`; `\gexec` runs one count per knowledge
+   database:
+
+   ```sql
+   select format(
+       'select %L as database, count(*) filter (where pg_column_compression(document) = ''pglz'') as pglz_rows, '
+       'count(*) as rows, pg_size_pretty(pg_total_relation_size(%L)) as size from documentdb_data.documents_%s',
+       database_name, 'documentdb_data.documents_' || collection_id, collection_id)
+   from documentdb_api_catalog.collections where collection_name = 'documents-data' \gexec
+   ```
+
+   Plan free space of about a third of the knowledge stores' total size: the rewritten tables grow by about a quarter
+   and keep that size.
+
+3. **Pick a quiet window**: no backup due and no large ingestion running.
+
+### Run the job
+
+1. In the backup Dagster UI (`http://localhost:3004`), open **Jobs → `ferretdb_lz4_rewrite_job`** and launch it. It
+   stays *Queued* while a backup, restore, cleanup or repack holds the `postgres-mutex`.
+2. **Check the run's metadata** when it finishes:
+   - `pglz_rows_after` is `0`;
+   - `collections_rewritten` lists the knowledge databases it rewrote;
+   - `collections_skipped` counts those that had no pglz rows.
+3. **Optionally launch it again.** Every collection is now skipped, which confirms the migration is complete.
+
+The job runs online. For each collection that still has pglz rows, it:
+
+- sets a temporary top-level field `_lz4_rewrite` on 50 documents at a time and removes it again, which leaves the
+  document's content and key order unchanged;
+- runs `VACUUM` every 500 documents, so the space of the replaced row versions is reused, and `VACUUM (ANALYZE)` at
+  the end.
+
+Ingestion can keep writing meanwhile.
+
+### What to expect
+
+- **Duration and write load:** on the dev stack, 5,400 rows (534 MB, mostly documents of 100k characters) took 4.3
+  minutes. Each row is written twice, so the WAL grows by about twice the rewritten size. On large stores, run it outside
+  ingestion peaks.
+- **Disk usage grows a little and stays.** The same run grew the tables from 534 to 673 MB (+26%). VACUUM makes space
+  reusable inside PostgreSQL but does not return it to the OS; new ingestion fills it over time. To return it at once,
+  `VACUUM FULL` would do it, but its exclusive lock blocks FerretDB, so never run it during working hours.
+- **Other collections** (agent events, threads, conversations) switch to lz4 as their rows are written. They need no
+  job.
+- **Restores** write every row with the target server's default. A restore onto a server with the setting needs no
+  rewrite afterwards; a restore onto a server without it brings pglz back.
+
+### Common errors
+
+| Symptom                                                 | Cause                                                                                            | Fix                                                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Fails with `default_toast_compression is pglz, not lz4` | The setting is not active: the deploy did not run, or the container was restarted, not recreated | Recreate `postgres-ferretdb` with `up -d` as above, then launch again                                          |
+| Stays *Queued*                                          | Another Postgres job holds the mutex                                                             | Wait; don't cancel the backup                                                                                  |
+| Succeeds with `skipped: MAINTENANCE_DISABLED`           | `BACKUP_MAINTENANCE_DISABLED` is `true`                                                          | Set it to `false` for the run                                                                                  |
+| Connection refused to `ferretdb:27017`                  | FerretDB is down, or a customised compose file took `backup-code` off the `data` network         | Start FerretDB, or restore the network                                                                         |
+| Fails with `N rows are still pglz after the rewrite`    | Rows could not be rewritten, for example because FerretDB rejected a write                       | Check the run log, then launch again. Finished collections are skipped                                         |
+| Fails part-way (disk full, deploy, lost connection)     | The run was interrupted                                                                          | Free space if needed, then launch again. Leftover `_lz4_rewrite` fields are removed first, so a re-run is safe |
+
+Recompressing by hand with `UPDATE … SET document = document` does not work: PostgreSQL copies the compressed value
+unchanged.
+
+**Rollback** means removing the `-c default_toast_compression=lz4` flag from `postgres-ferretdb`. New rows are then pglz
+again, and lz4 rows stay readable, so nothing has to be migrated back. Every future `postgres-ferretdb` image must be
+built with lz4 support (`pg_config --configure | grep lz4`).
+
+______________________________________________________________________
+
 ## Backup storage layout
 
 Each backup is stored in a flat, timestamped directory:
