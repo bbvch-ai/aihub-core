@@ -144,6 +144,8 @@ async def test_searches_only_the_collections_passed(knowledge_databases: dict[st
         ("PRÜFBERICHT", False, {"pruef", "nfd"}),
         (r"\bÄußerung\b", True, {"pruef"}),
         (r"Pr\wfbericht", True, {"pruef", "plain_u"}),
+        (r"(?<w>Prüf)bericht", True, {"pruef", "nfd"}),
+        (r"P(?P<r>r)üfbe(?P=r)icht", True, {"pruef", "nfd"}),
     ],
 )
 async def test_regexes_substrings_and_umlauts_match_as_in_python(
@@ -256,6 +258,12 @@ async def test_a_scan_longer_than_the_budget_is_cancelled_in_the_database() -> N
 async def test_a_pattern_only_python_accepts_is_rejected_with_a_hint() -> None:
     with pytest.raises(InvalidSearchPatternError, match="PCRE2"):
         await KnowledgeContentSearch.search([_FINANCE], r"(?<=\d+)X", is_regex=True)
+
+
+@pytest.mark.asyncio
+async def test_a_numbered_backreference_is_rejected_with_the_named_form_as_hint() -> None:
+    with pytest.raises(InvalidSearchPatternError, match=r"\(\?P=x\)"):
+        await KnowledgeContentSearch.search([_FINANCE], r"(e)r \1", is_regex=True)
 
 
 @pytest.mark.asyncio

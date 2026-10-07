@@ -22,8 +22,10 @@ class KnowledgeContentPattern:
     prefixed with `(*UCP)`, without which PCRE2's `\\w` and `\\b` treat umlauts as non-word characters, and both sides
     use multiline mode, so `^` and `$` mean line boundaries as in grep. Text is stored as the parser wrote it, which on
     files from macOS or SMB sources can mean decomposed umlauts, so a composed query is also tried in its decomposed
-    form; one alternation keeps that a single scan, where a second `$or` branch scanned every row twice. That covers
-    literal text only: a character class such as `[üu]` matches one character, and a decomposed `ü` is two.
+    form; one alternation keeps that a single scan, where a second `$or` branch scanned every row twice. It is a branch
+    reset group, `(?|…|…)`, because PCRE2 refuses a group name used twice, and the two copies of a named group must
+    share their name and number. That covers literal text only: a character class such as `[üu]` matches one
+    character, and a decomposed `ü` is two.
 
     PCRE2 stops at its backtracking limit, and DocumentDB reports that as no match, so a pattern with ambiguous nested
     repetition such as `(x+x+)+` or `(a|a)+` can miss documents without an error. Everyday patterns, `(\\w+\\s)+` and
@@ -43,8 +45,8 @@ class KnowledgeContentPattern:
             raise InvalidSearchPatternError(
                 query, "it matches empty text, so every line would match; require at least one character"
             )
-        variants = [composed] if self._decomposed is None else [f"(?:{composed})", f"(?:{decomposed})"]
-        self.database_pattern = "(*UCP)" + "|".join(variants)
+        alternatives = composed if self._decomposed is None else f"(?|(?:{composed})|(?:{decomposed}))"
+        self.database_pattern = "(*UCP)" + alternatives
         self.database_options = "m" if case_sensitive else "mi"
 
     def matching_lines(
@@ -56,46 +58,52 @@ class KnowledgeContentPattern:
         """The first matching lines of a text and how many lines match in total.
 
         A line the decomposed variant alone matched also has to match the composed pattern once normalised: a class
-        such as `[ü]` decomposes into a `u` and a combining diaeresis, and would then match a plain `u`.
+        such as `[ü]` decomposes into a `u` and a combining diaeresis, and would then match a plain `u`. The check
+        covers every line the match spans, so a match across a line break is not lost.
         """
         found = self._line_matches(self._composed, text, budget)
         if self._decomposed is not None:
-            for line_start, (line_end, match_start) in self._line_matches(self._decomposed, text, budget).items():
+            for line_start, (line_end, match) in self._line_matches(self._decomposed, text, budget).items():
+                spanned = text[line_start : self._end_of_line(text, max(match.start(), match.end() - 1))]
                 if line_start not in found and self._search(
-                    self._composed, unicodedata.normalize("NFC", text[line_start:line_end]), 0, budget
+                    self._composed, unicodedata.normalize("NFC", spanned), 0, budget
                 ):
-                    found[line_start] = (line_end, match_start)
+                    found[line_start] = (line_end, match)
         lines: list[KnowledgeContentLine] = []
         line_number, counted_to = 1, 0
         for line_start in sorted(found)[: limits.max_lines_per_document]:
             line_number += text.count("\n", counted_to, line_start)
             counted_to = line_start
-            line_end, match_start = found[line_start]
+            line_end, match = found[line_start]
             lines.append(
                 KnowledgeContentLine.from_text(
-                    text, line_start, line_end, line_number, match_start, limits.max_line_chars
+                    text, line_start, line_end, line_number, match.start(), limits.max_line_chars
                 )
             )
         return lines, len(found)
 
     def _line_matches(
         self, pattern: regex.Pattern[str], text: str, budget: KnowledgeSearchBudget
-    ) -> dict[int, tuple[int, int]]:
+    ) -> dict[int, tuple[int, regex.Match[str]]]:
         """Start of every matching line, mapped to its end (without a trailing `\\r`) and its first match.
 
         One search per matching line, resumed after the line, so a word repeated thousands of times costs one
         search per line rather than one per occurrence. A match spanning lines counts for the line it starts on.
         """
-        found: dict[int, tuple[int, int]] = {}
+        found: dict[int, tuple[int, regex.Match[str]]] = {}
         position = 0
         while position <= len(text) and (match := self._search(pattern, text, position, budget)) is not None:
             line_start = text.rfind("\n", 0, match.start()) + 1
-            newline = text.find("\n", match.start())
-            next_line = len(text) if newline == -1 else newline
+            next_line = self._end_of_line(text, match.start())
             line_end = next_line - 1 if next_line > line_start and text[next_line - 1] == "\r" else next_line
-            found[line_start] = (line_end, match.start())
+            found[line_start] = (line_end, match)
             position = next_line + 1
         return found
+
+    @staticmethod
+    def _end_of_line(text: str, position: int) -> int:
+        newline = text.find("\n", position)
+        return len(text) if newline == -1 else newline
 
     @staticmethod
     def _search(

@@ -42,7 +42,7 @@ def test_the_database_pattern_is_unicode_aware_and_multiline() -> None:
 def test_a_term_with_umlauts_is_also_searched_decomposed() -> None:
     pattern = KnowledgeContentPattern("Prüfbericht")
 
-    assert pattern.database_pattern == f"(*UCP)(?:Prüfbericht)|(?:{unicodedata.normalize('NFD', 'Prüfbericht')})"
+    assert pattern.database_pattern == f"(*UCP)(?|(?:Prüfbericht)|(?:{unicodedata.normalize('NFD', 'Prüfbericht')}))"
 
 
 @pytest.mark.parametrize(
@@ -124,6 +124,14 @@ def test_anchors_mean_line_starts_and_crlf_lines_end_before_the_carriage_return(
 
 def test_a_match_across_lines_counts_for_the_line_it_starts_on() -> None:
     lines, count = _lines(KnowledgeContentPattern(r"RFC\s+9000", is_regex=True), "see RFC\n9000 here")
+
+    assert count == 1
+    assert (lines[0].line_number, lines[0].text) == (1, "see RFC")
+
+
+def test_a_decomposed_match_across_lines_is_kept() -> None:
+    text = unicodedata.normalize("NFD", "see RFC\nPrüfbericht here")
+    lines, count = _lines(KnowledgeContentPattern(r"RFC\s+Prüf", is_regex=True), text)
 
     assert count == 1
     assert (lines[0].line_number, lines[0].text) == (1, "see RFC")

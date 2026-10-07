@@ -28,6 +28,8 @@ from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 
 # DocumentDB's error code for a regular expression its PCRE2 engine cannot compile.
 _PCRE_REJECTED = 51091
+# DocumentDB rejects every numbered backreference, `\1` and `\g{-1}` alike, with this message; named ones work.
+_NUMBERED_REFERENCE = "reference to non-existent subpattern"
 
 type _Candidate = tuple[ResolvedKnowledgeCollection, str]
 
@@ -75,15 +77,22 @@ class KnowledgeContentSearch:
         except OperationFailure as operation_failure:
             if operation_failure.code != _PCRE_REJECTED:
                 raise
-            reason = (operation_failure.details or {}).get("errmsg", "")
-            raise InvalidSearchPatternError(
-                query, f"the database's regex engine (PCRE2) rejects it: {reason}; use syntax PCRE2 and Python share"
-            ) from operation_failure
+            raise KnowledgeContentSearch._rejected(query, operation_failure) from operation_failure
         return KnowledgeContentSearchResult(
             matches=matches,
             total_documents=len(candidates) - dropped,
             next_offset=next_index if next_index < len(candidates) else None,
         )
+
+    @staticmethod
+    def _rejected(query: str, operation_failure: OperationFailure) -> InvalidSearchPatternError:
+        reason = (operation_failure.details or {}).get("errmsg", "")
+        hint = (
+            "numbered backreferences such as \\1 are not supported; name the group instead, as in (?P<x>ab)(?P=x)"
+            if _NUMBERED_REFERENCE in reason
+            else "use syntax PCRE2 and Python share"
+        )
+        return InvalidSearchPatternError(query, f"the database's regex engine (PCRE2) rejects it: {reason}; {hint}")
 
     @staticmethod
     async def _candidates(

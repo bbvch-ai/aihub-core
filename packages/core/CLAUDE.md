@@ -583,8 +583,9 @@ collection errors as the reader. How it works:
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
-  not by a class such as `[üu]`. `$` does not match before `\r\n`. PCRE2 reports hitting its backtracking limit as no
-  match, so ambiguous nested repetition such as `(x+x+)+` can silently miss documents.
+  not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
+  named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
+  repetition such as `(x+x+)+` can silently miss documents.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
