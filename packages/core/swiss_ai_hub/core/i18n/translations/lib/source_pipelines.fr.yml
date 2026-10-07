@@ -111,3 +111,13 @@ rclone:
         label: Clé privée (PEM)
         help: Clé privée au format PEM, en alternative à un mot de passe. Stockée
           chiffrée.
+structured:
+  display_name: Synchronisation d'applications métier
+  description: Maintient la base synchronisée avec les enregistrements d'applications
+    métier comme les outils de suivi de tickets et les wikis. Chaque enregistrement
+    devient un document markdown, et son projet ou espace devient un espace de noms.
+  config:
+    source_kind:
+      label: Système source
+      help: Application d'où les enregistrements sont lus. Ses paramètres s'affichent
+        une fois qu'elle est sélectionnée.

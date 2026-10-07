@@ -82,9 +82,10 @@ skipped files and the reason in its metadata and logs. Other folders and the dat
 renaming the folder at the source fixes it.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
-including deletions, into the Swiss AI Hub. Giving a database that already holds uploaded documents a source asks for
-confirmation first, because the first sync removes everything the source does not have. Clearing the source turns the
-database back into a manually managed one; its files stay until you delete them.
+including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,
+whether it was filled by hand or by another source, asks for confirmation first, because the new source's first sync
+removes everything it does not have. Editing the current source's settings saves without asking. Clearing the source
+turns the database back into a manually managed one; its files stay until you delete them.
 
 ### Deleting databases and collections
 
