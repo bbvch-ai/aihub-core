@@ -95,7 +95,6 @@ async function fetchDatabases() {
         validSelected.length > 0 ? validSelected : null,
       )
     }
-
   }
   catch (error) {
     console.error('Failed to fetch databases:', error)
