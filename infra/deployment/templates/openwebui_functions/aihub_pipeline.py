@@ -81,6 +81,14 @@ CITATION_MARKER_PATTERN = re.compile(r"(\s*)\[\s*(s[0-9a-f]{6}(?:\s*[,;]\s*s[0-9
 CITATION_ID_PATTERN = re.compile(r"s[0-9a-f]{6}")
 UNFINISHED_CITATION_PATTERN = re.compile(r"\[\s*s[0-9a-f]{0,6}(?:\s*[,;]\s*s[0-9a-f]{0,6})*$")
 
+# A markdown link or image a model wrote, its target optionally in ``<…>`` and followed by a title. A ``[`` right after
+# a word, ``]`` or ``)`` indexes code (``df[col](x)``) rather than opening a link, so it is left alone.
+MARKDOWN_LINK_PATTERN = re.compile(r"(?<![\w\])])(!?)\[([^\]\n]*)\]\(\s*<?([^\s<>()]+)>?(?:\s+\"[^\"\n]*\")?\s*\)")
+URL_SCHEME_PATTERN = re.compile(r"^([a-z][a-z0-9+.-]*):", re.IGNORECASE)
+FILE_EXTENSION_PATTERN = re.compile(r"\.[A-Za-z0-9]{1,8}$")
+# OpenAI's code interpreter links its files as ``sandbox:/mnt/data/<name>``, a habit models carry into our sandbox.
+SANDBOX_LINK_SCHEMES = ("sandbox", "file")
+
 
 # ============================================================================
 # Domain Models with Inheritance
@@ -514,11 +522,55 @@ class CitationRegistry:
         return match.group(1) + "".join(f"[{number}]" for number in numbers)
 
 
+class FileLinkRegistry:
+    """The files attached to the answer by name, and the rewrite of the links a model writes to them into downloads.
+
+    Told never to, a model still links a file it made the way it knows from elsewhere: ``sandbox:<name>``, its sandbox
+    path or a bare name, none of which a browser opens. Such a link is pointed at the file's download, or reduced to
+    its label when the answer attached no file of that name. The raw text keeps the model's link, so one written before
+    its file arrives resolves on the next render.
+    """
+
+    def __init__(self) -> None:
+        self._urls: dict[str, str] = {}
+
+    def register(self, file: Annotated[dict[str, Any], "The attached file as a message file entry"]) -> None:
+        self._urls[file["name"].casefold()] = file["url"]
+
+    def resolve(
+        self, content: Annotated[str, "Rendered message content"]
+    ) -> Annotated[str, "Content whose file links open"]:
+        return MARKDOWN_LINK_PATTERN.sub(self._linked, content)
+
+    def _linked(self, match: re.Match) -> str:
+        image, label, target = match.groups()
+        name = self.sandbox_file_name(target)
+        if name is None:
+            return match.group(0)
+        url = self._urls.get(name.casefold())
+        return f"{image}[{label}]({url})" if url else label
+
+    @staticmethod
+    def sandbox_file_name(
+        target: Annotated[str, "A link's target"],
+    ) -> Annotated[Optional[str], "The name of the sandbox file it points at, or None for a link a browser opens"]:
+        path = target.split("#", 1)[0].split("?", 1)[0]
+        scheme = URL_SCHEME_PATTERN.match(path)
+        if scheme:
+            if scheme.group(1).lower() not in SANDBOX_LINK_SCHEMES:
+                return None
+            path = path[scheme.end() :]
+        elif path.startswith(("/api/", "//")) or not FILE_EXTENSION_PATTERN.search(path):
+            return None
+        return urllib.parse.unquote(path.rstrip("/").rsplit("/", 1)[-1]) or None
+
+
 class StreamingStateManager:
     """Manages streaming content state with proper encapsulation"""
 
     def __init__(self):
         self.citations = CitationRegistry()
+        self.files = FileLinkRegistry()
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
         self._deferred_thinking: Annotated[
@@ -678,7 +730,9 @@ class StreamingStateManager:
         if self._deferred_thinking:
             blocks.append(self._deferred_thinking)
         return "".join(
-            block.to_html() if isinstance(block, ToolBlock) else self.citations.resolve(block.to_html())
+            block.to_html()
+            if isinstance(block, ToolBlock)
+            else self.files.resolve(self.citations.resolve(block.to_html()))
             for block in blocks
         )
 
@@ -1222,6 +1276,7 @@ class SandboxFileDisplayedEventHandler(EventHandler):
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
         attached = await context.attachments.attach(event, context.chat_id, context.message_id)
+        context.state_manager.files.register(attached)
         # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
         # so the new file is persisted on its own and the browser then gets every file of the answer.
         await context.emitter({"type": "files", "data": {"files": [attached]}})
