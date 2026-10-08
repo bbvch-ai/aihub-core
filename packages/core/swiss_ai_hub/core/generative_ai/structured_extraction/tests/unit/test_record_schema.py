@@ -49,8 +49,10 @@ def test_validation_reports_every_problem_at_once() -> None:
 
 
 def test_empty_schema_is_rejected() -> None:
+    schema = RecordSchema(fields=[])
+
     with pytest.raises(InvalidRecordSchemaError, match="no fields"):
-        RecordSchema(fields=[]).validated()
+        schema.validated()
 
 
 def test_invalid_schema_error_is_a_value_error_so_callers_degrade_with_one_clause() -> None:

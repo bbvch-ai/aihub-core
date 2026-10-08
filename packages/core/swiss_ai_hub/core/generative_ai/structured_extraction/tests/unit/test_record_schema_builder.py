@@ -61,15 +61,17 @@ async def test_passes_the_description_and_field_limit_to_the_prompt() -> None:
 @pytest.mark.asyncio
 async def test_proposal_breaking_the_rules_raises_invalid_schema() -> None:
     caller_llm, _ = _llm(_proposal("a", "b", "c"))
+    t = LocaleHandler("en")
 
     with pytest.raises(InvalidRecordSchemaError, match="more than the 2 allowed"):
-        await RecordSchemaBuilder.build("a, b, c", caller_llm, LocaleHandler("en"), max_fields=2)
+        await RecordSchemaBuilder.build("a, b, c", caller_llm, t, max_fields=2)
 
 
 @pytest.mark.asyncio
 async def test_malformed_model_output_propagates() -> None:
     malformed = ValidationError.from_exception_data("RecordSchema", [])
     caller_llm, _ = _llm(malformed)
+    t = LocaleHandler("en")
 
     with pytest.raises(ValueError):
-        await RecordSchemaBuilder.build("supplier", caller_llm, LocaleHandler("en"))
+        await RecordSchemaBuilder.build("supplier", caller_llm, t)

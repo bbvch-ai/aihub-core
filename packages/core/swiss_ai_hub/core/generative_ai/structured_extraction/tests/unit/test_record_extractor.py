@@ -169,7 +169,9 @@ async def test_empty_document_makes_no_model_call() -> None:
 
     result = await RecordExtractor.extract(_SCHEMA, _document(""), llm, _llm_config(), LocaleHandler("en"))
 
-    assert result.records == [] and result.window_count == 0 and not result.failed
+    assert result.records == []
+    assert result.window_count == 0
+    assert not result.failed
     llm.astructured_predict.assert_not_awaited()
 
 
@@ -214,25 +216,27 @@ async def test_one_failed_window_fails_the_whole_document_rather_than_returning_
 async def test_infrastructure_errors_propagate() -> None:
     llm = Mock()
     llm.astructured_predict = AsyncMock(side_effect=ConnectionError("gateway down"))
+    document, llm_config, t = _document(_invoice(3)), _llm_config(), LocaleHandler("en")
 
     with pytest.raises(ConnectionError):
-        await RecordExtractor.extract(_SCHEMA, _document(_invoice(3)), llm, _llm_config(), LocaleHandler("en"))
+        await RecordExtractor.extract(_SCHEMA, document, llm, llm_config, t)
 
 
 @pytest.mark.asyncio
 async def test_a_character_range_is_rejected_because_records_outside_it_would_be_lost() -> None:
+    document, llm, llm_config, t = _document(_invoice(3), end=20), _reading_llm(), _llm_config(), LocaleHandler("en")
+
     with pytest.raises(ValueError, match="needs the whole document"):
-        await RecordExtractor.extract(
-            _SCHEMA, _document(_invoice(3), end=20), _reading_llm(), _llm_config(), LocaleHandler("en")
-        )
+        await RecordExtractor.extract(_SCHEMA, document, llm, llm_config, t)
 
 
 @pytest.mark.asyncio
 async def test_a_model_too_small_to_extract_with_raises_a_configuration_error() -> None:
+    document, llm, t = _document(_invoice(3)), _reading_llm(), LocaleHandler("en")
+    llm_config = _llm_config(max_output_tokens=200)
+
     with pytest.raises(ValueError, match="tokens per document window"):
-        await RecordExtractor.extract(
-            _SCHEMA, _document(_invoice(3)), _reading_llm(), _llm_config(max_output_tokens=200), LocaleHandler("en")
-        )
+        await RecordExtractor.extract(_SCHEMA, document, llm, llm_config, t)
 
 
 @pytest.mark.asyncio
