@@ -83,6 +83,19 @@ async function fetchDatabases() {
       path: { tenant_id: tenantId.value! },
     })
     databases.value = response
+    const validNames = new Set(response.map(db => db.name))
+    const selected = props.context.value ?? []
+
+    const validSelected = selected.filter(name =>
+      validNames.has(name),
+    )
+
+    if (validSelected.length !== selected.length) {
+      props.context.node.input(
+        validSelected.length > 0 ? validSelected : null,
+      )
+    }
+
   }
   catch (error) {
     console.error('Failed to fetch databases:', error)
