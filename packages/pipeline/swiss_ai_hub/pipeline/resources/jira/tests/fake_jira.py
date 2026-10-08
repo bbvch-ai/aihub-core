@@ -1,0 +1,174 @@
+"""An in-memory Jira answering the REST v2 calls ``JiraClient`` makes, as Jira Cloud or Jira Data Center does.
+
+It is served through a ``requests`` transport adapter mounted on a real dlt retrying session, so the client's retry
+and error handling run exactly as in production.
+"""
+
+import itertools
+import json
+import re
+from typing import Any
+from urllib.parse import parse_qs, urlparse
+
+import pytest
+from dlt.sources.helpers.requests.retry import Client
+from requests import PreparedRequest, Response
+from requests.adapters import BaseAdapter
+
+_PROJECT = re.compile(r'project = "([A-Z][A-Z0-9_]*)"')
+_AFTER_ID = re.compile(r"AND id > (\d+)")
+_COMMENTS = re.compile(r"/rest/api/2/issue/([A-Z0-9_]+-\d+)/comment$")
+
+
+class FakeJiraTransport(BaseAdapter):
+    def __init__(self, jira: "FakeJira"):
+        super().__init__()
+        self.jira = jira
+
+    def send(self, request: PreparedRequest, **kwargs: Any) -> Response:
+        self.jira.requests.append(request)
+        status, body = self.jira.answer(request)
+        response = Response()
+        response.status_code = status
+        response.reason = {200: "OK", 400: "Bad Request", 401: "Unauthorized", 429: "Too Many Requests"}.get(status, "")
+        response.headers["Content-Type"] = "application/json"
+        response._content = json.dumps(body).encode()
+        response.url = request.url
+        response.request = request
+        return response
+
+    def close(self) -> None:
+        pass
+
+
+class FakeJira:
+    """Issues per project and comments per issue; it pages its answers in ``page_size`` items whatever was asked for,
+    as Jira Cloud does when many fields are requested."""
+
+    def __init__(self, deployment: str = "cloud", site: str = "https://acme.atlassian.net", page_size: int = 2):
+        self.deployment = deployment
+        self.site = site
+        self.page_size = page_size
+        self.issues: dict[str, list[dict[str, Any]]] = {}
+        self.paged_comments: dict[str, list[dict[str, Any]]] = {}
+        self.requests: list[PreparedRequest] = []
+        self.queued_failures: list[tuple[int, dict[str, Any]]] = []
+        self._ids = itertools.count(10001)
+
+    def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        client = Client(raise_for_status=False, request_backoff_factor=0, request_max_retry_delay=0)
+        client.session.mount("https://", FakeJiraTransport(self))
+        monkeypatch.setattr("swiss_ai_hub.pipeline.resources.jira.jira_client.Client", lambda **_: client)
+
+    def add_issue(self, key: str, *, comments: int = 0, **fields: Any) -> dict[str, Any]:
+        project = key.rsplit("-", 1)[0]
+        issue_id = str(next(self._ids))
+        raw_comments = [self._comment(index) for index in range(1, comments + 1)]
+        hit = {
+            "id": issue_id,
+            "key": key,
+            "self": f"{self.site}/rest/api/2/issue/{issue_id}",
+            "fields": {
+                "summary": f"Summary of {key}",
+                "issuetype": {"name": "Story"},
+                "status": {"name": "To Do"},
+                "priority": {"name": "Medium"},
+                "labels": [],
+                "components": [],
+                "fixVersions": [],
+                "reporter": {"displayName": "Rita Reporter", "emailAddress": "rita@acme.test"},
+                "assignee": None,
+                "created": "2026-10-01T09:00:00.000+0200",
+                "updated": "2026-10-02T10:30:00.000+0200",
+                "description": "Raw wiki text",
+                "comment": {"comments": raw_comments, "total": comments, "maxResults": comments, "startAt": 0},
+                **fields,
+            },
+            "renderedFields": {
+                "description": f"<p>Description of {key}</p>",
+                "comment": {"comments": [{"id": c["id"], "body": f"<p>Comment {c['id']}</p>"} for c in raw_comments]},
+            },
+        }
+        self.issues.setdefault(project, []).append(hit)
+        self.paged_comments[key] = [{**c, "renderedBody": f"<p>Comment {c['id']}</p>"} for c in raw_comments]
+        return hit
+
+    def fail_next(self, status: int, body: dict[str, Any] | None = None, times: int = 1) -> None:
+        self.queued_failures.extend([(status, body or {})] * times)
+
+    def sent_jql(self) -> list[str]:
+        return [self._params(request).get("jql", "") for request in self.requests if "search" in request.url]
+
+    def answer(self, request: PreparedRequest) -> tuple[int, dict[str, Any]]:
+        if self.queued_failures:
+            return self.queued_failures.pop(0)
+        path = urlparse(request.url).path
+        params = self._params(request)
+        if comments := _COMMENTS.search(path):
+            return 200, self._comment_page(comments.group(1), params)
+        if path.endswith("/rest/api/2/search/jql") and self.deployment == "cloud":
+            return 200, self._cloud_search(params)
+        if path.endswith("/rest/api/2/search") and self.deployment == "data_center":
+            return 200, self._data_center_search(params)
+        return 404, {"errorMessages": [f"No such endpoint {path} on {self.deployment}"]}
+
+    def _cloud_search(self, params: dict[str, str]) -> dict[str, Any]:
+        matching = self._matching(params["jql"])
+        offset = int(params.get("nextPageToken", "0"))
+        page = matching[offset : offset + self.page_size]
+        is_last = offset + self.page_size >= len(matching)
+        answer: dict[str, Any] = {"issues": [self._shaped(hit, params) for hit in page], "isLast": is_last}
+        if not is_last:
+            answer["nextPageToken"] = str(offset + self.page_size)
+        return answer
+
+    def _data_center_search(self, params: dict[str, str]) -> dict[str, Any]:
+        assert params.get("startAt") == "0", "Data Center pages by id, never by offset"
+        matching = self._matching(params["jql"])
+        page = matching[: self.page_size]
+        return {
+            "startAt": 0,
+            "maxResults": self.page_size,
+            "total": len(matching),
+            "issues": [self._shaped(h, params) for h in page],
+        }
+
+    def _matching(self, jql: str) -> list[dict[str, Any]]:
+        project = _PROJECT.search(jql).group(1)
+        after = int(match.group(1)) if (match := _AFTER_ID.search(jql)) else -1
+        return sorted((h for h in self.issues.get(project, []) if int(h["id"]) > after), key=lambda h: int(h["id"]))
+
+    def _shaped(self, hit: dict[str, Any], params: dict[str, str]) -> dict[str, Any]:
+        """Only the requested fields, and the rendered HTML only when asked for; Cloud embeds at most 20 comments."""
+        wanted = params.get("fields", "").split(",")
+        fields = {name: value for name, value in hit["fields"].items() if name in wanted}
+        if "comment" in fields:
+            embedded = fields["comment"]["comments"][:20]
+            fields["comment"] = {**fields["comment"], "comments": embedded, "maxResults": len(embedded)}
+        shaped = {key: value for key, value in hit.items() if key not in ("fields", "renderedFields")}
+        shaped["fields"] = fields
+        if params.get("expand") == "renderedFields":
+            rendered = hit["renderedFields"]
+            embedded_ids = {c["id"] for c in fields.get("comment", {}).get("comments", [])}
+            comments = [c for c in rendered["comment"]["comments"] if c["id"] in embedded_ids]
+            shaped["renderedFields"] = {**rendered, "comment": {"comments": comments}}
+        return shaped
+
+    def _comment_page(self, key: str, params: dict[str, str]) -> dict[str, Any]:
+        everything = self.paged_comments[key]
+        start = int(params.get("startAt", "0"))
+        page = everything[start : start + self.page_size]
+        return {"comments": page, "startAt": start, "maxResults": self.page_size, "total": len(everything)}
+
+    @staticmethod
+    def _comment(index: int) -> dict[str, Any]:
+        return {
+            "id": str(index),
+            "author": {"displayName": f"Commenter {index}"},
+            "body": f"Raw comment {index}",
+            "created": f"2026-10-03T{8 + index % 10:02d}:00:00.000+0200",
+        }
+
+    @staticmethod
+    def _params(request: PreparedRequest) -> dict[str, str]:
+        return {name: values[0] for name, values in parse_qs(urlparse(request.url).query).items()}
