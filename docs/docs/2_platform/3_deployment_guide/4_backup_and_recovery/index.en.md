@@ -278,21 +278,20 @@ first deploy with the setting. It is launched by hand and never scheduled.
    ```
 
    If it prints `pglz`, recreate the container with the same compose file, project directory and env file your
-   deployment always uses, for example
-   `docker compose -f infra/docker-compose.<stage>.yml --env-file .env up -d postgres-ferretdb` from the repository
-   root. FerretDB is unavailable for a few seconds while it is recreated. `docker restart` is not enough, because it
-   keeps the container's old command.
+   deployment always uses, for example `docker compose -f infra/docker-compose.<stage>.yml --env-file .env up -d
+   postgres-ferretdb` from the repository root. FerretDB is unavailable for a few seconds while it is recreated.
+   `docker restart` is not enough, because it keeps the container's old command.
 
    ::: warning
-The data directory (`VOLUME_ROOT`, by default `./.docker-volumes`) is resolved relative to the compose file's folder. A
-compose file from another checkout or folder mounts an **empty** data directory, and FerretDB then serves an empty
-instance. Afterwards, check in the output of `docker inspect postgres-ferretdb` that `Mounts` → `Source` is your usual
-data directory.
+   The data directory (`VOLUME_ROOT`, by default `./.docker-volumes`) is resolved relative to the compose file's
+   folder. A compose file from another checkout or folder mounts an **empty** data directory, and FerretDB then serves
+   an empty instance. Afterwards, check in the output of `docker inspect postgres-ferretdb` that `Mounts` → `Source`
+   is your usual data directory.
    :::
 
-Nothing has to be installed: the platform's `postgres-ferretdb` image is built with lz4 support. If your deployment
-replaced that image with its own, check it first with `docker exec postgres-ferretdb pg_config --configure`, which must
-list `--with-lz4`; without it, PostgreSQL refuses to start with the setting.
+   Nothing has to be installed: the platform's `postgres-ferretdb` image is built with lz4 support. If your deployment
+   replaced that image with its own, check it first with `docker exec postgres-ferretdb pg_config --configure`, which
+   must list `--with-lz4`; without it, PostgreSQL refuses to start with the setting.
 
 2. **Check how much work there is and how much disk it needs.** Run this inside
    `docker exec -it postgres-ferretdb psql -U "$MONGO_USERNAME" -d postgres`; `\gexec` runs one count per collection:
@@ -350,14 +349,14 @@ it again and it continues with the rows that are left.
 
 ### Common errors
 
-| Symptom                                                 | Cause                                                                                                | Fix                                                                                            |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Fails with `default_toast_compression is pglz, not lz4` | The setting is not active: the deploy did not run, or the container was restarted, not recreated     | Recreate `postgres-ferretdb` with `up -d` as above, then launch again                          |
-| Stays *Queued*                                          | Another Postgres job holds the mutex                                                                 | Wait; don't cancel the backup                                                                  |
-| Succeeds with `skipped: MAINTENANCE_DISABLED`           | `BACKUP_MAINTENANCE_DISABLED` is `true`                                                              | Set it to `false` for the run                                                                  |
-| Connection refused to `postgres-ferretdb:5432`          | PostgreSQL is down, or a customised compose file took `backup-code` off the `data` network           | Start `postgres-ferretdb`, or restore the network                                              |
+| Symptom                                                 | Cause                                                                                            | Fix                                                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Fails with `default_toast_compression is pglz, not lz4` | The setting is not active: the deploy did not run, or the container was restarted, not recreated | Recreate `postgres-ferretdb` with `up -d` as above, then launch again                   |
+| Stays *Queued*                                          | Another Postgres job holds the mutex                                                             | Wait; don't cancel the backup                                                           |
+| Succeeds with `skipped: MAINTENANCE_DISABLED`           | `BACKUP_MAINTENANCE_DISABLED` is `true`                                                          | Set it to `false` for the run                                                           |
+| Connection refused to `postgres-ferretdb:5432`          | PostgreSQL is down, or a customised compose file took `backup-code` off the `data` network      | Start `postgres-ferretdb`, or restore the network                                       |
 | Fails with `N rows are still pglz after the rewrite`    | A table pins its own compression (`ALTER TABLE … SET COMPRESSION pglz`), which wins over the default | Reset it with `ALTER TABLE … ALTER COLUMN document SET COMPRESSION DEFAULT`, then launch again |
-| Fails part-way (disk full, deploy, lost connection)     | The run was interrupted                                                                              | Free space if needed, then launch again; it continues with the rows still pglz                 |
+| Fails part-way (disk full, deploy, lost connection)     | The run was interrupted                                                                          | Free space if needed, then launch again; it continues with the rows still pglz          |
 
 Recompressing by hand with `UPDATE … SET document = document` does not work: PostgreSQL copies the compressed value
 unchanged.
