@@ -50,12 +50,13 @@ def _service(pipe: Any) -> tuple[Any, MagicMock, MagicMock]:
     s3 = MagicMock()
     s3.get_object.return_value = {"Body": io.BytesIO(b"\x89PNG")}
     request = MagicMock()
-    request.app.url_path_for.return_value = "/api/v1/files/f1/content"
+    request.app.url_path_for.side_effect = lambda _route, id: f"/api/v1/files/{id}/content"
     return pipe.AgentFileAttachmentService(s3, request, "owui-user"), s3, request
 
 
-def _uploaded(pipe: Any) -> AsyncMock:
-    upload = sys.modules["open_webui.routers.files"].upload_file_handler = AsyncMock(return_value=MagicMock(id="f1"))
+def _uploaded(pipe: Any, *file_ids: str) -> AsyncMock:
+    uploads = [MagicMock(id=file_id) for file_id in file_ids or ("f1",)]
+    upload = sys.modules["open_webui.routers.files"].upload_file_handler = AsyncMock(side_effect=uploads)
     pipe.Users.get_user_by_id = AsyncMock(return_value=MagicMock(id="owui-user"))
     pipe.Chats.insert_chat_files = AsyncMock()
     return upload
@@ -142,8 +143,8 @@ async def test_the_answer_links_each_attached_file_once(pipe: Any) -> None:
     service, _, _ = _service(pipe)
     await service.attach(DISPLAYED, "chat-1", "msg-1")
 
-    assert service.download_links() == "\n\nDownload: [chart.png](/api/v1/files/f1/content)"
-    assert service.download_links() == ""
+    assert service.download_links("") == "\n\nDownload: [chart.png](/api/v1/files/f1/content)"
+    assert service.download_links("") == ""
 
 
 @pytest.mark.asyncio
@@ -152,7 +153,7 @@ async def test_an_earlier_answer_reaches_the_agent_without_its_download_links(pi
     _uploaded(pipe)
     service, _, _ = _service(pipe)
     await service.attach(DISPLAYED, "chat-1", "msg-1")
-    answer = "The chart is attached." + service.download_links()
+    answer = "The chart is attached." + service.download_links("")
 
     converted = pipe.MessageConverter.convert_to_event_format(
         [{"role": "assistant", "content": answer}, {"role": "user", "content": "Now make a spreadsheet."}]
@@ -250,3 +251,33 @@ def test_a_link_written_before_its_file_arrived_resolves_once_it_does(pipe: Any)
     state_manager.files.register(CHART)
 
     assert state_manager.serialize_to_html() == "[the chart](/api/v1/files/f1/content)"
+
+
+@pytest.mark.asyncio
+async def test_a_file_the_model_linked_is_left_out_of_the_download_line(pipe: Any) -> None:
+    """Each file is linked once: by the model's own link when it wrote one, by the download line otherwise."""
+    _uploaded(pipe, "f1", "f2")
+    service, _, _ = _service(pipe)
+    context = _context(pipe, service)
+    handler = pipe.SandboxFileDisplayedEventHandler()
+    await handler.handle(DISPLAYED, context)
+    await handler.handle(
+        {**DISPLAYED, "filename": "totals.xlsx", "key": "UniversalAgent/assistant/abc/totals.xlsx"}, context
+    )
+    context.state_manager.start_text_block("Here is [the chart](sandbox:chart.png).")
+
+    answer = context.state_manager.serialize_to_html()
+
+    assert answer == "Here is [the chart](/api/v1/files/f1/content)."
+    assert service.download_links(answer) == "\n\nDownload: [totals.xlsx](/api/v1/files/f2/content)"
+
+
+@pytest.mark.asyncio
+async def test_an_answer_that_links_every_file_gets_no_download_line(pipe: Any) -> None:
+    _uploaded(pipe)
+    service, _, _ = _service(pipe)
+    context = _context(pipe, service)
+    await pipe.SandboxFileDisplayedEventHandler().handle(DISPLAYED, context)
+    context.state_manager.start_text_block("Download: [chart.png](sandbox:chart.png)")
+
+    assert service.download_links(context.state_manager.serialize_to_html()) == ""

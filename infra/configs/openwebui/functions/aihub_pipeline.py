@@ -1655,7 +1655,7 @@ class StreamingService:
                     state_manager.finalize_all_blocks()
                     await self._handle_http_error_from_info(result, event_emitter)
                 else:
-                    if attachments and (links := attachments.download_links()):
+                    if attachments and (links := attachments.download_links(state_manager.serialize_to_html())):
                         state_manager.close_current_block()
                         state_manager.start_text_block(links)
                     # Finalize any open blocks when stream ends normally
@@ -1973,13 +1973,19 @@ class AgentFileAttachmentService:
         self.attached.append(entry)
         return entry
 
-    def download_links(self) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
-        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one."""
+    def download_links(
+        self, answer: Annotated[str, "The answer as rendered so far"]
+    ) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
+        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one.
+
+        A file the model linked itself, its link resolved to the download, is left out so the answer links it once.
+        """
         new = self.attached[self._linked :]
         self._linked = len(self.attached)
-        if not new:
+        unlinked = [entry for entry in new if entry["url"] not in answer]
+        if not unlinked:
             return ""
-        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in new)
+        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in unlinked)
 
     def _read(self, bucket: str, key: str) -> bytes:
         return self._s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
