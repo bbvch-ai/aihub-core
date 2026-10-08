@@ -1,0 +1,154 @@
+---
+# Test cases for the Jira structured source (#1954). `seed` creates every case in every project given with --projects.
+# Descriptions and comments are Jira wiki markup, which REST v2 accepts on Jira Cloud and Jira Data Center alike.
+# `{me}` becomes a mention of the seeding account. Every issue is reported by and assigned to the seeding account, so
+# nobody else is notified, and gets the labels `aihub-seed` and `aihub-case-<case>`, which `list`, `edit`, `delete` and
+# `clean` find it by.
+issues:
+  - case: plain
+    type: task
+    summary: Plain task without description or comments
+    expect: The file holds the frontmatter and the title heading only, no Description
+      and no Comments section.
+  - case: rich-formatting
+    type: bug
+    summary: Login fails after a wrong password
+    priority: High
+    labels: [auth, backend]
+    description: |
+      h2. Steps to reproduce
+      # Open the login page
+      # Enter a valid user and a *wrong* password
+      ## Wait for the error message
+      # Press _Sign in_ again
+      h3. Environment
+      ||Field||Value||
+      |Browser|Firefox 131|
+      |Tenant|acme|
+      {code:java}
+      int attempts = 0;
+      while (attempts < 3) { attempts++; }
+      {code}
+      {quote}Users report it since the last release.{quote}
+      * -Struck- text, +inserted+ text and {{inline code}}
+      * See [the handbook|https://example.com/handbook]
+      {panel:title=Note}Panels become plain text.{panel}
+    comments:
+      - body: I can reproduce this on *staging*.
+      - body: |
+          The log shows:
+          {noformat}
+          AuthError: invalid_grant (attempt 3)
+          {noformat}
+    expect: >-
+      Headings, the nested numbered list, the table, the code block, the quote and
+      the absolute handbook link survive
+      as markdown; both comments, the second with its log block. Where the space has
+      a Bug type, the
+      `issuetype != Bug` JQL removes it.
+  - case: comment-paging
+    type: task
+    summary: Long discussion with 25 comments
+    description: Jira Cloud embeds only 20 comments in a search result.
+    generated_comments: 25
+    expect: All 25 comments in the file, oldest first. The last 5 come from the comment
+      endpoint.
+  - case: restricted-comment
+    type: task
+    summary: Issue with a comment restricted to a project role
+    comments:
+      - body: Public comment before the restricted one.
+      - body: RESTRICTED - only a project role may read this. It must never reach
+          the knowledge database.
+        restricted: true
+      - body: Public comment after the restricted one.
+    expect: >-
+      Two comments in the file; the text RESTRICTED appears nowhere. Needs the seeding
+      account in a project role (or a
+      site that allows group restrictions); otherwise the seeder skips the restricted
+      comment and says so.
+  - case: internal-comment
+    type: task
+    summary: Request with an internal agent comment
+    comments:
+      - body: Public reply to the customer.
+      - body: INTERNAL - agents only. It must never reach the knowledge database.
+        internal: true
+    expect: >-
+      In a service management space, one comment in the file and the text INTERNAL
+      nowhere. Other spaces skip the
+      internal comment when seeding, so their file has the public reply only.
+  - case: unicode
+    type: task
+    summary: Größe prüfen – Ça marche – 日本語 – 🚀
+    description: Umlaute äöü und ß, accents éèà, CJK 日本語のテキスト, emoji 🚀✅.
+    expect: Summary, title and body keep every character, and searching for Größe
+      finds the issue.
+  - case: yaml-special
+    type: task
+    summary: "Colon: \"double\" 'single' --- # hash [list] {map} & * ! | > %"
+    description: The summary is full of characters that mean something in YAML.
+    expect: The frontmatter stays valid YAML and the title shows the summary exactly.
+  - case: long-description
+    type: task
+    summary: Very long description that spans several chunks
+    filler_paragraphs: 40
+    description: The secret word is lighthouse.
+    expect: Several chunks; a search for the secret word (lighthouse) finds this issue.
+  - case: metadata
+    type: story
+    summary: Story with every field the frontmatter carries
+    description: Checks the frontmatter fields.
+    priority: High
+    labels: [backend, release-1]
+    components: [API, Frontend]
+    fix_versions: ['1.0']
+    status: in_progress
+    expect: >-
+      Frontmatter has issue_type Story, status In Progress, priority High, labels
+      backend and release-1, components API
+      and Frontend, fix_versions 1.0 and your display name as assignee and reporter
+      (true of every seeded issue). Fields
+      the project's create screen
+      lacks are skipped and reported by the seeder.
+  - case: done
+    type: task
+    summary: Finished task
+    priority: Low
+    status: done
+    expect: Frontmatter status Done, priority Low.
+  - case: second-bug
+    type: bug
+    summary: Pipeline drops tables with merged cells
+    description: A second bug for the JQL filter test.
+    expect: >-
+      Removed together with rich-formatting when the database's JQL is set to `issuetype
+      != Bug`. A space without a Bug
+      type creates both as its first issue type instead (the seeder says which), and
+      the JQL leaves them.
+  - case: mention
+    type: task
+    summary: Description mentioning a user
+    description: Handed over to {me} for review.
+    comments:
+      - body: Thanks {me}, looking into it.
+    expect: Only your display name appears; no profile link and no account id.
+  - case: subtask
+    type: subtask
+    parent_case: metadata
+    summary: Sub-task of the metadata story
+    description: Sub-tasks are issues of their own.
+    expect: Its own file next to its parent in the same project folder. Skipped where
+      the space has no sub-task type.
+  - case: edit-me
+    type: task
+    summary: Edit me
+    description: The `edit` command changes this issue's summary and adds a comment.
+    expect: After `edit` and a sync, only this file is rewritten (Files written 1),
+      with the new title and comment.
+  - case: delete-me
+    type: task
+    summary: Delete me
+    description: The `delete` command deletes this issue.
+    expect: After `delete` and a sync, the file is removed. `seed --only delete-me`
+      brings it back.
