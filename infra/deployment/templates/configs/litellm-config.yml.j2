@@ -221,6 +221,7 @@ model_list:
       drop_params: true
     model_info:
       mode: rerank
+      max_input_tokens: 8192
 {%- if has_local_models %}
       input_cost_per_token: 0
 {%- else %}
