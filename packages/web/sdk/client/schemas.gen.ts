@@ -18145,13 +18145,15 @@ export const MetadataFilterPairSchema = {
         },
       ],
       title: "Value",
-      description: "The value the metadata key must equal.",
+      description:
+        "The value the metadata key must equal, or, where the key holds a list, contain.",
     },
   },
   type: "object",
   required: ["key", "value"],
   title: "MetadataFilterPair",
-  description: "A metadata key/value equality filter for RAG retrieval.",
+  description:
+    "A metadata key/value filter for RAG retrieval: the stored value equals it, or a stored list contains it.",
 } as const;
 
 export const MinimalAgentInstanceDTOSchema = {

@@ -12080,7 +12080,7 @@ export type Metadata = {
 /**
  * MetadataFilterPair
  *
- * A metadata key/value equality filter for RAG retrieval.
+ * A metadata key/value filter for RAG retrieval: the stored value equals it, or a stored list contains it.
  */
 export type MetadataFilterPair = {
   /**
@@ -12092,7 +12092,7 @@ export type MetadataFilterPair = {
   /**
    * Value
    *
-   * The value the metadata key must equal.
+   * The value the metadata key must equal, or, where the key holds a list, contain.
    */
   value: string | number | number | boolean;
 };
