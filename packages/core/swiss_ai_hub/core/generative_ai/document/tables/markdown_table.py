@@ -32,20 +32,20 @@ def create_compact_markdown_table(df: pd.DataFrame) -> str:
     if has_integer_column_indices(df):
         df = apply_header_rows(df.copy(), 1)
 
-    header = [_markdown_cell(column) for column in df.columns]
+    header = [markdown_cell(column) for column in df.columns]
     lines = [
-        _markdown_row(header),
-        _markdown_row(["---"] * len(header)),
-        *(_markdown_row([_markdown_cell(value) for value in row]) for row in df.values),
+        markdown_row(header),
+        markdown_row(["---"] * len(header)),
+        *(markdown_row([markdown_cell(value) for value in row]) for row in df.values),
     ]
     return "\n".join(lines)
 
 
-def _markdown_row(cells: list[str]) -> str:
+def markdown_row(cells: list[str]) -> str:
     return f"| {' | '.join(cells)} |"
 
 
-def _markdown_cell(value: object) -> str:
+def markdown_cell(value: object) -> str:
     """
     Keep every cell on one line, free of delimiters, and free of placeholder text.
 
