@@ -358,6 +358,9 @@ class RecursiveNodeSummarizer:
             text=summary_text,
             metadata=metadata,
             relationships={},
+            # Inherited with the metadata, so keys a document keeps out of its embeddings stay out of its summaries'.
+            excluded_embed_metadata_keys=original_node.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=original_node.excluded_llm_metadata_keys,
         )
 
         if NodeRelationship.SOURCE in original_node.relationships:

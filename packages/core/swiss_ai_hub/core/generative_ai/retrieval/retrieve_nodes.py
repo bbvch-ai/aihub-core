@@ -36,7 +36,7 @@ def retrieve_nodes(
     if index_namespaces is not None and not index_namespaces:
         return []
 
-    extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
+    extra_filters = [f.to_llama_index() for f in (additional_filters or [])]
 
     if index_namespaces:
         filters = MetadataFilters(

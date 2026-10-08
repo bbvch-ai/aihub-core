@@ -1,9 +1,11 @@
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 from llama_index.core.utils import get_tokenizer
 from llama_index.core.vector_stores.types import (
     FilterCondition,
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
@@ -40,7 +42,29 @@ def _and_groups(filters: MetadataFilters) -> list[MetadataFilters]:
 
 
 def _keys(group: MetadataFilters) -> list[str]:
-    return [f.key for f in group.filters if isinstance(f, MetadataFilter)]
+    """The key each filter of the group tests; a nested group counts once, as it tests one key in several ways."""
+    return [f.key if isinstance(f, MetadataFilter) else _single_key(f) for f in group.filters]
+
+
+def _single_key(nested: MetadataFilters) -> str:
+    (key,) = {f.key for f in nested.filters}
+    return key
+
+
+def _extra_filter(value: str | int | float | bool) -> MetadataFilter | MetadataFilters:
+    store, captured = _capturing_vector_store()
+    retrieve_nodes(
+        message="q",
+        embed_model=_mock_embed_model(),
+        retrieve_k=5,
+        index_namespaces=["ns1"],
+        query_mode=VectorStoreQueryMode.DEFAULT,
+        node_types=["content"],
+        vector_store=store,
+        additional_filters=[MetadataFilterPair(key="labels", value=value)],
+    )
+    (group,) = _and_groups(captured["filters"])
+    return group.filters[-1]
 
 
 class TestRetrieveNodesFilters:
@@ -125,6 +149,39 @@ class TestRetrieveNodesFilters:
         groups = _and_groups(captured["filters"])
         assert len(groups) == 1
         assert _keys(groups[0]) == [NAMESPACE, TYPE]
+
+
+class TestRetrieveNodesListFilters:
+    """#1953: frontmatter stores lists of text, and Milvus never finds a string in a list by equality."""
+
+    def test_a_text_value_matches_an_equal_value_or_a_list_containing_it(self):
+        extra = _extra_filter("backend")
+
+        assert isinstance(extra, MetadataFilters)
+        assert extra.condition == FilterCondition.OR
+        assert [(f.key, f.value, f.operator) for f in extra.filters] == [
+            ("labels", "backend", FilterOperator.EQ),
+            ("labels", "backend", FilterOperator.CONTAINS),
+        ]
+
+    @pytest.mark.parametrize("value", [2, 1.5])
+    def test_a_number_keeps_plain_equality(self, value: int | float):
+        """Lists hold text only, so a number can only ever equal the stored value."""
+        extra = _extra_filter(value)
+
+        assert isinstance(extra, MetadataFilter)
+        assert (extra.key, extra.value, extra.operator) == ("labels", value, FilterOperator.EQ)
+
+    @pytest.mark.parametrize(("flag", "text"), [(True, "true"), (False, "false")])
+    def test_a_flag_is_compared_as_the_text_ingestion_stores(self, flag: bool, text: str):
+        """llama-index's MetadataFilter rejects booleans, so a boolean filter used to fail before reaching Milvus."""
+        extra = _extra_filter(flag)
+
+        assert isinstance(extra, MetadataFilters)
+        assert [(f.value, f.operator) for f in extra.filters] == [
+            (text, FilterOperator.EQ),
+            (text, FilterOperator.CONTAINS),
+        ]
 
 
 class TestRetrieveNodesQueryClamp:

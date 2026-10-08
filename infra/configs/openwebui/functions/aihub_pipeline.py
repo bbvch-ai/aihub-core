@@ -1125,7 +1125,7 @@ class GroundingNodesEventHandler(EventHandler):
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
-        reference_url = (first.get("metadata") or {}).get("reference_url", "")
+        reference_url = GroundingNodesEventHandler.document_link(first)
         source_data: dict[str, Any] = {
             "source": {
                 "name": GroundingNodesEventHandler.display_name(first),
@@ -1139,6 +1139,14 @@ class GroundingNodesEventHandler(EventHandler):
         if all("score" in node for node in nodes):
             source_data["distances"] = [node["score"] for node in nodes]
         return source_data
+
+    @staticmethod
+    def document_link(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Link a user can open, or ''"]:
+        """The document's place outside the platform: an explicit reference link, else the original source its pipeline
+        recorded, such as a markdown file's frontmatter `url`. Only web links are offered, since this becomes an href.
+        """
+        link = (node.get("metadata") or {}).get("reference_url") or node.get("source_origin") or ""
+        return link if urlparse(link).scheme in ("http", "https") else ""
 
     @staticmethod
     def display_name(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Label on the citation chip"]:

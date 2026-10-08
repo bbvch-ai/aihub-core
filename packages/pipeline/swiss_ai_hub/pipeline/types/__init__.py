@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
     from swiss_ai_hub.pipeline.types.document_with_figure_info import DocumentWithFigureInfo
     from swiss_ai_hub.pipeline.types.figure_metadata import FigureMetadata
+    from swiss_ai_hub.pipeline.types.malformed_frontmatter_error import MalformedFrontmatterError
+    from swiss_ai_hub.pipeline.types.markdown_frontmatter import MarkdownFrontmatter
     from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile
     from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
     from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile, SharePointFile
@@ -18,6 +20,8 @@ __all__ = [
     "DataLakeListing",
     "DocumentWithFigureInfo",
     "FigureMetadata",
+    "MalformedFrontmatterError",
+    "MarkdownFrontmatter",
     "MinimalRcloneFile",
     "MinimalSharePointFile",
     "MinimalSourceFile",
@@ -33,6 +37,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "DataLakeListing": "swiss_ai_hub.pipeline.types.data_lake_listing",
     "DocumentWithFigureInfo": "swiss_ai_hub.pipeline.types.document_with_figure_info",
     "FigureMetadata": "swiss_ai_hub.pipeline.types.figure_metadata",
+    "MalformedFrontmatterError": "swiss_ai_hub.pipeline.types.malformed_frontmatter_error",
+    "MarkdownFrontmatter": "swiss_ai_hub.pipeline.types.markdown_frontmatter",
     "MinimalRcloneFile": "swiss_ai_hub.pipeline.types.rclone_file",
     "MinimalSharePointFile": "swiss_ai_hub.pipeline.types.share_point_file",
     "MinimalSourceFile": "swiss_ai_hub.pipeline.types.source_file",

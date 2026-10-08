@@ -126,6 +126,63 @@ Vector embedding: Text chunks convert to vector representations that capture sem
 content based on concepts, not just keyword matching. A query about "vehicle speed limits" matches content about
 "maximum velocity constraints."
 
+### Markdown files with frontmatter
+
+A Markdown file (`.md`) may open with a YAML block between two `---` lines, its frontmatter. It carries a record's
+fields next to its text, the way a page or issue exported from a wiki or tracker often looks:
+
+```markdown
+---
+title: "ABC-123: Login fails on Safari"
+url: https://jira.example.com/browse/ABC-123
+created: 2026-09-01T09:00:00+02:00
+updated: 2026-09-30T14:05:00+02:00
+project: ABC
+status: Done
+labels: [backend, urgent]
+---
+Users on Safari 17 cannot log in after the SSO change.
+```
+
+The block is removed before chunking: no chunk contains it, and only the text below it is embedded. Its fields become
+part of the document instead. Four keys set the document's own fields:
+
+| Key                   | Becomes                                                    | Accepted values                                                                                          |
+| --------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `title`               | The document title, in the knowledge area and on citations | Non-empty text                                                                                           |
+| `url`                 | The link a citation opens                                  | `http://` or `https://` links                                                                            |
+| `created` / `updated` | The document's creation and update dates                   | ISO 8601 dates such as `2026-09-30` or `2026-09-30T14:05:00+02:00`; a time without a zone is read as UTC |
+
+Every other key is stored as metadata on the document and on each of its chunks, where a retriever can filter on it:
+
+- Values are text, numbers, `true`/`false`, dates, or lists of these. `true`/`false`, dates and list items are stored as
+  text.
+- Names are lowercased, accents are dropped, and every run of other characters becomes `_`: `Fix Version` is stored as
+  `fix_version`, `Priorität` as `prioritat`. Use the stored name when you allow a field for filtering.
+- A key is skipped when its value is empty, a nested map or a nested list, or when its name is one the platform uses
+  itself, such as `type`, `language`, `version`, `namespace`, `source` or `document_title`. Name such a field
+  differently, for example `issue_type`. When two keys end up with the same name, the first one wins.
+- All of a file's metadata keys together are limited to 8 KiB; keys beyond that are skipped.
+- These keys are not embedded. They are there to filter on, and on a short record they would outweigh the text in the
+  search. The title is embedded as before.
+
+Every skipped key is named, with the reason, in the ingestion run's logs. A block that is not valid YAML, or holds
+anything other than `key: value` pairs, does not stop ingestion: the file is ingested exactly as written, block
+included, and the run logs a warning. Dates written as plain numbers are refused, because seconds and milliseconds
+cannot be told apart. Markdown without frontmatter is processed exactly as before, and other file types are never read
+for it.
+
+A document ingested before frontmatter was understood keeps the block in its chunks until the file changes or is
+uploaded again.
+
+::: tip Filtering on frontmatter fields
+A retriever filters only on keys listed in its **Allowed Filter Fields**. The values to filter by are supplied when an
+agent is started programmatically (`RAGStartEvent.additional_filters`), for example by a process; chat users do not set
+them. A text value matches documents that store it on its own or in a list, so filtering `labels` by `backend` finds
+both `labels: backend` and `labels: [backend, urgent]`. Numbers match by equality, and a `true`/`false` filter matches
+the text ingestion stores.
+:::
+
 ## Inspection and debugging
 
 The system provides visibility into document processing:
@@ -133,8 +190,9 @@ The system provides visibility into document processing:
 Document reconstruction shows how the parser interpreted your document. Check whether it correctly identified tables,
 sidebars, and other structural elements.
 
-Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
-retrieval. Useful when agents aren't finding expected content.
+Chunk inspection displays how the system segmented content: the text of each chunk, as agents retrieve it. Useful when
+agents aren't finding expected content. A chunk's metadata, such as fields from a Markdown file's frontmatter, is not
+shown there; it lives in the vector database, where Milvus' admin UI (Attu) can display it.
 
 Processing status indicates whether documents are uploading, processing, or ready. The document list refreshes itself
 every few seconds while a document on the page is still processing, so you do not need to reload to see it become ready.

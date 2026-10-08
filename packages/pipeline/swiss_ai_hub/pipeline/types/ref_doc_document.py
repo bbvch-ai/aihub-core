@@ -21,6 +21,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
 
 if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+    from swiss_ai_hub.pipeline.types.markdown_frontmatter import MarkdownFrontmatter
 
 
 class RefDocDocument(Document):
@@ -68,3 +69,28 @@ class RefDocDocument(Document):
             IS_INGESTED: False,
         }
         return self
+
+    def with_frontmatter(self, frontmatter: "MarkdownFrontmatter") -> Self:
+        """A copy whose text is the body, with the frontmatter's fields over the data lake file's.
+
+        The custom keys are left out of the embedded text: they are there to be filtered on, and on a short record
+        they would outweigh the body in its vector. Chunks inherit the exclusion from the document.
+        """
+        document_fields = {
+            DOCUMENT_TITLE: frontmatter.title,
+            SOURCE_ORIGIN: frontmatter.url,
+            CREATED_AT: frontmatter.created,
+            UPDATED_AT: frontmatter.updated,
+        }
+        applied = self.model_copy(
+            update={
+                "metadata": {
+                    **self.metadata,
+                    **{key: value for key, value in document_fields.items() if value is not None},
+                    **frontmatter.metadata,
+                },
+                "excluded_embed_metadata_keys": [*self.excluded_embed_metadata_keys, *frontmatter.metadata],
+            }
+        )
+        applied.set_content(frontmatter.body)
+        return applied

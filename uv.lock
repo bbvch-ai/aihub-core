@@ -5868,6 +5868,7 @@ dependencies = [
     { name = "dagster-webserver" },
     { name = "matplotlib" },
     { name = "openai" },
+    { name = "pyyaml" },
     { name = "swiss-ai-hub-core" },
 ]
 
@@ -5881,6 +5882,7 @@ requires-dist = [
     { name = "dagster-webserver", specifier = ">=1.11.2" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "openai", specifier = ">=1.76.2" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
 ]
 
