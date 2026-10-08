@@ -50,30 +50,22 @@ def _service(pipe: Any) -> tuple[Any, MagicMock, MagicMock]:
     s3 = MagicMock()
     s3.get_object.return_value = {"Body": io.BytesIO(b"\x89PNG")}
     request = MagicMock()
-    request.app.url_path_for.return_value = "/api/v1/files/f1/content"
+    request.app.url_path_for.side_effect = lambda _route, id: f"/api/v1/files/{id}/content"
     return pipe.AgentFileAttachmentService(s3, request, "owui-user"), s3, request
 
 
-def _uploaded(pipe: Any) -> AsyncMock:
-    upload = sys.modules["open_webui.routers.files"].upload_file_handler = AsyncMock(return_value=MagicMock(id="f1"))
+def _uploaded(pipe: Any, *file_ids: str) -> AsyncMock:
+    uploads = [MagicMock(id=file_id) for file_id in file_ids or ("f1",)]
+    upload = sys.modules["open_webui.routers.files"].upload_file_handler = AsyncMock(side_effect=uploads)
     pipe.Users.get_user_by_id = AsyncMock(return_value=MagicMock(id="owui-user"))
     pipe.Chats.insert_chat_files = AsyncMock()
     return upload
 
 
-@pytest.mark.asyncio
-async def test_a_displayed_file_joins_the_answer_s_files(pipe: Any) -> None:
-    """The server keeps the new file next to the earlier ones; the browser is given all of them, since it replaces."""
-    attachments = MagicMock()
-    attachments.attach = AsyncMock(return_value={"type": "file", "id": "f2", "name": "chart.png"})
-    attachments.attached = [
-        {"type": "file", "id": "f1", "name": "totals.xlsx"},
-        {"type": "file", "id": "f2", "name": "chart.png"},
-    ]
-    emitter = _Recorder()
-    context = pipe.EventContext(
+def _context(pipe: Any, attachments: Any, emitter: _Recorder | None = None) -> Any:
+    return pipe.EventContext(
         state_manager=pipe.StreamingStateManager(),
-        emitter=emitter,
+        emitter=emitter or _Recorder(),
         caller=MagicMock(),
         headers={},
         agent_class="UniversalAgent",
@@ -85,11 +77,24 @@ async def test_a_displayed_file_joins_the_answer_s_files(pipe: Any) -> None:
         attachments=attachments,
     )
 
-    await pipe.SandboxFileDisplayedEventHandler().handle(DISPLAYED, context)
+
+@pytest.mark.asyncio
+async def test_a_displayed_file_joins_the_answer_s_files(pipe: Any) -> None:
+    """The server keeps the new file next to the earlier ones; the browser is given all of them, since it replaces."""
+    chart = {"type": "file", "id": "f2", "url": "/api/v1/files/f2/content", "name": "chart.png"}
+    attachments = MagicMock()
+    attachments.attach = AsyncMock(return_value=chart)
+    attachments.attached = [
+        {"type": "file", "id": "f1", "url": "/api/v1/files/f1/content", "name": "totals.xlsx"},
+        chart,
+    ]
+    emitter = _Recorder()
+
+    await pipe.SandboxFileDisplayedEventHandler().handle(DISPLAYED, _context(pipe, attachments, emitter))
 
     attachments.attach.assert_awaited_once_with(DISPLAYED, "chat-1", "msg-1")
     assert emitter.events == [
-        {"type": "files", "data": {"files": [{"type": "file", "id": "f2", "name": "chart.png"}]}},
+        {"type": "files", "data": {"files": [chart]}},
         {"type": "chat:message:files", "data": {"files": attachments.attached}},
     ]
 
@@ -138,8 +143,8 @@ async def test_the_answer_links_each_attached_file_once(pipe: Any) -> None:
     service, _, _ = _service(pipe)
     await service.attach(DISPLAYED, "chat-1", "msg-1")
 
-    assert service.download_links() == "\n\nDownload: [chart.png](/api/v1/files/f1/content)"
-    assert service.download_links() == ""
+    assert service.download_links("") == "\n\nDownload: [chart.png](/api/v1/files/f1/content)"
+    assert service.download_links("") == ""
 
 
 @pytest.mark.asyncio
@@ -148,7 +153,7 @@ async def test_an_earlier_answer_reaches_the_agent_without_its_download_links(pi
     _uploaded(pipe)
     service, _, _ = _service(pipe)
     await service.attach(DISPLAYED, "chat-1", "msg-1")
-    answer = "The chart is attached." + service.download_links()
+    answer = "The chart is attached." + service.download_links("")
 
     converted = pipe.MessageConverter.convert_to_event_format(
         [{"role": "assistant", "content": answer}, {"role": "user", "content": "Now make a spreadsheet."}]
@@ -180,3 +185,99 @@ def test_a_file_linked_in_the_prose_keeps_its_name_without_its_url(pipe: Any) ->
 
     assert converted[0]["blocks"][0]["text"] == "Open the chart or see preview below."
     assert converted[1]["blocks"][0]["text"] == question
+
+
+CHART = {"name": "chart.png", "url": "/api/v1/files/f1/content"}
+
+
+def _rendered(pipe: Any, text: str, *files: dict[str, str]) -> str:
+    state_manager = pipe.StreamingStateManager()
+    for file in files:
+        state_manager.files.register(file)
+    state_manager.start_text_block(text)
+    return state_manager.serialize_to_html()
+
+
+@pytest.mark.parametrize(
+    "written",
+    [
+        "[Tải xuống file PDF](sandbox:chart.png)",
+        "[Tải xuống file PDF](sandbox:/home/u130507f8/conversations/t1/chart.png)",
+        "[Tải xuống file PDF](sandbox:/mnt/data/chart.png)",
+        "[Tải xuống file PDF](file:///home/u/chart.png)",
+        "[Tải xuống file PDF](/home/u/conversations/t1/chart.png)",
+        "[Tải xuống file PDF](~/conversations/t1/chart.png)",
+        "[Tải xuống file PDF](./chart.png)",
+        "[Tải xuống file PDF](chart.png)",
+        "[Tải xuống file PDF](Chart.PNG)",
+        "[Tải xuống file PDF](<sandbox:/home/u/chart.png>)",
+        '[Tải xuống file PDF](chart.png "The chart")',
+    ],
+)
+def test_a_link_the_model_wrote_to_an_attached_file_opens_its_download(pipe: Any, written: str) -> None:
+    """Told never to, a model still links its file the way OpenAI's sandbox does, which no browser opens."""
+    assert _rendered(pipe, f"📎 {written}", CHART) == "📎 [Tải xuống file PDF](/api/v1/files/f1/content)"
+
+
+def test_an_image_of_an_attached_file_shows_it(pipe: Any) -> None:
+    assert _rendered(pipe, "![chart](sandbox:chart.png)", CHART) == "![chart](/api/v1/files/f1/content)"
+
+
+@pytest.mark.parametrize("written", ["[the report](sandbox:report.pdf)", "[the report](report.pdf)"])
+def test_a_link_to_a_file_the_answer_did_not_attach_keeps_only_its_label(pipe: Any, written: str) -> None:
+    assert _rendered(pipe, f"See {written}.", CHART) == "See the report."
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "[the guide](https://example.com/chart.png)",
+        "[the chart](/api/v1/files/f9/content)",
+        "[above](#chart)",
+        "[write us](mailto:chart@example.com)",
+        "`df[col](chart.png)`",
+        "[a section]",
+    ],
+)
+def test_links_a_browser_opens_and_code_stay_as_written(pipe: Any, text: str) -> None:
+    assert _rendered(pipe, text, CHART) == text
+
+
+def test_a_link_written_before_its_file_arrived_resolves_once_it_does(pipe: Any) -> None:
+    state_manager = pipe.StreamingStateManager()
+    state_manager.start_text_block("[the chart](sandbox:chart.png)")
+    assert state_manager.serialize_to_html() == "the chart"
+
+    state_manager.files.register(CHART)
+
+    assert state_manager.serialize_to_html() == "[the chart](/api/v1/files/f1/content)"
+
+
+@pytest.mark.asyncio
+async def test_a_file_the_model_linked_is_left_out_of_the_download_line(pipe: Any) -> None:
+    """Each file is linked once: by the model's own link when it wrote one, by the download line otherwise."""
+    _uploaded(pipe, "f1", "f2")
+    service, _, _ = _service(pipe)
+    context = _context(pipe, service)
+    handler = pipe.SandboxFileDisplayedEventHandler()
+    await handler.handle(DISPLAYED, context)
+    await handler.handle(
+        {**DISPLAYED, "filename": "totals.xlsx", "key": "UniversalAgent/assistant/abc/totals.xlsx"}, context
+    )
+    context.state_manager.start_text_block("Here is [the chart](sandbox:chart.png).")
+
+    answer = context.state_manager.serialize_to_html()
+
+    assert answer == "Here is [the chart](/api/v1/files/f1/content)."
+    assert service.download_links(answer) == "\n\nDownload: [totals.xlsx](/api/v1/files/f2/content)"
+
+
+@pytest.mark.asyncio
+async def test_an_answer_that_links_every_file_gets_no_download_line(pipe: Any) -> None:
+    _uploaded(pipe)
+    service, _, _ = _service(pipe)
+    context = _context(pipe, service)
+    await pipe.SandboxFileDisplayedEventHandler().handle(DISPLAYED, context)
+    context.state_manager.start_text_block("Download: [chart.png](sandbox:chart.png)")
+
+    assert service.download_links(context.state_manager.serialize_to_html()) == ""
