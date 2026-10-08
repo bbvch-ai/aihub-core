@@ -31,7 +31,7 @@ class MarkItDownParseCache:
         self._bucket = ParseCacheBucket()
 
     async def get(self, file_bytes: bytes, filename: str) -> str | None:
-        """Traced by hand rather than with `trace_fn`, which would record the document's bytes and its converted text."""
+        """Traced by hand rather than with `trace_fn`, which would record the document's bytes and its text."""
         key = self.object_key(file_bytes, filename)
         with get_tracer(__name__).start_as_current_span(
             "MarkItDownParseCache.get", attributes={PARSE_CACHE_KEY_ATTRIBUTE: key}

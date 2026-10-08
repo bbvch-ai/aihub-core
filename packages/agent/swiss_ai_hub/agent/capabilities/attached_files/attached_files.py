@@ -66,9 +66,9 @@ class AttachedFiles(Capability):
 
     - `read(files, history, query, reserve_tokens)` is answered with `AttachedFilesReadEvent`, one context block
       holding each file's text, empty when nothing readable is attached. `first_page`/`last_page` read those pages of
-      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to `Conversation.compose(...)`
-      behind the memories. `reserve_tokens` is room the caller still needs afterwards, such as RAG's retrieved
-      knowledge, which the files leave free.
+      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to
+      `Conversation.compose(...)` behind the memories. `reserve_tokens` is room the caller still needs afterwards, such
+      as RAG's retrieved knowledge, which the files leave free.
 
     Chat clients send every file of the current message branch on every turn, so a file attached earlier keeps
     answering later questions without being attached again, and an edited or regenerated message sees exactly its
