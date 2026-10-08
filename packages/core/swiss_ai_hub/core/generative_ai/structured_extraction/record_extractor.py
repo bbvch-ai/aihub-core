@@ -31,6 +31,10 @@ OUTPUT_TOKENS_PER_WINDOW_TOKEN = 2
 # neighbouring window.
 WINDOW_OVERLAP_RATIO = 0.1
 
+# Room for a header (invoice number, supplier, contract parties) that every later window is shown, so a value stated
+# once at the top still reaches records far below it.
+DOCUMENT_OPENING_TOKENS = 512
+
 MIN_WINDOW_TOKENS = 256
 
 MAX_FAILURE_REASON_CHARACTERS = 300
@@ -63,11 +67,18 @@ class RecordExtractor:
         windows = TextWindows.split(
             document.text, window_tokens, int(window_tokens * WINDOW_OVERLAP_RATIO), llm_config.token_counter
         )
+        opening = RecordExtractor._opening(document.text, window_tokens, llm_config) if len(windows) > 1 else ""
         records_model = schema.to_records_model()
 
         per_window = []
         for position, window in enumerate(windows, start=1):
-            window_args = {**prompt_args, "text": window, "position": position, "total": len(windows)}
+            window_args = {
+                **prompt_args,
+                "text": window,
+                "position": position,
+                "total": len(windows),
+                "opening": opening if position > 1 else "",
+            }
             try:
                 per_window.append(await RecordExtractor._extract_window(llm, records_model, prompt, window_args))
             except ValueError as malformed_output:
@@ -104,9 +115,11 @@ class RecordExtractor:
         Raises when the model is too small to extract with at all, which is a configuration error, not a document's.
         """
         model_info = llm_config.get_model_info()["model_info"]
-        rendered = prompt.format(**prompt_args, text="", position=1, total=1)
+        rendered = prompt.format(**prompt_args, text="", position=1, total=1, opening="")
         prompt_tokens = len(llm_config.token_counter(rendered))
-        input_room = int(model_info["max_input_tokens"] * INPUT_BUDGET_SAFETY_FACTOR) - prompt_tokens
+        input_room = (
+            int(model_info["max_input_tokens"] * INPUT_BUDGET_SAFETY_FACTOR) - prompt_tokens - DOCUMENT_OPENING_TOKENS
+        )
         output_room = model_info["max_output_tokens"] // OUTPUT_TOKENS_PER_WINDOW_TOKEN
         window_tokens = min(input_room, output_room)
         if window_tokens < MIN_WINDOW_TOKENS:
@@ -115,6 +128,16 @@ class RecordExtractor:
                 f"{MIN_WINDOW_TOKENS} extraction needs. Choose a model with a larger context window or output limit."
             )
         return window_tokens
+
+    @staticmethod
+    def _opening(text: str, window_tokens: int, llm_config: LLMConfig) -> str:
+        """The start of the document, for values every record shares but only the first window states.
+
+        Capped at half a window so it ends well before the second window begins: a record inside it is then extracted
+        from the first window only, and the opening never yields a copy the merger would have to catch.
+        """
+        opening_tokens = min(DOCUMENT_OPENING_TOKENS, window_tokens // 2)
+        return TextWindows.split(text, opening_tokens, 0, llm_config.token_counter)[0]
 
     @staticmethod
     def _require_whole(document: KnowledgeDocument) -> None:

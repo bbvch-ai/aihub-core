@@ -150,6 +150,30 @@ async def test_long_document_is_extracted_completely_without_duplicates() -> Non
     assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
 
 
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_values_stated_once_in_the_header_reach_records_on_later_pages() -> None:
+    llm_config, llm, _ = _llm()
+    header = "# Contract HW-2025-117\n\nSupplier: Helvetic IT Supplies AG\nClient: Acme Engineering GmbH\n\n"
+    schema = RecordSchema(
+        fields=[
+            RecordField(name="contract_number", type="string", description="Number of the contract, e.g. HW-2024-1"),
+            RecordField(name="supplier", type="string", description="Company that supplies the positions"),
+            *_LINE_SCHEMA.fields,
+        ]
+    )
+
+    result = await RecordExtractor.extract(
+        schema, _document(header + _long_contract(), title="Hardware contract"), llm, llm_config, LocaleHandler("en")
+    )
+
+    assert not result.failed, result.failure_reason
+    assert result.window_count > 1
+    assert [record.values["position"] for record in result.records] == [1, 2, 3, 4, 5, 6]
+    assert {record.values["contract_number"] for record in result.records} == {"HW-2025-117"}
+    assert {record.values["supplier"] for record in result.records} == {"Helvetic IT Supplies AG"}
+
+
 @pytest.mark.skipif(not _CONSISTENCY_MODELS, reason="set STRUCTURED_EXTRACTION_CONSISTENCY_MODELS to measure")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", _CONSISTENCY_MODELS)

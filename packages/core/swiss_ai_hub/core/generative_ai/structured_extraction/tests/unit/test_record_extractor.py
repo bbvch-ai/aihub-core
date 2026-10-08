@@ -98,6 +98,43 @@ async def test_long_document_is_extracted_completely_without_boundary_duplicates
 
 
 @pytest.mark.asyncio
+async def test_later_windows_are_shown_the_document_opening_for_values_stated_once_in_the_header() -> None:
+    llm = _reading_llm()
+    text = "Invoice INV-7 from Acme AG.\n\n" + _invoice(300)
+
+    await RecordExtractor.extract(_SCHEMA, _document(text), llm, _llm_config(max_output_tokens=600), LocaleHandler("en"))
+
+    openings = [call.kwargs["opening"] for call in llm.astructured_predict.await_args_list]
+    assert len(openings) > 1
+    assert openings[0] == ""
+    assert all(opening.startswith("Invoice INV-7 from Acme AG.") for opening in openings[1:])
+
+
+@pytest.mark.asyncio
+async def test_opening_ends_inside_the_first_window_so_it_cannot_yield_a_record_twice() -> None:
+    llm = _reading_llm()
+
+    await RecordExtractor.extract(
+        _SCHEMA, _document(_invoice(300)), llm, _llm_config(max_output_tokens=600), LocaleHandler("en")
+    )
+
+    first_window, second_window = (call.kwargs for call in llm.astructured_predict.await_args_list[:2])
+    opening_lines = set(_LINE.findall(second_window["opening"]))
+    assert opening_lines
+    assert opening_lines <=set(_LINE.findall(first_window["text"]))
+    assert not opening_lines & set(_LINE.findall(second_window["text"]))
+
+
+@pytest.mark.asyncio
+async def test_a_document_that_fits_one_window_gets_no_opening() -> None:
+    llm = _reading_llm()
+
+    await RecordExtractor.extract(_SCHEMA, _document(_invoice(5)), llm, _llm_config(), LocaleHandler("en"))
+
+    assert llm.astructured_predict.await_args.kwargs["opening"] == ""
+
+
+@pytest.mark.asyncio
 async def test_document_without_matching_content_yields_zero_records_not_a_failure() -> None:
     llm = Mock()
     llm.astructured_predict = AsyncMock(side_effect=lambda model, _prompt, **_kwargs: model(records=[]))

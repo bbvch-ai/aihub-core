@@ -64,6 +64,13 @@ overlap by ten percent. `RecordMerger` drops a record only when a *compatible* r
 non-null values agree, and the kept record takes the other's non-null values. Identical records within one window, or in
 windows that share no text, are kept, because an invoice can legitimately repeat a line.
 
+Every window after the first is also shown the document's opening, up to 512 tokens and at most half a window, as
+context for values that apply to every record. An invoice states its number and supplier once, at the top. Without the
+opening, records past the first window came back with those fields null, because the prompt forbids guessing. The model
+takes such values from the opening only where the excerpt does not state them, and is told never to extract a record
+from it. The cap of half a window keeps the opening inside the first window and before the second, so a record in it is
+extracted once.
+
 **7. Malformed output fails the document, not the run.** `RecordExtractor.extract` catches `ValueError` around each
 model call and returns a `DocumentExtractionResult` with a `failure_reason`. A document fails as a whole, never with the
 records of the windows that worked, because a partial list would read as complete. Infrastructure errors still raise.
@@ -73,6 +80,9 @@ records of the windows that worked, because a partial list would read as complet
 - **Letting the model return free-form JSON and parsing it leniently.** It abandons the strict path every other caller
   uses and moves validation into hand-written code.
 - **Deduplicating on value equality across all windows.** It collapses genuinely repeated lines.
+- **Filling null fields after extraction from values that are constant across the document's records.** A field set on
+  only one line, such as a discount, would be copied to every record. The model can tell a header value from a line
+  value; a post-processing rule cannot.
 - **Passing only the schema to extraction.** The filter then has to be smuggled into field descriptions, which models do
   not reliably act on.
 
@@ -88,6 +98,9 @@ records of the windows that worked, because a partial list would read as complet
 
 - **Windows sized by output are small.** On an 8192-token output limit a window holds about 4000 tokens, so a long
   document costs many calls.
+- **A shared value must sit in the opening.** A value stated once in the middle of a long document, such as a section
+  heading, still reaches only the records of its own window. A document that bundles several invoices may lend the
+  first one's header to later records whose excerpt does not restate theirs.
 - **Compatible-record matching can merge two distinct lines** that sit in adjacent windows and share every known value.
 - **Page provenance is not available yet.** Parsed text carries no page boundaries, so `RecordProvenance.page` stays
   `None` until ingestion records them.

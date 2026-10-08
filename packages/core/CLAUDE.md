@@ -601,7 +601,8 @@ read no agent configuration:
   filters never become fields. The document must be loaded whole.
 - **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
   half the output limit, because the records come back as JSON. `RecordMerger` drops overlap copies between adjacent
-  windows only.
+  windows only. Every later window is also shown the document's opening (`DOCUMENT_OPENING_TOKENS`, at most half a
+  window), so header values such as an invoice number reach records far below the header.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
 
