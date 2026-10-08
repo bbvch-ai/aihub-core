@@ -39,15 +39,16 @@ rows read correctly side by side. A value keeps its method until it changes: an 
    the pglz rows of **every** collection table in SQL, 50 rows at a time by primary key:
    `SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. The round
    trip builds a new value with the same bytes, which PostgreSQL compresses with the new default. It runs `VACUUM` every
-   500 rows so the replaced row versions' space is reused, and `VACUUM (ANALYZE)` at the end. It refuses to run while the
-   server default is not lz4, and it skips collections that have no pglz rows left.
+   500 rows, or every 2% of the collection's pglz rows when that is more, so the replaced row versions' space is reused
+   without a full pass over every index after each 500 rows of a large collection; and `VACUUM (ANALYZE)` at the end. It
+   refuses to run while the server default is not lz4, and it skips collections that have no pglz rows left.
 
 The rewrite writes DocumentDB's tables directly instead of going through FerretDB. A FerretDB-level rewrite would need a
 visible change to each document (set a temporary field, then remove it). MongoEngine entities reject unknown fields
 unless they opt out (`AgentConfigEntityDocument` does not), so a reader catching a row in between, or a run interrupted
 in between, would break reads. Going through FerretDB was also about ten times slower per MB on the dev stack (258 s for
-534 MB against 31 s for 690 MB). The SQL round trip changes no byte of any document, which the integration test
-checks against raw BSON, and selecting only pglz rows makes an interrupted run resume where it stopped.
+534 MB against 31 s for 690 MB). The SQL round trip changes no byte of any document, which the integration test checks
+against raw BSON, and selecting only pglz rows makes an interrupted run resume where it stopped.
 
 Rejected alternatives:
 

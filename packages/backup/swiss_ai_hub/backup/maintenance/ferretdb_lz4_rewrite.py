@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from typing import override
 
@@ -14,6 +15,9 @@ _BATCH_SIZE = 50
 # Every write leaves the old row version behind; vacuuming this often lets later batches reuse that space, where one
 # VACUUM at the end let the table grow by most of its size.
 _VACUUM_EVERY_BATCHES = 10
+# With random ids a batch's rows sit on as many pages, past VACUUM's 2% bypass, so each VACUUM reads every index in
+# full. Spacing them by a share of the collection caps those passes at about fifty however large it is.
+_VACUUM_EVERY_SHARE = 0.02
 _TABLES_SQL = text(
     "SELECT database_name, collection_name, collection_id FROM documentdb_api_catalog.collections "
     "WHERE view_definition IS NULL AND to_regclass('documentdb_data.documents_' || collection_id) IS NOT NULL "
@@ -77,7 +81,7 @@ class FerretdbLz4RewriteHandler(MaintenanceHandler):
                 continue
             counts["pglz_rows_before"] += pglz_rows
             counts["bytes_before"] += self._size(conn, table)
-            counts["rows_rewritten"] += self._rewrite(conn, table)
+            counts["rows_rewritten"] += self._rewrite(conn, table, int(collection_id), pglz_rows)
             counts["pglz_rows_after"] += self._pglz_rows(conn, table)
             counts["bytes_after"] += self._size(conn, table)
             rewritten.append(f"{database_name}.{collection_name}")
@@ -90,35 +94,50 @@ class FerretdbLz4RewriteHandler(MaintenanceHandler):
         }
 
     @staticmethod
-    def _rewrite(conn: Connection, table: str) -> int:
-        """Rows are addressed by their primary key, and each batch rechecks that a row is still pglz, so a row that
-        FerretDB replaced meanwhile is left as written. DocumentDB's bson operators are outside the search path, hence
-        the qualified `OPERATOR(documentdb_core.=)`."""
-        keys = conn.execute(
-            text(
-                f"SELECT shard_key_value, documentdb_core.bson_to_bytea(object_id) FROM {table} "
-                "WHERE pg_column_compression(document) = 'pglz' ORDER BY shard_key_value, object_id"
-            )
-        ).all()
+    def _rewrite(conn: Connection, table: str, shard_key_value: int, pglz_rows: int) -> int:
+        """Walks the primary key from the last rewritten row, so every batch is an index lookup and the table is read
+        once; joining the batch's keys as rows let the planner hash-join them against a scan of the whole table, once
+        per batch. An unsharded collection stores its collection id as every row's shard key (the table's CHECK
+        constraint); a row outside it would stay pglz and fail the run.
+
+        Each batch rechecks that a row is still pglz, so a row that FerretDB replaced meanwhile is left as written.
+        DocumentDB's bson operators are outside the search path, hence the qualified `OPERATOR(documentdb_core.=)`."""
+        vacuum_every = max(_VACUUM_EVERY_BATCHES, math.ceil(pglz_rows * _VACUUM_EVERY_SHARE / _BATCH_SIZE))
         rewritten = 0
-        for batch_number, index in enumerate(range(0, len(keys), _BATCH_SIZE), start=1):
-            batch = keys[index : index + _BATCH_SIZE]
+        last_key: bytes | None = None
+        batch_number = 0
+        while keys := FerretdbLz4RewriteHandler._next_pglz_keys(conn, table, shard_key_value, last_key):
+            batch_number += 1
             rewritten += conn.execute(
                 text(
-                    f"UPDATE {table} AS d "
-                    "SET document = documentdb_core.bson_from_bytea(documentdb_core.bson_to_bytea(d.document)) "
-                    "FROM (SELECT unnest(CAST(:shards AS bigint[])) AS shard_key_value, "
-                    "documentdb_core.bson_from_bytea(unnest(CAST(:ids AS bytea[]))) AS object_id) AS batch "
-                    "WHERE d.shard_key_value = batch.shard_key_value "
-                    "AND d.object_id OPERATOR(documentdb_core.=) batch.object_id "
-                    "AND pg_column_compression(d.document) = 'pglz'"
+                    f"UPDATE {table} "
+                    "SET document = documentdb_core.bson_from_bytea(documentdb_core.bson_to_bytea(document)) "
+                    "WHERE shard_key_value = :shard_key_value "
+                    "AND object_id OPERATOR(documentdb_core.=) "
+                    "ANY (ARRAY(SELECT documentdb_core.bson_from_bytea(unnest(CAST(:ids AS bytea[]))))) "
+                    "AND pg_column_compression(document) = 'pglz'"
                 ),
-                {"shards": [shard for shard, _ in batch], "ids": [object_id for _, object_id in batch]},
+                {"shard_key_value": shard_key_value, "ids": keys},
             ).rowcount
-            if batch_number % _VACUUM_EVERY_BATCHES == 0:
+            last_key = keys[-1]
+            if batch_number % vacuum_every == 0:
                 conn.execute(text(f"VACUUM {table}"))
         conn.execute(text(f"VACUUM (ANALYZE) {table}"))
         return rewritten
+
+    @staticmethod
+    def _next_pglz_keys(conn: Connection, table: str, shard_key_value: int, after: bytes | None) -> list[bytes]:
+        after_last_key = "AND object_id OPERATOR(documentdb_core.>) documentdb_core.bson_from_bytea(:after) "
+        return list(
+            conn.execute(
+                text(
+                    f"SELECT documentdb_core.bson_to_bytea(object_id) FROM {table} "
+                    f"WHERE shard_key_value = :shard_key_value {after_last_key if after is not None else ''}"
+                    "AND pg_column_compression(document) = 'pglz' ORDER BY object_id LIMIT :limit"
+                ),
+                {"shard_key_value": shard_key_value, "after": after, "limit": _BATCH_SIZE},
+            ).scalars()
+        )
 
     @staticmethod
     def _pglz_rows(conn: Connection, table: str) -> int:
