@@ -232,6 +232,27 @@ unaffected.
 foreign Postgres image without the extension still work — repack reports a clean skip in the run metadata; cleanup works
 unconditionally.
 
+### Knowledge content search index
+
+Two more jobs keep the index the knowledge content search uses for exact terms (see ADR
+`2026_10_08_trigram_index_for_knowledge_content_search`):
+
+- **`ferretdb_text_index_job`** — daily at 5 AM. Builds a trigram index on the text of every knowledge database that has
+  none yet, on FerretDB's PostgreSQL, and grants the search's read-only role `aihub_text_search` access to that
+  knowledge table only. Builds run with `CREATE INDEX CONCURRENTLY`: FerretDB keeps reading and writing, and a build
+  takes about one minute per 500 MB of text.
+- **`ferretdb_text_index_rebuild_job`** — manual only. Rebuilds every index with `REINDEX INDEX CONCURRENTLY` to reclaim
+  space after heavy re-ingestion.
+
+The search falls back to a full scan wherever an index is missing, so results never depend on the job having run, only
+their speed does. After **upgrading the `postgres_ferretdb` image**, the search scans every database until the next run
+has checked DocumentDB's text extraction and rebuilt the indexes; launch `ferretdb_text_index_job` by hand to shorten
+that. A run that fails with "changed how it extracts text" leaves every index untouched and the search on the scan: the
+new DocumentDB version needs a code change before the index is used again.
+
+The role is created by the one-shot `ferretdb-init` container on every deploy, from `KNOWLEDGE_TEXT_INDEX_PASSWORD`.
+That variable is required in the deployment's environment file; an empty value turns the index off.
+
 ### Configuration
 
 ```bash

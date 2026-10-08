@@ -104,13 +104,6 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def first_by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self | None:
-        """Safe to call from worker threads, unlike the `switch_db` readers: see `list_ingested_summaries`."""
-        son = get_db(db_alias)[cls._meta["collection"]].find_one({"_id": doc_id, _RAW_NAMESPACE: namespace})
-        return None if son is None else cls._from_son(son)
-
-    @classmethod
-    @trace_fn
     def list_ingested_summaries(cls, db_alias: str, namespace: str) -> list["RefDoc"]:
         """Every fully ingested document of a namespace, ordered by source and loaded with its metadata only.
 
@@ -170,14 +163,106 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def ingested_with_text_by_ids(cls, db_alias: str, namespace: str, ids: list[str], max_time_ms: int) -> list[Self]:
-        """Metadata and parsed text of the given documents that are still fully ingested, never the `text_resource`
-        copy; a document that turned pending since its id was found is left out."""
+    def search_ingested_ids_among(
+        cls,
+        db_alias: str,
+        namespace: str,
+        pattern: str,
+        options: str,
+        candidate_ids: list[str],
+        max_time_ms: int,
+        with_source: bool = False,
+    ) -> list[Self]:
+        """`search_ingested_ids`, restricted to candidates the content search's trigram index found.
+
+        The id filter comes first, so the primary key index picks the rows and only those are decompressed; the regex
+        and the pending checks then decide exactly as the scan would.
+        """
         rows = (
             get_db(db_alias)[cls._meta["collection"]]
             .find(
                 {
-                    "_id": {"$in": ids},
+                    "_id": {"$in": candidate_ids},
+                    _RAW_TEXT: {"$regex": pattern, "$options": options},
+                    _RAW_NAMESPACE: namespace,
+                    _RAW_IS_INGESTED: {"$ne": False},
+                    "__type__": {"$ne": "placeholder"},
+                },
+                {_RAW_SOURCE: 1} if with_source else {"_id": 1},
+            )
+            .sort("_id", 1)
+            .max_time_ms(max_time_ms)
+        )
+        return [cls._from_son(son) for son in rows]
+
+    @classmethod
+    @trace_fn
+    def first_with_text_range(
+        cls, db_alias: str, doc_id: str, namespace: str, start: int | None, end: int | None
+    ) -> tuple[Self, int, int] | None:
+        """A document's metadata and one character range of its parsed text, cut in the database.
+
+        Returns the document, whose text is the range, the full text's length and the range's start. Bounds follow
+        Python slicing, negative ones counted from the end, and the database counts code points as Python does, so a
+        caller reading a large document piece by piece never receives the rest of it, nor the `text_resource` copy.
+        Safe to call from worker threads, unlike the `switch_db` readers: see `list_ingested_summaries`.
+        """
+        rows = get_db(db_alias)[cls._meta["collection"]].aggregate(
+            [
+                {"$match": {"_id": doc_id, _RAW_NAMESPACE: namespace}},
+                {
+                    "$project": {
+                        "__type__": 1,
+                        "__data__.metadata": 1,
+                        "__data__.mimetype": 1,
+                        "full_text": {"$ifNull": [f"${_RAW_TEXT}", ""]},
+                        "text_length": {"$strLenCP": {"$ifNull": [f"${_RAW_TEXT}", ""]}},
+                    }
+                },
+                {"$addFields": {"range_start": cls._range_bound(start, 0), "range_end": cls._range_bound(end, None)}},
+                {
+                    "$project": {
+                        "__type__": 1,
+                        "__data__.metadata": 1,
+                        "__data__.mimetype": 1,
+                        "__data__.text": {
+                            "$substrCP": [
+                                "$full_text",
+                                "$range_start",
+                                {"$max": [0, {"$subtract": ["$range_end", "$range_start"]}]},
+                            ]
+                        },
+                        "text_length": 1,
+                        "range_start": 1,
+                    }
+                },
+            ]
+        )
+        son = next(rows, None)
+        if son is None:
+            return None
+        text_length, range_start = son.pop("text_length"), son.pop("range_start")
+        return cls._from_son(son), text_length, range_start
+
+    @staticmethod
+    def _range_bound(bound: int | None, default: int | None) -> int | str | dict[str, Any]:
+        """A slice bound as a database expression over the text's length; a None default means the length itself."""
+        if bound is None:
+            return "$text_length" if default is None else default
+        if bound < 0:
+            return {"$max": [0, {"$add": ["$text_length", bound]}]}
+        return {"$min": [bound, "$text_length"]}
+
+    @classmethod
+    @trace_fn
+    def first_ingested_with_text(cls, db_alias: str, namespace: str, doc_id: str, max_time_ms: int) -> Self | None:
+        """Metadata and parsed text of a document that is still fully ingested, never the `text_resource` copy; a
+        document that turned pending since its id was found is None."""
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {
+                    "_id": doc_id,
                     _RAW_NAMESPACE: namespace,
                     _RAW_IS_INGESTED: {"$ne": False},
                     "__type__": {"$ne": "placeholder"},
@@ -185,8 +270,9 @@ class RefDoc(Document):
                 {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1, _RAW_TEXT: 1},
             )
             .max_time_ms(max_time_ms)
+            .limit(1)
         )
-        return [cls._from_son(son) for son in rows]
+        return next((cls._from_son(row) for row in rows), None)
 
     @classmethod
     @trace_fn

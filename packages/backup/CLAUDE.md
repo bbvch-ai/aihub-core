@@ -45,7 +45,7 @@ packages/backup/swiss_ai_hub/backup/
 │   └── nats.py               # nats CLI stream backup/restore
 └── maintenance/              # Postgres maintenance handlers (run() returns MaintenanceResult)
     ├── base.py                       # MaintenanceHandler ABC, MaintenanceResult
-    ├── postgres_engine.py            # SQLAlchemy Engine factory (NullPool, direct postgres connect)
+    ├── postgres_engine.py            # SQLAlchemy Engine factories (dagster DB; FerretDB's PostgreSQL)
     ├── dagster_cleanup_sql.py        # Shared CTE-based DELETE with LIMIT (caps WAL spike)
     ├── dagster_debug_logs.py         # DELETE level=10 user logs older than retention
     ├── dagster_info_logs.py          # DELETE level=20 user logs older than retention
@@ -53,7 +53,8 @@ packages/backup/swiss_ai_hub/backup/
     ├── dagster_unimportant_events.py # DELETE ENGINE_EVENT/HANDLED_OUTPUT/LOADED_INPUT/MAT_PLANNED/STEP_OUTPUT
     ├── postgres_indexes.py           # CREATE INDEX CONCURRENTLY IF NOT EXISTS — idempotent
     ├── postgres_autovacuum_tune.py   # ALTER TABLE SET autovacuum_vacuum_scale_factor — idempotent
-    └── postgres_repack.py            # subprocess pg_repack -t event_logs/runs/job_ticks
+    ├── postgres_repack.py            # subprocess pg_repack -t event_logs/runs/job_ticks
+    └── ferretdb_text_index.py        # Trigram index per knowledge database for the content search (FerretDB's PG)
 ```
 
 ## Key Patterns
@@ -83,13 +84,14 @@ packages/backup/swiss_ai_hub/backup/
 
 The maintenance subsystem keeps the platform Postgres bounded over time so deployments don't accumulate `event_logs`
 indefinitely. It lives **inside the backup Dagster instance** because backup is already the platform's "operate on the
-storage layer" plane. Three jobs share one `maintenance_session` asset:
+storage layer" plane. Four jobs share one `maintenance_session` asset:
 
 | Job                           | Schedule                   | Purpose                                                                                                           | Stops containers? |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- |
 | `dagster_cleanup_job`         | Sundays 3 AM               | Prune verbose Python logs + transient framework events from `event_logs`; ensure cleanup indexes; tune autovacuum | No (online-safe)  |
 | `postgres_repack_job`         | First Sunday of month 4 AM | `pg_repack` on `event_logs`, `runs`, `job_ticks` to return disk to OS                                             | No (online-safe)  |
 | `daily_backup_job` (existing) | Daily 1 AM                 | Full backup with container stop/restart                                                                           | Yes               |
+| `ferretdb_text_index_job`     | Daily 5 AM                 | Build missing knowledge-database trigram indexes on FerretDB's PostgreSQL; rebuild after a DocumentDB upgrade     | No (online-safe)  |
 
 **UI safety guarantees** (these are load-bearing — do not change without re-reviewing the docs):
 
@@ -130,6 +132,24 @@ failing. Operators can install `pg_repack` later and the next monthly run picks 
 
 **Reference**: docs.dagster.io/deployment/troubleshooting/database-tuning is the canonical recipe this subsystem
 implements. The cleanup SQL targets exactly the event types the docs recommend; the indexes match exactly.
+
+## Content Search Text Index (FerretDB)
+
+`ferretdb_text_index_job` keeps one `pg_trgm` GIN index, `aihub_text_trgm_<collection_id>`, on every knowledge
+database's `documents-data` table in FerretDB's PostgreSQL, built over
+`documentdb_core.bson_get_value_text(document, '__data__.text')`. `KnowledgeTextIndex` in `packages/core` reads it
+through the `aihub_text_search` role that the `ferretdb-init` container creates. Each run:
+
+1. creates `pg_trgm` if missing;
+2. checks `bson_get_value_text` against a canary text and fails, touching nothing, if DocumentDB changed its output;
+3. drops an invalid index (an interrupted `CONCURRENTLY` build), creates missing ones with `CREATE INDEX CONCURRENTLY`,
+   and runs `REINDEX INDEX CONCURRENTLY` on any index stamped with another `documentdb_core` version;
+4. stamps each index `COMMENT 'documentdb_core <extversion>'` and grants the role `SELECT` on each indexed table only.
+
+The search ignores an index whose stamp is not the running version, so after a `postgres_ferretdb` image bump it scans
+until this job has run; launch it by hand to shorten that. `ferretdb_text_index_rebuild_job` (manual only) rebuilds
+every index to reclaim space. Index name, stamp format and role name are shared with `KnowledgeTextIndex` in
+`packages/core`; change both together. See ADR `2026_10_08_trigram_index_for_knowledge_content_search`.
 
 ## DocumentDB Catalog Maintenance
 

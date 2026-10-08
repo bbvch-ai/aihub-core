@@ -94,6 +94,7 @@ CONFIG_SPECS = [
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-openwebui.sh.j2", "configs/openwebui", "init-openwebui.sh"),
+    ("templates/configs/ferretdb-init.sh.j2", "configs/ferretdb", "init-ferretdb.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
     ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
     # Keycloak theme - static files (no stage/hardware variations)
@@ -207,6 +208,7 @@ DOCKER_LICENSE_ALIASES = {
     "backup-daemon": "dagster",
     "otel-collector": "opentelemetry-collector-contrib",
     "openwebui-init": "postgres",
+    "ferretdb-init": "postgres",
     "keycloak-config": "keycloak-config-cli",
 }
 

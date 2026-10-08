@@ -61,11 +61,16 @@ class KnowledgeDocumentReader:
     ) -> KnowledgeDocument:
         """Load a document's parsed text by id, searching only the given collections."""
         for resolved in await KnowledgeCollectionResolver.resolve_all(collections):
-            ref_doc = await asyncio.to_thread(
-                RefDoc.first_by_id_and_namespace, resolved.db_name, document_id, resolved.collection.namespace_name
+            loaded = await asyncio.to_thread(
+                RefDoc.first_with_text_range,
+                resolved.db_name,
+                document_id,
+                resolved.collection.namespace_name,
+                start,
+                end,
             )
-            if ref_doc is not None:
-                return KnowledgeDocumentReader._to_document(ref_doc, resolved, document_id, start, end)
+            if loaded is not None:
+                return KnowledgeDocumentReader._to_document(loaded, resolved, document_id)
         raise KnowledgeDocumentNotFoundError(document_id, collections)
 
     @staticmethod
@@ -86,20 +91,24 @@ class KnowledgeDocumentReader:
         target = await asyncio.to_thread(KnowledgeCollectionResolver.resolve, collection)
 
         normalized_path = unicodedata.normalize("NFC", path).lstrip("/")
-        ref_doc = await asyncio.to_thread(
-            RefDoc.first_by_id_and_namespace,
+        loaded = await asyncio.to_thread(
+            RefDoc.first_with_text_range,
             target.db_name,
             source_to_doc_id(target.source_for(normalized_path)),
             target.collection.namespace_name,
+            start,
+            end,
         )
-        if ref_doc is None:
-            ref_doc = await KnowledgeDocumentReader._find_by_normalized_path(target, normalized_path)
-        if ref_doc is None:
+        if loaded is None:
+            loaded = await KnowledgeDocumentReader._find_by_normalized_path(target, normalized_path, start, end)
+        if loaded is None:
             raise KnowledgeDocumentNotFoundError(path, collections)
-        return KnowledgeDocumentReader._to_document(ref_doc, target, path, start, end)
+        return KnowledgeDocumentReader._to_document(loaded, target, path)
 
     @staticmethod
-    async def _find_by_normalized_path(resolved: ResolvedKnowledgeCollection, normalized_path: str) -> RefDoc | None:
+    async def _find_by_normalized_path(
+        resolved: ResolvedKnowledgeCollection, normalized_path: str, start: int | None, end: int | None
+    ) -> tuple[RefDoc, int, int] | None:
         """Ids hash the stored path byte for byte, so a file stored with decomposed umlauts is only found by comparing
         normalised paths."""
         ref_docs = await asyncio.to_thread(
@@ -116,17 +125,21 @@ class KnowledgeDocumentReader:
         if match is None:
             return None
         return await asyncio.to_thread(
-            RefDoc.first_by_id_and_namespace, resolved.db_name, str(match.id), resolved.collection.namespace_name
+            RefDoc.first_with_text_range,
+            resolved.db_name,
+            str(match.id),
+            resolved.collection.namespace_name,
+            start,
+            end,
         )
 
     @staticmethod
     def _to_document(
-        ref_doc: RefDoc,
+        loaded: tuple[RefDoc, int, int],
         resolved: ResolvedKnowledgeCollection,
         reference: str,
-        start: int | None,
-        end: int | None,
     ) -> KnowledgeDocument:
+        ref_doc, text_length, start = loaded
         if ref_doc.data.metadata.is_ingested is False or ref_doc.type_ == "placeholder":
             raise KnowledgeDocumentPendingError(reference, resolved.collection)
-        return KnowledgeDocument.from_ref_doc(ref_doc, resolved, start, end)
+        return KnowledgeDocument.from_text_range(ref_doc, resolved, text_length, start)
