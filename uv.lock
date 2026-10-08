@@ -5956,6 +5956,7 @@ dependencies = [
     { name = "s3fs" },
     { name = "scim2-client" },
     { name = "starlette" },
+    { name = "swiss-ai-hub-jambo" },
     { name = "tabulate" },
     { name = "transformers" },
 ]
@@ -6033,6 +6034,7 @@ requires-dist = [
     { name = "s3fs", specifier = ">=2024.10.0,<2025.0.0" },
     { name = "scim2-client", specifier = ">=0.7.5" },
     { name = "starlette", specifier = ">=1.0.1" },
+    { name = "swiss-ai-hub-jambo", specifier = ">=0.5.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "transformers", specifier = ">=4.57.3" },
 ]
