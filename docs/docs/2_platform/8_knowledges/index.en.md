@@ -150,8 +150,8 @@ part of the document instead. Four keys set the document's own fields:
 
 | Key                   | Becomes                                                    | Accepted values                                                                                          |
 | --------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `title`               | The document title, in the knowledge area and on citations | Non-empty text                                                                                           |
-| `url`                 | The link a citation opens                                  | `http://` or `https://` links                                                                            |
+| `title`               | The document title, in the knowledge area and on citations | Non-empty text, up to 500 characters                                                                     |
+| `url`                 | The link a citation opens                                  | `http://` or `https://` links, up to 2,048 characters                                                    |
 | `created` / `updated` | The document's creation and update dates                   | ISO 8601 dates such as `2026-09-30` or `2026-09-30T14:05:00+02:00`; a time without a zone is read as UTC |
 
 Every other key is stored as metadata on the document and on each of its chunks, where a retriever can filter on it:

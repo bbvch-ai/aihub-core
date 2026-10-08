@@ -46,7 +46,7 @@ class TestFindingTheBlock:
     @pytest.mark.parametrize(
         "text",
         [
-            "﻿---\ntitle: Report\n---\nBody",
+            "\ufeff---\ntitle: Report\n---\nBody",
             "---\r\ntitle: Report\r\n---\r\nBody",
             "---\ntitle: Report\n...\nBody",
             "---  \ntitle: Report\n---\t\nBody",
@@ -121,6 +121,26 @@ class TestReservedFields:
 
         assert parsed.url is None
         assert "url" in parsed.skipped
+
+    def test_a_title_or_link_too_long_to_store_on_every_chunk_is_skipped(self) -> None:
+        """Both are stored twice per chunk and the title is embedded with each, so an unbounded one could fail the
+        whole document instead of one key."""
+        title = "t" * (MarkdownFrontmatter.MAX_TITLE_CHARACTERS + 1)
+        url = "https://example.com/" + "p" * MarkdownFrontmatter.MAX_URL_CHARACTERS
+
+        parsed = _parse(f"title: {title}\nurl: {url}\n")
+
+        assert (parsed.title, parsed.url) == (None, None)
+        assert "longer than" in parsed.skipped["title"]
+        assert "longer than" in parsed.skipped["url"]
+
+    def test_a_title_and_link_at_their_limits_are_kept(self) -> None:
+        title = "t" * MarkdownFrontmatter.MAX_TITLE_CHARACTERS
+        url = "https://example.com/" + "p" * (MarkdownFrontmatter.MAX_URL_CHARACTERS - len("https://example.com/"))
+
+        parsed = _parse(f"title: {title}\nurl: {url}\n")
+
+        assert (parsed.title, parsed.url) == (title, url)
 
     @pytest.mark.parametrize(
         ("value", "expected"),

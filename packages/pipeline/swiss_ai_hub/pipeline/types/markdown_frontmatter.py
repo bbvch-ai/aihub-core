@@ -58,9 +58,13 @@ class MarkdownFrontmatter(BaseModel):
     # Every chunk stores its metadata twice in Milvus' 64 KiB dynamic field (as keys and inside _node_content), next
     # to the platform's own keys and the chunk's relationships, so the frontmatter gets a small, fixed share.
     MAX_METADATA_BYTES: ClassVar[int] = 8192
+    # Outside that budget, the title is embedded with every chunk and both fields are stored twice per chunk, so an
+    # unbounded one could push chunks past the embedding model's input or Milvus' dynamic field and fail the document.
+    MAX_TITLE_CHARACTERS: ClassVar[int] = 500
+    MAX_URL_CHARACTERS: ClassVar[int] = 2048
     INT64_RANGE: ClassVar[range] = range(-(2**63), 2**63)
     BLOCK_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
-        r"\A﻿?---[ \t]*\r?\n(?P<yaml>.*?)^(?:---|\.\.\.)[ \t]*(?:\r?\n|\Z)", re.DOTALL | re.MULTILINE
+        r"\A\ufeff?---[ \t]*\r?\n(?P<yaml>.*?)^(?:---|\.\.\.)[ \t]*(?:\r?\n|\Z)", re.DOTALL | re.MULTILINE
     )
 
     body: Annotated[str, Field(description="The markdown after the block; this is what gets chunked and embedded.")]
@@ -129,14 +133,19 @@ class MarkdownFrontmatter(BaseModel):
     def _set_reserved(self, key: str, value: object) -> str | None:
         match key:
             case "title":
-                title = self._as_text(value)
-                if not title or not title.strip():
+                title = (self._as_text(value) or "").strip()
+                if not title:
                     return "title must be non-empty text"
-                self.title = title.strip()
+                if len(title) > self.MAX_TITLE_CHARACTERS:
+                    return f"title is longer than {self.MAX_TITLE_CHARACTERS} characters"
+                self.title = title
             case "url":
                 if not self._is_web_link(value):
                     return "url must be an http or https link"
-                self.url = str(value).strip()
+                url = str(value).strip()
+                if len(url) > self.MAX_URL_CHARACTERS:
+                    return f"url is longer than {self.MAX_URL_CHARACTERS} characters"
+                self.url = url
             case _:
                 timestamp = self._as_timestamp(value)
                 if timestamp is None:

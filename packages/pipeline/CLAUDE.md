@@ -497,7 +497,8 @@ The demo registers a `structured_demo` row in your dev Mongo's `source_pipelines
 ## Markdown Frontmatter
 
 A `.md` file's leading YAML block becomes document fields and filterable metadata instead of chunked text (#1953). It is
-the contract the [structured source pipeline](#structured-source-pipeline-stage-1-configured-per-database) writes its records in, and it applies to hand-uploaded markdown too.
+the contract the [structured source pipeline](#structured-source-pipeline-stage-1-configured-per-database) writes its
+records in, and it applies to hand-uploaded markdown too.
 
 **Where.** `ops/document/apply_markdown_frontmatter.py` runs in `documents_factory` right after parsing, so neither
 figure descriptions nor the table-refinement LLM see the YAML. It reads `.md` URIs only: converters emit markdown too,
@@ -513,8 +514,10 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 **Contract** (what a writer must produce):
 
 - `title` → `DOCUMENT_TITLE`, `url` → `SOURCE_ORIGIN` (http/https only, it becomes a citation href), `created`/`updated`
-  → `CREATED_AT`/`UPDATED_AT`. Dates are ISO 8601 only, naive = UTC; bare numbers are refused (seconds vs milliseconds).
-  **Writers should always emit ISO 8601 with an offset.** A field the block omits keeps the data lake value.
+  → `CREATED_AT`/`UPDATED_AT`. `title` is capped at 500 and `url` at 2,048 characters: both sit on every chunk, twice,
+  and the title is embedded with each, so an unbounded one could fail the whole document. Dates are ISO 8601 only, naive
+  = UTC; bare numbers are refused (seconds vs milliseconds). **Writers should always emit ISO 8601 with an offset.** A
+  field the block omits keeps the data lake value.
 - Every other key lands on the document and, through the chunker, on every node and summary node. Names are normalised
   (`normalize_key`: NFKD, ASCII, lowercase, runs of other characters → `_`, edge `_` trimmed, must start with a letter),
   because Milvus filter expressions and Mongo field names accept only plain identifiers and an admin must be able to
