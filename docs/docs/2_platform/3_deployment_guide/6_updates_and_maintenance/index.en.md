@@ -118,8 +118,8 @@ every run, so the update above creates the buckets a release adds. Only an updat
 docker compose up seaweedfs-init
 ```
 
-A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU document parse fails
-with `NoSuchBucket`. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired
+A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU and Office document
+parse fails with `NoSuchBucket`. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired
 entry is parsed again, so nothing needs a backup.
 
 The `sandbox-files` bucket holds the one-way mirror of every user's code-sandbox home (the files behind **My Files**).
