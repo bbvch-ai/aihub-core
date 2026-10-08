@@ -31,3 +31,10 @@ class ContextualizeConversationEvent(ControlAndDisplayEvent):
             "programmatic start, which skips inspection."
         ),
     ] = None
+    attached_file_names: Annotated[
+        list[str],
+        Field(
+            description="The names of the files the user attached to the conversation. The inspection is told about "
+            "them, since without them a question about a file's content reads as one about the assistant."
+        ),
+    ] = []

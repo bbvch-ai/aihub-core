@@ -18,6 +18,9 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pend
     KnowledgeDocumentPendingError,
 )
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_reader import KnowledgeDocumentReader
+from swiss_ai_hub.core.generative_ai.knowledge_documents.tests.integration.knowledge_document_seeder import (
+    KnowledgeDocumentSeeder,
+)
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry import MongoConnectionRegistry
@@ -25,7 +28,6 @@ from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
-from swiss_ai_hub.core.persistence.rag.documents.utils.id_utils import source_to_doc_id
 
 pytestmark = pytest.mark.integration
 
@@ -40,44 +42,6 @@ _BULK = BucketNamespacePair(bucket_name=_DB_A, namespace_name="bulk")
 _GONE = BucketNamespacePair(bucket_name=_DB_A, namespace_name="gone")
 _HR = BucketNamespacePair(bucket_name=_DB_B, namespace_name="hr")
 _NFD_PATH = unicodedata.normalize("NFD", "invoices/Prüfbericht-Ä.md")
-
-
-def _insert(
-    db_name: str,
-    namespace: str,
-    source: str,
-    text: str = "parsed text",
-    is_ingested: bool | None = True,
-    type_: str = "4",
-) -> str:
-    doc_id = source_to_doc_id(source)
-    metadata = {
-        "source": source,
-        "namespace": namespace,
-        "version": "1",
-        "created_at": 1735689600,
-        "updated_at": 1735689600,
-        "inserted_at": 1735689600,
-        "content_hash": "hash",
-        "type": "content",
-        "document_title": None,
-    }
-    if is_ingested is not None:
-        metadata["is_ingested"] = is_ingested
-    get_db(db_name)["documents-data"].insert_one(
-        {
-            "_id": doc_id,
-            "__type__": type_,
-            "__data__": {
-                "id_": doc_id,
-                "text": text,
-                "text_resource": {"text": text},
-                "mimetype": "text/plain",
-                "metadata": metadata,
-            },
-        }
-    )
-    return doc_id
 
 
 @pytest.fixture(autouse=True)
@@ -100,15 +64,23 @@ def knowledge_databases() -> Iterator[dict[str, str]]:
         get_db(db_name).client.drop_database(db_name)
 
     ids = {
-        "acme": _insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/q1/acme.pdf", text="ACME " * 1000),
-        "legacy": _insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2024/legacy.pdf", is_ingested=None),
-        "umlaut": _insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/{_NFD_PATH}"),
-        "pending": _insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/resync.pdf", is_ingested=False),
-        "placeholder": _insert(
+        "acme": KnowledgeDocumentSeeder.insert(
+            _DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/q1/acme.pdf", text="ACME " * 1000
+        ),
+        "legacy": KnowledgeDocumentSeeder.insert(
+            _DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2024/legacy.pdf", is_ingested=None
+        ),
+        "umlaut": KnowledgeDocumentSeeder.insert(_DB_A, "finance", f"s3://{_DB_A}/Finanzen/{_NFD_PATH}"),
+        "pending": KnowledgeDocumentSeeder.insert(
+            _DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/resync.pdf", is_ingested=False
+        ),
+        "placeholder": KnowledgeDocumentSeeder.insert(
             _DB_A, "finance", f"s3://{_DB_A}/Finanzen/invoices/2025/new.pdf", is_ingested=False, type_="placeholder"
         ),
-        "msa": _insert(_DB_A, "legal", f"s3://{_DB_A}/legal/contracts/msa.md"),
-        "hr_acme": _insert(_DB_B, "hr", f"s3://{_DB_B}/hr/invoices/2025/q1/acme.pdf", text="HR copy"),
+        "msa": KnowledgeDocumentSeeder.insert(_DB_A, "legal", f"s3://{_DB_A}/legal/contracts/msa.md"),
+        "hr_acme": KnowledgeDocumentSeeder.insert(
+            _DB_B, "hr", f"s3://{_DB_B}/hr/invoices/2025/q1/acme.pdf", text="HR copy"
+        ),
     }
     yield ids
 
@@ -283,7 +255,9 @@ async def test_load_by_path_from_a_collection_being_deleted_fails() -> None:
 async def test_lists_a_few_hundred_documents_in_one_call() -> None:
     large_text = "x" * 100_000
     for index in range(300):
-        _insert(_DB_A, "bulk", f"s3://{_DB_A}/bulk/batch-{index // 50:02d}/doc-{index:03d}.md", text=large_text)
+        KnowledgeDocumentSeeder.insert(
+            _DB_A, "bulk", f"s3://{_DB_A}/bulk/batch-{index // 50:02d}/doc-{index:03d}.md", text=large_text
+        )
 
     started = time.monotonic()
     listing = await KnowledgeDocumentReader.list_documents([_BULK])

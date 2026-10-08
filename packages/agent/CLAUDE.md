@@ -173,7 +173,9 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   gate** (inspection, the meta answer and its title), derives the query the turn is answered for (the last user message,
   or condensed when `condense_question` is on, then `StandaloneQuestionCondenserEvent` is displayed too), and titles the
   thread. The gate lives here on purpose: a blueprint cannot forget it, so detection can never race the pipeline. Pass
-  `message=None` for a programmatic start and inspection is skipped.
+  `message=None` for a programmatic start and inspection is skipped. The inspection is told the names of the message's
+  attached files: without them, a question about a file's content ("what does the User role do here?") reads as one
+  about the assistant, and the meta answer cannot see the file.
 - `compose(history, blocks)` → `ContextComposedEvent`, the history with the blocks merged behind the leading system
   messages within the input budget, in the order given. Displayed in the chat as what the model saw, so compose the
   prompt the model is actually sent: instructions in the leading system messages of `history`, never added after. When
@@ -192,7 +194,9 @@ completion is what guarantees it is published before the run tears down (ADR `20
 **`AttachedFiles`** (needs `AttachedFilesFields`: an embedding and a reranking model, preset to `embedding/bge-m3` and
 `reranker/bge`, plus the deployment-fixed `share_of_input_budget` and `shortlist_size`):
 `read(files, history, query, reserve_tokens)` → `AttachedFiles.Contents` (`AttachedFilesReadEvent`), empty when nothing
-readable is attached (images stay image content). Each file is split with the ingestion pipeline's
+readable is attached (images stay image content). Files are read two at a time (`AttachedFileReader.read_all`), since
+MinerU serves three conversions at once and a dozen PDFs sent together ran out of their 503 retries side by side. Each
+file is split with the ingestion pipeline's
 `MarkdownStructuralNodeParser`, so sections keep their headings and tables split between rows, and rendered with
 `combine_nodes_in_order` as a `REFERENCE_DOCUMENT`, exactly like retrieved knowledge; notes the model must pass on (a
 file cut down, or unreadable) follow in a second message. The files share the room left after `history` and

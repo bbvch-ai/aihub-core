@@ -1,3 +1,5 @@
+from dagster import ScheduleDefinition
+
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
 
@@ -141,6 +143,8 @@ def test_maintenance_definitions_has_all_cleanup_assets() -> None:
     assert "maintenance/cleanup_finalize" in all_keys
     assert "maintenance/postgres_repack" in all_keys
     assert "maintenance/repack_finalize" in all_keys
+    assert "maintenance/ferretdb_lz4_rewrite" in all_keys
+    assert "maintenance/lz4_rewrite_finalize" in all_keys
 
 
 def test_maintenance_jobs_registered() -> None:
@@ -149,6 +153,16 @@ def test_maintenance_jobs_registered() -> None:
     repack = defs.get_job_def("postgres_repack_job")
     assert cleanup.name == "dagster_cleanup_job"
     assert repack.name == "postgres_repack_job"
+
+
+def test_lz4_rewrite_job_is_launched_by_hand_only() -> None:
+    defs = backup_definitions()
+    job = defs.get_job_def("ferretdb_lz4_rewrite_job")
+    selected = {key.to_user_string() for key in job.asset_layer.selected_asset_keys}
+
+    assert selected == {"maintenance/session", "maintenance/ferretdb_lz4_rewrite", "maintenance/lz4_rewrite_finalize"}
+    scheduled = {schedule.job_name for schedule in defs.schedules or [] if isinstance(schedule, ScheduleDefinition)}
+    assert "ferretdb_lz4_rewrite_job" not in scheduled
 
 
 def test_maintenance_handlers_depend_on_session() -> None:
@@ -163,6 +177,7 @@ def test_maintenance_handlers_depend_on_session() -> None:
         "maintenance/dagster_warning_logs",
         "maintenance/dagster_unimportant_events",
         "maintenance/postgres_repack",
+        "maintenance/ferretdb_lz4_rewrite",
     ]
     for key_str in handler_keys:
         matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
@@ -206,7 +221,13 @@ def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
     QueuedRunCoordinator serializes them. Without the tag, a cleanup tick could
     fire mid-backup (postgres stopped → cleanup queries fail)."""
     defs = backup_definitions()
-    for job_name in ("backup_asset_job", "full_restore_job", "dagster_cleanup_job", "postgres_repack_job"):
+    for job_name in (
+        "backup_asset_job",
+        "full_restore_job",
+        "dagster_cleanup_job",
+        "postgres_repack_job",
+        "ferretdb_lz4_rewrite_job",
+    ):
         job = defs.get_job_def(job_name)
         assert job.tags.get("postgres-mutex") == "true", (
             f"{job_name} is missing the postgres-mutex tag (got tags: {job.tags})"

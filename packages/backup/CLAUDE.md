@@ -33,7 +33,7 @@ packages/backup/swiss_ai_hub/backup/
 │   │   ├── maintenance_service_factory.py  # Per-handler: handler.run() — failures isolated
 │   │   └── maintenance_finalize_factory.py # Fan-in: aggregate results
 │   ├── resources/           # Dagster ConfigurableResource wrappers (incl. MaintenanceEngineResource)
-│   ├── jobs/factory.py      # backup_asset_job, restore_asset_job, cleanup_asset_job, repack_asset_job
+│   ├── jobs/factory.py      # backup, restore, cleanup, repack, ferretdb_lz4_rewrite asset jobs
 │   └── schedules/factory.py # daily_backup, weekly_cleanup, monthly_repack (all Europe/Zurich)
 ├── services/                 # Backup handlers (one per stateful service)
 │   ├── base.py               # BackupHandler ABC (backup + restore methods)
@@ -45,7 +45,8 @@ packages/backup/swiss_ai_hub/backup/
 │   └── nats.py               # nats CLI stream backup/restore
 └── maintenance/              # Postgres maintenance handlers (run() returns MaintenanceResult)
     ├── base.py                       # MaintenanceHandler ABC, MaintenanceResult
-    ├── postgres_engine.py            # SQLAlchemy Engine factory (NullPool, direct postgres connect)
+    ├── postgres_engine.py            # SQLAlchemy Engine factories (NullPool): dagster DB, FerretDB's postgres
+    ├── ferretdb_lz4_rewrite.py       # One-off: recompress every FerretDB collection's pglz rows as lz4, in SQL
     ├── dagster_cleanup_sql.py        # Shared CTE-based DELETE with LIMIT (caps WAL spike)
     ├── dagster_debug_logs.py         # DELETE level=10 user logs older than retention
     ├── dagster_info_logs.py          # DELETE level=20 user logs older than retention
@@ -83,13 +84,14 @@ packages/backup/swiss_ai_hub/backup/
 
 The maintenance subsystem keeps the platform Postgres bounded over time so deployments don't accumulate `event_logs`
 indefinitely. It lives **inside the backup Dagster instance** because backup is already the platform's "operate on the
-storage layer" plane. Three jobs share one `maintenance_session` asset:
+storage layer" plane. Four jobs share one `maintenance_session` asset:
 
 | Job                           | Schedule                   | Purpose                                                                                                           | Stops containers? |
 | ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- |
 | `dagster_cleanup_job`         | Sundays 3 AM               | Prune verbose Python logs + transient framework events from `event_logs`; ensure cleanup indexes; tune autovacuum | No (online-safe)  |
 | `postgres_repack_job`         | First Sunday of month 4 AM | `pg_repack` on `event_logs`, `runs`, `job_ticks` to return disk to OS                                             | No (online-safe)  |
 | `daily_backup_job` (existing) | Daily 1 AM                 | Full backup with container stop/restart                                                                           | Yes               |
+| `ferretdb_lz4_rewrite_job`    | None — launched by hand    | Recompress every FerretDB collection's existing pglz rows as lz4, once per deployment                             | No (online-safe)  |
 
 **UI safety guarantees** (these are load-bearing — do not change without re-reviewing the docs):
 
@@ -127,6 +129,17 @@ only fails the run if ANY handler reported `succeeded=False`. One failed cleanup
 **`pg_repack` graceful degradation**: If the `pg_repack` binary or extension is missing (e.g., Postgres image hasn't
 been updated yet), `PostgresRepackHandler.run()` returns `succeeded=True` with `metadata={"skipped": ...}` rather than
 failing. Operators can install `pg_repack` later and the next monthly run picks it up.
+
+**lz4 rewrite (`FerretdbLz4RewriteHandler`)**: unlike the others it targets `postgres-ferretdb` (with the
+`MONGO_USERNAME` superuser), not the dagster DB, and it is a one-off, so it is never scheduled. It refuses to run unless
+`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in
+`documentdb_data`, 50 rows at a time by primary key:
+`SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. That builds a
+new value with the same bytes, which PostgreSQL compresses with the new default (`SET document = document` would copy
+the compressed bytes unchanged). It writes DocumentDB's tables directly, not through FerretDB, so readers never see a
+changed document, and it selects only rows still pglz, so an interrupted run resumes where it stopped. bson operators
+live outside the search path: write `OPERATOR(documentdb_core.=)`. Operator steps are on the docs page "Backup and
+Recovery"; the decision is ADR `2026_10_07_ferretdb_postgres_lz4_toast_compression`.
 
 **Reference**: docs.dagster.io/deployment/troubleshooting/database-tuning is the canonical recipe this subsystem
 implements. The cleanup SQL targets exactly the event types the docs recommend; the indexes match exactly.

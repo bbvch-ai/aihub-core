@@ -1,7 +1,12 @@
+import os
+
 import pytest
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
+
+# dlt reports anonymous usage to dlthub unless told not to; no test run may phone home.
+os.environ["RUNTIME__DLTHUB_TELEMETRY"] = "false"
 
 # MUST be the first ``swiss_ai_hub`` import — sets AIHUB_MONGO_MAIN_DB_NAME=aihub_test
 # at import time so subsequent ``AIHubSettings()`` instantiations resolve to the test DB.

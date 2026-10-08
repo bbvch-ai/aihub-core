@@ -7,6 +7,7 @@ from llama_index.core import Document
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.generative_ai import (
     DEFAULT_METADATA,
+    EmbeddingQueryClamp,
     ExtractedDocument,
     IngestedNode,
     MarkdownStructuralNodeParser,
@@ -71,8 +72,9 @@ class AttachedFileSections:
         """The sections, most relevant first."""
         api_key = await LiteLLMService.api_key_for_user(self._user) if self._user else None
         embed_model, _ = self._config.embedding_model.to_llama_index(api_key=api_key)
+        relevance_query = EmbeddingQueryClamp.clamp(query, model_name=self._config.embedding_model.model_name)
         query_embedding, section_embeddings = await asyncio.gather(
-            embed_model.aget_query_embedding(query),
+            embed_model.aget_query_embedding(relevance_query),
             embed_model.aget_text_embedding_batch([section.content for section in sections]),
         )
         similarity = {
@@ -83,7 +85,7 @@ class AttachedFileSections:
             : self._config.shortlist_size
         ]
         reranking_model = self._config.reranking_model.model_copy(update={"top_n": len(shortlist)})
-        return await rerank_nodes(shortlist, query, reranking_model, self._user)
+        return await rerank_nodes(shortlist, relevance_query, reranking_model, self._user)
 
     def fill(self, sections: list[IngestedNode], room: int) -> list[IngestedNode]:
         """The sections that fit `room`, taken in the given order and returned in document order."""

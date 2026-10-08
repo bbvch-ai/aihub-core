@@ -575,7 +575,9 @@ class KnowledgeService:
         """Replaces the source axis of a database: credentials rotate, patterns change, or it returns to manual upload.
 
         A secret resubmitted as the mask keeps its stored value, so a client never has to know a credential to edit
-        the fields around it. Takes effect on the source pipeline's next run; nothing is redeployed.
+        the fields around it. Handing a database that holds documents to a different source needs the caller's
+        acknowledgement; editing the current source's settings does not. Takes effect on the source pipeline's next
+        run; nothing is redeployed.
         """
         try:
             bucket = BucketEntity.get_bucket_by_db_name(database)
@@ -588,7 +590,7 @@ class KnowledgeService:
             updated = BucketEntity.update_source(bucket.bucket_name, None, None)
             return KnowledgeService._database_response(updated, t)
 
-        if bucket.source is None and not request.replace_existing_documents:
+        if bucket.source != request.source and not request.replace_existing_documents:
             KnowledgeService._reject_if_documents_would_be_replaced(bucket)
         stored = bucket.source_configuration if bucket.source == request.source else None
         source_configuration = await KnowledgeService._validated_source_configuration(
@@ -642,7 +644,7 @@ class KnowledgeService:
     @staticmethod
     def _reject_if_documents_would_be_replaced(bucket: BucketEntity) -> None:
         """A source owns the content of its database: on the next sync it removes every file it does not have. A
-        database that was filled by hand must therefore not be handed over without the caller saying so."""
+        database filled by hand or by another source must therefore not be handed over without the caller saying so."""
         KnowledgeService._ensure_db_exists(bucket.db_name)
         documents = sum(
             RefDoc.count_by_namespace(db_alias=bucket.db_name, namespace=namespace.namespace_name)
@@ -650,12 +652,16 @@ class KnowledgeService:
             if not namespace.deleting
         )
         if documents:
+            held = (
+                f"{documents} manually uploaded document(s)"
+                if bucket.source is None
+                else f"{documents} document(s) synced from source '{bucket.source}'"
+            )
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    f"Database '{bucket.db_name}' holds {documents} manually uploaded document(s) that the source "
-                    "would remove on its next sync. Resubmit with replace_existing_documents=true to hand the "
-                    "content over to the source."
+                    f"Database '{bucket.db_name}' holds {held} that the new source would remove on its next sync. "
+                    "Resubmit with replace_existing_documents=true to hand the content over to the new source."
                 ),
             )
 

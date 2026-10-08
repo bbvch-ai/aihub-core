@@ -7,7 +7,7 @@ Requires the dev stack: LiteLLM, the configured embedding model, and Milvus. Opt
 
 The unit tests cover the clamp arithmetic against tiktoken. Only a live embedder can show that the
 clamped query fits the model's *own* tokenizer, which counts differently — bge-m3 reads 1.6x what
-tiktoken reports for English, which is what SEARCH_QUERY_BUDGET_SAFETY_FACTOR has to absorb.
+tiktoken reports for English, which is what QUERY_BUDGET_SAFETY_FACTOR has to absorb.
 """
 
 import os

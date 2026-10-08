@@ -147,9 +147,7 @@ class AttachedFiles(Capability):
         if not files:
             return [AttachedFilesReadEvent(tool_call_id=request.tool_call_id)]
 
-        outcomes = await asyncio.gather(
-            *(AttachedFileReader.read(file, topic.agent_class, topic.agent_id) for file in files)
-        )
+        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id)
         readable = {event.file_id: (document, event) for document, event in outcomes if document is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
         by_page = {file_id for file_id, (document, _) in readable.items() if pages and document.is_paged}

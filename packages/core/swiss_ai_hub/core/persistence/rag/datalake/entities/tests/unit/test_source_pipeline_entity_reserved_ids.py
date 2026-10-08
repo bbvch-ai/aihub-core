@@ -28,8 +28,9 @@ class TestReservedIds:
     def test_every_source_pipeline_token_is_reserved_for_ingestors(self, reserved):
         assert reserved in IngestorEntity.reserved_ids()
 
-    def test_the_shipped_source_pipeline_id_is_registrable(self):
-        assert SourcePipelineType.RCLONE.value not in SourcePipelineEntity.reserved_ids()
+    @pytest.mark.parametrize("shipped", [source_type.value for source_type in SourcePipelineType])
+    def test_every_shipped_source_pipeline_id_is_registrable(self, shipped):
+        assert shipped not in SourcePipelineEntity.reserved_ids()
 
     def test_the_legacy_subject_source_type_is_reserved(self):
         assert "datalake" in SourcePipelineEntity.reserved_ids()

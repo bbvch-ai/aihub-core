@@ -2,10 +2,8 @@ import asyncio
 import unicodedata
 from typing import Annotated
 
-from mongoengine import DoesNotExist
-
-from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error import (
-    KnowledgeCollectionNotFoundError,
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_resolver import (
+    KnowledgeCollectionResolver,
 )
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing import KnowledgeDocumentListing
@@ -20,10 +18,7 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.resolved_knowledge_coll
     ResolvedKnowledgeCollection,
 )
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
-from swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry import MongoConnectionRegistry
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.rag.datalake.entities.bucket_entity import BucketEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities.namespace_entity import NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.documents.utils.id_utils import source_to_doc_id
 
@@ -49,7 +44,7 @@ class KnowledgeDocumentReader:
     ) -> KnowledgeDocumentListing:
         """List every fully ingested document of the collections; documents still being ingested are left out."""
         summaries: list[KnowledgeDocumentSummary] = []
-        for resolved in await KnowledgeDocumentReader._resolve_all(collections):
+        for resolved in await KnowledgeCollectionResolver.resolve_all(collections):
             ref_docs = await asyncio.to_thread(
                 RefDoc.list_ingested_summaries, resolved.db_name, resolved.collection.namespace_name
             )
@@ -65,7 +60,7 @@ class KnowledgeDocumentReader:
         end: Annotated[int | None, "Offset one past the last character to return; None for the end"] = None,
     ) -> KnowledgeDocument:
         """Load a document's parsed text by id, searching only the given collections."""
-        for resolved in await KnowledgeDocumentReader._resolve_all(collections):
+        for resolved in await KnowledgeCollectionResolver.resolve_all(collections):
             ref_doc = await asyncio.to_thread(
                 RefDoc.first_by_id_and_namespace, resolved.db_name, document_id, resolved.collection.namespace_name
             )
@@ -86,9 +81,9 @@ class KnowledgeDocumentReader:
 
         Only the named collection is resolved, so a sibling collection being deleted does not fail the load.
         """
-        if not any(KnowledgeDocumentReader._same(allowed, collection) for allowed in collections):
+        if not any(KnowledgeCollectionResolver.same(allowed, collection) for allowed in collections):
             raise KnowledgeDocumentNotFoundError(path, collections)
-        target = await asyncio.to_thread(KnowledgeDocumentReader._resolve, collection)
+        target = await asyncio.to_thread(KnowledgeCollectionResolver.resolve, collection)
 
         normalized_path = unicodedata.normalize("NFC", path).lstrip("/")
         ref_doc = await asyncio.to_thread(
@@ -135,26 +130,3 @@ class KnowledgeDocumentReader:
         if ref_doc.data.metadata.is_ingested is False or ref_doc.type_ == "placeholder":
             raise KnowledgeDocumentPendingError(reference, resolved.collection)
         return KnowledgeDocument.from_ref_doc(ref_doc, resolved, start, end)
-
-    @staticmethod
-    def _same(first: BucketNamespacePair, second: BucketNamespacePair) -> bool:
-        return first.bucket_name == second.bucket_name and first.namespace_name == second.namespace_name
-
-    @staticmethod
-    async def _resolve_all(collections: list[BucketNamespacePair]) -> list[ResolvedKnowledgeCollection]:
-        unique = {(pair.bucket_name, pair.namespace_name): pair for pair in collections}
-        return [await asyncio.to_thread(KnowledgeDocumentReader._resolve, pair) for pair in unique.values()]
-
-    @staticmethod
-    def _resolve(collection: BucketNamespacePair) -> ResolvedKnowledgeCollection:
-        try:
-            bucket = BucketEntity.get_bucket_by_bucket_name(collection.bucket_name)
-            namespace = NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), collection.namespace_name)
-        except DoesNotExist as does_not_exist:
-            raise KnowledgeCollectionNotFoundError(collection, "does not exist") from does_not_exist
-        if bucket.deleting or namespace.deleting:
-            raise KnowledgeCollectionNotFoundError(collection, "is being deleted")
-        MongoConnectionRegistry.ensure_alias(bucket.db_name)
-        return ResolvedKnowledgeCollection(
-            collection=collection, db_name=bucket.db_name, folder_name=namespace.folder_name
-        )
