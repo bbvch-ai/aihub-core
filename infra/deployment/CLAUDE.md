@@ -33,6 +33,7 @@ deployment/
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
+│       ├── ferretdb-init.sh.j2        # FerretDB PG init (read-only role of the knowledge content search)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
 │           ├── bootstrap/             # First-start-only seeds: realm-settings, components, groups, users-superuser,
 │           │                          #   identity-providers
@@ -53,7 +54,8 @@ deployment/
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
 - `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
-- `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+- `infra/configs/{service}/{static-scripts}` — ~7 stage-independent scripts (etcd, seaweedfs, postgres, openwebui,
+  ferretdb)
 
 ### LiteLLM provider variants
 
@@ -108,10 +110,10 @@ stays reviewable.
 
 ### Global and per-model OpenWebUI functions
 
-`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes
-the ids listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter
-runs only on the models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent
-filters (`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes the ids
+listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter runs only on the
+models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent filters
+(`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 
 ### Applying an OpenWebUI function change to a running stack
 

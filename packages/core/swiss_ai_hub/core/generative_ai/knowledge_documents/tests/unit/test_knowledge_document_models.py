@@ -49,25 +49,9 @@ def test_document_at_the_top_of_the_folder() -> None:
     assert KnowledgeDocumentSummary.from_ref_doc(_ref_doc("s3://kb/Finanzen/notes.txt"), _RESOLVED).path == "notes.txt"
 
 
-@pytest.mark.parametrize(
-    ("start", "end", "expected_text", "expected_start", "expected_end"),
-    [
-        (None, None, "0123456789", 0, 10),
-        (2, 5, "234", 2, 5),
-        (8, None, "89", 8, 10),
-        (None, 3, "012", 0, 3),
-        (5, 500, "56789", 5, 10),
-        (7, 3, "", 7, 7),
-        (50, None, "", 10, 10),
-    ],
-)
-def test_range_reads(
-    start: int | None, end: int | None, expected_text: str, expected_start: int, expected_end: int
-) -> None:
-    document = KnowledgeDocument.from_ref_doc(
-        _ref_doc("s3://kb/Finanzen/a.md", text="0123456789"), _RESOLVED, start, end
+def test_a_text_range_ends_where_its_text_does() -> None:
+    document = KnowledgeDocument.from_text_range(
+        _ref_doc("s3://kb/Finanzen/a.md", text="a😀b"), _RESOLVED, text_length=10, start=4
     )
 
-    assert document.text == expected_text
-    assert (document.start, document.end) == (expected_start, expected_end)
-    assert document.text_length == 10
+    assert (document.text, document.start, document.end, document.text_length) == ("a😀b", 4, 7, 10)

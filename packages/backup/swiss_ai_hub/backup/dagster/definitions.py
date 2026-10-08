@@ -1,4 +1,4 @@
-from dagster import AssetKey, Definitions
+from dagster import AssetKey, AssetsDefinition, Definitions
 
 from swiss_ai_hub.backup.dagster.assets.backup_finalize_factory import backup_finalize_factory
 from swiss_ai_hub.backup.dagster.assets.backup_service_factory import backup_service_factory
@@ -7,6 +7,8 @@ from swiss_ai_hub.backup.dagster.assets.maintenance_finalize_factory import main
 from swiss_ai_hub.backup.dagster.assets.maintenance_handler_factory import (
     CLEANUP_HANDLER_NAMES,
     REPACK_HANDLER_NAMES,
+    TEXT_INDEX_HANDLER_NAMES,
+    TEXT_INDEX_REBUILD_HANDLER_NAMES,
 )
 from swiss_ai_hub.backup.dagster.assets.maintenance_service_factory import maintenance_service_factory
 from swiss_ai_hub.backup.dagster.assets.maintenance_session_factory import maintenance_session_factory
@@ -18,10 +20,13 @@ from swiss_ai_hub.backup.dagster.jobs.factory import (
     cleanup_asset_job,
     repack_asset_job,
     restore_asset_job,
+    text_index_asset_job,
+    text_index_rebuild_asset_job,
 )
 from swiss_ai_hub.backup.dagster.resources.factory import backup_resources
 from swiss_ai_hub.backup.dagster.schedules.factory import (
     daily_backup_schedule,
+    daily_text_index_schedule,
     monthly_repack_schedule,
     weekly_cleanup_schedule,
 )
@@ -115,20 +120,48 @@ def backup_definitions() -> Definitions:
     # cleanup and repack share the same session asset definition but are selected as separate jobs.
     repack_assets = [*repack_service_assets, repack_finalize]
 
+    text_index_assets = _maintenance_assets(TEXT_INDEX_HANDLER_NAMES, "text_index_finalize", maintenance_session_key)
+    text_index_rebuild_assets = _maintenance_assets(
+        TEXT_INDEX_REBUILD_HANDLER_NAMES, "text_index_rebuild_finalize", maintenance_session_key
+    )
+
     backup_job = backup_asset_job(backup_assets)
     restore_job = restore_asset_job(restore_assets)
     cleanup_job = cleanup_asset_job([maintenance_session_asset, *cleanup_service_assets, cleanup_finalize])
     repack_job = repack_asset_job([maintenance_session_asset, *repack_service_assets, repack_finalize])
+    text_index_job = text_index_asset_job([maintenance_session_asset, *text_index_assets])
+    text_index_rebuild_job = text_index_rebuild_asset_job([maintenance_session_asset, *text_index_rebuild_assets])
 
     schedule = daily_backup_schedule(backup_job)
     cleanup_schedule = weekly_cleanup_schedule(cleanup_job)
     repack_schedule = monthly_repack_schedule(repack_job)
+    text_index_schedule = daily_text_index_schedule(text_index_job)
 
     resources = backup_resources()
 
     return Definitions(
-        assets=[*backup_assets, *restore_assets, *cleanup_assets, *repack_assets],
-        jobs=[backup_job, restore_job, cleanup_job, repack_job],
-        schedules=[schedule, cleanup_schedule, repack_schedule],
+        assets=[
+            *backup_assets,
+            *restore_assets,
+            *cleanup_assets,
+            *repack_assets,
+            *text_index_assets,
+            *text_index_rebuild_assets,
+        ],
+        jobs=[backup_job, restore_job, cleanup_job, repack_job, text_index_job, text_index_rebuild_job],
+        schedules=[schedule, cleanup_schedule, repack_schedule, text_index_schedule],
         resources=resources,
     )
+
+
+def _maintenance_assets(
+    handler_names: tuple[str, ...], finalize_name: str, session_key: AssetKey
+) -> list[AssetsDefinition]:
+    """The handler assets of a maintenance job and their finalize; the session asset is shared and added by the job."""
+    service_keys = {name: AssetKey(["maintenance", name]) for name in handler_names}
+    service_assets = [
+        maintenance_service_factory(key, session_key, name, f"Maintenance: {name}")
+        for name, key in service_keys.items()
+    ]
+    finalize = maintenance_finalize_factory(AssetKey(["maintenance", finalize_name]), session_key, service_keys)
+    return [*service_assets, finalize]

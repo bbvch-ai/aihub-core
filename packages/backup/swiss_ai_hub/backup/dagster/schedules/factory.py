@@ -48,3 +48,14 @@ def monthly_repack_schedule(repack_job: JobDefinition | UnresolvedAssetJobDefini
         return RunRequest()
 
     return monthly_repack
+
+
+def daily_text_index_schedule(text_index_job: JobDefinition | UnresolvedAssetJobDefinition) -> ScheduleDefinition:
+    """5 AM Europe/Zurich — after the backup, cleanup and repack windows, so a new knowledge database is indexed
+    within a day and a DocumentDB upgrade deployed the evening before is checked by morning."""
+
+    @schedule(cron_schedule="0 5 * * *", job=text_index_job, execution_timezone="Europe/Zurich")
+    def daily_text_index(context: ScheduleEvaluationContext) -> RunRequest:
+        return RunRequest()
+
+    return daily_text_index

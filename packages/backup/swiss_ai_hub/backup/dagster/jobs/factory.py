@@ -84,3 +84,27 @@ def repack_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefini
         ),
         tags=POSTGRES_MUTEX_TAG,
     )
+
+
+def text_index_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="ferretdb_text_index_job",
+        selection=assets,
+        description=(
+            "Online-safe: build the trigram index of every knowledge database that has none yet, rebuild indexes from "
+            "an older DocumentDB version after checking its text extraction, and drop interrupted builds."
+        ),
+        tags=POSTGRES_MUTEX_TAG,
+    )
+
+
+def text_index_rebuild_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="ferretdb_text_index_rebuild_job",
+        selection=assets,
+        description=(
+            "Launched by hand, online-safe: rebuild every knowledge database's trigram index with REINDEX "
+            "CONCURRENTLY, which reclaims the space a heavily rewritten index has accumulated."
+        ),
+        tags=POSTGRES_MUTEX_TAG,
+    )

@@ -141,6 +141,10 @@ def test_maintenance_definitions_has_all_cleanup_assets() -> None:
     assert "maintenance/cleanup_finalize" in all_keys
     assert "maintenance/postgres_repack" in all_keys
     assert "maintenance/repack_finalize" in all_keys
+    assert "maintenance/ferretdb_text_index" in all_keys
+    assert "maintenance/text_index_finalize" in all_keys
+    assert "maintenance/ferretdb_text_index_rebuild" in all_keys
+    assert "maintenance/text_index_rebuild_finalize" in all_keys
 
 
 def test_maintenance_jobs_registered() -> None:
@@ -149,6 +153,30 @@ def test_maintenance_jobs_registered() -> None:
     repack = defs.get_job_def("postgres_repack_job")
     assert cleanup.name == "dagster_cleanup_job"
     assert repack.name == "postgres_repack_job"
+
+
+def test_text_index_jobs_select_only_their_own_handler() -> None:
+    defs = backup_definitions()
+    daily = defs.get_job_def("ferretdb_text_index_job")
+    rebuild = defs.get_job_def("ferretdb_text_index_rebuild_job")
+
+    assert {key.to_user_string() for key in daily.asset_layer.selected_asset_keys} == {
+        "maintenance/session",
+        "maintenance/ferretdb_text_index",
+        "maintenance/text_index_finalize",
+    }
+    assert {key.to_user_string() for key in rebuild.asset_layer.selected_asset_keys} == {
+        "maintenance/session",
+        "maintenance/ferretdb_text_index_rebuild",
+        "maintenance/text_index_rebuild_finalize",
+    }
+
+
+def test_only_the_daily_text_index_job_is_scheduled() -> None:
+    scheduled = {schedule.job_name for schedule in backup_definitions().schedules or []}
+
+    assert "ferretdb_text_index_job" in scheduled
+    assert "ferretdb_text_index_rebuild_job" not in scheduled
 
 
 def test_maintenance_handlers_depend_on_session() -> None:
@@ -163,6 +191,8 @@ def test_maintenance_handlers_depend_on_session() -> None:
         "maintenance/dagster_warning_logs",
         "maintenance/dagster_unimportant_events",
         "maintenance/postgres_repack",
+        "maintenance/ferretdb_text_index",
+        "maintenance/ferretdb_text_index_rebuild",
     ]
     for key_str in handler_keys:
         matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
@@ -206,7 +236,14 @@ def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
     QueuedRunCoordinator serializes them. Without the tag, a cleanup tick could
     fire mid-backup (postgres stopped → cleanup queries fail)."""
     defs = backup_definitions()
-    for job_name in ("backup_asset_job", "full_restore_job", "dagster_cleanup_job", "postgres_repack_job"):
+    for job_name in (
+        "backup_asset_job",
+        "full_restore_job",
+        "dagster_cleanup_job",
+        "postgres_repack_job",
+        "ferretdb_text_index_job",
+        "ferretdb_text_index_rebuild_job",
+    ):
         job = defs.get_job_def(job_name)
         assert job.tags.get("postgres-mutex") == "true", (
             f"{job_name} is missing the postgres-mutex tag (got tags: {job.tags})"

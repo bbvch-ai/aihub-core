@@ -402,6 +402,7 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
+    ports: [5433:5432]
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U ${MONGO_USERNAME} -d postgres']
       interval: 10s
@@ -433,6 +434,30 @@ services:
       healthcheck.protocol: http
       healthcheck.port: '8088'
       healthcheck.path: /debug/livez
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
+  ferretdb-init:
+    container_name: ferretdb-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: on-failure
+    depends_on:
+      postgres-ferretdb:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres-ferretdb
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${MONGO_USERNAME}
+      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
+      KNOWLEDGE_TEXT_INDEX_PASSWORD: ${KNOWLEDGE_TEXT_INDEX_PASSWORD}
+    volumes: [./configs/ferretdb/init-ferretdb.sh:/init-ferretdb.sh:ro]
+    entrypoint: [/bin/sh, /init-ferretdb.sh]
     logging:
       driver: json-file
       options:

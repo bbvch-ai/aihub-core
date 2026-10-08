@@ -245,6 +245,29 @@ Innerhalb jedes Laufs bleibt die Intra-Run-Parallelität (z.B. parallele Backups
 funktionieren weiterhin — repack meldet einen sauberen Skip in den Lauf-Metadaten; die Bereinigung funktioniert
 bedingungslos.
 
+### Index der Inhaltssuche in Wissensdatenbanken
+
+Zwei weitere Jobs pflegen den Index, den die Inhaltssuche in Wissensdatenbanken für exakte Begriffe verwendet (siehe ADR
+`2026_10_08_trigram_index_for_knowledge_content_search`):
+
+- **`ferretdb_text_index_job`** — täglich um 5 Uhr. Erstellt auf dem PostgreSQL von FerretDB einen Trigramm-Index auf
+  dem Text jeder Wissensdatenbank, die noch keinen hat, und gibt der schreibgeschützten Rolle der Suche,
+  `aihub_text_search`, Lesezugriff nur auf diese Wissenstabelle. Indizes werden mit `CREATE INDEX CONCURRENTLY`
+  erstellt: FerretDB liest und schreibt weiter, und der Aufbau dauert etwa eine Minute pro 500 MB Text.
+- **`ferretdb_text_index_rebuild_job`** — nur manuell. Baut jeden Index mit `REINDEX INDEX CONCURRENTLY` neu auf, um
+  nach umfangreicher Neu-Ingestion Speicherplatz zurückzugewinnen.
+
+Wo ein Index fehlt, durchsucht die Suche die Datenbank vollständig. Die Ergebnisse hängen daher nie davon ab, ob der Job
+gelaufen ist, nur ihre Geschwindigkeit. Nach einem **Upgrade des `postgres_ferretdb`-Images** durchsucht die Suche jede
+Datenbank vollständig, bis der nächste Lauf die Textextraktion von DocumentDB geprüft und die Indizes neu aufgebaut hat;
+starten Sie `ferretdb_text_index_job` manuell, um das abzukürzen. Ein Lauf, der mit „changed how it extracts text“
+fehlschlägt, lässt jeden Index unverändert und die Suche beim vollständigen Durchsuchen: Die neue DocumentDB-Version
+braucht eine Code-Änderung, bevor der Index wieder verwendet wird.
+
+Die Rolle legt der einmalig laufende Container `ferretdb-init` bei jedem Deployment an, aus
+`KNOWLEDGE_TEXT_INDEX_PASSWORD`. Diese Variable ist in der Env-Datei des Deployments erforderlich; ein leerer Wert
+schaltet den Index ab.
+
 ### Konfiguration
 
 ```bash

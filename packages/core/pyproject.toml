@@ -89,6 +89,7 @@ dependencies = [
     "croniter>=6.2.4",
     "cryptography>=44.0.0",
     "regex>=2026.5.9",
+    "psycopg[binary]>=3.3.3",
 ]
 
 [dependency-groups]

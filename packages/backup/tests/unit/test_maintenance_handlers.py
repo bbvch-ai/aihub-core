@@ -6,10 +6,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from swiss_ai_hub.backup.dagster.assets.maintenance_handler_factory import create_maintenance_handler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import (
     _UNIMPORTANT_EVENT_TYPES,
     DagsterUnimportantEventsHandler,
 )
+from swiss_ai_hub.backup.maintenance.ferretdb_text_index import FerretdbTextIndexHandler
 from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
 from swiss_ai_hub.backup.maintenance.postgres_indexes import PostgresIndexesHandler
@@ -446,3 +448,25 @@ def test_postgres_repack_handler_sets_pgappname_for_pg_stat_activity(
     PostgresRepackHandler(settings).run()
     env = mock_subprocess.call_args.kwargs["env"]
     assert env["PGAPPNAME"] == "swiss-ai-hub-maintenance"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("service_name", "rebuild"), [("ferretdb_text_index", False), ("ferretdb_text_index_rebuild", True)]
+)
+def test_text_index_handlers_are_built_by_name(service_name: str, rebuild: bool) -> None:
+    handler = create_maintenance_handler(service_name, MagicMock(), MagicMock())
+
+    assert isinstance(handler, FerretdbTextIndexHandler)
+    assert handler.service_name == service_name
+    assert handler._rebuild is rebuild
+
+
+@pytest.mark.unit
+def test_text_index_handler_reports_an_unreachable_server_as_a_failed_result() -> None:
+    with patch("swiss_ai_hub.backup.maintenance.ferretdb_text_index.build_ferretdb_engine") as build:
+        build.return_value.connect.side_effect = OSError("connection refused")
+        result = FerretdbTextIndexHandler(MagicMock()).run()
+
+    assert not result.succeeded
+    assert "connection refused" in (result.error or "")
