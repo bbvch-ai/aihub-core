@@ -19673,7 +19673,7 @@ export type UpdateDatabaseSourceRequest = {
   /**
    * Replace Existing Documents
    *
-   * Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.
+   * Acknowledges that handing a database to a different source, from manual upload or from another source, gives its content to that source: documents the new source does not have are removed on its next sync. Required when the database already holds documents; not needed to edit the current source's settings or to switch back to manual upload.
    */
   replace_existing_documents?: boolean;
 };

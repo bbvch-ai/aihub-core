@@ -108,3 +108,13 @@ rclone:
       key_pem:
         label: Private key (PEM)
         help: PEM-encoded private key, as an alternative to a password. Stored encrypted.
+structured:
+  display_name: Business application sync
+  description: Keeps the database in sync with records from business applications
+    such as issue trackers and wikis. Each record becomes a markdown document, and
+    its project or space becomes a namespace.
+  config:
+    source_kind:
+      label: Source system
+      help: Which application the records are read from. Its settings appear once
+        it is selected.

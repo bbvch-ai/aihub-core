@@ -15,7 +15,7 @@
             <i
               v-if="database.source"
               class="pi pi-sync text-surface-400 dark:text-surface-500"
-              :title="t('knowledge.source.description', { name: capitalCase(database.source) })"
+              :title="t('knowledge.source.description', { name: sourceDisplayName(database.source) })"
             />
             <i
               v-else
@@ -124,6 +124,11 @@ const toast = useToast()
 const { tenantId } = useTenant()
 
 const { databases, databasesAreLoading } = useDatabases()
+const { sourcePipelines } = useSourcePipelines()
+
+// The token is only a fallback, for a source whose pipeline is not announced (anymore).
+const sourceDisplayName = (source: string) =>
+  sourcePipelines.value?.find(pipeline => pipeline.name === source)?.display_name || capitalCase(source)
 
 const { deleteDatabase, isDeleting: isDeletingDatabase } = useDeleteDatabase()
 const { deleteNamespace, isDeleting: isDeletingNamespace } = useDeleteNamespace()

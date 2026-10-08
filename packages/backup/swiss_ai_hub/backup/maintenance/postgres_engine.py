@@ -28,3 +28,16 @@ def build_dagster_engine(settings: BackupSettings) -> Engine:
         database=settings.DAGSTER_DB,
     )
     return create_engine(url, poolclass=NullPool, connect_args={"application_name": "swiss-ai-hub-maintenance"})
+
+
+def build_ferretdb_engine(settings: BackupSettings) -> Engine:
+    """Build a SQLAlchemy engine for the PostgreSQL behind FerretDB, whose `postgres` database holds every Mongo
+    database's tables and DocumentDB's catalog."""
+    url = URL.create(
+        drivername="postgresql+psycopg",
+        username=settings.MONGO_USERNAME,
+        password=settings.MONGO_PASSWORD.get_secret_value(),
+        host=settings.POSTGRES_FERRETDB_HOST,
+        database="postgres",
+    )
+    return create_engine(url, poolclass=NullPool, connect_args={"application_name": "swiss-ai-hub-maintenance"})

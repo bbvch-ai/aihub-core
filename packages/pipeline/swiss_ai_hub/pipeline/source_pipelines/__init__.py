@@ -1,12 +1,18 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import (
+        AbstractStructuredSourceAdapter,
+    )
     from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSyncConfig
+    from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 
-__all__ = ["RcloneSyncConfig"]
+__all__ = ["AbstractStructuredSourceAdapter", "RcloneSyncConfig", "StructuredSyncConfig"]
 
 _LAZY_IMPORTS = {
+    "AbstractStructuredSourceAdapter": "swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter",
     "RcloneSyncConfig": "swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config",
+    "StructuredSyncConfig": "swiss_ai_hub.pipeline.source_pipelines.structured_sync_config",
 }
 
 
