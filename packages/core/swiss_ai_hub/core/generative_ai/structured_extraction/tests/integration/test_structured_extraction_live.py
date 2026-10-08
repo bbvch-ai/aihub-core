@@ -174,6 +174,25 @@ async def test_values_stated_once_in_the_header_reach_records_on_later_pages() -
     assert {record.values["supplier"] for record in result.records} == {"Helvetic IT Supplies AG"}
 
 
+@pytest.mark.slow
+@pytest.mark.asyncio
+async def test_long_markdown_table_is_extracted_once_per_row_with_exact_amounts() -> None:
+    """A table row is one line, so a window edge inside it would hand the model a truncated amount."""
+    llm_config, llm, _ = _llm()
+    amounts = {n: float(f"{50 + n * 7}.50") for n in range(1, 301)}
+    rows = "\n".join(f"| {n} | External SSD 2 TB | {amount:.2f} | CHF |" for n, amount in amounts.items())
+    table = f"# Invoice INV-2025-0977\n\n| Pos | Description | Amount | Currency |\n|---|---|---|---|\n{rows}\n"
+
+    result = await RecordExtractor.extract(
+        _LINE_SCHEMA, _document(table, title="Invoice INV-2025-0977"), llm, llm_config, LocaleHandler("en")
+    )
+
+    assert not result.failed, result.failure_reason
+    assert result.window_count > 1
+    assert {record.values["position"]: record.values["amount"] for record in result.records} == amounts
+    assert len(result.records) == len(amounts)
+
+
 @pytest.mark.skipif(not _CONSISTENCY_MODELS, reason="set STRUCTURED_EXTRACTION_CONSISTENCY_MODELS to measure")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("model_name", _CONSISTENCY_MODELS)

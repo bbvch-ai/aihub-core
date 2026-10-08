@@ -60,7 +60,8 @@ reproducible with the consistency report in the module's integration tests.
 
 **6. Long documents are split into overlapping windows.** A window is bounded by the input window minus the prompt, and
 by half the output limit, because records come back as JSON that can reach twice the size of a dense table. Windows
-overlap by ten percent. `RecordMerger` drops a record only when a *compatible* record came from the *adjacent* window:
+overlap by ten percent and break at line ends, so a markdown table row is never cut: the sentence fallback would cut
+it at the decimal point of an amount, and the model would read the cut row as a different record. `RecordMerger` drops a record only when a *compatible* record came from the *adjacent* window:
 non-null values agree, and the kept record takes the other's non-null values. Identical records within one window, or in
 windows that share no text, are kept, because an invoice can legitimately repeat a line.
 

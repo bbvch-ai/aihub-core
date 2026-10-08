@@ -43,3 +43,27 @@ def test_adjacent_windows_share_text() -> None:
 
     for previous, following in zip(windows, windows[1:], strict=False):
         assert set(previous.split("\n\n")) & set(following.split("\n\n"))
+
+
+def _markdown_table(rows: int) -> str:
+    """A table as MinerU renders one: single line breaks, and amounts whose decimal point reads as a sentence end."""
+    header = "| Pos | Description | Amount | Currency |\n|---|---|---|---|"
+    lines = [f"| {n} | External SSD 2 TB | {n * 3}.50 | CHF |" for n in range(1, rows + 1)]
+    return "\n".join([header, *lines])
+
+
+def test_markdown_table_rows_are_never_cut_at_a_window_edge() -> None:
+    """A cut row reads as a different record, an amount of 1156 instead of 1156.50, which the merger keeps twice."""
+    table = _markdown_table(200)
+
+    windows = TextWindows.split(table, 120, 20, _words)
+
+    assert len(windows) > 1
+    assert all(line in table.splitlines() for window in windows for line in window.splitlines())
+
+
+def test_markdown_table_windows_overlap_by_whole_rows() -> None:
+    windows = TextWindows.split(_markdown_table(200), 120, 20, _words)
+
+    for previous, following in zip(windows, windows[1:], strict=False):
+        assert set(previous.splitlines()) & set(following.splitlines())
