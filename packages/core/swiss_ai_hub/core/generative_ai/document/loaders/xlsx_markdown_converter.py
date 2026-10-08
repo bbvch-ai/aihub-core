@@ -34,46 +34,42 @@ class XlsxMarkdownConverter:
     @staticmethod
     def _sheet(sheet: "ReadOnlyWorksheet") -> str:
         """The read-only reader trusts the size a sheet declares, and files not written by Excel can declare A1:A1 for
-        a full sheet, so the declared size is dropped and every stored row read, as pandas does. Every row is padded to
-        the widest, since `parse_markdown_table` drops a row whose cell count differs from its header's."""
+        a full sheet, so the declared size is dropped and every stored row read, as pandas does.
+
+        Only columns holding a value somewhere are kept, and every row is given exactly those, since
+        `parse_markdown_table` drops a row whose cell count differs from its header's. Padding to the widest row instead
+        let one stray cell in column XFD turn a 71 KB file into 246M characters.
+        """
         sheet.reset_dimensions()
         heading = f"## {sheet.title}"
-        cells = list(XlsxMarkdownConverter._trimmed_rows(sheet.iter_rows(values_only=True)))
-        if not cells:
+        rows = list(XlsxMarkdownConverter._trimmed_rows(sheet.iter_rows(values_only=True)))
+        if not rows:
             return heading
-        width = max(len(row) for row in cells)
-        header, *body = cells
+        columns = sorted({index for row in rows for index, cell in enumerate(row) if cell})
+        header, *body = ([row[index] if index < len(row) else "" for index in columns] for row in rows)
         return "\n".join(
-            [
-                heading,
-                markdown_row(XlsxMarkdownConverter._padded(header, width)),
-                markdown_row(["---"] * width),
-                *(markdown_row(XlsxMarkdownConverter._padded(row, width)) for row in body),
-            ]
+            [heading, markdown_row(header), markdown_row(["---"] * len(columns)), *(markdown_row(row) for row in body)]
         )
 
     @staticmethod
     def _trimmed_rows(rows: Iterable[Sequence[object]]) -> Iterator[list[str]]:
         """Each row's cells without the empty ones at its end. Empty rows before the first and after the last filled one
-        are dropped; those in between stay, since they separate blocks such as two tables on one sheet."""
-        empty_rows = 0
+        are dropped, and each run of them in between becomes one empty row: enough to separate blocks such as two
+        tables on one sheet, without a stray cell 500,000 rows down adding 500,000 lines."""
+        gap = False
         started = False
         for values in rows:
             cells = [markdown_cell(XlsxMarkdownConverter._text(value)) for value in values]
             while cells and not cells[-1]:
                 cells.pop()
             if not cells:
-                if started:
-                    empty_rows += 1
+                gap = started
                 continue
-            yield from ([] for _ in range(empty_rows))
-            empty_rows = 0
+            if gap:
+                yield []
+            gap = False
             started = True
             yield cells
-
-    @staticmethod
-    def _padded(cells: list[str], width: int) -> list[str]:
-        return cells + [""] * (width - len(cells))
 
     @staticmethod
     def _text(value: object) -> str:

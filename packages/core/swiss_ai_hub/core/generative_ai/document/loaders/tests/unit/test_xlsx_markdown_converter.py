@@ -95,12 +95,41 @@ def test_rows_are_padded_to_the_widest():
     assert table_lines(markdown) == ["| a | b |  |", "| --- | --- | --- |", "| 1 |  |  |", "| 1 | 2 | 3 |"]
 
 
-def test_empty_rows_around_the_data_are_dropped_and_those_between_kept():
+def test_empty_rows_around_the_data_are_dropped_and_a_run_between_kept_as_one():
     rows = [[], [None], ["Employee"], ["Ann"], [], [None], ["Dept"], ["HR"], [], []]
 
     markdown = convert(("Two Tables", rows))
 
-    assert table_lines(markdown) == ["| Employee |", "| --- |", "| Ann |", "|  |", "|  |", "| Dept |", "| HR |"]
+    assert table_lines(markdown) == ["| Employee |", "| --- |", "| Ann |", "|  |", "| Dept |", "| HR |"]
+
+
+def test_a_column_empty_in_every_row_is_dropped():
+    markdown = convert(("Data", [[None, "a", None, "b"], [None, 1, None, 2]]))
+
+    assert table_lines(markdown) == ["| a | b |", "| --- | --- |", "| 1 | 2 |"]
+
+
+def test_stray_far_away_cells_cannot_blow_the_output_up():
+    """One cell in the last column and one 100,000 rows down used to pad the table to 16,384 columns and add the rows
+    between as empty lines."""
+    book = Workbook()
+    book.active.append(["id", "name"])
+    book.active.append([1, "a"])
+    book.active["XFD3"] = "stray"
+    book.active["A100000"] = "note"
+    buffer = io.BytesIO()
+    book.save(buffer)
+
+    markdown = XlsxMarkdownConverter.convert(buffer.getvalue())
+
+    assert table_lines(markdown) == [
+        "| id | name |  |",
+        "| --- | --- | --- |",
+        "| 1 | a |  |",
+        "|  |  | stray |",
+        "|  |  |  |",
+        "| note |  |  |",
+    ]
 
 
 def test_a_sheet_declaring_a_wrong_size_is_read_whole():
