@@ -15,6 +15,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── source_to_data_lake/           # Stage 1 generic: data_lake_file, placeholder_refdocs, removed_data_lake_files + routed_* (bucket per run)
 │   │   ├── share_point_to_data_lake/      # Stage 1: observable_share_point
 │   │   ├── rclone_to_data_lake/           # Stage 1: observable_rclone (routed by run tag)
+│   │   ├── structured_to_data_lake/       # Stage 1: structured_sync_factory — sync → list → reconcile → delete → announce
 │   │   └── local_files_system_to_data_lake/  # Stage 1: observable_local_file_system
 │   ├── io/                                # I/O managers (storage handlers)
 │   │   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS (Stage 1, one bucket)
@@ -32,6 +33,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
 │   │   ├── nodes/                         # Chunking, embedding, vector insertion, summaries
 │   │   ├── rclone/                        # data_version_by_partition_for_rclone_files (composite keys)
+│   │   ├── structured/                    # Structured source steps (op factories per source): sync via dlt, list, reconcile
 │   │   ├── source/routed/                 # Source pipeline write/remove path: bucket-routed data lake ops + announce
 │   │   ├── teardown/                      # knowledge_teardown_op (database / namespace teardown)
 │   │   └── repair/                        # repair_orphaned_nodes_op (manual cleanup of stranded vector nodes)
@@ -45,6 +47,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── llm/                           # EmbeddingModelResource, LanguageModelResource
 │   │   ├── share_point/                   # SharePointResource (MS Graph API)
 │   │   ├── rclone/                        # RcloneClient (RC API; stateless, built per run)
+│   │   ├── structured/                    # Structured sources: markdown dlt destination, per-database dlt state store
 │   │   ├── local_file_system/             # LocalFileSystemResource
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
@@ -52,7 +55,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── run_after_success_sensor.py    # Chain a job after another job's successful run
 │   │   ├── run_failure_notification_sensor.py # Apprise alerts on any failed run
 │   │   ├── ingestor_registration_sensor.py # Announce this pipeline: labels + configuration form + schema
-│   │   ├── source_pipeline_registration_sensor.py # Stage-1 counterpart: announce a source pipeline
+│   │   ├── source_pipeline_registration_sensor.py # Stage-1 counterpart: announce a source pipeline (+ shared id/label gate)
 │   │   ├── source_bucket_cleanup_sensor.py # Forget databases a source pipeline no longer fills (partitions + remote)
 │   │   ├── knowledge_teardown_sensor.py   # Run teardown for databases/folders flagged `deleting`
 │   │   ├── single_flight_run_guard.py     # "Is a run of this job already queued or running?"
@@ -66,7 +69,9 @@ packages/pipeline/                        # SDK framework
 │   ├── ingestors/
 │   │   └── document_ingestion_config.py   # DocumentIngestionConfig: the announced per-database form (Form duality)
 │   ├── source_pipelines/
-│   │   └── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
+│   │   ├── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
+│   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
+│   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
 │   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
@@ -83,10 +88,15 @@ packages/pipeline/                        # SDK framework
 │   │   ├── share_point_file.py            # SharePoint-specific file
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
+│   │   ├── structured_record_file.py      # One API record as a markdown file: namespace, frontmatter, body
+│   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
+│   │   ├── structured_sync_outcome.py     # Sync → listing handover: written keys + fingerprint, never secrets
+│   │   ├── structured_listing.py          # Listing → reconcile handover: listed keys + written keys
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
 │   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
 │   │   ├── rclone_pipeline_definitions_util.py            # rclone_pipeline_definitions() — Stage 1 source pipeline, route-per-run
+│   │   ├── structured_pipeline_definitions_util.py        # structured_pipeline_definitions() — Stage 1 dlt source pipeline, route-per-run
 │   │   ├── definitions_util.py            # Stage 1 deploy-time builders (SharePoint via MS Graph, local FS)
 │   │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
 │   │   ├── partition_utils.py             # replace_partition_keys(), composite {bucket}|{uri} keys
@@ -103,12 +113,16 @@ app/                                   # Deployable pipelines (Dagster gRPC code
 ├── document_ingestion_pipeline/        # THE document ingestion pipeline — one deployment, all self-service knowledge DBs
 │   ├── __init__.py                    # defs = document_ingestion_pipeline_definitions()  (route-per-run, no bucket env var)
 │   └── Dockerfile                     # dagster api grpc on port 4000; rclone_pipeline/Dockerfile is the same file with another PIPELINE default
-└── rclone_pipeline/                    # THE rclone source pipeline — one deployment, every database whose source is `rclone`
-    ├── __init__.py                    # defs = rclone_pipeline_definitions()  (route-per-run, no source env vars)
-    └── Dockerfile                     # copy of the ingestion Dockerfile with PIPELINE=rclone_pipeline (release workflow builds app/<name>/Dockerfile)
+├── rclone_pipeline/                    # THE rclone source pipeline — one deployment, every database whose source is `rclone`
+│   ├── __init__.py                    # defs = rclone_pipeline_definitions()  (route-per-run, no source env vars)
+│   └── Dockerfile                     # copy of the ingestion Dockerfile with PIPELINE=rclone_pipeline (release workflow builds app/<name>/Dockerfile)
+└── structured_pipeline/                # THE structured source pipeline — API records (Jira, Confluence, …) as markdown, via dlt
+    ├── __init__.py                    # defs = structured_pipeline_definitions()  (route-per-run, no source env vars)
+    └── Dockerfile                     # copy with PIPELINE=structured_pipeline and RUNTIME__DLTHUB_TELEMETRY=false
 
 playground/                            # Examples (START HERE)
 ├── __init__.py                        # defs = document_ingestion_pipeline_definitions() + a playground BucketEntity
+├── structured_demo/                   # Structured source with a `demo_records` kind reading a local JSON file (make structured-demo)
 └── quick_start/                       # Tutorials
     ├── simple_pipeline.py             # Hello-world: 2 basic assets, no external deps
     └── my_document_pipeline.py        # Full document ingestion pipeline with all factories
@@ -128,6 +142,9 @@ Concrete Stage 1 flows:
   deployment for every knowledge database whose `BucketEntity.source` is `rclone`**, configured per database from the UI
   (OneDrive/SharePoint, Google Drive, S3, Azure Blob, SFTP, local). See
   [Rclone Source Pipeline](#rclone-source-pipeline-stage-1-configured-per-database).
+- Structured source pipeline → S3 (`structured_sync_factory`): API records (Jira, Confluence, …) written as markdown via
+  dlt, **one deployment for every knowledge database whose `source` is `structured`**, one run per database. See
+  [Structured Source Pipeline](#structured-source-pipeline-stage-1-configured-per-database).
 - SharePoint via MS Graph → S3 (`observable_share_point_factory`, deploy-time builder, one bucket)
 - Local/network filesystem → S3 (`observable_local_file_system_factory`, deploy-time builder, one bucket)
 
@@ -190,6 +207,9 @@ Stage-1 counterparts:
 
 - `rclone_pipeline_definitions(...)` in `util/rclone_pipeline_definitions_util.py` — the source pipeline, route-per-run
   like this one (see [Rclone Source Pipeline](#rclone-source-pipeline-stage-1-configured-per-database))
+- `structured_pipeline_definitions(...)` in `util/structured_pipeline_definitions_util.py` — the dlt source pipeline for
+  API records, route-per-run (see
+  [Structured Source Pipeline](#structured-source-pipeline-stage-1-configured-per-database))
 - `default_sharepoint_to_datalake_definitions(...)` / `default_local_filesystem_to_datalake_definitions(...)` in
   `util/definitions_util.py` — deploy-time builders bound to one bucket (SharePoint via MS Graph, local FS)
 
@@ -360,13 +380,116 @@ teardown stays with the ingestion pipeline.
 
 **A second source pipeline type** registers the same way: a `SourcePipelineConfig` subclass for its form, a factory
 shaped like `rclone_pipeline_definitions(source="acme_sync", display_name=..., description=..., config=...)` (or
-`source_pipeline_registration_sensor(SourcePipeline.from_config(...))` wired into hand-built `Definitions`), and its own
-`source` token. Every deployment-global name derives from that token with suffixes distinct from the ingestion
-pipeline's (`{source}_source_to_datalake` asset group, `{source}_source_partitions`, `{source}_source_observation` /
+`announced_source_pipeline_sensor(...)`, the reserved-id and label gate every source pipeline builds through, wired into
+hand-built `Definitions`), and its own `source` token. The structured source pipeline is the second one. Every
+deployment-global name derives from that token with suffixes distinct from the ingestion pipeline's
+(`{source}_source_to_datalake` asset group, `{source}_source_partitions`, `{source}_source_observation` /
 `…_remove_source_files` jobs). **Ingestor and source tokens reserve each other**: both kinds of pipeline name their
 Dagster jobs after their token and the single-flight guard matches runs by job name across code locations, so
 `SourcePipelineEntity.reserved_ids()` covers every `IngestorType` value plus the `PipelineSourceType` subject tokens,
 and the factory raises at `Definitions`-build time for a reserved id or a custom id without labels.
+
+## Structured Source Pipeline (Stage 1, configured per database)
+
+Jira issues, Confluence pages and similar API records are not files, so rclone cannot sync them. The structured source
+pipeline runs a dlt source per database and writes each record as a markdown file with YAML frontmatter into that
+database's data lake. The unchanged ingestion pipeline parses and embeds it, and #1953 turns the frontmatter into
+document metadata. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
+
+**What you write.** `app/structured_pipeline/__init__.py` is the whole deployed app:
+
+```python
+defs = structured_pipeline_definitions(
+    source="structured",  # routing key (default); every global Dagster name derives from it
+    display_name=LocaleString(en="…"),  # required for a custom source, defaulted for `structured`
+    description=LocaleString(en="…"),
+    config=None,  # announced form; defaults to StructuredSyncConfig.as_form()
+    settings=StructuredPipelineSettings(),  # STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR/MINUTE
+)
+```
+
+A pipeline whose config offers no source kind is built but not announced, so the create-database dialog never offers a
+source nothing can be configured for. That is the shipped pipeline until the Jira adapter (#1954) lands.
+
+**Adding a source kind** takes:
+
+- an `AbstractStructuredSourceAdapter[TOptions]` subclass with its `kind` and its `display_name` (what the kind dropdown
+  shows; the token is what gets stored)
+- an options `Form` whose every element carries `condition_if=Adapter.shown_for(kind)`
+- one field named after the kind on `StructuredSyncConfig`, and the adapter in its `adapters()`
+- labels under `lib.source_pipelines.structured.config.*`
+
+The adapter declares:
+
+- `dlt_source(options)`, incremental on the record's last update. Credentials arrive as arguments, never through dlt's
+  configuration providers, which are shared by the whole process.
+- `to_record_file(record)` → `StructuredRecordFile`: the namespace (first folder), the path segments, frontmatter using
+  #1953's reserved keys (`title`, `url`, `created`, `updated`) and the body. It must be a pure function of the record.
+- `list_record_paths(options)`: the key of every record in scope, built with `StructuredRecordFile.object_key_for` and
+  never through the incremental state. It raises rather than returning a partial set.
+- `layout_version`: raise it when `to_record_file` changes where or how records are written.
+
+`playground/structured_demo/demo_records_adapter.py` is the smallest working example.
+
+**One run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source(source))` launches one run per
+database, tagged `aihub/bucket`. The single asset `[{source}_source_to_datalake, records]` chains, inside that run:
+
+1. **sync**: config through `source_config_for_bucket` (decrypted) → restore the state → `DagsterDltResource.run` with
+   the adapter's `file_source` into `MarkdownDataLakeDestination` → save the state
+2. **list**: the adapter's listing. It takes the sync's output as input, so it always runs after the sync.
+3. **reconcile**: files to remove = present − listed − written this run
+4. **delete** and **announce**: the routed ops the rclone pipeline uses, unchanged
+
+Steps hand their values over per run (`storage/{run_id}/…`). Never split them into assets: an asset's value is stored
+under its key, which every database shares.
+
+**Writes.** `MarkdownDataLakeDestination` writes a file only when the MD5 of its content differs from the stored
+object's ETag, then announces the batch through `notify_source_updated`. dlt delivers at least once, so this is what
+keeps a run with no changes from writing or announcing anything. Don't replace it with a hash kept as object metadata:
+ingestion copies every metadata key of a file into its document and embeds it with each chunk.
+
+Records become files in the extract step (`add_map` in `file_source`), because dlt coerces ISO timestamps into datetimes
+before loading. The mapped rows keep every field of the record, so the cursor and the primary key still resolve.
+
+**State.** dlt cannot restore state from a custom destination, so each database's ~1 KB `state.json` is kept at
+`s3://{database}/.{source}_dagster/state.json`:
+
+- data-lake listings skip `.…dagster` folders
+- the `dagster` bucket would expire it within a day
+- teardown deletes it together with the bucket
+
+It is keyed by a scope fingerprint (the non-secret options plus `layout_version`): a changed scope or layout re-reads
+everything, while a rotated credential keeps the cursor.
+
+**Rules.** Each one guards a failure that would otherwise be silent.
+
+1. **`restore_from_destination = False`** on every pipeline. Otherwise `DagsterDltResource` drops the restored state,
+   and every run re-reads everything.
+2. **Save the state only after the whole sync succeeded**, and only if the database still uses this source and isn't
+   `deleting`. dlt advances the cursor before it writes.
+3. **Deactivate dlt's pipeline after the sync** (`Container()[PipelineContext].deactivate()`). Every step of a run
+   shares one process (`in_process_executor`), and a listing must never read the sync's cursor.
+4. **List after the sync, never before.** A failing listing raises, and an empty listing while the bucket holds files
+   raises.
+5. **Never remove a file the same run wrote.**
+6. **A listed record without a file means the cursor is ahead of the data.** The state is discarded, and the next run
+   re-reads everything.
+7. **One sync per database at a time.** A run that finds another sync of the same database running gives way, whichever
+   was created first. "Another sync" is a run of the sync job or one launched from the asset page (`__ASSET_JOB` with
+   the asset selected); never match on the bucket tag alone, because the database's ingestion runs carry it too.
+8. **dlt telemetry stays off.** `structured_pipeline_definitions` sets `RUNTIME__DLTHUB_TELEMETRY=false`, and so does
+   the Dockerfile.
+9. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
+   step outputs are pickled into the `dagster` bucket.
+
+**Try it locally.** `make structured-demo` runs the ingestion pipeline and `playground.structured_demo` (token
+`structured_demo`) in one `dagster dev`.
+
+1. With the dev stack, API and web up, create a database with the "Demo records (JSON file)" source.
+2. Launch `structured_demo_source_sync` with the tag `aihub/bucket=<database>`.
+3. Edit `playground/structured_demo/demo_records.json` to see updates and removals.
+
+The demo registers a `structured_demo` row in your dev Mongo's `source_pipelines`; delete it afterwards.
 
 ## Per-Database Configuration
 
@@ -657,15 +780,15 @@ runs set it for you; only manual launches need it.
 
 ## Local Dagster Instance
 
-`make playground`, `make quickstart`, and `make document-ingestion-pipeline` each depend on the `dagster-home` target,
-which installs `dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root
-`.env` for the dev-stack connection settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes
-`dagster dev` create a throwaway `.tmp_dagster_home_*` instance per start, and a missing instance config leaves
-`DefaultRunCoordinator` in place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same
-`QueuedRunCoordinator` as `infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a
-literal instead of `env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so
-an unresolvable env var would raise `PostProcessingError` in every Dagster process on the machine, including ones
-started without the repo `.env` loaded.
+`make playground`, `make quickstart`, `make document-ingestion-pipeline` and `make structured-demo` each depend on the
+`dagster-home` target, which installs `dagster.local.yaml` into `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent),
+and source the repo-root `.env` for the dev-stack connection settings. Two failure modes this prevents: an unset
+`DAGSTER_HOME` makes `dagster dev` create a throwaway `.tmp_dagster_home_*` instance per start, and a missing instance
+config leaves `DefaultRunCoordinator` in place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml`
+uses the same `QueuedRunCoordinator` as `infra/configs/dagster/dagster-config.<stage>.yml`, but with
+`max_concurrent_runs` as a literal instead of `env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed
+into `$DAGSTER_HOME`, so an unresolvable env var would raise `PostProcessingError` in every Dagster process on the
+machine, including ones started without the repo `.env` loaded.
 
 `DAGSTER_HOME ?= $(HOME)/.dagster_home` is defined in the Makefile and exported over whatever `.env` says — same
 directory, but already absolute, so the recipes can `mkdir`/`cp` with it. `.env` keeps the tilde form for the manual
@@ -697,6 +820,13 @@ where it sits, including inside the pipeline images that `COPY packages/pipeline
   workspace entry `rclone_pipeline:4000`, env `AIHUB_CONFIG_ENCRYPTION_KEY`, `RCLONE_URL`, `RCLONE_RC_USER/PASS`,
   `RCLONE_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`. See
   [Rclone Source Pipeline](#rclone-source-pipeline-stage-1-configured-per-database).
+- `structured_pipeline/` — **the** structured source pipeline (Stage 1). One deployment syncs *every* knowledge database
+  whose `BucketEntity.source` is `structured`, from the source kind and credentials stored on that database, via dlt.
+  Built by `structured_pipeline_definitions()` in `util/structured_pipeline_definitions_util.py`; Dockerfile as rclone's
+  with `PIPELINE=structured_pipeline` and `RUNTIME__DLTHUB_TELEMETRY=false`. Not deployed yet: its compose service,
+  workspace entry and env (`AIHUB_CONFIG_ENCRYPTION_KEY`, `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`) land with the
+  first real source kind (#1954). See
+  [Structured Source Pipeline](#structured-source-pipeline-stage-1-configured-per-database).
 
 The legacy `default_rag_pipeline` / `shared_rag_pipeline` are **gone**: their code is deleted and their last published
 images are pinned in the `nightly` and `latest` compose stages so existing corpora keep ingesting. They can never be
@@ -708,7 +838,9 @@ nothing can be created on top of them, and rows predating the `ingestor` field r
 `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.document_ingestion_pipeline"`
 
 Run it locally: `make document-ingestion-pipeline`. The rclone source pipeline runs on the host the same way with
-`dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`).
+`dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`). The structured
+source pipeline is tried with `make structured-demo`, which runs the ingestion pipeline and the playground's demo source
+as two code locations.
 
 ## Testing
 

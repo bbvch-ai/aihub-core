@@ -5,6 +5,7 @@ Files arrive on every turn for the whole message branch, so a turn without attac
 and a waiting step never hangs. Images are left out, since they already reach the model as image content.
 """
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -22,6 +23,7 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import MAX_CONCURRENT_READS
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
@@ -162,6 +164,31 @@ async def test_an_unreadable_file_is_reported_not_dropped():
     assert source.error == "corrupt PDF"
     assert "broken.pdf" in (read.block[0].content or "")
     assert "corrupt PDF" in (read.block[0].content or "")
+
+
+@pytest.mark.asyncio
+async def test_many_attachments_are_read_a_few_at_a_time_in_order():
+    """A dozen PDFs read at once overran MinerU's three slots and ran out of their 503 retries together."""
+    in_flight, peak = 0, 0
+
+    async def extract(bucket: str, key: str, content_type: str) -> ExtractedDocument:
+        nonlocal in_flight, peak
+        in_flight += 1
+        peak = max(peak, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return _document(f"Contents of {key.rsplit('/', 1)[-1]}")
+
+    files = [
+        _file(f"{year}_d.pdf", file_id=f"7f1c6a8e-3b2d-4c5e-9f10-2a3b4c5d6e{year % 100:02d}")
+        for year in range(2014, 2026)
+    ]
+    with patch(f"{READER_MODULE}.DocumentExtractor.extract_from_s3", new=extract):
+        events = await _read(files)
+
+    assert peak == MAX_CONCURRENT_READS
+    assert [event.filename for event in events[:-1]] == [file.filename for file in files]
+    assert all(event.status == AttachedFileStatus.READ for event in events[:-1])
 
 
 LONG_TEXT = " ".join(f"Sentence number {index} of the handbook." for index in range(4000))

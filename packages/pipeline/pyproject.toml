@@ -32,6 +32,8 @@ dependencies = [
     "dagster-apprise>=0.0.2",
     "apprise>=1.9.9",
     "openai>=1.76.2",
+    "dlt>=1.30.0",
+    "dagster-dlt>=0.29.23",
 ]
 
 [dependency-groups]

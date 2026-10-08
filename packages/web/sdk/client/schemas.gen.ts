@@ -6296,6 +6296,16 @@ export const ContextualizeConversationEventSchema = {
       description:
         "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
     },
+    attached_file_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Attached File Names",
+      description:
+        "The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -29460,7 +29470,7 @@ export const UpdateDatabaseSourceRequestSchema = {
       type: "boolean",
       title: "Replace Existing Documents",
       description:
-        "Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.",
+        "Acknowledges that handing a database to a different source, from manual upload or from another source, gives its content to that source: documents the new source does not have are removed on its next sync. Required when the database already holds documents; not needed to edit the current source's settings or to switch back to manual upload.",
       default: false,
     },
   },
@@ -33911,6 +33921,16 @@ export const ContextualizeConversationEventWritableSchema = {
       title: "User Query",
       description:
         "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
+    },
+    attached_file_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Attached File Names",
+      description:
+        "The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.",
+      default: [],
     },
   },
   additionalProperties: true,

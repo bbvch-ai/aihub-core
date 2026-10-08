@@ -156,6 +156,7 @@ class NamespaceSelectionAgent(Agent):
         """Gate every chat message: classify it as a meta question or release the normal pipeline."""
         return await do_detect_meta_question(
             user_query=event.user_query,
+            attached_file_names=event.attached_file_names,
             llm_config=agent_config.task_llm,
             displayer=displayer,
             user=user,

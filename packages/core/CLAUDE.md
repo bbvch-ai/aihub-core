@@ -67,7 +67,9 @@ packages/core/swiss_ai_hub/core/
 │   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
-│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents
+│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents;
+│   │                                #   KnowledgeContentSearch: exact and regex search over their parsed text
+│   ├── structured_extraction/       # RecordSchemaBuilder + RecordExtractor: runtime-schema record extraction
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
@@ -533,20 +535,21 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module                 | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`              | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
-| `retrieval/`           | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
-| `retrievers/`          | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
-| `knowledge_documents/` | Whole-document read access            | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`                                                                                                                                                                                              |
-| `rerank/`              | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
-| `guards/`              | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
-| `processors/`          | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
-| `resources/`           | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
-| `document/`            | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                    |
-| `prompting/`           | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
-| `chat_history/`        | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
-| `routing/`             | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+| Module                   | Purpose                                   | Key Entry Points                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`                | Agent-scoped memory (user + org)          | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                   |
+| `retrieval/`             | RAG node retrieval                        | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                                                      |
+| `retrievers/`            | Vector store abstraction                  | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                                                     |
+| `knowledge_documents/`   | Whole-document read access                | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                           |
+| `rerank/`                | Result reranking                          | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                            |
+| `guards/`                | Input/output guards                       | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                     |
+| `processors/`            | Retrieval post-processors                 | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                   |
+| `resources/`             | LLM/embedding model configs               | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                               |
+| `document/`              | Document loading and parsing              | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache`), `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                    |
+| `prompting/`             | Few-shot examples, language detection     | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                      |
+| `chat_history/`          | Chat context management                   | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
+| `routing/`               | LLM-based event routing                   | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                              |
+| `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                |
 
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
@@ -564,6 +567,48 @@ exist or is being deleted fails the whole call with `KnowledgeCollectionNotFound
 range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
 passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
 against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
+
+`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_glob=, offset=, limits=)` finds
+every fully ingested document whose parsed text contains an exact term or matches a regex. Unlike vector or BM25
+retrieval it is exhaustive: pages of `max_documents` (default 20) are walked with `next_offset` until it is None. Each
+`KnowledgeContentMatch` carries the summary, the first `max_lines_per_document` (5) matching lines, located by
+`start`/`end` offsets that `load_document` takes, and the total `matching_line_count`. It has the same trust rule and
+collection errors as the reader. How it works:
+
+- **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
+  passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
+- **Two engines.** The database (PCRE2, prefixed `(*UCP)` so `\w`/`\b` handle umlauts) only finds candidates; Python's
+  `regex` decides the lines, and a candidate without one is dropped. A pattern PCRE2 rejects raises
+  `InvalidSearchPatternError`; so do empty, empty-matching, over-500-character and fuzzy (`{e<=1}`) queries.
+- **Cost.** The backend decompresses the whole row, both text copies included, for every filter operator, projection and
+  sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
+  and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
+  s on PostgreSQL's default pglz (#1024).
+- **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
+  not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
+  named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
+  repetition such as `(x+x+)+` can silently miss documents.
+
+`structured_extraction/` pulls records out of one document with a schema decided at request time (issue #1949, ADR
+`2026_10_02_runtime_record_schemas_for_structured_extraction`). Both entry points take their model as an argument and
+read no agent configuration:
+
+- **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at most
+  `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
+  `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None)`** returns a
+  `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only hardware");
+  filters never become fields. The document must be loaded whole.
+- **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
+  half the output limit, because the records come back as JSON. Windows break at line ends, so a table row is never
+  cut. `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's opening (`DOCUMENT_OPENING_TOKENS`, at most half a
+  window), so header values such as an invoice number reach records far below the header.
+- **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
+  Infrastructure errors still raise.
+
+Keep the schema model and the extraction model separate parameters. Each model is consistent with itself across runs,
+but models disagree with each other on names and types, so the schema model decides what a table looks like.
+`page` stays `None` because parsed text carries no page boundaries yet.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it

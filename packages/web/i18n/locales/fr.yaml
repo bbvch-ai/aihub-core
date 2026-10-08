@@ -642,6 +642,9 @@ knowledge:
         message: "{name} contient déjà {count} document(s) téléversé(s) manuellement.\
           \ Dès qu'une source alimente cette base, chaque fichier absent de la source\
           \ est supprimé lors de la prochaine synchronisation."
+        message_from_source: "{name} contient {count} document(s) synchronisé(s) depuis\
+          \ {source}. Dès que la nouvelle source alimente cette base, chaque fichier\
+          \ qu'elle n'a pas est supprimé lors de sa prochaine synchronisation."
         accept: Remplacer les documents existants
     edit:
       title: Modifier la collection
@@ -659,8 +662,8 @@ knowledge:
     source:
       label: Source
       placeholder: Choisissez d'où proviennent les documents
-      help: Un pipeline source maintient cette base synchronisée avec un système externe
-        ; chaque dossier de premier niveau devient un espace de noms.
+      help: Un pipeline source maintient cette base synchronisée avec un système externe.
+        Sa description indique comment le contenu est réparti en espaces de noms.
       manual_upload:
         label: Téléversement manuel
         description: Les documents sont téléversés à la main dans des espaces de noms

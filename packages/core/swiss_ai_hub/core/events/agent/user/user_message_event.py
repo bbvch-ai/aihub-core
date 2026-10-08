@@ -90,6 +90,11 @@ class UserMessageEvent(StartEvent):
         return self.last_user_message.content or ""
 
     @property
+    def attached_file_names(self) -> list[str]:
+        """The names of the uploaded files, which tell a question about their content from one about the agent."""
+        return [file.filename for file in self.files or []]
+
+    @property
     def last_user_message(self) -> ChatMessage:
         """
         Extracts the complete last user message (with all blocks including images/audio) from chat history.

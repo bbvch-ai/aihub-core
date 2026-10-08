@@ -86,7 +86,11 @@ class Conversation(Capability):
         history: list[ChatMessage], message: UserMessageEvent | None = None
     ) -> ContextualizeConversationEvent:
         """Hand the limited history over; pass the user's message so it is inspected for a meta question."""
-        return ContextualizeConversationEvent(history=history, user_query=message.user_query if message else None)
+        if message is None:
+            return ContextualizeConversationEvent(history=history)
+        return ContextualizeConversationEvent(
+            history=history, user_query=message.user_query, attached_file_names=message.attached_file_names
+        )
 
     @staticmethod
     def compose(history: list[ChatMessage], blocks: Sequence[list[ChatMessage]]) -> ComposeContextEvent:
@@ -117,6 +121,7 @@ class Conversation(Capability):
             return NotAMetaQuestionEvent(reasoning="Programmatic start: no user message to inspect.")
         return await do_detect_meta_question(
             user_query=request.user_query,
+            attached_file_names=request.attached_file_names,
             llm_config=conversation.task_llm,
             displayer=displayer,
             user=user,

@@ -2,6 +2,7 @@ from sqlalchemy import Engine
 
 from swiss_ai_hub.backup.maintenance.base import MaintenanceHandler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import DagsterUnimportantEventsHandler
+from swiss_ai_hub.backup.maintenance.ferretdb_lz4_rewrite import FerretdbLz4RewriteHandler
 from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
 from swiss_ai_hub.backup.maintenance.postgres_indexes import PostgresIndexesHandler
@@ -19,6 +20,8 @@ CLEANUP_HANDLER_NAMES: tuple[str, ...] = (
     "dagster_unimportant_events",
 )
 REPACK_HANDLER_NAMES: tuple[str, ...] = ("postgres_repack",)
+# Launched by hand once per deployment, never scheduled: see FerretdbLz4RewriteHandler.
+LZ4_REWRITE_HANDLER_NAMES: tuple[str, ...] = ("ferretdb_lz4_rewrite",)
 
 # Three of the cleanup handlers differ only in log level + retention window.
 # Keep that knowledge here rather than scattering it across three near-identical
@@ -55,4 +58,6 @@ def create_maintenance_handler(
         )
     if service_name == "postgres_repack":
         return PostgresRepackHandler(settings)
+    if service_name == "ferretdb_lz4_rewrite":
+        return FerretdbLz4RewriteHandler(settings)
     raise ValueError(f"Unknown maintenance service: {service_name}")
