@@ -143,11 +143,20 @@ class ToolSet(BaseModel):
             if definition is not None:
                 definitions[definition.name] = definition
         for name, tool in self.function_tools(context).items():
-            function = tool.metadata.to_openai_tool()["function"]
+            function = tool.metadata.to_openai_tool(skip_length_check=True)["function"]
             definitions[name] = ToolDefinition(
-                name=name, description=function["description"], parameters=function["parameters"]
+                name=name,
+                description=self._without_signature(name, function["description"]),
+                parameters=function["parameters"],
             )
         return definitions
+
+    @staticmethod
+    def _without_signature(name: str, description: str) -> str:
+        """LlamaIndex leads a function's description with its Python signature, which repeats the parameter schema
+        the model is given anyway."""
+        first, _, rest = description.partition("\n")
+        return rest.strip() if first.startswith(f"{name}(") and rest.strip() else description
 
     @staticmethod
     def _spec_function_name(entry: str | tuple[str, str]) -> str:

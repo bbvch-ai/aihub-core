@@ -23,6 +23,15 @@ class ReadAttachedFilesEvent(ControlAndDisplayEvent):
     )
 
     files: Annotated[list[UserUploadedFile], Field(description="The files attached to the current branch.")] = []
+    kept_for_code: Annotated[
+        list[UserUploadedFile],
+        Field(
+            description=(
+                "Files the model chose that are not read but named back to it, because code in the sandbox works on "
+                "them better than on their Markdown text."
+            )
+        ),
+    ] = []
     history: Annotated[
         list[ChatMessage], Field(description="The history the files will be composed into, for sizing them.")
     ] = []
