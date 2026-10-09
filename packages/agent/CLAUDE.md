@@ -211,7 +211,9 @@ sections when there is no query or the models fail. `read(..., first_page=, last
 Document Intelligence mark `PAGE_BREAK`s, and the node parser gives every chunk its `page`), in order up to the room,
 with a note naming the pages that fit; a file without page marks is read as usual and the model is told its pages are
 unknown. RAG reserves room for its retrieved nodes (`RAGAgentConfig.retrieved_context_reserve()`), because the files are
-read in parallel with retrieval and `compose` can only drop a whole block when they do not fit. It emits an
+read in parallel with retrieval and `compose` can only drop a whole block when they do not fit, and for the sufficiency
+guard's instructions and query (`context_sufficient_guard_reserve()`), which the guard sends next to the documents, so
+its prompt keeps the file block the answer's does. It emits an
 `AttachedFileEvent` per file, carrying the text the model received and its citation id, which chat clients show as a
 source. Blueprints call it from their `gather_context_step` next to `Memory.recall` and compose the block after the
 memories. Chat clients send every file of the current message branch on each turn, so no file state is kept across

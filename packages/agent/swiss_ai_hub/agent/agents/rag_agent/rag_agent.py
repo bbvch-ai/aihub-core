@@ -127,13 +127,14 @@ class RAGAgent(Agent):
         ctx: Conversation.Contextualized,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: RAGAgentConfig,
+        t: LocaleHandler,
     ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
         """A programmatic start may narrow the organization-memory scope; a chat message reads the profile's and may
         reference collections to search on top of the configured ones."""
         namespaces = start_event.org_memory_namespaces if isinstance(start_event, RAGStartEvent) else []
         references = start_event.knowledge_references if isinstance(start_event, UserMessageEvent) else []
         cite_sources = CitationPolicy.cites_sources(start_event)
-        reserve = agent_config.retrieved_context_reserve()
+        reserve = agent_config.retrieved_context_reserve() + agent_config.context_sufficient_guard_reserve(t, ctx.query)
         if references:
             reserve += agent_config.knowledge.context_reserve()
         files = AttachedFiles.read(
