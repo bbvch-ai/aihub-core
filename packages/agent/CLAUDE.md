@@ -181,8 +181,13 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   prompt the model is actually sent: instructions in the leading system messages of `history`, never added after. When
   it does not fit, the oldest turns give way first, then whole blocks from the front (never part of one); the system
   head and the last turn never do. Consecutive messages of one role leave merged, so send the history unchanged.
-  `Conversation.fit(history, blocks, config)` is the same composition without the event, for a step that must reason
-  over the context before the prompt is composed (RAG's context-sufficiency guard).
+  `Conversation.fit(history, blocks, config, reserve_tokens=0)` is the same composition without the event, for a step
+  that must reason over the context before the prompt is composed (RAG's context-sufficiency guard). Anything the step
+  sends next to the result must be passed as `reserve_tokens`: the guard reserves its retrieved documents and its own
+  prompt, which otherwise overflowed the model's window by their size (issue #2077). The input budget every filled
+  prompt uses, `ConversationFields.input_budget()`, is the admin's ceiling capped by `WINDOW_SAFETY_FACTOR` (0.85) of the
+  narrowest model window: prompts are counted with tiktoken, which undercounts English by up to 6% against Ministral
+  and gemma. Refusing an oversized message (`do_limit_chat_history`) compares against the exact window instead.
 - `complete(answer, stop=None)` → generates the follow-up questions and ends the run with the given stop event (RAG's
   outcome events) or an `LLMStopEvent` carrying the answer. Return it **last** from the step, behind anything that must
   be published before teardown.
@@ -196,22 +201,23 @@ completion is what guarantees it is published before the run tears down (ADR `20
 `read(files, history, query, reserve_tokens)` → `AttachedFiles.Contents` (`AttachedFilesReadEvent`), empty when nothing
 readable is attached (images stay image content). Files are read two at a time (`AttachedFileReader.read_all`), since
 MinerU serves three conversions at once and a dozen PDFs sent together ran out of their 503 retries side by side. Each
-file is split with the ingestion pipeline's
-`MarkdownStructuralNodeParser`, so sections keep their headings and tables split between rows, and rendered with
-`combine_nodes_in_order` as a `REFERENCE_DOCUMENT`, exactly like retrieved knowledge; notes the model must pass on (a
-file cut down, or unreadable) follow in a second message. The files share the room left after `history` and
-`reserve_tokens`; a file that fits goes in whole, one that does not keeps the sections most relevant to `query`
-(embedding shortlist, then core's `rerank_nodes`, back in document order), and its first sections when there is no query
-or the models fail. `read(..., first_page=, last_page=)` (and the tool's `first_page`/`last_page`) reads those pages of
-a file that knows its pages (`ExtractedDocument.is_paged`: MinerU and Document Intelligence mark `PAGE_BREAK`s, and the
-node parser gives every chunk its `page`), in order up to the room, with a note naming the pages that fit; a file
-without page marks is read as usual and the model is told its pages are unknown. RAG reserves room for its retrieved
-nodes (`RAGAgentConfig.retrieved_context_reserve()`), because the files are read in parallel with retrieval and
-`compose` can only drop a whole block when they do not fit. It emits an `AttachedFileEvent` per file, carrying the text
-the model received and its citation id, which chat clients show as a source. Blueprints call it from their
-`gather_context_step` next to `Memory.recall` and compose the block after the memories. Chat clients send every file of
-the current message branch on each turn, so no file state is kept across turns. The query used for knowledge retrieval
-does not consider the files.
+file is split with the ingestion pipeline's `MarkdownStructuralNodeParser`, so sections keep their headings and tables
+split between rows, and rendered with `combine_nodes_in_order` as a `REFERENCE_DOCUMENT`, exactly like retrieved
+knowledge; notes the model must pass on (a file cut down, or unreadable) follow in a second message. The files share the
+room left after `history` and `reserve_tokens`; a file that fits goes in whole, one that does not keeps the sections
+most relevant to `query` (embedding shortlist, then core's `rerank_nodes`, back in document order), and its first
+sections when there is no query or the models fail. `read(..., first_page=, last_page=)` (and the tool's
+`first_page`/`last_page`) reads those pages of a file that knows its pages (`ExtractedDocument.is_paged`: MinerU and
+Document Intelligence mark `PAGE_BREAK`s, and the node parser gives every chunk its `page`), in order up to the room,
+with a note naming the pages that fit; a file without page marks is read as usual and the model is told its pages are
+unknown. RAG reserves room for its retrieved nodes (`RAGAgentConfig.retrieved_context_reserve()`), because the files are
+read in parallel with retrieval and `compose` can only drop a whole block when they do not fit, and for the sufficiency
+guard's instructions and query (`context_sufficient_guard_reserve()`), which the guard sends next to the documents, so
+its prompt keeps the file block the answer's does. It emits an
+`AttachedFileEvent` per file, carrying the text the model received and its citation id, which chat clients show as a
+source. Blueprints call it from their `gather_context_step` next to `Memory.recall` and compose the block after the
+memories. Chat clients send every file of the current message branch on each turn, so no file state is kept across
+turns. The query used for knowledge retrieval does not consider the files.
 
 **`Knowledge`** (needs `KnowledgeFields`: a reranking model, preset to `reranker/bge`, `retrieve_k` (sections per
 database) and the deployment-fixed `tokens_per_section`): `search(references, query, cite_sources)` →

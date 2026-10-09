@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
@@ -27,6 +28,7 @@ from swiss_ai_hub.core.generative_ai import (
     RetrievalRuntimeConfig,
     combine_nodes_in_order,
     context_sufficient_guard,
+    context_sufficient_guard_messages,
     estimate_prompt_tokens,
     few_shot_guard,
     limit_chat_history,
@@ -42,6 +44,8 @@ from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_
 )
 from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
@@ -287,15 +291,29 @@ async def do_context_sufficient_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    chat_history: list[ChatMessage],
+    history: list[ChatMessage],
+    blocks: Sequence[list[ChatMessage]],
+    conversation: ConversationFields,
     user: UserIdentity | None,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+    """Ask the task model whether the retrieved documents answer the question.
+
+    The history is fitted here, not by the caller: the guard renders the documents and its own instructions next to
+    it, so only the room left after them may hold the history. Fitted to the whole budget, the prompt overflowed
+    by the size of the documents (issue #2077).
+    """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
+
+    guard_prompt = context_sufficient_guard_messages(
+        t, user_query, context_message, prev_queries, more_hops_available, chat_history=[]
+    )
+    reserve_tokens = estimate_prompt_tokens(guard_prompt, conversation.llm.token_counter)
+    chat_history = Conversation.fit(history, blocks, conversation, reserve_tokens=reserve_tokens)
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
         guard_result = await context_sufficient_guard(
