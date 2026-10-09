@@ -22264,6 +22264,16 @@ export const ReadAttachedFilesEventSchema = {
       description: "The files attached to the current branch.",
       default: [],
     },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
+      default: [],
+    },
     history: {
       items: {
         $ref: "#/components/schemas/ChatMessage",
@@ -43624,6 +43634,16 @@ export const ReadAttachedFilesEventWritableSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {
