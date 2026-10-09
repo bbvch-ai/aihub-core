@@ -3,7 +3,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ImageBlock, MessageRole, TextBlock
+from llama_index.core.utils import get_tokenizer
 from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.generative_ai import estimate_prompt_tokens
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
@@ -85,6 +87,23 @@ def displayer():
     return d
 
 
+# The agent's own counter, which `limit_chat_history` also uses: a test counting otherwise trims the history short
+# of the budget and hides an overflow.
+_token_counter = get_tokenizer()
+
+
+def _conversation(input_budget: int) -> MagicMock:
+    conversation = MagicMock()
+    conversation.input_budget.return_value = input_budget
+    conversation.llm.token_counter = _token_counter
+    return conversation
+
+
+@pytest.fixture
+def conversation() -> MagicMock:
+    return _conversation(input_budget=100_000)
+
+
 @pytest.fixture
 def run_context():
     ctx = MagicMock()
@@ -95,7 +114,7 @@ def run_context():
 
 @pytest.mark.asyncio
 async def test_organization_memory_system_message_reaches_guard_prompt(
-    mock_llm, llm_config, displayer, run_context, locale_handler
+    mock_llm, llm_config, displayer, run_context, locale_handler, conversation
 ):
     """End-to-end wiring: extend_chat_history_with_organization_memory injects a system message,
     and do_context_sufficient_guard must render that chat history into the guard prompt so the
@@ -119,7 +138,9 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
         displayer=displayer,
         t=locale_handler,
         user=fake_user(),
-        chat_history=chat_history_with_memory,
+        history=chat_history_with_memory,
+        blocks=[],
+        conversation=conversation,
     )
 
     assert memory_text in _rendered_text(mock_llm)
@@ -127,7 +148,7 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
 
 @pytest.mark.asyncio
 async def test_guard_forwards_full_chat_history_including_user_and_assistant_turns(
-    mock_llm, llm_config, displayer, run_context, locale_handler
+    mock_llm, llm_config, displayer, run_context, locale_handler, conversation
 ):
     chat_history = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -147,7 +168,9 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
         displayer=displayer,
         t=locale_handler,
         user=fake_user(),
-        chat_history=chat_history,
+        history=chat_history,
+        blocks=[],
+        conversation=conversation,
     )
 
     rendered = _rendered_text(mock_llm)
@@ -157,7 +180,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
 
 @pytest.mark.asyncio
 async def test_guard_with_empty_chat_history_still_calls_the_model(
-    mock_llm, llm_config, displayer, run_context, locale_handler
+    mock_llm, llm_config, displayer, run_context, locale_handler, conversation
 ):
     await do_context_sufficient_guard(
         user_query="What is the capital of France?",
@@ -169,7 +192,9 @@ async def test_guard_with_empty_chat_history_still_calls_the_model(
         displayer=displayer,
         t=locale_handler,
         user=fake_user(),
-        chat_history=[],
+        history=[],
+        blocks=[],
+        conversation=conversation,
     )
 
     assert mock_llm.achat.called
@@ -177,7 +202,7 @@ async def test_guard_with_empty_chat_history_still_calls_the_model(
 
 @pytest.mark.asyncio
 async def test_guard_forwards_context_message_with_image_blocks_intact(
-    mock_llm, llm_config, displayer, run_context, locale_handler
+    mock_llm, llm_config, displayer, run_context, locale_handler, conversation
 ):
     """Regression: when retrieved context contains figures, the guard prompt must still carry the
     image block so the model can see it — not a flattened text-only string."""
@@ -201,14 +226,18 @@ async def test_guard_forwards_context_message_with_image_blocks_intact(
         displayer=displayer,
         t=locale_handler,
         user=fake_user(),
-        chat_history=[],
+        history=[],
+        blocks=[],
+        conversation=conversation,
     )
 
     assert any(isinstance(block, ImageBlock) for block in _rendered_blocks(mock_llm))
 
 
 @pytest.mark.asyncio
-async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, displayer, run_context, locale_handler):
+async def test_guard_emits_reject_event_when_no_more_hops(
+    mock_llm, llm_config, displayer, run_context, locale_handler, conversation
+):
     mock_llm.achat = AsyncMock(return_value=_verdict_response("INSUFFICIENT Context does not answer the question"))
 
     result = await do_context_sufficient_guard(
@@ -221,8 +250,79 @@ async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, 
         displayer=displayer,
         t=locale_handler,
         user=fake_user(),
-        chat_history=[],
+        history=[],
+        blocks=[],
+        conversation=conversation,
     )
 
     assert isinstance(result, ContextInsufficientRejectEvent)
     assert result.reason == "Context does not answer the question"
+
+
+def _long_conversation(turns: int, words_per_answer: int) -> list[ChatMessage]:
+    history = [ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant.")]
+    for turn in range(turns):
+        history.append(ChatMessage(role=MessageRole.USER, content=f"Question {turn}"))
+        history.append(ChatMessage(role=MessageRole.ASSISTANT, content=f"Answer{turn}: " + "word " * words_per_answer))
+    history.append(ChatMessage(role=MessageRole.USER, content="Which torque applies on line 7?"))
+    return history
+
+
+def _documents(words: int) -> ChatMessage:
+    return ChatMessage(role=MessageRole.USER, content="<REFERENCE_DOCUMENT>" + "document " * words)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("more_hops", [True, False], ids=["with-hops-left", "last-hop"])
+async def test_guard_prompt_stays_within_the_input_budget(
+    mock_llm, llm_config, displayer, run_context, locale_handler, more_hops
+):
+    """Regression for #2077: the history used to be fitted to the whole budget, and the documents and the guard's
+    instructions were rendered on top of it, so a long conversation overflowed by the size of the documents."""
+    budget = 20_000
+    run_context.get = AsyncMock(
+        side_effect=lambda key, default=None: {"prev_queries": ["earlier query"], "hop_count": 1}.get(key, default)
+    )
+
+    await do_context_sufficient_guard(
+        user_query="Which torque applies on line 7?",
+        context_message=_documents(words=6_000),
+        check_context_sufficiency=True,
+        max_hops=3 if more_hops else 1,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        history=_long_conversation(turns=14, words_per_answer=2_000),
+        blocks=[[ChatMessage(role=MessageRole.SYSTEM, content="memory " * 500)]],
+        conversation=_conversation(input_budget=budget),
+        user=fake_user(),
+    )
+
+    assert estimate_prompt_tokens(_prompt_messages(mock_llm), _token_counter) <= budget
+
+
+@pytest.mark.asyncio
+async def test_guard_keeps_the_documents_and_the_question_when_the_history_must_give_way(
+    mock_llm, llm_config, displayer, run_context, locale_handler
+):
+    await do_context_sufficient_guard(
+        user_query="Which torque applies on line 7?",
+        context_message=_documents(words=6_000),
+        check_context_sufficiency=True,
+        max_hops=3,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        history=_long_conversation(turns=14, words_per_answer=2_000),
+        blocks=[],
+        conversation=_conversation(input_budget=20_000),
+        user=fake_user(),
+    )
+
+    rendered = _rendered_text(mock_llm)
+    assert rendered.count("document ") >= 6_000
+    assert "Which torque applies on line 7?" in rendered
+    assert "Answer0:" not in rendered
+    assert "Answer13:" in rendered

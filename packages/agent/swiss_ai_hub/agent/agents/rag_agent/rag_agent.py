@@ -268,7 +268,9 @@ class RAGAgent(Agent):
             agent_config.task_llm,
             displayer,
             t,
-            chat_history=Conversation.fit(ctx.history, [*memories.blocks, knowledge.block, files.block], agent_config),
+            history=ctx.history,
+            blocks=[*memories.blocks, knowledge.block, files.block],
+            conversation=agent_config,
             user=user,
         )
 
