@@ -32,20 +32,20 @@ def create_compact_markdown_table(df: pd.DataFrame) -> str:
     if has_integer_column_indices(df):
         df = apply_header_rows(df.copy(), 1)
 
-    header = [_markdown_cell(column) for column in df.columns]
+    header = [markdown_cell(column) for column in df.columns]
     lines = [
-        _markdown_row(header),
-        _markdown_row(["---"] * len(header)),
-        *(_markdown_row([_markdown_cell(value) for value in row]) for row in df.values),
+        markdown_row(header),
+        markdown_row(["---"] * len(header)),
+        *(markdown_row([markdown_cell(value) for value in row]) for row in df.values),
     ]
     return "\n".join(lines)
 
 
-def _markdown_row(cells: list[str]) -> str:
+def markdown_row(cells: list[str]) -> str:
     return f"| {' | '.join(cells)} |"
 
 
-def _markdown_cell(value: object) -> str:
+def markdown_cell(value: object) -> str:
     """
     Keep every cell on one line, free of delimiters, and free of placeholder text.
 
@@ -57,8 +57,14 @@ def _markdown_cell(value: object) -> str:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
 
-    cell = str(value).replace("\r", " ").replace("\n", " ").replace("|", "/").strip()
+    cell = markdown_cell_text(str(value))
     return "" if cell.lower() in ("none", "nan", "<na>") else cell
+
+
+def markdown_cell_text(text: str) -> str:
+    """A cell's own text on one line and free of delimiters, for a source with no pandas placeholders to hide, where
+    "None" or "Nan" is what someone wrote."""
+    return text.replace("\r", " ").replace("\n", " ").replace("|", "/").strip()
 
 
 def has_integer_column_indices(df: pd.DataFrame) -> bool:

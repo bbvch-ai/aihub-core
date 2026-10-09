@@ -89,7 +89,7 @@ aws --endpoint-url $ENDPOINT s3api get-bucket-lifecycle-configuration --bucket d
   || echo "No lifecycle configuration found"
 
 # Apply lifecycle expiration to the parse-cache bucket.
-# MinerU conversions keyed by document bytes (MineruParseCache). An expired entry is
+# MinerU and MarkItDown conversions keyed by document bytes (MineruParseCache, MarkItDownParseCache). An expired entry is
 # simply parsed again, so expiry bounds storage without losing anything.
 echo "Configuring lifecycle expiration for parse-cache bucket..."
 cat > /tmp/lifecycle-parse-cache.json <<EOF

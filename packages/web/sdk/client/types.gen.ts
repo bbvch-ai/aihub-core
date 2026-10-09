@@ -14870,6 +14870,12 @@ export type ReadAttachedFilesEvent = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -28700,6 +28706,12 @@ export type ReadAttachedFilesEventWritable = {
    * The files attached to the current branch.
    */
   files?: Array<UserUploadedFile>;
+  /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
   /**
    * History
    *
