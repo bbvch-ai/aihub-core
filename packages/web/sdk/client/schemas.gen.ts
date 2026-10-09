@@ -16687,6 +16687,31 @@ export const LocaleStringSchema = {
     'A multi-language string container supporting German, English, French, and Italian.\n\nLocaleString serves as a data container for translated strings. For form rendering,\nuse the `LocaleInput` FormKit element with the duality pattern.\n\n## Basic Usage (Data Mode)\n\n```python\ngreeting = LocaleString(\n    de="Hallo",\n    en="Hello",\n    fr="Bonjour",\n    it="Ciao",\n)\nprint(greeting.in_locale("en"))  # "Hello"\n```\n\n## Form Duality Pattern\n\nFor form fields that accept LocaleString values, use the union type pattern:\n\n```python\nclass MyConfig(Form):\n    name: Annotated[LocaleString | LocaleInput, Field(description="Name")]\n\n# Form mode - for rendering:\nconfig = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))\n\n# Data mode - from submission:\nconfig = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))\n```\n\nFor convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:\n\n```python\nconfig = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))\n```',
 } as const;
 
+export const LoginOptionsResponseSchema = {
+  properties: {
+    welcome_page: {
+      type: "boolean",
+      title: "Welcome Page",
+      description:
+        "Show a welcome page pointing to the organisation's login link instead of provider buttons",
+    },
+    providers: {
+      items: {
+        $ref: "#/components/schemas/AuthProviderResponse",
+      },
+      type: "array",
+      title: "Providers",
+      description:
+        "Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use",
+    },
+  },
+  type: "object",
+  required: ["welcome_page", "providers"],
+  title: "LoginOptionsResponse",
+  description:
+    "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
+} as const;
+
 export const LogprobSchema = {
   properties: {
     token: {

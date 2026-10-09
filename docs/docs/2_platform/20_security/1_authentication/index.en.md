@@ -118,6 +118,32 @@ Keycloak" button appears alongside federated provider buttons. This enables user
 own user store — useful for development environments or deployments where some users authenticate directly with Keycloak
 rather than through an external IdP.
 
+### Per-Tenant Login Links
+
+`/{locale}/auth/login/<idp-alias>` shows a single login button for one identity provider. The page resolves the alias
+through `GET /api/v1/auth-providers/<idp-alias>`, which returns the provider while it is enabled and not link-only, and
+`null` otherwise. Providers hidden on Keycloak's login page still resolve, because Keycloak honours `kc_idp_hint` for
+them. An unknown alias falls back to the generic login page. Tenants that share an identity provider share its link.
+
+### Welcome Page for Shared Instances
+
+On an instance that serves several organisations, the generic login page would show every tenant's identity provider to
+anyone. Setting `KEYCLOAK_LOGIN_WELCOME_PAGE=true` (environment variable on `api` and `sysadmin-api`, default: `false`)
+replaces the provider buttons with a welcome message that points visitors to their organisation's login link or to their
+administrator.
+
+The switch acts in the API, not only on the page. `GET /api/v1/auth-providers/` then returns `welcome_page: true` and no
+federated provider, and does not query Keycloak at all. Per-tenant login links keep working. If
+`KEYCLOAK_SHOW_KEYCLOAK_LOGIN` is also `true`, the welcome page shows a small "Administrator login" link to Keycloak's
+own login page for username/password accounts.
+
+Two things the switch does not cover:
+
+- **Keycloak's login page** lists every identity provider that is not hidden on it. The administrator link, the
+  OpenWebUI sign-in and any hand-built authorization URL all lead there. On a shared instance, enable **Hide on login
+  page** for every tenant's identity provider in the Keycloak admin console. Per-tenant links are unaffected.
+- **Tenants without a link** have no way in. Hand every tenant its link before turning the switch on.
+
 ## Admin Service Authentication via OAuth2 Proxy
 
 Internal admin services (Dagster, Attu, SeaweedFS) are protected by [OAuth2 Proxy](https://oauth2-proxy.github.io/)

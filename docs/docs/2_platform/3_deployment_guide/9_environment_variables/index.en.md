@@ -79,6 +79,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `KEYCLOAK_AZURE_CLIENT_ID` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_AZURE_CLIENT_SECRET` | `identity-providers.json` | `keycloak` |  |
 | `KEYCLOAK_AZURE_TENANT_ID` | `identity-providers.json` | `keycloak` |  |
+| `KEYCLOAK_LOGIN_WELCOME_PAGE` | `KeycloakSettings.LOGIN_WELCOME_PAGE` | `api`, `sysadmin-api` | Show a welcome page instead of the identity provider list on the generic login page, and stop publishing federated IDPs to anonymous callers. For shared instances whose tenants each log in through their own per-tenant login link. |
 | `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-attu` |  |
 | `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-backup` |  |
 | `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-dagster` |  |

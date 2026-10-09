@@ -11024,6 +11024,26 @@ export type LocaleString = {
 };
 
 /**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
+};
+
+/**
  * Logprob
  */
 export type Logprob = {
@@ -32455,15 +32475,49 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];
 
 export type GetSuiteData = {
   body?: never;
