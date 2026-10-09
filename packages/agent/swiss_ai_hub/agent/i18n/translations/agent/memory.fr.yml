@@ -33,6 +33,6 @@ config:
 tool:
   label: "Rappeler la mémoire"
   approval_summary: "Rappeler ce qui est mémorisé sur « {query} »"
-  description: "Cherche ce qui est mémorisé sur l'utilisateur et l'organisation : préférences, faits et décisions de conversations précédentes. À utiliser quand la réponse peut dépendre de qui est l'utilisateur ou de quelque chose convenu auparavant."
+  description: "Recherche ce dont on se souvient sur l'utilisateur et l'organisation : préférences, faits et décisions de conversations précédentes. Utilise-le lorsque la réponse peut dépendre de qui est l'utilisateur ou de quelque chose convenu auparavant. Il contient de brefs faits mémorisés, pas des documents ni des fichiers ; pour ceux-ci, utilise les outils de connaissances ou de fichiers."
   query: "Ce qu'il faut rappeler, sous forme de courte question autonome ou de mots-clés."
   nothing_remembered: "Rien n'est mémorisé à ce sujet."

@@ -27,7 +27,7 @@ prompt:
   condensed_result: "[Risultato precedente condensato] %{summary}"
   condense_turns: "Riassumi la conversazione qui sotto in modo che possa continuare senza di essa: cosa ha chiesto l'utente, cosa è stato risposto e cosa è stato deciso o resta aperto. Mantieni esattamente fatti, cifre, nomi e identificativi di documenti come [s3f9a1c]. Al massimo %{words} parole, senza preambolo."
   condensed_turns: "Riassunto della conversazione precedente: %{summary}"
-  dropped_result: "[Questo risultato precedente è stato rimosso per rientrare nel contesto. Richiama lo strumento se ti serve.]"
+  dropped_result: "[Questo risultato precedente è stato rimosso per rientrare nel contesto. Richiama lo strumento se ti serve; per un comando che ha creato file, guarda quei file invece di eseguirlo di nuovo.]"
   limit_reached: "Hai usato tutte le chiamate agli strumenti disponibili per questa risposta. Rispondi ora con ciò che hai trovato."
   no_tools: "Per il resto di questa risposta non è disponibile alcuno strumento, quindi non cercare di chiamarne uno. Rispondi ora in base alla conversazione e a ciò che sai già, e dillo quando la risposta dipende da documenti che non hai potuto consultare."
   unknown_tool: "Non esiste uno strumento chiamato %{tool}. Usa uno degli strumenti offerti."

@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     AttachedFileEvent,
     AttachedFilesReadEvent,
     AttachedFileStatus,
+    ChatFeature,
     ReadAttachedFilesEvent,
     RunToolLoopEvent,
     ToolCallApprovedEvent,
@@ -38,9 +39,12 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_tool_arguments import AttachedFilesToolArguments
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.structured_file import StructuredFile
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -100,12 +104,24 @@ class AttachedFiles(Capability):
             return None
         t = context.t
         # Files go by their citation id: a model shown the upload id cites that instead, which no client links.
-        listing = "\n".join(f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})" for file in files)
+        listing = "\n".join(
+            f"- {CitationId.of(file.file_id)}: {file.filename}"
+            + (
+                f" {t('agent.attached_files.tool.structured_hint')}"
+                if StructuredFile.works_better_in_code(file.filename)
+                else ""
+            )
+            for file in files
+        )
         return ToolDefinition(
             name=READ_ATTACHED_FILES_TOOL,
             description=t("agent.attached_files.tool.description", files=listing),
             parameters=AttachedFilesToolArguments.schema_for([CitationId.of(file.file_id) for file in files], t),
         )
+
+    @staticmethod
+    def _kept_for_code(files: Sequence[UserUploadedFile], t: LocaleHandler) -> str:
+        return "\n".join(t("agent.attached_files.prompt.kept_for_code", filename=file.filename) for file in files)
 
     @staticmethod
     def read(
@@ -165,6 +181,10 @@ class AttachedFiles(Capability):
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
         block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages)
+        if request.kept_for_code:
+            block.append(
+                ChatMessage(role=MessageRole.SYSTEM, content=AttachedFiles._kept_for_code(request.kept_for_code, t))
+            )
         return [*events, AttachedFilesReadEvent(block=block, tool_call_id=request.tool_call_id)]
 
     @staticmethod
@@ -180,12 +200,15 @@ class AttachedFiles(Capability):
         request: RunToolLoopEvent,
         conversation: ConversationFields,
         loop: ToolLoopFields,
+        run_context: RunContext,
         t: LocaleHandler,
     ) -> ReadAttachedFilesEvent | ToolResultEvent:
         """The model chose to read: the regular read of the files it picked, sized to one tool result's room.
 
         A choice naming no readable attached file is refused rather than widened to every file, which the model did
-        not ask for; the refusal lists only the files the tool offered."""
+        not ask for; the refusal lists only the files the tool offered. While the code sandbox is offered, a chosen
+        spreadsheet, presentation or CSV file is not read but named back to the model with where code finds it,
+        since its Markdown text loses the structure and, for a large file, all but a slice."""
         try:
             arguments = AttachedFilesToolArguments.model_validate(call.arguments)
         except ValidationError as error:
@@ -202,8 +225,17 @@ class AttachedFiles(Capability):
                 content=t("agent.attached_files.tool.unknown_files", files=known),
                 is_error=True,
             )
+        code_runs = not loop.tool_loop.is_disabled("run_command") and await RequestedFeatures.contains(
+            ChatFeature.CODE_INTERPRETER, run_context, type(agent)
+        )
+        kept = [file for file in chosen if code_runs and StructuredFile.works_better_in_code(file.filename)]
+        if kept and len(kept) == len(chosen):
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id, name=call.name, content=AttachedFiles._kept_for_code(kept, t)
+            )
         return ReadAttachedFilesEvent(
-            files=chosen,
+            files=[file for file in chosen if file not in kept],
+            kept_for_code=kept,
             query=arguments.query,
             first_page=arguments.first_page,
             last_page=arguments.last_page,
