@@ -216,7 +216,12 @@ class MarkItDownLoader(BaseReader):
         """
         The single place every caller converts through, so the cache sits here: ahead of the per-caller image
         handling, whose input still carries images as data URIs, which makes one entry serve all of them.
+
+        HTML skips the cache: it only arrives as an email body from `EmlLoader`, and converts in milliseconds, so a
+        storage round trip and an entry per email would cost more than they save.
         """
+        if os.path.splitext(filename)[1].lower() == ".html":
+            return await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
         cached = await self.parse_cache.get(file_bytes, filename)
         if cached is not None:
             logger.info(f"[MarkItDownLoader] {filename}: served from the parse cache")

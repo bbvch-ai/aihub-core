@@ -83,6 +83,12 @@ def test_an_empty_cell_is_blank_rather_than_nan():
     assert table_lines(markdown)[-1] == "| 1 |  | 3 |"
 
 
+def test_text_that_reads_like_a_pandas_placeholder_is_kept():
+    markdown = convert(("People", [["name", "allergies", "code"], ["Nan", "None", "<NA>"], ["Ann", "nan", "NaN"]]))
+
+    assert table_lines(markdown)[2:] == ["| Nan | None | <NA> |", "| Ann | nan | NaN |"]
+
+
 def test_delimiters_in_a_cell_cannot_break_its_row():
     markdown = convert(("Data", [["note"], ["a|b"], ["line1\nline2"]]))
 

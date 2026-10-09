@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from botocore.exceptions import ClientError, EndpointConnectionError
 from openpyxl import Workbook
 
 from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
@@ -106,6 +107,40 @@ async def test_a_failed_conversion_is_not_cached(
     with pytest.raises(ValueError, match="corrupt document"):
         await loader.aload_data_from_bytes(DOCX_BYTES, "order.docx", include_images=False)
 
+    assert in_memory_parse_cache == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "storage_error",
+    [
+        EndpointConnectionError(endpoint_url="http://seaweedfs-s3:8333"),
+        ClientError({"Error": {"Code": "NoSuchBucket"}}, "GetObject"),
+    ],
+)
+async def test_a_document_still_converts_when_the_cache_cannot_be_reached(
+    loader: MarkItDownLoader, markitdown: MagicMock, monkeypatch: pytest.MonkeyPatch, storage_error: Exception
+):
+    def unreachable(*args: object) -> None:
+        raise storage_error
+
+    monkeypatch.setattr(ParseCacheBucket, "read", unreachable)
+    monkeypatch.setattr(ParseCacheBucket, "write", unreachable)
+
+    documents = await loader.aload_data_from_bytes(DOCX_BYTES, "order.docx", include_images=False)
+
+    assert documents[0].text.startswith("# Order")
+    markitdown.convert.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_an_email_body_is_converted_without_the_cache(
+    loader: MarkItDownLoader, markitdown: MagicMock, in_memory_parse_cache: dict[str, bytes]
+):
+    await loader.aload_data_from_bytes(b"<p>Hello</p>", "body.html", include_images=False)
+    await loader.aload_data_from_bytes(b"<p>Hello</p>", "body.html", include_images=False)
+
+    assert markitdown.convert.call_count == 2
     assert in_memory_parse_cache == {}
 
 

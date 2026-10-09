@@ -6,6 +6,8 @@ import logging
 import os
 from typing import ClassVar
 
+from botocore.exceptions import BotoCoreError, ClientError
+
 from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
 
@@ -25,27 +27,39 @@ class MarkItDownParseCache:
     is part of the key, so a new MarkItDown release or a change to our own xlsx rendering starts fresh.
     """
 
-    XLSX_FORMAT: ClassVar[int] = 1
+    XLSX_FORMAT: ClassVar[int] = 2
 
     def __init__(self) -> None:
         self._bucket = ParseCacheBucket()
 
     async def get(self, file_bytes: bytes, filename: str) -> str | None:
-        """Traced by hand rather than with `trace_fn`, which would record the document's bytes and its text."""
+        """Traced by hand rather than with `trace_fn`, which would record the document's bytes and its text.
+
+        A bucket that cannot be read counts as a miss: an Office conversion needs no storage, so a missing bucket or a
+        storage outage costs the time the cache saves, not the parse."""
         key = self.object_key(file_bytes, filename)
         with get_tracer(__name__).start_as_current_span(
             "MarkItDownParseCache.get", attributes={PARSE_CACHE_KEY_ATTRIBUTE: key}
         ) as span:
-            content = await asyncio.to_thread(self._bucket.read, key)
+            try:
+                content = await asyncio.to_thread(self._bucket.read, key)
+            except (BotoCoreError, ClientError):
+                logger.warning(f"[MarkItDownParseCache] Could not read {key}, converting {filename}", exc_info=True)
+                content = None
             span.set_attribute(PARSE_CACHE_HIT_ATTRIBUTE, content is not None)
         return None if content is None else content.decode()
 
     async def put(self, file_bytes: bytes, filename: str, markdown: str) -> None:
+        """A conversion that could not be stored is still returned; only the next parse of the file pays for it."""
         key = self.object_key(file_bytes, filename)
         with get_tracer(__name__).start_as_current_span(
             "MarkItDownParseCache.put", attributes={PARSE_CACHE_KEY_ATTRIBUTE: key}
         ):
-            await asyncio.to_thread(self._bucket.write, key, markdown.encode(), "text/markdown; charset=utf-8")
+            try:
+                await asyncio.to_thread(self._bucket.write, key, markdown.encode(), "text/markdown; charset=utf-8")
+            except (BotoCoreError, ClientError):
+                logger.warning(f"[MarkItDownParseCache] Could not store {filename} as {key}", exc_info=True)
+                return
         logger.debug(f"[MarkItDownParseCache] Stored {filename} as {key}")
 
     def object_key(self, file_bytes: bytes, filename: str) -> str:

@@ -57,8 +57,14 @@ def markdown_cell(value: object) -> str:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return ""
 
-    cell = str(value).replace("\r", " ").replace("\n", " ").replace("|", "/").strip()
+    cell = markdown_cell_text(str(value))
     return "" if cell.lower() in ("none", "nan", "<na>") else cell
+
+
+def markdown_cell_text(text: str) -> str:
+    """A cell's own text on one line and free of delimiters, for a source with no pandas placeholders to hide, where
+    "None" or "Nan" is what someone wrote."""
+    return text.replace("\r", " ").replace("\n", " ").replace("|", "/").strip()
 
 
 def has_integer_column_indices(df: pd.DataFrame) -> bool:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from openpyxl import load_workbook
 
-from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import markdown_cell, markdown_row
+from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import markdown_cell_text, markdown_row
 
 if TYPE_CHECKING:
     from openpyxl.worksheet._read_only import ReadOnlyWorksheet
@@ -59,7 +59,7 @@ class XlsxMarkdownConverter:
         gap = False
         started = False
         for values in rows:
-            cells = [markdown_cell(XlsxMarkdownConverter._text(value)) for value in values]
+            cells = [markdown_cell_text(XlsxMarkdownConverter._text(value)) for value in values]
             while cells and not cells[-1]:
                 cells.pop()
             if not cells:
