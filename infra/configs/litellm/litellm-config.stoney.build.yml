@@ -72,8 +72,9 @@ model_list:
       additional_drop_params: [chat_template_kwargs]
     model_info:
       mode: chat
-      # Infomaniak's GET /1/ai/models declares max_token_input: 100000 for this model.
-      max_input_tokens: 100000
+      # Infomaniak serves an 80000-token window, input + output combined (its 400 names it), so these two must sum
+      # to it. Their GET /1/ai/models declares max_token_input: 100000, more than the model accepts at all.
+      max_input_tokens: 71808
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true

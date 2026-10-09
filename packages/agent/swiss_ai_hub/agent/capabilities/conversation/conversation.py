@@ -267,7 +267,10 @@ class Conversation(Capability):
 
     @staticmethod
     def fit(
-        history: list[ChatMessage], blocks: Sequence[list[ChatMessage]], conversation: ConversationFields
+        history: list[ChatMessage],
+        blocks: Sequence[list[ChatMessage]],
+        conversation: ConversationFields,
+        reserve_tokens: int = 0,
     ) -> list[ChatMessage]:
         """The history with the blocks merged behind its leading system messages, re-limited to the input budget.
 
@@ -277,11 +280,13 @@ class Conversation(Capability):
         over several system messages, and strict chat templates (Qwen) reject a system message anywhere else.
         What gives way when the result does not fit is the oldest turns first, since the blocks were asked for
         this turn; then whole blocks from the front, never part of one, and never the question or the system head.
+        `reserve_tokens` is room kept free for what the caller sends next to the result (the sufficiency guard's
+        documents and instructions).
         """
         counter = conversation.llm.token_counter
         system_head, turns = _split_system_head(history)
         earlier, question = turns[:-1], turns[-1:]
-        room = conversation.input_budget() - estimate_prompt_tokens([*system_head, *question], counter)
+        room = conversation.input_budget() - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
         return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])
