@@ -17547,6 +17547,20 @@ export type TemplateData = {
 };
 
 /**
+ * TenantAuthProviderResponse
+ *
+ * Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.
+ */
+export type TenantAuthProviderResponse = {
+  /**
+   * Alias
+   *
+   * Keycloak IDP alias to start the tenant's login with, or null when it has no login link
+   */
+  alias: string | null;
+};
+
+/**
  * TenantIdentity
  *
  * Represents a tenant's identity in the multi-tenant system.
@@ -32464,6 +32478,40 @@ export type GetAuthProvidersResponses = {
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetTenantAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant ID taken from the tenant's login link
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/auth-providers/tenants/{tenant_id}";
+};
+
+export type GetTenantAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetTenantAuthProviderError =
+  GetTenantAuthProviderErrors[keyof GetTenantAuthProviderErrors];
+
+export type GetTenantAuthProviderResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantAuthProviderResponse;
+};
+
+export type GetTenantAuthProviderResponse =
+  GetTenantAuthProviderResponses[keyof GetTenantAuthProviderResponses];
 
 export type GetSuiteData = {
   body?: never;

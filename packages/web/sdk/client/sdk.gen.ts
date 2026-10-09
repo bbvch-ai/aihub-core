@@ -255,6 +255,9 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantAuthProviderData,
+  GetTenantAuthProviderError,
+  GetTenantAuthProviderResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
@@ -452,6 +455,28 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Tenant Auth Provider
+ */
+export const getTenantAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantAuthProviderResponse =
+    GetTenantAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantAuthProviderData,
+    GetTenantAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantAuthProviderResponse | DefaultT,
+    GetTenantAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/tenants/{tenant_id}", ...options });
 
 /**
  * Get Suite

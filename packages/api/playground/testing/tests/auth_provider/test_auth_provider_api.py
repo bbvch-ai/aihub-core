@@ -7,6 +7,7 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
+from swiss_ai_hub.api.routes.auth_provider.dto.tenant_auth_provider_response import TenantAuthProviderResponse
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_ENDPOINT = "/api/v1/auth-providers"
@@ -61,3 +62,35 @@ def test_get_auth_providers_unauthenticated(api_client, monkeypatch):
 
     response = api_client.get(BASE_ENDPOINT + "/")
     assert response.status_code == 200
+
+
+def _mount_tenant_lookup() -> TestClient:
+    auth = TestAuthHandler()
+    runner = ApiTestRunner()
+    runner.mount(AuthProviderController(auth=auth).get_tenant_auth_provider())
+    app = runner.create_app()
+    app.state.redis = AsyncMock()
+    return TestClient(app)
+
+
+def test_get_tenant_auth_provider_returns_alias(monkeypatch):
+    async def mock_get(redis, tenant_id):
+        return TenantAuthProviderResponse(alias="acme-entra" if tenant_id == "acme" else None)
+
+    monkeypatch.setattr(AuthProviderService, "get_tenant_auth_provider", mock_get)
+
+    response = _mount_tenant_lookup().get(BASE_ENDPOINT + "/tenants/acme")
+    assert response.status_code == 200
+    assert response.json() == {"alias": "acme-entra"}
+
+
+def test_get_tenant_auth_provider_answers_unknown_and_unlisted_tenants_alike(monkeypatch):
+    monkeypatch.setenv("KEYCLOAK_URL", "http://kc:8080")
+    monkeypatch.setenv("KEYCLOAK_TENANT_IDP_ALIASES", "acme=acme-entra")
+    client = _mount_tenant_lookup()
+
+    unknown = client.get(BASE_ENDPOINT + "/tenants/does-not-exist")
+    unlisted = client.get(BASE_ENDPOINT + "/tenants/default")
+
+    assert unknown.status_code == unlisted.status_code == 200
+    assert unknown.json() == unlisted.json() == {"alias": None}

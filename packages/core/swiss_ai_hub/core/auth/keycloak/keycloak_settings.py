@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from pydantic import Field, computed_field, field_validator
+from pydantic_settings import NoDecode
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
@@ -30,6 +31,18 @@ class KeycloakSettings(EnvironmentSettings):
     SHOW_KEYCLOAK_LOGIN: Annotated[
         bool, Field(description="Show a direct Keycloak login button alongside federated IDPs")
     ] = True
+    TENANT_IDP_ALIASES: Annotated[
+        dict[str, str],
+        NoDecode,
+        Field(
+            default_factory=dict,
+            description=(
+                "Tenant login links as comma-separated tenant_id=idp_alias pairs "
+                "(e.g. 'acme=acme-entra,beta=shared-idp'). A logged-out visit to /<tenant_id> "
+                "goes straight to that identity provider. Empty turns tenant login links off."
+            ),
+        ),
+    ]
 
     @field_validator("API_SERVICE_CLIENT_SECRET", mode="before")
     @classmethod
@@ -44,6 +57,22 @@ class KeycloakSettings(EnvironmentSettings):
         if v == "":
             return True
         return v
+
+    @field_validator("TENANT_IDP_ALIASES", mode="before")
+    @classmethod
+    def _parse_tenant_idp_pairs(cls, value: object) -> object:
+        """A typo here would silently send a tenant's users to the welcome page, so malformed pairs fail startup."""
+        if not isinstance(value, str):
+            return value
+        aliases: dict[str, str] = {}
+        for pair in filter(None, (segment.strip() for segment in value.split(","))):
+            tenant_id, separator, alias = (part.strip() for part in pair.partition("="))
+            if not (separator and tenant_id and alias) or "=" in alias:
+                raise ValueError(f"Expected tenant_id=idp_alias, got '{pair}'")
+            if tenant_id in aliases:
+                raise ValueError(f"Tenant '{tenant_id}' is mapped more than once")
+            aliases[tenant_id] = alias
+        return aliases
 
     @computed_field
     @property

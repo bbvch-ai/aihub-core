@@ -1,3 +1,5 @@
+import { getTenantAuthProvider } from '@core/sdk/client'
+
 /**
  * Tracks the last tenant synced with the backend to avoid redundant PUT calls
  * on every navigation within the same tenant.
@@ -36,13 +38,44 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
   }
 }
 
+const firstSegment = (path: string, localeCodes: string[]): string | undefined =>
+  stripLocale(normalize(path), localeCodes).split('/')[1] || undefined
+
+/**
+ * A tenant's address doubles as its login link. The API answers unknown and
+ * unlisted tenants alike, so the lookup reveals nothing about which tenants
+ * exist; a failed lookup ends on the login page just the same.
+ */
+const tenantLoginAlias = async (tenantId: string | undefined): Promise<string | null> => {
+  if (!tenantId) return null
+  const response = await getTenantAuthProvider({ composable: '$fetch', path: { tenant_id: tenantId } })
+    .catch(() => null)
+  return response?.alias ?? null
+}
+
 // Redirects are returned as plain locations, not via navigateTo(): after an
 // await, another navigation may already have finished, and navigateTo() then
 // navigates on its own instead of redirecting this one (see home-redirect.ts).
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { $auth, $i18n } = useNuxtApp()
+  const nuxtApp = useNuxtApp()
+  const { $auth, $i18n } = nuxtApp
   const locale = $i18n.locale.value
   const localeCodes = $i18n.locales.value.map(entry => entry.code)
+
+  // signinRedirect() stays pending until the page unloads, keeping this
+  // navigation pending too: returning false instead would show Nuxt's 404 page
+  // on a first load. The redirect replaces this page in the history, so Back
+  // from the identity provider returns to wherever the visitor came from
+  // instead of landing here and being sent straight back.
+  // runWithContext because useAuth() needs the Nuxt app after the await.
+  const sendToLogin = async () => {
+    rememberRedirect(to.fullPath, to.path.includes('/auth/'))
+    const alias = await tenantLoginAlias(firstSegment(to.path, localeCodes))
+    if (alias) {
+      await nuxtApp.runWithContext(() => useAuth().login(alias, 'replace'))
+    }
+    return `/${locale}/auth/login`
+  }
 
   if (isAnonymousPath(to.path, localeCodes)) {
     return
@@ -51,11 +84,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   try {
     const user = await $auth.getUser()
 
-    const isAuthPath = to.path.includes('/auth/')
-
     if (!user) {
-      rememberRedirect(to.fullPath, isAuthPath)
-      return `/${locale}/auth/login`
+      return await sendToLogin()
     }
 
     if (user.expired) {
@@ -64,8 +94,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
       }
       catch {
         await $auth.removeUser()
-        rememberRedirect(to.fullPath, isAuthPath)
-        return `/${locale}/auth/login`
+        return await sendToLogin()
       }
     }
 

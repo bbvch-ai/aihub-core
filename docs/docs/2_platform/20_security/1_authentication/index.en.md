@@ -83,9 +83,9 @@ different behaviors for different access levels, and validating permissions befo
 ## Dynamic Identity Provider Discovery
 
 The login page dynamically discovers available identity providers from Keycloak at runtime. When a user visits the login
-page, the frontend calls `GET /api/v1/{tenant_id}/auth-providers/` — an unauthenticated API endpoint that queries the
-Keycloak Admin API using a dedicated, least-privilege service account (`aihub-api-service`) with only the
-`view-identity-providers` permission.
+page, the frontend calls `GET /api/v1/auth-providers/` — an unauthenticated API endpoint that queries the Keycloak Admin
+API using a dedicated, least-privilege service account (`aihub-api-service`) with only the `view-identity-providers`
+permission.
 
 The API filters the provider list to only include enabled, visible providers and returns their alias, display name, and
 icon. Results are cached for 5 minutes. The frontend renders a branded login button for each provider. Clicking a button
@@ -117,6 +117,37 @@ When `KEYCLOAK_SHOW_KEYCLOAK_LOGIN=true` (API environment variable, default: `tr
 Keycloak" button appears alongside federated provider buttons. This enables username/password login through Keycloak's
 own user store — useful for development environments or deployments where some users authenticate directly with Keycloak
 rather than through an external IdP.
+
+### Tenant Login Links
+
+A tenant's own address doubles as its login link. When a visitor who is not logged in opens `/<tenant-id>` or any page
+below it, with or without a locale prefix (`/acme`, `/en/acme/service/openai`), the frontend sends them straight to that
+tenant's identity provider with `kc_idp_hint` — no provider list and no login button. After login, the user returns to
+the page they opened, and that tenant becomes their active tenant if they are a member of it.
+
+The mapping from tenant ID to IdP alias is set per instance with `KEYCLOAK_TENANT_IDP_ALIASES` (API environment
+variable, default: empty):
+
+```bash
+KEYCLOAK_TENANT_IDP_ALIASES='acme=acme-entra,beta=shared-idp,gamma=shared-idp'
+```
+
+- Tenants that share one identity provider map to the same alias.
+- Empty turns tenant login links off: visitors reach the login page as before. This is the default, so dedicated
+  customer instances are unaffected.
+- A malformed entry or a tenant listed twice stops the API from starting.
+- An alias is used only while its identity provider is enabled and not set to account linking only. Providers hidden on
+  Keycloak's login page are accepted, because Keycloak still honours `kc_idp_hint` for them.
+
+The frontend resolves the tenant through `GET /api/v1/auth-providers/tenants/{tenant_id}`, an unauthenticated endpoint
+that returns `{"alias": "<alias>"}` or `{"alias": null}`. It reads only the configured mapping and never checks whether
+a tenant exists, so an unknown tenant and an existing but unlisted tenant get the same answer and both end on the login
+page. A listed tenant does reveal itself by redirecting to its identity provider, as any working login link must.
+
+When a session cannot be renewed on a tenant page, the user takes the same route: to the tenant's identity provider,
+then back to the page.
+
+Per-provider login pages at `/auth/login/<idp-alias>` keep working alongside tenant login links.
 
 ## Admin Service Authentication via OAuth2 Proxy
 

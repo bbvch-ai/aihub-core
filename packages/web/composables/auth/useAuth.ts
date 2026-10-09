@@ -10,11 +10,12 @@ export const useAuth = () => {
     return `${globalThis.location.origin}/${$i18n.locale.value}/auth/${path}`
   }
 
-  const login = (idpHint?: string) => {
+  const login = (idpHint?: string, redirectMethod: 'assign' | 'replace' = 'assign') => {
     const { $auth, $i18n } = useNuxtApp()
     const extraQueryParams = idpHint ? { kc_idp_hint: idpHint } : {}
-    $auth.signinRedirect({
+    return $auth.signinRedirect({
       extraQueryParams,
+      redirectMethod,
       redirect_uri: localeRedirectUri('callback'),
       // Renders Keycloak's own login page in the user's language.
       ui_locales: $i18n.locale.value,
