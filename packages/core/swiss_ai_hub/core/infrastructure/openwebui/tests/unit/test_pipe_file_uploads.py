@@ -20,6 +20,7 @@ OPEN_WEBUI_MODULES += ["open_webui.models.users", "open_webui.utils", "open_webu
 
 AGENT_CLASS, AGENT_ID = "RAGAgent", "hr"
 THREAD = "65f1c0ffee00000000000001"
+USER = "user-1"
 SEVEN_DAYS = 604800
 
 
@@ -58,6 +59,7 @@ class _AgentFilesApi:
         self.validations: list[dict[str, Any]] = []
         self.uploads: list[bytes] = []
         self.failing_validations = 0
+        self.malformed_validations = 0
         self._error = error
 
     def client(self, **_: Any) -> "_AgentFilesApi":
@@ -75,6 +77,9 @@ class _AgentFilesApi:
             if self.failing_validations:
                 self.failing_validations -= 1
                 raise self._error("the API is unavailable")
+            if self.malformed_validations:
+                self.malformed_validations -= 1
+                return _Response({"detail": "a proxy's error page"})
             return _Response(
                 {"missing": [file["file_id"] for file in json["files"] if file["file_id"] not in self.stored]}
             )
@@ -88,11 +93,14 @@ class _AgentFilesApi:
 
 
 class _Redis:
-    def __init__(self) -> None:
+    def __init__(self, failing_reads: bool = False) -> None:
         self.values: dict[str, str] = {}
         self.expiries: dict[str, int | None] = {}
+        self.failing_reads = failing_reads
 
     async def get(self, key: str) -> str | None:
+        if self.failing_reads:
+            raise ConnectionError("Redis is unavailable")
         return self.values.get(key)
 
     async def set(self, key: str, value: str, ex: int | None = None) -> None:
@@ -122,8 +130,10 @@ def _service(pipe: Any, monkeypatch: pytest.MonkeyPatch, api: _AgentFilesApi, *o
     return service
 
 
-async def _turn(service: Any, files: list[dict[str, Any]], redis: Any = None) -> tuple[list[dict[str, str]], dict]:
-    return await service.prepare_files_for_event(files, AGENT_CLASS, AGENT_ID, {}, THREAD, redis)
+async def _turn(
+    service: Any, files: list[dict[str, Any]], redis: Any = None, user: str = USER
+) -> tuple[list[dict[str, str]], dict]:
+    return await service.prepare_files_for_event(files, AGENT_CLASS, AGENT_ID, {}, THREAD, user, redis)
 
 
 def _checked(validation: dict[str, Any]) -> list[str]:
@@ -200,7 +210,7 @@ async def test_a_temporary_chat_s_text_is_uploaded_once_and_reused_on_the_next_t
     assert api.uploads == [b"hello"]
     assert first == second == [{"filename": "notes.txt", "file_type": "text/plain", "file_id": first[0]["file_id"]}]
     assert first_owui_ids == {}
-    key = f"aihub:temp-upload:{THREAD}:item-1"
+    key = f"aihub:temp-upload:{USER}:{THREAD}:item-1"
     assert (redis.values[key], redis.expiries[key]) == (first[0]["file_id"], SEVEN_DAYS)
     assert len(api.validations) == 2
     assert all(validation["thread_id"] == THREAD for validation in api.validations)
@@ -274,3 +284,44 @@ async def test_only_a_saved_chat_gets_the_agent_s_title(pipe: Any, chat_id: str,
 
     assert pipe.Chats.update_chat_title_by_id.await_count == int(saved)
     emitter.assert_awaited_once_with({"type": "chat:title", "data": "Leave policy"})
+
+
+@pytest.mark.asyncio
+async def test_a_redis_read_error_uploads_the_temporary_text_instead_of_dropping_it(
+    pipe: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    item = {"type": "text", "id": "item-1", "name": "notes", "content": "hello"}
+
+    files, _ = await _turn(service, [item], _Redis(failing_reads=True))
+
+    assert api.uploads == [b"hello"]
+    assert [file["filename"] for file in files] == ["notes.txt"]
+
+
+@pytest.mark.asyncio
+async def test_another_user_never_reuses_a_temporary_chat_s_upload(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A temporary chat's id comes from the browser, so it alone must not lead to someone else's upload."""
+    api = _AgentFilesApi(pipe.httpx.HTTPError)
+    service = _service(pipe, monkeypatch, api)
+    redis = _Redis()
+    item = {"type": "text", "id": "item-1", "name": "notes", "content": "hello"}
+
+    mine, _ = await _turn(service, [item], redis, user="user-1")
+    theirs, _ = await _turn(service, [item], redis, user="user-2")
+
+    assert mine[0]["file_id"] != theirs[0]["file_id"]
+    assert api.uploads == [b"hello", b"hello"]
+
+
+@pytest.mark.asyncio
+async def test_a_malformed_validate_answer_counts_as_a_failed_check(pipe: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    api = _AgentFilesApi(pipe.httpx.HTTPError, stored={_known_id(0)})
+    api.malformed_validations = 1
+    service = _service(pipe, monkeypatch, api, _owui_file("owui-0", "kept.pdf", _known_id(0)))
+
+    files, _ = await _turn(service, [{"type": "file", "id": "owui-0"}])
+
+    assert api.uploads == [b"owui-0_kept.pdf"]
+    assert [file["file_id"] for file in files] == [_checked(api.validations[1])[0]]

@@ -310,19 +310,7 @@ class AgentController(TenantScopedController):
             Once none is missing, the files are placed in the user's files of the conversation together, after the
             answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
             """
-            stored = await asyncio.gather(
-                *(
-                    asyncio.to_thread(
-                        upload_service.verify_file_exists,
-                        agent_class=agent_class,
-                        agent_id=agent_id,
-                        file_id=file.file_id,
-                        filename=file.filename,
-                    )
-                    for file in request.files
-                )
-            )
-            missing = [file.file_id for file, exists in zip(request.files, stored, strict=True) if not exists]
+            missing = await upload_service.missing_files(agent_class, agent_id, request.files)
             if not missing and request.thread_id:
                 background_tasks.add_task(
                     UserKnowledgeService.place_attachments,

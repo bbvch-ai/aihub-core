@@ -1,3 +1,4 @@
+from functools import partial
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,6 +25,7 @@ def mock_upload_service():
         VALID_FILE_ID,
     )
     service.verify_file_exists.return_value = True
+    service.missing_files = partial(AgentFileUploadService.missing_files, service)
     service.UPLOAD_URL_LIFETIME_SECONDS = 3600
     return service
 

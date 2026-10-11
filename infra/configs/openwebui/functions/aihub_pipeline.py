@@ -68,7 +68,8 @@ AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
 # A temporary chat stores no file in Open WebUI, so the pipe remembers the agent's upload of each attached text item,
 # by the id the browser gave it, in Open WebUI's Redis; for as long as the agent-files bucket keeps the upload.
-AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{thread_id}:{item_id}"
+# A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
+AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
 AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
 
 # OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
@@ -1962,6 +1963,39 @@ class KnowledgeReferenceService:
             return response.json()
 
 
+class TemporaryUploadScope(BaseModel):
+    """Where a temporary chat's uploads are remembered: Open WebUI keeps no file for its attachments, so without this
+    each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
+
+    user_id: str
+    thread_id: str
+    redis: Any = None
+
+    def _key(self, item_id: str) -> str:
+        return AIHUB_TEMPORARY_UPLOAD_REDIS_KEY.format(user_id=self.user_id, thread_id=self.thread_id, item_id=item_id)
+
+    async def recall(
+        self, item_id: Annotated[str | None, "The id the browser gave the item when it was attached"]
+    ) -> Annotated[str | None, "The agent file id of an earlier turn's upload of the item"]:
+        if self.redis is None or not item_id:
+            return None
+        try:
+            file_id = await self.redis.get(self._key(item_id))
+        except Exception as e:
+            logger.warning(f"Could not look up an earlier upload of {item_id}: {e}")
+            return None
+        return file_id.decode() if isinstance(file_id, bytes) else file_id
+
+    async def remember(
+        self,
+        item_id: Annotated[str | None, "The id the browser gave the item when it was attached"],
+        file_id: Annotated[str, "The agent file id the item was uploaded as"],
+    ) -> None:
+        if self.redis is None or not item_id:
+            return
+        await self.redis.set(self._key(item_id), file_id, ex=AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS)
+
+
 class AgentAttachment(BaseModel):
     """One file of the turn on its way into the agent's bucket, with the upload it has there once known."""
 
@@ -2024,6 +2058,7 @@ class FileProcessingService:
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
         thread_id: Annotated[str, "The conversation, whose folder in the user's files gets each file"],
+        user_id: Annotated[str, "The Open WebUI user, whose temporary chats' uploads are remembered apart"],
         redis: Annotated[Any, "OpenWebUI async redis client, remembering a temporary chat's uploads"] = None,
     ) -> Annotated[
         tuple[list[dict[str, str]], dict[str, str]],
@@ -2036,7 +2071,8 @@ class FileProcessingService:
         the files of a turn are placed together, once.
         """
         agent_key = f"{agent_class}/{agent_id}"
-        attachments = await self._resolve_all(files, agent_key, thread_id, redis)
+        scope = TemporaryUploadScope(user_id=user_id, thread_id=thread_id, redis=redis)
+        attachments = await self._resolve_all(files, agent_key, scope)
         known = [attachment for attachment in attachments if attachment.file_id]
         # With a new file in the turn the check after its upload places them all, so this one must place nothing.
         placing_thread_id = thread_id if len(known) == len(attachments) else None
@@ -2048,7 +2084,7 @@ class FileProcessingService:
             confirmed = await self._confirm(attachments, confirmed, agent_class, agent_id, headers, thread_id)
             for attachment in pending:
                 if attachment.file_id in confirmed:
-                    await self._remember(attachment, agent_key, thread_id, redis)
+                    await self._remember(attachment, agent_key, scope)
 
         prepared = [attachment for attachment in attachments if attachment.file_id in confirmed]
         owui_file_ids = {item.file_id: item.owui_file_id for item in prepared if item.owui_file_id}
@@ -2058,8 +2094,7 @@ class FileProcessingService:
         self,
         files: Annotated[list[dict[str, Any]] | None, "Files of the current message branch"],
         agent_key: Annotated[str, "Agent class/id the uploads belong to"],
-        thread_id: Annotated[str, "The conversation the files are attached in"],
-        redis: Annotated[Any, "OpenWebUI async redis client or None"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[list[AgentAttachment], "The turn's files, each with its known upload if any"]:
         """A knowledge entry stands for one of our collections, which the agent searches itself, so it is no file."""
         attachments: list[AgentAttachment] = []
@@ -2067,7 +2102,7 @@ class FileProcessingService:
             if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
                 continue
             try:
-                attachment = await self._resolve(file, agent_key, thread_id, redis)
+                attachment = await self._resolve(file, agent_key, scope)
             except Exception:
                 logger.exception(f"Error processing file {file.get('name', '')}")
                 continue
@@ -2079,8 +2114,7 @@ class FileProcessingService:
         self,
         file: Annotated[dict[str, Any], "Single file of the branch"],
         agent_key: Annotated[str, "Agent class/id the uploads belong to"],
-        thread_id: Annotated[str, "The conversation the file is attached in"],
-        redis: Annotated[Any, "OpenWebUI async redis client or None"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
         like any other attachment; a web or YouTube item is of the same type but carries none."""
@@ -2091,7 +2125,7 @@ class FileProcessingService:
                 source=file,
                 filename=name if name.lower().endswith(".txt") else f"{name}.txt",
                 content_type="text/plain",
-                file_id=await self._remembered_temporary_upload(file.get("id"), thread_id, redis),
+                file_id=await scope.recall(file.get("id")),
             )
 
         file_obj = await Files.get_file_by_id(file.get("id", ""))
@@ -2106,17 +2140,6 @@ class FileProcessingService:
             file_id=(file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}).get(agent_key),
             owui_file=file_obj,
         )
-
-    @staticmethod
-    async def _remembered_temporary_upload(
-        item_id: Annotated[str | None, "The id the browser gave the item when it was attached"],
-        thread_id: Annotated[str, "The conversation the item is attached in"],
-        redis: Annotated[Any, "OpenWebUI async redis client or None"],
-    ) -> Annotated[str | None, "The agent file id of an earlier turn's upload of the item"]:
-        if redis is None or not item_id:
-            return None
-        file_id = await redis.get(AIHUB_TEMPORARY_UPLOAD_REDIS_KEY.format(thread_id=thread_id, item_id=item_id))
-        return file_id.decode() if isinstance(file_id, bytes) else file_id
 
     async def _upload_all(
         self,
@@ -2158,8 +2181,7 @@ class FileProcessingService:
         self,
         attachment: Annotated[AgentAttachment, "A file just uploaded and confirmed in the agent's bucket"],
         agent_key: Annotated[str, "Agent class/id the upload belongs to"],
-        thread_id: Annotated[str, "The conversation the file is attached in"],
-        redis: Annotated[Any, "OpenWebUI async redis client or None"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> None:
         """Remembered so a later turn validates the upload instead of copying the file again; forgetting only costs
         that copy, so it never fails the turn."""
@@ -2170,12 +2192,8 @@ class FileProcessingService:
                     attachment.source.get("id", ""),
                     {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: attachment.file_id}},
                 )
-            elif redis is not None and attachment.source.get("id"):
-                await redis.set(
-                    AIHUB_TEMPORARY_UPLOAD_REDIS_KEY.format(thread_id=thread_id, item_id=attachment.source["id"]),
-                    attachment.file_id,
-                    ex=AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS,
-                )
+            elif attachment.file_id:
+                await scope.remember(attachment.source.get("id"), attachment.file_id)
         except Exception as e:
             logger.warning(f"Could not remember the upload of {attachment.filename}: {e}")
 
@@ -2205,10 +2223,10 @@ class FileProcessingService:
                     },
                 )
             response.raise_for_status()
-        except httpx.HTTPError as e:
+            return set(response.json()["missing"])
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as e:
             logger.warning(f"Could not validate {len(attachments)} file(s) in the agent's bucket: {e}")
             return None
-        return set(response.json()["missing"])
 
     async def _upload(
         self,
@@ -2750,7 +2768,7 @@ class Pipe:
 
                 # Process files — upload to agent's dedicated bucket
                 files, owui_file_ids = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers, thread_id, redis
+                    __files__, agent_class, agent_id, headers, thread_id, __user__["id"], redis
                 )
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers
