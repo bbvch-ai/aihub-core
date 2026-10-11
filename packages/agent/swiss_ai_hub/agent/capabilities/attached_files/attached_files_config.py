@@ -40,6 +40,23 @@ class AttachedFilesConfig(Form):
         ),
         Ge(1),
     ] = 40
+    max_embedded_chars: Annotated[
+        int,
+        Field(
+            description="How much not yet embedded text, in characters, one ranking may send to the embedding model. "
+            "The provider's quota is shared by every stage and counted in characters, so a large file is embedded a "
+            "few hundred thousand characters per question rather than all at once."
+        ),
+        Ge(1),
+    ] = 200_000
+    lexical_pinned: Annotated[
+        int,
+        Field(
+            description="How many of the sections sharing the most words with the query always reach the reranker, "
+            "whatever the embedding thinks of them, so an exact identifier is never ranked out."
+        ),
+        Ge(0),
+    ] = 5
 
     @classmethod
     def as_form(cls) -> Self:

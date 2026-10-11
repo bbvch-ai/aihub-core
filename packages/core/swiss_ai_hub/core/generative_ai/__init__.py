@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
+    from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
         DEFAULT_METADATA,
@@ -194,6 +195,7 @@ __all__ = [
     "ImageLoader",
     "IngestedDocument",
     "IngestedNode",
+    "ParseCacheBucket",
     "KnowledgeRetrieverConfig",
     "LLMConfig",
     "LLMParameter",
@@ -272,6 +274,7 @@ _LAZY_IMPORTS = {
     "ImageLoader": "swiss_ai_hub.core.generative_ai.document.loaders.image_loader",
     "IngestedDocument": "swiss_ai_hub.core.generative_ai.document.types.ingested_document",
     "IngestedNode": "swiss_ai_hub.core.generative_ai.document.types.ingested_node",
+    "ParseCacheBucket": "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket",
     "InvalidPathPatternError": "swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error",
     "KnowledgeCollectionNotFoundError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error",
     "KnowledgeDocument": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document",

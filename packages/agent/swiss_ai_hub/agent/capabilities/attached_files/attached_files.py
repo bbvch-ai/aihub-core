@@ -21,7 +21,6 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     CitationId,
-    ExtractedDocument,
     IngestedNode,
     combine_nodes_in_order,
     estimate_prompt_tokens,
@@ -34,6 +33,7 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode impor
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_page_range import AttachedFilePageRange
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_text import AttachedFileText
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_tool_arguments import AttachedFilesToolArguments
@@ -164,10 +164,12 @@ class AttachedFiles(Capability):
             return [AttachedFilesReadEvent(tool_call_id=request.tool_call_id)]
 
         outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id)
-        readable = {event.file_id: (document, event) for document, event in outcomes if document is not None}
+        readable = {event.file_id: text for text, event in outcomes if text is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
-        by_page = {file_id for file_id, (document, _) in readable.items() if pages and document.is_paged}
-        sections = AttachedFiles._on_pages(await AttachedFiles._parse(readable), pages, by_page)
+        by_page = {file_id for file_id, text in readable.items() if pages and text.is_paged}
+        sections = AttachedFiles._on_pages(
+            {file_id: text.sections for file_id, text in readable.items()}, pages, by_page
+        )
         counter = conversation.llm.token_counter
         available = (
             conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
@@ -177,7 +179,8 @@ class AttachedFiles(Capability):
             {file_id: "\n\n".join(section.content for section in found) for file_id, found in sections.items()}
         )
         picker = AttachedFileSections(files_config.attached_files, counter, user)
-        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page)
+        hashes = {file_id: text.content_sha256 for file_id, text in readable.items()}
+        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page, hashes)
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
         block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages)
@@ -264,18 +267,6 @@ class AttachedFiles(Capability):
         )
 
     @staticmethod
-    async def _parse(
-        readable: dict[str, tuple[ExtractedDocument, AttachedFileEvent]],
-    ) -> dict[str, list[IngestedNode]]:
-        parsed = await asyncio.gather(
-            *(
-                asyncio.to_thread(AttachedFileSections.parse, document, event.file_id, event.filename)
-                for document, event in readable.values()
-            )
-        )
-        return dict(zip(readable, parsed, strict=True))
-
-    @staticmethod
     def _on_pages(
         sections: dict[str, list[IngestedNode]], pages: AttachedFilePageRange | None, by_page: set[str]
     ) -> dict[str, list[IngestedNode]]:
@@ -291,6 +282,7 @@ class AttachedFiles(Capability):
         picker: AttachedFileSections,
         query: str,
         by_page: set[str],
+        hashes: dict[str, str],
     ) -> dict[str, tuple[list[IngestedNode], FitMode]]:
         """Pages asked for are kept in order up to the room, since they are read through, not searched."""
 
@@ -302,13 +294,17 @@ class AttachedFiles(Capability):
                 return file_id, (picker.fill_leading(sections[file_id], room), FitMode.PAGES_CUT)
             if room is None:
                 return file_id, (sections[file_id], FitMode.WHOLE)
-            return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query)
+            return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query, hashes.get(file_id))
 
         return dict(await asyncio.gather(*(fit_one(file_id) for file_id in sections)))
 
     @staticmethod
     async def _cut_down(
-        sections: list[IngestedNode], room: int, picker: AttachedFileSections, query: str
+        sections: list[IngestedNode],
+        room: int,
+        picker: AttachedFileSections,
+        query: str,
+        content_sha256: str | None = None,
     ) -> tuple[list[IngestedNode], FitMode]:
         """Relevant sections when the models can pick them; the beginning otherwise.
 
@@ -317,14 +313,14 @@ class AttachedFiles(Capability):
         """
         if query.strip():
             try:
-                return picker.fill(await picker.rank(sections, query), room), FitMode.EXCERPTS
+                return picker.fill(await picker.rank(sections, query, content_sha256), room), FitMode.EXCERPTS
             except Exception:
                 logger.exception("[attached-files] Could not pick relevant sections, keeping the beginning instead")
         return picker.fill(sections, room), FitMode.BEGINNING
 
     @staticmethod
     def _block(
-        outcomes: Sequence[tuple[ExtractedDocument | None, AttachedFileEvent]],
+        outcomes: Sequence[tuple[AttachedFileText | None, AttachedFileEvent]],
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
         cite_sources: bool,
