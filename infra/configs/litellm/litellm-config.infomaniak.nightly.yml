@@ -123,8 +123,9 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_EMBEDDING_API_KEY
       # Requests beyond this wait their turn in this process instead of reaching the provider: Phoeniqs answers
       # 401/500 from about 40 in flight, which cools the group down for every caller. Queuing never rejects, so it
-      # cannot trigger that cooldown itself; stoney's throughput levels off around this many anyway. Local vLLM has
-      # no such limit and batches requests itself.
+      # cannot trigger that cooldown itself; stoney's throughput levels off around this many anyway. The limit is per
+      # LiteLLM process, so N replicas or workers let N times as many through. Local vLLM has no such limit and batches
+      # requests itself.
       max_parallel_requests: 16
       drop_params: true
     model_info:
