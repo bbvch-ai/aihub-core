@@ -39,6 +39,7 @@ class KnowledgeRetriever(BaseRetriever):
             node_types=self.config.node_types,
             vector_store=vector_store,
             additional_filters=self.additional_metadata_filters,
+            min_similarity=self.config.min_similarity,
         )
 
         if not nodes:
