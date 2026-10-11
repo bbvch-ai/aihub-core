@@ -188,17 +188,31 @@ class TestBoundedEmbedding:
         assert 0 < model.peak <= EMBEDDING_CONCURRENCY
 
     @pytest.mark.asyncio
-    async def test_a_failing_query_embedding_cancels_the_batches_and_surfaces_its_error(self):
+    async def test_a_failing_embedding_cancels_the_batches_and_keeps_the_lexical_matches(self):
+        """An embedding group in cooldown must not cost the turn its exact matches."""
         model = FakeEmbedModel(fail_query=True, delay=0.05)
+        picker = _picker()
         embed, rerank = _patched(model)
 
-        with embed, rerank, pytest.raises(RuntimeError, match="embedding provider down"):
-            await _picker().rank(_table(), "region West")
+        with embed, rerank as reranked:
+            ranked = await picker.rank(_table(), f"status of order {IDENTIFIER}")
 
         finished = model.batches_finished
         await asyncio.sleep(0.2)
         assert model.batches_finished == finished
         assert model.in_flight == 0
+        assert IDENTIFIER in ranked[0].content
+        assert reranked.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_a_failing_embedding_with_no_shared_word_surfaces_its_error(self):
+        """Nothing to rank by then, so the caller falls back to the file's beginning."""
+        model = FakeEmbedModel(fail_query=True)
+        picker = _picker()
+        embed, rerank = _patched(model)
+
+        with embed, rerank, pytest.raises(RuntimeError, match="embedding provider down"):
+            await picker.rank(_table(50), "summarise the complaints")
 
     def test_the_concurrency_limit_holds_on_each_event_loop(self):
         """A semaphore binds to the loop it first waits on; a second loop in the same process would be refused it."""
@@ -238,7 +252,8 @@ class TestSectionCache:
 
         assert extract.await_count == 1
         assert [s.content for s in second.sections] == [s.content for s in first.sections]
-        assert second.is_paged and event.number_of_pages == 2
+        assert second.is_paged
+        assert event.number_of_pages == 2
 
     @pytest.mark.asyncio
     async def test_the_same_file_id_under_another_profile_is_read_afresh(self):
@@ -351,8 +366,9 @@ class TestSectionCache:
         assert len(model.texts) == len(resplit)
 
     @pytest.mark.asyncio
-    async def test_cached_vectors_of_another_width_are_dropped_and_replaced(self):
-        """A model alias pointed at another model keeps the key but changes the width."""
+    async def test_cached_vectors_of_another_width_are_dropped_from_the_cache(self):
+        """A model alias pointed at another model keeps the key but changes the width; the next question embeds the
+        dropped sections again."""
         cache = AttachedFileSectionCache()
         sections = _table(5)
         digest = AttachedFileSectionCache.sections_digest(sections)

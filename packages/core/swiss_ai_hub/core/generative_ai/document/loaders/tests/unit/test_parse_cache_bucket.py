@@ -1,3 +1,5 @@
+import time
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock
 
 import pytest
@@ -47,3 +49,24 @@ def test_write_stores_the_content_with_its_type(monkeypatch: pytest.MonkeyPatch)
     client.put_object.assert_called_once_with(
         Bucket="parse-cache", Key="markitdown/key", Body=b"# text", ContentType="text/markdown; charset=utf-8"
     )
+
+
+def test_concurrent_first_reads_build_one_client(monkeypatch: pytest.MonkeyPatch):
+    """boto3's default session is not thread-safe, so two worker threads must not build their clients at once."""
+    clients: list[MagicMock] = []
+
+    def slow_client() -> MagicMock:
+        time.sleep(0.05)
+        clients.append(MagicMock())
+        return clients[-1]
+
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket.create_s3_client", slow_client
+    )
+    bucket = ParseCacheBucket()
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        built = list(pool.map(lambda _: bucket._client(), range(4)))
+
+    assert len(clients) == 1
+    assert all(client is clients[0] for client in built)

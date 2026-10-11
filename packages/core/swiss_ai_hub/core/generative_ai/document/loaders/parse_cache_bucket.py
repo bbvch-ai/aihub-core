@@ -1,3 +1,4 @@
+import threading
 from typing import TYPE_CHECKING, ClassVar
 
 from botocore.exceptions import ClientError
@@ -17,6 +18,8 @@ class ParseCacheBucket:
     """
 
     NAME: ClassVar[str] = "parse-cache"
+    # boto3's default session is not thread-safe, and two reads in worker threads may build their clients at once.
+    _client_creation: ClassVar[threading.Lock] = threading.Lock()
 
     def __init__(self) -> None:
         self._s3_client: S3Client | None = None
@@ -40,5 +43,7 @@ class ParseCacheBucket:
     def _client(self) -> "S3Client":
         """Built on first use in a worker thread: creating a boto3 client blocks for tens of milliseconds."""
         if self._s3_client is None:
-            self._s3_client = create_s3_client()
+            with self._client_creation:
+                if self._s3_client is None:
+                    self._s3_client = create_s3_client()
         return self._s3_client

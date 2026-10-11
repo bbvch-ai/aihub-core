@@ -1,11 +1,12 @@
 import asyncio
+import logging
 import math
 import time
 from array import array
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Sequence
 from datetime import UTC, datetime
 from itertools import chain
-from typing import ClassVar
+from typing import Any, ClassVar
 from uuid import uuid4
 from weakref import WeakKeyDictionary
 
@@ -35,6 +36,8 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_file_lexical_rankin
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_rank_fusion import AttachedFileRankFusion
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_cache import AttachedFileSectionCache
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_config import AttachedFilesConfig
+
+logger = logging.getLogger(__name__)
 
 # The embedding provider of the compose stacks fails from about 40 requests in flight and its quota is shared by every
 # stage, so each agent process sends at most this many at once, whatever the number of files and users.
@@ -111,28 +114,43 @@ class AttachedFileSections:
         self, sections: list[IngestedNode], query: str, content_sha256: str | None = None
     ) -> list[IngestedNode]:
         """The sections, most relevant first. Embeddings already computed for this content are reused, and new ones
-        are kept for the next question about it."""
+        are kept for the next question about it. When embedding fails, the sections sharing the query's words are
+        still reranked: the reranker is another model, and an embedding group in cooldown would otherwise cost the
+        turn every exact match and leave it with the file's beginning."""
         relevance_query = EmbeddingQueryClamp.clamp(query, model_name=self._config.embedding_model.model_name)
         lexical = await asyncio.to_thread(AttachedFileLexicalRanking.rank, sections, relevance_query)
+        try:
+            dense, keep_embeddings = await self._dense(sections, lexical, relevance_query, content_sha256)
+        except Exception:
+            if not lexical:
+                raise
+            logger.warning("[attached-files] Could not embed, ranking by the query's words alone", exc_info=True)
+            dense, keep_embeddings = [], None
+        shortlist = self.shortlist(lexical, dense)
+        reranking_model = self._config.reranking_model.model_copy(update={"top_n": len(shortlist)})
+        reranking = rerank_nodes(shortlist, relevance_query, reranking_model, self._user)
+        if keep_embeddings is None:
+            return await reranking
+        reranked, _ = await asyncio.gather(reranking, keep_embeddings)
+        return reranked
+
+    async def _dense(
+        self, sections: list[IngestedNode], lexical: list[IngestedNode], query: str, content_sha256: str | None
+    ) -> tuple[list[IngestedNode], Coroutine[Any, Any, None] | None]:
+        """The candidates in embedding order, and the write keeping new embeddings for the next question, if any."""
         model = self._embedding_model_key()
         digest = await asyncio.to_thread(AttachedFileSectionCache.sections_digest, sections) if content_sha256 else ""
         cached = await self._cache.embeddings(content_sha256, model, digest) if content_sha256 else {}
         candidates = self._candidates(sections, lexical, cached)
         uncached = [section for section in candidates if self._key(section) not in cached]
-        query_embedding, embedded = await self._embed(relevance_query, uncached)
+        query_embedding, embedded = await self._embed(query, uncached)
         # A model alias pointed at another model changes the width under the same key; its old vectors are dropped.
         usable = {key: vector for key, vector in cached.items() if len(vector) == len(query_embedding)}
         vectors = {**usable, **embedded}
         dense = await asyncio.to_thread(self.dense_order, candidates, vectors, query_embedding)
-        shortlist = self.shortlist(lexical, dense)
-        reranking_model = self._config.reranking_model.model_copy(update={"top_n": len(shortlist)})
-        reranking = rerank_nodes(shortlist, relevance_query, reranking_model, self._user)
         if not content_sha256 or (not embedded and len(usable) == len(cached)):
-            return await reranking
-        reranked, _ = await asyncio.gather(
-            reranking, self._cache.put_embeddings(content_sha256, model, vectors, digest)
-        )
-        return reranked
+            return dense, None
+        return dense, self._cache.put_embeddings(content_sha256, model, vectors, digest)
 
     def shortlist(self, lexical: list[IngestedNode], dense: list[IngestedNode]) -> list[IngestedNode]:
         """Fusion alone can rank an exact identifier out: when most sections share some word with the query, one
@@ -170,7 +188,7 @@ class AttachedFileSections:
     def dense_order(
         sections: list[IngestedNode], vectors: dict[int, array], query_embedding: Sequence[float]
     ) -> list[IngestedNode]:
-        """Run in a thread: a fully cached large file is a thousand vectors compared in pure Python."""
+        """Run in a thread: a fully cached large file is thousands of vectors compared in pure Python."""
         query_norm = math.sqrt(sum(value * value for value in query_embedding))
         scored = [
             (AttachedFileSections.cosine(query_embedding, vectors[key], query_norm), section)

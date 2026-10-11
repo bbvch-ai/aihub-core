@@ -29,7 +29,7 @@ for every caller (aihub-core-private#325).
 `attached-files/`, expiring with the bucket's 7-day lifecycle:
 
 1. **A record per upload**, keyed by a hash of the upload's agent-scoped location
-   (`agent-files/{class}/{id}/{file id}/ {name}`). It holds the content hash, title, page count and whether the document
+   (`agent-files/{class}/{id}/{file id}/{name}`). It holds the content hash, title, page count and whether the document
    can be read by page, so a later read of that upload needs no download and no parse.
 2. **The sections**, keyed by a hash of the extracted text and a fingerprint of the chunking settings. Loaded sections
    are re-stamped with the current upload's document id, source, title and fresh node ids, because citations derive from

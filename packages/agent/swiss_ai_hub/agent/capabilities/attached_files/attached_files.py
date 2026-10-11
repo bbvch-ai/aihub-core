@@ -32,6 +32,7 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode import FitMode
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_page_range import AttachedFilePageRange
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_cache import AttachedFileSectionCache
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_text import AttachedFileText
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
@@ -163,7 +164,9 @@ class AttachedFiles(Capability):
         if not files:
             return [AttachedFilesReadEvent(tool_call_id=request.tool_call_id)]
 
-        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id)
+        # One cache for the turn: its S3 client is built once, not by every read at the same moment.
+        cache = AttachedFileSectionCache()
+        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, cache)
         readable = {event.file_id: text for text, event in outcomes if text is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
         by_page = {file_id for file_id, text in readable.items() if pages and text.is_paged}
@@ -178,7 +181,7 @@ class AttachedFiles(Capability):
         rooms = budget.allocate(
             {file_id: "\n\n".join(section.content for section in found) for file_id, found in sections.items()}
         )
-        picker = AttachedFileSections(files_config.attached_files, counter, user)
+        picker = AttachedFileSections(files_config.attached_files, counter, user, cache)
         hashes = {file_id: text.content_sha256 for file_id, text in readable.items()}
         fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page, hashes)
 

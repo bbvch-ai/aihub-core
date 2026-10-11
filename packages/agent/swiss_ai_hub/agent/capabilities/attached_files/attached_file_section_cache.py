@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 CACHE_HIT_ATTRIBUTE = "aihub.attached_files.section_cache.hit"
 CACHE_KEY_ATTRIBUTE = "aihub.attached_files.section_cache.key"
 SECTIONS = TypeAdapter(list[IngestedNode])
+JSON = "application/json"
 
 
 class AttachedFileSectionCache:
@@ -48,7 +49,7 @@ class AttachedFileSectionCache:
         return self._parse(content, AttachedFileRecord.model_validate_json)
 
     async def put_record(self, bucket: str, key: str, record: AttachedFileRecord) -> None:
-        await self._write(self.record_key(bucket, key), record.model_dump_json().encode(), "application/json")
+        await self._write(self.record_key(bucket, key), record.model_dump_json().encode(), JSON)
 
     async def sections(self, content_sha256: str) -> list[IngestedNode] | None:
         content = await self._read(self.sections_key(content_sha256))
@@ -56,7 +57,7 @@ class AttachedFileSectionCache:
 
     async def put_sections(self, content_sha256: str, sections: list[IngestedNode]) -> None:
         encoded = await asyncio.to_thread(SECTIONS.dump_json, sections)
-        await self._write(self.sections_key(content_sha256), encoded, "application/json")
+        await self._write(self.sections_key(content_sha256), encoded, JSON)
 
     async def embeddings(self, content_sha256: str, model: str, sections_digest: str) -> dict[int, array]:
         content = await self._read(self.embeddings_key(content_sha256, model))
@@ -67,7 +68,7 @@ class AttachedFileSectionCache:
         self, content_sha256: str, model: str, vectors: dict[int, array], sections_digest: str
     ) -> None:
         encoded = await asyncio.to_thread(self.encode_embeddings, vectors, sections_digest)
-        await self._write(self.embeddings_key(content_sha256, model), encoded, "application/json")
+        await self._write(self.embeddings_key(content_sha256, model), encoded, JSON)
 
     @classmethod
     def record_key(cls, bucket: str, key: str) -> str:
