@@ -209,11 +209,11 @@ class TestBoundedEmbedding:
         """Nothing to rank by then, so the caller falls back to the file's beginning."""
         model = FakeEmbedModel(fail_query=True)
         picker = _picker()
+        sections = _table(50)
         embed, rerank = _patched(model)
 
-        with embed, rerank:
-            with pytest.raises(RuntimeError, match="embedding provider down"):
-                await picker.rank(_table(50), "summarise the complaints")
+        with embed, rerank, pytest.raises(RuntimeError, match="embedding provider down"):
+            await picker.rank(sections, "summarise the complaints")
 
     def test_the_concurrency_limit_holds_on_each_event_loop(self):
         """A semaphore binds to the loop it first waits on; a second loop in the same process would be refused it."""
