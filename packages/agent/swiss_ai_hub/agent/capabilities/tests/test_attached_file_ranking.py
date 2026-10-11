@@ -211,8 +211,9 @@ class TestBoundedEmbedding:
         picker = _picker()
         embed, rerank = _patched(model)
 
-        with embed, rerank, pytest.raises(RuntimeError, match="embedding provider down"):
-            await picker.rank(_table(50), "summarise the complaints")
+        with embed, rerank:
+            with pytest.raises(RuntimeError, match="embedding provider down"):
+                await picker.rank(_table(50), "summarise the complaints")
 
     def test_the_concurrency_limit_holds_on_each_event_loop(self):
         """A semaphore binds to the loop it first waits on; a second loop in the same process would be refused it."""
