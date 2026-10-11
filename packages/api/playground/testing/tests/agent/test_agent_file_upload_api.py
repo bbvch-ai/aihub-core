@@ -83,50 +83,6 @@ async def test_initiate_upload_rejects_empty_filename(client):
 
 
 @pytest.mark.asyncio
-async def test_validate_upload_returns_exists_true(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": VALID_FILE_ID, "filename": "report.pdf"},
-    )
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["exists"] is True
-    assert data["file_id"] == VALID_FILE_ID
-
-
-@pytest.mark.asyncio
-async def test_validate_upload_returns_exists_false(client, mock_upload_service):
-    mock_upload_service.verify_file_exists.return_value = False
-    missing_file_id = "00000000-0000-4000-a000-000000000000"
-
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": missing_file_id, "filename": "missing.pdf"},
-    )
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["exists"] is False
-
-
-@pytest.mark.asyncio
-async def test_validate_upload_rejects_non_uuid_file_id(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": "not-a-valid-uuid-string-at-all", "filename": "test.pdf"},
-    )
-    assert response.status_code == 422
-
-
-@pytest.mark.asyncio
-async def test_validate_upload_rejects_empty_file_id(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": "", "filename": "test.pdf"},
-    )
-    assert response.status_code == 422
-
-
-@pytest.mark.asyncio
 async def test_initiate_upload_rejects_path_traversal_forward_slash(client):
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/initiate",
@@ -144,64 +100,96 @@ async def test_initiate_upload_rejects_path_traversal_backslash(client):
     assert response.status_code == 422
 
 
-@pytest.mark.asyncio
-async def test_validate_upload_rejects_path_traversal_forward_slash(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": VALID_FILE_ID, "filename": "../other-id/secret.pdf"},
-    )
-    assert response.status_code == 422
-
-
-@pytest.mark.asyncio
-async def test_validate_upload_rejects_path_traversal_backslash(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": VALID_FILE_ID, "filename": "..\\..\\secret.pdf"},
-    )
-    assert response.status_code == 422
-
-
+VALIDATE = f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate"
 THREAD = "65f1c0ffee00000000000001"
+MISSING_FILE_ID = "00000000-0000-4000-a000-000000000000"
+
+
+def _file(file_id: str = VALID_FILE_ID, filename: str = "report.pdf") -> dict[str, str]:
+    return {"file_id": file_id, "filename": filename}
 
 
 @pytest.mark.asyncio
-async def test_a_validated_upload_is_placed_in_the_conversation_s_folder(client, mock_upload_service):
-    mock_upload_service.read_file.return_value = b"%PDF"
-    with patch.object(UserKnowledgeService, "place_attachment", new=AsyncMock()) as place:
-        response = await client.post(
-            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-            json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": THREAD},
-        )
+async def test_validate_returns_only_the_missing_files(client, mock_upload_service):
+    mock_upload_service.verify_file_exists.side_effect = lambda **kwargs: kwargs["file_id"] != MISSING_FILE_ID
+
+    response = await client.post(VALIDATE, json={"files": [_file(), _file(MISSING_FILE_ID, "gone.pdf")]})
 
     assert response.status_code == 200, response.text
-    user, thread_id, file_id, filename, read = place.await_args.args
-    assert (user.id, thread_id, file_id, filename) == (TEST_USER_OID, THREAD, VALID_FILE_ID, "report.pdf")
-    assert read() == b"%PDF"
-    mock_upload_service.read_file.assert_called_once_with(AGENT_CLASS, AGENT_ID, VALID_FILE_ID, "report.pdf")
+    assert response.json() == {"missing": [MISSING_FILE_ID]}
+    mock_upload_service.verify_file_exists.assert_any_call(
+        agent_class=AGENT_CLASS, agent_id=AGENT_ID, file_id=MISSING_FILE_ID, filename="gone.pdf"
+    )
 
 
 @pytest.mark.asyncio
-async def test_an_upload_without_a_conversation_or_not_stored_is_not_placed(client, mock_upload_service):
-    with patch.object(UserKnowledgeService, "place_attachment", new=AsyncMock()) as place:
-        await client.post(
-            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-            json={"file_id": VALID_FILE_ID, "filename": "report.pdf"},
-        )
-        mock_upload_service.verify_file_exists.return_value = False
-        await client.post(
-            f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-            json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": THREAD},
+async def test_a_turn_with_a_missing_file_places_nothing(client, mock_upload_service):
+    mock_upload_service.verify_file_exists.side_effect = lambda **kwargs: kwargs["file_id"] != MISSING_FILE_ID
+    with patch.object(UserKnowledgeService, "place_attachments", new=AsyncMock()) as place:
+        response = await client.post(
+            VALIDATE, json={"thread_id": THREAD, "files": [_file(), _file(MISSING_FILE_ID, "gone.pdf")]}
         )
 
+    assert response.json() == {"missing": [MISSING_FILE_ID]}
     place.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_a_thread_id_that_is_not_one_is_refused(client):
-    response = await client.post(
-        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": VALID_FILE_ID, "filename": "report.pdf", "thread_id": "../../etc"},
-    )
+async def test_a_complete_turn_places_all_its_files_at_once(client, mock_upload_service):
+    mock_upload_service.read_file.side_effect = lambda _class, _id, file_id, filename: f"{file_id}/{filename}".encode()
+    with patch.object(UserKnowledgeService, "place_attachments", new=AsyncMock()) as place:
+        response = await client.post(
+            VALIDATE, json={"thread_id": THREAD, "files": [_file(), _file(MISSING_FILE_ID, "notes.txt")]}
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json() == {"missing": []}
+    place.assert_awaited_once()
+    user, thread_id, files, read = place.await_args.args
+    assert (user.id, thread_id) == (TEST_USER_OID, THREAD)
+    assert files == {VALID_FILE_ID: "report.pdf", MISSING_FILE_ID: "notes.txt"}
+    assert read(VALID_FILE_ID, "report.pdf") == f"{VALID_FILE_ID}/report.pdf".encode()
+    mock_upload_service.read_file.assert_called_once_with(AGENT_CLASS, AGENT_ID, VALID_FILE_ID, "report.pdf")
+
+
+@pytest.mark.asyncio
+async def test_a_turn_without_a_conversation_places_nothing(client):
+    with patch.object(UserKnowledgeService, "place_attachments", new=AsyncMock()) as place:
+        response = await client.post(VALIDATE, json={"files": [_file()]})
+
+    assert response.json() == {"missing": []}
+    place.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "file",
+    [
+        _file("not-a-valid-uuid-string-at-all"),
+        _file(""),
+        _file(filename="../other-id/secret.pdf"),
+        _file(filename="..\\..\\secret.pdf"),
+        _file(filename=""),
+    ],
+)
+async def test_a_file_that_is_not_an_upload_is_refused(client, file):
+    response = await client.post(VALIDATE, json={"files": [file]})
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_a_thread_id_that_is_not_one_is_refused(client):
+    response = await client.post(VALIDATE, json={"thread_id": "../../etc", "files": [_file()]})
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_a_turn_holds_one_to_a_thousand_files(client, mock_upload_service):
+    many = [_file() for _ in range(1000)]
+
+    assert (await client.post(VALIDATE, json={"files": many})).status_code == 200
+    assert mock_upload_service.verify_file_exists.call_count == 1000
+    assert (await client.post(VALIDATE, json={"files": [*many, _file()]})).status_code == 422
+    assert (await client.post(VALIDATE, json={"files": []})).status_code == 422

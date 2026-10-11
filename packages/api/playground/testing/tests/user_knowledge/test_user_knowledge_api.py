@@ -3,7 +3,7 @@ on and every path kept inside the home."""
 
 import json
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 import pytest_asyncio
@@ -235,6 +235,7 @@ async def test_a_sandbox_refusal_is_passed_on_and_a_failure_is_a_bad_gateway(cli
 
 
 FILE_ID = "0f8fad5b-d9cb-469f-a165-70867728950e"
+OTHER_FILE_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 
 
 def _record(sandbox: Any, placed: dict[str, str] | None) -> None:
@@ -247,36 +248,49 @@ def _record(sandbox: Any, placed: dict[str, str] | None) -> None:
     sandbox.list_files = AsyncMock(return_value={"entries": []})
 
 
+def _read(file_id: str, filename: str) -> bytes:
+    return f"{file_id}/{filename}".encode()
+
+
 @pytest.mark.asyncio
-async def test_an_attachment_is_placed_in_its_conversation_folder(sandbox: Any) -> None:
+async def test_a_turn_s_attachments_are_placed_in_its_conversation_folder_together(sandbox: Any) -> None:
     _record(sandbox, None)
 
-    placed = await user_knowledge_service.UserKnowledgeService.place_attachment(
-        fake_user(), THREAD, FILE_ID, "report.pdf", lambda: b"%PDF"
+    placed = await user_knowledge_service.UserKnowledgeService.place_attachments(
+        fake_user(), THREAD, {FILE_ID: "report.pdf", OTHER_FILE_ID: "notes.txt"}, _read
     )
 
-    sandbox.upload.assert_awaited_once_with(f"conversations/{THREAD}", "report.pdf", b"%PDF")
-    assert placed.path == f"conversations/{THREAD}/report.pdf"
+    assert sandbox.upload.await_args_list == [
+        call(f"conversations/{THREAD}", "report.pdf", f"{FILE_ID}/report.pdf".encode()),
+        call(f"conversations/{THREAD}", "notes.txt", f"{OTHER_FILE_ID}/notes.txt".encode()),
+    ]
+    sandbox.write_file.assert_awaited_once()
+    assert [entry.path for entry in placed] == [
+        f"conversations/{THREAD}/report.pdf",
+        f"conversations/{THREAD}/notes.txt",
+    ]
 
 
 @pytest.mark.asyncio
 async def test_an_attachment_already_placed_is_not_placed_again_on_a_later_turn(sandbox: Any) -> None:
     _record(sandbox, {FILE_ID: "report.pdf"})
 
-    await user_knowledge_service.UserKnowledgeService.place_attachment(
-        fake_user(), THREAD, FILE_ID, "report.pdf", lambda: b"%PDF"
+    await user_knowledge_service.UserKnowledgeService.place_attachments(
+        fake_user(), THREAD, {FILE_ID: "report.pdf", OTHER_FILE_ID: "notes.txt"}, _read
     )
 
-    sandbox.upload.assert_not_awaited()
+    sandbox.upload.assert_awaited_once_with(
+        f"conversations/{THREAD}", "notes.txt", f"{OTHER_FILE_ID}/notes.txt".encode()
+    )
 
 
 @pytest.mark.asyncio
 async def test_a_user_without_a_file_space_gets_no_attachment_placed(sandbox: Any) -> None:
     sandbox.id_of.return_value = None
 
-    placed = await user_knowledge_service.UserKnowledgeService.place_attachment(
-        fake_user(), THREAD, FILE_ID, "a.pdf", bytes
+    placed = await user_knowledge_service.UserKnowledgeService.place_attachments(
+        fake_user(), THREAD, {FILE_ID: "a.pdf"}, _read
     )
 
-    assert placed is None
+    assert placed == []
     sandbox.upload.assert_not_awaited()
