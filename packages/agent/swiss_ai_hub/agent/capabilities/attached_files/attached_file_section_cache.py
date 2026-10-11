@@ -6,10 +6,11 @@ import json
 import logging
 from array import array
 from collections.abc import Callable
+from functools import partial
 from typing import ClassVar
 
 from botocore.exceptions import BotoCoreError, ClientError
-from pydantic import TypeAdapter, ValidationError
+from pydantic import TypeAdapter
 from swiss_ai_hub.core.generative_ai import IngestedNode, MarkdownStructuralNodeParser, ParseCacheBucket
 from swiss_ai_hub.core.infrastructure import get_tracer
 
@@ -31,7 +32,9 @@ class AttachedFileSectionCache:
     agent-scoped location so a file id never answers under another profile, points to the content. The sections and
     embeddings are keyed by a hash of the extracted text, so a re-upload or another chat reuses them; like the parse
     caches, those are not tenant-scoped, because the key can only be derived from the content itself. The cache is
-    best-effort: storage it cannot reach costs the time it saves, never the read.
+    best-effort: storage it cannot reach costs the time it saves, never the read. Two rankings of the same content at
+    once each write the embeddings they know of, and the last write wins; the vectors it drops are embedded again when
+    a later question needs them.
     """
 
     FORMAT: ClassVar[int] = 1
@@ -49,19 +52,22 @@ class AttachedFileSectionCache:
 
     async def sections(self, content_sha256: str) -> list[IngestedNode] | None:
         content = await self._read(self.sections_key(content_sha256))
-        return self._parse(content, SECTIONS.validate_json)
+        return await asyncio.to_thread(self._parse, content, SECTIONS.validate_json)
 
     async def put_sections(self, content_sha256: str, sections: list[IngestedNode]) -> None:
-        await self._write(self.sections_key(content_sha256), SECTIONS.dump_json(sections), "application/json")
+        encoded = await asyncio.to_thread(SECTIONS.dump_json, sections)
+        await self._write(self.sections_key(content_sha256), encoded, "application/json")
 
-    async def embeddings(self, content_sha256: str, model: str) -> dict[int, array]:
+    async def embeddings(self, content_sha256: str, model: str, sections_digest: str) -> dict[int, array]:
         content = await self._read(self.embeddings_key(content_sha256, model))
-        return self._parse(content, self.decode_embeddings) or {}
+        decode = partial(self.decode_embeddings, sections_digest=sections_digest)
+        return await asyncio.to_thread(self._parse, content, decode) or {}
 
-    async def put_embeddings(self, content_sha256: str, model: str, vectors: dict[int, array]) -> None:
-        await self._write(
-            self.embeddings_key(content_sha256, model), self.encode_embeddings(vectors), "application/json"
-        )
+    async def put_embeddings(
+        self, content_sha256: str, model: str, vectors: dict[int, array], sections_digest: str
+    ) -> None:
+        encoded = await asyncio.to_thread(self.encode_embeddings, vectors, sections_digest)
+        await self._write(self.embeddings_key(content_sha256, model), encoded, "application/json")
 
     @classmethod
     def record_key(cls, bucket: str, key: str) -> str:
@@ -88,22 +94,44 @@ class AttachedFileSectionCache:
         return hashlib.sha256(json.dumps(relevant, sort_keys=True).encode()).hexdigest()[:16]
 
     @staticmethod
-    def encode_embeddings(vectors: dict[int, array]) -> bytes:
+    def sections_digest(sections: list[IngestedNode]) -> str:
+        """Embeddings are stored by section index, so they may only meet the sections they were computed for: a
+        parser that splits the same text differently would otherwise pair them with other text."""
+        digest = hashlib.sha256()
+        for section in sections:
+            digest.update(f"{section.index}:{len(section.content)}:".encode())
+            digest.update(section.content.encode())
+        return digest.hexdigest()
+
+    @staticmethod
+    def encode_embeddings(vectors: dict[int, array], sections_digest: str) -> bytes:
         indices = sorted(vectors)
         packed = array("f")
         for index in indices:
             packed.extend(vectors[index])
-        return json.dumps({"indices": indices, "vectors": base64.b64encode(packed.tobytes()).decode()}).encode()
+        width = len(vectors[indices[0]]) if indices else 0
+        return json.dumps(
+            {
+                "sections": sections_digest,
+                "width": width,
+                "indices": indices,
+                "vectors": base64.b64encode(packed.tobytes()).decode(),
+            }
+        ).encode()
 
     @staticmethod
-    def decode_embeddings(content: bytes) -> dict[int, array]:
+    def decode_embeddings(content: bytes, sections_digest: str) -> dict[int, array]:
+        """Vectors computed for other sections are of no use, and a payload whose size does not add up is refused
+        rather than sliced into vectors of the wrong width."""
         payload = json.loads(content)
+        if payload["sections"] != sections_digest:
+            return {}
         indices: list[int] = payload["indices"]
+        width: int = payload["width"]
         packed = array("f")
         packed.frombytes(base64.b64decode(payload["vectors"]))
-        if not indices:
-            return {}
-        width = len(packed) // len(indices)
+        if len(packed) != width * len(indices):
+            raise ValueError(f"{len(packed)} floats do not make {len(indices)} vectors of width {width}")
         return {index: packed[position * width : (position + 1) * width] for position, index in enumerate(indices)}
 
     @staticmethod
@@ -113,7 +141,7 @@ class AttachedFileSectionCache:
             return None
         try:
             return decode(content)
-        except (ValidationError, ValueError, KeyError):
+        except (ValueError, KeyError, TypeError):
             logger.warning("[AttachedFileSectionCache] Ignoring an entry that does not decode", exc_info=True)
             return None
 

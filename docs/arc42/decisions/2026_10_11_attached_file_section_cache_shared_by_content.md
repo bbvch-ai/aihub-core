@@ -52,4 +52,8 @@ scoping of the upload's location. Every read and write is best-effort: storage t
 - **Silent degradation**: missing S3 permissions disable the cache without an error. The `AttachedFileSectionCache.get`
   span carries a hit attribute to check after a deployment.
 - **Invalidation**: a change to the chunking settings or the entry format changes the fingerprint, so old entries are
-  simply not found again.
+  simply not found again. A change to the parser's code needs a `FORMAT` bump to renew the sections. Embeddings carry a
+  digest of the sections they were computed for and are ignored against any other, so a re-split file never pairs old
+  vectors with new text.
+- **Lost updates**: two rankings of the same content at once each write the embeddings they know of and the last write
+  wins. Nothing is corrupted; the dropped vectors are embedded again when a later question needs them.

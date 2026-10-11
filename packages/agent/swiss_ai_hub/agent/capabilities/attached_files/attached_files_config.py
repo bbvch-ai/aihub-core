@@ -35,8 +35,9 @@ class AttachedFilesConfig(Form):
     shortlist_size: Annotated[
         int,
         Field(
-            description="How many sections, closest to the query by embedding, the reranker orders. The reranker is "
-            "the slower and better judge, so it sees a shortlist rather than every section of a long file."
+            description="How many sections, the best of the fused lexical and embedding rankings, the reranker "
+            "orders. The reranker is the slower and better judge, so it sees a shortlist rather than every section of "
+            "a long file."
         ),
         Ge(1),
     ] = 40

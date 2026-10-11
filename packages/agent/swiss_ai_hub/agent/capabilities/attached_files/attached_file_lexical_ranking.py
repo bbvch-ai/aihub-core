@@ -5,6 +5,8 @@ from swiss_ai_hub.core.generative_ai import IngestedNode
 
 QUERY_TERM = re.compile(r"[\w-]+")
 MIN_TERM_LENGTH = 2
+# Every term is counted in every section, so a long pasted message would cost seconds of CPU on a large sheet.
+MAX_QUERY_TERMS = 64
 K1 = 1.2
 B = 0.75
 
@@ -44,13 +46,18 @@ class AttachedFileLexicalRanking:
 
     @staticmethod
     def terms(query: str) -> list[str]:
-        """The query's words and the parts of its hyphenated ones, so `ORD-145678` also matches `145678`."""
+        """The query's words and the parts of its hyphenated ones, so `ORD-145678` also matches `145678`. A long
+        message keeps its longest terms, which is where identifiers are."""
         found: list[str] = []
         for token in QUERY_TERM.findall(query.lower()):
             found.append(token)
             if "-" in token:
                 found.extend(part for part in token.split("-") if part)
-        return list(dict.fromkeys(term for term in found if len(term) >= MIN_TERM_LENGTH))
+        unique = list(dict.fromkeys(term for term in found if len(term) >= MIN_TERM_LENGTH))
+        if len(unique) <= MAX_QUERY_TERMS:
+            return unique
+        kept = set(sorted(unique, key=len, reverse=True)[:MAX_QUERY_TERMS])
+        return [term for term in unique if term in kept]
 
     @staticmethod
     def idf(total: int, containing: int) -> float:

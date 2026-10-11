@@ -15,7 +15,10 @@ from swiss_ai_hub.core.generative_ai import (
     ParseCacheBucket,
 )
 
-from swiss_ai_hub.agent.capabilities.attached_files.attached_file_lexical_ranking import AttachedFileLexicalRanking
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_lexical_ranking import (
+    MAX_QUERY_TERMS,
+    AttachedFileLexicalRanking,
+)
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_rank_fusion import AttachedFileRankFusion
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_cache import AttachedFileSectionCache
@@ -28,6 +31,7 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files_config import
 SECTIONS_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections"
 READER_MODULE = "swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader"
 IDENTIFIER = "ORD-145678"
+MODEL_KEY = "embedding/bge-m3:native"
 
 
 def _section(index: int, content: str) -> IngestedNode:
@@ -129,6 +133,14 @@ class TestLexicalRanking:
     def test_a_word_found_almost_everywhere_never_lowers_a_score(self):
         assert AttachedFileLexicalRanking.idf(total=1000, containing=999) > 0
 
+    def test_a_long_message_keeps_a_bounded_number_of_terms_and_its_identifier(self):
+        message = " ".join(f"word{index}" for index in range(4000)) + f" status of {IDENTIFIER}"
+
+        terms = AttachedFileLexicalRanking.terms(message)
+
+        assert len(terms) == MAX_QUERY_TERMS
+        assert IDENTIFIER.lower() in terms
+
 
 class TestFusionAndPinning:
     def test_reciprocal_rank_fusion_rewards_agreement(self):
@@ -141,7 +153,7 @@ class TestFusionAndPinning:
         sections = _table()
         cache = AttachedFileSectionCache()
         vectors = {s.index: array("f", [0.0, 1.0] if IDENTIFIER in s.content else [1.0, 0.1]) for s in sections}
-        await cache.put_embeddings("content-1", "embedding/bge-m3:native", vectors)
+        await cache.put_embeddings("content-1", MODEL_KEY, vectors, AttachedFileSectionCache.sections_digest(sections))
         model = FakeEmbedModel()
         embed, rerank = _patched(model)
 
@@ -188,16 +200,17 @@ class TestBoundedEmbedding:
         assert model.batches_finished == finished
         assert model.in_flight == 0
 
-    @pytest.mark.asyncio
-    async def test_the_concurrency_limit_works_on_a_new_event_loop(self):
-        """Pytest gives this test a loop of its own; a semaphore bound to an earlier test's loop would refuse it."""
+    def test_the_concurrency_limit_holds_on_each_event_loop(self):
+        """A semaphore binds to the loop it first waits on; a second loop in the same process would be refused it."""
         model = FakeEmbedModel()
         embed, rerank = _patched(model)
 
         with embed, rerank:
-            await _picker().rank(_table(100), "region West")
+            for _ in range(2):
+                with asyncio.Runner() as runner:
+                    runner.run(_picker().rank(_table(100), "region West"))
 
-        assert model.peak >= 1
+        assert 0 < model.peak <= EMBEDDING_CONCURRENCY
 
 
 def _upload(file_id: str = "7f1c6a8e-3b2d-4c5e-9f10-2a3b4c5d6e7f", name: str = "handbook.pdf") -> UserUploadedFile:
@@ -291,21 +304,23 @@ class TestSectionCache:
     async def test_embeddings_are_completed_and_kept_for_the_next_question(self):
         cache = AttachedFileSectionCache()
         sections = _table(40)
-        await cache.put_embeddings("content-1", "embedding/bge-m3:native", {0: array("f", [1.0, 0.1])})
+        digest = AttachedFileSectionCache.sections_digest(sections)
+        await cache.put_embeddings("content-1", MODEL_KEY, {0: array("f", [1.0, 0.1])}, digest)
         model = FakeEmbedModel()
         embed, rerank = _patched(model)
 
         with embed, rerank:
             await _picker(AttachedFilesConfig(max_embedded_chars=1_000_000)).rank(sections, "region West", "content-1")
 
-        stored = await cache.embeddings("content-1", "embedding/bge-m3:native")
+        stored = await cache.embeddings("content-1", MODEL_KEY, digest)
         assert set(stored) == {s.index for s in sections}
         assert len(model.texts) == len(sections) - 1
 
     @pytest.mark.asyncio
     async def test_another_vector_width_does_not_reuse_embeddings(self):
         cache = AttachedFileSectionCache()
-        await cache.put_embeddings("content-1", "embedding/bge-m3:native", {0: array("f", [1.0, 0.1])})
+        digest = AttachedFileSectionCache.sections_digest(_table(5))
+        await cache.put_embeddings("content-1", MODEL_KEY, {0: array("f", [1.0, 0.1])}, digest)
         default = AttachedFilesConfig().embedding_model
         narrower = default.model_copy(
             update={"default_parameter": default.default_parameter.model_copy(update={"dimensions": 512})}
@@ -318,6 +333,49 @@ class TestSectionCache:
             await _picker(config).rank(_table(5), "region West", "content-1")
 
         assert len(model.texts) == 5
+
+    @pytest.mark.asyncio
+    async def test_embeddings_computed_for_other_sections_are_not_reused(self):
+        """A parser that splits the same text differently pairs indices with other text."""
+        cache = AttachedFileSectionCache()
+        resplit = _table(5)
+        earlier = [_section(section.index, f"{section.content} as split before") for section in resplit]
+        vectors = {s.index: array("f", [1.0, 0.1]) for s in earlier}
+        await cache.put_embeddings("content-1", MODEL_KEY, vectors, AttachedFileSectionCache.sections_digest(earlier))
+        model = FakeEmbedModel()
+        embed, rerank = _patched(model)
+
+        with embed, rerank:
+            await _picker().rank(resplit, "region West", "content-1")
+
+        assert len(model.texts) == len(resplit)
+
+    @pytest.mark.asyncio
+    async def test_cached_vectors_of_another_width_are_dropped_and_replaced(self):
+        """A model alias pointed at another model keeps the key but changes the width."""
+        cache = AttachedFileSectionCache()
+        sections = _table(5)
+        digest = AttachedFileSectionCache.sections_digest(sections)
+        await cache.put_embeddings(
+            "content-1", MODEL_KEY, {s.index: array("f", [1.0, 0.1, 0.0]) for s in sections}, digest
+        )
+        model = FakeEmbedModel()
+        embed, rerank = _patched(model)
+
+        with embed, rerank:
+            ranked = await _picker().rank(sections, "region West", "content-1")
+
+        assert ranked
+        assert await cache.embeddings("content-1", MODEL_KEY, digest) == {}
+
+    @pytest.mark.asyncio
+    async def test_an_embeddings_entry_whose_size_does_not_add_up_is_a_miss(self, in_memory_parse_cache):
+        cache = AttachedFileSectionCache()
+        await cache.put_embeddings("content-1", MODEL_KEY, {0: array("f", [1.0, 0.1]), 1: array("f", [0.5, 0.5])}, "d")
+        key = AttachedFileSectionCache.embeddings_key("content-1", MODEL_KEY)
+        in_memory_parse_cache[key] = in_memory_parse_cache[key].replace(b'"width": 2', b'"width": 3')
+
+        assert await cache.embeddings("content-1", MODEL_KEY, "d") == {}
 
     def test_a_new_chunking_starts_a_fresh_cache(self, monkeypatch):
         before = AttachedFileSectionCache.sections_key("content-1")

@@ -115,16 +115,24 @@ class AttachedFileSections:
         relevance_query = EmbeddingQueryClamp.clamp(query, model_name=self._config.embedding_model.model_name)
         lexical = await asyncio.to_thread(AttachedFileLexicalRanking.rank, sections, relevance_query)
         model = self._embedding_model_key()
-        cached = await self._cache.embeddings(content_sha256, model) if content_sha256 else {}
+        digest = await asyncio.to_thread(AttachedFileSectionCache.sections_digest, sections) if content_sha256 else ""
+        cached = await self._cache.embeddings(content_sha256, model, digest) if content_sha256 else {}
         candidates = self._candidates(sections, lexical, cached)
         uncached = [section for section in candidates if self._key(section) not in cached]
         query_embedding, embedded = await self._embed(relevance_query, uncached)
-        if embedded and content_sha256:
-            await self._cache.put_embeddings(content_sha256, model, {**cached, **embedded})
-        dense = await asyncio.to_thread(self.dense_order, candidates, {**cached, **embedded}, query_embedding)
+        # A model alias pointed at another model changes the width under the same key; its old vectors are dropped.
+        usable = {key: vector for key, vector in cached.items() if len(vector) == len(query_embedding)}
+        vectors = {**usable, **embedded}
+        dense = await asyncio.to_thread(self.dense_order, candidates, vectors, query_embedding)
         shortlist = self.shortlist(lexical, dense)
         reranking_model = self._config.reranking_model.model_copy(update={"top_n": len(shortlist)})
-        return await rerank_nodes(shortlist, relevance_query, reranking_model, self._user)
+        reranking = rerank_nodes(shortlist, relevance_query, reranking_model, self._user)
+        if not content_sha256 or (not embedded and len(usable) == len(cached)):
+            return await reranking
+        reranked, _ = await asyncio.gather(
+            reranking, self._cache.put_embeddings(content_sha256, model, vectors, digest)
+        )
+        return reranked
 
     def shortlist(self, lexical: list[IngestedNode], dense: list[IngestedNode]) -> list[IngestedNode]:
         """Fusion alone can rank an exact identifier out: when most sections share some word with the query, one
@@ -163,8 +171,9 @@ class AttachedFileSections:
         sections: list[IngestedNode], vectors: dict[int, array], query_embedding: Sequence[float]
     ) -> list[IngestedNode]:
         """Run in a thread: a fully cached large file is a thousand vectors compared in pure Python."""
+        query_norm = math.sqrt(sum(value * value for value in query_embedding))
         scored = [
-            (AttachedFileSections.cosine(query_embedding, vectors[key]), section)
+            (AttachedFileSections.cosine(query_embedding, vectors[key], query_norm), section)
             for section in sections
             if (key := AttachedFileSections._key(section)) in vectors
         ]
@@ -180,8 +189,11 @@ class AttachedFileSections:
         return [sections[position] for position in order]
 
     @staticmethod
-    def cosine(left: Sequence[float], right: Sequence[float]) -> float:
-        norm = math.sqrt(sum(value * value for value in left)) * math.sqrt(sum(value * value for value in right))
+    def cosine(left: Sequence[float], right: Sequence[float], left_norm: float | None = None) -> float:
+        """`left_norm` spares recomputing the query's norm for every section."""
+        if left_norm is None:
+            left_norm = math.sqrt(sum(value * value for value in left))
+        norm = left_norm * math.sqrt(sum(value * value for value in right))
         return sum(a * b for a, b in zip(left, right, strict=True)) / norm if norm else 0.0
 
     def _candidates(
