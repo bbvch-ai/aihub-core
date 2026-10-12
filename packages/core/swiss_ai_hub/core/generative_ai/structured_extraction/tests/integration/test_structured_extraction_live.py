@@ -175,9 +175,14 @@ async def test_values_stated_once_in_the_header_reach_records_on_later_pages() -
 
 
 @pytest.mark.slow
+@pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_long_markdown_table_is_extracted_once_per_row_with_exact_amounts() -> None:
-    """A table row is one line, so a window edge inside it would hand the model a truncated amount."""
+    """A table row is one line, so a window edge inside it would hand the model a truncated amount.
+
+    Flaky because the 300 rows come back as about 9,000 output tokens: under CI's 300 s timeout only while the provider
+    generates faster than about 30 tokens/s, and it measured 21 on 2026-10-12 (421 s).
+    """
     llm_config, llm, _ = _llm()
     amounts = {n: float(f"{50 + n * 7}.50") for n in range(1, 301)}
     rows = "\n".join(f"| {n} | External SSD 2 TB | {amount:.2f} | CHF |" for n, amount in amounts.items())
