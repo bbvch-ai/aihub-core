@@ -3,8 +3,8 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class AgentFileValidationRequest(BaseModel):
-    """Request to validate that a file was uploaded successfully."""
+class AgentFileValidationItem(BaseModel):
+    """One uploaded file, named as the initiate endpoint stored it."""
 
     file_id: Annotated[
         str,
@@ -24,10 +24,3 @@ class AgentFileValidationRequest(BaseModel):
             description="Original filename with extension. Must not contain path separators.",
         ),
     ]
-    thread_id: Annotated[
-        str | None,
-        Field(
-            pattern=r"^[0-9a-f]{24}$",
-            description="The conversation the file is attached in; it is also placed in the user's files there.",
-        ),
-    ] = None

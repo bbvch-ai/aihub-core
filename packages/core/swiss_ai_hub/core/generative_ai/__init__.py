@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
+    from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
         DEFAULT_METADATA,
@@ -214,6 +215,7 @@ __all__ = [
     "OrgMemoryReadConfig",
     "OrgMemoryWriteConfig",
     "OrganizationMemory",
+    "ParseCacheBucket",
     "RawLoader",
     "RecursiveNodeSummarizer",
     "RerankingModelConfig",
@@ -314,6 +316,7 @@ _LAZY_IMPORTS = {
     "OrgMemoryReadConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_read_config",
     "OrgMemoryWriteConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_write_config",
     "OrganizationMemory": "swiss_ai_hub.core.generative_ai.memory.organization_memory",
+    "ParseCacheBucket": "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket",
     "RawLoader": "swiss_ai_hub.core.generative_ai.document.loaders.raw_loader",
     "RecursiveNodeSummarizer": "swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser",
     "RerankingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config",
