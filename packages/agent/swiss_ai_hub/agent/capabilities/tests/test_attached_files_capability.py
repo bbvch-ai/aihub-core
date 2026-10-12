@@ -209,7 +209,7 @@ async def test_a_file_too_large_without_a_query_keeps_its_beginning():
 
 @pytest.mark.asyncio
 async def test_a_file_too_large_keeps_the_sections_relevant_to_the_query():
-    async def pick_last(self, sections: list, query: str) -> list:
+    async def pick_last(self, sections: list, query: str, content_sha256: str | None = None) -> list:
         return list(reversed(sections))
 
     with (

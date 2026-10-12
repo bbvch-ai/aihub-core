@@ -120,6 +120,12 @@ model_list:
       model: openai/inference-bge-m3
       api_base: os.environ/SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_EMBEDDING_API_KEY
+      # Requests beyond this wait their turn in this process instead of reaching the provider: Phoeniqs answers
+      # 401/500 from about 40 in flight, which cools the group down for every caller. Queuing never rejects, so it
+      # cannot trigger that cooldown itself; stoney's throughput levels off around this many anyway. The limit is per
+      # LiteLLM process, so N replicas or workers let N times as many through. Local vLLM has no such limit and batches
+      # requests itself.
+      max_parallel_requests: 16
       drop_params: true
     model_info:
       mode: embedding
@@ -139,6 +145,8 @@ model_list:
       model: jina_ai/inference-bge-reranker
       api_base: os.environ/SWISS_LLM_CLOUD_RERANKING_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_RERANKING_API_KEY
+      # No max_parallel_requests: LiteLLM 1.83.10 routes rerank calls around the deployment's semaphore, so it would
+      # have no effect. Callers send one rerank per ranking instead of bursts.
       drop_params: true
     model_info:
       mode: rerank
@@ -256,8 +264,9 @@ router_settings:
     - reranker/bge: []
     - transcription/whisper-large-v3: []
     - image-generation/flux: []
-  # Every model group has one deployment and none sets rpm/tpm, so usage-based routing had nothing to choose
-  # between and only added a Redis increment to every call.
+  # Every model group has one deployment and none sets rpm/tpm (the cloud embedding caps concurrency with
+  # max_parallel_requests, which queues rather than routes), so usage-based routing had nothing to choose between and
+  # only added a Redis increment to every call.
   routing_strategy: simple-shuffle
   retry_policy:
     TimeoutErrorRetries: 2

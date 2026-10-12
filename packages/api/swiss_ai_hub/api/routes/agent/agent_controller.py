@@ -21,10 +21,10 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
 from swiss_ai_hub.api.routes.agent.dto.agent_class_dto import AgentClassDTO
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_request import AgentFileBatchValidationRequest
+from swiss_ai_hub.api.routes.agent.dto.agent_file_batch_validation_response import AgentFileBatchValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_request import AgentFileUploadRequest
 from swiss_ai_hub.api.routes.agent.dto.agent_file_upload_response import AgentFileUploadResponse
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_request import AgentFileValidationRequest
-from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_response import AgentFileValidationResponse
 from swiss_ai_hub.api.routes.agent.dto.create_agent_instance_request import CreateAgentInstanceRequest
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.agent.dto.update_agent_instance_dto import UpdateAgentInstanceDTO
@@ -297,38 +297,28 @@ class AgentController(TenantScopedController):
         async def validate_file_upload(
             agent_class: str,
             agent_id: str,
-            request: AgentFileValidationRequest,
+            request: AgentFileBatchValidationRequest,
             user: Annotated[
                 UserIdentity,
                 Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
             ],
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
             background_tasks: BackgroundTasks,
-        ) -> AgentFileValidationResponse:
-            """Validate that a file was successfully uploaded to the agent's dedicated bucket.
+        ) -> AgentFileBatchValidationResponse:
+            """Report which of a turn's files the agent's dedicated bucket does not hold.
 
-            Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
-            slow or unavailable sandbox never holds up or fails the chat.
+            Once none is missing, the files are placed in the user's files of the conversation together, after the
+            answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
             """
-            exists = await asyncio.to_thread(
-                upload_service.verify_file_exists,
-                agent_class=agent_class,
-                agent_id=agent_id,
-                file_id=request.file_id,
-                filename=request.filename,
-            )
-            if exists and request.thread_id:
+            missing = await upload_service.missing_files(agent_class, agent_id, request.files)
+            if not missing and request.thread_id:
                 background_tasks.add_task(
-                    UserKnowledgeService.place_attachment,
+                    UserKnowledgeService.place_attachments,
                     user,
                     request.thread_id,
-                    request.file_id,
-                    request.filename,
-                    partial(upload_service.read_file, agent_class, agent_id, request.file_id, request.filename),
+                    {file.file_id: file.filename for file in request.files},
+                    partial(upload_service.read_file, agent_class, agent_id),
                 )
-            return AgentFileValidationResponse(
-                file_id=request.file_id,
-                exists=exists,
-            )
+            return AgentFileBatchValidationResponse(missing=missing)
 
         return self
