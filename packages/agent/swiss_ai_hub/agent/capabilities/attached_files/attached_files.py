@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     AttachedFileEvent,
     AttachedFilesReadEvent,
     AttachedFileStatus,
+    ChatFeature,
     ReadAttachedFilesEvent,
     RunToolLoopEvent,
     ToolCallApprovedEvent,
@@ -20,7 +21,6 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     CitationId,
-    ExtractedDocument,
     IngestedNode,
     combine_nodes_in_order,
     estimate_prompt_tokens,
@@ -32,15 +32,20 @@ from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_fit_mode import FitMode
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_page_range import AttachedFilePageRange
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_reader import AttachedFileReader
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_section_cache import AttachedFileSectionCache
 from swiss_ai_hub.agent.capabilities.attached_files.attached_file_sections import AttachedFileSections
+from swiss_ai_hub.agent.capabilities.attached_files.attached_file_text import AttachedFileText
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_budget import AttachedFilesBudget
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_tool_arguments import AttachedFilesToolArguments
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
+from swiss_ai_hub.agent.capabilities.structured_file import StructuredFile
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
@@ -66,9 +71,9 @@ class AttachedFiles(Capability):
 
     - `read(files, history, query, reserve_tokens)` is answered with `AttachedFilesReadEvent`, one context block
       holding each file's text, empty when nothing readable is attached. `first_page`/`last_page` read those pages of
-      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to `Conversation.compose(...)`
-      behind the memories. `reserve_tokens` is room the caller still needs afterwards, such as RAG's retrieved
-      knowledge, which the files leave free.
+      a file that knows its pages, in order, instead of the sections closest to the query. Pass the block to
+      `Conversation.compose(...)` behind the memories. `reserve_tokens` is room the caller still needs afterwards, such
+      as RAG's retrieved knowledge, which the files leave free.
 
     Chat clients send every file of the current message branch on every turn, so a file attached earlier keeps
     answering later questions without being attached again, and an edited or regenerated message sees exactly its
@@ -100,12 +105,24 @@ class AttachedFiles(Capability):
             return None
         t = context.t
         # Files go by their citation id: a model shown the upload id cites that instead, which no client links.
-        listing = "\n".join(f"- {CitationId.of(file.file_id)}: {file.filename} ({file.file_type})" for file in files)
+        listing = "\n".join(
+            f"- {CitationId.of(file.file_id)}: {file.filename}"
+            + (
+                f" {t('agent.attached_files.tool.structured_hint')}"
+                if StructuredFile.works_better_in_code(file.filename)
+                else ""
+            )
+            for file in files
+        )
         return ToolDefinition(
             name=READ_ATTACHED_FILES_TOOL,
             description=t("agent.attached_files.tool.description", files=listing),
             parameters=AttachedFilesToolArguments.schema_for([CitationId.of(file.file_id) for file in files], t),
         )
+
+    @staticmethod
+    def _kept_for_code(files: Sequence[UserUploadedFile], t: LocaleHandler) -> str:
+        return "\n".join(t("agent.attached_files.prompt.kept_for_code", filename=file.filename) for file in files)
 
     @staticmethod
     def read(
@@ -147,11 +164,15 @@ class AttachedFiles(Capability):
         if not files:
             return [AttachedFilesReadEvent(tool_call_id=request.tool_call_id)]
 
-        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id)
-        readable = {event.file_id: (document, event) for document, event in outcomes if document is not None}
+        # One cache for the turn: its S3 client is built once, not by every read at the same moment.
+        cache = AttachedFileSectionCache()
+        outcomes = await AttachedFileReader.read_all(files, topic.agent_class, topic.agent_id, cache)
+        readable = {event.file_id: text for text, event in outcomes if text is not None}
         pages = AttachedFilePageRange.of(request.first_page, request.last_page)
-        by_page = {file_id for file_id, (document, _) in readable.items() if pages and document.is_paged}
-        sections = AttachedFiles._on_pages(await AttachedFiles._parse(readable), pages, by_page)
+        by_page = {file_id for file_id, text in readable.items() if pages and text.is_paged}
+        sections = AttachedFiles._on_pages(
+            {file_id: text.sections for file_id, text in readable.items()}, pages, by_page
+        )
         counter = conversation.llm.token_counter
         available = (
             conversation.input_budget() - estimate_prompt_tokens(request.history, counter) - request.reserve_tokens
@@ -160,11 +181,16 @@ class AttachedFiles(Capability):
         rooms = budget.allocate(
             {file_id: "\n\n".join(section.content for section in found) for file_id, found in sections.items()}
         )
-        picker = AttachedFileSections(files_config.attached_files, counter, user)
-        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page)
+        picker = AttachedFileSections(files_config.attached_files, counter, user, cache)
+        hashes = {file_id: text.content_sha256 for file_id, text in readable.items()}
+        fitted = await AttachedFiles._fit(sections, rooms, picker, request.query, by_page, hashes)
 
         events = [AttachedFiles._with_status(event, fitted) for _, event in outcomes]
         block = AttachedFiles._block(outcomes, fitted, t, request.cite_sources, pages)
+        if request.kept_for_code:
+            block.append(
+                ChatMessage(role=MessageRole.SYSTEM, content=AttachedFiles._kept_for_code(request.kept_for_code, t))
+            )
         return [*events, AttachedFilesReadEvent(block=block, tool_call_id=request.tool_call_id)]
 
     @staticmethod
@@ -180,12 +206,15 @@ class AttachedFiles(Capability):
         request: RunToolLoopEvent,
         conversation: ConversationFields,
         loop: ToolLoopFields,
+        run_context: RunContext,
         t: LocaleHandler,
     ) -> ReadAttachedFilesEvent | ToolResultEvent:
         """The model chose to read: the regular read of the files it picked, sized to one tool result's room.
 
         A choice naming no readable attached file is refused rather than widened to every file, which the model did
-        not ask for; the refusal lists only the files the tool offered."""
+        not ask for; the refusal lists only the files the tool offered. While the code sandbox is offered, a chosen
+        spreadsheet, presentation or CSV file is not read but named back to the model with where code finds it,
+        since its Markdown text loses the structure and, for a large file, all but a slice."""
         try:
             arguments = AttachedFilesToolArguments.model_validate(call.arguments)
         except ValidationError as error:
@@ -202,8 +231,17 @@ class AttachedFiles(Capability):
                 content=t("agent.attached_files.tool.unknown_files", files=known),
                 is_error=True,
             )
+        code_runs = not loop.tool_loop.is_disabled("run_command") and await RequestedFeatures.contains(
+            ChatFeature.CODE_INTERPRETER, run_context, type(agent)
+        )
+        kept = [file for file in chosen if code_runs and StructuredFile.works_better_in_code(file.filename)]
+        if kept and len(kept) == len(chosen):
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id, name=call.name, content=AttachedFiles._kept_for_code(kept, t)
+            )
         return ReadAttachedFilesEvent(
-            files=chosen,
+            files=[file for file in chosen if file not in kept],
+            kept_for_code=kept,
             query=arguments.query,
             first_page=arguments.first_page,
             last_page=arguments.last_page,
@@ -232,18 +270,6 @@ class AttachedFiles(Capability):
         )
 
     @staticmethod
-    async def _parse(
-        readable: dict[str, tuple[ExtractedDocument, AttachedFileEvent]],
-    ) -> dict[str, list[IngestedNode]]:
-        parsed = await asyncio.gather(
-            *(
-                asyncio.to_thread(AttachedFileSections.parse, document, event.file_id, event.filename)
-                for document, event in readable.values()
-            )
-        )
-        return dict(zip(readable, parsed, strict=True))
-
-    @staticmethod
     def _on_pages(
         sections: dict[str, list[IngestedNode]], pages: AttachedFilePageRange | None, by_page: set[str]
     ) -> dict[str, list[IngestedNode]]:
@@ -259,6 +285,7 @@ class AttachedFiles(Capability):
         picker: AttachedFileSections,
         query: str,
         by_page: set[str],
+        hashes: dict[str, str],
     ) -> dict[str, tuple[list[IngestedNode], FitMode]]:
         """Pages asked for are kept in order up to the room, since they are read through, not searched."""
 
@@ -270,13 +297,17 @@ class AttachedFiles(Capability):
                 return file_id, (picker.fill_leading(sections[file_id], room), FitMode.PAGES_CUT)
             if room is None:
                 return file_id, (sections[file_id], FitMode.WHOLE)
-            return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query)
+            return file_id, await AttachedFiles._cut_down(sections[file_id], room, picker, query, hashes.get(file_id))
 
         return dict(await asyncio.gather(*(fit_one(file_id) for file_id in sections)))
 
     @staticmethod
     async def _cut_down(
-        sections: list[IngestedNode], room: int, picker: AttachedFileSections, query: str
+        sections: list[IngestedNode],
+        room: int,
+        picker: AttachedFileSections,
+        query: str,
+        content_sha256: str | None = None,
     ) -> tuple[list[IngestedNode], FitMode]:
         """Relevant sections when the models can pick them; the beginning otherwise.
 
@@ -285,14 +316,14 @@ class AttachedFiles(Capability):
         """
         if query.strip():
             try:
-                return picker.fill(await picker.rank(sections, query), room), FitMode.EXCERPTS
+                return picker.fill(await picker.rank(sections, query, content_sha256), room), FitMode.EXCERPTS
             except Exception:
                 logger.exception("[attached-files] Could not pick relevant sections, keeping the beginning instead")
         return picker.fill(sections, room), FitMode.BEGINNING
 
     @staticmethod
     def _block(
-        outcomes: Sequence[tuple[ExtractedDocument | None, AttachedFileEvent]],
+        outcomes: Sequence[tuple[AttachedFileText | None, AttachedFileEvent]],
         fitted: dict[str, tuple[list[IngestedNode], FitMode]],
         t: LocaleHandler,
         cite_sources: bool,

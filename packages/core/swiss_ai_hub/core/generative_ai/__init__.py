@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
+    from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
         DEFAULT_METADATA,
@@ -44,7 +45,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
     from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
     from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
-    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import (
+        context_sufficient_guard,
+        context_sufficient_guard_messages,
+    )
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error import (
@@ -211,6 +215,7 @@ __all__ = [
     "OrgMemoryReadConfig",
     "OrgMemoryWriteConfig",
     "OrganizationMemory",
+    "ParseCacheBucket",
     "RawLoader",
     "RecursiveNodeSummarizer",
     "RerankingModelConfig",
@@ -223,6 +228,7 @@ __all__ = [
     "condense_standalone_question",
     "EmptyCondensationError",
     "context_sufficient_guard",
+    "context_sufficient_guard_messages",
     "create_few_shot_messages",
     "create_figures_folder_name",
     "decode_partition_key",
@@ -310,6 +316,7 @@ _LAZY_IMPORTS = {
     "OrgMemoryReadConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_read_config",
     "OrgMemoryWriteConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_write_config",
     "OrganizationMemory": "swiss_ai_hub.core.generative_ai.memory.organization_memory",
+    "ParseCacheBucket": "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket",
     "RawLoader": "swiss_ai_hub.core.generative_ai.document.loaders.raw_loader",
     "RecursiveNodeSummarizer": "swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser",
     "RerankingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config",
@@ -322,6 +329,7 @@ _LAZY_IMPORTS = {
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
     "EmptyCondensationError": "swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
+    "context_sufficient_guard_messages": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
     "create_few_shot_messages": "swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages",
     "create_figures_folder_name": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "decode_partition_key": "swiss_ai_hub.core.generative_ai.utils.path_utils",

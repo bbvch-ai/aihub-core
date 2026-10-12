@@ -414,13 +414,15 @@ class OpenWebuiProvisioner:
         Every native toggle is written, on or off, because OpenWebUI treats a missing capability as enabled.
         Memory is off because OpenWebUI would otherwise inject its own memories into the prompt next to the
         ones our agents recall themselves, and file context is off because our agents read the attached files
-        themselves instead of receiving OpenWebUI's injected copy.
+        themselves instead of receiving OpenWebUI's injected copy. The terminal selector is off because agents run
+        their own sandbox tools and the pipe ignores the chosen terminal, while OpenWebUI would still run its own
+        terminal tools around the agent and hide the Code Interpreter toggle while a terminal is selected.
         """
         capabilities = {feature.openwebui_capability: False for feature in ChatFeature if feature.openwebui_capability}
         for feature in agent.supported_features:
             if feature.openwebui_capability:
                 capabilities[feature.openwebui_capability] = True
-        return {**capabilities, "memory": False, "file_context": False}
+        return {**capabilities, "memory": False, "file_context": False, "terminal": False}
 
     @staticmethod
     def _agent_filter_ids(agent: OnlineAgent) -> list[str]:

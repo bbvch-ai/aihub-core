@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -5926,6 +5926,7 @@ dependencies = [
     { name = "openinference-instrumentation" },
     { name = "openinference-instrumentation-llama-index" },
     { name = "openinference-semantic-conventions" },
+    { name = "openpyxl" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp" },
     { name = "opentelemetry-exporter-otlp-proto-grpc" },
@@ -6004,6 +6005,7 @@ requires-dist = [
     { name = "openinference-instrumentation", specifier = ">=0.1.38" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.1" },
     { name = "openinference-semantic-conventions", specifier = ">=0.1.21" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "opentelemetry-api", specifier = ">=1.39.1" },
     { name = "opentelemetry-exporter-otlp", specifier = ">=1.39.1" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.39.1" },

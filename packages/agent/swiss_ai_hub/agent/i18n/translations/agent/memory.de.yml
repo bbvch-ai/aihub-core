@@ -34,6 +34,6 @@ config:
 tool:
   label: "Erinnerung abrufen"
   approval_summary: "Abrufen, was zu \"{query}\" erinnert wird"
-  description: "Durchsucht, was über den Benutzer und die Organisation erinnert wird: Vorlieben, Fakten und Entscheidungen aus früheren Gesprächen. Verwende es, wenn die Antwort davon abhängen kann, wer der Benutzer ist, oder von etwas früher Vereinbartem."
+  description: "Durchsucht, was über den Benutzer und die Organisation erinnert wird: Vorlieben, Fakten und Entscheidungen aus früheren Gesprächen. Verwende es, wenn die Antwort davon abhängen kann, wer der Benutzer ist, oder von etwas früher Vereinbartem. Es enthält kurze erinnerte Fakten, keine Dokumente oder Dateien; dafür sind die Wissens- und Datei-Werkzeuge da."
   query: "Was abgerufen werden soll, als kurze eigenständige Frage oder Stichworte."
   nothing_remembered: "Dazu ist nichts erinnert."

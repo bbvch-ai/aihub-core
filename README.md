@@ -108,7 +108,8 @@ wired together.
 | Component               | Powered by                                            | Role                                                                                                    |
 | ----------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | PDF & image parsing     | [MinerU](https://github.com/opendatalab/MinerU)       | Converts complex PDFs into clean markdown: tables, formulas, multi-column layouts, OCR in 109 languages |
-| Office document parsing | [MarkItDown](https://github.com/microsoft/markitdown) | Converts DOCX, PPTX, XLSX, and Outlook messages into markdown with embedded image extraction            |
+| Office document parsing | [MarkItDown](https://github.com/microsoft/markitdown) | Converts DOCX, PPTX, and Outlook messages into markdown with embedded image extraction                  |
+| Spreadsheet parsing     | [openpyxl](https://openpyxl.readthedocs.io)           | Streams XLSX sheets row by row into markdown tables, keeping memory low on large workbooks              |
 
 </details>
 
