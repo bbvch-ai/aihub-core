@@ -73,6 +73,7 @@ Diese Variablen werden als `${VAR}` (ohne einen `${VAR:-default}` Fallback) irge
 | `KEYCLOAK_AZURE_CLIENT_ID` | `identity-providers.json` | `keycloak` | |
 | `KEYCLOAK_AZURE_CLIENT_SECRET` | `identity-providers.json` | `keycloak` | |
 | `KEYCLOAK_AZURE_TENANT_ID` | `identity-providers.json` | `keycloak` | |
+| `KEYCLOAK_LOGIN_WELCOME_PAGE` | `KeycloakSettings.LOGIN_WELCOME_PAGE` | `api`, `sysadmin-api` | Zeigt auf der allgemeinen Anmeldeseite eine Willkommensseite statt der Identity-Provider-Liste und gibt föderierte IDPs nicht mehr an anonyme Aufrufer heraus |
 | `KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-attu` | |
 | `KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-backup` | |
 | `KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-dagster` | |

@@ -31,6 +31,16 @@ class KeycloakSettings(EnvironmentSettings):
     SHOW_KEYCLOAK_LOGIN: Annotated[
         bool, Field(description="Show a direct Keycloak login button alongside federated IDPs")
     ] = True
+    LOGIN_WELCOME_PAGE: Annotated[
+        bool,
+        Field(
+            description=(
+                "Show a welcome page instead of the identity provider list on the generic login page, and stop "
+                "publishing federated IDPs to anonymous callers. For shared instances whose tenants each log in "
+                "through their own per-tenant login link."
+            )
+        ),
+    ] = False
     TENANT_IDP_ALIASES: Annotated[
         dict[str, str],
         NoDecode,
@@ -56,6 +66,13 @@ class KeycloakSettings(EnvironmentSettings):
     def _empty_string_defaults_to_true(cls, v: object) -> object:
         if v == "":
             return True
+        return v
+
+    @field_validator("LOGIN_WELCOME_PAGE", mode="before")
+    @classmethod
+    def _empty_string_defaults_to_false(cls, v: object) -> object:
+        if v == "":
+            return False
         return v
 
     @field_validator("TENANT_IDP_ALIASES", mode="before")
