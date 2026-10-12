@@ -807,6 +807,58 @@ export const AgentEventSchema = {
   title: "AgentEvent",
 } as const;
 
+export const AgentFileBatchValidationRequestSchema = {
+  properties: {
+    thread_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[0-9a-f]{24}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Thread Id",
+      description:
+        "The conversation the files are attached in; once none is missing, they are also placed in the user's files there.",
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/AgentFileValidationItem",
+      },
+      type: "array",
+      maxItems: 1000,
+      minItems: 1,
+      title: "Files",
+      description: "The uploaded files to check.",
+    },
+  },
+  type: "object",
+  required: ["files"],
+  title: "AgentFileBatchValidationRequest",
+  description:
+    "All files of one chat turn, checked together so a turn costs one call and places its files once.",
+} as const;
+
+export const AgentFileBatchValidationResponseSchema = {
+  properties: {
+    missing: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Missing",
+      description: "The file_ids not found in the agent's bucket.",
+    },
+  },
+  type: "object",
+  required: ["missing"],
+  title: "AgentFileBatchValidationResponse",
+  description:
+    "Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.",
+} as const;
+
 export const AgentFileUploadRequestSchema = {
   properties: {
     filename: {
@@ -860,7 +912,7 @@ export const AgentFileUploadResponseSchema = {
     "Response containing a presigned upload URL and the assigned file_id.",
 } as const;
 
-export const AgentFileValidationRequestSchema = {
+export const AgentFileValidationItemSchema = {
   properties: {
     file_id: {
       type: "string",
@@ -880,45 +932,11 @@ export const AgentFileValidationRequestSchema = {
       description:
         "Original filename with extension. Must not contain path separators.",
     },
-    thread_id: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^[0-9a-f]{24}$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Thread Id",
-      description:
-        "The conversation the file is attached in; it is also placed in the user's files there.",
-    },
   },
   type: "object",
   required: ["file_id", "filename"],
-  title: "AgentFileValidationRequest",
-  description: "Request to validate that a file was uploaded successfully.",
-} as const;
-
-export const AgentFileValidationResponseSchema = {
-  properties: {
-    file_id: {
-      type: "string",
-      title: "File Id",
-      description: "The file_id that was checked.",
-    },
-    exists: {
-      type: "boolean",
-      title: "Exists",
-      description: "True if the file was found in the agent's bucket.",
-    },
-  },
-  type: "object",
-  required: ["file_id", "exists"],
-  title: "AgentFileValidationResponse",
-  description:
-    "Response confirming whether a file exists in the agent's bucket.",
+  title: "AgentFileValidationItem",
+  description: "One uploaded file, named as the initiate endpoint stored it.",
 } as const;
 
 export const AgentHealthChecksSchema = {
@@ -22262,6 +22280,16 @@ export const ReadAttachedFilesEventSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {
@@ -43624,6 +43652,16 @@ export const ReadAttachedFilesEventWritableSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {

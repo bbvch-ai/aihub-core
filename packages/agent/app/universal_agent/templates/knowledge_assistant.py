@@ -5,8 +5,8 @@ from swiss_ai_hub.agent.agents.universal_agent import UniversalAgent, UniversalA
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import READ_ATTACHED_FILES_TOOL
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import SEARCH_KNOWLEDGE_TOOL
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
-from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.capabilities.memory.memory import RECALL_MEMORY_TOOL
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 
 # Everything but reading the organisation's documents, the user's attachments and their memory is switched off, so the
@@ -66,9 +66,10 @@ def build() -> UniversalAgentConfig:
             ),
         ),
         llm=LLMConfig(
-            model_name="text-generation/gemma-4-31B-it",
+            model_name="text-generation/Kimi-K2.6",
             default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
         ),
+        task_llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         knowledge_tool=KnowledgeToolConfig(every_readable_collection=True),
         user_memory=UserMemoryConfig(memory_llm="text-generation/gemma-4-31B-it"),
         org_memory=None,

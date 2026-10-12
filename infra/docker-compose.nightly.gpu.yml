@@ -595,6 +595,9 @@ services:
     container_name: postgres-ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
     restart: always
+    # DocumentDB decompresses a whole row for every filter, projection and sort; lz4 does that about 3x faster than
+    # the default pglz. See docs/arc42/decisions/2026_10_07_ferretdb_postgres_lz4_toast_compression.md.
+    command: [postgres, -c, default_toast_compression=lz4]
     environment:
       POSTGRES_USER: ${MONGO_USERNAME}
       POSTGRES_PASSWORD: ${MONGO_PASSWORD}

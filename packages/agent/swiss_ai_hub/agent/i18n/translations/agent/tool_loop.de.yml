@@ -27,7 +27,7 @@ prompt:
   condensed_result: "[Verdichtetes früheres Ergebnis] %{summary}"
   condense_turns: "Fasse das folgende Gespräch so zusammen, dass es ohne es weitergehen kann: was der Benutzer gefragt hat, was beantwortet wurde und was entschieden wurde oder noch offen ist. Übernimm Fakten, Zahlen, Namen und Dokument-IDs wie [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung."
   condensed_turns: "Zusammenfassung des bisherigen Gesprächs: %{summary}"
-  dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst.]"
+  dropped_result: "[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht. Rufe das Werkzeug erneut auf, wenn du es brauchst; bei einem Befehl, der Dateien erstellt hat, sieh dir diese Dateien an, statt ihn erneut auszuführen.]"
   limit_reached: "Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht. Antworte jetzt mit dem, was du gefunden hast."
   no_tools: "Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche also nicht, eines aufzurufen. Antworte jetzt mit dem Gesprächsverlauf und dem, was du bereits weisst, und sag es, wenn die Antwort von Dokumenten abhängt, die du nicht durchsuchen konntest."
   unknown_tool: "Es gibt kein Werkzeug namens %{tool}. Verwende eines der angebotenen Werkzeuge."

@@ -65,6 +65,7 @@ def _client(present: list[str] | None = None, staged: dict[str, str] | None = No
     client.list_files = AsyncMock(return_value={"entries": [{"name": name} for name in present or []]})
     client.upload = AsyncMock(return_value={})
     client.write_file = AsyncMock(return_value={})
+    client.mkdir = AsyncMock(return_value={})
     client.execute = AsyncMock(return_value={"status": "done", "exit_code": 0, "output": [{"data": "42\r\n"}]})
     client.view = AsyncMock(side_effect=view)
     return client
@@ -161,11 +162,12 @@ class TestAttachedFiles:
         assert [call.args[1] for call in client.upload.await_args_list] == ["sales.csv", "sales (2).csv"]
 
     @pytest.mark.asyncio
-    async def test_a_message_without_files_does_not_touch_the_sandbox(self) -> None:
+    async def test_a_message_without_files_only_creates_the_folder_commands_run_in(self) -> None:
         client = _client()
 
         await SandboxWorkspace(client, _topic(), []).prepare()
 
+        client.mkdir.assert_awaited_once_with(f"conversations/{THREAD}")
         client.view.assert_not_awaited()
         client.list_files.assert_not_awaited()
 
@@ -186,7 +188,47 @@ class TestTools:
 
         sandbox.created.assert_called_once_with("owui-1")
         sandbox.execute.assert_awaited_once_with("python3 -c 'print(6*7)'", cwd=f"conversations/{THREAD}", wait=60)
-        assert result == "Exit code 0.\n42"
+        assert result == "Command finished successfully (exit code 0).\n42"
+
+    @pytest.mark.asyncio
+    async def test_a_spreadsheet_is_sent_to_code_instead_of_being_read_as_text(self, sandbox: Any) -> None:
+        sandbox.read_file = AsyncMock()
+
+        result = await SandboxTools(_context()).read_file("data/orders.xlsx")
+
+        sandbox.read_file.assert_not_awaited()
+        assert result.startswith("orders.xlsx is a spreadsheet or presentation")
+        assert "run_command" in result
+
+    @pytest.mark.asyncio
+    async def test_a_failed_command_says_so_and_how_to_go_on(self, sandbox: Any) -> None:
+        sandbox.execute = AsyncMock(return_value={"status": "done", "exit_code": 1, "output": [{"data": "KeyError"}]})
+
+        result = await SandboxTools(_context()).run_command("python3 broken.py")
+
+        assert result.startswith("Command failed (exit code 1). Read the error below and fix the command.")
+        assert result.endswith("KeyError")
+
+    @pytest.mark.asyncio
+    async def test_the_files_a_command_made_or_changed_are_named_with_how_to_hand_them_over(self, sandbox: Any) -> None:
+        before = {"entries": [{"name": "orders.xlsx", "type": "file", "size": 2_200_000, "modified": 1.0}]}
+        after = {
+            "entries": [
+                {"name": "orders.xlsx", "type": "file", "size": 2_200_000, "modified": 1.0},
+                {"name": "orders-net.xlsx", "type": "file", "size": 3_100_000, "modified": 2.0},
+                {"name": ".attached_files.json", "type": "file", "size": 80, "modified": 2.0},
+                {"name": "charts", "type": "directory", "modified": 2.0},
+            ]
+        }
+        sandbox.list_files = AsyncMock(side_effect=[before, after])
+
+        result = await SandboxTools(_context()).run_command("python3 net.py")
+
+        assert result.endswith(
+            "Files created or changed in the conversation folder: orders-net.xlsx (3.0 MB). "
+            "Attach one for the user with display_file."
+        )
+        assert "orders.xlsx (" not in result
 
     @pytest.mark.asyncio
     async def test_a_command_still_running_says_how_to_follow_it(self, sandbox: Any) -> None:
@@ -213,7 +255,10 @@ class TestTools:
         shown = context.displayer.display_event.await_args.args[0]
         assert isinstance(shown, SandboxFileDisplayedEvent)
         assert (shown.filename, shown.content_type, shown.size, shown.key) == ("chart.png", "image/png", 4, put["Key"])
-        assert result == "Attached chart.png (4 bytes) to your answer for the user."
+        assert result == (
+            "Attached chart.png (4 bytes) to your answer; the user gets it with a download link, "
+            "so do not attach it again."
+        )
 
     @pytest.mark.asyncio
     async def test_a_user_without_a_chat_account_has_no_sandbox(self) -> None:

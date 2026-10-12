@@ -162,10 +162,10 @@ Use the error information from Step 1 to match against these known patterns.
 - Unsupported file type
 - Corrupted file content
 - Large file timeout
-- MinerU conversions are cached by content hash in the `parse-cache` bucket (`MineruParseCache`,
-  `packages/core/swiss_ai_hub/core/generative_ai/document/loaders/mineru_parse_cache.py`); a stale or wrong result for
-  the same bytes means the cache entry (keyed also by MinerU settings) is the thing to inspect or delete, entries expire
-  by lifecycle rule
+- MinerU and MarkItDown conversions are cached by content hash in the `parse-cache` bucket (`MineruParseCache`,
+  `MarkItDownParseCache`, both in `packages/core/swiss_ai_hub/core/generative_ai/document/loaders/`); a stale or wrong
+  result for the same bytes means the cache entry (keyed also by MinerU settings, or by the MarkItDown version and
+  `XlsxMarkdownConverter`'s format) is the thing to inspect or delete, entries expire by lifecycle rule
 
 ______________________________________________________________________
 

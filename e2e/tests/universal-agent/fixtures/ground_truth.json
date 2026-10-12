@@ -1,0 +1,25 @@
+{
+  "sales.xlsx": {
+    "q3_revenue_by_region": {
+      "North": 45174,
+      "South": 54687,
+      "East": 64200,
+      "West": 73713
+    },
+    "lookup": {
+      "region": "South",
+      "quarter": "Q2",
+      "product": "Heron",
+      "revenue": 16921
+    }
+  },
+  "alpha.pdf": {
+    "code_name": "AMBER-FALCON-42",
+    "lead": "Dana Keller"
+  },
+  "bravo.pdf": {
+    "code_name": "COBALT-OTTER-17",
+    "lead": "Luca Brunner"
+  },
+  "broken.pdf": {}
+}

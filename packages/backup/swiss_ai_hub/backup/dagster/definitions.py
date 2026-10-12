@@ -6,6 +6,7 @@ from swiss_ai_hub.backup.dagster.assets.backup_session_factory import backup_ses
 from swiss_ai_hub.backup.dagster.assets.maintenance_finalize_factory import maintenance_finalize_factory
 from swiss_ai_hub.backup.dagster.assets.maintenance_handler_factory import (
     CLEANUP_HANDLER_NAMES,
+    LZ4_REWRITE_HANDLER_NAMES,
     REPACK_HANDLER_NAMES,
 )
 from swiss_ai_hub.backup.dagster.assets.maintenance_service_factory import maintenance_service_factory
@@ -16,6 +17,7 @@ from swiss_ai_hub.backup.dagster.assets.restore_session_factory import restore_s
 from swiss_ai_hub.backup.dagster.jobs.factory import (
     backup_asset_job,
     cleanup_asset_job,
+    ferretdb_lz4_rewrite_asset_job,
     repack_asset_job,
     restore_asset_job,
 )
@@ -115,10 +117,22 @@ def backup_definitions() -> Definitions:
     # cleanup and repack share the same session asset definition but are selected as separate jobs.
     repack_assets = [*repack_service_assets, repack_finalize]
 
+    lz4_rewrite_service_keys = {name: AssetKey(["maintenance", name]) for name in LZ4_REWRITE_HANDLER_NAMES}
+    lz4_rewrite_finalize_key = AssetKey(["maintenance", "lz4_rewrite_finalize"])
+    lz4_rewrite_service_assets = [
+        maintenance_service_factory(key, maintenance_session_key, name, f"Maintenance: {name}")
+        for name, key in lz4_rewrite_service_keys.items()
+    ]
+    lz4_rewrite_finalize = maintenance_finalize_factory(
+        lz4_rewrite_finalize_key, maintenance_session_key, lz4_rewrite_service_keys
+    )
+    lz4_rewrite_assets = [*lz4_rewrite_service_assets, lz4_rewrite_finalize]
+
     backup_job = backup_asset_job(backup_assets)
     restore_job = restore_asset_job(restore_assets)
     cleanup_job = cleanup_asset_job([maintenance_session_asset, *cleanup_service_assets, cleanup_finalize])
     repack_job = repack_asset_job([maintenance_session_asset, *repack_service_assets, repack_finalize])
+    lz4_rewrite_job = ferretdb_lz4_rewrite_asset_job([maintenance_session_asset, *lz4_rewrite_assets])
 
     schedule = daily_backup_schedule(backup_job)
     cleanup_schedule = weekly_cleanup_schedule(cleanup_job)
@@ -127,8 +141,8 @@ def backup_definitions() -> Definitions:
     resources = backup_resources()
 
     return Definitions(
-        assets=[*backup_assets, *restore_assets, *cleanup_assets, *repack_assets],
-        jobs=[backup_job, restore_job, cleanup_job, repack_job],
+        assets=[*backup_assets, *restore_assets, *cleanup_assets, *repack_assets, *lz4_rewrite_assets],
+        jobs=[backup_job, restore_job, cleanup_job, repack_job, lz4_rewrite_job],
         schedules=[schedule, cleanup_schedule, repack_schedule],
         resources=resources,
     )

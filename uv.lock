@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.13.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -5926,6 +5926,7 @@ dependencies = [
     { name = "openinference-instrumentation" },
     { name = "openinference-instrumentation-llama-index" },
     { name = "openinference-semantic-conventions" },
+    { name = "openpyxl" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp" },
     { name = "opentelemetry-exporter-otlp-proto-grpc" },
@@ -5956,6 +5957,7 @@ dependencies = [
     { name = "s3fs" },
     { name = "scim2-client" },
     { name = "starlette" },
+    { name = "swiss-ai-hub-jambo" },
     { name = "tabulate" },
     { name = "transformers" },
 ]
@@ -6003,6 +6005,7 @@ requires-dist = [
     { name = "openinference-instrumentation", specifier = ">=0.1.38" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.1" },
     { name = "openinference-semantic-conventions", specifier = ">=0.1.21" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "opentelemetry-api", specifier = ">=1.39.1" },
     { name = "opentelemetry-exporter-otlp", specifier = ">=1.39.1" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.39.1" },
@@ -6033,6 +6036,7 @@ requires-dist = [
     { name = "s3fs", specifier = ">=2024.10.0,<2025.0.0" },
     { name = "scim2-client", specifier = ">=0.7.5" },
     { name = "starlette", specifier = ">=1.0.1" },
+    { name = "swiss-ai-hub-jambo", specifier = ">=0.5.0" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "transformers", specifier = ">=4.57.3" },
 ]

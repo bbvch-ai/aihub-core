@@ -4,8 +4,13 @@ from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox, LocaleInput
 from swiss_ai_hub.core.form.constraints import Ge
-from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.generative_ai import (
+    FewShotGuardExample,
+    KnowledgeRetrieverConfig,
+    context_sufficient_guard_messages,
+    estimate_prompt_tokens,
+)
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
@@ -94,6 +99,23 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, KnowledgeFields, Convers
         if self.reranking_config is not None:
             nodes = min(nodes, self.reranking_config.reranking_model.top_n)
         return min(nodes * self.retrieved_tokens_per_node, self.input_budget() // 2)
+
+    def context_sufficient_guard_reserve(self, t: LocaleHandler, query: str | None) -> int:
+        """Tokens the sufficiency guard sends besides the history and the documents: its instructions and the query.
+
+        Attached files must leave room for them, or the guard drops the file block that the answer step keeps.
+        """
+        if not self.context_sufficient_guard.check_context_sufficiency:
+            return 0
+        guard_prompt = context_sufficient_guard_messages(
+            t=t,
+            user_query=query,
+            context_message=None,
+            prev_queries=[],
+            more_hops_available=True,
+            chat_history=[],
+        )
+        return estimate_prompt_tokens(guard_prompt, self.llm.token_counter)
 
     @classmethod
     def as_form(cls) -> Self:
