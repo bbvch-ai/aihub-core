@@ -64,14 +64,25 @@ class TestWithFrontmatter:
 
     def test_frontmatter_fields_win_over_the_data_lake_file(self) -> None:
         frontmatter = MarkdownFrontmatter(
-            body="# Body", title="ABC-123", url="https://jira.example.com/browse/ABC-123", created=100, updated=200
+            body="# Body", title="ABC-123", url="https://jira.example.com/browse/ABC-123", created=100
         )
 
         applied = self._parsed_markdown().with_frontmatter(frontmatter)
 
         assert applied.metadata[DOCUMENT_TITLE] == "ABC-123"
         assert applied.metadata[SOURCE_ORIGIN] == "https://jira.example.com/browse/ABC-123"
-        assert (applied.metadata[CREATED_AT], applied.metadata[UPDATED_AT]) == (100, 200)
+        assert applied.metadata[CREATED_AT] == 100
+
+    def test_a_records_own_updated_date_never_becomes_the_documents_update_time(self) -> None:
+        """updated_at is when the platform last wrote the document: uploads bump it, and the knowledge list relies on
+        it. The record's own edit date is kept as an ordinary key."""
+        original = self._parsed_markdown()
+        frontmatter = MarkdownFrontmatter(body="# Body", metadata={"updated": "2026-09-30T14:05:00+02:00"})
+
+        applied = original.with_frontmatter(frontmatter)
+
+        assert applied.metadata[UPDATED_AT] == original.metadata[UPDATED_AT]
+        assert applied.metadata["updated"] == "2026-09-30T14:05:00+02:00"
 
     def test_a_field_the_frontmatter_lacks_keeps_the_data_lake_value(self) -> None:
         original = self._parsed_markdown()

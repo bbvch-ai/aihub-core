@@ -29,8 +29,8 @@ RAG agents search. It implements a **two-stage, asset-based pipeline**:
    [rclone](https://rclone.org/)) into the platform's S3 (SeaweedFS). The source is configured per knowledge database
    from the UI; one deployed source pipeline serves every such database.
 2. **Data lake → vector store** — parse each file (MinerU OCR + structure; a markdown file's YAML frontmatter becomes
-   the document's title, link, dates and filterable metadata), chunk it, embed it via the LLM gateway, and upsert the
-   vectors into Milvus, with full lineage from every embedding back to its source document.
+   the document's title, link, creation date and filterable metadata), chunk it, embed it via the LLM gateway, and
+   upsert the vectors into Milvus, with full lineage from every embedding back to its source document.
 
 You compose a pipeline from one function, `document_ingestion_pipeline_definitions()`, which wires together all the
 assets, resources, IO managers, sensors, jobs, and schedules. It builds on

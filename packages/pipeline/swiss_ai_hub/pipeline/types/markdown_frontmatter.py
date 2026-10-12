@@ -35,7 +35,9 @@ class MarkdownFrontmatter(BaseModel):
     and an admin has to be able to predict the name to allow it as a filter field.
     """
 
-    RESERVED_FIELDS: ClassVar[frozenset[str]] = frozenset({"title", "url", "created", "updated"})
+    # `updated` is deliberately not one: a document's updated_at is when the platform last wrote it, which uploads and
+    # the knowledge list rely on, so a record's own edit date is kept as an ordinary key instead.
+    RESERVED_FIELDS: ClassVar[frozenset[str]] = frozenset({"title", "url", "created"})
     PLATFORM_KEYS: ClassVar[frozenset[str]] = frozenset(
         {
             *DEFAULT_METADATA,
@@ -71,7 +73,6 @@ class MarkdownFrontmatter(BaseModel):
     title: Annotated[str | None, Field(description="Becomes the document title.")] = None
     url: Annotated[str | None, Field(description="Becomes the original link citations show; http(s) only.")] = None
     created: Annotated[int | None, Field(description="Becomes the document's creation time, in epoch seconds.")] = None
-    updated: Annotated[int | None, Field(description="Becomes the document's update time, in epoch seconds.")] = None
     metadata: Annotated[
         dict[str, MetadataValue],
         Field(description="Every other key under its normalised name, stored on the document and its chunks."),
@@ -146,11 +147,11 @@ class MarkdownFrontmatter(BaseModel):
                 if len(url) > self.MAX_URL_CHARACTERS:
                     return f"url is longer than {self.MAX_URL_CHARACTERS} characters"
                 self.url = url
-            case _:
-                timestamp = self._as_timestamp(value)
-                if timestamp is None:
-                    return f"{key} must be an ISO 8601 date, such as 2026-09-30 or 2026-09-30T14:05:00+02:00"
-                setattr(self, key, timestamp)
+            case "created":
+                created = self._as_timestamp(value)
+                if created is None:
+                    return "created must be an ISO 8601 date, such as 2026-09-30 or 2026-09-30T14:05:00+02:00"
+                self.created = created
         return None
 
     def _set_metadata(self, key: str, value: object) -> str | None:

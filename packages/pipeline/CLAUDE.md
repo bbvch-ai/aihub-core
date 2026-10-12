@@ -427,7 +427,8 @@ The adapter declares:
 - `dlt_source(options)`, incremental on the record's last update. Credentials arrive as arguments, never through dlt's
   configuration providers, which are shared by the whole process.
 - `to_record_file(record)` → `StructuredRecordFile`: the namespace (first folder), the path segments, frontmatter using
-  #1953's reserved keys (`title`, `url`, `created`, `updated`) and the body. It must be a pure function of the record.
+  #1953's reserved keys (`title`, `url`, `created`; the record's `updated` is kept as ordinary metadata) and the body.
+  It must be a pure function of the record.
 - `list_record_paths(options)`: the key of every record in scope, built with `StructuredRecordFile.object_key_for` and
   never through the incremental state. It raises rather than returning a partial set.
 - `layout_version`: raise it when `to_record_file` changes where or how records are written.
@@ -513,11 +514,14 @@ and a converted file opening with a horizontal rule must not be taken for YAML. 
 
 **Contract** (what a writer must produce):
 
-- `title` → `DOCUMENT_TITLE`, `url` → `SOURCE_ORIGIN` (http/https only, it becomes a citation href), `created`/`updated`
-  → `CREATED_AT`/`UPDATED_AT`. `title` is capped at 500 and `url` at 2,048 characters: both sit on every chunk, twice,
-  and the title is embedded with each, so an unbounded one could fail the whole document. Dates are ISO 8601 only, naive
-  = UTC; bare numbers are refused (seconds vs milliseconds). **Writers should always emit ISO 8601 with an offset.** A
-  field the block omits keeps the data lake value.
+- `title` → `DOCUMENT_TITLE`, `url` → `SOURCE_ORIGIN` (http/https only, it becomes a citation href), `created` →
+  `CREATED_AT`. `title` is capped at 500 and `url` at 2,048 characters: both sit on every chunk, twice, and the title is
+  embedded with each, so an unbounded one could fail the whole document. `created` is ISO 8601 only, naive = UTC; bare
+  numbers are refused (seconds vs milliseconds). **Writers should always emit ISO 8601 with an offset.** A field the
+  block omits keeps the data lake value.
+- `updated` is **not** reserved: `UPDATED_AT` is when the platform last wrote the document. Uploads bump it
+  (`RefDoc.get_or_create_placeholder`), and the knowledge list relies on that to tell a re-upload from a document still
+  being deleted. The record's own `updated` is stored as an ordinary key.
 - Every other key lands on the document and, through the chunker, on every node and summary node. Names are normalised
   (`normalize_key`: NFKD, ASCII, lowercase, runs of other characters → `_`, edge `_` trimmed, must start with a letter),
   because Milvus filter expressions and Mongo field names accept only plain identifiers and an admin must be able to
@@ -617,7 +621,7 @@ Key factories (all in `assets/factories/`):
 | `RefDocDocument`      | LlamaIndex `Document` | namespace, hash, uri, updated (computed from metadata) | MongoDB via DocStoreIOManager   |
 | `TextNode`            | LlamaIndex `TextNode` | Used directly — not subclassed                         | Milvus via VectorStoreIOManager |
 | `SourceFile`          | `BaseModel`           | name, path, size, modified, content                    | In-memory (not persisted)       |
-| `MarkdownFrontmatter` | `BaseModel`           | body, title, url, created, updated, metadata, skipped  | In-memory (applied to RefDoc)   |
+| `MarkdownFrontmatter` | `BaseModel`           | body, title, url, created, metadata, skipped           | In-memory (applied to RefDoc)   |
 | `SharePointFile`      | `SourceFile`          | + download_url, full_url                               | via SharePointIOManager         |
 | `RcloneFile`          | `SourceFile`          | + remote, remote_path, hashes, mime_type               | via RoutedRcloneIOManager       |
 

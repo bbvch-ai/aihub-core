@@ -86,15 +86,20 @@ class TestReservedFields:
             "title: 'ABC-123: Login fails'\n"
             "url: https://jira.example.com/browse/ABC-123\n"
             "created: 2026-09-01T09:00:00+02:00\n"
-            "updated: 2026-09-30T14:05:00+02:00\n"
         )
 
         assert parsed.title == "ABC-123: Login fails"
         assert parsed.url == "https://jira.example.com/browse/ABC-123"
         assert parsed.created == _epoch(2026, 9, 1, 7)
-        assert parsed.updated == _epoch(2026, 9, 30, 12, 5)
         assert parsed.metadata == {}
         assert parsed.skipped == {}
+
+    def test_updated_is_an_ordinary_key_and_never_the_documents_update_time(self) -> None:
+        """A document's updated_at is when the platform last wrote it, so the record's own edit date stays metadata."""
+        parsed = _parse("updated: 2026-09-30T14:05:00+02:00\n")
+
+        assert parsed.metadata == {"updated": "2026-09-30T14:05:00+02:00"}
+        assert not hasattr(parsed, "updated")
 
     def test_reserved_keys_are_matched_after_normalisation(self) -> None:
         parsed = _parse("Title: Report\nURL: https://example.com\n")
@@ -154,7 +159,7 @@ class TestReservedFields:
         ],
     )
     def test_iso_8601_dates_become_epoch_seconds_with_utc_for_a_missing_zone(self, value: str, expected: int) -> None:
-        assert _parse(f"updated: {value}\n").updated == expected
+        assert _parse(f"created: {value}\n").created == expected
 
     @pytest.mark.parametrize("value", ["1759233900", "1759233900000", "'30.09.2026'", "yesterday", "true"])
     def test_numbers_and_non_iso_dates_are_skipped(self, value: str) -> None:

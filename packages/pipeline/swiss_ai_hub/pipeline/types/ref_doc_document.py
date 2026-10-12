@@ -74,13 +74,13 @@ class RefDocDocument(Document):
         """A copy whose text is the body, with the frontmatter's fields over the data lake file's.
 
         The custom keys are left out of the embedded text: they are there to be filtered on, and on a short record
-        they would outweigh the body in its vector. Chunks inherit the exclusion from the document.
+        they would outweigh the body in its vector. Chunks inherit the exclusion from the document. updated_at is never
+        set here: it stays the time the platform last wrote the document, and a record's own `updated` is a custom key.
         """
         document_fields = {
             DOCUMENT_TITLE: frontmatter.title,
             SOURCE_ORIGIN: frontmatter.url,
             CREATED_AT: frontmatter.created,
-            UPDATED_AT: frontmatter.updated,
         }
         applied = self.model_copy(
             update={
