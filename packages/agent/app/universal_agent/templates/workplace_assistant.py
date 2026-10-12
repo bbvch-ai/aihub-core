@@ -36,9 +36,10 @@ def build() -> UniversalAgentConfig:
         ),
         icon="mdi:briefcase-outline",
         llm=LLMConfig(
-            model_name="text-generation/gemma-4-31B-it",
+            model_name="text-generation/Kimi-K2.6",
             default_parameter=LLMParameter(temperature=0.2, timeout=120.0),
         ),
+        task_llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         knowledge_tool=KnowledgeToolConfig(every_readable_collection=True),
         user_memory=UserMemoryConfig(memory_llm="text-generation/gemma-4-31B-it"),
         org_memory=None,

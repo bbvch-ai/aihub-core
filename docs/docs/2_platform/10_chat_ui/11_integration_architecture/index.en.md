@@ -103,7 +103,8 @@ When a user attaches a file in an agent chat, the agent reads it; Open WebUI onl
   agent models, and Open WebUI no longer embeds uploads, since it runs in full-context mode and never read the
   embeddings. Plain LLM models keep Open WebUI's own file handling.
 - **The agent reads the whole document**: the pipe copies each file into the agent's upload bucket, once per agent, and
-  the agent parses it with the platform's document extraction (MinerU for PDFs and images, MarkItDown for Office). The
+  the agent parses it with the platform's document extraction (MinerU for PDFs and images, openpyxl for XLSX, MarkItDown
+  for other Office files), cached by content so each file is converted once. The
   full text goes into the model's context, trimmed to fit, and the user is told when only part of a file fit.
 - **Later turns and edited messages**: every file of the current message branch is sent on every turn, so a file
   attached earlier keeps answering later questions, and an edited or regenerated message sees only its branch's files.

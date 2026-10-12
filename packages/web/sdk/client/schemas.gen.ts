@@ -807,6 +807,58 @@ export const AgentEventSchema = {
   title: "AgentEvent",
 } as const;
 
+export const AgentFileBatchValidationRequestSchema = {
+  properties: {
+    thread_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[0-9a-f]{24}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Thread Id",
+      description:
+        "The conversation the files are attached in; once none is missing, they are also placed in the user's files there.",
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/AgentFileValidationItem",
+      },
+      type: "array",
+      maxItems: 1000,
+      minItems: 1,
+      title: "Files",
+      description: "The uploaded files to check.",
+    },
+  },
+  type: "object",
+  required: ["files"],
+  title: "AgentFileBatchValidationRequest",
+  description:
+    "All files of one chat turn, checked together so a turn costs one call and places its files once.",
+} as const;
+
+export const AgentFileBatchValidationResponseSchema = {
+  properties: {
+    missing: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Missing",
+      description: "The file_ids not found in the agent's bucket.",
+    },
+  },
+  type: "object",
+  required: ["missing"],
+  title: "AgentFileBatchValidationResponse",
+  description:
+    "Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.",
+} as const;
+
 export const AgentFileUploadRequestSchema = {
   properties: {
     filename: {
@@ -860,7 +912,7 @@ export const AgentFileUploadResponseSchema = {
     "Response containing a presigned upload URL and the assigned file_id.",
 } as const;
 
-export const AgentFileValidationRequestSchema = {
+export const AgentFileValidationItemSchema = {
   properties: {
     file_id: {
       type: "string",
@@ -880,45 +932,11 @@ export const AgentFileValidationRequestSchema = {
       description:
         "Original filename with extension. Must not contain path separators.",
     },
-    thread_id: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^[0-9a-f]{24}$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Thread Id",
-      description:
-        "The conversation the file is attached in; it is also placed in the user's files there.",
-    },
   },
   type: "object",
   required: ["file_id", "filename"],
-  title: "AgentFileValidationRequest",
-  description: "Request to validate that a file was uploaded successfully.",
-} as const;
-
-export const AgentFileValidationResponseSchema = {
-  properties: {
-    file_id: {
-      type: "string",
-      title: "File Id",
-      description: "The file_id that was checked.",
-    },
-    exists: {
-      type: "boolean",
-      title: "Exists",
-      description: "True if the file was found in the agent's bucket.",
-    },
-  },
-  type: "object",
-  required: ["file_id", "exists"],
-  title: "AgentFileValidationResponse",
-  description:
-    "Response confirming whether a file exists in the agent's bucket.",
+  title: "AgentFileValidationItem",
+  description: "One uploaded file, named as the initiate endpoint stored it.",
 } as const;
 
 export const AgentHealthChecksSchema = {
@@ -16687,6 +16705,31 @@ export const LocaleStringSchema = {
     'A multi-language string container supporting German, English, French, and Italian.\n\nLocaleString serves as a data container for translated strings. For form rendering,\nuse the `LocaleInput` FormKit element with the duality pattern.\n\n## Basic Usage (Data Mode)\n\n```python\ngreeting = LocaleString(\n    de="Hallo",\n    en="Hello",\n    fr="Bonjour",\n    it="Ciao",\n)\nprint(greeting.in_locale("en"))  # "Hello"\n```\n\n## Form Duality Pattern\n\nFor form fields that accept LocaleString values, use the union type pattern:\n\n```python\nclass MyConfig(Form):\n    name: Annotated[LocaleString | LocaleInput, Field(description="Name")]\n\n# Form mode - for rendering:\nconfig = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))\n\n# Data mode - from submission:\nconfig = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))\n```\n\nFor convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:\n\n```python\nconfig = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))\n```',
 } as const;
 
+export const LoginOptionsResponseSchema = {
+  properties: {
+    welcome_page: {
+      type: "boolean",
+      title: "Welcome Page",
+      description:
+        "Show a welcome page pointing to the organisation's login link instead of provider buttons",
+    },
+    providers: {
+      items: {
+        $ref: "#/components/schemas/AuthProviderResponse",
+      },
+      type: "array",
+      title: "Providers",
+      description:
+        "Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use",
+    },
+  },
+  type: "object",
+  required: ["welcome_page", "providers"],
+  title: "LoginOptionsResponse",
+  description:
+    "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
+} as const;
+
 export const LogprobSchema = {
   properties: {
     token: {
@@ -22264,6 +22307,16 @@ export const ReadAttachedFilesEventSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {
@@ -43626,6 +43679,16 @@ export const ReadAttachedFilesEventWritableSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {

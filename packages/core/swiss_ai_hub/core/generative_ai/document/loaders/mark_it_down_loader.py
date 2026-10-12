@@ -11,6 +11,8 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_parse_cache import MarkItDownParseCache
+from swiss_ai_hub.core.generative_ai.document.loaders.xlsx_markdown_converter import XlsxMarkdownConverter
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import wrap_markdown_tables
 from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     embed_images_as_base64,
@@ -37,6 +39,9 @@ class MarkItDownLoader(BaseReader):
 
     Converts DOCX, PPTX, XLSX, XLS, and Outlook message files to markdown.
     Handles embedded images by extracting base64 data and uploading to S3.
+
+    XLSX is streamed by `XlsxMarkdownConverter` instead, and every conversion is cached by the document's bytes
+    (`MarkItDownParseCache`), so the API, agents and ingestion convert a document once.
     """
 
     SUPPORTED_EXTENSIONS: list[str] = ["docx", "pptx", "xlsx", "xls", "msg", "eml"]
@@ -44,6 +49,7 @@ class MarkItDownLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._converter: MarkItDown | None = None
+        self.parse_cache = MarkItDownParseCache()
 
     def _get_converter(self) -> "MarkItDown":
         """Lazy-load the MarkItDown converter."""
@@ -207,12 +213,28 @@ class MarkItDownLoader(BaseReader):
         return int(page_match.group(1)) if page_match else None
 
     async def _convert_to_markdown(self, file_bytes: bytes, filename: str) -> str:
-        """Convert document to markdown using MarkItDown."""
-        return await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
+        """
+        The single place every caller converts through, so the cache sits here: ahead of the per-caller image
+        handling, whose input still carries images as data URIs, which makes one entry serve all of them.
+
+        HTML skips the cache: it only arrives as an email body from `EmlLoader`, and converts in milliseconds, so a
+        storage round trip and an entry per email would cost more than they save.
+        """
+        if os.path.splitext(filename)[1].lower() == ".html":
+            return await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
+        cached = await self.parse_cache.get(file_bytes, filename)
+        if cached is not None:
+            logger.info(f"[MarkItDownLoader] {filename}: served from the parse cache")
+            return cached
+        markdown = await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
+        await self.parse_cache.put(file_bytes, filename, markdown)
+        return markdown
 
     def _convert_to_markdown_sync(self, file_bytes: bytes, filename: str) -> str:
-        """Synchronous helper for MarkItDown conversion (runs in thread pool)."""
+        """Synchronous helper for the conversion (runs in thread pool)."""
         ext = os.path.splitext(filename)[1].lower()
+        if ext == ".xlsx":
+            return XlsxMarkdownConverter.convert(file_bytes)
 
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
             tmp_file.write(file_bytes)

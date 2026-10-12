@@ -5,6 +5,7 @@ import pytest
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import (
     CACHE_KEY,
     DEFAULT_ICON,
+    LINKABLE_CACHE_KEY,
     AuthProviderService,
 )
 
@@ -227,3 +228,115 @@ def test_display_name_falls_back_to_alias():
 
     providers = AuthProviderService._filter_providers([idp])
     assert providers[0].display_name == "my-idp"
+
+
+def _settings(login_welcome_page: bool = False, show_keycloak_login: bool = False) -> object:
+    return type(
+        "S",
+        (),
+        {
+            "URL": "http://kc:8080",
+            "REALM": "aihub",
+            "API_SERVICE_CLIENT_ID": "svc",
+            "API_SERVICE_CLIENT_SECRET": "secret",
+            "SHOW_KEYCLOAK_LOGIN": show_keycloak_login,
+            "LOGIN_WELCOME_PAGE": login_welcome_page,
+        },
+    )()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("show_keycloak_login", "expected_aliases"), [(True, [""]), (False, [])])
+async def test_welcome_page_offers_at_most_keycloak_login_without_asking_keycloak(
+    mock_redis, show_keycloak_login, expected_aliases
+):
+    mock_admin_class = AsyncMock()
+
+    with (
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", mock_admin_class),
+        patch(
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
+            return_value=_settings(login_welcome_page=True, show_keycloak_login=show_keycloak_login),
+        ),
+    ):
+        options = await AuthProviderService.get_login_options(mock_redis)
+
+    assert options.welcome_page is True
+    assert [provider.alias for provider in options.providers] == expected_aliases
+    mock_admin_class.assert_not_called()
+    mock_redis.get.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_login_options_without_welcome_page_list_providers(mock_redis):
+    mock_admin = AsyncMock()
+    mock_admin.a_get_idps.return_value = [
+        _build_idp(alias="azure-ad"),
+        _build_idp(alias="hidden", hide_on_login=True),
+    ]
+
+    with (
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
+        patch(
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
+            return_value=_settings(show_keycloak_login=True),
+        ),
+    ):
+        options = await AuthProviderService.get_login_options(mock_redis)
+
+    assert options.welcome_page is False
+    assert [provider.alias for provider in options.providers] == ["azure-ad", ""]
+
+
+@pytest.mark.asyncio
+async def test_get_auth_provider_resolves_hidden_provider(mock_redis):
+    mock_admin = AsyncMock()
+    mock_admin.a_get_idps.return_value = [
+        _build_idp(alias="acme-entra", display_name="Acme", hide_on_login=True, icon="pi-microsoft"),
+    ]
+
+    with (
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
+        patch(
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
+            return_value=_settings(),
+        ),
+    ):
+        provider = await AuthProviderService.get_auth_provider(mock_redis, "acme-entra")
+
+    assert provider is not None
+    assert provider.display_name == "Acme"
+    assert provider.icon == "pi-microsoft"
+    assert mock_redis.set.call_args[0][0] == LINKABLE_CACHE_KEY
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("alias", ["disabled", "link-only", "unknown", ""])
+async def test_get_auth_provider_returns_none_for_unusable_alias(mock_redis, alias):
+    mock_admin = AsyncMock()
+    mock_admin.a_get_idps.return_value = [
+        _build_idp(alias="disabled", enabled=False),
+        _build_idp(alias="link-only", link_only=True),
+    ]
+
+    with (
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
+        patch(
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
+            return_value=_settings(show_keycloak_login=True),
+        ),
+    ):
+        assert await AuthProviderService.get_auth_provider(mock_redis, alias) is None
+
+
+@pytest.mark.asyncio
+async def test_get_auth_provider_reads_cached_providers(mock_redis):
+    import json
+
+    mock_redis.get.return_value = json.dumps([{"alias": "cached", "display_name": "Cached IDP", "icon": "pi-lock"}])
+
+    provider = await AuthProviderService.get_auth_provider(mock_redis, "cached")
+
+    assert provider is not None
+    assert provider.display_name == "Cached IDP"
+    mock_redis.get.assert_called_once_with(LINKABLE_CACHE_KEY)

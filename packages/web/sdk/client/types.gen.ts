@@ -561,6 +561,40 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileBatchValidationRequest
+ *
+ * All files of one chat turn, checked together so a turn costs one call and places its files once.
+ */
+export type AgentFileBatchValidationRequest = {
+  /**
+   * Thread Id
+   *
+   * The conversation the files are attached in; once none is missing, they are also placed in the user's files there.
+   */
+  thread_id?: string | null;
+  /**
+   * Files
+   *
+   * The uploaded files to check.
+   */
+  files: Array<AgentFileValidationItem>;
+};
+
+/**
+ * AgentFileBatchValidationResponse
+ *
+ * Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.
+ */
+export type AgentFileBatchValidationResponse = {
+  /**
+   * Missing
+   *
+   * The file_ids not found in the agent's bucket.
+   */
+  missing: Array<string>;
+};
+
+/**
  * AgentFileUploadRequest
  *
  * Request to initiate a file upload to an agent's dedicated bucket.
@@ -607,11 +641,11 @@ export type AgentFileUploadResponse = {
 };
 
 /**
- * AgentFileValidationRequest
+ * AgentFileValidationItem
  *
- * Request to validate that a file was uploaded successfully.
+ * One uploaded file, named as the initiate endpoint stored it.
  */
-export type AgentFileValidationRequest = {
+export type AgentFileValidationItem = {
   /**
    * File Id
    *
@@ -624,32 +658,6 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
-  /**
-   * Thread Id
-   *
-   * The conversation the file is attached in; it is also placed in the user's files there.
-   */
-  thread_id?: string | null;
-};
-
-/**
- * AgentFileValidationResponse
- *
- * Response confirming whether a file exists in the agent's bucket.
- */
-export type AgentFileValidationResponse = {
-  /**
-   * File Id
-   *
-   * The file_id that was checked.
-   */
-  file_id: string;
-  /**
-   * Exists
-   *
-   * True if the file was found in the agent's bucket.
-   */
-  exists: boolean;
 };
 
 /**
@@ -11024,6 +11032,26 @@ export type LocaleString = {
 };
 
 /**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
+};
+
+/**
  * Logprob
  */
 export type Logprob = {
@@ -14869,6 +14897,12 @@ export type ReadAttachedFilesEvent = {
    * The files attached to the current branch.
    */
   files?: Array<UserUploadedFile>;
+  /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
   /**
    * History
    *
@@ -28701,6 +28735,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -32443,15 +32483,49 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];
 
 export type GetSuiteData = {
   body?: never;
@@ -34002,7 +34076,7 @@ export type InitiateFileUploadResponse =
   InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
 
 export type ValidateFileUploadData = {
-  body: AgentFileValidationRequest;
+  body: AgentFileBatchValidationRequest;
   path: {
     /**
      * Tenant Id
@@ -34037,7 +34111,7 @@ export type ValidateFileUploadResponses = {
   /**
    * Successful Response
    */
-  200: AgentFileValidationResponse;
+  200: AgentFileBatchValidationResponse;
 };
 
 export type ValidateFileUploadResponse =

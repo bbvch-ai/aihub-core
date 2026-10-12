@@ -32,6 +32,6 @@ config:
 tool:
   label: "Recall memory"
   approval_summary: "Recall what is remembered about \"{query}\""
-  description: "Searches what is remembered about the user and the organization: preferences, facts and decisions from earlier conversations. Use it when the answer may depend on who the user is or on something agreed before."
+  description: "Searches what is remembered about the user and the organization: preferences, facts and decisions from earlier conversations. Use it when the answer may depend on who the user is or on something agreed before. It holds short remembered facts, not documents or files; for those, use the knowledge or file tools."
   query: "What to recall, as a short standalone question or keywords."
   nothing_remembered: "Nothing is remembered for this."

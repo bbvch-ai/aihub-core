@@ -139,6 +139,9 @@ import type {
   GetAnonymousFileRedirectError,
   GetAnonymousFileUrlData,
   GetAnonymousFileUrlError,
+  GetAuthProviderData,
+  GetAuthProviderError,
+  GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
   GetChatDisclaimerData,
@@ -452,6 +455,27 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Auth Provider
+ */
+export const getAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProviderResponse = GetAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProviderData,
+    GetAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProviderResponse | DefaultT,
+    GetAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/{alias}", ...options });
 
 /**
  * Get Suite
@@ -1693,10 +1717,10 @@ export const initiateFileUpload = <
 /**
  * Validate File Upload
  *
- * Validate that a file was successfully uploaded to the agent's dedicated bucket.
+ * Report which of a turn's files the agent's dedicated bucket does not hold.
  *
- * Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
- * slow or unavailable sandbox never holds up or fails the chat.
+ * Once none is missing, the files are placed in the user's files of the conversation together, after the
+ * answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
  */
 export const validateFileUpload = <
   TComposable extends Composable = "$fetch",
