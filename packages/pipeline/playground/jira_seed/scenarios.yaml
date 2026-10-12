@@ -21,17 +21,22 @@ issues:
       # Enter a valid user and a *wrong* password
       ## Wait for the error message
       # Press _Sign in_ again
+
       h3. Environment
       ||Field||Value||
       |Browser|Firefox 131|
       |Tenant|acme|
+
       {code:java}
       int attempts = 0;
       while (attempts < 3) { attempts++; }
       {code}
+
       {quote}Users report it since the last release.{quote}
+
       * -Struck- text, +inserted+ text and {{inline code}}
       * See [the handbook|https://example.com/handbook]
+
       {panel:title=Note}Panels become plain text.{panel}
     comments:
       - body: I can reproduce this on *staging*.
