@@ -50,6 +50,21 @@ class InstanceConfigHelper:
         return config
 
     @staticmethod
+    def with_schema_defaults(config: dict[str, Any], config_schema: dict[str, Any]) -> dict[str, Any]:
+        """Fill top-level keys a stored config predates with the default the agent applies at runtime.
+
+        The edit form otherwise seeds a missing key from the form element's value, which may differ from
+        the model default, so saving an old profile would silently change its behaviour. Nested, list
+        and null defaults stay with the frontend, whose group and nullable-toggle seeding depends on them.
+        """
+        schema_defaults = {
+            name: prop["default"]
+            for name, prop in config_schema.get("properties", {}).items()
+            if prop.get("default") is not None and not isinstance(prop["default"], dict | list)
+        }
+        return {**schema_defaults, **config}
+
+    @staticmethod
     def validate_config_for_create(
         config: dict[str, Any],
         config_model: type[BaseModel],
