@@ -119,8 +119,9 @@ docker compose up seaweedfs-init
 ```
 
 A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU document parse fails
-with `NoSuchBucket`. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired
-entry is parsed again, so nothing needs a backup.
+with `NoSuchBucket`. Office documents are still parsed, only without the cache, so every read converts them again and
+logs a warning. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired entry is
+parsed again, so nothing needs a backup.
 
 The `sandbox-files` bucket holds the one-way mirror of every user's code-sandbox home (the files behind **My Files**).
 It is created the same way, and needs `SANDBOX_MIRROR_S3_ACCESS_KEY`, `SANDBOX_MIRROR_S3_SECRET_KEY` and

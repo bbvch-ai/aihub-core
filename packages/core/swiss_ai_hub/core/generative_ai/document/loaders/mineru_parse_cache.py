@@ -3,17 +3,12 @@ import hashlib
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, ClassVar
-
-from botocore.exceptions import ClientError
+from typing import ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
+from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
 from swiss_ai_hub.core.infrastructure.mineru.mineru_settings import MineruSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
-from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_client
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +26,12 @@ class MineruParseCache:
     fresh. Entries expire through the bucket's lifecycle rule (`s3-init-buckets.sh.j2`).
     """
 
-    BUCKET_NAME: ClassVar[str] = "parse-cache"
     WITH_IMAGES: ClassVar[str] = "with-images"
     TEXT_ONLY: ClassVar[str] = "text-only"
 
     def __init__(self, settings: MineruSettings) -> None:
         self._settings = settings
-        self._s3_client: S3Client | None = None
+        self._bucket = ParseCacheBucket()
 
     async def get(self, file_bytes: bytes, filename: str, include_images: bool) -> MineruFileResult | None:
         """A conversion with images also serves a caller that asked for none.
@@ -83,23 +77,7 @@ class MineruParseCache:
         return hashlib.sha256(json.dumps(relevant, sort_keys=True).encode()).hexdigest()[:16]
 
     def _read_object(self, key: str) -> bytes | None:
-        try:
-            response = self._client().get_object(Bucket=self.BUCKET_NAME, Key=key)
-        except ClientError as error:
-            if error.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
-                return None
-            raise
-        body = response["Body"]
-        try:
-            return body.read()
-        finally:
-            body.close()
+        return self._bucket.read(key)
 
     def _write_object(self, key: str, content: bytes) -> None:
-        self._client().put_object(Bucket=self.BUCKET_NAME, Key=key, Body=content, ContentType="application/json")
-
-    def _client(self) -> "S3Client":
-        """Built on first use in a worker thread: creating a boto3 client blocks for tens of milliseconds."""
-        if self._s3_client is None:
-            self._s3_client = create_s3_client()
-        return self._s3_client
+        self._bucket.write(key, content, "application/json")
