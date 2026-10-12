@@ -561,6 +561,40 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileBatchValidationRequest
+ *
+ * All files of one chat turn, checked together so a turn costs one call and places its files once.
+ */
+export type AgentFileBatchValidationRequest = {
+  /**
+   * Thread Id
+   *
+   * The conversation the files are attached in; once none is missing, they are also placed in the user's files there.
+   */
+  thread_id?: string | null;
+  /**
+   * Files
+   *
+   * The uploaded files to check.
+   */
+  files: Array<AgentFileValidationItem>;
+};
+
+/**
+ * AgentFileBatchValidationResponse
+ *
+ * Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.
+ */
+export type AgentFileBatchValidationResponse = {
+  /**
+   * Missing
+   *
+   * The file_ids not found in the agent's bucket.
+   */
+  missing: Array<string>;
+};
+
+/**
  * AgentFileUploadRequest
  *
  * Request to initiate a file upload to an agent's dedicated bucket.
@@ -607,11 +641,11 @@ export type AgentFileUploadResponse = {
 };
 
 /**
- * AgentFileValidationRequest
+ * AgentFileValidationItem
  *
- * Request to validate that a file was uploaded successfully.
+ * One uploaded file, named as the initiate endpoint stored it.
  */
-export type AgentFileValidationRequest = {
+export type AgentFileValidationItem = {
   /**
    * File Id
    *
@@ -624,32 +658,6 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
-  /**
-   * Thread Id
-   *
-   * The conversation the file is attached in; it is also placed in the user's files there.
-   */
-  thread_id?: string | null;
-};
-
-/**
- * AgentFileValidationResponse
- *
- * Response confirming whether a file exists in the agent's bucket.
- */
-export type AgentFileValidationResponse = {
-  /**
-   * File Id
-   *
-   * The file_id that was checked.
-   */
-  file_id: string;
-  /**
-   * Exists
-   *
-   * True if the file was found in the agent's bucket.
-   */
-  exists: boolean;
 };
 
 /**
@@ -14890,6 +14898,12 @@ export type ReadAttachedFilesEvent = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -28721,6 +28735,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -34056,7 +34076,7 @@ export type InitiateFileUploadResponse =
   InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
 
 export type ValidateFileUploadData = {
-  body: AgentFileValidationRequest;
+  body: AgentFileBatchValidationRequest;
   path: {
     /**
      * Tenant Id
@@ -34091,7 +34111,7 @@ export type ValidateFileUploadResponses = {
   /**
    * Successful Response
    */
-  200: AgentFileValidationResponse;
+  200: AgentFileBatchValidationResponse;
 };
 
 export type ValidateFileUploadResponse =

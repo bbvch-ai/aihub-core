@@ -1717,10 +1717,10 @@ export const initiateFileUpload = <
 /**
  * Validate File Upload
  *
- * Validate that a file was successfully uploaded to the agent's dedicated bucket.
+ * Report which of a turn's files the agent's dedicated bucket does not hold.
  *
- * Given the conversation, the file is also placed in the user's files there once the answer is sent, so a
- * slow or unavailable sandbox never holds up or fails the chat.
+ * Once none is missing, the files are placed in the user's files of the conversation together, after the
+ * answer is sent, so a slow or unavailable sandbox never holds up or fails the chat.
  */
 export const validateFileUpload = <
   TComposable extends Composable = "$fetch",

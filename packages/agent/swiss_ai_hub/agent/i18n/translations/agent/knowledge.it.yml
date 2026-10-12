@@ -22,7 +22,7 @@ prompt:
 tool:
   label: "Cercare nella nostra conoscenza"
   approval_summary: "Cercare «{query}» nella nostra conoscenza"
-  description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni più pertinenti, con id da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione. Raccolte disponibili:\n%{collections}"
+  description: "Cerca nelle nostre raccolte di conoscenza e restituisce le sezioni di documenti più pertinenti, con identificativi da citare. Usalo quando la domanda può trovare risposta nei documenti dell'organizzazione, come direttive, manuali, rapporti o contratti. Restituisce estratti, non documenti interi: per una domanda ampia, cerca più volte con richieste mirate. I file allegati dall'utente non sono in queste raccolte; leggili con lo strumento per i file allegati. Un risultato vuoto significa che le raccolte non coprono la domanda. Raccolte disponibili:\n%{collections}"
   query: "Cosa cercare, come breve domanda autonoma o parole chiave."
   collections: "Le raccolte da consultare, per identificativo; ometti per consultarle tutte."
 config:

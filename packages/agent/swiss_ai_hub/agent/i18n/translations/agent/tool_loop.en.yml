@@ -27,7 +27,7 @@ prompt:
   condensed_result: "[Condensed earlier result] %{summary}"
   condense_turns: "Summarise the conversation below so it can continue without it: what the user asked, what was answered, and what was decided or is still open. Keep facts, figures, names and document ids such as [s3f9a1c] exactly. At most %{words} words, no preamble."
   condensed_turns: "Summary of the earlier conversation: %{summary}"
-  dropped_result: "[This earlier result was removed to fit the context. Call the tool again if you need it.]"
+  dropped_result: "[This earlier result was removed to fit the context. Call the tool again if you need it; for a command that made files, look at those files instead of running it again.]"
   limit_reached: "You have used all the tool calls available for this answer. Answer now with what you have found."
   no_tools: "No tools are available for the rest of this answer, so do not try to call one. Answer now from the conversation and what you already know, and say so when the answer depends on documents you could not search."
   unknown_tool: "There is no tool named %{tool}. Use one of the tools offered to you."

@@ -112,7 +112,8 @@ class OpenTerminalClient:
                     content.extend(chunk)
                     if len(content) > self._settings.MAX_FILE_BYTES:
                         raise OpenTerminalError(
-                            f"{path} is larger than {self._settings.MAX_FILE_BYTES} bytes, the most a file may have here."
+                            f"{path} is larger than {self._settings.MAX_FILE_BYTES} bytes, "
+                            "the most a file may have here."
                         )
                 return bytes(content), response.headers.get("content-type", "application/octet-stream")
         except httpx.TransportError as error:

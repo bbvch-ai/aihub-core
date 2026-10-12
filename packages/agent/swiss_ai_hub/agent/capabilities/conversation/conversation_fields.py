@@ -9,6 +9,12 @@ from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
+# Prompts are measured with tiktoken, not the served model's tokenizer, and a budget that is filled to the brim must
+# absorb the difference: measured live, Ministral counts English 6% above tiktoken and gemma 4%, which overflowed a
+# context-sufficiency prompt fitted exactly to the window (issue #2077). Same value as core's
+# SUMMARIZATION_BUDGET_SAFETY_FACTOR and the mailbox agents' BUDGET_SAFETY_FACTOR.
+WINDOW_SAFETY_FACTOR = 0.85
+
 
 class ConversationFields(Form):
     """
@@ -57,9 +63,13 @@ class ConversationFields(Form):
     ] = False
 
     def input_budget(self) -> int:
-        """The admin's cost ceiling capped by the narrowest model window that could receive the prompt."""
+        """The admin's cost ceiling capped by the narrowest model window that could receive the prompt, less a
+        margin for the tokenizer difference. Only for prompts that are filled to it; refusing an oversized message
+        compares against the exact window (`do_limit_chat_history`), so nothing the model accepts is refused."""
         budget = usable_input_budget([self.llm, self.task_llm])
-        return self.number_of_input_tokens if budget is None else min(self.number_of_input_tokens, budget)
+        if budget is None:
+            return self.number_of_input_tokens
+        return min(self.number_of_input_tokens, int(budget * WINDOW_SAFETY_FACTOR))
 
     @model_validator(mode="after")
     def derive_task_llm_from_main_llm(self) -> Self:

@@ -88,6 +88,13 @@ def test_memory_model_is_enabled_on_gemma(template: UniversalAgentConfig):
     assert template_data["user_memory"]["memory_llm"] == "text-generation/gemma-4-31B-it"
 
 
+def test_kimi_answers_and_gemma_runs_the_task_steps(template: UniversalAgentConfig):
+    template_data = template.to_template_data(_PUBLISHED_CONFIG).model_dump()
+
+    assert template_data["llm"]["model_name"] == "text-generation/Kimi-K2.6"
+    assert template_data["task_llm"]["model_name"] == "text-generation/gemma-4-31B-it"
+
+
 def test_organization_memory_is_left_for_the_admin_to_enable(template: UniversalAgentConfig):
     template_data = template.to_template_data(_PUBLISHED_CONFIG).model_dump()
 
