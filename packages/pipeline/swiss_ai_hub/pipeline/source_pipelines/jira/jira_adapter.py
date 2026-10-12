@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from datetime import datetime
 from typing import Any
 
 import dlt
@@ -12,6 +13,7 @@ from swiss_ai_hub.pipeline.source_pipelines.jira.jira_comment import JiraComment
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_issue import JiraIssue
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_preflight import JiraPreflight
+from swiss_ai_hub.pipeline.source_pipelines.jira.jira_timestamp import JiraTimestamp
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
 _I18N = "lib.source_pipelines.structured.config.jira"
@@ -33,6 +35,9 @@ _ISSUE_FIELDS = [
 ]
 # The listing needs only each issue's key, which every hit carries; one small field keeps the pages light.
 _LISTING_FIELDS = ["summary"]
+# Each sync re-reads the last five minutes before its cursor: Jira's search index catches up a moment after an edit,
+# and JQL dates have minute precision. Re-read issues are unchanged files, which the destination skips.
+_OVERLAP_SECONDS = 300
 
 
 class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
@@ -84,14 +89,27 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         )
 
     def dlt_source(self, options: JiraOptions) -> DltSource:
-        client = self._checked_client(options)
+        """Issues changed since the last successful sync, all of them on the first.
+
+        The lower bound is taken once from the cursor's lag-adjusted start, before the first project is read: the
+        cursor's last value moves on while the first project's issues pass, and would make later projects skip
+        changes.
+        """
+        client, account = self._checked_client(options)
+        zone = JiraTimestamp.zone_of(account)
 
         @dlt.source(name="jira")
         def jira() -> DltResource:
             @dlt.resource(name="issues", primary_key="id")
-            def issues() -> Iterator[list[dict[str, Any]]]:
+            def issues(
+                updated_at: dlt.sources.incremental[datetime] = dlt.sources.incremental(
+                    "updated_at", initial_value=None, lag=_OVERLAP_SECONDS
+                ),
+            ) -> Iterator[list[dict[str, Any]]]:
+                since = JiraTimestamp.jql_lower_bound(updated_at.start_value, zone)
                 for project in options.projects():
-                    for page in client.search(self._scope(project, options.jql), _ISSUE_FIELDS, rendered=True):
+                    jql = self._scope(project, options.jql, since)
+                    for page in client.search(jql, _ISSUE_FIELDS, rendered=True):
                         yield [self._issue(client, project, hit).model_dump() for hit in page]
 
             return issues
@@ -102,7 +120,7 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         return JiraIssue.model_validate(record).to_record_file()
 
     def list_record_paths(self, options: JiraOptions) -> set[str]:
-        client = self._checked_client(options)
+        client, _ = self._checked_client(options)
         return {
             JiraIssue.object_key_for(self._own_key(project, hit))
             for project in options.projects()
@@ -128,23 +146,27 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         return key
 
     @staticmethod
-    def _scope(project: str, jql: str) -> str:
+    def _scope(project: str, jql: str, updated_since: str | None = None) -> str:
         """The clause is parenthesised, so an ``OR`` in it cannot widen the search beyond the project."""
-        scope = f'project = "{project}"'
-        return f"{scope} AND ({jql.strip()})" if jql.strip() else scope
+        parts = [f'project = "{project}"']
+        if jql.strip():
+            parts.append(f"({jql.strip()})")
+        if updated_since:
+            parts.append(f'updated >= "{updated_since}"')
+        return " AND ".join(parts)
 
     @staticmethod
-    def _checked_client(options: JiraOptions) -> JiraClient:
+    def _checked_client(options: JiraOptions) -> tuple[JiraClient, dict[str, Any]]:
         """Checked before anything is read, in the sync and again in the listing, which runs as its own step: a
-        listing that silently comes back short removes the files of issues that still exist."""
+        listing that silently comes back short removes the files of issues that still exist. Returns the client and
+        the account it signs in as."""
         problems = options.problems()
         if problems:
             raise ValueError(f"The Jira source cannot sync: {'; '.join(problems)}.")
         client = JiraClient(
             base_url=options.base_url, deployment=options.deployment, email=options.email, token=options.api_token
         )
-        JiraPreflight.check(client, options)
-        return client
+        return client, JiraPreflight.check(client, options)
 
     @staticmethod
     def _labels(field: str) -> dict[str, LocaleString]:

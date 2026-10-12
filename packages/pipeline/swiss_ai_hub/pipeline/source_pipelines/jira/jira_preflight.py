@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from swiss_ai_hub.pipeline.resources.jira.jira_client import JiraClient
 from swiss_ai_hub.pipeline.resources.jira.jira_request_error import JiraRequestError
@@ -21,17 +21,19 @@ class JiraPreflight:
         cls,
         client: Annotated[JiraClient, "Client built from the configuration being checked"],
         options: Annotated[JiraOptions, "The configuration, already checked for missing values"],
-    ) -> None:
+    ) -> dict[str, Any]:
+        """Returns the account the credentials sign in as, whose time zone Jira reads JQL dates in."""
         account = cls._signed_in_account(client, options.base_url)
         for project in options.projects():
-            cls._require_visible(client, project, account)
+            cls._require_visible(client, project, account.get("displayName") or "this account")
         if options.jql.strip():
             cls._require_valid(client, options.jql.strip())
+        return account
 
     @staticmethod
-    def _signed_in_account(client: JiraClient, base_url: str) -> str:
+    def _signed_in_account(client: JiraClient, base_url: str) -> dict[str, Any]:
         try:
-            return client.myself().get("displayName") or "this account"
+            return client.myself()
         except JiraRequestError as refused:
             if refused.status_code not in _REFUSED_SIGN_IN:
                 raise

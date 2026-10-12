@@ -7,8 +7,10 @@ and error handling run exactly as in production.
 import itertools
 import json
 import re
+from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+from zoneinfo import ZoneInfo
 
 import pytest
 from dlt.sources.helpers.requests.retry import Client
@@ -19,6 +21,8 @@ _PROJECT = re.compile(r'project = "([A-Z][A-Z0-9_]*)"')
 _AFTER_ID = re.compile(r"AND id > (\d+)")
 _COMMENTS = re.compile(r"/rest/api/2/issue/([A-Z0-9_]+-\d+)/comment$")
 _PROJECT_PATH = re.compile(r"/rest/api/2/project/([^/]+)$")
+_UPDATED_SINCE = re.compile(r'updated >= "(\d{4}/\d{2}/\d{2} \d{2}:\d{2})"')
+ZONE = ZoneInfo("Europe/Zurich")
 
 
 class FakeJiraTransport(BaseAdapter):
@@ -113,7 +117,7 @@ class FakeJira:
         if comments := _COMMENTS.search(path):
             return 200, self._comment_page(comments.group(1), params)
         if path.endswith("/rest/api/2/myself"):
-            return 200, {"accountId": "bot-1", "name": "bot", "displayName": "Seed Bot"}
+            return 200, {"accountId": "bot-1", "name": "bot", "displayName": "Seed Bot", "timeZone": ZONE.key}
         if project := _PROJECT_PATH.search(path):
             return self._project(project.group(1))
         if path.endswith("/rest/api/3/jql/parse") and self.deployment == "cloud":
@@ -170,9 +174,18 @@ class FakeJira:
         }
 
     def _matching(self, jql: str) -> list[dict[str, Any]]:
+        """Projects, keyset ids and ``updated >=`` in the account's zone, to the minute, as Jira reads them."""
         project = _PROJECT.search(jql).group(1)
         after = int(match.group(1)) if (match := _AFTER_ID.search(jql)) else -1
-        return sorted((h for h in self.issues.get(project, []) if int(h["id"]) > after), key=lambda h: int(h["id"]))
+        since = None
+        if match := _UPDATED_SINCE.search(jql):
+            since = datetime.strptime(match.group(1), "%Y/%m/%d %H:%M").replace(tzinfo=ZONE)
+        hits = [
+            hit
+            for hit in self.issues.get(project, [])
+            if int(hit["id"]) > after and (since is None or datetime.fromisoformat(hit["fields"]["updated"]) >= since)
+        ]
+        return sorted(hits, key=lambda hit: int(hit["id"]))
 
     def _shaped(self, hit: dict[str, Any], params: dict[str, str]) -> dict[str, Any]:
         """Only the requested fields, and the rendered HTML only when asked for; Cloud embeds at most 20 comments."""

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, Field
@@ -31,6 +32,7 @@ class JiraIssue(BaseModel):
     assignee: Annotated[str | None, Field(description="Assignee's display name.")] = None
     created: Annotated[str, Field(description="Creation time, UTC ISO-8601.")]
     updated: Annotated[str, Field(description="Last update, UTC ISO-8601.")]
+    updated_at: Annotated[datetime, Field(description="Last update as an aware UTC datetime: the sync's cursor.")]
     description_html: Annotated[str, Field(description="The description as Jira renders it.")] = ""
     comments: Annotated[list[JiraComment], Field(description="Public comments, oldest first.")] = []
 
@@ -52,6 +54,7 @@ class JiraIssue(BaseModel):
             assignee=(fields.get("assignee") or {}).get("displayName"),
             created=JiraTimestamp.to_utc_iso(fields["created"]),
             updated=JiraTimestamp.to_utc_iso(fields["updated"]),
+            updated_at=JiraTimestamp.to_utc(fields["updated"]),
             description_html=(hit.get("renderedFields") or {}).get("description") or "",
             comments=comments,
         )
