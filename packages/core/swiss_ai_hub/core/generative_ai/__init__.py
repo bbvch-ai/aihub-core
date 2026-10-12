@@ -44,7 +44,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
     from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
     from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
-    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import (
+        context_sufficient_guard,
+        context_sufficient_guard_messages,
+    )
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
@@ -149,6 +152,7 @@ __all__ = [
     "condense_standalone_question",
     "EmptyCondensationError",
     "context_sufficient_guard",
+    "context_sufficient_guard_messages",
     "create_few_shot_messages",
     "create_figures_folder_name",
     "decode_partition_key",
@@ -225,6 +229,7 @@ _LAZY_IMPORTS = {
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
     "EmptyCondensationError": "swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
+    "context_sufficient_guard_messages": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
     "create_few_shot_messages": "swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages",
     "create_figures_folder_name": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "decode_partition_key": "swiss_ai_hub.core.generative_ai.utils.path_utils",
