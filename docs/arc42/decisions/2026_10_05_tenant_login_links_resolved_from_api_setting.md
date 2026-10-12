@@ -46,7 +46,9 @@ anonymous lookup endpoint.**
   always with status 200. It reads only the mapping and never asks whether the tenant exists. A mapped alias is returned
   only while its IdP is enabled and not link-only. IdPs hidden on Keycloak's login page are accepted, because Keycloak
   still honours `kc_idp_hint` for them and hiding them is how an operator keeps Keycloak's own page from listing every
-  customer. The usable aliases are cached in Redis for five minutes, like the public provider list.
+  customer. The alias goes through the same lookup as the per-provider login pages
+  (`GET /api/v1/auth-providers/<alias>`, see ADR `2026_10_05_saas_login_welcome_page_withholds_provider_list`), so both
+  share one five-minute Redis cache.
 - **Frontend**: `middleware/auth.global.ts` looks up the first path segment, after an optional locale, whenever a
   visitor has no valid session, and redirects with `kc_idp_hint`. The redirect replaces the tenant page in the browser
   history, so Back from the IdP does not land on it and redirect again. Anything else ends on `/auth/login` as before. A
@@ -81,5 +83,6 @@ anonymous lookup endpoint.**
   empty mapping.
 - A user of a shared IdP can authenticate through another tenant's link without being a member of that tenant. The API
   still denies access, but the user lands on a tenant page they cannot use.
-- `/api/v1/auth-providers/` still lists every enabled, visible IdP to anyone. Hiding that list is a separate concern of
-  #1977.
+- `/api/v1/auth-providers/` lists every enabled, visible IdP to anyone unless `KEYCLOAK_LOGIN_WELCOME_PAGE` is on; with
+  it on, unknown and unlisted tenants end on the welcome page (ADR
+  `2026_10_05_saas_login_welcome_page_withholds_provider_list`).
