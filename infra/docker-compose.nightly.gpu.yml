@@ -595,6 +595,9 @@ services:
     container_name: postgres-ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
     restart: always
+    # DocumentDB decompresses a whole row for every filter, projection and sort; lz4 does that about 3x faster than
+    # the default pglz. See docs/arc42/decisions/2026_10_07_ferretdb_postgres_lz4_toast_compression.md.
+    command: [postgres, -c, default_toast_compression=lz4]
     environment:
       POSTGRES_USER: ${MONGO_USERNAME}
       POSTGRES_PASSWORD: ${MONGO_PASSWORD}
@@ -1646,6 +1649,10 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
       STORE_MODEL_IN_DB: true
+      # The openai SDK defers building its pydantic models. LiteLLM copies the upstream logprobs object as-is
+      # into a stream's final chunk, and serializing an unbuilt model there fails with "'MockValSer' object
+      # cannot be converted to 'SchemaSerializer'", so every logprobs stream that ends with "stop" breaks.
+      DEFER_PYDANTIC_BUILD: 'false'
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
       RAG_IMAGE_INLINE_MAX_BYTES: ${RAG_IMAGE_INLINE_MAX_BYTES}

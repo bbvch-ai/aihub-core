@@ -35,7 +35,8 @@ prompt:
     \ identifiants de documents comme [s3f9a1c]. Au plus %{words} mots, sans préambule."
   condensed_turns: 'Résumé de la conversation précédente : %{summary}'
   dropped_result: "[Ce résultat précédent a été retiré pour tenir dans le contexte.\
-    \ Rappelle l'outil si tu en as besoin.]"
+    \ Rappelle l'outil si tu en as besoin ; pour une commande qui a créé des fichiers,\
+    \ regarde ces fichiers au lieu de la relancer.]"
   limit_reached: Tu as utilisé tous les appels d'outils disponibles pour cette réponse.
     Réponds maintenant avec ce que tu as trouvé.
   no_tools: Aucun outil n'est disponible pour le reste de cette réponse, n'essaie

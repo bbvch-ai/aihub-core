@@ -561,6 +561,40 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileBatchValidationRequest
+ *
+ * All files of one chat turn, checked together so a turn costs one call and places its files once.
+ */
+export type AgentFileBatchValidationRequest = {
+  /**
+   * Thread Id
+   *
+   * The conversation the files are attached in; once none is missing, they are also placed in the user's files there.
+   */
+  thread_id?: string | null;
+  /**
+   * Files
+   *
+   * The uploaded files to check.
+   */
+  files: Array<AgentFileValidationItem>;
+};
+
+/**
+ * AgentFileBatchValidationResponse
+ *
+ * Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.
+ */
+export type AgentFileBatchValidationResponse = {
+  /**
+   * Missing
+   *
+   * The file_ids not found in the agent's bucket.
+   */
+  missing: Array<string>;
+};
+
+/**
  * AgentFileUploadRequest
  *
  * Request to initiate a file upload to an agent's dedicated bucket.
@@ -607,11 +641,11 @@ export type AgentFileUploadResponse = {
 };
 
 /**
- * AgentFileValidationRequest
+ * AgentFileValidationItem
  *
- * Request to validate that a file was uploaded successfully.
+ * One uploaded file, named as the initiate endpoint stored it.
  */
-export type AgentFileValidationRequest = {
+export type AgentFileValidationItem = {
   /**
    * File Id
    *
@@ -624,32 +658,6 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
-  /**
-   * Thread Id
-   *
-   * The conversation the file is attached in; it is also placed in the user's files there.
-   */
-  thread_id?: string | null;
-};
-
-/**
- * AgentFileValidationResponse
- *
- * Response confirming whether a file exists in the agent's bucket.
- */
-export type AgentFileValidationResponse = {
-  /**
-   * File Id
-   *
-   * The file_id that was checked.
-   */
-  file_id: string;
-  /**
-   * Exists
-   *
-   * True if the file was found in the agent's bucket.
-   */
-  exists: boolean;
 };
 
 /**
@@ -4264,6 +4272,12 @@ export type ContextualizeConversationEvent = {
    * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
    */
   user_query?: string | null;
+  /**
+   * Attached File Names
+   *
+   * The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.
+   */
+  attached_file_names?: Array<string>;
   /**
    * Event Name
    *
@@ -14864,6 +14878,12 @@ export type ReadAttachedFilesEvent = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -19667,7 +19687,7 @@ export type UpdateDatabaseSourceRequest = {
   /**
    * Replace Existing Documents
    *
-   * Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.
+   * Acknowledges that handing a database to a different source, from manual upload or from another source, gives its content to that source: documents the new source does not have are removed on its next sync. Required when the database already holds documents; not needed to edit the current source's settings or to switch back to manual upload.
    */
   replace_existing_documents?: boolean;
 };
@@ -22689,6 +22709,12 @@ export type ContextualizeConversationEventWritable = {
    * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
    */
   user_query?: string | null;
+  /**
+   * Attached File Names
+   *
+   * The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.
+   */
+  attached_file_names?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -28689,6 +28715,12 @@ export type ReadAttachedFilesEventWritable = {
    */
   files?: Array<UserUploadedFile>;
   /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
    * History
    *
    * The history the files will be composed into, for sizing them.
@@ -33990,7 +34022,7 @@ export type InitiateFileUploadResponse =
   InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
 
 export type ValidateFileUploadData = {
-  body: AgentFileValidationRequest;
+  body: AgentFileBatchValidationRequest;
   path: {
     /**
      * Tenant Id
@@ -34025,7 +34057,7 @@ export type ValidateFileUploadResponses = {
   /**
    * Successful Response
    */
-  200: AgentFileValidationResponse;
+  200: AgentFileBatchValidationResponse;
 };
 
 export type ValidateFileUploadResponse =

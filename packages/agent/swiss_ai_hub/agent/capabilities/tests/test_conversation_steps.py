@@ -15,9 +15,12 @@ from swiss_ai_hub.core.events.agent import (
     NotAMetaQuestionEvent,
     RAGSuccessStopEvent,
     StandaloneQuestionCondenserEvent,
+    UserMessageEvent,
+    UserUploadedFile,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig, merge_consecutive_messages
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
 from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
@@ -60,6 +63,30 @@ async def test_a_programmatic_start_is_cleared_without_inspection():
 
     detect.assert_not_awaited()
     assert isinstance(cleared, NotAMetaQuestionEvent)
+
+
+@pytest.mark.asyncio
+async def test_the_inspection_is_told_which_files_are_attached():
+    """Without the file names, a question about an attached file's content reads as one about the assistant."""
+    roles = UserUploadedFile(
+        filename="roles.xlsx",
+        file_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        file_id="11111111-1111-4111-8111-111111111111",
+    )
+    question = ChatMessage(role=MessageRole.USER, content="what does the User role do here?")
+    message = UserMessageEvent(messages=[question], user=fake_user(), files=[roles])
+
+    with patch(f"{CONVERSATION_MODULE}.do_detect_meta_question", new=AsyncMock()) as detect:
+        await Conversation.inspect_message_step(
+            LLMWrappingAgent(),
+            request=Conversation.contextualize(history=[question], message=message),
+            conversation=_config(),
+            displayer=MagicMock(),
+            t=MagicMock(),
+        )
+
+    assert detect.await_args.kwargs["user_query"] == "what does the User role do here?"
+    assert detect.await_args.kwargs["attached_file_names"] == ["roles.xlsx"]
 
 
 @pytest.mark.asyncio

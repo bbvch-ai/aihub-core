@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 from openai import BadRequestError
@@ -22,6 +24,7 @@ async def do_detect_meta_question(
     displayer: EventDisplayer,
     t: LocaleHandler,
     user: UserIdentity,
+    attached_file_names: Sequence[str] = (),
 ) -> MetaQuestionDetectedEvent | NotAMetaQuestionEvent:
     """Classify the user message and emit the routing event for the self-awareness branch."""
     await displayer.display_thought(t("agent.self_awareness.thought.detecting"))
@@ -42,7 +45,9 @@ async def do_detect_meta_question(
         )
 
     async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
-        classification = await detect_meta_question(llm=llm, t=t, user_query=user_query)
+        classification = await detect_meta_question(
+            llm=llm, t=t, user_query=user_query, attached_file_names=attached_file_names
+        )
 
     if classification.is_meta_question and classification.category is not None:
         return MetaQuestionDetectedEvent(

@@ -16,6 +16,13 @@ REPO_ROOT = Path(__file__).resolve().parents[8]
 TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihub_pipeline.py"
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users", "open_webui.routers", "open_webui.routers.files"]
+OPEN_WEBUI_MODULES += ["open_webui.utils", "open_webui.utils.chat_id"]
+
+
+def _is_saved_chat_id(chat_id: str | None) -> bool:
+    """Open WebUI 0.11.3's own rule, since a stubbed one would call every chat saved."""
+    return bool(chat_id) and not chat_id.startswith(("temporary:", "local:", "channel:"))
+
 
 DISPLAYED = {
     "_event_name": "SandboxFileDisplayedEvent",
@@ -32,6 +39,7 @@ DISPLAYED = {
 def pipe(monkeypatch: pytest.MonkeyPatch) -> Any:
     for name in OPEN_WEBUI_MODULES:
         monkeypatch.setitem(sys.modules, name, MagicMock())
+    sys.modules["open_webui.utils.chat_id"].is_saved_chat_id = _is_saved_chat_id
     spec = importlib.util.spec_from_file_location("aihub_pipeline", TEMPLATE_PIPE)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -125,7 +133,7 @@ async def test_a_temporary_chat_gets_the_file_without_a_message_link(pipe: Any) 
     _uploaded(pipe)
     service, _, _ = _service(pipe)
 
-    attached = await service.attach(DISPLAYED, "local:abc", "msg-1")
+    attached = await service.attach(DISPLAYED, "temporary:abc", "msg-1")
 
     pipe.Chats.insert_chat_files.assert_not_awaited()
     assert attached["id"] == "f1"
@@ -140,3 +148,43 @@ async def test_the_answer_links_each_attached_file_once(pipe: Any) -> None:
 
     assert service.download_links() == "\n\nDownload: [chart.png](/api/v1/files/f1/content)"
     assert service.download_links() == ""
+
+
+@pytest.mark.asyncio
+async def test_an_earlier_answer_reaches_the_agent_without_its_download_links(pipe: Any) -> None:
+    """A model handed the earlier link reuses its url for the file it makes next, which then downloads the old one."""
+    _uploaded(pipe)
+    service, _, _ = _service(pipe)
+    await service.attach(DISPLAYED, "chat-1", "msg-1")
+    answer = "The chart is attached." + service.download_links()
+
+    converted = pipe.MessageConverter.convert_to_event_format(
+        [{"role": "assistant", "content": answer}, {"role": "user", "content": "Now make a spreadsheet."}]
+    )
+
+    assert converted[0]["blocks"][0]["text"] == "The chart is attached."
+
+
+def test_a_download_line_a_model_copied_leaves_the_history_too(pipe: Any) -> None:
+    """The copy carries the new file's name over the earlier file's url, as in the answer the issue shows."""
+    answer = (
+        "4. Monthly Revenue Chart\nI have generated a chart.\n\n"
+        "Download: [monthly_revenue_chart.png](/api/v1/files/xlsx-id/content)\n\n"
+        "Download: [monthly_revenue_chart.png](/api/v1/files/png-id/content) · [totals.xlsx](/api/v1/files/t/content)"
+    )
+
+    converted = pipe.MessageConverter.convert_to_event_format([{"role": "assistant", "content": answer}])
+
+    assert converted[0]["blocks"][0]["text"] == "4. Monthly Revenue Chart\nI have generated a chart."
+
+
+def test_a_file_linked_in_the_prose_keeps_its_name_without_its_url(pipe: Any) -> None:
+    answer = "Open [the chart](/api/v1/files/f1/content) or see ![preview](/api/v1/files/f1/content) below."
+    question = "Is [this](/api/v1/files/f9/content) the right file?"
+
+    converted = pipe.MessageConverter.convert_to_event_format(
+        [{"role": "assistant", "content": answer}, {"role": "user", "content": question}]
+    )
+
+    assert converted[0]["blocks"][0]["text"] == "Open the chart or see preview below."
+    assert converted[1]["blocks"][0]["text"] == question

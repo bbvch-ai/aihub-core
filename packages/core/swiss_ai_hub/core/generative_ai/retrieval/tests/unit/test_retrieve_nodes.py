@@ -1,6 +1,8 @@
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+from llama_index.core.schema import TextNode
+from llama_index.core.utils import get_tokenizer
 from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilter,
@@ -124,3 +126,71 @@ class TestRetrieveNodesFilters:
         groups = _and_groups(captured["filters"])
         assert len(groups) == 1
         assert _keys(groups[0]) == [NAMESPACE, TYPE]
+
+
+class TestRetrieveNodesQueryClamp:
+    def test_document_sized_message_is_clamped_before_embedding(self):
+        """A chat message that inlines an attached document must not reach the embedder past its window."""
+        question = "What does the attached contract say about termination?"
+        message = ("Contract clause text. " * 6000) + question
+        embed = _mock_embed_model()
+        embed.model_name = "embedding/bge-m3"
+        store, _ = _capturing_vector_store()
+
+        with patch(
+            "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp.EmbeddingModelConfig"
+        ) as config_cls:
+            config_cls.return_value.get_model_info.return_value = {"model_info": {"max_input_tokens": 8192}}
+            retrieve_nodes(
+                message=message,
+                embed_model=embed,
+                retrieve_k=5,
+                index_namespaces=None,
+                query_mode=VectorStoreQueryMode.DEFAULT,
+                node_types=["content"],
+                vector_store=store,
+            )
+
+        embedded = embed.get_text_embedding.call_args.args[0]
+        assert len(get_tokenizer()(embedded)) <= 4096
+        assert embedded.endswith(question)
+
+
+def _scored_vector_store(scores: list[float]) -> MagicMock:
+    store = MagicMock()
+    nodes = [TextNode(id_=f"n{index}", text=f"section {index}") for index in range(len(scores))]
+    store.query.return_value = VectorStoreQueryResult(nodes=nodes, similarities=scores, ids=[n.id_ for n in nodes])
+    return store
+
+
+def _retrieve(scores: list[float], mode: VectorStoreQueryMode, min_similarity: float | None) -> list[str]:
+    nodes = retrieve_nodes(
+        message="q",
+        embed_model=_mock_embed_model(),
+        retrieve_k=5,
+        index_namespaces=None,
+        query_mode=mode,
+        node_types=["content"],
+        vector_store=_scored_vector_store(scores),
+        min_similarity=min_similarity,
+    )
+    return [node.node.node_id for node in nodes]
+
+
+class TestMinimumSimilarity:
+    def test_dense_results_below_the_floor_are_dropped(self):
+        assert _retrieve([0.71, 0.36, 0.35, 0.34, 0.2], VectorStoreQueryMode.DEFAULT, 0.35) == ["n0", "n1", "n2"]
+
+    def test_nothing_above_the_floor_returns_no_nodes(self):
+        assert _retrieve([0.31, 0.28], VectorStoreQueryMode.DEFAULT, 0.35) == []
+
+    def test_no_floor_or_zero_keeps_every_result(self):
+        assert _retrieve([0.71, 0.1], VectorStoreQueryMode.DEFAULT, None) == ["n0", "n1"]
+        assert _retrieve([0.71, 0.1], VectorStoreQueryMode.DEFAULT, 0.0) == ["n0", "n1"]
+
+    def test_hybrid_scores_are_not_cosine_and_are_never_cut(self):
+        """Hybrid scores are min-max normalised per query, so its weakest result always scores 0."""
+        assert _retrieve([0.03, 0.02, 0.01], VectorStoreQueryMode.HYBRID, 0.35) == ["n0", "n1", "n2"]
+
+    def test_sparse_scores_are_not_cosine_and_are_never_cut(self):
+        assert _retrieve([0.2, 0.1], VectorStoreQueryMode.SPARSE, 0.35) == ["n0", "n1"]

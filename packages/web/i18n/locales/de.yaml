@@ -643,6 +643,9 @@ knowledge:
         message: '{name} enthält bereits {count} manuell hochgeladene(s) Dokument(e).
           Sobald eine Quelle diese Datenbank befüllt, wird bei der nächsten Synchronisation
           jede Datei entfernt, die die Quelle nicht hat.'
+        message_from_source: '{name} enthält {count} Dokument(e), die aus {source}
+          synchronisiert wurden. Sobald die neue Quelle diese Datenbank befüllt, wird
+          bei ihrer nächsten Synchronisation jede Datei entfernt, die sie nicht hat.'
         accept: Bestehende Dokumente ersetzen
     edit:
       title: Sammlung bearbeiten
@@ -659,8 +662,8 @@ knowledge:
     source:
       label: Quelle
       placeholder: Wählen Sie, woher die Dokumente kommen
-      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron;
-        jeder Ordner der obersten Ebene wird zu einem Namespace.
+      help: Eine Quell-Pipeline hält diese Datenbank mit einem externen System synchron.
+        Ihre Beschreibung sagt, wie der Inhalt in Namespaces gegliedert wird.
       manual_upload:
         label: Manueller Upload
         description: Dokumente werden von Hand in selbst erstellte Namespaces hochgeladen.

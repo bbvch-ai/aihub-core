@@ -38,7 +38,8 @@ prompt:
     [s3f9a1c] genau. Höchstens %{words} Wörter, ohne Einleitung.'
   condensed_turns: 'Zusammenfassung des bisherigen Gesprächs: %{summary}'
   dropped_result: '[Dieses frühere Ergebnis wurde entfernt, damit der Kontext reicht.
-    Rufe das Werkzeug erneut auf, wenn du es brauchst.]'
+    Rufe das Werkzeug erneut auf, wenn du es brauchst; bei einem Befehl, der Dateien
+    erstellt hat, sieh dir diese Dateien an, statt ihn erneut auszuführen.]'
   limit_reached: Du hast alle für diese Antwort verfügbaren Werkzeugaufrufe verbraucht.
     Antworte jetzt mit dem, was du gefunden hast.
   no_tools: Für den Rest dieser Antwort stehen keine Werkzeuge zur Verfügung, versuche

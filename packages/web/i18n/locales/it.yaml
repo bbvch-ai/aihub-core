@@ -644,6 +644,9 @@ knowledge:
         message: '{name} contiene già {count} documento/i caricato/i manualmente.
           Quando una sorgente alimenta questo database, alla prossima sincronizzazione
           viene rimosso ogni file che la sorgente non possiede.'
+        message_from_source: '{name} contiene {count} documento/i sincronizzato/i
+          da {source}. Quando la nuova sorgente alimenta questo database, alla sua
+          prossima sincronizzazione viene rimosso ogni file che non possiede.'
         accept: Sostituisci i documenti esistenti
     edit:
       title: Modifica collezione
@@ -661,7 +664,7 @@ knowledge:
       label: Sorgente
       placeholder: Scegli da dove provengono i documenti
       help: Una pipeline sorgente mantiene questa base sincronizzata con un sistema
-        esterno; ogni cartella di primo livello diventa un namespace.
+        esterno. La sua descrizione indica come il contenuto viene suddiviso in namespace.
       manual_upload:
         label: Caricamento manuale
         description: I documenti vengono caricati a mano in namespace creati da te.

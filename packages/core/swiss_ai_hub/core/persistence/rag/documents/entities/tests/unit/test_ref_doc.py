@@ -93,3 +93,23 @@ class TestGetOrCreatePlaceholder:
         assert created is True
         assert ref_doc is placeholder
         create_placeholder.assert_called_once_with("my_db", self._SOURCE, "reports", "Q3")
+
+
+class TestIdLookups:
+    def test_all_ids_are_read_as_a_projection(self) -> None:
+        switched = MagicMock()
+        switched.objects.scalar.return_value = ["doc1", "doc2"]
+
+        with patch(_SWITCH_DB, _switched_to(switched)):
+            assert RefDoc.get_all_ids(db_alias="my_db") == {"doc1", "doc2"}
+
+        switched.objects.scalar.assert_called_once_with("id")
+
+    def test_existing_ids_are_the_subset_that_still_has_a_document(self) -> None:
+        switched = MagicMock()
+        switched.objects.filter.return_value.scalar.return_value = ["doc1"]
+
+        with patch(_SWITCH_DB, _switched_to(switched)):
+            assert RefDoc.get_existing_ids(db_alias="my_db", doc_ids=["doc1", "gone"]) == {"doc1"}
+
+        switched.objects.filter.assert_called_once_with(id__in=["doc1", "gone"])

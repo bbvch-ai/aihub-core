@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
     from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
+    from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
     from swiss_ai_hub.core.form.config_specs import ConfigSpecs
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
@@ -58,6 +59,7 @@ __all__ = [
     "ModelSelect",
     "MultiSelect",
     "Password",
+    "PrimeVueElement",
     "Repeater",
     "SecretFieldWalker",
     "SecretFileInput",
@@ -94,6 +96,7 @@ _LAZY_IMPORTS = {
     "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
     "MultiSelect": "swiss_ai_hub.core.form.elements.multi_select",
     "Password": "swiss_ai_hub.core.form.elements.password",
+    "PrimeVueElement": "swiss_ai_hub.core.form.base.prime_vue_element",
     "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "SecretFieldWalker": "swiss_ai_hub.core.form.secret_field_walker",
     "SecretFileInput": "swiss_ai_hub.core.form.elements.secret_file_input",

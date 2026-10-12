@@ -93,6 +93,9 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
+    from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
+        PartitionAwareMilvusVectorStore,
+    )
     from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
@@ -134,6 +137,7 @@ __all__ = [
     "LocaleStringEntity",
     "MilvusIndexType",
     "MilvusVectorStoreConfig",
+    "PartitionAwareMilvusVectorStore",
     "NAMESPACE",
     "NODE_CONTENT_TYPE",
     "NODE_CONTENT_TYPE_FIGURE",
@@ -215,6 +219,9 @@ _LAZY_IMPORTS = {
     "LocaleStringEntity": "swiss_ai_hub.core.persistence.i18n.locale_string_entity",
     "MilvusIndexType": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory",
     "MilvusVectorStoreConfig": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config",
+    "PartitionAwareMilvusVectorStore": (
+        "swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store"
+    ),
     "NAMESPACE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "NODE_CONTENT_TYPE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "NODE_CONTENT_TYPE_FIGURE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

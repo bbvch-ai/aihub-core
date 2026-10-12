@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition, SensorDefinition
+from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import RclonePipelineSettings
-from swiss_ai_hub.core.persistence import SourcePipeline, SourcePipelineEntity, SourcePipelineType
+from swiss_ai_hub.core.persistence import SourcePipelineType
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
 
 from swiss_ai_hub.pipeline.assets.factories.rclone_to_data_lake.observable_rclone_factory import (
@@ -24,7 +24,7 @@ from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.run_after_success_sensor import run_after_success_sensor
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensors_from_settings
 from swiss_ai_hub.pipeline.sensors.source_bucket_cleanup_sensor import source_bucket_cleanup_sensor
-from swiss_ai_hub.pipeline.sensors.source_pipeline_registration_sensor import source_pipeline_registration_sensor
+from swiss_ai_hub.pipeline.sensors.source_pipeline_registration_sensor import announced_source_pipeline_sensor
 from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSyncConfig
 from swiss_ai_hub.pipeline.util.run_routing import owned_by_source
 
@@ -75,7 +75,7 @@ def rclone_pipeline_definitions(
     )
 
     announced_config = config or RcloneSyncConfig.as_form()
-    registration_sensor = _registration_sensor(source, display_name, description, announced_config)
+    registration_sensor = announced_source_pipeline_sensor(source, display_name, description, announced_config)
 
     return Definitions(
         assets=assets,
@@ -101,23 +101,3 @@ def rclone_pipeline_definitions(
             )
         ],
     )
-
-
-def _registration_sensor(
-    source: str,
-    display_name: LocaleString | None,
-    description: LocaleString | None,
-    config: SourcePipelineConfig,
-) -> SensorDefinition:
-    """Mirrors the ingestion pipeline's gate: reserved ids fail at build time, only the shipped source may rely on the
-    platform's translations for its labels."""
-    if source in SourcePipelineEntity.reserved_ids():
-        msg = f"Source pipeline id '{source}' is reserved by the platform and cannot be claimed by a pipeline."
-        raise ValueError(msg)
-    if source == SourcePipelineType.RCLONE.value:
-        display_name = display_name or LocaleString.from_i18n_path("lib.source_pipelines.rclone.display_name")
-        description = description or LocaleString.from_i18n_path("lib.source_pipelines.rclone.description")
-    if display_name is None or description is None:
-        msg = f"Custom source pipeline '{source}' needs a display_name and a description to be selectable."
-        raise ValueError(msg)
-    return source_pipeline_registration_sensor(SourcePipeline.from_config(source, display_name, description, config))

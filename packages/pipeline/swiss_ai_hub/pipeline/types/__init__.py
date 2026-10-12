@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile, SharePointFile
     from swiss_ai_hub.pipeline.types.skipped_data_lake_file import SkippedDataLakeFile
     from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile, SourceFile
+    from swiss_ai_hub.pipeline.types.structured_listing import StructuredListing
+    from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
+    from swiss_ai_hub.pipeline.types.structured_source_state import StructuredSourceState
+    from swiss_ai_hub.pipeline.types.structured_sync_outcome import StructuredSyncOutcome
 
 __all__ = [
     "DataLakeFile",
@@ -26,6 +30,10 @@ __all__ = [
     "SharePointFile",
     "SkippedDataLakeFile",
     "SourceFile",
+    "StructuredListing",
+    "StructuredRecordFile",
+    "StructuredSourceState",
+    "StructuredSyncOutcome",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -41,6 +49,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "SharePointFile": "swiss_ai_hub.pipeline.types.share_point_file",
     "SkippedDataLakeFile": "swiss_ai_hub.pipeline.types.skipped_data_lake_file",
     "SourceFile": "swiss_ai_hub.pipeline.types.source_file",
+    "StructuredListing": "swiss_ai_hub.pipeline.types.structured_listing",
+    "StructuredRecordFile": "swiss_ai_hub.pipeline.types.structured_record_file",
+    "StructuredSourceState": "swiss_ai_hub.pipeline.types.structured_source_state",
+    "StructuredSyncOutcome": "swiss_ai_hub.pipeline.types.structured_sync_outcome",
 }
 
 

@@ -35,7 +35,8 @@ prompt:
     %{words} words, no preamble.'
   condensed_turns: 'Summary of the earlier conversation: %{summary}'
   dropped_result: '[This earlier result was removed to fit the context. Call the tool
-    again if you need it.]'
+    again if you need it; for a command that made files, look at those files instead
+    of running it again.]'
   limit_reached: You have used all the tool calls available for this answer. Answer
     now with what you have found.
   no_tools: No tools are available for the rest of this answer, so do not try to call
