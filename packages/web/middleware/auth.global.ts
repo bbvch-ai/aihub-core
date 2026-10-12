@@ -1,8 +1,21 @@
+import { ErrorResponse } from 'oidc-client-ts'
+
+import type { User, UserManager } from 'oidc-client-ts'
+
 /**
  * Tracks the last tenant synced with the backend to avoid redundant PUT calls
  * on every navigation within the same tenant.
  */
 let lastSyncedTenant: string | null = null
+
+/**
+ * The stored OIDC user lives in localStorage and survives a browser restart,
+ * but Keycloak's SSO cookie is a session cookie and does not. The OpenWebUI
+ * iframe signs in through that cookie, so without it the chat shows a login
+ * screen inside an app that still looks logged in. Probing once per page load
+ * is enough: the cookie can only vanish together with the browser session.
+ */
+let ssoSessionVerified = false
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
@@ -36,6 +49,24 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
   }
 }
 
+/**
+ * A refresh-token renewal would succeed without the SSO cookie, because the
+ * Keycloak session lives on server-side; only a `prompt=none` round trip
+ * through the browser sees the cookie the iframe depends on.
+ */
+const hasSsoSessionFor = async (auth: UserManager, user: User): Promise<boolean> => {
+  try {
+    const session = await auth.querySessionStatus()
+    return session?.sub === user.profile.sub
+  }
+  catch (error) {
+    if (error instanceof ErrorResponse) {
+      return false
+    }
+    throw error
+  }
+}
+
 // Redirects are returned as plain locations, not via navigateTo(): after an
 // await, another navigation may already have finished, and navigateTo() then
 // navigates on its own instead of redirecting this one (see home-redirect.ts).
@@ -56,6 +87,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (!user) {
       rememberRedirect(to.fullPath, isAuthPath)
       return `/${locale}/auth/login`
+    }
+
+    if (!ssoSessionVerified) {
+      if (!await hasSsoSessionFor($auth, user)) {
+        await $auth.removeUser()
+        rememberRedirect(to.fullPath, isAuthPath)
+        return `/${locale}/auth/login`
+      }
+      ssoSessionVerified = true
     }
 
     if (user.expired) {
