@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from fastapi import Depends
+from fastapi import Depends, Path
 from redis.asyncio import Redis
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.infrastructure import use_redis
@@ -9,6 +9,7 @@ from swiss_ai_hub.core.routes import Controller
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
+from swiss_ai_hub.api.routes.auth_provider.dto.login_options_response import LoginOptionsResponse
 
 
 class AuthProviderController(Controller):
@@ -23,7 +24,17 @@ class AuthProviderController(Controller):
 
     def get_auth_providers(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_auth_providers(redis: Annotated[Redis, Depends(use_redis)]) -> list[AuthProviderResponse]:
-            return await AuthProviderService.get_auth_providers(redis)
+        async def get_auth_providers(redis: Annotated[Redis, Depends(use_redis)]) -> LoginOptionsResponse:
+            return await AuthProviderService.get_login_options(redis)
+
+        return self
+
+    def get_auth_provider(self, route: str = "/{alias}") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_auth_provider(
+            alias: Annotated[str, Path(description="Keycloak IDP alias taken from a /auth/login/<idp-alias> link")],
+            redis: Annotated[Redis, Depends(use_redis)],
+        ) -> AuthProviderResponse | None:
+            return await AuthProviderService.get_auth_provider(redis, alias)
 
         return self
