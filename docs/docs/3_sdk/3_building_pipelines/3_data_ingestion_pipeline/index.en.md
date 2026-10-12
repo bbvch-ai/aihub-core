@@ -203,7 +203,44 @@ The `source` token must not collide with any ingestor token: both kinds of pipel
 token, so the factory rejects a reserved id when the definitions are built. See ADR
 `2026_09_09_source_pipelines_as_a_second_axis_of_a_knowledge_database`.
 
-## 2. The Data Lake to Vector Store Pipeline
+## 2. The Structured Source Pipeline (records from business applications)
+
+Records that are not files, such as Jira issues, come through the structured source pipeline. Like the rclone one, it is
+configured per knowledge database from the UI: one deployed `structured_pipeline` code location serves every database
+whose source is `structured`. For each database it reads the records through a [dlt](https://dlthub.com/) source and
+writes each one as a markdown file with YAML frontmatter into the database's data lake, one folder (namespace) per
+project or space, so the Stage 2 pipeline parses and embeds it like any other document.
+
+- **Source kinds**: one adapter class per system. Jira (Cloud and Data Center) ships today: one document per issue, with
+  its fields, description and comments.
+- **Incremental**: a sync reads only the records changed since the previous one, and a listing of every record key in
+  scope removes the files of records deleted at the source.
+- **Fails before it removes**: an adapter checks its credentials and scope before reading, and a failing listing, or an
+  empty one while the database holds files, fails the run, so a wrong token or a typo never empties a database.
+
+### Deployment
+
+The platform ships the pipeline as the `structured_pipeline` compose service (Dagster workspace entry
+`structured_pipeline`). Nothing per source is deployed; the service needs:
+
+| Variable                                           | Purpose                                               |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| `AIHUB_CONFIG_ENCRYPTION_KEY`                      | Decrypts stored credentials; must equal the API's key |
+| `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE` | Time of the daily per-database sync                   |
+
+The pipeline calls each business application's API itself, so unlike the rclone pipeline it joins the `egress` network
+as well as `backend`, `data` and `storage`. A Jira Data Center inside the company network must be reachable from the
+Docker host.
+
+### Adding a Source Kind
+
+An `AbstractStructuredSourceAdapter` subclass declares the kind, its options form, its dlt source, how a record becomes
+a file and how to list every record key in scope. One field on `StructuredSyncConfig` and labels in the
+`lib/source_pipelines.*.yml` translations offer it in the dialog; the API and the UI need no change.
+`source_pipelines/jira/` in `packages/pipeline` is the reference implementation, and the package's `CLAUDE.md` lists
+the rules an adapter must keep. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
+
+## 3. The Data Lake to Vector Store Pipeline
 
 This is the core document ingestion pipeline. Use the `document_ingestion_pipeline_definitions` factory to process
 documents from your S3 data lake into a vector store.

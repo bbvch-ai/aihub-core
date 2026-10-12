@@ -64,22 +64,61 @@ as a safety net, catching anything a missed notification would otherwise have le
 ### Syncing from an external source
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
-database. Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials,
-the folder to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the
-`.json` file downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with.
-Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
-stored ones, so a rotation is a matter of editing the source. The system then:
+database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
+application sync** keeps records such as Jira issues in sync, each record as one document. Credentials are stored
+encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the stored ones, so a rotation is
+a matter of editing the source. Either way, the system then:
 
-- Syncs files from the source on a daily schedule
-- Creates collections automatically from the top-level folders of the synced root (files directly in the root are
-  skipped and counted in the run)
-- Processes each synced file within a minute or two, like an upload
+- Syncs from the source on a daily schedule
+- Creates the collections itself, as described below
+- Processes each synced document within a minute or two, like an upload
 - Disables manual uploads, hand-made collections and manual document deletion for that database
+
+#### Files from cloud storage
+
+Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials, the folder
+to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the `.json` file
+downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with. Each top-level
+folder of the synced root becomes a collection; files directly in the root are skipped and counted in the run.
 
 If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
 name and the second is skipped: its files reach the data lake but are never ingested, and the ingestion run names the
 skipped files and the reason in its metadata and logs. Other folders and the database's other files are unaffected;
 renaming the folder at the source fixes it.
+
+#### Jira issues
+
+Pick **Jira** as the source system and enter:
+
+- **Jira URL**: the address you open Jira at, such as `https://acme.atlassian.net` for Jira Cloud or
+  `https://jira.acme.ch/jira` for a Jira Data Center served under a path
+- **Jira edition**: Jira Cloud signs in with the account's e-mail and an
+  [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Jira Data Center with a
+  personal access token (profile → *Personal Access Tokens*)
+- **Projects**: the keys of the projects to sync, such as `ABC`
+- **Additional JQL filter** (optional): a clause every synced issue must also match, such as
+  `issuetype != "Service Request"`
+
+Each project becomes a collection and each issue one document. The document is titled with the issue key and summary,
+links back to the issue, and carries its type, status, priority, labels, components, fix versions, reporter and
+assignee, its description and its comments with author and date. Headings, lists, tables and code keep their
+formatting; images and attachments are not synced. Comments restricted to a project role or group, and internal
+comments of Jira Service Management, are left out.
+
+::: warning Use a dedicated account
+The database holds every issue and comment the token's account can read, and everyone with access to the database can
+find them, whatever their own permissions in Jira. Sync with a dedicated read-only account that sees only what the
+database's readers may see.
+:::
+
+The first sync reads every issue in scope. Later syncs read only the issues changed since the previous one, and compare
+the list of issue keys in scope, so issues deleted in Jira, moved to another project or no longer matching the filter
+are removed. Changing the projects or the filter reads everything again. On Jira Cloud, deleting a comment updates its
+issue, so the next sync removes the comment as well.
+
+A sync whose token Jira rejects, whose project does not exist or is not visible to the account, or whose filter is not
+valid JQL fails before it changes anything. The reason is shown on the failed run in the Dagster UI, and in the failure
+notification when notifications are configured.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

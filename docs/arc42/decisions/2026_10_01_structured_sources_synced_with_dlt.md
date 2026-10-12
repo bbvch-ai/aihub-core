@@ -204,8 +204,10 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 ### Trade-offs
 
 - **dlt brings no ready-made Jira or Confluence connector.** The verified Jira source has no incremental cursor, and
-  there is no verified Confluence source. #1954 and #1955 build their adapters on dlt's REST API source, which declares
-  pagination, authentication and incremental cursors.
+  there is no verified Confluence source. The Jira adapter (#1954) uses dlt's `RESTClient`, which brings authentication
+  and retries, in a hand-written resource rather than the declarative REST API source: it pages each project with its
+  own query, writes the incremental lower bound into JQL in the account's time zone, and merges an issue's comments into
+  its record, none of which the declarative source expresses.
 - **A sync is daily.** This is inherited from the source-pipelines ADR. Creating a database or changing its source
   triggers nothing, so a new database stays empty until the next scheduled run. A first-sync or on-demand trigger is a
   follow-up; the guard against two concurrent runs of the same database (rule 7) is already in place for it.

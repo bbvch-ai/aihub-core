@@ -93,6 +93,11 @@ Distributed object storage cluster:
 Services that require outbound internet access but no inbound access:
 
 - **playwright**: Web scraping and browser automation (needs to fetch web pages)
+- **searxng**: Web search (queries external search engines)
+- **rclone**: The daemon the rclone source pipeline drives (reaches the cloud storage it syncs from)
+- **structured_pipeline**: The structured source pipeline (calls business application APIs such as Jira)
+- **imap_agent**, **email_classification_agent**: Read and file mail on external IMAP servers
+- **otel-collector**: Exports telemetry to external backends
 
 This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this
 network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `backend`) for
