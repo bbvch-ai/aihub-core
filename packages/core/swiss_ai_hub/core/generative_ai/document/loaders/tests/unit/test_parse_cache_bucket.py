@@ -36,9 +36,10 @@ def test_a_missing_entry_is_a_miss(code: str, monkeypatch: pytest.MonkeyPatch):
 def test_any_other_storage_error_propagates(monkeypatch: pytest.MonkeyPatch):
     client = MagicMock()
     client.get_object.side_effect = ClientError({"Error": {"Code": "NoSuchBucket"}}, "GetObject")
+    bucket = bucket_with(client, monkeypatch)
 
     with pytest.raises(ClientError):
-        bucket_with(client, monkeypatch).read("markitdown/key")
+        bucket.read("markitdown/key")
 
 
 def test_write_stores_the_content_with_its_type(monkeypatch: pytest.MonkeyPatch):
