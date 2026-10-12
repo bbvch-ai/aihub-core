@@ -18,6 +18,7 @@ from requests.adapters import BaseAdapter
 _PROJECT = re.compile(r'project = "([A-Z][A-Z0-9_]*)"')
 _AFTER_ID = re.compile(r"AND id > (\d+)")
 _COMMENTS = re.compile(r"/rest/api/2/issue/([A-Z0-9_]+-\d+)/comment$")
+_PROJECT_PATH = re.compile(r"/rest/api/2/project/([^/]+)$")
 
 
 class FakeJiraTransport(BaseAdapter):
@@ -53,6 +54,8 @@ class FakeJira:
         self.paged_comments: dict[str, list[dict[str, Any]]] = {}
         self.requests: list[PreparedRequest] = []
         self.queued_failures: list[tuple[int, dict[str, Any]]] = []
+        self.projects: set[str] = set()
+        self.unknown_jql_fields: set[str] = set()
         self._ids = itertools.count(10001)
 
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -89,6 +92,7 @@ class FakeJira:
                 "comment": {"comments": [{"id": c["id"], "body": f"<p>Comment {c['id']}</p>"} for c in raw_comments]},
             },
         }
+        self.projects.add(project)
         self.issues.setdefault(project, []).append(hit)
         self.paged_comments[key] = [{**c, "renderedBody": f"<p>Comment {c['id']}</p>"} for c in raw_comments]
         return hit
@@ -97,7 +101,9 @@ class FakeJira:
         self.queued_failures.extend([(status, body or {})] * times)
 
     def sent_jql(self) -> list[str]:
-        return [self._params(request).get("jql", "") for request in self.requests if "search" in request.url]
+        """The searches made for issues, without the zero-result query Data Center validates a clause with."""
+        searches = [self._params(request) for request in self.requests if "/search" in request.url]
+        return [params.get("jql", "") for params in searches if params.get("maxResults") != "0"]
 
     def answer(self, request: PreparedRequest) -> tuple[int, dict[str, Any]]:
         if self.queued_failures:
@@ -106,11 +112,41 @@ class FakeJira:
         params = self._params(request)
         if comments := _COMMENTS.search(path):
             return 200, self._comment_page(comments.group(1), params)
+        if path.endswith("/rest/api/2/myself"):
+            return 200, {"accountId": "bot-1", "name": "bot", "displayName": "Seed Bot"}
+        if project := _PROJECT_PATH.search(path):
+            return self._project(project.group(1))
+        if path.endswith("/rest/api/3/jql/parse") and self.deployment == "cloud":
+            return 200, self._parsed(json.loads(request.body))
+        if path.endswith("/rest/api/2/search") and params.get("maxResults") == "0":
+            return self._validated(params["jql"])
         if path.endswith("/rest/api/2/search/jql") and self.deployment == "cloud":
             return 200, self._cloud_search(params)
         if path.endswith("/rest/api/2/search") and self.deployment == "data_center":
             return 200, self._data_center_search(params)
         return 404, {"errorMessages": [f"No such endpoint {path} on {self.deployment}"]}
+
+    def _project(self, key: str) -> tuple[int, dict[str, Any]]:
+        """Jira answers the same 404 for a missing project and for one the account may not browse."""
+        if key in self.projects:
+            return 200, {"key": key, "name": f"Project {key}"}
+        return 404, {"errorMessages": [f"No project could be found with key '{key}'."], "errors": {}}
+
+    def _problems(self, jql: str) -> list[str]:
+        return [
+            f"Field '{field}' does not exist or you do not have permission to view it."
+            for field in sorted(self.unknown_jql_fields)
+            if field in jql
+        ]
+
+    def _parsed(self, body: dict[str, Any]) -> dict[str, Any]:
+        return {"queries": [{"query": query, "errors": self._problems(query)} for query in body["queries"]]}
+
+    def _validated(self, jql: str) -> tuple[int, dict[str, Any]]:
+        problems = self._problems(jql)
+        if problems:
+            return 400, {"errorMessages": problems, "errors": {}}
+        return 200, {"startAt": 0, "maxResults": 0, "total": 0, "issues": []}
 
     def _cloud_search(self, params: dict[str, str]) -> dict[str, Any]:
         matching = self._matching(params["jql"])

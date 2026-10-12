@@ -16,11 +16,20 @@ class JiraRequestError(HTTPError):
     def from_response(cls, response: Response) -> Self:
         request = f"{response.request.method} {urlparse(response.url).path}"
         message = f"Jira answered {response.status_code} {response.reason} to {request}"
-        detail = cls._jira_messages(response)
+        detail = cls.jira_messages_of(response)
         return cls(f"{message}: {detail}" if detail else message, response=response)
 
+    @property
+    def status_code(self) -> int:
+        return self.response.status_code
+
+    @property
+    def jira_messages(self) -> str:
+        """Jira's own words for the error, without the status and path around them."""
+        return self.jira_messages_of(self.response)
+
     @staticmethod
-    def _jira_messages(response: Response) -> str:
+    def jira_messages_of(response: Response) -> str:
         if "json" not in response.headers.get("Content-Type", ""):
             return ""
         body = response.json()

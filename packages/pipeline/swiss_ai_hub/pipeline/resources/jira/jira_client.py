@@ -70,6 +70,32 @@ class JiraClient:
             if not batch or len(comments) >= page.get("total", 0):
                 return comments
 
+    def myself(self) -> dict[str, Any]:
+        """The account the credentials sign in as; the cheapest call that fails on wrong credentials."""
+        return self._get("rest/api/2/myself", {})
+
+    def project(self, key: Annotated[str, "Project key"]) -> dict[str, Any]:
+        """Answers 404 for a project that does not exist and for one the account cannot browse alike."""
+        return self._get(f"rest/api/2/project/{key}", {})
+
+    def jql_problems(self, jql: Annotated[str, "A JQL query without ORDER BY"]) -> list[str]:
+        """What is wrong with a query, checked before it is used.
+
+        Since 2026 Cloud search answers an invalid clause with no issues instead of an error, which would make a
+        listing look empty; its parse endpoint still names the problem. Data Center search validates the query and
+        answers 400.
+        """
+        if self.deployment == "cloud":
+            answer = self._post("rest/api/3/jql/parse", {"queries": [jql]}, {"validation": "strict"})
+            return [error for query in answer.get("queries", []) for error in query.get("errors", [])]
+        try:
+            self._get(_SEARCH_PATHS["data_center"], {"jql": jql, "maxResults": 0, "startAt": 0})
+        except JiraRequestError as refused:
+            if refused.status_code != 400:
+                raise
+            return [refused.jira_messages or str(refused)]
+        return []
+
     def _search_cloud(self, jql: str, params: dict[str, Any]) -> Iterator[list[dict[str, Any]]]:
         """Cloud's search pages by token, with no cap on how far it goes."""
         token: str | None = None
@@ -103,6 +129,11 @@ class JiraClient:
 
     def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         response = self._rest.get(path, params=params, hooks={"response": [self._raise_for_jira_error]})
+        return response.json()
+
+    def _post(self, path: str, body: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+        """Only for queries Jira takes as a body; nothing here writes to Jira."""
+        response = self._rest.post(path, json=body, params=params, hooks={"response": [self._raise_for_jira_error]})
         return response.json()
 
     @staticmethod

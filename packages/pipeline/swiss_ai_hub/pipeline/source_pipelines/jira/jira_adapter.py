@@ -11,6 +11,7 @@ from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter i
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_comment import JiraComment
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_issue import JiraIssue
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
+from swiss_ai_hub.pipeline.source_pipelines.jira.jira_preflight import JiraPreflight
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
 _I18N = "lib.source_pipelines.structured.config.jira"
@@ -83,8 +84,7 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         )
 
     def dlt_source(self, options: JiraOptions) -> DltSource:
-        self._refuse_unusable(options)
-        client = self._client(options)
+        client = self._checked_client(options)
 
         @dlt.source(name="jira")
         def jira() -> DltResource:
@@ -102,8 +102,7 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         return JiraIssue.model_validate(record).to_record_file()
 
     def list_record_paths(self, options: JiraOptions) -> set[str]:
-        self._refuse_unusable(options)
-        client = self._client(options)
+        client = self._checked_client(options)
         return {
             JiraIssue.object_key_for(self._own_key(project, hit))
             for project in options.projects()
@@ -135,16 +134,17 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         return f"{scope} AND ({jql.strip()})" if jql.strip() else scope
 
     @staticmethod
-    def _client(options: JiraOptions) -> JiraClient:
-        return JiraClient(
-            base_url=options.base_url, deployment=options.deployment, email=options.email, token=options.api_token
-        )
-
-    @staticmethod
-    def _refuse_unusable(options: JiraOptions) -> None:
+    def _checked_client(options: JiraOptions) -> JiraClient:
+        """Checked before anything is read, in the sync and again in the listing, which runs as its own step: a
+        listing that silently comes back short removes the files of issues that still exist."""
         problems = options.problems()
         if problems:
             raise ValueError(f"The Jira source cannot sync: {'; '.join(problems)}.")
+        client = JiraClient(
+            base_url=options.base_url, deployment=options.deployment, email=options.email, token=options.api_token
+        )
+        JiraPreflight.check(client, options)
+        return client
 
     @staticmethod
     def _labels(field: str) -> dict[str, LocaleString]:

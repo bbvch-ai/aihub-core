@@ -75,6 +75,31 @@ class TestJiraSync:
 
         assert "title: 'BBB-1: Renamed'" in world.body("jira-db", "BBB/BBB-1.md")
 
+    @pytest.mark.parametrize(
+        ("change", "message"),
+        [
+            ({"project_keys": ["AAA", "BBB", "SDD"]}, "Jira project SDD does not exist, or Seed Bot cannot see it."),
+            ({"jql": "statuz = Done"}, "The JQL clause is invalid: Field 'statuz' does not exist"),
+        ],
+    )
+    def test_a_project_or_clause_jira_would_answer_with_nothing_fails_and_removes_nothing(
+        self, world: World, jira: FakeJira, change: dict, message: str
+    ):
+        """Jira answers both with no issues; the listing would then remove every file of the affected projects."""
+        world.sync("jira-db", asset=_ASSET)
+        jira.unknown_jql_fields = {"statuz"}
+        options = world.configs["jira-db"].jira.model_dump()
+        world.configs["jira-db"] = StructuredSyncConfig.model_validate(
+            {"source_kind": "jira", "jira": {**options, **change}}
+        )
+
+        result = world.sync("jira-db", asset=_ASSET)
+
+        assert not result.success
+        [failure] = result.get_step_failure_events()
+        assert message in failure.event_specific_data.error.to_string()
+        assert world.files("jira-db") == ["AAA/AAA-1.md", "AAA/AAA-2.md", "BBB/BBB-1.md"]
+
     def test_rejected_credentials_fail_the_sync_and_remove_nothing(self, world: World, jira: FakeJira):
         world.sync("jira-db", asset=_ASSET)
         jira.fail_next(401, {"errorMessages": ["Client must be authenticated to access this resource."]})
@@ -84,6 +109,6 @@ class TestJiraSync:
         assert not result.success
         [failure] = result.get_step_failure_events()
         shown_on_the_run_page = failure.event_specific_data.error.to_string()
-        assert "Jira answered 401 Unauthorized to GET /rest/api/2/search/jql" in shown_on_the_run_page
+        assert "ValueError: Jira rejected the credentials for https://acme.atlassian.net (401)" in shown_on_the_run_page
         assert "s3cret-token" not in shown_on_the_run_page
         assert world.files("jira-db") == ["AAA/AAA-1.md", "AAA/AAA-2.md", "BBB/BBB-1.md"]
