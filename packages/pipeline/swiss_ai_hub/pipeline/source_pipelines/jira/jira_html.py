@@ -19,11 +19,14 @@ class JiraHtml:
         are not synced, and user mentions keep only the name, not the account id their profile link carries.
 
         Jira's relative links already start with its context path (``/jira/browse/…``), so they are resolved against
-        the site rather than appended to it.
+        the site rather than appended to it. Data Center renders ``{{monospace}}`` as ``<tt>``, which markdownify
+        would flatten into plain text.
         """
         if not html or not html.strip():
             return ""
         soup = BeautifulSoup(html, "html.parser")
+        for monospace in soup.find_all("tt"):
+            monospace.name = "code"
         for image in soup.find_all("img"):
             image.decompose()
         for mention in soup.select("a.user-hover"):

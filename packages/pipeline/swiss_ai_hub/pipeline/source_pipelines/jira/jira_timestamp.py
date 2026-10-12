@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from typing import Any
 from zoneinfo import ZoneInfo
 
 _JQL_MINUTE = "%Y/%m/%d %H:%M"
@@ -17,11 +16,6 @@ class JiraTimestamp:
     @classmethod
     def to_utc_iso(cls, value: str) -> str:
         return cls.to_utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    @staticmethod
-    def zone_of(account: dict[str, Any]) -> ZoneInfo:
-        """The zone Jira reads the account's JQL dates in, from its ``/myself`` answer."""
-        return ZoneInfo(account.get("timeZone") or "UTC")
 
     @staticmethod
     def jql_lower_bound(start: datetime | None, zone: ZoneInfo) -> str | None:

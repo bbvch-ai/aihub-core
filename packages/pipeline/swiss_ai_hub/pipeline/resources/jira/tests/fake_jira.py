@@ -59,6 +59,13 @@ class FakeJira:
         self.requests: list[PreparedRequest] = []
         self.queued_failures: list[tuple[int, dict[str, Any]]] = []
         self.projects: set[str] = set()
+        self.project_types: dict[str, str] = {}
+        self.account: dict[str, Any] = {
+            "accountId": "bot-1",
+            "name": "bot",
+            "displayName": "Seed Bot",
+            "timeZone": ZONE.key,
+        }
         self.unknown_jql_fields: set[str] = set()
         self._ids = itertools.count(10001)
 
@@ -117,7 +124,7 @@ class FakeJira:
         if comments := _COMMENTS.search(path):
             return 200, self._comment_page(comments.group(1), params)
         if path.endswith("/rest/api/2/myself"):
-            return 200, {"accountId": "bot-1", "name": "bot", "displayName": "Seed Bot", "timeZone": ZONE.key}
+            return 200, self.account
         if project := _PROJECT_PATH.search(path):
             return self._project(project.group(1))
         if path.endswith("/rest/api/3/jql/parse") and self.deployment == "cloud":
@@ -133,7 +140,11 @@ class FakeJira:
     def _project(self, key: str) -> tuple[int, dict[str, Any]]:
         """Jira answers the same 404 for a missing project and for one the account may not browse."""
         if key in self.projects:
-            return 200, {"key": key, "name": f"Project {key}"}
+            return 200, {
+                "key": key,
+                "name": f"Project {key}",
+                "projectTypeKey": self.project_types.get(key, "software"),
+            }
         return 404, {"errorMessages": [f"No project could be found with key '{key}'."], "errors": {}}
 
     def _problems(self, jql: str) -> list[str]:
@@ -204,7 +215,10 @@ class FakeJira:
         return shaped
 
     def _comment_page(self, key: str, params: dict[str, str]) -> dict[str, Any]:
+        """Comment properties come only when asked for, as Jira sends them."""
         everything = self.paged_comments[key]
+        if "properties" not in params.get("expand", ""):
+            everything = [{k: v for k, v in comment.items() if k != "properties"} for comment in everything]
         start = int(params.get("startAt", "0"))
         page = everything[start : start + self.page_size]
         return {"comments": page, "startAt": start, "maxResults": self.page_size, "total": len(everything)}

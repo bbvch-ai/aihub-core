@@ -13,6 +13,7 @@ from swiss_ai_hub.pipeline.source_pipelines.jira.jira_comment import JiraComment
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_issue import JiraIssue
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_preflight import JiraPreflight
+from swiss_ai_hub.pipeline.source_pipelines.jira.jira_scope import JiraScope
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_timestamp import JiraTimestamp
 from swiss_ai_hub.pipeline.types.structured_record_file import StructuredRecordFile
 
@@ -95,8 +96,7 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         cursor's last value moves on while the first project's issues pass, and would make later projects skip
         changes.
         """
-        client, account = self._checked_client(options)
-        zone = JiraTimestamp.zone_of(account)
+        client, scope = self._checked_client(options)
 
         @dlt.source(name="jira")
         def jira() -> DltResource:
@@ -106,11 +106,11 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
                     "updated_at", initial_value=None, lag=_OVERLAP_SECONDS
                 ),
             ) -> Iterator[list[dict[str, Any]]]:
-                since = JiraTimestamp.jql_lower_bound(updated_at.start_value, zone)
+                since = JiraTimestamp.jql_lower_bound(updated_at.start_value, scope.zone)
                 for project in options.projects():
-                    jql = self._scope(project, options.jql, since)
-                    for page in client.search(jql, _ISSUE_FIELDS, rendered=True):
-                        yield [self._issue(client, project, hit).model_dump() for hit in page]
+                    service_desk = scope.is_service_desk(project)
+                    for page in client.search(self._scope(project, options.jql, since), _ISSUE_FIELDS, rendered=True):
+                        yield [self._issue(client, project, hit, service_desk).model_dump() for hit in page]
 
             return issues
 
@@ -128,10 +128,12 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
             for hit in page
         }
 
-    def _issue(self, client: JiraClient, project: str, hit: dict[str, Any]) -> JiraIssue:
+    def _issue(self, client: JiraClient, project: str, hit: dict[str, Any], service_desk: bool) -> JiraIssue:
+        """A service desk's comments are always read from the comment endpoint with their properties: on Data Center
+        that is the only place an internal (agents-only) comment shows it is one."""
         key = self._own_key(project, hit)
-        if JiraComment.has_more_than_embedded(hit):
-            comments = JiraComment.from_paged(client.comments(key))
+        if service_desk or JiraComment.has_more_than_embedded(hit):
+            comments = JiraComment.from_paged(client.comments(key, with_properties=service_desk))
         else:
             comments = JiraComment.from_embedded(hit)
         return JiraIssue.from_search_hit(hit, comments)
@@ -156,10 +158,10 @@ class JiraAdapter(AbstractStructuredSourceAdapter[JiraOptions]):
         return " AND ".join(parts)
 
     @staticmethod
-    def _checked_client(options: JiraOptions) -> tuple[JiraClient, dict[str, Any]]:
+    def _checked_client(options: JiraOptions) -> tuple[JiraClient, JiraScope]:
         """Checked before anything is read, in the sync and again in the listing, which runs as its own step: a
         listing that silently comes back short removes the files of issues that still exist. Returns the client and
-        the account it signs in as."""
+        what the preflight learned."""
         problems = options.problems()
         if problems:
             raise ValueError(f"The Jira source cannot sync: {'; '.join(problems)}.")

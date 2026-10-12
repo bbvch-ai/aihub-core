@@ -34,10 +34,6 @@ class TestJqlLowerBound:
         assert JiraTimestamp.jql_lower_bound(datetime(2026, 10, 8, 8, 5), _ZURICH) == "2026/10/08 10:05"
 
 
-class TestZone:
-    def test_the_account_s_zone_is_used_and_utc_without_one(self):
-        assert JiraTimestamp.zone_of({"timeZone": "Asia/Ho_Chi_Minh"}) == ZoneInfo("Asia/Ho_Chi_Minh")
-        assert JiraTimestamp.zone_of({}) == ZoneInfo("UTC")
-
+class TestConversion:
     def test_a_jira_timestamp_becomes_aware_utc(self):
         assert JiraTimestamp.to_utc("2026-10-08T10:15:30.000+0200") == datetime(2026, 10, 8, 8, 15, 30, tzinfo=UTC)

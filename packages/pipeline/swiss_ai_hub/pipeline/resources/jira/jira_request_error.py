@@ -1,7 +1,10 @@
+from http import HTTPStatus
 from typing import Self
 from urllib.parse import urlparse
 
 from requests import HTTPError, Response
+
+_STANDARD_REASONS = {status.value: status.phrase for status in HTTPStatus}
 
 
 class JiraRequestError(HTTPError):
@@ -9,13 +12,16 @@ class JiraRequestError(HTTPError):
 
     It stays an ``HTTPError`` carrying the response, because that is what dlt's retry inspects: 429 and 5xx are
     retried (honouring ``Retry-After``), everything else fails at once. The message names the status, the path and
-    Jira's own error messages; it never carries the query string or a credential.
+    Jira's own error messages; it never carries the query string or a credential. Data Center sends no reason
+    phrase, so the standard one stands in for it.
     """
 
     @classmethod
     def from_response(cls, response: Response) -> Self:
         request = f"{response.request.method} {urlparse(response.url).path}"
-        message = f"Jira answered {response.status_code} {response.reason} to {request}"
+        reason = response.reason or _STANDARD_REASONS.get(response.status_code, "")
+        status = f"{response.status_code} {reason}".strip()
+        message = f"Jira answered {status} to {request}"
         detail = cls.jira_messages_of(response)
         return cls(f"{message}: {detail}" if detail else message, response=response)
 

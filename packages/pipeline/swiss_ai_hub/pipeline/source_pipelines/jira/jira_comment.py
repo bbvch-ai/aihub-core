@@ -27,7 +27,8 @@ class JiraComment(BaseModel):
 
     @classmethod
     def from_paged(cls, raw: list[dict[str, Any]]) -> list[Self]:
-        """Comments read from the issue's comment endpoint with ``expand=renderedBody``."""
+        """Comments read from the issue's comment endpoint with ``expand=renderedBody`` (and ``properties`` for a
+        service desk)."""
         return cls._public_in_order([(comment, comment.get("renderedBody") or "") for comment in raw])
 
     @property
@@ -51,6 +52,16 @@ class JiraComment(BaseModel):
                 body_html=html,
             )
             for raw, html in comments
-            if not raw.get("visibility") and raw.get("jsdPublic") is not False
+            if cls.is_public(raw)
         ]
         return sorted(public, key=lambda comment: (comment.created, int(comment.id)))
+
+    @staticmethod
+    def is_public(raw: dict[str, Any]) -> bool:
+        """Not restricted to a role or group, and not an internal service desk comment. Cloud flags the latter with
+        ``jsdPublic``; Data Center only with the ``sd.public.comment`` property, which a search never returns."""
+        internal = any(
+            prop.get("key") == "sd.public.comment" and (prop.get("value") or {}).get("internal") is True
+            for prop in raw.get("properties") or []
+        )
+        return not raw.get("visibility") and raw.get("jsdPublic") is not False and not internal

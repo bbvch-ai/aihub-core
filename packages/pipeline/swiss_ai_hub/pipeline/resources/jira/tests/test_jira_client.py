@@ -86,10 +86,21 @@ class TestComments:
         jira.add_issue("AAA-1", comments=5)
         jira.install(monkeypatch)
 
-        comments = _client("cloud").comments("AAA-1")
+        comments = _client("cloud").comments("AAA-1", with_properties=False)
 
         assert [comment["id"] for comment in comments] == ["1", "2", "3", "4", "5"]
         assert comments[0]["renderedBody"] == "<p>Comment 1</p>"
+        assert "expand=renderedBody" in jira.requests[0].url
+        assert "properties" not in jira.requests[0].url
+
+    def test_properties_are_asked_for_when_internal_comments_must_be_recognised(self, monkeypatch: pytest.MonkeyPatch):
+        jira = FakeJira()
+        jira.add_issue("AAA-1", comments=1)
+        jira.install(monkeypatch)
+
+        _client("data_center").comments("AAA-1", with_properties=True)
+
+        assert "expand=renderedBody%2Cproperties" in jira.requests[0].url
 
 
 class TestErrors:
@@ -99,6 +110,14 @@ class TestErrors:
 
         with pytest.raises(JiraRequestError, match="400 Bad Request to GET /rest/api/2/search/jql: Field 'sprnt'"):
             _keys(_client("cloud"))
+
+    def test_a_missing_reason_phrase_is_filled_in(self, monkeypatch: pytest.MonkeyPatch):
+        """Data Center answers ``HTTP/1.1 404`` with no phrase after the code."""
+        jira = _jira(monkeypatch, "data_center")
+        jira.fail_next(404, {"errorMessages": ["Not found"], "errors": {}})
+
+        with pytest.raises(JiraRequestError, match="Jira answered 404 Not Found to GET /rest/api/2/search: Not found"):
+            _keys(_client("data_center"))
 
     def test_rejected_credentials_fail_at_once_without_retrying(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")

@@ -144,6 +144,27 @@ class TestComments:
 
         assert (comment.author, comment.created, comment.body_html) == ("Bo", "2026-10-03T10:00:00Z", "<b>x</b>")
 
+    def test_an_internal_comment_is_recognised_by_its_property(self):
+        """Data Center marks an internal service desk comment only with the ``sd.public.comment`` property."""
+        internal = {"key": "sd.public.comment", "value": {"internal": True}}
+        public = {"key": "sd.public.comment", "value": {"internal": False}}
+        raw = [
+            {
+                "id": "1",
+                "author": {"displayName": "A"},
+                "created": "2026-10-03T10:00:00.000+0000",
+                "properties": [public],
+            },
+            {
+                "id": "2",
+                "author": {"displayName": "B"},
+                "created": "2026-10-03T11:00:00.000+0000",
+                "properties": [internal],
+            },
+        ]
+
+        assert [comment.id for comment in JiraComment.from_paged(raw)] == ["1"]
+
     def test_a_deleted_author_still_gives_a_heading(self):
         [comment] = JiraComment.from_paged([{"id": "1", "author": None, "created": "2026-10-03T10:00:00.000+0000"}])
 
@@ -165,6 +186,11 @@ class TestHtml:
         assert "1. Open\n2. Click" in markdown
         assert "| Field | Value |" in markdown
         assert "int x = 1;" in markdown
+
+    def test_monospace_text_from_data_center_stays_code(self):
+        markdown = JiraHtml.to_markdown("<p>Run <tt>make test</tt> first</p>", "https://jira.acme.ch/jira")
+
+        assert markdown == "Run `make test` first"
 
     def test_relative_links_point_at_jira_and_keep_its_context_path(self):
         html = '<a href="/jira/browse/ABC-2">ABC-2</a> and <a href="https://example.com">site</a>'

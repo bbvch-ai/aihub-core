@@ -57,13 +57,18 @@ class JiraClient:
         else:
             yield from self._search_data_center(jql, params)
 
-    def comments(self, issue_key: Annotated[str, "Key of the issue whose comments to read"]) -> list[dict[str, Any]]:
+    def comments(
+        self,
+        issue_key: Annotated[str, "Key of the issue whose comments to read"],
+        with_properties: Annotated[bool, "Also return each comment's properties, where Data Center marks internal"],
+    ) -> list[dict[str, Any]]:
         """Every comment of one issue with its rendered HTML, for issues with more comments than a search embeds."""
+        expand = "renderedBody,properties" if with_properties else "renderedBody"
         comments: list[dict[str, Any]] = []
         while True:
             page = self._get(
                 f"rest/api/2/issue/{issue_key}/comment",
-                {"startAt": len(comments), "maxResults": self.PAGE_SIZE, "expand": "renderedBody"},
+                {"startAt": len(comments), "maxResults": self.PAGE_SIZE, "expand": expand},
             )
             batch = page.get("comments") or []
             comments.extend(batch)
