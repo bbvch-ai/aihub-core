@@ -15,12 +15,19 @@ REPO_ROOT = Path(__file__).resolve().parents[8]
 TEMPLATE_PIPE = REPO_ROOT / "infra/deployment/templates/openwebui_functions/aihub_pipeline.py"
 OPEN_WEBUI_MODULES = ["open_webui", "open_webui.models", "open_webui.models.chats", "open_webui.models.files"]
 OPEN_WEBUI_MODULES += ["open_webui.models.users"]
+OPEN_WEBUI_MODULES += ["open_webui.utils", "open_webui.utils.chat_id"]
+
+
+def _is_saved_chat_id(chat_id: str | None) -> bool:
+    """Open WebUI 0.11.3's own rule, since a stubbed one would call every chat saved."""
+    return bool(chat_id) and not chat_id.startswith(("temporary:", "local:", "channel:"))
 
 
 @pytest.fixture
 def pipe(monkeypatch: pytest.MonkeyPatch) -> Any:
     for name in OPEN_WEBUI_MODULES:
         monkeypatch.setitem(sys.modules, name, MagicMock())
+    sys.modules["open_webui.utils.chat_id"].is_saved_chat_id = _is_saved_chat_id
     spec = importlib.util.spec_from_file_location("aihub_pipeline", TEMPLATE_PIPE)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
