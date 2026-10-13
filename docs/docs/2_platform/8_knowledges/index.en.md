@@ -69,7 +69,8 @@ application sync** keeps records such as Jira issues in sync, each record as one
 encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the stored ones, so a rotation
 is a matter of editing the source. Either way, the system then:
 
-- Syncs from the source on a daily schedule
+- Syncs from the source on a daily schedule; until the first sync has filled it, the database shows **Nothing synced
+  yet**
 - Creates the collections itself, as described below
 - Processes each synced document within a minute or two, like an upload
 - Disables manual uploads, hand-made collections and manual document deletion for that database

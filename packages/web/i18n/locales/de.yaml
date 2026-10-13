@@ -593,6 +593,13 @@ knowledge:
   source:
     description: Synchronisiert aus {name}
     edit: Quelle bearbeiten
+    next_sync: Die Quelle synchronisiert einmal täglich, ihre Inhalte erscheinen also
+      nach der nächsten geplanten Synchronisierung.
+    awaiting_sync:
+      title: Noch nichts synchronisiert
+      description: Die Quelle synchronisiert diese Datenbank einmal täglich, ihre
+        Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
+        Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
