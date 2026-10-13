@@ -93,6 +93,26 @@ class TestComments:
         assert "expand=renderedBody" in jira.requests[0].url
         assert "properties" not in jira.requests[0].url
 
+    def test_a_page_token_that_keeps_serving_the_first_page_fails_the_search(self, monkeypatch: pytest.MonkeyPatch):
+        """Reported for Cloud's /search/jql: fresh tokens, the same first page, and never ``isLast``."""
+        jira = _jira(monkeypatch, "cloud")
+        jira.stuck_page_tokens = True
+
+        with pytest.raises(RuntimeError, match="Jira returned AAA-1 twice while paging"):
+            _keys(_client("cloud"))
+
+    def test_data_center_paging_that_skips_an_issue_fails_the_search(self, monkeypatch: pytest.MonkeyPatch):
+        """An issue moved into the project keeps its old, lower id; if Jira orders by number, ``id >`` passes it by."""
+        jira = FakeJira(deployment="data_center", page_size=2)
+        jira.add_issue("AAA-5")
+        for number in range(1, 5):
+            jira.add_issue(f"AAA-{number}")
+        jira.sorted_by_key = True
+        jira.install(monkeypatch)
+
+        with pytest.raises(RuntimeError, match="Jira counted 5 issues .* but paging returned 4"):
+            _keys(_client("data_center"))
+
     def test_properties_are_asked_for_when_internal_comments_must_be_recognised(self, monkeypatch: pytest.MonkeyPatch):
         jira = FakeJira()
         jira.add_issue("AAA-1", comments=1)
@@ -128,6 +148,20 @@ class TestErrors:
 
         assert len(jira.requests) == 1
         assert _TOKEN not in str(raised.value)
+
+    def test_a_gateway_error_without_a_body_is_still_retried(self, monkeypatch: pytest.MonkeyPatch):
+        jira = _jira(monkeypatch, "cloud", issues=1)
+        jira.fail_next(503, b"", times=2)
+
+        assert _keys(_client("cloud")) == ["AAA-1"]
+        assert len(jira.requests) == 3
+
+    def test_a_rejection_without_a_body_names_the_status_and_path(self, monkeypatch: pytest.MonkeyPatch):
+        jira = _jira(monkeypatch, "cloud")
+        jira.fail_next(401, b"")
+
+        with pytest.raises(JiraRequestError, match="Jira answered 401 Unauthorized to GET /rest/api/2/search/jql$"):
+            _keys(_client("cloud"))
 
     def test_rate_limiting_is_waited_out(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud", issues=1)

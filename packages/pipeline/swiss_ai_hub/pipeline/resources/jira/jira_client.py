@@ -104,12 +104,14 @@ class JiraClient:
     def _search_cloud(self, jql: str, params: dict[str, Any]) -> Iterator[list[dict[str, Any]]]:
         """Cloud's search pages by token, with no cap on how far it goes."""
         token: str | None = None
+        seen: set[str] = set()
         while True:
             page_params = {**params, "jql": f"{jql} ORDER BY id ASC"}
             if token:
                 page_params["nextPageToken"] = token
             page = self._get(_SEARCH_PATHS["cloud"], page_params)
             issues = page.get("issues") or []
+            self._require_progress(issues, seen)
             if issues:
                 yield issues
             token = page.get("nextPageToken")
@@ -118,19 +120,41 @@ class JiraClient:
 
     def _search_data_center(self, jql: str, params: dict[str, Any]) -> Iterator[list[dict[str, Any]]]:
         """Data Center 11 with OpenSearch refuses to page past 10,000 results, so every page is a fresh query for the
-        issues after the last id seen (Atlassian's documented workaround)."""
+        issues after the last id seen (Atlassian's documented workaround).
+
+        The first page counts every match, so a keyset that skipped issues fails the search instead of making the
+        listing partial.
+        """
         after: str | None = None
+        seen: set[str] = set()
+        counted: int | None = None
         while True:
             bounded = jql if after is None else f"{jql} AND id > {after}"
             page = self._get(
                 _SEARCH_PATHS["data_center"], {**params, "jql": f"{bounded} ORDER BY id ASC", "startAt": 0}
             )
+            counted = page.get("total", 0) if counted is None else counted
             issues = page.get("issues") or []
+            self._require_progress(issues, seen)
             if issues:
                 yield issues
             if not issues or len(issues) >= page.get("total", 0):
-                return
+                break
             after = issues[-1]["id"]
+        if len(seen) < counted:
+            raise RuntimeError(
+                f"Jira counted {counted} issues for {jql} but paging returned {len(seen)}; the search stops so that no "
+                "issue is taken for deleted."
+            )
+
+    @staticmethod
+    def _require_progress(issues: list[dict[str, Any]], seen: set[str]) -> None:
+        """An issue seen twice means the paging went in a circle, as Cloud's page tokens have been reported to do; it
+        would never end."""
+        for issue in issues:
+            if issue["id"] in seen:
+                raise RuntimeError(f"Jira returned {issue['key']} twice while paging a search; the paging is stuck.")
+            seen.add(issue["id"])
 
     def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         response = self._rest.get(path, params=params, hooks={"response": [self._raise_for_jira_error]})

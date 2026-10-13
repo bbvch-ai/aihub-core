@@ -36,9 +36,14 @@ class JiraRequestError(HTTPError):
 
     @staticmethod
     def jira_messages_of(response: Response) -> str:
+        """A gateway in front of Jira can answer with an empty or garbled JSON body; the status and path still say what
+        failed, and the error must stay one dlt retries."""
         if "json" not in response.headers.get("Content-Type", ""):
             return ""
-        body = response.json()
+        try:
+            body = response.json()
+        except ValueError:
+            return ""
         if not isinstance(body, dict):
             return ""
         field_errors = [f"{field}: {error}" for field, error in (body.get("errors") or {}).items()]

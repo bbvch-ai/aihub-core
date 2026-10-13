@@ -37,7 +37,7 @@ class FakeJiraTransport(BaseAdapter):
         response.status_code = status
         response.reason = {200: "OK", 400: "Bad Request", 401: "Unauthorized", 429: "Too Many Requests"}.get(status, "")
         response.headers["Content-Type"] = "application/json"
-        response._content = json.dumps(body).encode()
+        response._content = body if isinstance(body, bytes) else json.dumps(body).encode()
         response.url = request.url
         response.request = request
         return response
@@ -57,7 +57,7 @@ class FakeJira:
         self.issues: dict[str, list[dict[str, Any]]] = {}
         self.paged_comments: dict[str, list[dict[str, Any]]] = {}
         self.requests: list[PreparedRequest] = []
-        self.queued_failures: list[tuple[int, dict[str, Any]]] = []
+        self.queued_failures: list[tuple[int, dict[str, Any] | bytes]] = []
         self.projects: set[str] = set()
         self.project_types: dict[str, str] = {}
         self.account: dict[str, Any] = {
@@ -67,6 +67,9 @@ class FakeJira:
             "timeZone": ZONE.key,
         }
         self.unknown_jql_fields: set[str] = set()
+        self.renamed_projects: dict[str, str] = {}
+        self.stuck_page_tokens = False
+        self.sorted_by_key = False
         self._ids = itertools.count(10001)
 
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -108,15 +111,16 @@ class FakeJira:
         self.paged_comments[key] = [{**c, "renderedBody": f"<p>Comment {c['id']}</p>"} for c in raw_comments]
         return hit
 
-    def fail_next(self, status: int, body: dict[str, Any] | None = None, times: int = 1) -> None:
-        self.queued_failures.extend([(status, body or {})] * times)
+    def fail_next(self, status: int, body: dict[str, Any] | bytes | None = None, times: int = 1) -> None:
+        """``bytes`` are sent as they are, for a gateway that answers JSON errors without a JSON body."""
+        self.queued_failures.extend([(status, {} if body is None else body)] * times)
 
     def sent_jql(self) -> list[str]:
         """The searches made for issues, without the zero-result query Data Center validates a clause with."""
         searches = [self._params(request) for request in self.requests if "/search" in request.url]
         return [params.get("jql", "") for params in searches if params.get("maxResults") != "0"]
 
-    def answer(self, request: PreparedRequest) -> tuple[int, dict[str, Any]]:
+    def answer(self, request: PreparedRequest) -> tuple[int, dict[str, Any] | bytes]:
         if self.queued_failures:
             return self.queued_failures.pop(0)
         path = urlparse(request.url).path
@@ -141,7 +145,7 @@ class FakeJira:
         """Jira answers the same 404 for a missing project and for one the account may not browse."""
         if key in self.projects:
             return 200, {
-                "key": key,
+                "key": self.renamed_projects.get(key, key),
                 "name": f"Project {key}",
                 "projectTypeKey": self.project_types.get(key, "software"),
             }
@@ -165,7 +169,7 @@ class FakeJira:
 
     def _cloud_search(self, params: dict[str, str]) -> dict[str, Any]:
         matching = self._matching(params["jql"])
-        offset = int(params.get("nextPageToken", "0"))
+        offset = 0 if self.stuck_page_tokens else int(params.get("nextPageToken", "0"))
         page = matching[offset : offset + self.page_size]
         is_last = offset + self.page_size >= len(matching)
         answer: dict[str, Any] = {"issues": [self._shaped(hit, params) for hit in page], "isLast": is_last}
@@ -196,7 +200,12 @@ class FakeJira:
             for hit in self.issues.get(project, [])
             if int(hit["id"]) > after and (since is None or datetime.fromisoformat(hit["fields"]["updated"]) >= since)
         ]
-        return sorted(hits, key=lambda hit: int(hit["id"]))
+        return sorted(hits, key=self._order)
+
+    def _order(self, hit: dict[str, Any]) -> int:
+        """``sorted_by_key`` orders by issue number while ``id >`` still compares ids, the way an issue moved into a
+        project keeps its old id under a new, higher number."""
+        return int(hit["key"].rsplit("-", 1)[1]) if self.sorted_by_key else int(hit["id"])
 
     def _shaped(self, hit: dict[str, Any], params: dict[str, str]) -> dict[str, Any]:
         """Only the requested fields, and the rendered HTML only when asked for; Cloud embeds at most 20 comments."""
