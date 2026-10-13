@@ -30,14 +30,14 @@ build-and-push-postgres-image:
 # pinned base tag or the installed libraries change. After running, non-build
 # stages pick up the new image automatically via `docker compose pull`.
 build-and-push-open-terminal-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1..."
 	@docker login ghcr.io
 	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1 \
 		-f docker/open-terminal/Dockerfile \
 		docker/open-terminal
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
-	@echo "Successfully published open-terminal-office:0.11.34"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
+	@echo "Successfully published open-terminal-office:0.11.34-1"
 
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.

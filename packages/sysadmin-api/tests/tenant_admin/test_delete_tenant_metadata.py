@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence import LocaleStringEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
 from swiss_ai_hub.sysadmin_api.routes.tenant_admin.tenant_admin_service import TenantAdminService
@@ -14,6 +16,7 @@ def _fake_tenant(tenant_id: str = "my-tenant") -> MagicMock:
     tenant.name = "My Tenant"
     tenant.description = "desc"
     tenant.access_rules = ["aihub.admin.>"]
+    tenant.chat_disclaimer = LocaleStringEntity(en="Verify answers.")
     tenant.created_at = datetime.now(UTC)
     tenant.updated_at = datetime.now(UTC)
     return tenant
@@ -143,6 +146,7 @@ async def test_delete_tenant_restores_row_and_raises_when_concurrent_delete_took
         name="My Tenant",
         description="desc",
         access_rules=["aihub.admin.>"],
+        chat_disclaimer=LocaleString(en="Verify answers."),
     )
 
 
@@ -163,6 +167,7 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
 
     def mutate_access_rules_on_delete(tenant_id: str) -> bool:
         tenant.access_rules.clear()
+        tenant.chat_disclaimer.en = "Changed after deletion"
         return True
 
     monkeypatch.setattr(TenantMetadataEntity, "delete_tenant_metadata", mutate_access_rules_on_delete)
@@ -173,3 +178,4 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
     mocks["create"].assert_called_once()
     restored_rules = mocks["create"].call_args.kwargs["access_rules"]
     assert restored_rules == ["aihub.admin.>", "aihub.user.>"]
+    assert mocks["create"].call_args.kwargs["chat_disclaimer"] == LocaleString(en="Verify answers.")

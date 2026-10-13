@@ -24,6 +24,20 @@
       </FloatLabel>
     </div>
 
+    <FormKit
+      v-model="tenant.chat_disclaimer"
+      type="localeInput"
+      name="chat_disclaimer"
+      input-type="textarea"
+      :allow-translation="false"
+      :label="t('tenant_admin.form.chat_disclaimer')"
+      :help="t('tenant_admin.form.chat_disclaimer_help')"
+      :placeholder="{ en: t('tenant_admin.form.chat_disclaimer') }"
+      validation="localeRequired|disclaimerLength"
+      :validation-rules="{ disclaimerLength }"
+      :validation-messages="{ disclaimerLength: t('tenant_admin.form.chat_disclaimer_too_long') }"
+    />
+
     <AccessRulesEditor
       v-model:rules="accessRules"
       :initial-rules="initialAccessRules"
@@ -35,9 +49,9 @@
 <script setup lang="ts">
 import AccessRulesEditor from '@core/components/Role/AccessRulesEditor.vue'
 
-import type { CreateTenantRequest, TenantResponse, UpdateTenantMetadataRequest } from '~/sdk/client'
+import type { TenantResponse, UpdateTenantMetadataRequest } from '~/sdk/client'
 
-type EditableTenant = TenantResponse | CreateTenantRequest | UpdateTenantMetadataRequest
+type EditableTenant = TenantResponse | UpdateTenantMetadataRequest
 
 const { t } = useI18n()
 
@@ -51,6 +65,11 @@ const emit = defineEmits<{
 
 const initialAccessRules = ref<string[]>([...(props.modelValue.access_rules ?? [])])
 const tenant = ref<EditableTenant>(props.modelValue)
+
+function disclaimerLength(node: { value: unknown }) {
+  return Object.values((node.value ?? {}) as Record<string, string | null>)
+    .every(value => !value || [...value.trim()].length <= 100)
+}
 
 watch(() => props.modelValue, (newValue) => {
   tenant.value = newValue

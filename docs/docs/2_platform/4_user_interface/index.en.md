@@ -59,6 +59,19 @@ Generation (RAG). You can manage the documents and data that provide context for
 - **Document reconstruction**: View the final, processed version of a document to understand how an agent sees it.
 :::
 
+### My Files
+
+Every user has a personal file space: the files they attached in agent chats, the files agents made for them, and their
+own uploads. It is the user's home in the code sandbox, so what an agent writes there and what the user sees here is the
+same thing. The service is available on its own page and beside a chat in OpenWebUI. See
+[My Files](../10_chat_ui/14_my_files/) for the user-facing behavior.
+
+::: details Key capabilities
+- **Browse and preview**: Folders per conversation, titled with the chat, with previews of text, images and PDFs.
+- **Manage**: Upload, download, rename, move into folders and delete.
+- **Private by construction**: Each user sees only their own files, and every path is confined to their home.
+:::
+
 ### Process management
 
 This service is for visualizing and managing complex, multi-step workflows that involve AI agents, human decision

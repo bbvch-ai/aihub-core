@@ -4,6 +4,7 @@ from llama_index.core.schema import Document
 from pydantic import BaseModel, Field
 
 from swiss_ai_hub.core.generative_ai.document.extraction.document_title_deriver import DocumentTitleDeriver
+from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.loaders.eml_loader import SUBJECT
 from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
@@ -52,3 +53,12 @@ class ExtractedDocument(BaseModel):
             number_of_pages=metadata.get(NUMBER_OF_PAGES),
             source=source,
         )
+
+    @property
+    def is_paged(self) -> bool:
+        """Whether the content can be read by page: its loader marked the page breaks, or there is only one page."""
+        return self.number_of_pages == 1 or PAGE_BREAK in self.content
+
+    def pages(self, first: int, last: int) -> list[str]:
+        """The text of pages `first` to `last`, counted from 1, of a document that `is_paged`."""
+        return [page.strip() for page in self.content.split(PAGE_BREAK)[first - 1 : last]]

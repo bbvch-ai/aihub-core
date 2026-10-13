@@ -13,6 +13,7 @@ from llama_index.core.vector_stores.types import (
 
 from swiss_ai_hub.core.generative_ai.processors.min_max_score_normalizer import MinMaxScoreNormalizer
 from swiss_ai_hub.core.generative_ai.processors.score_scaler_post_processor import ScoreScalerPostProcessor
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
 from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
@@ -26,6 +27,7 @@ def retrieve_nodes(
     node_types: list[str],
     vector_store: BasePydanticVectorStore,
     additional_filters: list[MetadataFilterPair] | None = None,
+    min_similarity: Annotated[float | None, "Dense results below this cosine similarity are dropped"] = None,
 ) -> list[NodeWithScore] | None:
     """An empty namespace list is a scope of nothing and returns no nodes; only ``None`` lifts the filter."""
     if retrieve_k <= 0:
@@ -35,7 +37,7 @@ def retrieve_nodes(
     if index_namespaces is not None and not index_namespaces:
         return []
 
-    extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
+    extra_filters = [f.to_llama_index() for f in (additional_filters or [])]
 
     if index_namespaces:
         filters = MetadataFilters(
@@ -70,7 +72,7 @@ def retrieve_nodes(
             condition=FilterCondition.OR,
         )
 
-    embedding = embed_model.get_text_embedding(message)
+    embedding = embed_model.get_text_embedding(EmbeddingQueryClamp.clamp(message, model_name=embed_model.model_name))
 
     question_query = vector_store.query(
         VectorStoreQuery(
@@ -81,6 +83,11 @@ def retrieve_nodes(
     nodes = [
         NodeWithScore(node=node, score=score) for node, score in zip(question_query.nodes, question_query.similarities)
     ]
+    # Only dense scores are cosine similarities: hybrid scores are normalised per query and sparse ones are BM25, so an
+    # absolute floor would drop their bottom results however relevant. Neighbours and summaries are added by the
+    # caller, after this, for the results kept here.
+    if query_mode == VectorStoreQueryMode.DEFAULT and min_similarity:
+        nodes = [node for node in nodes if (node.score or 0.0) >= min_similarity]
 
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
         nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).postprocess_nodes(nodes)

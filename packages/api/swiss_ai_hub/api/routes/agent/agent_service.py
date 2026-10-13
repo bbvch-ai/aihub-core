@@ -341,8 +341,13 @@ class AgentService:
         """
         Retrieve the current configuration data for a specific agent.
         Returns empty dict if no configuration has been saved.
+
+        Off the loop because `AgentConfigResponder` serves this over NATS RPC, and the requester
+        (`NCRequester`) gives it one 5 s shot with no retry. A blocking query here competes with every
+        other coroutine in this process, so a loop busy with event persistence can burn that budget
+        before the handler even runs — and the agent aborts its run on a timeout while NATS sits idle.
         """
-        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        config_entity = await asyncio.to_thread(AgentConfigEntityDocument.find_for_class_and_id, agent_class, agent_id)
         if config_entity and config_entity.config_data:
             return config_entity.config_data
         return {}
@@ -367,9 +372,13 @@ class AgentService:
         configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, configuration)
         config_instance = InstanceConfigHelper.validate_config_for_update(
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -455,9 +464,13 @@ class AgentService:
         config = InstanceConfigHelper.normalize_form_configuration(request.configuration)
 
         config_model = ModelCreationService.create_config_model(class_entity.agent_config_specs.to_specs())
+        # Before the generated model, which only sees the schema's notion of required — a key being
+        # present. A starred field submitted as "" or None satisfies that and is caught only here.
+        InstanceConfigHelper.reject_blank_required_fields(class_entity.form_elements, config)
         config_instance = InstanceConfigHelper.validate_config_for_create(
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
+        InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

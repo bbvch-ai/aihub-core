@@ -44,11 +44,16 @@ distinction that no longer distinguishes anything.
   retagging step requires a `:latest` tag.
 
   `v0.320.0` is the last release that still contained the legacy source — this decision landed on `main` after that
-  release was cut. `v0.320.1` is that code plus the knowledge namespace teardown sensor, built once from a branch off
-  the `v0.320.0` tag and pushed with no secondary tag. **The freeze deliberately takes effect at the version where a
-  frozen corpus can still have folders removed from it**, because the alternative was shipping a corpus that could be
-  added to forever and never pruned. Frozen still means frozen: `v0.320.1` is the terminal version, and the branch it
-  was built from is not maintained.
+  release was cut. `v0.320.1` is that code plus the knowledge namespace teardown sensor, built once from
+  `fix/legacy-namespace-teardown` — a single commit on top of the `v0.320.0` tag — and pushed with no secondary tag.
+  **The freeze deliberately takes effect at the version where a frozen corpus can still have folders removed from it**,
+  because the alternative was shipping a corpus that could be added to forever and never pruned. Frozen still means
+  frozen: `v0.320.1` is the terminal version, and the branch it was built from is not maintained.
+
+  That branch is the only ref carrying this code: it is not on `main`, which deleted the legacy source, and not on
+  `release/0.320`, which never received the teardown sensor. The git tag `v0.320.1` points at its tip so the image tag
+  and the source have a shared anchor. **Neither the branch nor the tag may be deleted** — without them the running
+  images have no locatable source.
 
 - **The Dagster workspace is guarded on the same image tags as the compose services**, so a code location can no longer
   outlive its container. This is what actually went wrong before: the services were commented out of `compose-config`
@@ -85,11 +90,17 @@ distinction that no longer distinguishes anything.
 ### Trade-offs
 
 - **Legacy bugs can no longer be fixed.** A published image cannot receive a patch, and `main` no longer contains the
-  code to build one. Shipping a legacy fix means branching from the `v0.320.0` tag and dispatching `build-pipelines.yml`
-  against that branch, where `compose-config.yml` still carries `build: localbuild` for both images — which is exactly
-  how `v0.320.1` was produced, and the one time it is intended to be done. That escape hatch stays open by accident of
-  git history rather than by policy: nothing keeps the old branch buildable as its dependencies age, and the rebuilt
-  image is not digest-identical to the original (`python:3.13-slim` floats and the apt layer is unpinned).
+  code to build one. Shipping a legacy fix means branching from the `v0.320.1` tag and dispatching `build-pipelines.yml`
+  against that branch, where `compose-config.yml` still carries `build: localbuild` for both images. Branch from
+  `v0.320.1`, never from the older `v0.320.0` release: `v0.320.1` is what gave the legacy pipelines a teardown sensor,
+  matching the behaviour the new ingestion pipeline already had, so building from `v0.320.0` would reinstate a corpus
+  that can be added to but never pruned. The escape hatch stays open by accident of git history rather than by policy:
+  nothing keeps the old branch buildable as its dependencies age, and the rebuilt image is not digest-identical to the
+  original (`python:3.13-slim` floats and the apt layer is unpinned).
+- **A hotfix on `release/0.320` must not reuse the `v0.320.1` version.** That branch still builds the legacy images but
+  never received the teardown sensor, so a build from it would overwrite the frozen images with that same regression.
+  `promote.yml` derives the next patch from the highest `v0.320.*` tag, so the `v0.320.1` tag keeps a hotfix on that
+  line landing on `v0.320.2`.
 - **Nothing removes a torn-down legacy namespace permanently while the seeder runs.** `AIHUB_CREATE_DEFAULT_BUCKETS`
   (default true) re-creates the two configured bucket and namespace rows on every API start, and `init-buckets.sh`
   re-creates the S3 buckets from the same variable. Deleting `defaultnamespace` itself therefore purges its contents but

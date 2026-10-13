@@ -155,6 +155,20 @@ docker compose up -d
 Core- und kundenseitiger Code können unabhängig voneinander zurückgerollt werden, wenn sie separat aktualisiert wurden.
 Wenn beide zusammen aktualisiert wurden, rollen Sie zuerst den Core und dann den kundenseitigen Code zurück.
 
+::: warning Dienste mit ausschliesslich vorwärtsgerichteten Migrationen lassen sich so nicht zurückrollen
+«Wenn die Daten kompatibel bleiben» ist die entscheidende Bedingung, und sie gilt nicht für jeden Dienst. Langfuse führt
+beim Start ausschliesslich vorwärtsgerichtete Postgres- und ClickHouse-Migrationen aus. Sobald ein Update diese
+angewendet hat, stellt das Herunterladen des vorherigen Bundles die älteren **Binaries** gegen das neuere **Schema**
+wieder her. Einen unterstützten Downgrade-Pfad gibt es nicht.
+
+Auch das Wiederherstellen eines Backups von vor dem Update ist kein Rollback: Die Wiederherstellung prüft nur, ob die
+erwarteten Artefakte vorhanden sind, enthält keine Schema-Versionsmarkierung und setzt Postgres und ClickHouse
+unabhängig voneinander zurück — ohne Konsistenzprüfung zwischen beiden und ohne anschliessenden Migrationsschritt.
+
+Erstellen Sie vor einem Release-Update, das Langfuse anhebt, ein Backup, das Sie als einmalig betrachten, und planen Sie
+die Wiederherstellung vorwärts statt als Rollback.
+:::
+
 ______________________________________________________________________
 
 ## Kompatibilität

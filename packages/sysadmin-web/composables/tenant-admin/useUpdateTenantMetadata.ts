@@ -3,7 +3,7 @@ import { updateTenantMetadata as updateTenantMetadataApi, type UpdateTenantMetad
 export const useUpdateTenantMetadata = defineMutation(() => {
   const queryCache = useQueryCache()
 
-  const { mutateAsync: updateTenantMetadataMutation } = useMutation({
+  const { mutateAsync: updateTenantMetadataMutation, isLoading: isSaving } = useMutation({
     mutation: async ({ tenantId, data }: { tenantId: string, data: UpdateTenantMetadataRequest }) => {
       await updateTenantMetadataApi({
         composable: '$fetch',
@@ -16,5 +16,6 @@ export const useUpdateTenantMetadata = defineMutation(() => {
   })
   return {
     updateTenantMetadata: updateTenantMetadataMutation,
+    isSaving,
   }
 })

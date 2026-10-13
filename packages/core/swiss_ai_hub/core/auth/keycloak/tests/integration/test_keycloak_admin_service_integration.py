@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import inspect
 import uuid
@@ -7,9 +8,11 @@ import pytest
 import pytest_asyncio
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakDeleteError, KeycloakGetError
+from redis.asyncio import Redis
 
 from swiss_ai_hub.core.auth.keycloak import keycloak_admin_service as kas_module
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
 from swiss_ai_hub.core.testing.auth_utils.keycloak_utils import create_real_keycloak_admin
 
 pytestmark = pytest.mark.usefixtures("_fresh_keycloak_admin_per_test")
@@ -175,6 +178,42 @@ class TestTenantGroups:
             await admin.a_get_group_by_path(f"/tenants/{tenant_id}")
 
 
+class TestPreferredLocaleAttribute:
+    @pytest.mark.asyncio
+    async def test_set_preferred_locale(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "fr")
+
+        raw = await admin.a_get_user(user_id)
+        assert raw.get("attributes", {}).get("preferred_locale") == ["fr"]
+
+    @pytest.mark.asyncio
+    async def test_get_preferred_locale(self, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+        await KeycloakAdminService.set_preferred_locale(user_id, "it")
+
+        assert await KeycloakAdminService.get_preferred_locale(user_id) == "it"
+
+    @pytest.mark.asyncio
+    async def test_get_preferred_locale_returns_none_when_unset(self, seeded_user: tuple[str, str]) -> None:
+        user_id, _ = seeded_user
+        assert await KeycloakAdminService.get_preferred_locale(user_id) is None
+
+    @pytest.mark.asyncio
+    async def test_set_preserves_active_tenant(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
+        """The two attributes share one Keycloak user record; writing one must not drop the other."""
+        user_id, _ = seeded_user
+        tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
+        await KeycloakAdminService.set_active_tenant(user_id, tenant_id)
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "en")
+
+        raw_after = await admin.a_get_user(user_id)
+        assert raw_after["attributes"]["active_tenant_id"] == [tenant_id]
+        assert raw_after["attributes"]["preferred_locale"] == ["en"]
+
+
 class TestActiveTenantAttribute:
     @pytest.mark.asyncio
     async def test_set_active_tenant(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
@@ -261,6 +300,61 @@ class TestActiveTenantAttribute:
         fresh_tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
         result = await KeycloakAdminService.get_user_ids_with_active_tenant(fresh_tenant_id)
         assert result == set()
+
+
+@pytest_asyncio.fixture
+async def redis() -> AsyncIterator[Redis]:
+    """Function-scoped: pytest-asyncio gives each test a fresh event loop to bind the pool to."""
+    client = RedisSettings.create_client()
+    yield client
+    await client.aclose()
+
+
+async def _write_active_tenant_concurrently(admin: KeycloakAdmin, user_id: str, tenant_id: str) -> None:
+    """The unguarded GET-merge-PUT burst that left nightly users with duplicated values."""
+
+    async def write() -> None:
+        user = await admin.a_get_user(user_id)
+        user["attributes"] = {**user.get("attributes", {}), "active_tenant_id": [tenant_id]}
+        await admin.a_update_user(user_id, user)
+
+    await asyncio.gather(*(write() for _ in range(8)))
+
+
+class TestConcurrentActiveTenantWrites:
+    @pytest.mark.asyncio
+    async def test_duplicated_active_tenant_no_longer_blocks_locale_write(
+        self, admin: KeycloakAdmin, seeded_user: tuple[str, str]
+    ) -> None:
+        """Duplicates can only be produced by winning the race: the service account may not relax the
+        realm user profile to seed them directly. Where the race does not reproduce (slow CI runners),
+        the trimming is still covered by the unit tests, so this skips rather than fails."""
+        user_id, _ = seeded_user
+        tenant_id = f"itest-tenant-{uuid.uuid4().hex[:8]}"
+        for _ in range(10):
+            await _write_active_tenant_concurrently(admin, user_id, tenant_id)
+            if len((await admin.a_get_user(user_id))["attributes"]["active_tenant_id"]) > 1:
+                break
+        else:
+            pytest.skip("Concurrent writes did not produce duplicate values on this Keycloak.")
+
+        await KeycloakAdminService.set_preferred_locale(user_id, "en")
+
+        assert await KeycloakAdminService.get_preferred_locale(user_id) == "en"
+        assert await KeycloakAdminService.get_active_tenant_id(user_id) == tenant_id
+
+    @pytest.mark.asyncio
+    async def test_parallel_ensure_active_tenant_stores_one_value(
+        self, admin: KeycloakAdmin, redis: Redis, seeded_user: tuple[str, str], seeded_tenant_group: str
+    ) -> None:
+        user_id, _ = seeded_user
+        group = await admin.a_get_group_by_path(f"/tenants/{seeded_tenant_group}")
+        await admin.a_group_user_add(user_id, group["id"])
+
+        await asyncio.gather(*(KeycloakAdminService.ensure_active_tenant(user_id, redis) for _ in range(8)))
+
+        raw = await admin.a_get_user(user_id)
+        assert len(raw["attributes"]["active_tenant_id"]) == 1
 
 
 class TestAccessChangeHookNotified:

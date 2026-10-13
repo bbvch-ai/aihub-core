@@ -43,7 +43,9 @@ The provisioner runs on six triggers — all changes propagate immediately:
   workspace models and access grants immediately (via `AgentConfigChangeHook` MongoEngine signals on
   `AgentConfigEntityDocument`) instead of waiting for the next discovery cycle
 - **Tenant switch** (`sync_access()`): when a user changes active tenant (via `AuthHandler` hook)
-- **OpenWebUI signup webhook** (`sync_access()`): when a new user signs up (via `WebhookController`)
+- **OpenWebUI signup webhook** (`sync_access()`): when a new user signs up (via `WebhookController`). No longer fires
+  since OpenWebUI 0.11.3; accounts are now provisioned over SCIM instead (ADR
+  `2026_09_29_openwebui_accounts_provisioned_over_scim`)
 - **Access entity changes** (`sync_access()`): when roles, tenants, or user-role assignments are created, updated, or
   deleted (via `AccessChangeHook` MongoEngine signals)
 
@@ -63,9 +65,11 @@ The provisioner runs on six triggers — all changes propagate immediately:
 - **`AgentConfigChangeHook` pattern**: the workspace-model analogue of `AccessChangeHook`. `post_save`/`post_delete`
   signals on `AgentConfigEntityDocument` trigger `sync_known_agents()` (same debounce, lock, and lifetime-manager
   wiring). The discovery cycle remains the periodic backstop that reconciles drift.
-- **Distributed locking**: Each sync method (`provision`, `sync_agents`, `sync_access`) acquires a non-blocking Redis
-  lock before executing. Concurrent calls across API replicas skip gracefully instead of racing. Locks use separate keys
-  per sync type so agent sync and access sync don't block each other.
+- **Distributed locking**: Each sync method (`provision`, `sync_agents`, `sync_access`) acquires a Redis lock before
+  executing. `provision` and `sync_agents` skip when the lock is held; `sync_access` waits for it instead, since the
+  running sync may have read its inputs before the change that triggered the waiting one (ADR
+  `2026_09_29_openwebui_accounts_provisioned_over_scim`). Locks use separate keys per sync type so agent sync and access
+  sync don't block each other.
 - **Redis-backed agent change detection**: The discovery service stores a SHA-256 hash of the online agent set in Redis
   (with 1-hour TTL) instead of an in-memory set. This survives API restarts and works correctly across replicas.
 - **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with manually-created
@@ -90,7 +94,8 @@ The provisioner runs on six triggers — all changes propagate immediately:
 
 - Adds dependency on OpenWebUI SCIM token and JWT secret key configuration (`OPENWEBUI_SCIM_TOKEN`,
   `OPENWEBUI_SECRET_KEY`)
-- Email-based user mapping requires users to have logged into both systems
+- Email-based user mapping required users to have logged into both systems — resolved by provisioning OpenWebUI
+  accounts over SCIM (ADR `2026_09_29_openwebui_accounts_provisioned_over_scim`)
 
 ### Risks
 

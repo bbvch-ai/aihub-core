@@ -1,6 +1,6 @@
 ---
 title: Dateigenerierung
-source_sha: b8235feb8239dc872463b9fc7a3f7c8c5de4fa9fe26f01c95d769ef3917ff617
+source_sha: d3aabda71b275ea6ca8c09e4a95b08b13783f43dea1d3e54cd7d47c3ddc1ae15
 ---
 
 # Dateigenerierung
@@ -15,11 +15,12 @@ erzeugen.
 
 ::: warning Voraussetzungen
 Die Dateigenerierung läuft über denselben Pfad wie [Programmierung / Softwareentwicklung](../6_coding/) und erbt daher
-dessen Einschränkungen: ein **einfaches LLM-Modell** (kein AI-Hub Agent — diese werden noch nicht unterstützt), mit
-dafür **aktiviertem Native Function Calling** (Admin → Settings → Models → die Advanced Params des Modells), und ein im
-Chat **ausgewähltes Terminal**. Ohne Native Function Calling kann das Modell die mehrstufige Schleife nicht ausführen,
-die der Aufbau einer Datei erfordert. Auf jener Seite finden Sie die Mechanik der Sandbox, das Isolationsmodell pro
-Benutzer und den Hinweis, dass generierte Dateien unbegrenzt aufbewahrt werden.
+dessen Einschränkungen: Sie funktioniert nur mit **einfachen LLM-Modellen, die Function (Tool) Calling unterstützen**,
+das Modell muss **Native Function Calling** verwenden (Kimi-K2.6 tut das standardmäßig; bei einem anderen Modell
+schalten Sie es im Chat unter Controls → Advanced Params um), **im Chat muss ein Terminal ausgewählt sein** — die
+Sandbox-Tools werden nur dann aufgelöst — und AI-Hub Agents außer dem
+[Universal Agent](../../5_agents/13_universal_agent/) führen keinen Code aus. Auf jener Seite finden Sie die Mechanik
+der Sandbox, das Isolationsmodell pro Benutzer und den Hinweis, dass generierte Dateien unbegrenzt aufbewahrt werden.
 :::
 
 ::: tip Empfohlenes Modell — Workspace → Kimi-K2.6
@@ -33,7 +34,8 @@ Durchhalten eines mehrstufigen Aufbaus bis zur fertigen Datei. Kimi-K2.6 ist das
 Formatmatrix verifiziert wurde. Wenn ein anderes Modell antwortet, ohne eine Datei zu erzeugen, probieren Sie zuerst
 Kimi-K2.6, bevor Sie das Format als nicht unterstützt einstufen.
 
-**Native Function Calling** muss für das gewählte Modell dennoch aktiviert werden — es ist nicht standardmäßig aktiv.
+Kimi-K2.6 verwendet **Native Function Calling** standardmäßig. Bei jedem anderen Modell muss es im Chat unter Controls →
+Advanced Params aktiviert werden.
 :::
 
 ## Unterstützte Ausgabeformate

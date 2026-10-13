@@ -1,0 +1,45 @@
+---
+tools:
+  run_command:
+    label: "Exécuter une commande"
+    approval: "Exécuter dans le bac à sable de code :\n{command}"
+  get_process_status:
+    label: "Vérifier la commande"
+    approval: "Vérifier la commande {process_id}"
+  send_process_input:
+    label: "Saisir dans la commande"
+    approval: "Saisir dans la commande {process_id} :\n{text}"
+  kill_process:
+    label: "Arrêter la commande"
+    approval: "Arrêter la commande {process_id}"
+  list_processes:
+    label: "Lister les commandes"
+    approval: "Lister les commandes du bac à sable de code"
+  list_files:
+    label: "Lister les fichiers"
+    approval: "Lister les fichiers de {directory}"
+  read_file:
+    label: "Lire un fichier"
+    approval: "Lire {path}"
+  write_file:
+    label: "Écrire un fichier"
+    approval: "Écrire {path}"
+  replace_file_content:
+    label: "Modifier un fichier"
+    approval: "Modifier {path}"
+  grep_search:
+    label: "Rechercher dans les fichiers"
+    approval: "Rechercher « {query} » dans {path}"
+  glob_search:
+    label: "Trouver des fichiers"
+    approval: "Trouver les fichiers {pattern} dans {path}"
+  display_file:
+    label: "Afficher un fichier"
+    approval: "Joindre {path} à la réponse"
+user_files:
+  list_my_files:
+    label: "Lister mes fichiers"
+    approval: "Lister vos fichiers dans {folder}"
+  read_my_file:
+    label: "Lire mon fichier"
+    approval: "Lire votre fichier {path}"

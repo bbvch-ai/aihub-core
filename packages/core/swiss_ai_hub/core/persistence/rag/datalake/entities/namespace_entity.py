@@ -50,8 +50,9 @@ class NamespaceEntity(Document):
             raise ValidationError("folder_name cannot be empty")
 
     @staticmethod
-    def _sanitize_namespace_name(name: str) -> str:
-        """Sanitize namespace name to only contain alphanumeric, hyphens, and underscores."""
+    def sanitize_namespace_name(name: str) -> str:
+        """The name a folder is stored under. Public because callers must look a namespace up by this name, not by
+        the raw folder, or two folders that sanitise alike slip past the unique index check."""
         return re.sub(r"[^a-zA-Z0-9_-]", "_", name)
 
     @classmethod
@@ -65,7 +66,7 @@ class NamespaceEntity(Document):
         namespace_id: ObjectId | None = None,
         db_alias: str = "default",
     ) -> Self:
-        sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
+        sanitized_namespace_name = cls.sanitize_namespace_name(namespace_name)
         cls._validate_namespace_name(sanitized_namespace_name)
 
         resolved_folder_name = folder_name or namespace_name
@@ -136,7 +137,7 @@ class NamespaceEntity(Document):
     ) -> Self:
         namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         if namespace_name:
-            sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
+            sanitized_namespace_name = cls.sanitize_namespace_name(namespace_name)
             cls._validate_namespace_name(sanitized_namespace_name)
             namespace.namespace_name = sanitized_namespace_name
         if folder_name:

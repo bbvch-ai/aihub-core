@@ -26,6 +26,9 @@ knowledge:
 model:
   name: AI Models
   description: View available AI models
+incident:
+  name: Report a problem
+  description: File a report when something in AI Hub goes wrong
 notification:
   name: Notifications
   description: View and manage your notifications
@@ -62,6 +65,9 @@ my_tenant:
 user:
   name: User Management
   description: Manage users and their access
+user_knowledge:
+  name: "My Files"
+  description: "The files you and your agents work with: attachments, generated files and your uploads"
 user_memory:
   name: User Memories
   description: View and manage your personal memories from mem0

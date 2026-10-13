@@ -28,8 +28,9 @@ class GroundedDraftsRequestedEvent(ControlEvent):
         int,
         Field(
             default=0,
-            description="Messages due a draft written from the message alone, because their category names no "
-            "collection. Drafted by the collecting step, which delegates nothing for them.",
+            description="Messages due a draft written from the message alone. Drafted by the collecting step, which "
+            "delegates nothing for them. Zero while a knowledge agent is configured, since every drafted message is "
+            "then delegated.",
         ),
     ]
     skipped_count: Annotated[

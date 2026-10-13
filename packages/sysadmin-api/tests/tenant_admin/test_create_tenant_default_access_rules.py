@@ -44,6 +44,7 @@ def captured_rules(monkeypatch: pytest.MonkeyPatch) -> list[list[str] | None]:
             name=data.name,
             description=data.description,
             access_rules=data.access_rules or [],
+            chat_disclaimer={"en": "Verify answers."},
             state=TenantState.ACTIVE,
             created_at=now,
             updated_at=now,

@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
+from swiss_ai_hub.core.incident import IncidentSettings
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
     LangfuseProvisioner,
@@ -20,7 +21,7 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook, AgentConfigChangeHook, KnowledgeChangeHook
 from swiss_ai_hub.core.scheduling import CronScheduler, SchedulerSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
@@ -29,14 +30,17 @@ from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
 from swiss_ai_hub.api.persistance.threads.thread_title_persister import ThreadTitlePersister
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.routes.incident.github_issue_client import GitHubIssueClient
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     carry_over_bucket_model_columns,
+    carry_over_pre_pair_knowledge_collections,
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
     strip_retired_agent_config_keys,
+    widen_empty_retriever_namespace_scopes,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -219,6 +223,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         agent_file_upload_service.ensure_bucket_exists()
         app.state.agent_file_upload_service = agent_file_upload_service
+        # Absent unless the deployment configured an incident repository. The client caches its
+        # installation token, so it has to outlive a request; the endpoints answer 404 while it is None.
+        incident_settings = IncidentSettings()
+        app.state.incident_client = GitHubIssueClient(incident_settings) if incident_settings.enabled else None
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
@@ -259,10 +267,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_startup_tenant()
-        await finalize_role_setup()
+        await finalize_role_setup(redis)
         await initialize_knowledge_buckets()
         await carry_over_bucket_model_columns()
         strip_retired_agent_config_keys()
+        widen_empty_retriever_namespace_scopes()
+        carry_over_pre_pair_knowledge_collections()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.
         # Lifts into aihub-daemon (#1203) by moving these lines — all scheduler state is in Redis.
@@ -287,6 +297,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Re-sync OpenWebUI workspace models when agent configs are created/renamed/deleted, so the
         # model picker reflects the change immediately instead of on the next periodic discovery cycle
         AgentConfigChangeHook.connect(openwebui_provisioner)
+
+        # Re-sync the OpenWebUI knowledge entries users reference with `#` when collections change
+        KnowledgeChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield

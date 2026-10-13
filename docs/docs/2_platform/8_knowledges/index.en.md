@@ -61,17 +61,31 @@ You control what gets uploaded and where it lives. Uploading a document notifies
 normally begins within a minute or two rather than waiting for a scheduled run. A daily run still sweeps every database
 as a safety net, catching anything a missed notification would otherwise have left behind.
 
-### Auto-sync from external sources
+### Syncing from an external source
 
-Mark a database as auto-sync to connect it to external content sources like SharePoint. The system then:
+Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
+database. Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials,
+the folder to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the
+`.json` file downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with.
+Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
+stored ones, so a rotation is a matter of editing the source. The system then:
 
-- Syncs files from the external source on a schedule (typically nightly)
-- Creates collections automatically from folder structure
-- Processes new content during the scheduled pipeline run
-- Disables manual uploads through the UI
+- Syncs files from the source on a daily schedule
+- Creates collections automatically from the top-level folders of the synced root (files directly in the root are
+  skipped and counted in the run)
+- Processes each synced file within a minute or two, like an upload
+- Disables manual uploads, hand-made collections and manual document deletion for that database
 
-The external system becomes the source of truth. Your team continues working in SharePoint, and the sync pipeline brings
-changes into the Swiss AI Hub on the configured schedule.
+If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
+name and the second is skipped: its files reach the data lake but are never ingested, and the ingestion run names the
+skipped files and the reason in its metadata and logs. Other folders and the database's other files are unaffected;
+renaming the folder at the source fixes it.
+
+The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
+including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,
+whether it was filled by hand or by another source, asks for confirmation first, because the new source's first sync
+removes everything it does not have. Editing the current source's settings saves without asking. Clearing the source
+turns the database back into a manually managed one; its files stay until you delete them.
 
 ### Deleting databases and collections
 
@@ -90,15 +104,18 @@ Deletion runs in the background. The moment you confirm, the item disappears fro
 uploads, while the platform frees the underlying storage shortly afterwards. If you later re-upload a document that was
 deleted, it is ingested again normally.
 
-Auto-synced databases cannot be deleted from the UI — their content is owned by the external source, which would simply
-re-sync it. Remove the external connection instead.
+A database with a source can be deleted as a whole, which also stops its sync and forgets its credentials. Its
+individual documents and collections cannot be deleted by hand, because the next sync would bring them back; remove them
+at the source instead.
 
 ## Document processing
 
 The system processes each uploaded document through several stages:
 
 Parsing: MinerU extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
-layouts, multi-column pages, and embedded content while preserving logical structure.
+layouts, multi-column pages, and embedded content while preserving logical structure. A file is parsed once however
+often the platform needs it: results are cached by file content for seven days, so re-uploading identical bytes, or an
+agent reading a file the chat already parsed, does not run MinerU again.
 
 Chunking: Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of chunks,
 each preserving its relationship to surrounding content.
@@ -110,6 +127,66 @@ Vector embedding: Text chunks convert to vector representations that capture sem
 content based on concepts, not just keyword matching. A query about "vehicle speed limits" matches content about
 "maximum velocity constraints."
 
+### Markdown files with frontmatter
+
+A Markdown file (`.md`) may open with a YAML block between two `---` lines, its frontmatter. It carries a record's
+fields next to its text, the way a page or issue exported from a wiki or tracker often looks:
+
+```markdown
+---
+title: "ABC-123: Login fails on Safari"
+url: https://jira.example.com/browse/ABC-123
+created: 2026-09-01T09:00:00+02:00
+updated: 2026-09-30T14:05:00+02:00
+project: ABC
+status: Done
+labels: [backend, urgent]
+---
+Users on Safari 17 cannot log in after the SSO change.
+```
+
+The block is removed before chunking: no chunk contains it, and only the text below it is embedded. Its fields become
+part of the document instead. Three keys set the document's own fields:
+
+| Key       | Becomes                                                    | Accepted values                                                                                          |
+| --------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `title`   | The document title, in the knowledge area and on citations | Non-empty text, up to 500 characters                                                                     |
+| `url`     | The link a citation opens                                  | `http://` or `https://` links, up to 2,048 characters                                                    |
+| `created` | The document's creation date                               | ISO 8601 dates such as `2026-09-30` or `2026-09-30T14:05:00+02:00`; a time without a zone is read as UTC |
+
+`updated` is not one of them. A document's update date is when the platform last wrote it, on upload or when a sync
+changed it, so the record's own `updated` is stored like any other key.
+
+Every other key is stored as metadata on the document and on each of its chunks, where a retriever can filter on it:
+
+- Values are text, numbers, `true`/`false`, dates, or lists of these. `true`/`false`, dates and list items are stored as
+  text.
+- Names are lowercased, accents are dropped, and every run of other characters becomes `_`: `Fix Version` is stored as
+  `fix_version`, `Priorität` as `prioritat`. Use the stored name when you allow a field for filtering.
+- A key is skipped when its value is empty, a nested map or a nested list, or when its name is one the platform uses
+  itself, such as `type`, `language`, `version`, `namespace`, `source` or `document_title`. Name such a field
+  differently, for example `issue_type`. When two keys end up with the same name, the first one wins.
+- All of a file's metadata keys together are limited to 8 KiB; keys beyond that are skipped.
+- These keys are not embedded. They are there to filter on, and on a short record they would outweigh the text in the
+  search. The title is embedded as before.
+
+Every skipped key is named, with the reason, in the ingestion run's logs. A block that is not valid YAML, or holds
+anything other than `key: value` pairs, does not stop ingestion: the file is ingested exactly as written, block
+included, and the run logs a warning. Dates written as plain numbers are refused, because seconds and milliseconds
+cannot be told apart. Markdown without frontmatter is processed exactly as before, and other file types are never read
+for it.
+
+A document ingested before frontmatter was understood keeps the block in its chunks until the file changes or is
+uploaded again.
+
+::: tip Filtering on frontmatter fields
+A retriever filters only on keys listed in its **Allowed Filter Fields**. The values to filter by are supplied when an
+agent is started programmatically (`RAGStartEvent.additional_filters`), for example by a process; chat users do not set
+them. A text value matches documents that store it on its own or in a list, so filtering `labels` by `backend` finds
+both `labels: backend` and `labels: [backend, urgent]`. Numbers match by equality, and a `true`/`false` filter matches
+the text ingestion stores.
+:::
+
 ## Inspection and debugging
 
 The system provides visibility into document processing:
@@ -117,12 +194,14 @@ The system provides visibility into document processing:
 Document reconstruction shows how the parser interpreted your document. Check whether it correctly identified tables,
 sidebars, and other structural elements.
 
-Chunk inspection displays how the system segmented content, what metadata it extracted, and how it represents chunks for
-retrieval. Useful when agents aren't finding expected content.
+Chunk inspection displays how the system segmented content: the text of each chunk, as agents retrieve it. Useful when
+agents aren't finding expected content. A chunk's metadata, such as fields from a Markdown file's frontmatter, is not
+shown there; it lives in the vector database, where Milvus' admin UI (Attu) can display it.
 
-Processing status indicates whether documents are uploading, processing, or ready. A document counts as ready only once
-its embeddings have been written to the vector database — until then it is still processing and agents cannot retrieve
-it, even though its text has already been parsed.
+Processing status indicates whether documents are uploading, processing, or ready. The document list refreshes itself
+every few seconds while a document on the page is still processing, so you do not need to reload to see it become ready.
+A document counts as ready only once its embeddings have been written to the vector database — until then it is still
+processing and agents cannot retrieve it, even though its text has already been parsed.
 
 ## Access control
 
@@ -140,13 +219,22 @@ parent, its collections (namespaces) are the children, and a rule on one level n
 | `aihub.user.knowledge.>`              | Browse every database and every collection                                                  |
 
 The seeded `AIHubKnowledgeUser` and `AIHubKnowledgeAdmin` roles bundle the last row and the first two rows respectively,
-and the role editor offers the same three rules as presets. Admin rules imply the matching user rule.
+and the role editor offers the same three rules as presets. Admin rules imply the matching user rule. Per resource, the
+role and tenant editors offer **Manage** on each database (`<db>` together with `<db>.>`) and **Use** and **Manage** on
+each collection (`<db>.<ns>`), so one collection can be handed to someone without the rest of its database.
 `aihub.admin.knowledge.>` covers every existing database and collection but not the bare `aihub.admin.knowledge` root,
 so a role that should create databases needs the root rule explicitly.
 
 Creating a resource grants access to it automatically, mirroring agent instances: the creator receives a per-resource
-admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rule
-unless a broader rule already covers it. Deleting a database or collection revokes those rules and roles again.
+admin role (`Knowledge<Db>Admin` or `Knowledge<Db><Ns>Admin`) and the tenant ceiling is raised to include the new rules
+unless a broader rule already covers them. A database is granted as `aihub.admin.knowledge.<db>` plus
+`aihub.admin.knowledge.<db>.>`, so its admin role and its tenant also reach every collection in it — including the ones
+a sync or ingestion pipeline creates, which are granted to no one when they appear. Deleting a database or collection
+revokes those rules and roles again.
+
+A new tenant's ceiling holds only `aihub.admin.knowledge`, never `aihub.admin.knowledge.>`. Databases are stored
+deployment-wide, so that wildcard would show a tenant every other tenant's knowledge; a tenant sees only the databases
+it created, plus any a sysadmin ticks for it in the tenant editor.
 
 ## Agent integration
 
@@ -159,6 +247,37 @@ message names the retriever field to fix.
 Saving an agent configuration also checks that scope against the saving user's rules: each named collection needs
 `aihub.user.knowledge.<db>.<ns>` (or a rule covering it), and opting into all collections needs a rule covering every
 one of them (`...<db>.*`, `...<db>.>` or broader).
+
+That check only covers whoever saved the agent. With **Restrict to the user's access** on, the knowledge agents (RAG,
+expert RAG and namespace selection) also check every run against the person asking. They search only the configured
+collections that person may browse under the rules above. A "Search all namespaces" retriever stays whole only for
+someone who may browse the whole database; anyone else gets the collections they may read. The knowledge area and the
+agents apply the same rules, so an agent never answers from a collection the person cannot open themselves. When nothing
+of the agent's knowledge is readable, the agent says so rather than answering as if the documents held no answer. The
+setting is on for new agents and off for agents saved before it existed, so their behaviour does not change unannounced.
+Runs without a person, such as scheduled or mail-triggered ones, keep the agent's configured scope.
+
+### Knowledge databases and My Files
+
+Knowledge databases are shared, curated and indexed: documents are parsed, chunked and embedded so agents can search
+them semantically. **My Files** is different. It is each user's own file space (their chat attachments, files agents
+made for them and their uploads) and is not part of any knowledge database. Its files are not embedded or searched by
+retrieval; an agent with the My Files option on reads them by name. Put documents that a team should find through search
+into a knowledge database, and keep personal working files in My Files.
+
+### Referencing collections in a chat
+
+In OpenWebUI, any chat agent can be pointed at a collection with `#`, the way OpenWebUI references its own knowledge.
+The `#` picker lists our collections as "Database / Collection", each only to users whose roles let them browse it. The
+entries hold no content and OpenWebUI runs no retrieval on them: a referenced collection reaches the agent as a
+reference, and the agent searches it with the database's own embedding model and adds the best matches to its context,
+cited like any other document. In a knowledge agent's chat this search comes on top of the agent's configured retrieval.
+The agent checks the reference against the asking user's rules again, and says when a referenced collection is not
+available to them instead of answering from it. OpenWebUI administrators see every entry in the picker, since OpenWebUI
+lets them bypass its access control, but they too get answers only from what they may read here.
+
+Creating, renaming or deleting a collection shows up in the picker within seconds; collections a sync or pipeline
+creates appear on the next reconcile, at most a minute later.
 
 Agents connect to specific collections rather than entire databases. When configuring an agent, you specify which
 collections it can search. A customer support agent might access "products" and "faq" but not "engineering."
@@ -183,8 +302,8 @@ each component for its specific task.
 
 ## Limitations
 
-No mixed modes: A database is either manually managed or auto-synced, not both. This prevents ambiguity about content
-sources.
+No mixed modes: A database is either manually managed or synced from one source, not both. This prevents ambiguity about
+who owns its content.
 
 No manual chunk editing: The system generates chunks automatically from source documents. To fix incorrect chunks,
 update the source document and reprocess.
