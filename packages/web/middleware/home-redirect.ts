@@ -1,4 +1,4 @@
-import { getMyActiveTenant, getMyTenants } from '@core/sdk/client'
+import { getMyActiveTenant, getMyTenants, setMyActiveTenant } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -19,6 +19,7 @@ export default defineNuxtRouteMiddleware(async () => {
 
   const localePath = useLocalePath()
   const router = useRouter()
+  const localeCodes: string[] = useNuxtApp().$i18n.locales.value.map(entry => entry.code)
 
   const [tenantsResponse, activeTenant] = await Promise.all([
     getMyTenants({ composable: '$fetch' }).catch(() => null),
@@ -35,6 +36,13 @@ export default defineNuxtRouteMiddleware(async () => {
   if (storedRedirect && storedRedirect !== '/') {
     // The stored value is a fullPath; resolve it so its query and hash survive.
     const { path, query, hash } = router.resolve(storedRedirect)
+    // OpenWebUI follows the backend's active tenant, not the URL, so a user who
+    // logged in through one tenant's link must land in that tenant there too.
+    const [first, second] = path.split('/').filter(Boolean)
+    const linkedTenantId = localeCodes.includes(first) ? second : first
+    if (linkedTenantId !== activeTenant?.id && tenants.some(tenant => tenant.id === linkedTenantId)) {
+      await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: linkedTenantId } }).catch(() => null)
+    }
     return { path, query, hash, replace: true }
   }
   if (tenants.length === 1) {
