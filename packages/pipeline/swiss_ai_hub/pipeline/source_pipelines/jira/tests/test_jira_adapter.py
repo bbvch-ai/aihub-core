@@ -94,8 +94,10 @@ class TestSync:
         fake.issues["AAA"][0]["key"] = "ZZZ-9"
         fake.install(monkeypatch)
 
+        config = _config(project_keys=["AAA"])
+
         with pytest.raises(ResourceExtractionError, match="Jira returned ZZZ-9 while searching project AAA"):
-            _files(_config(project_keys=["AAA"]))
+            _files(config)
 
     def test_data_center_is_read_the_same_way(self, monkeypatch: pytest.MonkeyPatch):
         fake = FakeJira(deployment="data_center", site="https://jira.acme.ch/jira")
@@ -133,11 +135,12 @@ class TestUnusableConfiguration:
     )
     def test_the_sync_fails_naming_what_to_fix(self, jira: FakeJira, options: dict, reason: str):
         config = _config(**options)
+        adapter, source_options = config.adapter(), config.options()
 
         with pytest.raises(ValueError, match=reason):
-            config.adapter().dlt_source(config.options())
+            adapter.dlt_source(source_options)
         with pytest.raises(ValueError, match=reason):
-            config.adapter().list_record_paths(config.options())
+            adapter.list_record_paths(source_options)
         assert jira.requests == []
 
     def test_data_center_needs_no_email(self, jira: FakeJira):

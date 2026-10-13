@@ -163,16 +163,20 @@ class TestDataCenterTransport:
 
     def test_a_rejected_token_names_the_site(self, jira: FakeJira):
         jira.fail_next(401, _recorded("unauthorized.json"))
+        config = _config()
+        adapter, source_options = config.adapter(), config.options()
 
         with pytest.raises(ValueError, match=r"Jira rejected the credentials for https://jira.acme.ch/jira \(401\)"):
-            _config().adapter().dlt_source(_config().options())
+            adapter.dlt_source(source_options)
 
     def test_an_invalid_clause_is_found_by_the_search_itself(self, jira: FakeJira):
         """Data Center has no JQL parse endpoint; its search answers an invalid query with 400."""
         jira.unknown_jql_fields = {"statuz"}
+        config = _config(jql="statuz = Done")
+        adapter, source_options = config.adapter(), config.options()
 
         with pytest.raises(ValueError, match="The JQL clause is invalid: Field 'statuz' does not exist"):
-            _config(jql="statuz = Done").adapter().dlt_source(_config(jql="statuz = Done").options())
+            adapter.dlt_source(source_options)
         assert not any("jql/parse" in request.url for request in jira.requests)
 
     def test_an_incremental_search_pages_by_id_within_its_window(self, monkeypatch: pytest.MonkeyPatch):

@@ -43,7 +43,7 @@ class FakeJiraTransport(BaseAdapter):
         return response
 
     def close(self) -> None:
-        pass
+        """Nothing to release: the fake answers from memory and holds no connections."""
 
 
 class FakeJira:

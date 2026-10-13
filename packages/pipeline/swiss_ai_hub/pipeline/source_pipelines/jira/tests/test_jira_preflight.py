@@ -48,38 +48,46 @@ class TestPreflight:
 
     def test_rejected_credentials_name_the_site_and_what_to_check(self, jira: FakeJira):
         jira.fail_next(401, {"errorMessages": ["Client must be authenticated to access this resource."]})
+        options = _for(jira)
 
         with pytest.raises(ValueError, match=r"Jira rejected the credentials for https://acme.atlassian.net \(401\)"):
-            _check(_for(jira))
+            _check(options)
 
     def test_a_locked_sign_in_is_rejected_the_same_way(self, jira: FakeJira):
         """Data Center answers 403 once a CAPTCHA locks the account after failed sign-ins."""
         jira.fail_next(403)
+        options = _for(jira)
 
         with pytest.raises(ValueError, match="Jira rejected the credentials"):
-            _check(_for(jira))
+            _check(options)
 
     def test_a_project_jira_does_not_show_names_the_project_and_the_account(self, jira: FakeJira):
+        options = _for(jira, project_keys=["AAA", "SDD"])
+
         with pytest.raises(ValueError, match=r"Jira project SDD does not exist, or Seed Bot cannot see it\."):
-            _check(_for(jira, project_keys=["AAA", "SDD"]))
+            _check(options)
 
     def test_a_renamed_project_names_its_new_key(self, jira: FakeJira):
         """Jira still answers the old key, but every issue it returns carries the new one."""
         jira.renamed_projects = {"BBB": "CCC"}
+        options = _for(jira)
 
         with pytest.raises(ValueError, match=r"Jira project BBB has been renamed to CCC"):
-            _check(_for(jira))
+            _check(options)
 
     def test_an_invalid_clause_names_jira_s_reason(self, jira: FakeJira):
         """Cloud search would answer it with no issues at all."""
+        options = _for(jira, jql="statuz = Done")
+
         with pytest.raises(ValueError, match="The JQL clause is invalid: Field 'statuz' does not exist"):
-            _check(_for(jira, jql="statuz = Done"))
+            _check(options)
 
     def test_no_message_carries_the_token(self, jira: FakeJira):
         jira.fail_next(401)
+        options = _for(jira)
 
         with pytest.raises(ValueError) as raised:
-            _check(_for(jira))
+            _check(options)
 
         assert _TOKEN not in str(raised.value)
         assert _TOKEN not in str(raised.value.__cause__)
@@ -87,9 +95,10 @@ class TestPreflight:
     def test_any_other_failure_is_left_as_jira_s_own(self, jira: FakeJira):
         """A 400 on sign-in is no credential problem; dressing it up as one would mislead."""
         jira.fail_next(400, {"errorMessages": ["Bad request"]})
+        options = _for(jira)
 
         with pytest.raises(JiraRequestError, match="400"):
-            _check(_for(jira))
+            _check(options)
 
 
 class TestPreflightRunsBeforeAnythingIsRead:
@@ -98,9 +107,10 @@ class TestPreflightRunsBeforeAnythingIsRead:
         fake.add_issue("AAA-1")
         fake.install(monkeypatch)
         options = _options(project_keys=["AAA", "SDD"])
+        adapter = JiraAdapter()
 
         with pytest.raises(ValueError, match="SDD"):
-            JiraAdapter().dlt_source(options)
+            adapter.dlt_source(options)
         with pytest.raises(ValueError, match="SDD"):
-            JiraAdapter().list_record_paths(options)
+            adapter.list_record_paths(options)
         assert fake.sent_jql() == []

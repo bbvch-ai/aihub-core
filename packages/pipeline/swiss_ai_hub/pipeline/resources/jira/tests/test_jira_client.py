@@ -97,9 +97,10 @@ class TestComments:
         """Reported for Cloud's /search/jql: fresh tokens, the same first page, and never ``isLast``."""
         jira = _jira(monkeypatch, "cloud")
         jira.stuck_page_tokens = True
+        client = _client("cloud")
 
         with pytest.raises(RuntimeError, match="Jira returned AAA-1 twice while paging"):
-            _keys(_client("cloud"))
+            _keys(client)
 
     def test_data_center_paging_that_skips_an_issue_fails_the_search(self, monkeypatch: pytest.MonkeyPatch):
         """An issue moved into the project keeps its old, lower id; if Jira orders by number, ``id >`` passes it by."""
@@ -109,9 +110,10 @@ class TestComments:
             jira.add_issue(f"AAA-{number}")
         jira.sorted_by_key = True
         jira.install(monkeypatch)
+        client = _client("data_center")
 
         with pytest.raises(RuntimeError, match="Jira counted 5 issues .* but paging returned 4"):
-            _keys(_client("data_center"))
+            _keys(client)
 
     def test_properties_are_asked_for_when_internal_comments_must_be_recognised(self, monkeypatch: pytest.MonkeyPatch):
         jira = FakeJira()
@@ -127,24 +129,27 @@ class TestErrors:
     def test_jira_s_own_reason_names_the_failure(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         jira.fail_next(400, {"errorMessages": ["Field 'sprnt' does not exist."], "errors": {}})
+        client = _client("cloud")
 
         with pytest.raises(JiraRequestError, match="400 Bad Request to GET /rest/api/2/search/jql: Field 'sprnt'"):
-            _keys(_client("cloud"))
+            _keys(client)
 
     def test_a_missing_reason_phrase_is_filled_in(self, monkeypatch: pytest.MonkeyPatch):
         """Data Center answers ``HTTP/1.1 404`` with no phrase after the code."""
         jira = _jira(monkeypatch, "data_center")
         jira.fail_next(404, {"errorMessages": ["Not found"], "errors": {}})
+        client = _client("data_center")
 
         with pytest.raises(JiraRequestError, match="Jira answered 404 Not Found to GET /rest/api/2/search: Not found"):
-            _keys(_client("data_center"))
+            _keys(client)
 
     def test_rejected_credentials_fail_at_once_without_retrying(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         jira.fail_next(401, times=5)
+        client = _client("cloud")
 
         with pytest.raises(JiraRequestError, match="401 Unauthorized") as raised:
-            _keys(_client("cloud"))
+            _keys(client)
 
         assert len(jira.requests) == 1
         assert _TOKEN not in str(raised.value)
@@ -159,9 +164,10 @@ class TestErrors:
     def test_a_rejection_without_a_body_names_the_status_and_path(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         jira.fail_next(401, b"")
+        client = _client("cloud")
 
         with pytest.raises(JiraRequestError, match="Jira answered 401 Unauthorized to GET /rest/api/2/search/jql$"):
-            _keys(_client("cloud"))
+            _keys(client)
 
     def test_rate_limiting_is_waited_out(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud", issues=1)
@@ -173,9 +179,10 @@ class TestErrors:
     def test_the_query_string_never_reaches_the_message(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         jira.fail_next(400)
+        client = _client("cloud")
 
         with pytest.raises(JiraRequestError) as raised:
-            _keys(_client("cloud"))
+            _keys(client)
 
         assert "?" not in str(raised.value)
         assert "AAA" not in str(raised.value)
