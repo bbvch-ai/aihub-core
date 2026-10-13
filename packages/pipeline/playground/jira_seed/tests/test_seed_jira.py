@@ -30,6 +30,13 @@ class TestScenarios:
         with pytest.raises(RuntimeError, match="Unknown case"):
             SeedScenario.load().selected({"no-such-case"})
 
+    def test_the_blocks_of_a_description_are_kept_apart(self):
+        """A wiki list runs on until a blank line, so without one Jira renders the heading after it inside the list."""
+        rich = next(issue for issue in SeedScenario.load().issues if issue.case == "rich-formatting")
+
+        assert "# Press _Sign in_ again\n\nh3. Environment" in rich.text(mention="[~me]")
+        assert "|Tenant|acme|\n\n{code:java}" in rich.text(mention="[~me]")
+
 
 class TestFields:
     def test_fields_the_create_screen_lacks_are_skipped(self, capsys: pytest.CaptureFixture[str]):

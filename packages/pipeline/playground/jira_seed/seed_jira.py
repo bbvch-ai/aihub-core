@@ -50,7 +50,13 @@ class SeedIssue(BaseModel):
     case: Annotated[str, Field(pattern=r"^[a-z0-9-]+$", description="Case id, also a label on the issue.")]
     type: Annotated[Literal["task", "story", "bug", "subtask"], Field(description="Kind of issue type.")] = "task"
     summary: Annotated[str, Field(max_length=255)]
-    description: Annotated[str, Field(description="Wiki markup; {me} becomes a mention.")] = ""
+    description: Annotated[
+        str | list[str],
+        Field(
+            description="Wiki markup; {me} becomes a mention. A list is joined by blank lines, which end a wiki list "
+            "or table; the YAML formatter strips blank lines inside one block."
+        ),
+    ] = ""
     filler_paragraphs: Annotated[int, Field(ge=0, description="Paragraphs written before the description.")] = 0
     priority: str | None = None
     labels: list[str] = []
@@ -71,7 +77,8 @@ class SeedIssue(BaseModel):
 
     def text(self, mention: str) -> str:
         filler = [f"Paragraph {number}. {_FILLER}" for number in range(1, self.filler_paragraphs + 1)]
-        return "\n\n".join([*filler, self.description.replace("{me}", mention)]).strip()
+        blocks = [self.description] if isinstance(self.description, str) else self.description
+        return "\n\n".join([*filler, *(block.strip().replace("{me}", mention) for block in blocks)]).strip()
 
     def all_comments(self) -> list[SeedComment]:
         count = self.generated_comments
