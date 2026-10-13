@@ -35,8 +35,8 @@ thoughts:
     \ environ %{tokens} jetons pour un budget utilisable de %{budget}. L'appel au\
     \ modèle est refusé."
 messages:
-  input_too_large: Ce message est trop long pour que je puisse le traiter. Je réponds
-    à partir de mes exemples configurés et je ne lis pas les documents joints. Pour
-    des questions sur un fichier, veuillez utiliser un assistant conçu pour les documents.
+  input_too_large: "Ce message est trop long pour que je puisse le traiter. Veuillez\
+    \ le raccourcir ou joindre plutôt le texte sous forme de fichier : je lis moi-même\
+    \ les fichiers joints et j'utilise les parties utiles à votre question."
   unsuitable_request: Je ne suis pas le bon assistant pour cette demande, je ne peux
     donc pas y répondre. %{reason}

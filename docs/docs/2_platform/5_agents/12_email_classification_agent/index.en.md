@@ -254,11 +254,19 @@ and ignored until drafting is switched back on.
 ::: warning Upgrading a profile configured before this release
 Earlier releases named one collection per category in a plain text field, with the databases listed once on the
 classification section. Both fields were replaced by the per-category picker. A profile saved in the old shape is
-carried over on load — each category's old collection name is paired with the databases that were configured — so
-grounding keeps working without you re-entering it. Categories that named no collection now search all of the knowledge
-agent's collections. Open the profile and check the picker once after upgrading: a carried-over collection the knowledge
-agent you picked is not configured for is listed as unavailable, and that category needs a new selection.
+carried over when the API starts — each category's old collection name is paired with the databases that were configured
+— so grounding keeps working without you re-entering it. Categories that named no collection now search all of the
+knowledge agent's collections. The conversion runs once when the API starts, and a category whose selection you later
+switch off stays on all collections. Open the profile and check the picker once after upgrading: a carried-over
+collection the knowledge agent you picked is not configured for is listed as unavailable, and that category needs a new
+selection.
 :::
+
+**Grounded drafts are written in the sender's language.** The agent detects the language of each incoming message
+(German, English, French or Italian) and has the knowledge agent answer in that language, so the draft is written in it;
+scheduled runs have no user locale of their own, so without this every grounded draft would come out in German.
+Detection is a model call and can misjudge mixed-language mail, for instance an English reply above a quoted German
+thread. When the language cannot be determined, the previous behaviour applies.
 
 **Every message still gets a draft.** When the lookup finds nothing that answers a message, the agent does not ask the
 model to write around an empty result — an ungrounded reply that reads like a grounded one is worse than an honest

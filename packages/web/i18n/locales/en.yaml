@@ -283,6 +283,14 @@ event:
       identity: Identity
       capabilities: Capabilities
       behavior: Behaviour
+  sandboxFileDisplayed:
+    file: File
+    type: Type
+    size: Size
+    path: In the sandbox
+  humanInTheLoopResponse:
+    confirmed: Confirmed
+    declined: Declined
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
@@ -301,6 +309,63 @@ event:
       delegations: Delegations
       delegatedTaskAgentInTheLoop: Delegated Task (Agent in the Loop)
       allEvents: All Events
+  parts:
+    noMessages: No messages
+    yes: 'Yes'
+    no: 'No'
+  capability:
+    userQuery: User message
+    historyMessages: Messages in history
+    condensed: Condensed from the history
+    query: Query
+    block: Block {number}
+    blocks: Context blocks
+    namespaces: Organization memory scopes
+    toolCall: Tool call
+    userMemories: User memories
+    organizationMemories: Organization memories
+    references: Referenced collections
+    citeSources: Cite sources
+    sections: Sections found
+    notSearched: Not searched (no access)
+    files: Files
+    reserveTokens: Tokens reserved
+    fileStatus:
+      read: Read
+      truncated: Shortened
+      failed: Failed
+    citationId: Citation id
+    pages: Pages
+    error: Error
+    stop: Ends with
+    targetAgent: Memory writer
+  toolLoop:
+    loop: Tool set
+    mode: Mode
+    modes:
+      answer: Answer
+      gather: Gather context
+    iteration: Decisions
+    toolCallsMade: Tool calls so far
+    messages: Messages in the loop
+    offeredTools: Offered tools
+    condensedResults: Condensed results
+    needsCondensing: Needs condensing
+    decidedCalls: One tool call decided | {count} tool calls decided
+    narrowedTools: Narrowed to
+    maxIterations: Decision limit
+    tool: Tool
+    kind: Kind
+    kinds:
+      function: Function
+      capability: Capability
+    failed: Failed
+    resultContext: Context returned
+    stoppedEarly: Stopped at its limits
+    gathered: Gathered context
+    gatheredMessages: Gathered messages
+    tokens: Tokens
+    condensedTurns: Condensed turns
 costs:
   table:
     count: Count
@@ -570,6 +635,9 @@ knowledge:
         message: '{name} already holds {count} manually uploaded document(s). Once
           a source fills this database, every file the source does not have is removed
           on the next sync.'
+        message_from_source: '{name} holds {count} document(s) synced from {source}.
+          Once the new source fills this database, every file it does not have is
+          removed on its next sync.'
         accept: Replace existing documents
     edit:
       title: Edit Collection
@@ -586,8 +654,8 @@ knowledge:
     source:
       label: Source
       placeholder: Select where documents come from
-      help: A source pipeline keeps this database in sync with an external system;
-        each top-level folder becomes a namespace.
+      help: A source pipeline keeps this database in sync with an external system.
+        Its description says how the content is grouped into namespaces.
       manual_upload:
         label: Manual upload
         description: Documents are uploaded by hand into namespaces you create.
@@ -627,6 +695,8 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
+    useOrganisationLink: "Please use the login link your organisation gave you. If you don't have it, contact your administrator."
+    adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
@@ -1018,3 +1088,44 @@ support:
   send_failed_detail: Your answers are still here — try sending again.
   unavailable: Reporting is not configured on this deployment. Please contact your
     administrator.
+userFiles:
+  title: "My Files"
+  description: "The files you and your agents work with: chat attachments, files agents made for you and your own uploads."
+  conversation: "Chat"
+  actions:
+    move: "Move"
+    upload: "Upload"
+    newFolder: "New folder"
+    refresh: "Refresh"
+    download: "Download"
+    rename: "Rename"
+    delete: "Delete"
+    close: "Close"
+    cancel: "Cancel"
+    save: "Save"
+    openFolder: "Open folder {name}"
+    preview: "Preview {name}"
+  columns:
+    name: "Name"
+    size: "Size"
+    modified: "Changed"
+  empty:
+    folder: "This folder is empty. Drop files here to upload them."
+    noSpace: "Your file space is set up with your chat account. Open the chat once, then come back."
+  error:
+    load: "This folder could not be loaded. Try again with Refresh."
+  move:
+    header: "Move {name} to"
+    noTargets: "No folder to move it to."
+  preview:
+    unavailable: "No preview for this file type. Download it to open it."
+  name:
+    invalid: "A name must not be empty or contain a slash."
+  delete:
+    header: "Delete"
+    file: "Delete {name}?"
+    folder: "Delete the folder {name} with everything in it?"
+  toast:
+    uploaded: "Uploaded {count} file(s)"
+    uploadFailed: "Upload failed"
+    changeFailed: "The change failed"

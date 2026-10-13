@@ -1097,3 +1097,44 @@ class TestEmptyGroups:
         inner = next(e for e in form.to_formkit_form() if e.name == "inner")
         assert inner.nullable
         assert inner.children == []
+
+
+class ModelChoiceForm(Form):
+    """A sub-form whose model has no class default, like `RerankingModelConfig.model_name`."""
+
+    model_name: Annotated[str | InputText, Field(description="Model")]
+    top_n: Annotated[int | InputNumber, Field(description="Top N")] = 5
+    tenant: Annotated[str | InputText, Field(description="Tenant")] = Field(default_factory=lambda: "from-settings")
+
+
+class FormWithDefaultedModelChoice(Form):
+    """Outer form whose sub-form default names the model, so a profile stored without it still has one."""
+
+    choice: Annotated[ModelChoiceForm, Field(description="Choice", title="Choice")] = ModelChoiceForm(
+        model_name="reranker/bge", top_n=7
+    )
+
+
+class TestInheritedSubFormDefaults:
+    """A nested element is pre-filled from the parent field's default, which the UI falls back to when editing a
+    profile stored before the sub-form existed."""
+
+    def _children(self) -> dict[str, object]:
+        form = FormWithDefaultedModelChoice(
+            choice=ModelChoiceForm(
+                model_name=InputText(label=LocaleString(en="Model")),
+                top_n=InputNumber(label=LocaleString(en="Top N")),
+                tenant=InputText(label=LocaleString(en="Tenant")),
+            )
+        )
+        group = form.to_formkit_form()[0]
+        return {child.name: child.value for child in group.children}
+
+    def test_parent_default_fills_a_field_without_a_class_default(self) -> None:
+        assert self._children()["model_name"] == "reranker/bge"
+
+    def test_parent_default_wins_over_the_class_default(self) -> None:
+        assert self._children()["top_n"] == 7
+
+    def test_a_factory_default_is_left_for_the_admin_to_choose(self) -> None:
+        assert self._children()["tenant"] is None

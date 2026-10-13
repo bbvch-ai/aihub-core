@@ -1,6 +1,6 @@
 ---
 title: Sicherung und Wiederherstellung
-source_sha: 198e889b47930d4e1fd9afc4cf0859c5356d393a1d61ecbb36f2532d22af406a
+source_sha: 48f1f92dffa75fa34dc28be419cfe21c3208a1a22d9265a30b5ec59c635b0647
 ---
 
 # Sicherung und Wiederherstellung
@@ -161,6 +161,48 @@ Behandeln Sie eine Langfuse-Versionsanhebung als Einbahnstrasse: Erstellen Sie v
 planen Sie die Wiederherstellung aber vorwärts statt als Downgrade.
 :::
 
+### Sandbox-Dateien der Benutzer (My Files)
+
+Die Homes der Benutzer in der Code-Sandbox (die Dateien hinter My Files) liegen auf dem Host-Volume, das unter
+`<VOLUME_ROOT>/open-terminal` eingebunden ist. Der Service `sandbox-mirror` kopiert sie einseitig in den Bucket
+`sandbox-files`, und zwar alle `SANDBOX_MIRROR_INTERVAL_SECONDS`; dabei bleiben Eigentümer, Gruppe, Modus und
+Änderungszeitpunkt jeder Datei erhalten. Eine gelöschte oder überschriebene Datei wird eine Woche lang unter
+`.deleted/<timestamp>/` aufbewahrt. Der Mirror schützt vor dem Verlust des Homes-Volumes, nicht vor dem Verlust von
+SeaweedFS selbst; siehe [Was NICHT gesichert wird](#was-von-der-plattform-nicht-gesichert-wird).
+
+So stellen Sie die Homes nach dem Verlust des Volumes wieder her:
+
+1. Stoppen Sie **zuerst** den Mirror, dann die Sandbox. Ein laufender Mirror würde das leere Volume über den Bucket
+   kopieren und jede Datei nach `.deleted/` verschieben.
+
+   ```bash
+   docker compose stop sandbox-mirror open-terminal
+   ```
+
+2. Kopieren Sie die Homes zurück, mit den eigenen Zugangsdaten des Mirrors und dem schreibbar eingebundenen Volume:
+
+   ```bash
+   docker compose run --rm --no-deps \
+     -v "<VOLUME_ROOT>/open-terminal:/restore" \
+     --entrypoint rclone sandbox-mirror \
+     copy mirror:sandbox-files /restore --metadata --exclude "/.deleted/**"
+   ```
+
+   Dateien kommen mit ihrem Eigentümer und Modus zurück. Ordner nicht: Der Bucket enthält keine Ordner-Metadaten,
+   weshalb jedes Home bis zum nächsten Schritt `root` gehört und den Modus `755` hat.
+
+3. Erstellen Sie die Sandbox neu und starten Sie dann den Mirror wieder. Der neue Container richtet das Konto jedes
+   Benutzers bei dessen nächster Anfrage ein; dadurch wird er wieder Eigentümer seines Homes und der Modus wird auf
+   `2770` gesetzt, sodass nur er es lesen kann.
+
+   ```bash
+   docker compose up -d --force-recreate open-terminal
+   docker compose up -d sandbox-mirror
+   ```
+
+   Wenn Sie das Neuerstellen überspringen, gehört jedes Home weiterhin `root`: Benutzer können nicht in ihre eigenen
+   Dateien schreiben, und andere Benutzer können sie auflisten.
+
 ______________________________________________________________________
 
 ## VM-Snapshots
@@ -225,6 +267,124 @@ POSTGRES_PORT="5432"
 Eine stark überlastete DB entlastet sich über mehrere wöchentliche Ticks (`DAGSTER_CLEANUP_BATCH_LIMIT` Zeilen pro Tick
 × 4 Cleanup-Handler). Bediener, die eine schnellere anfängliche Entlastung wünschen, können `dagster_cleanup_job`
 manuell wiederholt über die Dagster-UI starten.
+
+______________________________________________________________________
+
+## Einmalig: FerretDB-Daten mit lz4 neu komprimieren
+
+Das PostgreSQL von FerretDB (`postgres-ferretdb`) läuft mit `default_toast_compression=lz4`. DocumentDB dekomprimiert
+für jeden Filter, jede Projektion und jede Sortierung das ganze Dokument, und lz4 erledigt das etwa dreimal schneller
+als das PostgreSQL-Standardverfahren `pglz`. Die Inhaltssuche und das Auflisten von Wissensdokumenten werden dadurch 2–4×
+schneller. Siehe ADR `2026_10_07_ferretdb_postgres_lz4_toast_compression`.
+
+Die Einstellung gilt für jede Zeile, die geschrieben wird, sobald sie aktiv ist. Ältere Zeilen behalten pglz. Sie werden
+korrekt gelesen, nur langsamer, bis sie sich ändern. **`ferretdb_lz4_rewrite_job`** komprimiert die bestehenden
+pglz-Zeilen aller FerretDB-Collections neu: Wissensspeicher, Agent-Events, Konfigurationen und alles Weitere. Führen Sie
+ihn einmal pro Deployment aus, nach dem ersten Deployment mit der Einstellung. Er wird manuell gestartet und nie geplant.
+
+### Vorbereitung
+
+1. **Prüfen Sie, ob die Einstellung aktiv ist.** Der folgende Befehl muss `lz4` ausgeben:
+
+   ```bash
+   docker exec postgres-ferretdb psql -U "$MONGO_USERNAME" -d postgres -Atc 'show default_toast_compression'
+   ```
+
+   Gibt er `pglz` aus, erstellen Sie den Container mit derselben Compose-Datei, demselben Projektverzeichnis und
+   derselben Env-Datei neu, die Ihr Deployment immer verwendet, zum Beispiel im Repository-Root mit
+   `docker compose -f infra/docker-compose.<stage>.yml --env-file .env up -d postgres-ferretdb`. FerretDB ist dabei
+   einige Sekunden nicht erreichbar. `docker restart` genügt nicht, weil der Container dann seinen alten Befehl behält.
+
+   ::: warning
+   Das Datenverzeichnis (`VOLUME_ROOT`, standardmässig `./.docker-volumes`) wird relativ zum Ordner der Compose-Datei
+   aufgelöst. Eine Compose-Datei aus einem anderen Checkout oder Ordner bindet ein **leeres** Datenverzeichnis ein, und
+   FerretDB liefert dann eine leere Instanz aus. Prüfen Sie danach in der Ausgabe von `docker inspect postgres-ferretdb`,
+   dass `Mounts` → `Source` Ihr übliches Datenverzeichnis ist.
+   :::
+
+   Installiert werden muss nichts: Das `postgres-ferretdb`-Image der Plattform ist mit lz4-Unterstützung gebaut. Hat Ihr
+   Deployment dieses Image durch ein eigenes ersetzt, prüfen Sie es zuerst mit
+   `docker exec postgres-ferretdb pg_config --configure`; die Ausgabe muss `--with-lz4` enthalten, sonst startet
+   PostgreSQL mit der Einstellung nicht.
+
+2. **Prüfen Sie Arbeitsumfang und Platzbedarf.** Führen Sie die Abfrage in
+   `docker exec -it postgres-ferretdb psql -U "$MONGO_USERNAME" -d postgres` aus; `\gexec` führt eine Zählung pro
+   Collection aus:
+
+   ```sql
+   select format(
+       'select %L as collection, count(*) filter (where pg_column_compression(document) = ''pglz'') as pglz_rows, '
+       'pg_size_pretty(pg_total_relation_size(%L)) as size from documentdb_data.documents_%s',
+       database_name || '.' || collection_name, 'documentdb_data.documents_' || collection_id, collection_id)
+   from documentdb_api_catalog.collections where view_definition is null \gexec
+   ```
+
+   Planen Sie freien Platz von etwa einem Fünftel der Grösse der Collections mit pglz-Zeilen ein: Die neu geschriebenen
+   Tabellen wachsen um etwa ein Zehntel und behalten diese Grösse.
+
+3. **Wählen Sie ein ruhiges Zeitfenster**: kein Backup fällig und keine größere Ingestion im Gang.
+
+### Job ausführen
+
+1. Öffnen Sie in der Backup-Dagster-UI (`http://localhost:3004`) **Jobs → `ferretdb_lz4_rewrite_job`** und starten Sie
+   ihn. Er bleibt *Queued*, solange ein Backup, Restore, Cleanup oder Repack den `postgres-mutex` hält.
+2. **Prüfen Sie nach dem Lauf die Metadaten:**
+   - `pglz_rows_after` ist `0`;
+   - `collections_rewritten` nennt die neu geschriebenen Collections als `datenbank.collection`;
+   - `collections_skipped` zählt die, in denen keine pglz-Zeilen mehr waren.
+3. **Starten Sie ihn optional ein zweites Mal.** Jede Collection wird dann übersprungen, was bestätigt, dass die
+   Migration abgeschlossen ist.
+
+Der Job läuft im laufenden Betrieb, per SQL direkt auf den Tabellen hinter FerretDB. Für jede Collection, die noch
+pglz-Zeilen hat:
+
+- ersetzt er jeweils 50 Zeilen durch eine Kopie mit denselben Bytes (`bson_from_bytea(bson_to_bytea(document))`), die
+  PostgreSQL mit lz4 komprimiert. Die Dokumente ändern sich nicht, Anwendungen, die sie lesen, merken nichts davon;
+- wählt er nur Zeilen aus, die noch pglz sind, sodass eine Zeile, die FerretDB inzwischen neu geschrieben hat, bleibt,
+  wie sie ist;
+- führt er alle 500 Zeilen `VACUUM` aus, oder alle 2 % der pglz-Zeilen der Collection, wenn das mehr ist, damit der Platz
+  der ersetzten Zeilenversionen wiederverwendet wird, und am Ende `VACUUM (ANALYZE)`.
+
+Ingestion und Agenten können währenddessen weiter schreiben.
+
+### Was zu erwarten ist
+
+- **Dauer:** Auf dem Dev-Stack dauerten 18'900 Zeilen in 8 Collections (690 MB, meist Wissensdokumente mit 100k Zeichen
+  und Agent-Events) 31 Sekunden. Jede Zeile wird einmal geschrieben; das dabei entstehende WAL wird an Checkpoints
+  wiederverwendet und braucht daher keinen zusätzlichen Platz in der Grösse der Daten. Führen Sie den Job bei grossen
+  Deployments trotzdem ausserhalb von Ingestion-Spitzen aus: Er konkurriert um den Cache von PostgreSQL, Suchen sind
+  währenddessen langsamer.
+- **Der Speicherverbrauch wächst leicht und bleibt.** Derselbe Lauf liess diese Tabellen von 690 auf 761 MB wachsen
+  (+10 %). VACUUM macht Platz innerhalb von PostgreSQL wiederverwendbar, gibt ihn aber nicht an das Betriebssystem
+  zurück; neue Daten füllen ihn mit der Zeit. `VACUUM FULL` würde ihn sofort zurückgeben, aber seine exklusive Sperre
+  blockiert FerretDB, also führen Sie es nie während der Arbeitszeit aus.
+- **Restores** schreiben jede Zeile mit dem Standard des Zielservers. Ein Restore auf einen Server mit der Einstellung
+  braucht danach keinen Job; ein Restore auf einen Server ohne sie bringt pglz zurück.
+
+### Wenn er mittendrin abbricht
+
+Jeder Block von 50 Zeilen ist eine eigene Transaktion, und es werden nur Zeilen ausgewählt, die noch pglz sind. Ein
+Lauf, der durch ein Deployment, eine verlorene Verbindung oder eine volle Platte unterbrochen wird, hinterlässt jede
+Zeile entweder unverändert oder neu komprimiert, nie halb geschrieben. Starten Sie ihn erneut, und er macht mit den
+restlichen Zeilen weiter.
+
+### Häufige Fehler
+
+| Symptom                                                       | Ursache                                                                                                                    | Lösung                                                                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Schlägt fehl mit `default_toast_compression is pglz, not lz4` | Die Einstellung ist nicht aktiv: Das Deployment lief nicht, oder der Container wurde neu gestartet statt neu erstellt       | `postgres-ferretdb` wie oben mit `up -d` neu erstellen, dann erneut starten                                |
+| Bleibt *Queued*                                               | Ein anderer Postgres-Job hält den Mutex                                                                                    | Warten; das Backup nicht abbrechen                                                                         |
+| Erfolgreich mit `skipped: MAINTENANCE_DISABLED`               | `BACKUP_MAINTENANCE_DISABLED` ist `true`                                                                                   | Für den Lauf auf `false` setzen                                                                            |
+| Verbindung zu `postgres-ferretdb:5432` abgelehnt              | PostgreSQL läuft nicht, oder eine angepasste Compose-Datei hat `backup-code` aus dem Netzwerk `data` entfernt              | `postgres-ferretdb` starten oder das Netzwerk wiederherstellen                                             |
+| Schlägt fehl mit `N rows are still pglz after the rewrite`    | Eine Tabelle legt ihre eigene Kompression fest (`ALTER TABLE … SET COMPRESSION pglz`), die Vorrang vor dem Standard hat    | Mit `ALTER TABLE … ALTER COLUMN document SET COMPRESSION DEFAULT` zurücksetzen, dann erneut starten        |
+| Bricht mittendrin ab (Platte voll, Deployment, Verbindung verloren) | Der Lauf wurde unterbrochen                                                                                          | Bei Bedarf Platz schaffen, dann erneut starten; er macht mit den Zeilen weiter, die noch pglz sind         |
+
+Von Hand mit `UPDATE … SET document = document` neu zu komprimieren funktioniert nicht: PostgreSQL kopiert den
+komprimierten Wert unverändert.
+
+Ein **Rollback** bedeutet, das Flag `-c default_toast_compression=lz4` aus `postgres-ferretdb` zu entfernen. Neue Zeilen
+sind dann wieder pglz, und lz4-Zeilen bleiben lesbar, es muss also nichts zurückmigriert werden. Jedes künftige
+`postgres-ferretdb`-Image muss mit lz4-Unterstützung gebaut sein (`pg_config --configure | grep lz4`).
 
 ______________________________________________________________________
 

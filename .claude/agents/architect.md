@@ -200,16 +200,18 @@ classmethods.
 
 ### File Naming and Placement Rules
 
-- One class per file, file name MUST match class name: `MyClass` → `MyClass.py`
-- Events live in `packages/core/nats/events/<category>/` if shared, or in the service scope if service-specific
-- Custom agent events: `packages/agent/agents/{AgentName}/events/`
-- Custom process events: `packages/process/agentic_processes/{ProcessName}/events/`
-- Settings classes: `packages/core/infrastructure/<service>/` (Pydantic `BaseSettings`, env prefix convention)
-- Topic types: `packages/core/nats/topics/<domain>/`
-- Topic managers: `packages/core/nats/topic_managers/<domain>/`
-- Persistence entities: `packages/core/persistence/<domain>/entities/`
-- API controllers: `packages/api/routes/<domain>/`
-- API services: `packages/api/routes/<domain>/`
+- One class per file, file name is the snake_case of the class name: `MyClass` → `my_class.py`
+- Events live in `packages/core/swiss_ai_hub/core/events/<agent|process|pipeline>/` if shared, or in the service scope
+  if service-specific
+- Custom agent events: `packages/agent/swiss_ai_hub/agent/agents/{agent_name}/events/`
+- Process events: `packages/core/swiss_ai_hub/core/events/process/`
+- Settings classes: `packages/core/swiss_ai_hub/core/infrastructure/<service>/` (Pydantic `BaseSettings`, env prefix
+  convention)
+- Topic types: `packages/core/swiss_ai_hub/core/topics/<domain>/`
+- Topic managers: `packages/core/swiss_ai_hub/core/topic_managers/<domain>/`
+- Persistence entities: `packages/core/swiss_ai_hub/core/persistence/<domain>/` (`*_entity.py`)
+- API controllers: `packages/api/swiss_ai_hub/api/routes/<domain>/`
+- API services: `packages/api/swiss_ai_hub/api/routes/<domain>/` (cross-cutting ones in `api/services/`)
 - Frontend composables: `packages/web/composables/<domain>/`
 - Frontend components: `packages/web/components/<Domain>/`
 - i18n: 4 locales (de, en, fr, it), YAML files in each scope's `i18n/translations/`
@@ -219,7 +221,7 @@ classmethods.
 ```
 Is it used by 2+ services?
 ├── YES → packages/core
-│   ├── Event type? → nats/events/<category>/
+│   ├── Event type? → events/<agent|process|pipeline>/
 │   ├── Persistence? → persistence/<domain>/
 │   ├── Settings? → infrastructure/<service>/
 │   ├── Auth? → auth/
@@ -287,13 +289,13 @@ data sharing is needed, does the shared type belong in `packages/core`?
 
 - Are they self-describing? Could a consumer understand them without reading the producer's source?
 - Are they focused (single purpose) or trying to carry too much?
-- Are field names and types consistent with existing events in `packages/core/nats/events/`?
+- Are field names and types consistent with existing events in `packages/core/swiss_ai_hub/core/events/`?
 
 **State and data ownership**: Where does state live and who owns it?
 
 - Ephemeral per-run: `RunContext`/`WalkthroughContext` (Redis, 30-day TTL)
 - Persistent per-thread: `ThreadContext` (Redis, 30-day TTL)
-- Permanent: MongoDB entities via `packages/core/persistence/`
+- Permanent: MongoDB entities via `packages/core/swiss_ai_hub/core/persistence/`
 - Vector data: Milvus
 - Event history: JetStream (source of truth for workflow replay)
 - Is any state being duplicated across stores? Is there a single source of truth?
@@ -301,7 +303,7 @@ data sharing is needed, does the shared type belong in `packages/core`?
 **Configuration**: Does behavior need to be configurable?
 
 - Per-agent/process instance: `AgentConfig`/`ProcessConfig` with form duality
-- Per-deployment: `BaseSettings` class in `packages/core/infrastructure/`
+- Per-deployment: `BaseSettings` class in `packages/core/swiss_ai_hub/core/infrastructure/`
 - Static: hardcoded constants
 
 **Consistency check**: How many existing implementations follow the same pattern? Is this the 2nd instance (just follow

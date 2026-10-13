@@ -4,6 +4,9 @@ metadata:
   description: AI assistant that searches and analyzes your documents to provide informed,
     context-aware answers
 config:
+  restrict_to_user_access:
+    label: "Restrict to the user's access"
+    help: "Retrieve only from the configured collections the person asking may read in the knowledge area. Without it, everyone who can use this agent gets answers from all its collections."
   number_of_input_tokens:
     label: Max input tokens
     help: Maximum number of tokens allowed in the LLM input. Limits context size to
@@ -94,9 +97,6 @@ steps:
     name: Persist Grounding Nodes
     description: Persists this turn's top grounding documents so a follow-up question
       can reuse them.
-  limit_chat_history_with_context:
-    name: Limit Chat History with Context
-    description: Includes the combined context and truncates chat history again.
   respond_with_llm:
     name: Respond with LLM
     description: Generates a response using the configured LLM.
@@ -114,6 +114,7 @@ thoughts:
   input_too_large: 'The input does not fit the model context window: about %{tokens}
     tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
 messages:
+  no_accessible_knowledge: "This agent's knowledge is not available to you: you do not have access to any of the collections it answers from. Ask an administrator for access if you need it."
   condensation_empty: I could not work out what to search for from that message. Please
     rephrase your question and try again.
   input_too_large: This file is too large for me to read in one go. Please upload

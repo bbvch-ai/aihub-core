@@ -12,6 +12,7 @@ from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     AttachedFilesReadEvent,
     ConversationContextualizedEvent,
+    KnowledgeSearchedEvent,
     MemoryRecalledEvent,
     UserMessageEvent,
 )
@@ -44,6 +45,7 @@ async def _build_context(chat_history: list[ChatMessage]) -> list[ChatMessage]:
         _=AgentSuitabilityAcceptEvent(reason="fits"),
         memories=MemoryRecalledEvent(),
         files=AttachedFilesReadEvent(),
+        knowledge=KnowledgeSearchedEvent(),
         start_event=UserMessageEvent(messages=chat_history, user=fake_user(), locale="en"),
         agent_config=_config(),
     )
