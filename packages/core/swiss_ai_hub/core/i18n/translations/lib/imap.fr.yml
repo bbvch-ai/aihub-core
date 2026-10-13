@@ -6,12 +6,31 @@ config:
   port:
     label: Port IMAP
     help: Port du serveur IMAP. Utiliser 993 pour le TLS implicite.
+  auth_method:
+    label: Authentification
+    help: Comment l'agent se connecte à la boîte aux lettres. Choisir Microsoft 365
+      (OAuth 2.0) pour les boîtes Microsoft 365 dont l'authentification de base est
+      désactivée ; une inscription d'application dans Microsoft Entra ID est requise.
+    password_label: Nom d'utilisateur et mot de passe
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Nom d'utilisateur
     help: Identifiant de la boîte aux lettres, généralement l'adresse e-mail complète.
+      Avec Microsoft 365 (OAuth 2.0), l'adresse de la boîte aux lettres à traiter.
   password:
     label: Mot de passe
     help: Mot de passe de la boîte aux lettres ou jeton spécifique à l'application.
+  tenant_id:
+    label: ID de locataire
+    help: ID de l'annuaire (locataire) de votre locataire Microsoft Entra ID.
+  client_id:
+    label: ID client
+    help: ID d'application (client) de l'inscription d'application Entra ID autorisée
+      à accéder à cette boîte aux lettres via IMAP.
+  client_secret:
+    label: Secret client
+    help: Secret client de l'inscription d'application Entra ID. Les secrets expirent
+      ; le renouveler ici avant sa date d'expiration.
   use_tls:
     label: Utiliser TLS
     help: Se connecter via TLS implicite. À désactiver uniquement pour les serveurs
@@ -110,15 +129,14 @@ config:
   attachment_char_limit:
     label: Limite de caractères par pièce jointe
     help: Nombre de caractères conservés du texte extrait d'une seule pièce jointe.
-  category_knowledge_namespace:
-    label: Collection de connaissances
-    help: Collection sur laquelle les réponses de cette catégorie sont fondées. Si
-      elle est définie, la réponse provient uniquement des documents de cette collection.
-      Si elle est vide, la réponse est rédigée à partir du seul message, sans recherche.
-  knowledge_databases:
-    label: Bases de connaissances
-    help: Bases dans lesquelles les collections des catégories sont recherchées. Nécessaire
-      uniquement lorsqu'une catégorie nomme une collection.
+  category_knowledge_namespaces:
+    label: Collections de connaissances
+    help: Collections à partir desquelles les réponses de cette catégorie sont rédigées.
+      Seules les collections pour lesquelles l'agent de connaissances du profil est
+      configuré sont proposées.
+    placeholder: Sélectionner des collections
+    toggle_label: Sélectionner des collections de connaissances
+    toggle_help: Décocher pour rechercher dans toutes les collections.
   no_information_draft:
     label: Brouillon lorsque rien n'a été trouvé
     help: Texte du brouillon lorsque la recherche n'a rien trouvé qui réponde au message.

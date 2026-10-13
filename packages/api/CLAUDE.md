@@ -25,6 +25,8 @@ packages/api/
 │   │   ├── memory/             # User & organization memory
 │   │   ├── evaluation/         # Dataset & evaluation management
 │   │   ├── role/               # Permission & role management
+│   │   ├── incident/           # Incident reports filed as GitHub issues (404 unless IncidentSettings.enabled; form = core incident_form.yml)
+│   │   ├── user_knowledge/     # My Files: a user's own sandbox home (list/read/upload/rename/move/delete, confined to the home)
 │   │   ├── tenant_admin/       # Sysadmin tenant metadata management (list/configure/update/delete tenants)
 │   │   ├── file/               # File upload/download
 │   │   ├── model/              # LLM model access
@@ -264,6 +266,11 @@ infrastructure → event distributors → RPC responders → discovery services 
 buckets) → cron scheduler → Langfuse provisioning.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
+
+**One event loop**: MongoEngine is synchronous, so DB calls inside `async def` handlers stall HTTP, WebSocket and NATS
+callbacks. NATS RPC handlers and discovery rounds (`AgentService.get_agent_configuration`, agent and process endpoint
+discovery) wrap them in `asyncio.to_thread`; do the same in any new hot path. `ensure_active_tenant` takes
+`app.state.redis` so concurrent first requests do not write `active_tenant_id` to Keycloak several times.
 
 **`CronScheduler`**: Fires cron-scheduled agent runs. Lives in `swiss_ai_hub.core.scheduling` and is only *wired* here —
 it takes no FastAPI objects and registers no routes, so the move into `aihub-daemon` (#1203) is the dozen lines in

@@ -7,10 +7,16 @@ Pure unit test — limit_chat_history_step touches no infrastructure. The model-
 real HTTP GET against LiteLLM, so it is patched here rather than left to fail open over the network.
 """
 
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import NotAMetaQuestionEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import (
+    ContextComposedEvent,
+    ConversationContextualizedEvent,
+    LLMEvent,
+    UserMessageEvent,
+)
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
@@ -45,9 +51,8 @@ async def _limited_history(chat_history: list[ChatMessage]) -> list[ChatMessage]
             agent_config=_config(),
             displayer=_displayer(),
             t=LocaleHandler(locale="en"),
-            _clear=NotAMetaQuestionEvent(reasoning="forced normal"),
         )
-    return event.limited_history
+    return event.history
 
 
 @async_test
@@ -63,6 +68,38 @@ async def test_client_system_prompt_does_not_displace_the_agent_system_prompt():
     assert system_indices == [0], f"system messages must collapse into index 0, got {system_indices}"
     assert "You are a helpful assistant." in history[0].content
     assert "Respond briefly." in history[0].content
+
+
+@async_test
+async def test_recalled_memory_reaches_the_model_inside_the_leading_system_message():
+    composed = ContextComposedEvent(
+        history=[
+            ChatMessage(role=MessageRole.SYSTEM, content="Respond briefly."),
+            ChatMessage(role=MessageRole.SYSTEM, content="<user_context>The user leads Project Falcon.</user_context>"),
+            ChatMessage(role=MessageRole.USER, content="Which project do I lead?"),
+        ]
+    )
+    displayer = _displayer()
+    displayer.display_llm_stream = AsyncMock(return_value=LLMEvent())
+
+    @asynccontextmanager
+    async def _llm(*_args, **_kwargs):
+        yield MagicMock()
+
+    with patch.object(LLMConfig, "cost_reporting_llm", _llm):
+        await LLMWrappingAgent().respond_step(
+            event=composed,
+            ctx=ConversationContextualizedEvent(history=composed.history, query="Which project do I lead?"),
+            agent_config=_config(),
+            displayer=displayer,
+            topic=MagicMock(),
+            t=LocaleHandler(locale="en"),
+        )
+
+    sent = displayer.display_llm_stream.await_args.args[2]
+    assert [message.role for message in sent] == [MessageRole.SYSTEM, MessageRole.USER]
+    assert "Respond briefly." in sent[0].content
+    assert "Project Falcon" in sent[0].content
 
 
 @async_test

@@ -80,6 +80,9 @@
         option-value="name"
         :placeholder="namespacePlaceholder ?? t('lib.vectorStore.namespaces.placeholder')"
         :filter="filter"
+        :invalid="namespaceScopeIsEmpty"
+        :aria-invalid="namespaceScopeIsEmpty"
+        aria-describedby="vector-store-namespaces-hint"
         display="chip"
         class="w-full"
       >
@@ -93,7 +96,18 @@
           </div>
         </template>
       </MultiSelect>
-      <small class="mt-1 text-surface-500">
+      <small
+        v-if="namespaceScopeIsEmpty"
+        id="vector-store-namespaces-hint"
+        class="mt-1 block text-red-500"
+      >
+        {{ t('lib.vectorStore.namespaces.required') }}
+      </small>
+      <small
+        v-else
+        id="vector-store-namespaces-hint"
+        class="mt-1 text-surface-500"
+      >
         {{ t('lib.vectorStore.namespaces.help') }}
       </small>
     </div>
@@ -202,6 +216,11 @@ const selectedNamespaces = computed({
     }
   },
 })
+
+// The API refuses this scope on save and a run would abort on it, so it is flagged while the admin edits
+const namespaceScopeIsEmpty = computed(() =>
+  Boolean(selectedDatabase.value) && !allNamespaces.value && selectedNamespaces.value.length === 0,
+)
 
 // Allowed metadata filter fields (delegated to ChipsInput child component)
 const allowedFilterFields = computed(() => currentValue.value?.allowed_metadata_filter_fields ?? [])

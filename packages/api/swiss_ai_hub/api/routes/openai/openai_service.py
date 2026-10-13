@@ -29,6 +29,7 @@ from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
+from swiss_ai_hub.core.persistence import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
@@ -60,6 +61,14 @@ class OpenaiService:
     By abstracting these operations, the service ensures consistency with OpenAI's API semantics,
     allowing the underlying implementation to be used seamlessly by the OpenaiController.
     """
+
+    @staticmethod
+    @trace_fn
+    async def get_chat_disclaimer(tenant_id: str, t: LocaleHandler) -> str:
+        tenant = await asyncio.to_thread(TenantMetadataEntity.get_metadata_by_tenant_id, tenant_id)
+        if tenant is None or tenant.chat_disclaimer is None:
+            return t("api.common.default_chat_disclaimer")
+        return t.extract(tenant.chat_disclaimer.to_locale_string()) or ""
 
     @staticmethod
     @trace_fn
@@ -391,6 +400,7 @@ class OpenaiService:
                 primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -404,6 +414,7 @@ class OpenaiService:
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
+            requested_features=requested_features,
             locale=locale,
             aihub_headers=aihub_headers,
         )
@@ -460,6 +471,7 @@ class OpenaiService:
                 primary_agent_id=agent_id,
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        requested_features = chat_completion_request.metadata.features if chat_completion_request.metadata else []
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -473,6 +485,7 @@ class OpenaiService:
             thread_id=str_to_object_id(thread_id),
             display_id=str_to_object_id(display_id),
             files=files,
+            requested_features=requested_features,
             locale=locale,
             aihub_headers=aihub_headers,
         )

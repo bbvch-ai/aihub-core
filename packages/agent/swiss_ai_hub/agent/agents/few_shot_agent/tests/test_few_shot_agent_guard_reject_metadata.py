@@ -7,7 +7,8 @@ Needs the dev stack (NATS + Valkey) but no LLM — detection, the guard, and the
 all stubbed. Marked self_hosted so the lean CI skips it.
 """
 
-from unittest.mock import patch
+from contextlib import asynccontextmanager
+from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -16,6 +17,8 @@ from swiss_ai_hub.core.events.agent import (
     ConversationTitleEvent,
     FollowUpQuestionsEvent,
     NotAMetaQuestionEvent,
+    RefusalReason,
+    RefusalStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
@@ -26,20 +29,26 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
 from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
 
 pytestmark = pytest.mark.self_hosted
 
 FEW_SHOT_MODULE = "swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent"
+SPINE_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
+SELF_AWARENESS_MODULE = "swiss_ai_hub.agent.capabilities.conversation.conversation"
 
 
 def _config() -> FewShotAgentConfig:
     return FewShotAgentConfig(
         agent_id="guard_reject_metadata_test",
+        condense_question=False,
         name=LocaleString(en="Test FewShot"),
         description=LocaleString(en="A test few-shot agent."),
         llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
+        user_memory=UserMemoryConfig(enable_user_memory_retrieval=False, enable_user_memory_storage=False),
+        org_memory=None,
         few_shot=FewShotStepConfig(
             few_shot_examples=[FewShotExample(user=LocaleString(en="hi"), agent=LocaleString(en="hello"))],
             system_prompt=LocaleString(en="Respond briefly."),
@@ -59,18 +68,27 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     async def fake_guard(**_):
         return GuardResult(success=False, reasoning="forced rejection")
 
-    async def fake_generate_metadata(chat_messages, llm_config, displayer, t, thread_context, user):
+    async def fake_generate_title(chat_messages, llm_config, displayer, t, thread_context, user):
         await displayer.display_event(ConversationTitleEvent(title="Fake Title"))
+
+    async def fake_generate_follow_ups(chat_messages, llm_config, displayer, t, user):
         await displayer.display_event(FollowUpQuestionsEvent(questions=["Fake follow-up?"]))
 
-    monkeypatch.setattr(f"{FEW_SHOT_MODULE}.do_detect_meta_question", fake_detect)
+    @asynccontextmanager
+    async def fake_cost_reporting(self, displayer, user=None):
+        yield MagicMock()
+
+    monkeypatch.setattr(f"{SELF_AWARENESS_MODULE}.do_detect_meta_question", fake_detect)
     monkeypatch.setattr(f"{FEW_SHOT_MODULE}.agent_description_guard", fake_guard)
+    monkeypatch.setattr(f"{SPINE_MODULE}.generate_title", fake_generate_title)
+    # The guard is stubbed, but entering the cost-reporting context still mints a gateway key over HTTP.
+    monkeypatch.setattr(LLMConfig, "cost_reporting_llm", fake_cost_reporting)
 
     runner = AgentTestRunner(agent_type=FewShotAgent, agent_config=_config())
     # autospec, not monkeypatch.setattr: a bare stub silently accepts whatever the step passes, so when
     # the real helper gained its `user` parameter this test kept passing while production raised
     # TypeError on every guard rejection. autospec binds the call against the real signature instead.
-    with patch(f"{FEW_SHOT_MODULE}.generate_conversation_metadata", autospec=True, side_effect=fake_generate_metadata):
+    with patch(f"{SPINE_MODULE}.generate_follow_up_questions", autospec=True, side_effect=fake_generate_follow_ups):
         async with runner.test_run(delay_before_stop=20) as topic:
             await runner.send_event_from_topic(topic=topic, start_event=_user_message("Fight Club"))
 
@@ -78,6 +96,10 @@ async def test_guard_reject_generates_title_and_follow_ups(monkeypatch):
     assert runner.has_event_of_class(ConversationTitleEvent), "guard-reject path did not generate a title"
     assert runner.has_event_of_class(FollowUpQuestionsEvent), "guard-reject path did not generate follow-ups"
     assert not runner.has_exception_event
+    refusals = runner.get_events_of_class(RefusalStopEvent)
+    assert refusals, "reject is not a refusal"
+    assert {refusal.reason for refusal in refusals} == {RefusalReason.OUT_OF_SCOPE}
+    assert refusals[0].output_messages, "the refusal carries no text for programmatic callers"
 
     # Without a chunk the refusal never reaches OpenAI-compatible clients, which build the answer from
     # the streamed chunks plus the stop event's output — the admin UI's reject-event rendering is not

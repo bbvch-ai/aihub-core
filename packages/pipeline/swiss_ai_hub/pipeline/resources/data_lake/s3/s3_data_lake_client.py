@@ -2,6 +2,7 @@ import base64
 import logging
 import mimetypes
 import os
+from collections.abc import Iterator
 from datetime import datetime
 
 import boto3
@@ -11,7 +12,10 @@ from swiss_ai_hub.core.infrastructure import S3BucketProvisioner
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
+from swiss_ai_hub.pipeline.types.skipped_data_lake_file import SkippedDataLakeFile
 from swiss_ai_hub.pipeline.util.bucket_utils import get_or_create_namespace_for_directory
+from swiss_ai_hub.pipeline.util.namespace_collision_error import NamespaceCollisionError
 
 logger = logging.getLogger(__name__)
 
@@ -57,56 +61,83 @@ class S3DataLakeClient(AbstractDataLakeClient):
         return uri.split("/", 1)[1]
 
     def get_all_files(self) -> list[DataLakeFile]:
+        """Every ingestible file; files of a folder whose namespace collides with another folder's are left out."""
+        return self.list_files().files
+
+    def list_files(self) -> DataLakeListing:
         """
-        Retrieve all files from the specified directory, excluding figures.
+        Retrieve all files of the bucket, excluding figures, and report the ones left out.
 
         Answers only "which files exist and has any changed", which ``list_objects_v2`` already
         covers: no per-object ``head_object``, and one namespace lookup per directory rather than
         per file. Cost therefore scales with directories, not with objects in the bucket.
+
+        Only a namespace collision skips a file. Any other lookup failure propagates: skipping on it would
+        drop the partitions of every file of the database, and the removal job would then delete them.
         """
-        data_lake_files: list[DataLakeFile] = []
+        listing = DataLakeListing()
         namespace_cache: dict[str, str] = {}
+        collisions: dict[str, NamespaceCollisionError] = {}
 
+        for s3_object in self._ingestible_objects():
+            key = s3_object["Key"]
+            document_uri = self.build_uri(key)
+            namespace = self._namespace_or_collision(document_uri, namespace_cache, collisions)
+            if isinstance(namespace, NamespaceCollisionError):
+                listing.skipped.append(SkippedDataLakeFile(uri=document_uri, reason=str(namespace)))
+            else:
+                listing.files.append(
+                    self._create_data_lake_file_from_s3_object(document_uri, s3_object, key, namespace=namespace)
+                )
+
+        return listing
+
+    def _namespace_or_collision(
+        self,
+        document_uri: str,
+        namespace_cache: dict[str, str],
+        collisions: dict[str, NamespaceCollisionError],
+    ) -> str | NamespaceCollisionError:
+        """Remembers a collision per directory, so a colliding directory is looked up once like any other."""
+        directory_name = self._directory_name(document_uri)
+        if directory_name not in collisions:
+            try:
+                return self._resolve_namespace(document_uri, namespace_cache)
+            except NamespaceCollisionError as collision:
+                collisions[directory_name] = collision
+        return collisions[directory_name]
+
+    def list_ingestible_uris(self) -> list[str]:
+        """The URIs ``list_files`` considers, without resolving a single namespace.
+
+        The removal job only compares URIs. Resolving namespaces there would let a colliding folder block the very
+        deletion that repairs it once the folder is renamed at the source.
+        """
+        return [self.build_uri(s3_object["Key"]) for s3_object in self._ingestible_objects()]
+
+    def _ingestible_objects(self) -> Iterator[dict]:
+        """Objects inside a top-level folder, minus directory markers, figures and Dagster's own files."""
         paginator = self._client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(
-            Bucket=self.container_name,
-        )
-
-        for page in page_iterator:
-            if "Contents" not in page:
-                continue
-
-            for obj in page["Contents"]:
-                key = obj["Key"]
-
-                # Skip directories (keys ending with /)
-                if key.endswith("/"):
-                    continue
-
+        for page in paginator.paginate(Bucket=self.container_name):
+            for s3_object in page.get("Contents", []):
+                key = s3_object["Key"]
                 path_parts = key.split("/")
-
+                is_directory_marker = key.endswith("/")
                 is_root_folder = len(path_parts) == 1
                 is_figure_folder = FIGURES_DIRECTORY_NAME in path_parts
                 is_dagster_folder = any(part.startswith(".") and part.endswith("dagster") for part in path_parts)
-                if is_root_folder or is_figure_folder or is_dagster_folder:
-                    continue
+                if not (is_directory_marker or is_root_folder or is_figure_folder or is_dagster_folder):
+                    yield s3_object
 
-                document_uri = self.build_uri(key)
-                data_lake_file = self._create_data_lake_file_from_s3_object(
-                    document_uri,
-                    obj,
-                    key,
-                    namespace=self._resolve_namespace(document_uri, namespace_cache),
-                )
-                data_lake_files.append(data_lake_file)
-
-        return data_lake_files
+    @staticmethod
+    def _directory_name(document_uri: str) -> str:
+        return document_uri.split("/")[3]  # s3://bucket/directory_name/...
 
     def _resolve_namespace(self, document_uri: str, namespace_cache: dict[str, str] | None = None) -> str:
         """Namespace varies only per directory, but the lookup also *registers* directories the
         knowledge UI and namespace-selection agent read, so the first file of each directory must
         still reach it — caching per directory keeps that side effect and drops the rest."""
-        directory_name = document_uri.split("/")[3]  # s3://bucket/directory_name/...
+        directory_name = self._directory_name(document_uri)
         if namespace_cache is None:
             return get_or_create_namespace_for_directory(self.container_name, directory_name)
         if directory_name not in namespace_cache:

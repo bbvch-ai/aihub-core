@@ -3,23 +3,14 @@ from typing import NamedTuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from openai import BadRequestError
+
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
 
 logger = logging.getLogger(__name__)
 
 # Reasoning models on Infomaniak cannot reliably emit structured output (tool calls / JSON), but are
-# reliable at a plain-text verdict token. Guards therefore ask for a token instead of a JSON object.
-# Reasoning is disabled: a guard verdict is a trivial classification, so thinking is pure latency.
-_NO_THINKING = {"chat_template_kwargs": {"thinking": False}}
-
-
-async def _achat_reasoning_disabled(llm: LLM, messages: list[ChatMessage]):
-    """Chat with reasoning off, falling back gracefully for models that reject ``chat_template_kwargs``
-    (e.g. Mistral-tokenizer models like Ministral 400 with "chat_template is not supported")."""
-    try:
-        return await llm.achat(messages, extra_body=_NO_THINKING)
-    except BadRequestError:
-        return await llm.achat(messages)
+# reliable at a plain-text verdict token. Guards therefore ask for a token instead of a JSON object,
+# with thinking off: a verdict is a trivial classification.
 
 
 class BinaryVerdict(NamedTuple):
@@ -42,7 +33,7 @@ async def request_verdict(llm: LLM, prompt: str) -> str:
 
 async def request_verdict_for_messages(llm: LLM, messages: list[ChatMessage]) -> str:
     """Plain-text verdict for a pre-built message list (e.g. a multimodal context prompt)."""
-    response = await _achat_reasoning_disabled(llm, messages)
+    response = await ReasoningFreeChat.achat(llm, messages)
     return str(response.message.content or "")
 
 

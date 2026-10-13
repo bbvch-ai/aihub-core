@@ -11,6 +11,11 @@ import { getMyIdentity } from '~/sdk/client'
 //  2. Surface confinement: this app extends the web layer and therefore
 //     inherits ALL of web's pages. A focused extender keeps the user inside
 //     its own section — anything outside /tenants/* is redirected there.
+//
+// Redirects are returned as plain locations, not via navigateTo(): they follow
+// an await, and if another navigation finished meanwhile navigateTo() would
+// navigate on its own instead of redirecting this one (see web's
+// middleware/home-redirect.ts).
 
 const AUTH_PATH = /^\/(en|de|fr|it)\/auth(\/|$)/
 const SYSADMIN_REQUIRED_PATH = /^\/(en|de|fr|it)\/sysadmin-required(\/|$)/
@@ -54,14 +59,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (identityCheckFailed) {
-    return navigateTo(`/${locale}/auth/login`)
+    return `/${locale}/auth/login`
   }
 
   if (!identity?.is_sys_admin) {
-    return navigateTo(`/${locale}/sysadmin-required`)
+    return `/${locale}/sysadmin-required`
   }
 
   if (!SYSADMIN_SECTION.test(to.path)) {
-    return navigateTo(`/${locale}/tenants`, { replace: true })
+    return { path: `/${locale}/tenants`, replace: true }
   }
 })

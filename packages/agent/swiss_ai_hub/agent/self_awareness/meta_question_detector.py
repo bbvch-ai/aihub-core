@@ -1,9 +1,11 @@
 import logging
+from collections.abc import Sequence
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from openai import APIError, BadRequestError
+from openai import APIError
+from swiss_ai_hub.core.generative_ai import ReasoningFreeChat
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.self_awareness.meta_question_classification import MetaQuestionClassification
@@ -17,13 +19,6 @@ _LABEL_TO_CATEGORY = {
 }
 _LABELS = (*_LABEL_TO_CATEGORY, "NORMAL")
 
-# Detection and the meta answer are trivial for a reasoning model, so its thinking is pure latency (≈13s
-# for a single-token classification on Qwen3.5). Model families read different keys — Qwen3 honours
-# ``enable_thinking`` and silently ignores ``thinking``, other vLLM templates honour ``thinking`` — so send
-# both. Mistral-tokenizer models (Ministral) reject ``chat_template_kwargs`` with a 400; callers fall back
-# to a plain request.
-REASONING_DISABLED_EXTRA_BODY = {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}
-
 # Reasoning models on Infomaniak cannot reliably produce structured output (tool calls / JSON) but are
 # reliable at emitting a single free-text label, so detection classifies via a plain-text token. Tokens
 # are language-agnostic; the model reads the (any-language) user message and emits the English token.
@@ -34,6 +29,12 @@ REASONING_DISABLED_EXTRA_BODY = {"chat_template_kwargs": {"thinking": False, "en
 # self-awareness branch became unreachable. Hence three properties worth preserving: META_ labels lead,
 # the "do you know X?" lookalike carve-outs live inside NORMAL's own definition rather than as a closing
 # tie-breaker, and each label carries non-English anchors (without them "Was kannst du?" reads as NORMAL).
+#
+# The classifier sees only the message text, so "what does the User role do here?" asked about an attached
+# spreadsheet read as a question about the assistant (gemma-4-31B: META_CAPABILITIES five times out of five), and
+# the meta answer, which cannot see the file, said it knew nothing about it. Naming the attached files fixes that on
+# every model that failed it while "who are you?" stays META_IDENTITY. The note is left out when nothing is attached,
+# so the prompt the weak models were tuned on is unchanged for a message without files.
 _CLASSIFICATION_PROMPT = """You classify a user's message to an AI assistant. Decide what the message is \
 *about*: the assistant itself, or the world.
 
@@ -53,8 +54,13 @@ document, or field of knowledge — even when phrased "do you know X?", "what do
 Decide by the subject of the message: if the subject is the assistant, pick the matching META_ label; if it \
 is anything else, pick NORMAL.
 
-User message: "{user_query}"
+{attached_files_note}User message: "{user_query}"
 Answer:"""
+
+_ATTACHED_FILES_NOTE = """The user attached these files to the conversation: {file_names}. A question about \
+something the files may contain is NORMAL.
+
+"""
 
 
 def _parse_label(text: str) -> str | None:
@@ -64,23 +70,26 @@ def _parse_label(text: str) -> str | None:
     return max(matches)[1] if matches else None
 
 
-async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> MetaQuestionClassification:
+async def detect_meta_question(
+    llm: LLM, t: LocaleHandler, user_query: str, attached_file_names: Sequence[str] = ()
+) -> MetaQuestionClassification:
     """Classify whether a user message is a meta question about the agent itself.
 
     Detection gates every chat message, so it must never fail the run: if the model returns no
     recognizable label, fall back to "not a meta question" and let the normal answer pipeline handle it.
     """
     prompt = PromptTemplate(_CLASSIFICATION_PROMPT)
-    message = ChatMessage(role=MessageRole.USER, content=prompt.format(user_query=user_query))
+    attached_files_note = (
+        _ATTACHED_FILES_NOTE.format(file_names=", ".join(attached_file_names)) if attached_file_names else ""
+    )
+    message = ChatMessage(
+        role=MessageRole.USER,
+        content=prompt.format(user_query=user_query, attached_files_note=attached_files_note),
+    )
 
     try:
-        # Disable reasoning: this is a trivial single-token classification, so the model's thinking is
-        # pure latency. Mistral-tokenizer models reject chat_template_kwargs, so fall back to a plain call
-        # (they have no reasoning to disable anyway).
-        try:
-            response = await llm.achat([message], extra_body=REASONING_DISABLED_EXTRA_BODY)
-        except BadRequestError:
-            response = await llm.achat([message])
+        # A single-token classification needs no thinking; on a reasoning model it would be pure latency.
+        response = await ReasoningFreeChat.achat(llm, [message])
         raw_answer = str(response.message.content)
         label = _parse_label(raw_answer)
         degraded_reason = None if label is not None else f"unrecognized classification {raw_answer.strip()[:80]!r}"

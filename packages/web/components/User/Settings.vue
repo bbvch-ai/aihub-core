@@ -25,6 +25,7 @@
           class="w-full"
         />
       </div>
+      <SupportIncidentButton labelled />
       <Button
         class="w-full"
         :label="t('user.logout')"
@@ -46,9 +47,8 @@ import { changeLocale } from '@formkit/vue'
 const auth = useAuth()
 const { versionDisplay } = useAppVersion()
 const { t, locale, locales } = useI18n()
-const queryCache = useQueryCache()
-const switchLocalePath = useSwitchLocalePath()
-const router = useRouter()
+const { applyLocale } = useApplyLocale()
+const { updateMyLocale } = useUpdateMyLocale()
 
 const op = ref()
 const toggle = (event: Event) => {
@@ -73,11 +73,12 @@ const selectedLocale = computed({
   set: (newValue) => {
     if (newValue?.code && newValue.code !== locale.value) {
       op.value.hide()
-      changeLocale(newValue.code)
-      router.push(switchLocalePath(newValue.code))
-        .then(() => {
-          queryCache.invalidateQueries()
-        })
+      applyLocale(newValue.code)
+      // Fire-and-forget: the switch itself must not wait on the network, and a
+      // failed write only costs the user the cross-device preference.
+      updateMyLocale({ locale: newValue.code }).catch((error) => {
+        console.error('Failed to persist preferred locale', error)
+      })
     }
   },
 })

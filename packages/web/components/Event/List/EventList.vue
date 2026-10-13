@@ -144,7 +144,7 @@ const { resolveComponentForEvent } = useEventComponent()
 
 const runNameFn = (run: RunStatistics) => run.agent.agent_config.name
 
-const getEventTimestamp = (event: AgentEventReadable): number =>
+const getEventTimestamp = (event: ContextualizedAgentEvent): number =>
   (event.event as { created_at?: number }).created_at ?? 0
 
 const sortedEvents = computed(() =>

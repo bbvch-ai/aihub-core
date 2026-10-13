@@ -1,5 +1,6 @@
 ---
 test: Questo è un test italiano
+default_chat_disclaimer: L’IA può commettere errori. Verifica le risposte.
 translation:
   prompt: |
     Sei un traduttore professionale. Il tuo compito è tradurre testi con precisione preservando significato, tono e contesto culturale.

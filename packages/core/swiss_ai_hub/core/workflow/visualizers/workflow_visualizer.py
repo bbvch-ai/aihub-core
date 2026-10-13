@@ -50,6 +50,9 @@ class WorkflowVisualizer:
             )
 
         producers, consumers = self._collect_producers_and_consumers(steps)
+        # A stop handed over in a completion request is emitted by whichever step returns the bare `StopEvent`.
+        for stop_event in self.agent.completion_stops:
+            producers[stop_event] |= producers.get(StopEvent, set())
 
         # Iterate event classes in a stable order so the serialized graph is
         # deterministic across runs (avoids flaky tests and noisy API diffs).

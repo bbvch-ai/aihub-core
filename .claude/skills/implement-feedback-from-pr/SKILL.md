@@ -56,27 +56,29 @@ threads — they have already been addressed in previous commits.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 
-This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot checks:
+This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs these bot checks:
 
 - **`test-modules`** — pytest across scopes. Failures here are real — fix the code.
 
 - **`pytest-coverage-comment`** — coverage delta. Add tests only if the uncovered code is meaningful.
 
-- **`sonarcloud-scan`** — scans three SonarCloud projects:
+- **`env-check`** — `.env.prod` vs rendered compose consistency. Failures are real — run `make generate-compose` and
+  `make check-env`.
 
-  - `swiss-ai-hub_lib-core` (packages/core)
-  - `swiss-ai-hub_api-core` (packages/api)
-  - `swiss-ai-hub_agents-core` (packages/agent)
+- **`sonarcloud-scan`** — scans one SonarCloud project per package (keys in `packages/*/sonar-project.properties`, e.g.
+  `aihub-core_lib-core` for packages/core, `aihub-core_api-core` for packages/api, `aihub-core_agents-core` for
+  packages/agent).
 
   SonarCloud bugs and vulnerabilities: almost always fix. Code smells: fix if straightforward. Security hotspots:
   evaluate case-by-case.
 
 ## Step 3: Identify Affected Scopes
 
-Use the file list from Step 1 (`get_files`) to determine which monorepo scopes need testing. Map changed file paths to
-scopes: `packages/core/` → packages/core, `packages/api/` → packages/api, `packages/agent/` → packages/agent,
-`packages/pipeline/` → packages/pipeline, `packages/process/` → packages/process, `packages/bot/` → packages/bot,
-`packages/web/` → packages/web.
+Use the file list from Step 1 (`gh pr view --json files`) to determine which monorepo scopes need testing. Map changed
+file paths to scopes: `packages/core/` → packages/core, `packages/api/` → packages/api, `packages/agent/` →
+packages/agent, `packages/pipeline/` → packages/pipeline, `packages/process/` → packages/process, `packages/bot/` →
+packages/bot, `packages/web/` → packages/web, plus `packages/backup/`, `packages/sysadmin-api/`,
+`packages/sysadmin-web/` the same way.
 
 ## Step 4: Implement Changes
 
@@ -89,7 +91,7 @@ After all changes are implemented:
 
 ```bash
 # Lint all affected scopes
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make pr-ready
 
 # Run tests in affected scopes (or delegate to /test-scope)
 make -C packages/core test    # if packages/core was affected
@@ -98,13 +100,13 @@ make -C packages/api test    # if packages/api was affected
 
 ## Troubleshooting
 
-| Problem                             | Solution                                                              |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| MCP `get` returns no PR             | Verify PR number: `gh pr list`                                        |
-| Inline comments not visible         | Use `get_review_comments` method (not `get_comments`)                 |
-| SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation |
-| `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                      |
-| Tests fail in unrelated scope       | Check if `packages/core` changes broke a downstream scope             |
+| Problem                             | Solution                                                                |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `gh pr view` returns no PR          | Verify PR number: `gh pr list`                                          |
+| Inline comments not visible         | Query `reviewThreads` via GraphQL (Step 1), not `gh pr view --comments` |
+| SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation   |
+| `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                        |
+| Tests fail in unrelated scope       | Check if `packages/core` changes broke a downstream scope               |
 
 ## Done When
 

@@ -16,6 +16,7 @@ from swiss_ai_hub.api.routes import (
     EventController,
     FileController,
     I18nController,
+    IncidentController,
     KnowledgeController,
     ModelController,
     MyAccountController,
@@ -31,6 +32,7 @@ from swiss_ai_hub.api.routes import (
     TokenController,
     TranslationController,
     UserController,
+    UserKnowledgeController,
     UserMemoryController,
     WebhookController,
 )
@@ -45,10 +47,15 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
-    AuthProviderController(auth=auth).get_auth_providers(),
+    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider().get_tenant_auth_provider(),
     SuiteController(auth=auth).get_suite(),
     MyTenantController(auth=auth).get_my_tenants().get_my_active_tenant().set_my_active_tenant(),
-    MyAccountController(auth=auth).get_my_account().get_my_identity().get_my_dashboard().update_my_dashboard(),
+    MyAccountController(auth=auth)
+    .get_my_account()
+    .get_my_identity()
+    .get_my_dashboard()
+    .update_my_dashboard()
+    .update_my_locale(),
     UserController(auth=auth).get_user().get_users().assign_role().revoke_role(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth)
@@ -98,6 +105,7 @@ runner.mount(
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     AccessController(auth=auth).get_access_capabilities().get_access_presets().get_default_tenant_rules(),
     OpenaiController(auth=auth)
+    .get_chat_disclaimer()
     .get_models()
     .get_model_with_assistants()
     .get_embeddings()
@@ -111,10 +119,13 @@ runner.mount(
         translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
     )
     .get_ingestors()
+    .get_source_pipelines()
     .create_database()
+    .update_database_source()
     .create_namespace()
     .update_namespace()
     .get_databases()
+    .resolve_openwebui_references()
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()
@@ -129,6 +140,14 @@ runner.mount(
     .delete_database(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    IncidentController(auth=auth).get_incident_availability().get_incident_form().create_incident(),
+    UserKnowledgeController(auth=auth)
+    .list_user_files()
+    .get_user_file_content()
+    .upload_user_file()
+    .create_user_folder()
+    .move_user_file()
+    .delete_user_file(),
     UserMemoryController(auth=auth)
     .get_user_memories()
     .search_user_memories()

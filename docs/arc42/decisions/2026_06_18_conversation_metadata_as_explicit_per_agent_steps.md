@@ -1,5 +1,8 @@
 # Conversation Metadata (Title + Follow-up Questions) as Explicit Per-Agent Steps
 
+> **Superseded by `2026_09_28_capabilities_and_the_conversational_spine`:** the per-agent step copies this ADR accepted
+> are gone; every conversational blueprint now installs the shared steps as capabilities.
+
 ::: warning Update (2026-07-30)
 Two of this ADR's own stated consequences are reversed:
 

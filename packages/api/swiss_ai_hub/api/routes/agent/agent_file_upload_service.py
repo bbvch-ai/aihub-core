@@ -1,12 +1,20 @@
+import asyncio
 import logging
 import uuid
+from collections.abc import Sequence
 
 from botocore.exceptions import ClientError
 from mypy_boto3_s3 import S3Client
 from swiss_ai_hub.core.events.agent import UserUploadedFile
 from swiss_ai_hub.core.infrastructure import trace_fn
 
+from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_item import AgentFileValidationItem
+
 logger = logging.getLogger(__name__)
+
+# Each check holds a thread of the shared executor and a connection of the S3 client's pool of ten for a whole round
+# trip, so a turn's files are checked a few at a time rather than all at once.
+CONCURRENT_FILE_CHECKS = 8
 
 
 class AgentFileUploadService:
@@ -79,6 +87,11 @@ class AgentFileUploadService:
         return presigned_url, file_id
 
     @trace_fn
+    def read_file(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bytes:
+        key = self.s3_key(agent_class, agent_id, file_id, filename)
+        return self._s3_client.get_object(Bucket=self.BUCKET_NAME, Key=key)["Body"].read()
+
+    @trace_fn
     def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:
         """Check whether a file was successfully uploaded."""
         key = self.s3_key(agent_class, agent_id, file_id, filename)
@@ -90,3 +103,22 @@ class AgentFileUploadService:
             if error_code in ["404", "NoSuchKey"]:
                 return False
             raise
+
+    async def missing_files(
+        self, agent_class: str, agent_id: str, files: Sequence[AgentFileValidationItem]
+    ) -> list[str]:
+        """The ids of the files the bucket does not hold, in the order given."""
+        slots = asyncio.Semaphore(CONCURRENT_FILE_CHECKS)
+
+        async def exists(file: AgentFileValidationItem) -> bool:
+            async with slots:
+                return await asyncio.to_thread(
+                    self.verify_file_exists,
+                    agent_class=agent_class,
+                    agent_id=agent_id,
+                    file_id=file.file_id,
+                    filename=file.filename,
+                )
+
+        stored = await asyncio.gather(*(exists(file) for file in files))
+        return [file.file_id for file, present in zip(files, stored, strict=True) if not present]

@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
     types: [opened, edited, synchronize, reopened, ready_for_review]
+concurrency:
+  # Editing the PR body (e.g. ticking a test-plan box) re-runs this workflow; overlapping runs upload
+  # SonarCloud analyses for the same PR at once and SonarCloud cancels them. Pushes to main are never cancelled.
+  group: analyze-test-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: write
   security-events: write
@@ -59,7 +64,7 @@ jobs:
             docker_compose_services: postgres-ferretdb ferretdb
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
       - name: Run Tests
         uses: ./.github/actions/test_backend
         with:
@@ -86,9 +91,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
       - name: Set up Python 3.13
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: '3.13'
       - name: Install uv

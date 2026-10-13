@@ -11,7 +11,7 @@ from opentelemetry import context as otel_context
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents import AgentConfig, StepConfig
-from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.dispatcher import BaseDispatcher, EventsAndKwargs, TraceStore
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events import BaseEvent
@@ -259,7 +259,10 @@ class AgentDispatcher(BaseDispatcher):
     ) -> None:
         for step_method in self.agent.get_steps_waiting_for_event(type(event)):
             logger.debug(f"Checking step '{step_method.__name__}' for readiness")
-            input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set())
+            precondition_fn = getattr(step_method, Agent.PRECONDITION_FUNCTION_ANNOTATION, None)
+            input_events = getattr(step_method, Agent.INPUT_EVENTS_ANNOTATION, set()) | getattr(
+                precondition_fn, Agent.INPUT_EVENTS_ANNOTATION, set()
+            )
             input_event_class_names = [event_class.event_name_from_class() for event_class in input_events]
             events = await self.event_store.get_events_of_multiple_types(
                 topic.execution_context_id, input_event_class_names, until_event=event
@@ -500,8 +503,8 @@ class AgentDispatcher(BaseDispatcher):
         (own thread/display/run ids), so the caller's stop-time cleanup never touches it. Unlike
         `trigger_agent_in_the_loop`, NO response subscription is opened — the writer runs to its own StopEvent
         and cleans itself up, with nothing routed back to the caller. The `MemoryStorageRequestedEvent` itself
-        is still published to the caller topic by `publish_event` (control-only, no display), where it serves
-        as the stop-gate marker.
+        is still published to the caller topic by `publish_event`, where its control copy serves as the
+        stop-gate marker and its display copy shows the delegation in the event history.
 
         The publish is done in a **detached OTEL context** so the writer starts its own root Langfuse trace.
         Otherwise `js_publisher.with_trace_context()` would inject the caller's span context into the message
@@ -593,16 +596,11 @@ class AgentDispatcher(BaseDispatcher):
         if step_configs.get(param.annotation):
             return step_configs[param.annotation]
 
-        if inspect.isclass(param.annotation) and issubclass(param.annotation, AgentConfig):
-            if param.annotation != self.agent_config_type:
-                raise ValueError(
-                    f"Expected AgentConfig type '{self.agent_config_type.__name__}', "
-                    f"but got '{param.annotation.__name__}' for parameter '{param.name}'."
-                )
-            logger.debug(
-                f"Injected dynamic configuration for parameter '{param.name}' of type '{param.annotation.__name__}'"
-            )
-            return agent_config
+        if (config := self._config_for_form_parameter(param, agent_config)) is not None:
+            return config
+
+        if param.annotation == type[Agent]:
+            return self.agent
 
         if param.annotation == RunContext:
             return run_context
@@ -612,6 +610,13 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == Redis:
             return self.redis
+
+        if AccessChecker in (param.annotation, *get_args(param.annotation)):
+            # A run without a user gets None, so the step keeps its profile's scope.
+            user_data = await run_context.get("user")
+            if not user_data:
+                return None
+            return await asyncio.to_thread(AccessChecker.from_user, UserIdentity.model_validate(user_data))
 
         # Matched through the union members too: the programmatically-started agents annotate this
         # `UserIdentity | None`, and an equality check against the bare class silently misses them —
@@ -645,6 +650,25 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
 
+        return None
+
+    def _config_for_form_parameter(
+        self,
+        param: Annotated[inspect.Parameter, "Parameter from the step method signature."],
+        agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
+    ) -> AgentConfig | None:
+        """A shared step names the form mixin it needs; the run's concrete config carries every mixin it lists."""
+        annotation = param.annotation
+        if not inspect.isclass(annotation) or not issubclass(annotation, Form) or annotation is Form:
+            return None
+        if issubclass(self.agent_config_type, annotation):
+            logger.debug(f"Injected dynamic configuration for parameter '{param.name}' of type '{annotation.__name__}'")
+            return agent_config
+        if issubclass(annotation, AgentConfig):
+            raise ValueError(
+                f"Expected a config deriving from '{annotation.__name__}' for parameter "
+                f"'{param.name}', but this blueprint runs on '{self.agent_config_type.__name__}'."
+            )
         return None
 
     def get_topic_manager_for_thread(

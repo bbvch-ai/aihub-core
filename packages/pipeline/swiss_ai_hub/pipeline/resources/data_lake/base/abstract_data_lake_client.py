@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
 
 
 class AbstractDataLakeClient(ABC):
@@ -72,6 +73,23 @@ class AbstractDataLakeClient(ABC):
 
         Implementation should handle pagination for large directories
         and provide appropriate error handling for access issues.
+        """
+        pass
+
+    @abstractmethod
+    def list_files(self) -> DataLakeListing:
+        """The files ``get_all_files`` returns plus the ones it leaves out and why.
+
+        A folder whose namespace collides with another folder's must be skipped, not fail the listing: one listing
+        feeds the whole database's observation.
+        """
+        pass
+
+    @abstractmethod
+    def list_ingestible_uris(self) -> list[str]:
+        """The URIs of every file the listing considers, without resolving or registering any namespace.
+
+        For callers that only compare URIs, such as removal, which must keep working while a folder collides.
         """
         pass
 

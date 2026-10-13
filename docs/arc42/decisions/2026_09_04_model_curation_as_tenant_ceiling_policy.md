@@ -66,10 +66,22 @@ new tenants automatically, while a new **chat** model — the kind QC vets and u
 *A `.>` rule does not match its own root.* This is the non-obvious constraint that makes an enumerated ceiling harder to
 get right than the single `aihub.admin.>` it replaces. `aihub.admin.knowledge.>` covers every named database but not the
 bare `aihub.admin.knowledge`, which is what *creating* one is guarded on — a database that does not exist yet cannot be
-named by a rule. `_NON_MODEL_RULES` therefore carries both forms for `knowledge`, exactly as the seeded
-`AIHubKnowledgeAdmin` role does. Because a ceiling caps every role beneath it, omitting the root does not merely narrow
-a role — it makes the permission unreachable for the whole tenant, and `AccessCapabilityService._capability_for_guard`
-*hides* such a row rather than showing it blocked, so the loss is silent.
+named by a rule. The ceiling therefore carries the bare `aihub.admin.knowledge` root. Because a ceiling caps every role
+beneath it, omitting the root does not merely narrow a role — it makes the permission unreachable for the whole tenant,
+and `AccessCapabilityService._capability_for_guard` *hides* such a row rather than showing it blocked, so the loss is
+silent.
+
+*Amended for aihub-core-private#269:* the ceiling carries **only** the root, not `aihub.admin.knowledge.>` beside it as
+this ADR originally recorded. Databases live in one global collection with no tenant column, so the subtree form granted
+every new tenant every database in the deployment — and since admin access implies use, its users could read and search
+what other tenants had ingested. Reachability now arrives per database: `KnowledgeService._grant_knowledge_access`
+grants `aihub.admin.knowledge.<db>` **and** `aihub.admin.knowledge.<db>.>` to the tenant that creates it, and puts both
+on the creator's `Knowledge<Db>Admin` role. The subtree is safe there because a database owns its namespaces — unlike an
+agent class, whose profiles belong to whoever built them (`2026_09_08_standard_blueprints_as_tenant_ceiling.md`) — and
+it is required, because a rule matches only its own depth and namespaces created by a pipeline are granted to no one
+when they appear. It is also the pair the knowledge "Manage" row writes, so the row reads as granted. Deleting a
+database revokes both forms. The seeded `AIHubKnowledgeAdmin` role keeps both forms: inside a role, capped by the
+ceiling, `knowledge.>` means "every database this tenant holds".
 
 Getting this right per family by hand is what the family-coverage guard failed to catch, because the gap was one of
 *depth*, not of family. `test_the_derived_ceiling_permits_every_route_guard` therefore reads the guards off the real
@@ -117,7 +129,14 @@ for anything the ceiling cannot grant, "hidden, never merely disabled".
   a live rule, so a chat model added later does not appear for tenants created earlier.
 
 - *Two classes of tenant coexist.* Existing tenants keep `aihub.admin.>` and continue to auto-inherit new models, until
-  someone migrates them. Out of scope here, and the reason nothing breaks.
+  someone migrates them. Out of scope here, and the reason nothing breaks. The same holds for knowledge: a tenant
+  configured while the ceiling still carried `aihub.admin.knowledge.>` keeps seeing every database, and a database it
+  creates is covered by that wildcard, so no per-database grant is added. Unticking the databases in the tenant editor
+  is the cleanup.
+
+- *A database created without a tenant context reaches no tenant.* A sysadmin acting outside any tenant gets no
+  per-database grant, so the database appears nowhere until the sysadmin ticks it in a tenant's editor. The same applies
+  to the legacy `defaultknowledge` and `sharedknowledge` databases, including for the startup tenant on a fresh install.
 
 - *This is a permission control, not a hard block.* The model stays served and callable by anyone permitted, and
   sysadmins bypass the ceiling entirely. If a model must become genuinely unreachable, that is gateway removal — and it

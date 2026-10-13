@@ -1,0 +1,25 @@
+---
+name: aihub-disclaimer-regression
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:v0.11.3-slim
+    ports: [127.0.0.1:18081:8080]
+    environment:
+      WEBUI_AUTH: 'False'
+      OFFLINE_MODE: 'True'
+      ENABLE_OLLAMA_API: 'False'
+      ENABLE_VERSION_UPDATE_CHECK: 'False'
+    volumes:
+      - ../../infra/deployment/templates/openwebui-disclaimer/loader.js:/app/build/static/loader.js:ro
+    configs:
+      - source: openwebui-disclaimer
+        target: /app/build/static/aihub-disclaimer.json
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8080/health]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+configs:
+  openwebui-disclaimer:
+    content: |-
+      {"parentOrigin": "http://localhost:3335"}

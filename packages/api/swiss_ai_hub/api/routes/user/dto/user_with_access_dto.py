@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Annotated, Self
 
 from nats.aio.client import Client as NATS
 from pydantic import Field
+from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -25,6 +26,10 @@ class UserWithAccessDTO(UserDTO):
         list[str],
         Field(description="The user's resolved access rules (union of their roles), to drive the capability view."),
     ]
+    preferred_locale: Annotated[
+        str | None,
+        Field(description="The user's persisted UI language, or null if they have never chosen one."),
+    ] = None
 
     @classmethod
     async def from_user_identity(
@@ -39,6 +44,10 @@ class UserWithAccessDTO(UserDTO):
         access_checker = AccessChecker.from_user(user)
         access = await AccessCatalogService.build_access(access_checker, runner, t, include_denied=False)
 
+        # Read here rather than on UserIdentity: this endpoint is the only consumer,
+        # so the extra Keycloak round-trip stays off the per-request auth path.
+        preferred_locale = await KeycloakAdminService.get_preferred_locale(user.id)
+
         return cls(
             id=user.id,
             name=user.name,
@@ -49,4 +58,5 @@ class UserWithAccessDTO(UserDTO):
             is_sys_admin=user.is_sys_admin,
             access=access,
             access_rules=sorted(access_checker.access_rules),
+            preferred_locale=preferred_locale,
         )

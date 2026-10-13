@@ -187,6 +187,15 @@ including other tenants'. A new tenant therefore starts with its three blueprint
 assistant it creates is added to its own ceiling as it is created. Granting a tenant one specific assistant that already
 exists stays a deliberate act: tick that assistant's own row in the tenant editor.
 
+**Knowledge** follows the same reasoning. The tenant gets `aihub.admin.knowledge`, which is what creating a knowledge
+database is guarded on, and no existing database. Databases are also stored deployment-wide, so
+`aihub.admin.knowledge.>` would hand the tenant every other tenant's knowledge. Each database a tenant creates is added
+to its own ceiling as `aihub.admin.knowledge.<db>` plus `aihub.admin.knowledge.<db>.>` — the second form covers every
+folder in it, including folders a sync or ingestion pipeline creates later — and the creator gets a `Knowledge<Db>Admin`
+role holding the same two rules to hand on to others. A database created by a sysadmin outside any tenant, and the
+legacy `defaultknowledge` / `sharedknowledge` databases, reach a tenant only once the sysadmin ticks them in its tenant
+editor.
+
 Agents use an allow list where models use exclusions because the two rosters differ in kind. Model names vary between
 CPU and GPU deployments, so a fixed list would leave a GPU tenant with no chat model. Agent class names are fixed at
 build time, and the discovered-class roster is still empty when the startup tenant is seeded at first boot — an
@@ -231,7 +240,8 @@ not exist yet: creating a knowledge database is checked against `aihub.admin.kno
 been created cannot be named by a rule. A rule set that should cover both has to carry both forms, which is why
 `AIHubKnowledgeAdmin` is seeded with `aihub.admin.knowledge` *and* `aihub.admin.knowledge.>`. This applies to tenant
 ceilings as much as to roles: a ceiling holding only the `.>` form caps the root permission away from every role in the
-tenant.
+tenant. The reverse holds one level down: `aihub.admin.knowledge.hr-docs` alone does not reach the folder
+`aihub.admin.knowledge.hr-docs.policies`, which is why a newly created database is granted with its `.>` form too.
 
 **Prohibited**:
 

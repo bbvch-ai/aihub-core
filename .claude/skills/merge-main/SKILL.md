@@ -138,7 +138,7 @@ uv sync --all-packages
 Run `make pr-ready` from the repo root to ensure formatting and linting pass after merge:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make pr-ready
 ```
 
 If `uv.lock` was conflicted or dependencies changed on main, regenerate it:
@@ -150,7 +150,7 @@ uv lock
 If Docker Compose templates were touched on main, regenerate:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core generate-compose
+make generate-compose
 ```
 
 Commit any post-merge fixups:

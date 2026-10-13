@@ -57,7 +57,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     def mock_sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
         pass
 
-    async def mock_ensure_active_tenant(user_id: str) -> None:
+    async def mock_ensure_active_tenant(user_id: str, redis: object) -> None:
         pass
 
     def mock_get_roles(user_id: str, tenant_id: str) -> list[str]:

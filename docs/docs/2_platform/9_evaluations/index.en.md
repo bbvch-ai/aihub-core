@@ -8,17 +8,47 @@ Agent evaluations test and measure AI agent quality before and after deployment.
 deliver accurate, complete, and concise responses.
 
 Evaluations test agents against predefined questions with known correct answers. Experiments are run in
-[Langfuse](https://langfuse.com), the platform's built-in LLM observability tool. Swiss AI Hub auto-provisions
-everything Langfuse needs — your agents, an agent-calling connection, evaluator models, and a prompt template — so you
-can focus on three steps:
+[Langfuse](https://langfuse.com), the platform's built-in LLM observability tool. Swiss AI Hub auto-provisions most of
+what Langfuse needs — your agents, an agent-calling connection, an evaluator LLM connection, and a prompt template — so
+you can focus on three steps:
 
 1. **Create a dataset** of questions and reference answers.
 2. **Create evaluators** that score agent responses.
 3. **Run experiments** against your agent and review the results.
 
+One thing is not provisioned automatically and must be set once per deployment — see
+[Before you start](#before-you-start-set-the-default-evaluation-model).
+
 ::: tip
 This page describes the Swiss AI Hub workflow only. For Langfuse-specific details (dataset upload formats, evaluator
 configuration, experiment comparison), see the [Langfuse documentation](https://langfuse.com/docs).
+:::
+
+## Before you start: set the default evaluation model
+
+Langfuse keeps a **project-level default evaluation model** — the judge its managed evaluators use. Swiss AI Hub cannot
+provision it: Langfuse exposes no API for this setting. Until a sysadmin sets it, every managed evaluator in the **Run
+Experiment** wizard is greyed out and cannot be selected, with the tooltip *"Requires project-level evaluation model"*.
+
+Set it once, after deployment:
+
+1. Open Langfuse and go to **Evaluation → LLM-as-a-Judge → Default Evaluation Model**.
+2. Click **Set up** and pick a chat model from the `AI-Hub LLM (Evaluators)` connection.
+
+This is a one-time action per deployment — Langfuse runs a single project for the whole platform, so it does not need
+repeating per tenant.
+
+::: tip Upgrading a local environment created before September 2026
+Langfuse issues both the agent call and the judge call **from its own container**, so both connections must carry
+addresses reachable from there. `.env.dev` now ships them, but an `.env` copied before that change does not. Add:
+
+```bash
+LITE_LLM_PROXY_INTERNAL_BASE_URL='http://litellm:4000'
+AIHUB_OPENAI_API_BASE_URL='http://host.docker.internal:8000/api/v1/active/openai'
+```
+
+Without them the API refuses to register the connections at startup, logging an error that names the missing setting —
+the host-side defaults point at `localhost`, which inside the Langfuse container is Langfuse itself.
 :::
 
 ## 1. Create a dataset
@@ -49,7 +79,8 @@ saved. To change a question, add a corrected item or edit the dataset in Langfus
 
 Evaluators score each agent response, typically using LLM-as-a-judge. Configure them in Langfuse. Swiss AI Hub
 provisions a dedicated evaluator LLM connection (`AI-Hub LLM (Evaluators)`), so judge models are available out of the
-box.
+box. Document-extraction models (OCR and vision-language) are deliberately left out of that list — LiteLLM reports them
+as chat models, but they cannot grade text.
 
 Recommended dimensions to score:
 

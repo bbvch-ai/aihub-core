@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
@@ -22,6 +23,10 @@ from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import Ag
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
+from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
+    PrePairKnowledgeCollectionMigration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -194,10 +199,10 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
 
 
 @no_trace
-async def finalize_role_setup() -> None:
+async def finalize_role_setup(redis: Redis) -> None:
     """Runs post-tenant-initialization role checks and superuser bookkeeping."""
     await _validate_signup_roles()
-    await initialize_superuser_token()
+    await initialize_superuser_token(redis)
 
 
 async def _validate_signup_roles() -> None:
@@ -223,7 +228,7 @@ _SUPERUSER_TOKEN_NAME = "superuser-static-token"
 _SUPERUSER_TOKEN_TTL = timedelta(days=365 * 100)
 
 
-async def initialize_superuser_token() -> None:
+async def initialize_superuser_token(redis: Redis) -> None:
     """
     Ensures the superuser Keycloak user exists with the AIHubSysAdmin realm role,
     then upserts a ``BearerToken`` row holding the static ``SUPERUSER_TOKEN`` env
@@ -264,7 +269,7 @@ async def initialize_superuser_token() -> None:
     )
     logger.info(f"Superuser bearer token seeded for Keycloak user '{settings.USERNAME}' (id={keycloak_user.id})")
 
-    await KeycloakAdminService.ensure_active_tenant(keycloak_user.id)
+    await KeycloakAdminService.ensure_active_tenant(keycloak_user.id, redis)
 
 
 @no_trace
@@ -323,6 +328,27 @@ def strip_retired_agent_config_keys() -> None:
         stripped = AgentConfigEntityDocument.unset_config_key(config_key)
         if stripped:
             logger.info(f"Stripped the retired '{config_key}' config key from {stripped} agent profile(s)")
+
+
+# Transitional: since #1603 a retriever must name its namespaces or set `all_namespaces`, and an empty list,
+# which used to search everything, aborts every run (#1836). Saves now reject it, so no new one appears; this
+# rewrites the ones stored before. Delete it, `EmptyNamespaceScopeMigration` and the entities'
+# `replace_config_data_if_unchanged`, once deployments have upgraded past it.
+def widen_empty_retriever_namespace_scopes() -> None:
+    """Gives every stored retriever with an empty namespace scope the all-namespaces scope it used to mean."""
+    migrated = EmptyNamespaceScopeMigration.run()
+    if migrated:
+        logger.info(f"Widened an empty retriever namespace scope to all namespaces in: {', '.join(migrated)}")
+
+
+# Transitional: mail categories name their collections as (database, collection) pairs, and the old keys left in a
+# profile narrowed a category back to its old collection after an admin switched the selection off
+# (aihub-core-private#299). Delete it and `PrePairKnowledgeCollectionMigration` once deployments have upgraded past it.
+def carry_over_pre_pair_knowledge_collections() -> None:
+    """Rewrites mail categories still in the pre-pair collection shape, and removes the old keys from every profile."""
+    migrated = PrePairKnowledgeCollectionMigration.run()
+    if migrated:
+        logger.info(f"Carried pre-pair knowledge collections over to pairs in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:
