@@ -89,11 +89,6 @@ def setup_test_credentials():
         validate_roles=False,
     )
 
-    # Seed the fake Keycloak admin store so ``find_user_by_email(USER_EMAIL)``
-    # resolves to the dev OID. The bot sends ``from_property.name = USER_EMAIL``
-    # which is looked up via email.
-    register_fake_keycloak_user(user_id=dev_oid, name="Test User", email=USER_EMAIL)
-
     yield
 
     # Clean up test data
@@ -109,6 +104,12 @@ def setup_test_credentials():
             disconnect()
         except Exception:
             pass
+
+
+@pytest.fixture(autouse=True)
+def seed_test_user(mock_keycloak_admin_service):
+    """The fake Keycloak store is cleared per test, so its user must be seeded per test."""
+    register_fake_keycloak_user(user_id=TEST_USER_OID, name="Test User", email=USER_EMAIL)
 
 
 @pytest.fixture
