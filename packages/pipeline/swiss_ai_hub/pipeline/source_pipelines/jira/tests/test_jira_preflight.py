@@ -63,6 +63,13 @@ class TestPreflight:
         with pytest.raises(ValueError, match=r"Jira project SDD does not exist, or Seed Bot cannot see it\."):
             _check(_for(jira, project_keys=["AAA", "SDD"]))
 
+    def test_a_renamed_project_names_its_new_key(self, jira: FakeJira):
+        """Jira still answers the old key, but every issue it returns carries the new one."""
+        jira.renamed_projects = {"BBB": "CCC"}
+
+        with pytest.raises(ValueError, match=r"Jira project BBB has been renamed to CCC"):
+            _check(_for(jira))
+
     def test_an_invalid_clause_names_jira_s_reason(self, jira: FakeJira):
         """Cloud search would answer it with no issues at all."""
         with pytest.raises(ValueError, match="The JQL clause is invalid: Field 'statuz' does not exist"):

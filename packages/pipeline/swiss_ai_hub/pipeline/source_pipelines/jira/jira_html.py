@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from markdownify import ATX, MarkdownConverter
 
-_CONVERTER = MarkdownConverter(heading_style=ATX, bullets="-")
+_CONVERTER = MarkdownConverter(heading_style=ATX, bullets="-", escape_underscores=False, escape_asterisks=False)
 
 
 class JiraHtml:
@@ -20,7 +20,8 @@ class JiraHtml:
 
         Jira's relative links already start with its context path (``/jira/browse/…``), so they are resolved against
         the site rather than appended to it. Data Center renders ``{{monospace}}`` as ``<tt>``, which markdownify
-        would flatten into plain text.
+        would flatten into plain text. Plain ``_`` and ``*`` stay unescaped, so an identifier such as
+        ``ENG_CONFIG_PATH`` is indexed and found as written.
         """
         if not html or not html.strip():
             return ""

@@ -45,12 +45,18 @@ class JiraPreflight:
 
     @staticmethod
     def _require_visible(client: JiraClient, project: str, account: str) -> dict[str, Any]:
+        """Jira keeps answering a renamed project's old key, but its issues carry the new one."""
         try:
-            return client.project(project)
+            answer = client.project(project)
         except JiraRequestError as refused:
             if refused.status_code not in _NOT_VISIBLE:
                 raise
             raise ValueError(f"Jira project {project} does not exist, or {account} cannot see it.") from refused
+        if answer.get("key", project) != project:
+            raise ValueError(
+                f"Jira project {project} has been renamed to {answer['key']}; change the database's project keys."
+            )
+        return answer
 
     @staticmethod
     def _require_valid(client: JiraClient, jql: str) -> None:

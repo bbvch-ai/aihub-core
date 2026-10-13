@@ -187,6 +187,12 @@ class TestHtml:
         assert "| Field | Value |" in markdown
         assert "int x = 1;" in markdown
 
+    def test_identifiers_keep_their_underscores_and_asterisks(self):
+        """Escaped, ``ENG_CONFIG_PATH`` would be indexed as ``ENG\\_CONFIG\\_PATH`` and missed by a keyword search."""
+        markdown = JiraHtml.to_markdown("<p>Set ENG_CONFIG_PATH and run *.sh in my_script.py</p>", "https://x.test")
+
+        assert markdown == "Set ENG_CONFIG_PATH and run *.sh in my_script.py"
+
     def test_monospace_text_from_data_center_stays_code(self):
         markdown = JiraHtml.to_markdown("<p>Run <tt>make test</tt> first</p>", "https://jira.acme.ch/jira")
 
