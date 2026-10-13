@@ -30,7 +30,7 @@ packages/pipeline/                        # SDK framework
 │   │   └── local_file_system_io_manager.py # Local/network filesystem (read-only)
 │   ├── ops/                               # Operations (@op processing steps)
 │   │   ├── data_lake/                     # Parsing, versioning, figure descriptions, table refinement
-│   │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
+│   │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders, markdown frontmatter
 │   │   ├── nodes/                         # Chunking, embedding, vector insertion, summaries
 │   │   ├── rclone/                        # data_version_by_partition_for_rclone_files (composite keys)
 │   │   ├── structured/                    # Structured source steps (op factories per source): sync via dlt, list, reconcile
@@ -87,6 +87,8 @@ packages/pipeline/                        # SDK framework
 │   │   ├── data_lake_file.py              # File in cloud storage (S3 bucket)
 │   │   ├── ref_doc_document.py            # Parsed document (extends LlamaIndex Document)
 │   │   ├── source_file.py                 # Generic source file interface + MinimalSourceFile
+│   │   ├── markdown_frontmatter.py        # MarkdownFrontmatter: a .md file's YAML block → document fields + metadata
+│   │   ├── malformed_frontmatter_error.py # The block is not a YAML mapping → file ingested as written
 │   │   ├── share_point_file.py            # SharePoint-specific file
 │   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
 │   │   ├── rclone_remote.py               # How a run addresses one database's remote (name, fs, patterns)
@@ -154,7 +156,8 @@ Concrete Stage 1 flows:
 processing chain regardless of origin:
 
 - `observable_data_lake_factory` → monitors S3 for new/changed files
-- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB, flagged `is_ingested=False`
+- `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → `RefDocDocument` → MongoDB, flagged
+  `is_ingested=False` (see [Markdown Frontmatter](#markdown-frontmatter))
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents: vector nodes first, then figures, then the MongoDB record.
@@ -427,7 +430,8 @@ The adapter declares:
 - `dlt_source(options)`, incremental on the record's last update. Credentials arrive as arguments, never through dlt's
   configuration providers, which are shared by the whole process.
 - `to_record_file(record)` → `StructuredRecordFile`: the namespace (first folder), the path segments, frontmatter using
-  #1953's reserved keys (`title`, `url`, `created`, `updated`) and the body. It must be a pure function of the record.
+  #1953's reserved keys (`title`, `url`, `created`; the record's `updated` is kept as ordinary metadata) and the body.
+  It must be a pure function of the record.
 - `list_record_paths(options)`: the key of every record in scope, built with `StructuredRecordFile.object_key_for` and
   never through the incremental state. It raises rather than returning a partial set.
 - `layout_version`: raise it when `to_record_file` changes where or how records are written.
@@ -535,6 +539,63 @@ be silent:
   constraints (a 400 on save), and cross-field checks run in the adapter (`JiraOptions.problems()`).
   `hide_input_in_errors` keeps pydantic from echoing the decrypted token.
 
+## Markdown Frontmatter
+
+A `.md` file's leading YAML block becomes document fields and filterable metadata instead of chunked text (#1953). It is
+the contract the [structured source pipeline](#structured-source-pipeline-stage-1-configured-per-database) writes its
+records in, and it applies to hand-uploaded markdown too.
+
+**Where.** `ops/document/apply_markdown_frontmatter.py` runs in `documents_factory` right after parsing, so neither
+figure descriptions nor the table-refinement LLM see the YAML. It reads `.md` URIs only: converters emit markdown too,
+and a converted file opening with a horizontal rule must not be taken for YAML. `MarkdownFrontmatter.from_markdown()`
+(`types/markdown_frontmatter.py`) parses; `RefDocDocument.with_frontmatter()` returns the applied copy.
+
+| Outcome          | Behaviour                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| No leading block | Document passed through untouched (an unclosed `---` counts as no block)                      |
+| Not a YAML map   | `MalformedFrontmatterError` → one warning, file ingested exactly as written, block included   |
+| Block parsed     | Text becomes the body; one warning per skipped key; op metadata lists stored and skipped keys |
+
+**Contract** (what a writer must produce):
+
+- `title` → `DOCUMENT_TITLE`, `url` → `SOURCE_ORIGIN` (http/https only, it becomes a citation href), `created` →
+  `CREATED_AT`. `title` is capped at 500 and `url` at 2,048 characters: both sit on every chunk, twice, and the title is
+  embedded with each, so an unbounded one could fail the whole document. `created` is ISO 8601 only, naive = UTC; bare
+  numbers are refused (seconds vs milliseconds). **Writers should always emit ISO 8601 with an offset.** A field the
+  block omits keeps the data lake value.
+- `updated` is **not** reserved: `UPDATED_AT` is when the platform last wrote the document. Uploads bump it
+  (`RefDoc.get_or_create_placeholder`), and the knowledge list relies on that to tell a re-upload from a document still
+  being deleted. The record's own `updated` is stored as an ordinary key.
+- Every other key lands on the document and, through the chunker, on every node and summary node. Names are normalised
+  (`normalize_key`: NFKD, ASCII, lowercase, runs of other characters → `_`, edge `_` trimmed, must start with a letter),
+  because Milvus filter expressions and Mongo field names accept only plain identifiers and an admin must be able to
+  predict the name. First key wins on a collision.
+- Values: text, int64, finite floats; `true`/`false`, dates and list items are stored as **text**. llama-index's
+  `MetadataFilter` rejects booleans, so a flag must be stored the way a filter can name it. Null, maps and nested lists
+  are skipped.
+- `MarkdownFrontmatter.PLATFORM_KEYS` (all of `DEFAULT_METADATA` plus llama-index/Milvus internals) are refused, so a
+  Jira `type: Bug` cannot replace the content/summary `type` every retrieval filters on. Adapters write `issue_type`.
+- `MAX_METADATA_BYTES` (8 KiB, file order) caps the custom metadata: each node stores its metadata twice in Milvus' 64
+  KiB dynamic field (keys + `_node_content`).
+
+**Not embedded.** Custom keys go into `excluded_embed_metadata_keys`: they exist to be filtered on, and on a short
+record they would outweigh the body in its vector. The title stays embedded. The exclusion has to survive every step
+that rebuilds a document or node — `refine_document_tables` passes it on, `build_nodes_from_splits` copies it to chunks,
+`RecursiveSummaryParser._create_summary_node` (core) copies it to summaries, and the doc store round-trips it.
+
+**Filtering.** A retriever filters on keys listed in `allowed_metadata_filter_fields`, with values from
+`RAGStartEvent.additional_filters`. `MetadataFilterPair.to_llama_index()` (core) turns a text value into
+`key == v or array_contains(key, v)`, so one filter matches a scalar and a list without the publisher knowing the shape;
+numbers keep plain equality, booleans are compared as `"true"`/`"false"`. Covered against a real Milvus by
+`core/.../retrieval/tests/integration/test_retrieve_nodes_metadata_filters.py`.
+
+**Citations.** The OpenWebUI pipe (`GroundingNodesEventHandler.document_link`) links a citation to `reference_url`, else
+`source_origin`, and only to http(s). That also gives SharePoint (MS Graph) documents their web link, while the
+`remote:path` origins rclone records and local file paths are not links and stay unlinked.
+
+**Not retroactive.** Applying the op changes no data version upstream, so markdown ingested before it keeps its
+frontmatter chunks until the file changes or is re-uploaded.
+
 ## Per-Database Configuration
 
 Stage 2 serves many knowledge databases, so nothing about how a document is processed can be fixed at build time, any
@@ -598,14 +659,15 @@ Key factories (all in `assets/factories/`):
 
 ## Domain Types
 
-| Type             | Base                  | Key Fields                                             | Storage                         |
-| ---------------- | --------------------- | ------------------------------------------------------ | ------------------------------- |
-| `DataLakeFile`   | `BaseModel`           | name, namespace, uri, hash, content, filetype          | S3 via DataLakeIOManager        |
-| `RefDocDocument` | LlamaIndex `Document` | namespace, hash, uri, updated (computed from metadata) | MongoDB via DocStoreIOManager   |
-| `TextNode`       | LlamaIndex `TextNode` | Used directly — not subclassed                         | Milvus via VectorStoreIOManager |
-| `SourceFile`     | `BaseModel`           | name, path, size, modified, content                    | In-memory (not persisted)       |
-| `SharePointFile` | `SourceFile`          | + download_url, full_url                               | via SharePointIOManager         |
-| `RcloneFile`     | `SourceFile`          | + remote, remote_path, hashes, mime_type               | via RoutedRcloneIOManager       |
+| Type                  | Base                  | Key Fields                                             | Storage                         |
+| --------------------- | --------------------- | ------------------------------------------------------ | ------------------------------- |
+| `DataLakeFile`        | `BaseModel`           | name, namespace, uri, hash, content, filetype          | S3 via DataLakeIOManager        |
+| `RefDocDocument`      | LlamaIndex `Document` | namespace, hash, uri, updated (computed from metadata) | MongoDB via DocStoreIOManager   |
+| `TextNode`            | LlamaIndex `TextNode` | Used directly — not subclassed                         | Milvus via VectorStoreIOManager |
+| `SourceFile`          | `BaseModel`           | name, path, size, modified, content                    | In-memory (not persisted)       |
+| `MarkdownFrontmatter` | `BaseModel`           | body, title, url, created, metadata, skipped           | In-memory (applied to RefDoc)   |
+| `SharePointFile`      | `SourceFile`          | + download_url, full_url                               | via SharePointIOManager         |
+| `RcloneFile`          | `SourceFile`          | + remote, remote_path, hashes, mime_type               | via RoutedRcloneIOManager       |
 
 `DataLakeFile.from_content(uri, content, metadata)` — factory method for creating from raw bytes. `id_` is computed as
 `uri_to_id(uri)` (MD5 hash). `RefDocDocument.add_metadata_from_data_lake_file()` enriches documents with standard

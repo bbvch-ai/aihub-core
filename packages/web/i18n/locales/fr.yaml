@@ -705,6 +705,8 @@ auth:
     welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
     pleaseLoginWith: Veuillez vous connecter avec {provider}
+    useOrganisationLink: "Veuillez utiliser le lien de connexion fourni par votre organisation. Si vous ne l'avez pas, contactez votre administrateur."
+    adminLogin: Connexion administrateur
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise

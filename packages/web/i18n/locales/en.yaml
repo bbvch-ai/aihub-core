@@ -695,6 +695,8 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
+    useOrganisationLink: "Please use the login link your organisation gave you. If you don't have it, contact your administrator."
+    adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
