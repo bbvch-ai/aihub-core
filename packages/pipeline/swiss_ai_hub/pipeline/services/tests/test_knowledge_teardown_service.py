@@ -57,7 +57,8 @@ class TestDatabaseTeardown:
 
 
 class TestNamespaceTeardown:
-    def test_runs_steps_in_order_and_never_touches_the_collection_or_bucket(self):
+    def test_deletes_vectors_first_and_never_touches_the_collection_or_bucket(self):
+        """A Milvus failure must not leave the records deleted while their vectors stay retrievable."""
         manager = MagicMock()
         p_vs, p_s3, p_ref, p_bucket, p_ns, p_alias = _patches()
         with (
@@ -84,9 +85,9 @@ class TestNamespaceTeardown:
             )
 
             assert [call[0] for call in manager.mock_calls] == [
+                "vector_delete_by_namespace",
                 "delete_prefix",
                 "ref_delete_by_namespace",
-                "vector_delete_by_namespace",
                 "delete_namespace",
             ]
             s3.delete_prefix.assert_called_once_with(BUCKET, "reports/")

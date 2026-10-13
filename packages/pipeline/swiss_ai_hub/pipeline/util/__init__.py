@@ -7,11 +7,13 @@ if TYPE_CHECKING:
     from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
     from swiss_ai_hub.pipeline.util.partition_utils import replace_partition_keys
     from swiss_ai_hub.pipeline.util.rclone_pipeline_definitions_util import rclone_pipeline_definitions
+    from swiss_ai_hub.pipeline.util.structured_pipeline_definitions_util import structured_pipeline_definitions
 
 __all__ = [
     "document_ingestion_pipeline_definitions",
     "rclone_pipeline_definitions",
     "replace_partition_keys",
+    "structured_pipeline_definitions",
     "uri_to_id",
 ]
 
@@ -19,6 +21,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "document_ingestion_pipeline_definitions": "swiss_ai_hub.pipeline.util.document_ingestion_definitions_util",
     "rclone_pipeline_definitions": "swiss_ai_hub.pipeline.util.rclone_pipeline_definitions_util",
     "replace_partition_keys": "swiss_ai_hub.pipeline.util.partition_utils",
+    "structured_pipeline_definitions": "swiss_ai_hub.pipeline.util.structured_pipeline_definitions_util",
     "uri_to_id": "swiss_ai_hub.pipeline.util.id_utils",
 }
 

@@ -102,6 +102,10 @@ capabilities:
         description: Dieses Modell nutzen.
         conversation_metadata_description: Dieses Modell nutzen. Es erzeugt ausserdem
           Chat-Titel und Folgefragen — ohne Zugriff darauf fehlen beide Funktionen.
+    files:
+      own:
+        label: "Eigenen Dateibereich nutzen"
+        description: "Eigene Dateien durchsuchen, hochladen, herunterladen und verwalten."
     memory:
       org:
         label: Organisationsspeicher nutzen

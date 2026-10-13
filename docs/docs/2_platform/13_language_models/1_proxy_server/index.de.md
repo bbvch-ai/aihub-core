@@ -57,7 +57,11 @@ vLLM-Modellen und anderen Anbietern funktioniert. Der Plattformcode verwendet di
 welches Modell die Anfrage verarbeitet.
 
 Anfrage-Routing: Der Proxy leitet Anfragen basierend auf der konfigurierten Strategie weiter. Die aktuelle Konfiguration
-verwendet „usage-based-routing-v2“, welche die Last auf die verfügbaren Modelle verteilt.
+verwendet „simple-shuffle“: Jede Modellgruppe hat genau ein Deployment, eine nutzungsbasierte Strategie würde also nur
+jedem Aufruf einen Redis-Schreibzugriff hinzufügen.
+
+Antwort-Caching: Nur Embeddings werden in Valkey zwischengespeichert, für 24 Stunden. Chat-Antworten werden nicht
+zwischengespeichert, weil ihre Prompts ganze angehängte Dateien enthalten und sich fast nie wiederholen.
 
 Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage. Die Kosten pro Token sind für jedes
 Modell konfiguriert, sodass die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere Informationen

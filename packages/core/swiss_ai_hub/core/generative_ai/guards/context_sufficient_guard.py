@@ -72,15 +72,16 @@ def _parse(text: str, more_hops_available: bool) -> ContextGuardResult | None:
     return ContextGuardResult(success=False, reasoning=reasoning, new_query=new_query)
 
 
-async def context_sufficient_guard(
-    llm: LLM,
+def context_sufficient_guard_messages(
     t: LocaleHandler,
-    user_query: str,
+    user_query: str | None,
     context_message: ChatMessage | None,
     prev_queries: list[str],
     more_hops_available: bool,
     chat_history: list[ChatMessage],
-) -> ContextGuardResult:
+) -> list[ChatMessage]:
+    """The prompt the guard sends. Rendered with an empty history, it is what a caller must keep free when fitting
+    the history: the retrieved documents and the guard's own instructions sit next to it, not inside its budget."""
     sufficiency_prompt = RichPromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
     context_blocks = context_message.blocks if context_message is not None else []
     messages = sufficiency_prompt.format_messages(
@@ -90,6 +91,21 @@ async def context_sufficient_guard(
         chat_history=chat_history,
     )
     messages.append(ChatMessage(role=MessageRole.USER, content=_verdict_instruction(more_hops_available)))
+    return messages
+
+
+async def context_sufficient_guard(
+    llm: LLM,
+    t: LocaleHandler,
+    user_query: str | None,
+    context_message: ChatMessage | None,
+    prev_queries: list[str],
+    more_hops_available: bool,
+    chat_history: list[ChatMessage],
+) -> ContextGuardResult:
+    messages = context_sufficient_guard_messages(
+        t, user_query, context_message, prev_queries, more_hops_available, chat_history
+    )
 
     verdict = _parse(await request_verdict_for_messages(llm, messages), more_hops_available)
     if verdict is None:

@@ -116,3 +116,92 @@ capability-specific hooks.
   because the query is what memory is recalled with.
 - New LLM wrapping, few-shot and MCP profiles get memory on by default; `number_of_input_tokens` defaults to 128000 on
   all of them.
+
+## Amendment 2026-09-30: the tool loop, and tools declared by the blueprint
+
+Once web search, code execution or image generation are switched on they should become options the model weighs, not
+steps that always run, and a knowledge agent should be able to retrieve first and then decide whether it needs more.
+That needs a loop in which the model decides, and it has to be placeable anywhere in a blueprint and as observable as a
+fixed flow (#1950).
+
+**Decision.** The loop is a capability, `ToolLoop`, called like any other: `ToolLoop.run(history, mode)` answers with
+`ToolLoopFinishedEvent`, carrying the model's reply (`ANSWER`) or the tool results as a context block for the
+blueprint's own answer step (`GATHER`); `ToolLoop.route(...)` is the one-decision preset. Its steps are the loop's
+stages as events: decide (`ToolEvent` per call, `ToolCallsDecidedEvent` for the join), gate (the approval policy,
+`ToolApprovalRequestEvent` when the user must approve), run, and join (`ToolResultEvent`s back to the model, cut to fit
+the budget). There are two kinds of tool, indistinguishable to the model:
+
+- **Capability tools.** A capability sets `tool_name` and `tool_definition(config, locale)` and adds two adapter steps:
+  one turns the `ToolCallApprovedEvent` into its ordinary request (carrying the call's `tool_call_id`), one turns its
+  ordinary result into a `ToolResultEvent`. A model-chosen call therefore runs the same sub-workflow, with the same
+  events and chat sources, as an explicit call. `Knowledge` is the first.
+- **Function tools** are LlamaIndex tools: a `BaseToolSpec` whose listed methods are the tools (schema from their
+  signatures and docstrings, the spec built per run with a `ToolContext`), or any `BaseTool`. `@ToolOptions.of(...)`
+  adds what the model does not need but users do: a label, an approval summary, the approval default, the chat toggle.
+  Using LlamaIndex's contract instead of our own keeps LlamaHub's tool specs usable as they are.
+
+A blueprint declares **named tool sets** as class attributes, `research = ToolLoop.over(WebSearch, WeatherTools)`, and
+runs one with `research.run(history)`. **This is the one exception to "nothing is installed by listing":** a capability
+tool is installed from the declaration, because no step of the blueprint returns its request; the model does, at run
+time. A tool list passed only at run time would be invisible to that, which is why the sets are declared; naming them
+still gives each loop its own tools, and every loop event carries the set's name so several sets can run one after
+another in a run. Validation refuses sets no step runs and one name meaning two tools. The profile (`ToolLoopFields`:
+limits, disabled tools, approval rules, its form published by the runner with the blueprint's tools as options through
+`Capability.published_config`) and the chat toggles of #590 narrow a set per message; with none left, gathering ends
+without a model call.
+
+Two engine rules came with it. A capability step is composed into a blueprint only when *every* required input can be
+produced, not any one of them, so a tool adapter never shows in the graph of a blueprint that only calls the capability
+explicitly. And the "every outcome is consumed" check covers only calls made from outside the capability, since a
+model-chosen call is answered through the capability's own adapter step.
+
+**Rejected:** tools only as executors inside the loop (a model-chosen knowledge search would have shown different, and
+fewer, events than a `#` reference); a separate router capability (tool calling already picks several tools with
+arguments; a one-iteration preset covers routing); looping a whole fixed flow back to its start (hard to bound and to
+read; a re-runnable part becomes a tool instead).
+
+## Amendment 2026-10-02: an open-format agent, and capabilities as its tools
+
+The Universal Agent (#1937) is the first production blueprint built on the tool loop: it loads nothing into the prompt
+up front and offers `Knowledge`, `AttachedFiles` and `Memory` as tools, so the model decides per message what it needs.
+
+- **RAG keeps its own retrieval.** RAG is a fixed workflow that forces its steps; the Universal Agent is open-format.
+  The knowledge tool any agent can offer is `Knowledge` grown to search the profile's collections
+  (`KnowledgeToolFields`, RAG's own database picker) or every collection the user can read, plus the message's `#`
+  references, always narrowed to what the user may read. The two retrievals may diverge, and that is accepted;
+  extracting RAG's steps into a shared capability was rejected because it would loosen the workflow RAG guarantees.
+- **A tool may need settings an explicit call does not.** A capability names them as `tool_config`, and validation
+  requires that mixin wherever the capability sits in a tool set, so the tool settings stay off the forms of blueprints
+  that only call the capability.
+- **Tool definitions see the run, not just the profile.** `tool_definition` receives the run's `ToolContext`, which
+  carries the user's access and the message's files and references, because what a tool offers (readable collections,
+  attached files) depends on them.
+- **Condensing belongs to the loop.** Only the loop sees its conversation grow between decisions, so `ToolLoop`
+  condenses it in a step of its own when it outgrows the input budget, rather than leaving that to the model as a tool
+  or cutting each result to a share of the room left, which starved every result after a few calls.
+
+## Amendment 2026-10-02: one composed prompt per answer, and every protocol event displayed
+
+`ContextComposedEvent` is shown as what the model was given, but RAG composed its prompt before retrieval and added the
+retrieved documents, the profile's prompt and the rejection reason afterwards, outside the capability (#2007). Anyone
+reading a RAG answer's trace saw the memories and files, not the knowledge the model read.
+
+- **RAG composes once its outcome is known.** `assemble_prompt_step` runs on the guard's verdict: the retrieved
+  documents on acceptance, the rejection's reason on a few-shot or context rejection, and in `ExpertRAGAgent` the
+  expert's reply or the declined escalation. The profile's prompt, the citation rule and the reason lead the system
+  head; the documents are the last block, joined to the system head like every other block; the answer step sends the
+  composed history as it is. The context-sufficiency guard reads the contextualized history, and RAG's own context limit
+  step is gone.
+- **Old turns give way before blocks.** `compose` used to drop blocks before any earlier turn, which RAG's context limit
+  did the other way round. It now trims the oldest turns first; blocks give way only when they and the question alone do
+  not fit, and the system head and the question never do. A file a user attached to this turn no longer vanishes to keep
+  an old one.
+- **Files keep their reserve.** `AttachedFiles.read` still keeps room for the documents retrieval has yet to return,
+  because files are read in parallel with retrieval and sized to fit, and `compose` can only drop a whole block. Reading
+  them after retrieval would size them exactly, for the file read's latency on every RAG turn with attachments.
+- **Protocol events are control and display.** The event history lists display events only, so every capability request
+  and result and every tool-loop event is a `ControlAndDisplayEvent` with a component of its own. The loop events show
+  the round, the decided calls and the limits rather than repeating the conversation they carry.
+
+**Rejected:** placing the documents beside the question in a slot of their own (it kept RAG's previous prompt shape, but
+made RAG the only blueprint whose context sits outside the system head); dropping the file reserve (see above).

@@ -4,12 +4,18 @@ from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox, LocaleInput
 from swiss_ai_hub.core.form.constraints import Ge
-from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.generative_ai import (
+    FewShotGuardExample,
+    KnowledgeRetrieverConfig,
+    context_sufficient_guard_messages,
+    estimate_prompt_tokens,
+)
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files_fields import AttachedFilesFields
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
@@ -17,7 +23,7 @@ from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_suffi
 )
 
 
-class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, AgentConfig):
+class RAGAgentConfig(MemoryFields, AttachedFilesFields, KnowledgeFields, ConversationFields, AgentConfig):
     """
     Configuration for a RAGAgent with multiple retrieval sources.
 
@@ -67,6 +73,10 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
         ),
         Ge(1),
     ] = 800
+    restrict_to_user_access: Annotated[
+        bool | Checkbox,
+        Field(description="Retrieve only from the configured collections the asking user may read."),
+    ] = False
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(
@@ -90,6 +100,23 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
             nodes = min(nodes, self.reranking_config.reranking_model.top_n)
         return min(nodes * self.retrieved_tokens_per_node, self.input_budget() // 2)
 
+    def context_sufficient_guard_reserve(self, t: LocaleHandler, query: str | None) -> int:
+        """Tokens the sufficiency guard sends besides the history and the documents: its instructions and the query.
+
+        Attached files must leave room for them, or the guard drops the file block that the answer step keeps.
+        """
+        if not self.context_sufficient_guard.check_context_sufficiency:
+            return 0
+        guard_prompt = context_sufficient_guard_messages(
+            t=t,
+            user_query=query,
+            context_message=None,
+            prev_queries=[],
+            more_hops_available=True,
+            chat_history=[],
+        )
+        return estimate_prompt_tokens(guard_prompt, self.llm.token_counter)
+
     @classmethod
     def as_form(cls) -> Self:
         """Factory method to create a form-mode RAGAgentConfig."""
@@ -103,10 +130,16 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, ConversationFields, Agen
             **cls.conversation_form_elements(),
             **cls.memory_form_elements(),
             **cls.attached_files_form_elements(),
+            **cls.knowledge_form_elements(),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
             context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
             reranking_config=RerankingConfig.as_form(),
             few_shot_guard_examples=[FewShotGuardExample.as_form()],
+            restrict_to_user_access=Checkbox(
+                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.restrict_to_user_access.label"),
+                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.restrict_to_user_access.help"),
+                value=True,
+            ),
             system_prompt=LocaleString.as_form(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.label"),
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.system_prompt.help"),
