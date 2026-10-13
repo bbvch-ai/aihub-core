@@ -261,11 +261,11 @@ embedding, and vector store insertion. `observable_rclone_factory`, `observable_
 `observable_local_file_system_factory` create the Stage 1 source monitoring assets. The
 `document_ingestion_pipeline_definitions` function wires all Stage 2 factories, resources, sensors, and schedules into a
 complete Dagster Definitions object; `rclone_pipeline_definitions` does the same for the rclone source pipeline,
-`structured_pipeline_definitions` for the structured source pipeline (API records such as Jira issues, written as
-markdown through dlt), and the `default_*_to_datalake_definitions` builders for the deploy-time SharePoint and
-local-filesystem sources. No route-per-run pipeline names a bucket — the Stage 2 pipeline serves every knowledge
-database whose `BucketEntity.ingestor` matches, each source pipeline every database whose `BucketEntity.source` matches,
-all resolving the target per run.
+`structured_pipeline_definitions` for the structured source pipeline (API records such as Jira issues and Confluence
+pages, written as markdown through dlt), and the `default_*_to_datalake_definitions` builders for the deploy-time
+SharePoint and local-filesystem sources. No route-per-run pipeline names a bucket — the Stage 2 pipeline serves every
+knowledge database whose `BucketEntity.ingestor` matches, each source pipeline every database whose
+`BucketEntity.source` matches, all resolving the target per run.
 
 #### Resources and I/O managers
 
