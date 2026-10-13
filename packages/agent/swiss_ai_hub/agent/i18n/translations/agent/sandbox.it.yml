@@ -1,0 +1,45 @@
+---
+tools:
+  run_command:
+    label: "Esegui comando"
+    approval: "Eseguire nella sandbox di codice:\n{command}"
+  get_process_status:
+    label: "Controlla comando"
+    approval: "Controllare il comando {process_id}"
+  send_process_input:
+    label: "Digita nel comando"
+    approval: "Digitare nel comando {process_id}:\n{text}"
+  kill_process:
+    label: "Ferma comando"
+    approval: "Fermare il comando {process_id}"
+  list_processes:
+    label: "Elenca comandi"
+    approval: "Elencare i comandi nella sandbox di codice"
+  list_files:
+    label: "Elenca file"
+    approval: "Elencare i file in {directory}"
+  read_file:
+    label: "Leggi file"
+    approval: "Leggere {path}"
+  write_file:
+    label: "Scrivi file"
+    approval: "Scrivere {path}"
+  replace_file_content:
+    label: "Modifica file"
+    approval: "Modificare {path}"
+  grep_search:
+    label: "Cerca nei file"
+    approval: "Cercare «{query}» in {path}"
+  glob_search:
+    label: "Trova file"
+    approval: "Trovare i file {pattern} in {path}"
+  display_file:
+    label: "Mostra file"
+    approval: "Allegare {path} alla risposta"
+user_files:
+  list_my_files:
+    label: "Elenca i miei file"
+    approval: "Elencare i tuoi file in {folder}"
+  read_my_file:
+    label: "Leggi il mio file"
+    approval: "Leggere il tuo file {path}"

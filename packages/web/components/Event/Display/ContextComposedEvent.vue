@@ -34,11 +34,11 @@
 import type {
   ContextComposedEvent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: ContextComposedEvent }
+  event: ContextualizedAgentEvent & { event: ContextComposedEvent }
   thread: ThreadDto
 }>()
 

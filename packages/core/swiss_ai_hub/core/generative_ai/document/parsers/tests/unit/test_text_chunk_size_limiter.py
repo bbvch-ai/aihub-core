@@ -1,7 +1,10 @@
 """Tests for the hard ceiling applied to every chunk before it becomes a node."""
 
 from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChunk
-from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk_size_limiter import TextChunkSizeLimiter
+from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk_size_limiter import (
+    MAX_CHARACTERS_PER_TOKEN,
+    TextChunkSizeLimiter,
+)
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NODE_CONTENT_TYPE_TABLE,
@@ -44,6 +47,24 @@ class TestTextChunkSizeLimiter:
         result = limiter.enforce([TextChunk(digits, NODE_CONTENT_TYPE_TABLE)])
 
         assert all(word_count(part.content) <= 50 for part in result)
+
+    def test_fill_in_blanks_are_cut_at_the_character_cap(self) -> None:
+        """The splitter sizes pieces in tiktoken, which packs a run of underscores at ~64 characters per token: a
+        form row of blanks left it as one piece far past what the embedding model accepts."""
+        limiter = TextChunkSizeLimiter(max_tokens=100, token_counter=lambda text: len(text) // 4)
+        form_row = "Ziffer 12 Einkommen " + "_" * 300 + " CHF "
+
+        result = limiter.enforce([TextChunk(form_row * 200, NODE_CONTENT_TYPE_TABLE)])
+
+        assert max(len(part.content) for part in result) <= 100 * MAX_CHARACTERS_PER_TOKEN
+
+    def test_character_cap_keeps_all_content(self) -> None:
+        limiter = TextChunkSizeLimiter(max_tokens=100, token_counter=lambda text: len(text) // 4)
+        blanks = "_" * 10_000
+
+        result = limiter.enforce([TextChunk(blanks, NODE_CONTENT_TYPE_TABLE)])
+
+        assert "".join(part.content for part in result) == blanks
 
     def test_content_type_is_preserved_across_splits(self) -> None:
         limiter = TextChunkSizeLimiter(max_tokens=50, token_counter=word_count)

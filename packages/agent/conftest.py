@@ -14,3 +14,17 @@ from swiss_ai_hub.core.testing.conftest_utils import attach_fixtures_to_items  #
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Activates the test-DB isolation fixture for every collected test."""
     attach_fixtures_to_items(items, "isolate_test_db")
+
+
+@pytest.fixture(autouse=True)
+def in_memory_parse_cache(monkeypatch: pytest.MonkeyPatch) -> dict[str, bytes]:
+    """Attached files keep their sections and embeddings in the parse-cache bucket; a test keeps them in memory, one
+    store per test, so no test reaches S3 or sees another's entries."""
+    from swiss_ai_hub.core.generative_ai import ParseCacheBucket
+
+    store: dict[str, bytes] = {}
+    monkeypatch.setattr(ParseCacheBucket, "read", lambda _self, key: store.get(key))
+    monkeypatch.setattr(
+        ParseCacheBucket, "write", lambda _self, key, content, _content_type: store.update({key: content})
+    )
+    return store

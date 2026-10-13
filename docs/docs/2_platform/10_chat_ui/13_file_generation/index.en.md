@@ -14,9 +14,9 @@ You do not need to write or read any code to use this. Describe the document you
 File generation runs on the same code-execution path as [Coding / Software Development](../6_coding/), so it inherits
 that path's constraints: it works only with **plain LLM models that support function (tool) calling**, the model must
 use **Native Function Calling** (Kimi-K2.6 does by default; for another model, switch it in the chat's Controls →
-Advanced Params), **a terminal has to be selected in the chat** — the sandbox tools are resolved only then — and
-**AI-Hub agents are not supported yet**. See that page for the sandbox mechanics, the per-user isolation model, and the
-fact that generated files are kept indefinitely.
+Advanced Params), **a terminal has to be selected in the chat** — the sandbox tools are resolved only then — and AI-Hub
+agents other than the [Universal Agent](../../5_agents/13_universal_agent/) do not run code. See that page for the
+sandbox mechanics, the per-user isolation model, and the fact that generated files are kept indefinitely.
 :::
 
 ::: tip Recommended model — Workspace → Kimi-K2.6

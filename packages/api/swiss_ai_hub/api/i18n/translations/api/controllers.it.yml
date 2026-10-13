@@ -65,6 +65,9 @@ my_tenant:
 user:
   name: Gestione utenti
   description: Gestisci gli utenti e i loro accessi
+user_knowledge:
+  name: "I miei file"
+  description: "I file con cui lavorate tu e i tuoi agenti: allegati, file generati e i tuoi caricamenti"
 user_memory:
   name: Memorie utente
   description: Visualizza e gestisci le tue memorie personali da mem0

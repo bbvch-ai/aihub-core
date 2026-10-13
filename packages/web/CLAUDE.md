@@ -29,6 +29,7 @@ packages/web/
 │   ├── tenant/              # useTenant — reads tenant id from either route shape (`[tenant]` or `[tenant_id]`)
 │   ├── tenant-admin/        # useTenantAdminList, useConfigureTenant, useUpdateTenant, useDeleteTenant, useUnconfiguredTenantIds
 │   ├── form/                # useFormKitTransform (backend schema → FormKit nodes)
+│   ├── userFiles/           # useUserFiles, useUserFileContent, useUploadUserFiles, useCreateUserFolder, useMoveUserFile, useDeleteUserFile (My Files; components in `components/UserFiles/`)
 │   ├── event/               # useEventComponent (event → display component resolver)
 │   └── ...                  # auth, chat, dashboard, document, evaluation, file, etc.
 ├── i18n/locales/            # de.yaml, en.yaml, fr.yaml, it.yaml
@@ -43,6 +44,14 @@ packages/web/
 ├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
 └── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook)
 ```
+
+## Auth and locale
+
+`composables/auth/useAuth.ts` passes `redirect_uri` / `post_logout_redirect_uri` per `login()` / `logout()` call from
+the live locale; the `UserManager` built once in `plugins/oidc-client.ts` keeps bootstrap-locale defaults only for
+silent renew. Do not read the locale in the plugin for anything user-visible. The preferred locale is persisted
+server-side (`PUT` on my-account locale, restored by `useRestorePreferredLocale`), so it survives logout and a second
+device. `logout()` is a top-level `signoutRedirect()`, not a cross-origin `fetch`.
 
 ## Nuxt Layer Architecture
 

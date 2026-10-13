@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket import EventBucket
     from swiss_ai_hub.core.persistence.messaging.entities.types.llm_spend import LLMSpend
     from swiss_ai_hub.core.persistence.notification.notification_entity import NotificationEntity
+    from swiss_ai_hub.core.persistence.openwebui.openwebui_account_entity import OpenWebuiAccountEntity
+    from swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity import OpenWebuiKnowledgeEntryEntity
     from swiss_ai_hub.core.persistence.process.process_class_entity import (
         AgentInSpecsEntity,
         HumanInSpecsEntity,
@@ -45,6 +47,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline import SourcePipeline
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_entity import SourcePipelineEntity
     from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type import SourcePipelineType
+    from swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook import KnowledgeChangeHook
     from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
     from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
     from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
@@ -90,6 +93,9 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
+    from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
+        PartitionAwareMilvusVectorStore,
+    )
     from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
@@ -97,6 +103,7 @@ __all__ = [
     "AccessChangeHook",
     "AgentClassEntity",
     "AgentConfigChangeHook",
+    "KnowledgeChangeHook",
     "AgentConfigEntityDocument",
     "AgentInSpecsEntity",
     "AgentInstanceRef",
@@ -130,6 +137,7 @@ __all__ = [
     "LocaleStringEntity",
     "MilvusIndexType",
     "MilvusVectorStoreConfig",
+    "PartitionAwareMilvusVectorStore",
     "NAMESPACE",
     "NODE_CONTENT_TYPE",
     "NODE_CONTENT_TYPE_FIGURE",
@@ -161,6 +169,8 @@ __all__ = [
     "UPDATED_AT",
     "UsageLimit",
     "User",
+    "OpenWebuiAccountEntity",
+    "OpenWebuiKnowledgeEntryEntity",
     "UserDashboardEntity",
     "UserTenantRoleEntity",
     "VERSION",
@@ -175,6 +185,7 @@ _LAZY_IMPORTS = {
     "AccessChangeHook": "swiss_ai_hub.core.persistence.access.access_change_hook",
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
     "AgentConfigChangeHook": "swiss_ai_hub.core.persistence.agents.agent_config_change_hook",
+    "KnowledgeChangeHook": "swiss_ai_hub.core.persistence.rag.datalake.knowledge_change_hook",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",
     "AgentInstanceRef": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
@@ -208,6 +219,9 @@ _LAZY_IMPORTS = {
     "LocaleStringEntity": "swiss_ai_hub.core.persistence.i18n.locale_string_entity",
     "MilvusIndexType": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory",
     "MilvusVectorStoreConfig": "swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config",
+    "PartitionAwareMilvusVectorStore": (
+        "swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store"
+    ),
     "NAMESPACE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "NODE_CONTENT_TYPE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "NODE_CONTENT_TYPE_FIGURE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
@@ -239,6 +253,8 @@ _LAZY_IMPORTS = {
     "UPDATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "UsageLimit": "swiss_ai_hub.core.persistence.access.entities.role_entity",
     "User": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
+    "OpenWebuiAccountEntity": "swiss_ai_hub.core.persistence.openwebui.openwebui_account_entity",
+    "OpenWebuiKnowledgeEntryEntity": "swiss_ai_hub.core.persistence.openwebui.openwebui_knowledge_entry_entity",
     "UserDashboardEntity": "swiss_ai_hub.core.persistence.user.user_dashboard_entity",
     "UserTenantRoleEntity": "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity",
     "VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

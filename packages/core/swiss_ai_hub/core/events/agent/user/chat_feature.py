@@ -13,6 +13,7 @@ class ChatFeature(StrEnum):
     WEB_SEARCH = "web_search"
     CODE_INTERPRETER = "code_interpreter"
     IMAGE_GENERATION = "image_generation"
+    USER_FILES = "user_files"
 
     @property
     def openwebui_capability(self) -> str | None:

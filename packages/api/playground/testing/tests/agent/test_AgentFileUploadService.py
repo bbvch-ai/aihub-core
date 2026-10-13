@@ -1,9 +1,13 @@
+import threading
+import time
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
 from botocore.exceptions import ClientError
 
-from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.routes.agent.agent_file_upload_service import CONCURRENT_FILE_CHECKS, AgentFileUploadService
+from swiss_ai_hub.api.routes.agent.dto.agent_file_validation_item import AgentFileValidationItem
 
 
 @pytest.fixture
@@ -141,3 +145,33 @@ class TestVerifyFileExists:
 
         with pytest.raises(ClientError):
             service.verify_file_exists("MyAgent", "inst-1", "abc-123", "report.pdf")
+
+
+class TestMissingFiles:
+    @pytest.mark.asyncio
+    async def test_reports_the_missing_files_and_checks_a_few_at_a_time(self, service, s3_client):
+        lock = threading.Lock()
+        in_flight = peak = 0
+
+        def head_object(Bucket: str, Key: str) -> dict:
+            nonlocal in_flight, peak
+            with lock:
+                in_flight += 1
+                peak = max(peak, in_flight)
+            time.sleep(0.01)
+            with lock:
+                in_flight -= 1
+            if Key.endswith("missing.pdf"):
+                raise ClientError({"Error": {"Code": "404"}}, "HeadObject")
+            return {}
+
+        s3_client.head_object.side_effect = head_object
+        files = [
+            AgentFileValidationItem(file_id=str(uuid.uuid4()), filename="missing.pdf" if index % 7 == 0 else "here.pdf")
+            for index in range(30)
+        ]
+
+        missing = await service.missing_files("MyAgent", "inst-1", files)
+
+        assert missing == [file.file_id for file in files if file.filename == "missing.pdf"]
+        assert 0 < peak <= CONCURRENT_FILE_CHECKS

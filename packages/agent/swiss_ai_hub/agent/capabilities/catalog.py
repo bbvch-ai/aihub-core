@@ -14,16 +14,20 @@ class CapabilityCatalog:
     def all() -> list[type[Capability]]:
         from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
         from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+        from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
         from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+        from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 
-        return [Conversation, Memory, AttachedFiles]
+        return [Conversation, Memory, AttachedFiles, Knowledge, ToolLoop]
 
     @classmethod
-    def called_by(cls, steps: list[Callable]) -> list[type[Capability]]:
+    def called_by(cls, steps: list[Callable], declared: list[type[Capability]] = ()) -> list[type[Capability]]:
         """The capabilities whose request events these steps produce, transitively: a capability's own steps may
-        call another capability."""
-        installed: list[type[Capability]] = []
-        produced: set[type[BaseEvent]] = Capability.produced_events(steps)
+        call another capability. `declared` are the capabilities a blueprint offers as tools, installed outright."""
+        installed: list[type[Capability]] = list(declared)
+        produced: set[type[BaseEvent]] = Capability.produced_events(steps) | Capability.produced_events(
+            [step for capability in declared for step in capability.own_steps()]
+        )
         changed = True
         while changed:
             changed = False
@@ -36,10 +40,10 @@ class CapabilityCatalog:
         return installed
 
     @classmethod
-    def reachable_steps(cls, own_steps: list[Callable]) -> list[Callable]:
+    def reachable_steps(cls, own_steps: list[Callable], declared: list[type[Capability]] = ()) -> list[Callable]:
         """The capability steps that can actually run for this blueprint: a call it never makes, and everything
         downstream of that call, stays out of the workflow rather than dangling in the graph."""
-        candidates = [step for capability in cls.called_by(own_steps) for step in capability.own_steps()]
+        candidates = [step for capability in cls.called_by(own_steps, declared) for step in capability.own_steps()]
         reachable: list[Callable] = []
         produced = Capability.produced_events(own_steps)
         changed = True
@@ -58,4 +62,6 @@ def _can_be_triggered(step: Callable, produced: set[type[BaseEvent]]) -> bool:
     mapping: dict[str, set[type[BaseEvent]]] = getattr(step, DispatchableWorkflow.INPUT_EVENT_MAPPING_ANNOTATION)
     optional: dict[str, bool] = getattr(step, DispatchableWorkflow.PARAMETER_OPTIONAL_MAP_ANNOTATION)
     required = [events for parameter, events in mapping.items() if not optional.get(parameter, False)]
-    return any(event in produced or issubclass(event, ARRIVES_FROM_OUTSIDE) for events in required for event in events)
+    return bool(required) and all(
+        any(event in produced or issubclass(event, ARRIVES_FROM_OUTSIDE) for event in events) for events in required
+    )
