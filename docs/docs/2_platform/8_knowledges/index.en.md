@@ -105,6 +105,11 @@ assignee, its description and its comments with author and date. Headings, lists
 formatting; images and attachments are not synced. Comments restricted to a project role or group, and internal
 comments of Jira Service Management, are left out.
 
+The issue's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the key and
+summary and opens the issue in Jira, and the fields `key`, `project`, `issue_type`, `status`, `priority`, `labels`,
+`components`, `fix_versions`, `reporter`, `assignee` and `updated` are metadata a retriever can filter on once they are
+among its allowed filter fields.
+
 ::: warning Use a dedicated account
 The database holds every issue and comment the token's account can read, and everyone with access to the database can
 find them, whatever their own permissions in Jira. Sync with a dedicated read-only account that sees only what the

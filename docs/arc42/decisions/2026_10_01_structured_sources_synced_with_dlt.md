@@ -102,8 +102,8 @@ configured, secured or ingested changes.**
    Records become files in the extract step (`add_map`), not in the destination: dlt normalises rows before loading,
    coercing ISO timestamps to `pendulum.DateTime`, which YAML cannot render. The first path segment is the namespace,
    and a path without a folder is rejected, because the ingestion pipeline never ingests a root-level object.
-   Frontmatter uses the reserved keys of #1953 (`title`, `url`, `created`, `updated`) and renders deterministically,
-   with sorted keys. Adding a kind is one adapter, one options form, one field on `StructuredSyncConfig` and its labels,
+   Frontmatter uses the keys #1953 reserves (`title`, `url`, `created`; a record's `updated` is ordinary metadata) and
+   renders deterministically, with sorted keys. Adding a kind is one adapter, one options form, one field on `StructuredSyncConfig` and its labels,
    with no change to the API or the UI.
 
 3. **One sync run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source("structured"))` fans out one
@@ -226,8 +226,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 - **The code location needs outbound internet access.** The rclone code location reaches its sources through the rclone
   daemon and sits only on `backend`, `data` and `storage`. This one calls the source APIs itself, so it also joins
   `egress`.
-- **Frontmatter is plain text until #1953 lands.** Until then the ingestion pipeline chunks and embeds it like any
-  paragraph.
+- **Frontmatter is a contract with ingestion.** Since #1953, ingestion sets a document's title, link and creation date
+  from `title`, `url` and `created`, and stores every other key as filterable metadata that is not embedded. Markdown
+  ingested before #1953 keeps its frontmatter as text until the file changes, because that step changes no data version.
 
 ## Related Decisions
 
