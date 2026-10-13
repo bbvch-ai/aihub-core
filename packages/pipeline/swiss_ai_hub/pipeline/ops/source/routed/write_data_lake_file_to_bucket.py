@@ -1,6 +1,6 @@
 from typing import Any
 
-from dagster import OpExecutionContext, Output, op
+from dagster import Backoff, OpExecutionContext, Output, RetryPolicy, op
 
 from swiss_ai_hub.pipeline.io.s3_data_lake_io_manager import S3DataLakeIOManager
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3_PROTOCOL_PREFIX
@@ -11,7 +11,11 @@ from swiss_ai_hub.pipeline.util.source_updated_notifier import notify_source_upd
 from swiss_ai_hub.pipeline.util.store_builders import build_s3_data_lake_client
 
 
-@op(code_version="v1")
+@op(
+    code_version="v1",
+    # Overwriting the object and re-announcing it are both idempotent, so a transient S3 or NATS error is safe to retry.
+    retry_policy=RetryPolicy(max_retries=2, delay=5, backoff=Backoff.EXPONENTIAL),
+)
 def write_data_lake_file_to_bucket(
     context: OpExecutionContext, content: bytes, metadata: dict[str, Any], uri: str
 ) -> Output[DataLakeFile]:

@@ -102,6 +102,14 @@ run_monitoring:
   cancel_timeout_seconds: 180    # Force-cancel stuck CANCELING runs after 3 min
   poll_interval_seconds: 120     # Check run status every 2 min
 
+# Only runs tagged dagster/max_retries are re-executed (from failure). The
+# rclone source pipeline tags its automation-launched data-lake writes, so a
+# transient outage no longer leaves a file failed until it changes at the
+# source. Ingestion runs stay untagged (#1813).
+run_retries:
+  enabled: true
+  max_retries: 0
+
 # Tick history retention. Daemon-managed; covers job_ticks only — the heavy
 # event_logs / runs tables are pruned by the maintenance jobs in the backup
 # Dagster instance (see packages/backup/swiss_ai_hub/backup/maintenance/).
