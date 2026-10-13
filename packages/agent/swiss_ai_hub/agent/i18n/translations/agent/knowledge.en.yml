@@ -22,7 +22,7 @@ prompt:
 tool:
   label: "Search our knowledge"
   approval_summary: "Search our knowledge for \"{query}\""
-  description: "Searches our knowledge collections and returns the most relevant document sections, with ids to cite. Use it when the question may be answered by the organisation's documents. Available collections:\n%{collections}"
+  description: "Searches our knowledge collections and returns the most relevant document sections, with ids to cite. Use it when the question may be answered by the organisation's documents, such as policies, handbooks, reports or contracts. It returns excerpts, not whole documents: for a broad question, search several times with narrow queries. Files the user attached are not in these collections; read them with the tool for attached files. An empty result means the collections do not cover the question. Available collections:\n%{collections}"
   query: "What to search for, as a short standalone question or keywords."
   collections: "The collections to search, by identifier; leave out to search all of them."
 config:

@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
+    from swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket import ParseCacheBucket
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
     from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
         DEFAULT_METADATA,
@@ -44,11 +45,35 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
     from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
     from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
-    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+    from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import (
+        context_sufficient_guard,
+        context_sufficient_guard_messages,
+    )
     from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
     from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_path_pattern_error import InvalidPathPatternError
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error import (
+        InvalidSearchPatternError,
+    )
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error import (
         KnowledgeCollectionNotFoundError,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_line import (
+        KnowledgeContentLine,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_match import (
+        KnowledgeContentMatch,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search import (
+        KnowledgeContentSearch,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits import (
+        KnowledgeContentSearchLimits,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result import (
+        KnowledgeContentSearchResult,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error import (
+        KnowledgeContentSearchTimeoutError,
     )
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document import KnowledgeDocument
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_listing import (
@@ -104,6 +129,18 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
     from swiss_ai_hub.core.generative_ai.retrievers.user_scoped_retrievers import UserScopedRetrievers
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
+    from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import (
+        DocumentExtractionResult,
+    )
+    from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import ExtractedRecord
+    from swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error import (
+        InvalidRecordSchemaError,
+    )
+    from swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor import RecordExtractor
+    from swiss_ai_hub.core.generative_ai.structured_extraction.record_field import RecordField
+    from swiss_ai_hub.core.generative_ai.structured_extraction.record_provenance import RecordProvenance
+    from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
+    from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema_builder import RecordSchemaBuilder
     from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
     from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers import (
         narrow_retrievers,
@@ -127,6 +164,21 @@ __all__ = [
     "KnowledgeDocumentPendingError",
     "KnowledgeDocumentReader",
     "KnowledgeDocumentSummary",
+    "InvalidSearchPatternError",
+    "KnowledgeContentLine",
+    "KnowledgeContentMatch",
+    "KnowledgeContentSearch",
+    "KnowledgeContentSearchLimits",
+    "KnowledgeContentSearchResult",
+    "KnowledgeContentSearchTimeoutError",
+    "DocumentExtractionResult",
+    "ExtractedRecord",
+    "InvalidRecordSchemaError",
+    "RecordExtractor",
+    "RecordField",
+    "RecordProvenance",
+    "RecordSchema",
+    "RecordSchemaBuilder",
     "DocumentIntelligenceLoader",
     "CitationId",
     "DocumentExtractor",
@@ -163,6 +215,7 @@ __all__ = [
     "OrgMemoryReadConfig",
     "OrgMemoryWriteConfig",
     "OrganizationMemory",
+    "ParseCacheBucket",
     "RawLoader",
     "RecursiveNodeSummarizer",
     "RerankingModelConfig",
@@ -175,6 +228,7 @@ __all__ = [
     "condense_standalone_question",
     "EmptyCondensationError",
     "context_sufficient_guard",
+    "context_sufficient_guard_messages",
     "create_few_shot_messages",
     "create_figures_folder_name",
     "decode_partition_key",
@@ -228,6 +282,21 @@ _LAZY_IMPORTS = {
     "KnowledgeDocumentPendingError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pending_error",
     "KnowledgeDocumentReader": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_reader",
     "KnowledgeDocumentSummary": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary",
+    "InvalidSearchPatternError": "swiss_ai_hub.core.generative_ai.knowledge_documents.invalid_search_pattern_error",
+    "KnowledgeContentLine": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_line",
+    "KnowledgeContentMatch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_match",
+    "KnowledgeContentSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search",
+    "KnowledgeContentSearchLimits": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits",
+    "KnowledgeContentSearchResult": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result",
+    "KnowledgeContentSearchTimeoutError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error",
+    "DocumentExtractionResult": "swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result",
+    "ExtractedRecord": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
+    "InvalidRecordSchemaError": "swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error",
+    "RecordExtractor": "swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor",
+    "RecordField": "swiss_ai_hub.core.generative_ai.structured_extraction.record_field",
+    "RecordProvenance": "swiss_ai_hub.core.generative_ai.structured_extraction.record_provenance",
+    "RecordSchema": "swiss_ai_hub.core.generative_ai.structured_extraction.record_schema",
+    "RecordSchemaBuilder": "swiss_ai_hub.core.generative_ai.structured_extraction.record_schema_builder",
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
@@ -247,6 +316,7 @@ _LAZY_IMPORTS = {
     "OrgMemoryReadConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_read_config",
     "OrgMemoryWriteConfig": "swiss_ai_hub.core.generative_ai.memory.org_memory_write_config",
     "OrganizationMemory": "swiss_ai_hub.core.generative_ai.memory.organization_memory",
+    "ParseCacheBucket": "swiss_ai_hub.core.generative_ai.document.loaders.parse_cache_bucket",
     "RawLoader": "swiss_ai_hub.core.generative_ai.document.loaders.raw_loader",
     "RecursiveNodeSummarizer": "swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser",
     "RerankingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config",
@@ -259,6 +329,7 @@ _LAZY_IMPORTS = {
     "condense_standalone_question": "swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question",
     "EmptyCondensationError": "swiss_ai_hub.core.generative_ai.retrieval.empty_condensation_error",
     "context_sufficient_guard": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
+    "context_sufficient_guard_messages": "swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard",
     "create_few_shot_messages": "swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages",
     "create_figures_folder_name": "swiss_ai_hub.core.generative_ai.utils.path_utils",
     "decode_partition_key": "swiss_ai_hub.core.generative_ai.utils.path_utils",

@@ -807,6 +807,58 @@ export const AgentEventSchema = {
   title: "AgentEvent",
 } as const;
 
+export const AgentFileBatchValidationRequestSchema = {
+  properties: {
+    thread_id: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^[0-9a-f]{24}$",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Thread Id",
+      description:
+        "The conversation the files are attached in; once none is missing, they are also placed in the user's files there.",
+    },
+    files: {
+      items: {
+        $ref: "#/components/schemas/AgentFileValidationItem",
+      },
+      type: "array",
+      maxItems: 1000,
+      minItems: 1,
+      title: "Files",
+      description: "The uploaded files to check.",
+    },
+  },
+  type: "object",
+  required: ["files"],
+  title: "AgentFileBatchValidationRequest",
+  description:
+    "All files of one chat turn, checked together so a turn costs one call and places its files once.",
+} as const;
+
+export const AgentFileBatchValidationResponseSchema = {
+  properties: {
+    missing: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Missing",
+      description: "The file_ids not found in the agent's bucket.",
+    },
+  },
+  type: "object",
+  required: ["missing"],
+  title: "AgentFileBatchValidationResponse",
+  description:
+    "Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.",
+} as const;
+
 export const AgentFileUploadRequestSchema = {
   properties: {
     filename: {
@@ -860,7 +912,7 @@ export const AgentFileUploadResponseSchema = {
     "Response containing a presigned upload URL and the assigned file_id.",
 } as const;
 
-export const AgentFileValidationRequestSchema = {
+export const AgentFileValidationItemSchema = {
   properties: {
     file_id: {
       type: "string",
@@ -880,45 +932,11 @@ export const AgentFileValidationRequestSchema = {
       description:
         "Original filename with extension. Must not contain path separators.",
     },
-    thread_id: {
-      anyOf: [
-        {
-          type: "string",
-          pattern: "^[0-9a-f]{24}$",
-        },
-        {
-          type: "null",
-        },
-      ],
-      title: "Thread Id",
-      description:
-        "The conversation the file is attached in; it is also placed in the user's files there.",
-    },
   },
   type: "object",
   required: ["file_id", "filename"],
-  title: "AgentFileValidationRequest",
-  description: "Request to validate that a file was uploaded successfully.",
-} as const;
-
-export const AgentFileValidationResponseSchema = {
-  properties: {
-    file_id: {
-      type: "string",
-      title: "File Id",
-      description: "The file_id that was checked.",
-    },
-    exists: {
-      type: "boolean",
-      title: "Exists",
-      description: "True if the file was found in the agent's bucket.",
-    },
-  },
-  type: "object",
-  required: ["file_id", "exists"],
-  title: "AgentFileValidationResponse",
-  description:
-    "Response confirming whether a file exists in the agent's bucket.",
+  title: "AgentFileValidationItem",
+  description: "One uploaded file, named as the initiate endpoint stored it.",
 } as const;
 
 export const AgentHealthChecksSchema = {
@@ -6295,6 +6313,16 @@ export const ContextualizeConversationEventSchema = {
       title: "User Query",
       description:
         "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
+    },
+    attached_file_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Attached File Names",
+      description:
+        "The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.",
+      default: [],
     },
     _event_name: {
       type: "string",
@@ -16677,6 +16705,31 @@ export const LocaleStringSchema = {
     'A multi-language string container supporting German, English, French, and Italian.\n\nLocaleString serves as a data container for translated strings. For form rendering,\nuse the `LocaleInput` FormKit element with the duality pattern.\n\n## Basic Usage (Data Mode)\n\n```python\ngreeting = LocaleString(\n    de="Hallo",\n    en="Hello",\n    fr="Bonjour",\n    it="Ciao",\n)\nprint(greeting.in_locale("en"))  # "Hello"\n```\n\n## Form Duality Pattern\n\nFor form fields that accept LocaleString values, use the union type pattern:\n\n```python\nclass MyConfig(Form):\n    name: Annotated[LocaleString | LocaleInput, Field(description="Name")]\n\n# Form mode - for rendering:\nconfig = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))\n\n# Data mode - from submission:\nconfig = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))\n```\n\nFor convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:\n\n```python\nconfig = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))\n```',
 } as const;
 
+export const LoginOptionsResponseSchema = {
+  properties: {
+    welcome_page: {
+      type: "boolean",
+      title: "Welcome Page",
+      description:
+        "Show a welcome page pointing to the organisation's login link instead of provider buttons",
+    },
+    providers: {
+      items: {
+        $ref: "#/components/schemas/AuthProviderResponse",
+      },
+      type: "array",
+      title: "Providers",
+      description:
+        "Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use",
+    },
+  },
+  type: "object",
+  required: ["welcome_page", "providers"],
+  title: "LoginOptionsResponse",
+  description:
+    "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
+} as const;
+
 export const LogprobSchema = {
   properties: {
     token: {
@@ -18135,13 +18188,15 @@ export const MetadataFilterPairSchema = {
         },
       ],
       title: "Value",
-      description: "The value the metadata key must equal.",
+      description:
+        "The value the metadata key must equal, or, where the key holds a list, contain.",
     },
   },
   type: "object",
   required: ["key", "value"],
   title: "MetadataFilterPair",
-  description: "A metadata key/value equality filter for RAG retrieval.",
+  description:
+    "A metadata key/value filter for RAG retrieval: the stored value equals it, or a stored list contains it.",
 } as const;
 
 export const MinimalAgentInstanceDTOSchema = {
@@ -22254,6 +22309,16 @@ export const ReadAttachedFilesEventSchema = {
       description: "The files attached to the current branch.",
       default: [],
     },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
+      default: [],
+    },
     history: {
       items: {
         $ref: "#/components/schemas/ChatMessage",
@@ -26322,6 +26387,29 @@ export const TemplateDataSchema = {
     "Typed container for template data extracted from Form.to_template_data().\n\nEach agent/process type has different configurable fields, so extra fields\nare allowed and preserved through serialization.",
 } as const;
 
+export const TenantAuthProviderResponseSchema = {
+  properties: {
+    alias: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Alias",
+      description:
+        "Keycloak IDP alias to start the tenant's login with, or null when it has no login link",
+    },
+  },
+  type: "object",
+  required: ["alias"],
+  title: "TenantAuthProviderResponse",
+  description:
+    "Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.",
+} as const;
+
 export const TenantIdentitySchema = {
   properties: {
     id: {
@@ -29435,7 +29523,7 @@ export const UpdateDatabaseSourceRequestSchema = {
       type: "boolean",
       title: "Replace Existing Documents",
       description:
-        "Acknowledges that giving a manually filled database a source hands its content to that source: documents the source does not have are removed on the next sync. Required when the database already holds documents.",
+        "Acknowledges that handing a database to a different source, from manual upload or from another source, gives its content to that source: documents the new source does not have are removed on its next sync. Required when the database already holds documents; not needed to edit the current source's settings or to switch back to manual upload.",
       default: false,
     },
   },
@@ -33886,6 +33974,16 @@ export const ContextualizeConversationEventWritableSchema = {
       title: "User Query",
       description:
         "The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.",
+    },
+    attached_file_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Attached File Names",
+      description:
+        "The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.",
+      default: [],
     },
   },
   additionalProperties: true,
@@ -43604,6 +43702,16 @@ export const ReadAttachedFilesEventWritableSchema = {
       type: "array",
       title: "Files",
       description: "The files attached to the current branch.",
+      default: [],
+    },
+    kept_for_code: {
+      items: {
+        $ref: "#/components/schemas/UserUploadedFile",
+      },
+      type: "array",
+      title: "Kept For Code",
+      description:
+        "Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.",
       default: [],
     },
     history: {

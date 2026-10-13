@@ -42,6 +42,7 @@ from bson import ObjectId
 from open_webui.models.chats import Chats
 from open_webui.models.files import Files
 from open_webui.models.users import Users
+from open_webui.utils.chat_id import is_saved_chat_id
 from opentelemetry.propagate import inject
 from opentelemetry import trace
 
@@ -65,6 +66,12 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
+# A temporary chat stores no file in Open WebUI, so the pipe remembers the agent's upload of each attached text item,
+# by the id the browser gave it, in Open WebUI's Redis; for as long as the agent-files bucket keeps the upload.
+# A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
+AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
+AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
+
 # OpenWebUI's ``TASKS.MOA_RESPONSE_GENERATION`` (backend ``constants.py``), stamped into
 # ``metadata["task"]`` by its ``/api/v1/tasks/moa/completions`` route when a user presses "Merge
 # Responses". Unlike every other task value this one is user-initiated — see the two predicates below.
@@ -80,6 +87,14 @@ MOA_MERGE_THREAD_SALT = "moa-merge"
 CITATION_MARKER_PATTERN = re.compile(r"(\s*)\[\s*(s[0-9a-f]{6}(?:\s*[,;]\s*s[0-9a-f]{6})*)\s*\]")
 CITATION_ID_PATTERN = re.compile(r"s[0-9a-f]{6}")
 UNFINISHED_CITATION_PATTERN = re.compile(r"\[\s*s[0-9a-f]{0,6}(?:\s*[,;]\s*s[0-9a-f]{0,6})*$")
+
+# A markdown link or image a model wrote, its target optionally in ``<…>`` and followed by a title. A ``[`` right after
+# a word, ``]`` or ``)`` indexes code (``df[col](x)``) rather than opening a link, so it is left alone.
+MARKDOWN_LINK_PATTERN = re.compile(r"(?<![\w\])])(!?)\[([^\]\n]*)\]\(\s*<?([^\s<>()]+)>?(?:\s+\"[^\"\n]*\")?\s*\)")
+URL_SCHEME_PATTERN = re.compile(r"^([a-z][a-z0-9+.-]*):", re.IGNORECASE)
+FILE_EXTENSION_PATTERN = re.compile(r"\.[A-Za-z0-9]{1,8}$")
+# OpenAI's code interpreter links its files as ``sandbox:/mnt/data/<name>``, a habit models carry into our sandbox.
+SANDBOX_LINK_SCHEMES = ("sandbox", "file")
 
 
 # ============================================================================
@@ -514,11 +529,55 @@ class CitationRegistry:
         return match.group(1) + "".join(f"[{number}]" for number in numbers)
 
 
+class FileLinkRegistry:
+    """The files attached to the answer by name, and the rewrite of the links a model writes to them into downloads.
+
+    Told never to, a model still links a file it made the way it knows from elsewhere: ``sandbox:<name>``, its sandbox
+    path or a bare name, none of which a browser opens. Such a link is pointed at the file's download, or reduced to
+    its label when the answer attached no file of that name. The raw text keeps the model's link, so one written before
+    its file arrives resolves on the next render.
+    """
+
+    def __init__(self) -> None:
+        self._urls: dict[str, str] = {}
+
+    def register(self, file: Annotated[dict[str, Any], "The attached file as a message file entry"]) -> None:
+        self._urls[file["name"].casefold()] = file["url"]
+
+    def resolve(
+        self, content: Annotated[str, "Rendered message content"]
+    ) -> Annotated[str, "Content whose file links open"]:
+        return MARKDOWN_LINK_PATTERN.sub(self._linked, content)
+
+    def _linked(self, match: re.Match) -> str:
+        image, label, target = match.groups()
+        name = self.sandbox_file_name(target)
+        if name is None:
+            return match.group(0)
+        url = self._urls.get(name.casefold())
+        return f"{image}[{label}]({url})" if url else label
+
+    @staticmethod
+    def sandbox_file_name(
+        target: Annotated[str, "A link's target"],
+    ) -> Annotated[Optional[str], "The name of the sandbox file it points at, or None for a link a browser opens"]:
+        path = target.split("#", 1)[0].split("?", 1)[0]
+        scheme = URL_SCHEME_PATTERN.match(path)
+        if scheme:
+            if scheme.group(1).lower() not in SANDBOX_LINK_SCHEMES:
+                return None
+            path = path[scheme.end() :]
+        elif path.startswith(("/api/", "//")) or not FILE_EXTENSION_PATTERN.search(path):
+            return None
+        return urllib.parse.unquote(path.rstrip("/").rsplit("/", 1)[-1]) or None
+
+
 class StreamingStateManager:
     """Manages streaming content state with proper encapsulation"""
 
     def __init__(self):
         self.citations = CitationRegistry()
+        self.files = FileLinkRegistry()
         self._content_blocks: Annotated[list[ContentBlock], "List of finalized content blocks"] = []
         self._current_block: Annotated[Optional[ContentBlock], "Currently active block being built"] = None
         self._deferred_thinking: Annotated[
@@ -678,7 +737,9 @@ class StreamingStateManager:
         if self._deferred_thinking:
             blocks.append(self._deferred_thinking)
         return "".join(
-            block.to_html() if isinstance(block, ToolBlock) else self.citations.resolve(block.to_html())
+            block.to_html()
+            if isinstance(block, ToolBlock)
+            else self.files.resolve(self.citations.resolve(block.to_html()))
             for block in blocks
         )
 
@@ -1125,7 +1186,7 @@ class GroundingNodesEventHandler(EventHandler):
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
-        reference_url = (first.get("metadata") or {}).get("reference_url", "")
+        reference_url = GroundingNodesEventHandler.document_link(first)
         source_data: dict[str, Any] = {
             "source": {
                 "name": GroundingNodesEventHandler.display_name(first),
@@ -1139,6 +1200,14 @@ class GroundingNodesEventHandler(EventHandler):
         if all("score" in node for node in nodes):
             source_data["distances"] = [node["score"] for node in nodes]
         return source_data
+
+    @staticmethod
+    def document_link(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Link a user can open, or ''"]:
+        """The document's place outside the platform: an explicit reference link, else the original source its pipeline
+        recorded, such as a markdown file's frontmatter `url`. Only web links are offered, since this becomes an href.
+        """
+        link = (node.get("metadata") or {}).get("reference_url") or node.get("source_origin") or ""
+        return link if urlparse(link).scheme in ("http", "https") else ""
 
     @staticmethod
     def display_name(node: Annotated[dict[str, Any], "Node data"]) -> Annotated[str, "Label on the citation chip"]:
@@ -1222,6 +1291,7 @@ class SandboxFileDisplayedEventHandler(EventHandler):
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
         attached = await context.attachments.attach(event, context.chat_id, context.message_id)
+        context.state_manager.files.register(attached)
         # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
         # so the new file is persisted on its own and the browser then gets every file of the answer.
         await context.emitter({"type": "files", "data": {"files": [attached]}})
@@ -1405,7 +1475,7 @@ class ConversationTitleEventHandler(EventHandler):
     ) -> Annotated[bool, "Always returns True"]:
         title = event.get("title")
         if title:
-            if context.chat_id and not context.chat_id.startswith(("local:", "channel:")):
+            if is_saved_chat_id(context.chat_id):
                 await Chats.update_chat_title_by_id(context.chat_id, title)
                 if context.redis is not None:
                     await context.redis.set(
@@ -1433,11 +1503,7 @@ class FollowUpQuestionsEventHandler(EventHandler):
         questions = event.get("questions") or []
         if questions:
             await context.emitter({"type": "chat:message:follow_ups", "data": {"follow_ups": questions}})
-            if (
-                context.chat_id
-                and context.message_id
-                and not context.chat_id.startswith(("local:", "channel:"))
-            ):
+            if context.message_id and is_saved_chat_id(context.chat_id):
                 await Chats.upsert_message_to_chat_by_id_and_message_id(
                     context.chat_id, context.message_id, {"followUps": questions}
                 )
@@ -1600,7 +1666,7 @@ class StreamingService:
                     state_manager.finalize_all_blocks()
                     await self._handle_http_error_from_info(result, event_emitter)
                 else:
-                    if attachments and (links := attachments.download_links()):
+                    if attachments and (links := attachments.download_links(state_manager.serialize_to_html())):
                         state_manager.close_current_block()
                         state_manager.start_text_block(links)
                     # Finalize any open blocks when stream ends normally
@@ -1905,7 +1971,7 @@ class AgentFileAttachmentService:
             process=False,
             user=user,
         )
-        if chat_id and message_id and not chat_id.startswith(("local:", "channel:")):
+        if message_id and is_saved_chat_id(chat_id):
             await Chats.insert_chat_files(chat_id=chat_id, message_id=message_id, file_ids=[item.id], user_id=user.id)
         entry = {
             "type": "file",
@@ -1918,13 +1984,19 @@ class AgentFileAttachmentService:
         self.attached.append(entry)
         return entry
 
-    def download_links(self) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
-        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one."""
+    def download_links(
+        self, answer: Annotated[str, "The answer as rendered so far"]
+    ) -> Annotated[str, "Markdown links to the files not linked in the answer yet"]:
+        """Open WebUI hides an attachment's download behind the file name in its preview, so the answer links each one.
+
+        A file the model linked itself, its link resolved to the download, is left out so the answer links it once.
+        """
         new = self.attached[self._linked :]
         self._linked = len(self.attached)
-        if not new:
+        unlinked = [entry for entry in new if entry["url"] not in answer]
+        if not unlinked:
             return ""
-        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in new)
+        return "\n\nDownload: " + " · ".join(f"[{entry['name']}]({entry['url']})" for entry in unlinked)
 
     def _read(self, bucket: str, key: str) -> bytes:
         return self._s3_client.get_object(Bucket=bucket, Key=key)["Body"].read()
@@ -1960,6 +2032,64 @@ class KnowledgeReferenceService:
             return response.json()
 
 
+class TemporaryUploadScope(BaseModel):
+    """Where a temporary chat's uploads are remembered: Open WebUI keeps no file for its attachments, so without this
+    each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
+
+    user_id: str
+    thread_id: str
+    redis: Any = None
+
+    def _key(self, item_id: str) -> str:
+        return AIHUB_TEMPORARY_UPLOAD_REDIS_KEY.format(user_id=self.user_id, thread_id=self.thread_id, item_id=item_id)
+
+    async def recall(
+        self, item_id: Annotated[str | None, "The id the browser gave the item when it was attached"]
+    ) -> Annotated[str | None, "The agent file id of an earlier turn's upload of the item"]:
+        if self.redis is None or not item_id:
+            return None
+        try:
+            file_id = await self.redis.get(self._key(item_id))
+        except Exception as e:
+            logger.warning(f"Could not look up an earlier upload of {item_id}: {e}")
+            return None
+        return file_id.decode() if isinstance(file_id, bytes) else file_id
+
+    async def remember(
+        self,
+        item_id: Annotated[str | None, "The id the browser gave the item when it was attached"],
+        file_id: Annotated[str, "The agent file id the item was uploaded as"],
+    ) -> None:
+        if self.redis is None or not item_id:
+            return
+        await self.redis.set(self._key(item_id), file_id, ex=AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS)
+
+
+class AgentAttachment(BaseModel):
+    """One file of the turn on its way into the agent's bucket, with the upload it has there once known."""
+
+    source: dict[str, Any]
+    filename: str
+    content_type: str
+    file_id: str | None = None
+    owui_file: Any = None
+
+    @property
+    def is_temporary_text(self) -> bool:
+        """A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead."""
+        return self.owui_file is None
+
+    @property
+    def owui_file_id(self) -> str | None:
+        """The Open WebUI file the agent's copy came from, which the answer's citations link to."""
+        if self.source.get("type", "file") == "file" and self.source.get("id"):
+            return self.source["id"]
+        return None
+
+    def reference(self) -> dict[str, str]:
+        return {"filename": self.filename, "file_type": self.content_type, "file_id": self.file_id}
+
+
 class FileProcessingService:
     """Handles file processing via the agent file upload API.
 
@@ -1992,137 +2122,208 @@ class FileProcessingService:
 
     async def prepare_files_for_event(
         self,
-        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
+        files: Annotated[list[dict[str, Any]] | None, "Files of the current message branch from Open WebUI"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
         thread_id: Annotated[str, "The conversation, whose folder in the user's files gets each file"],
+        user_id: Annotated[str, "The Open WebUI user, whose temporary chats' uploads are remembered apart"],
+        redis: Annotated[Any, "OpenWebUI async redis client, remembering a temporary chat's uploads"] = None,
     ) -> Annotated[
         tuple[list[dict[str, str]], dict[str, str]],
         "Prepared files for AI-Hub, and each agent file id mapped to the Open WebUI file id it came from",
     ]:
-        """Hand every file of the branch to the agent's bucket, reusing an upload the bucket still holds."""
-        prepared_files: list[dict[str, str]] = []
-        owui_file_ids: dict[str, str] = {}
+        """Hand every file of the branch to the agent's bucket, reusing an upload the bucket still holds.
 
+        One validate call checks the known uploads; only what the bucket lacks is uploaded, followed by one more call
+        over all the turn's files. The API places them in the user's files on the call that finds none missing, so
+        the files of a turn are placed together, once.
+        """
+        agent_key = f"{agent_class}/{agent_id}"
+        scope = TemporaryUploadScope(user_id=user_id, thread_id=thread_id, redis=redis)
+        attachments = await self._resolve_all(files, agent_key, scope)
+        known = [attachment for attachment in attachments if attachment.file_id]
+        # With a new file in the turn the check after its upload places them all, so this one must place nothing.
+        placing_thread_id = thread_id if len(known) == len(attachments) else None
+        missing = await self._missing(known, agent_class, agent_id, headers, placing_thread_id)
+        confirmed = {attachment.file_id for attachment in known} - missing if missing is not None else set()
+        pending = [attachment for attachment in attachments if attachment.file_id not in confirmed]
+        if pending:
+            await self._upload_all(pending, agent_class, agent_id, headers)
+            confirmed = await self._confirm(attachments, confirmed, agent_class, agent_id, headers, thread_id)
+            for attachment in pending:
+                if attachment.file_id in confirmed:
+                    await self._remember(attachment, agent_key, scope)
+
+        prepared = [attachment for attachment in attachments if attachment.file_id in confirmed]
+        owui_file_ids = {item.file_id: item.owui_file_id for item in prepared if item.owui_file_id}
+        return [attachment.reference() for attachment in prepared], owui_file_ids
+
+    async def _resolve_all(
+        self,
+        files: Annotated[list[dict[str, Any]] | None, "Files of the current message branch"],
+        agent_key: Annotated[str, "Agent class/id the uploads belong to"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
+    ) -> Annotated[list[AgentAttachment], "The turn's files, each with its known upload if any"]:
+        """A knowledge entry stands for one of our collections, which the agent searches itself, so it is no file."""
+        attachments: list[AgentAttachment] = []
         for file in files or []:
             if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
                 continue
             try:
-                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers, thread_id)
-            except Exception as e:
-                logger.exception(f"Error processing file {file.get('name', '')}: {e}")
+                attachment = await self._resolve(file, agent_key, scope)
+            except Exception:
+                logger.exception(f"Error processing file {file.get('name', '')}")
                 continue
-            if prepared_file:
-                prepared_files.append(prepared_file)
-                if file.get("type", "file") == "file" and file.get("id"):
-                    owui_file_ids[prepared_file["file_id"]] = file["id"]
+            if attachment:
+                attachments.append(attachment)
+        return attachments
 
-        return prepared_files, owui_file_ids
-
-    async def _process_single_file(
+    async def _resolve(
         self,
-        file: Annotated[dict[str, Any], "Single file to process"],
+        file: Annotated[dict[str, Any], "Single file of the branch"],
+        agent_key: Annotated[str, "Agent class/id the uploads belong to"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
+    ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
+        """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
+        like any other attachment; a web or YouTube item is of the same type but carries none."""
+        logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
+        if file.get("type") == "text" and file.get("content") is not None:
+            name = file.get("name") or "attachment"
+            return AgentAttachment(
+                source=file,
+                filename=name if name.lower().endswith(".txt") else f"{name}.txt",
+                content_type="text/plain",
+                file_id=await scope.recall(file.get("id")),
+            )
+
+        file_obj = await Files.get_file_by_id(file.get("id", ""))
+        if not file_obj:
+            logger.warning(f"Could not retrieve file with ID: {file.get('id', '')}")
+            return None
+        file_meta = file_obj.meta or {}
+        return AgentAttachment(
+            source=file,
+            filename=file_meta.get("name", "unnamed_file"),
+            content_type=file_meta.get("content_type", "application/octet-stream"),
+            file_id=(file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}).get(agent_key),
+            owui_file=file_obj,
+        )
+
+    async def _upload_all(
+        self,
+        pending: Annotated[list[AgentAttachment], "Files the agent's bucket does not hold yet"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
-        thread_id: Annotated[str, "The conversation the file is attached in"],
-    ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
-        """Upload a single file to the agent's bucket via initiate → PUT → validate, unless it is already there.
+    ) -> None:
+        """A file that fails to upload is left out rather than costing the turn the others."""
+        for attachment in pending:
+            try:
+                attachment.file_id = await self._upload(attachment, agent_class, agent_id, headers)
+            except Exception:
+                logger.exception(f"Error uploading file {attachment.filename}")
+                attachment.file_id = None
 
-        A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead, so that text
-        is uploaded as a plain-text file for the agent to read like any other attachment.
-        """
-        logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
+    async def _confirm(
+        self,
+        attachments: Annotated[list[AgentAttachment], "All the turn's files"],
+        confirmed: Annotated[set[str], "Agent file ids the bucket was found to hold before the uploads"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
+        thread_id: Annotated[str, "The conversation the files are attached in"],
+    ) -> Annotated[set[str], "Agent file ids the bucket holds after the uploads"]:
+        """All the turn's files are validated together once more, so they are placed together; when that check
+        fails, only the files found before the uploads are known to be there."""
+        stored = [attachment for attachment in attachments if attachment.file_id]
+        if not stored:
+            return confirmed
+        missing = await self._missing(stored, agent_class, agent_id, headers, thread_id)
+        if missing is None:
+            return confirmed
+        if missing:
+            logger.warning(f"Files missing from the agent's bucket right after upload: {sorted(missing)}")
+        return {attachment.file_id for attachment in stored} - missing
 
-        if file.get("type") == "text" and file.get("content") is not None:
-            name = file.get("name") or "attachment"
-            filename = name if name.lower().endswith(".txt") else f"{name}.txt"
-            return await self._upload(
-                file["content"].encode(), filename, "text/plain", agent_class, agent_id, headers, thread_id
-            )
-
-        owui_file_id = file.get("id", "")
-        file_obj = await Files.get_file_by_id(owui_file_id)
-        if not file_obj:
-            logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
-            return None
-
-        file_meta = file_obj.meta or {}
-        filename = file_meta.get("name", "unnamed_file")
-        content_type = file_meta.get("content_type", "application/octet-stream")
-        agent_key = f"{agent_class}/{agent_id}"
-        known_uploads = file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}
-
-        known_file_id = known_uploads.get(agent_key)
-        if known_file_id and await self._is_stored(known_file_id, filename, agent_class, agent_id, headers, thread_id):
-            return {"filename": filename, "file_type": content_type, "file_id": known_file_id}
-
-        file_content = await asyncio.to_thread(self._read_file_content, file_obj)
-        prepared = await self._upload(file_content, filename, content_type, agent_class, agent_id, headers, thread_id)
-        if prepared:
-            await Files.update_file_metadata_by_id(
-                owui_file_id, {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: prepared["file_id"]}}
-            )
-        return prepared
+    async def _remember(
+        self,
+        attachment: Annotated[AgentAttachment, "A file just uploaded and confirmed in the agent's bucket"],
+        agent_key: Annotated[str, "Agent class/id the upload belongs to"],
+        scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
+    ) -> None:
+        """Remembered so a later turn validates the upload instead of copying the file again; forgetting only costs
+        that copy, so it never fails the turn."""
+        try:
+            if not attachment.is_temporary_text:
+                known_uploads = (attachment.owui_file.meta or {}).get(AGENT_UPLOADS_FILE_META_KEY) or {}
+                await Files.update_file_metadata_by_id(
+                    attachment.source.get("id", ""),
+                    {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: attachment.file_id}},
+                )
+            elif attachment.file_id:
+                await scope.remember(attachment.source.get("id"), attachment.file_id)
+        except Exception as e:
+            logger.warning(f"Could not remember the upload of {attachment.filename}: {e}")
 
     def _files_url(self, agent_class: str, agent_id: str, action: str) -> str:
         return f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/{action}"
 
-    async def _is_stored(
+    async def _missing(
         self,
-        file_id: Annotated[str, "Agent file id of an earlier upload"],
-        filename: Annotated[str, "Name it was uploaded under"],
+        attachments: Annotated[list[AgentAttachment], "Files with an upload in the agent's bucket"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
-        thread_id: Annotated[str, "The conversation the file is attached in"],
-    ) -> Annotated[bool, "Whether the agent bucket still holds it; uploads expire after 7 days"]:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                self._files_url(agent_class, agent_id, "validate"),
-                headers=headers,
-                json={"file_id": file_id, "filename": filename, "thread_id": thread_id},
-            )
-        return response.status_code == 200 and bool(response.json().get("exists"))
+        thread_id: Annotated[str | None, "The conversation to place the files in once none is missing"],
+    ) -> Annotated[set[str] | None, "Agent file ids the bucket lacks, or None when the check failed"]:
+        """Uploads expire after 7 days, so a known one can be gone. A failed check confirms nothing, like a missing
+        file, so the files are uploaded again rather than the turn failing."""
+        if not attachments:
+            return set()
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    self._files_url(agent_class, agent_id, "validate"),
+                    headers=headers,
+                    json={
+                        "thread_id": thread_id,
+                        "files": [{"file_id": item.file_id, "filename": item.filename} for item in attachments],
+                    },
+                )
+            response.raise_for_status()
+            return set(response.json()["missing"])
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as e:
+            logger.warning(f"Could not validate {len(attachments)} file(s) in the agent's bucket: {e}")
+            return None
 
     async def _upload(
         self,
-        content: Annotated[bytes, "File bytes"],
-        filename: Annotated[str, "File name"],
-        content_type: Annotated[str, "MIME type"],
+        attachment: Annotated[AgentAttachment, "File to copy into the agent's bucket"],
         agent_class: Annotated[str, "Target agent class"],
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
-        thread_id: Annotated[str, "The conversation the file is attached in"],
-    ) -> Annotated[Optional[dict[str, str]], "The uploaded file reference, or None when validation failed"]:
+    ) -> Annotated[str, "The agent file id of the upload"]:
+        if attachment.is_temporary_text:
+            content = attachment.source["content"].encode()
+        else:
+            content = await asyncio.to_thread(self._read_file_content, attachment.owui_file)
         async with httpx.AsyncClient(timeout=30.0) as client:
             initiate_resp = await client.post(
                 self._files_url(agent_class, agent_id, "initiate"),
                 headers=headers,
-                json={"filename": filename, "content_type": content_type},
+                json={"filename": attachment.filename, "content_type": attachment.content_type},
             )
             initiate_resp.raise_for_status()
             initiate_data = initiate_resp.json()
-            agent_file_id = initiate_data["file_id"]
 
             put_resp = await client.put(
-                initiate_data["upload_url"], content=content, headers={"Content-Type": content_type}
+                initiate_data["upload_url"], content=content, headers={"Content-Type": attachment.content_type}
             )
             put_resp.raise_for_status()
 
-            validate_resp = await client.post(
-                self._files_url(agent_class, agent_id, "validate"),
-                headers=headers,
-                json={"file_id": agent_file_id, "filename": filename, "thread_id": thread_id},
-            )
-            validate_resp.raise_for_status()
-            if not validate_resp.json().get("exists"):
-                logger.warning(f"File validation failed for {filename} (file_id={agent_file_id})")
-                return None
-
-        logger.debug(f"Successfully uploaded file: {filename} -> file_id={agent_file_id}")
-        return {"filename": filename, "file_type": content_type, "file_id": agent_file_id}
+        logger.debug(f"Uploaded file: {attachment.filename} -> file_id={initiate_data['file_id']}")
+        return initiate_data["file_id"]
 
     def _read_file_content(self, file_obj: Any) -> bytes:
         """Read file content from OpenWebUI's S3 storage."""
@@ -2632,9 +2833,11 @@ class Pipe:
                 # Convert messages
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
+                redis = getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None)
+
                 # Process files — upload to agent's dedicated bucket
                 files, owui_file_ids = await self._file_service.prepare_files_for_event(
-                    __files__, agent_class, agent_id, headers, thread_id
+                    __files__, agent_class, agent_id, headers, thread_id, __user__["id"], redis
                 )
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers
@@ -2693,7 +2896,7 @@ class Pipe:
                 chat_id = __metadata__.get("chat_id")
                 try:
                     tags = [agent_class]
-                    if chat_id and not chat_id.startswith(("local:", "channel:")):
+                    if is_saved_chat_id(chat_id):
                         owui_user = await Users.get_user_by_id(__user__["id"])
                         if owui_user:
                             tags = await self._merge_agent_class_tag(chat_id, agent_class, owui_user)
@@ -2720,7 +2923,7 @@ class Pipe:
                     state_manager,
                     chat_id=chat_id,
                     message_id=__metadata__.get("message_id"),
-                    redis=getattr(getattr(getattr(__request__, "app", None), "state", None), "redis", None),
+                    redis=redis,
                     stream_start_callback=stream_start_callback,
                     owui_file_ids=owui_file_ids,
                     attachments=AgentFileAttachmentService(

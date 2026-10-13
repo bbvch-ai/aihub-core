@@ -124,20 +124,21 @@ class UserKnowledgeService:
 
     @staticmethod
     @trace_fn
-    async def place_attachment(
-        user: UserIdentity, thread_id: str, file_id: str, filename: str, read: Callable[[], bytes]
-    ) -> FilePathDTO | None:
-        """A file attached in a chat also lands in that conversation's folder, once: the chat client validates it on
-        every turn, and a file the user has since deleted or changed there is theirs to keep that way. A user without
-        a file space yet has none to place it in."""
+    async def place_attachments(
+        user: UserIdentity, thread_id: str, files: dict[str, str], read: Callable[[str, str], bytes]
+    ) -> list[FilePathDTO]:
+        """The files attached in a chat, by file id to name, also land in that conversation's folder, each once: the
+        chat client validates them on every turn, and a file the user has since deleted or changed there is theirs to
+        keep that way. A user without a file space yet has none to place them in."""
         openwebui_id = OpenWebuiAccountEntity.openwebui_id_of(user.id)
         if openwebui_id is None:
-            return None
+            return []
         attachments = ConversationAttachments(OpenTerminalClient(openwebui_id), thread_id)
         placed = await attachments.place(
-            {file_id: SandboxHomePath.name(filename)}, lambda _file_id, _filename: asyncio.to_thread(read)
+            {file_id: SandboxHomePath.name(filename) for file_id, filename in files.items()},
+            lambda file_id, filename: asyncio.to_thread(read, file_id, filename),
         )
-        return FilePathDTO(path=placed[file_id])
+        return [FilePathDTO(path=path) for path in placed.values()]
 
     @staticmethod
     async def _read_bounded(file: UploadFile) -> bytes:

@@ -33,6 +33,6 @@ config:
 tool:
   label: "Richiamare la memoria"
   approval_summary: "Richiamare ciò che è memorizzato su «{query}»"
-  description: "Cerca ciò che è memorizzato sull'utente e sull'organizzazione: preferenze, fatti e decisioni di conversazioni precedenti. Usalo quando la risposta può dipendere da chi è l'utente o da qualcosa concordato in precedenza."
+  description: "Cerca ciò che si ricorda dell'utente e dell'organizzazione: preferenze, fatti e decisioni di conversazioni precedenti. Usalo quando la risposta può dipendere da chi è l'utente o da qualcosa concordato in precedenza. Contiene brevi fatti ricordati, non documenti né file; per quelli usa gli strumenti per la conoscenza o per i file."
   query: "Cosa richiamare, come breve domanda autonoma o parole chiave."
   nothing_remembered: "Non c'è nulla di memorizzato al riguardo."

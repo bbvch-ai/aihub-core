@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -28,6 +29,12 @@ _LABELS = (*_LABEL_TO_CATEGORY, "NORMAL")
 # self-awareness branch became unreachable. Hence three properties worth preserving: META_ labels lead,
 # the "do you know X?" lookalike carve-outs live inside NORMAL's own definition rather than as a closing
 # tie-breaker, and each label carries non-English anchors (without them "Was kannst du?" reads as NORMAL).
+#
+# The classifier sees only the message text, so "what does the User role do here?" asked about an attached
+# spreadsheet read as a question about the assistant (gemma-4-31B: META_CAPABILITIES five times out of five), and
+# the meta answer, which cannot see the file, said it knew nothing about it. Naming the attached files fixes that on
+# every model that failed it while "who are you?" stays META_IDENTITY. The note is left out when nothing is attached,
+# so the prompt the weak models were tuned on is unchanged for a message without files.
 _CLASSIFICATION_PROMPT = """You classify a user's message to an AI assistant. Decide what the message is \
 *about*: the assistant itself, or the world.
 
@@ -47,8 +54,13 @@ document, or field of knowledge — even when phrased "do you know X?", "what do
 Decide by the subject of the message: if the subject is the assistant, pick the matching META_ label; if it \
 is anything else, pick NORMAL.
 
-User message: "{user_query}"
+{attached_files_note}User message: "{user_query}"
 Answer:"""
+
+_ATTACHED_FILES_NOTE = """The user attached these files to the conversation: {file_names}. A question about \
+something the files may contain is NORMAL.
+
+"""
 
 
 def _parse_label(text: str) -> str | None:
@@ -58,14 +70,22 @@ def _parse_label(text: str) -> str | None:
     return max(matches)[1] if matches else None
 
 
-async def detect_meta_question(llm: LLM, t: LocaleHandler, user_query: str) -> MetaQuestionClassification:
+async def detect_meta_question(
+    llm: LLM, t: LocaleHandler, user_query: str, attached_file_names: Sequence[str] = ()
+) -> MetaQuestionClassification:
     """Classify whether a user message is a meta question about the agent itself.
 
     Detection gates every chat message, so it must never fail the run: if the model returns no
     recognizable label, fall back to "not a meta question" and let the normal answer pipeline handle it.
     """
     prompt = PromptTemplate(_CLASSIFICATION_PROMPT)
-    message = ChatMessage(role=MessageRole.USER, content=prompt.format(user_query=user_query))
+    attached_files_note = (
+        _ATTACHED_FILES_NOTE.format(file_names=", ".join(attached_file_names)) if attached_file_names else ""
+    )
+    message = ChatMessage(
+        role=MessageRole.USER,
+        content=prompt.format(user_query=user_query, attached_files_note=attached_files_note),
+    )
 
     try:
         # A single-token classification needs no thinking; on a reasoning model it would be pure latency.

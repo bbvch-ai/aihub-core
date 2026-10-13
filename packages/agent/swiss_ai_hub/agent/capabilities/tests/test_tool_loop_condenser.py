@@ -189,7 +189,7 @@ async def test_a_condensed_result_is_not_condensed_again_in_a_later_round():
         return "short"
 
     condenser._summarise_result = summarise  # type: ignore[method-assign]
-    second = await condenser.condense(later)
+    await condenser.condense(later)
 
     assert summarised == ["c2"]
 

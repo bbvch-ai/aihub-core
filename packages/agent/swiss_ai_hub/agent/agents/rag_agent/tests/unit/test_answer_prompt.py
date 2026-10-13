@@ -137,7 +137,7 @@ async def test_the_sufficiency_guard_weighs_the_documents_against_the_gathered_c
             run_context=MagicMock(),
         )
 
-    seen = _texts(guard.await_args.kwargs["chat_history"])
+    seen = _texts([message for block in guard.await_args.kwargs["blocks"] for message in block])
     assert "The user works in Bern." in seen
     assert "The handbook says Y." in seen
-    assert guard.await_args.kwargs["chat_history"][-1] == QUESTION
+    assert guard.await_args.kwargs["history"][-1] == QUESTION
