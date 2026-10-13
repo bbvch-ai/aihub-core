@@ -9,6 +9,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
+from swiss_ai_hub.core.generative_ai import ExtractedDocument
 from swiss_ai_hub.core.infrastructure import OpenTerminalError
 from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler, fake_user
 
@@ -27,6 +28,7 @@ async def client():
     (
         controller.list_user_files()
         .get_user_file_content()
+        .preview_user_file()
         .upload_user_file()
         .create_user_folder()
         .move_user_file()
@@ -158,6 +160,61 @@ async def test_a_file_a_browser_could_run_script_from_is_never_shown_in_place(
     assert response.headers["content-type"] == "application/octet-stream"
     assert response.headers["content-disposition"].startswith("attachment;")
     assert response.headers["content-security-policy"] == "sandbox; default-src 'none'"
+
+
+def _extracted(markdown: str) -> ExtractedDocument:
+    return ExtractedDocument(
+        title="Report",
+        content=markdown,
+        content_type="",
+        source_filename="report.docx",
+        document_parser="MarkItDownLoader",
+    )
+
+
+@pytest.mark.asyncio
+async def test_an_office_document_is_previewed_as_the_markdown_an_agent_reads(
+    client: AsyncClient, sandbox: Any
+) -> None:
+    docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    sandbox.view.return_value = (b"PK-docx", f"{docx}; charset=binary")
+    with patch.object(
+        user_knowledge_service.DocumentExtractor,
+        "extract_from_bytes",
+        AsyncMock(return_value=_extracted("# Report\n\n| a | b |")),
+    ) as extract:
+        response = await client.get(f"{ENDPOINT}/preview", params={"path": "reports/Q1.DOCX"})
+
+    assert response.status_code == 200
+    assert response.json() == {"path": "reports/Q1.DOCX", "markdown": "# Report\n\n| a | b |", "truncated": False}
+    sandbox.view.assert_awaited_once_with("reports/Q1.DOCX")
+    extract.assert_awaited_once_with(content=b"PK-docx", filename="Q1.DOCX", content_type=docx)
+
+
+@pytest.mark.asyncio
+async def test_a_long_preview_is_cut_short_and_says_so(client: AsyncClient, sandbox: Any) -> None:
+    limit = user_knowledge_service.UserKnowledgeService.MAX_PREVIEW_CHARS
+    with patch.object(
+        user_knowledge_service.DocumentExtractor,
+        "extract_from_bytes",
+        AsyncMock(return_value=_extracted("x" * (limit + 1))),
+    ):
+        response = await client.get(f"{ENDPOINT}/preview", params={"path": "big.xlsx"})
+
+    assert response.status_code == 200
+    assert len(response.json()["markdown"]) == limit
+    assert response.json()["truncated"] is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", ["report.pdf", "notes.txt", "page.html", "archive"])
+async def test_a_file_without_a_markdown_preview_is_refused_before_it_is_read(
+    client: AsyncClient, sandbox: Any, path: str
+) -> None:
+    response = await client.get(f"{ENDPOINT}/preview", params={"path": path})
+
+    assert response.status_code == 415
+    sandbox.view.assert_not_awaited()
 
 
 @pytest.mark.asyncio

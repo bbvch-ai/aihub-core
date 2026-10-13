@@ -292,6 +292,9 @@ import type {
   MoveUserFileData,
   MoveUserFileError,
   MoveUserFileResponse,
+  PreviewUserFileData,
+  PreviewUserFileError,
+  PreviewUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -3882,6 +3885,34 @@ export const getUserFileContent = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/user-knowledge/content",
+    ...options,
+  });
+
+/**
+ * Preview User File
+ */
+export const previewUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends PreviewUserFileResponse = PreviewUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    PreviewUserFileData,
+    PreviewUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    PreviewUserFileResponse | DefaultT,
+    PreviewUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/preview",
     ...options,
   });
 

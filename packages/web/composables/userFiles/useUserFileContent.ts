@@ -1,4 +1,4 @@
-import { getUserFileContent } from '@core/sdk/client'
+import { getUserFileContent, previewUserFile, type FilePreviewDto } from '@core/sdk/client'
 
 export const useUserFileContent = () => {
   const { tenantId } = useTenant()
@@ -11,6 +11,13 @@ export const useUserFileContent = () => {
       responseType: 'blob',
     }) as Blob
 
+  const fetchPreview = async (filePath: string): Promise<FilePreviewDto> =>
+    await previewUserFile({
+      composable: '$fetch',
+      path: { tenant_id: tenantId.value! },
+      query: { path: filePath },
+    })
+
   const download = async (filePath: string, name: string) => {
     const url = URL.createObjectURL(await fetchBlob(filePath, true))
     const link = document.createElement('a')
@@ -20,5 +27,5 @@ export const useUserFileContent = () => {
     URL.revokeObjectURL(url)
   }
 
-  return { fetchBlob, download }
+  return { fetchBlob, fetchPreview, download }
 }

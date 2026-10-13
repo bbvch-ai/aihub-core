@@ -144,6 +144,7 @@ runner.mount(
     UserKnowledgeController(auth=auth)
     .list_user_files()
     .get_user_file_content()
+    .preview_user_file()
     .upload_user_file()
     .create_user_folder()
     .move_user_file()
