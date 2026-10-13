@@ -63,8 +63,15 @@ keeps the two-axis shape.
 
 Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
 at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
-the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token window
-on `stoney`, Infomaniak with 100000 on `infomaniak`. Every other model is identical.
+the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token input
+limit on `stoney`, Infomaniak with 91824 on `infomaniak`. Every other model is identical.
+
+**`max_input_tokens` is the provider's window minus `max_output_tokens`.** Both providers count input and output against
+one window, and every agent call requests the full `max_output_tokens`, so agents fitting prompts to the provider's
+whole window get a "maximum context length" 400 on every long conversation (issue #2077). The window is the number in
+that 400, not what a provider's model catalogue declares as its input limit: Infomaniak lists 100000 for gemma (window
+100016\) and for Ministral (window 80000). To measure it, send one prompt twice, with `max_tokens=1` and with
+`max_output_tokens`; the second one's 400 names the window.
 
 This is deliberately **not** a stage or channel conditional. Every release bundle renders as `stage='latest'`
 (`generate_release`), and all customers deploy the same `latest` artifact, so which provider serves a model is a
@@ -108,10 +115,10 @@ stays reviewable.
 
 ### Global and per-model OpenWebUI functions
 
-`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes
-the ids listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter
-runs only on the models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent
-filters (`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes the ids
+listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter runs only on the
+models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent filters
+(`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 
 ### Applying an OpenWebUI function change to a running stack
 
@@ -205,7 +212,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.

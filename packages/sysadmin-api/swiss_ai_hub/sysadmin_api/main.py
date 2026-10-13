@@ -49,7 +49,7 @@ runner.mount(
     # The access catalog depends on the full controller surface a deployment serves, which this curated
     # plane does not have — SysadminAccessController overrides the endpoints to proxy them to the main API.
     SysadminAccessController(auth=auth).get_access_capabilities().get_access_presets(),
-    AuthProviderController(auth=auth).get_auth_providers(),
+    AuthProviderController(auth=auth).get_auth_providers().get_auth_provider(),
 )
 
 app = runner.create_app()

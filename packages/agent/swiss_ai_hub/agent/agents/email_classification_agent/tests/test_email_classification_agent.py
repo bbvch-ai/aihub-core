@@ -389,9 +389,10 @@ def _grounding_missing_collection() -> dict:
 def _grounding_with_drafting_off() -> dict:
     """The reachable regression: grounding configured, drafting later paused.
 
-    `_drafting_batch` returns nothing with drafting off, so grounding cannot execute — and must therefore not be
-    able to fail the run either. The collection deliberately does not exist and no knowledge agent is configured, so
-    a validation pass that ignored `enable_draft` would kill every classification run of a paused deployment.
+    `ReplyDrafting.drafting_batch` returns nothing with drafting off, so grounding cannot execute — and must therefore
+    not be able to fail the run either. The collection deliberately does not exist and no knowledge agent is
+    configured, so a validation pass that ignored `enable_draft` would kill every classification run of a paused
+    deployment.
     """
     return {
         "unread": [summary("1")],

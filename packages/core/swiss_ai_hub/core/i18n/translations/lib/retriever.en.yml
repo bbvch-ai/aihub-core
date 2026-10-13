@@ -10,6 +10,10 @@ config:
   query_mode:
     label: Query mode
     help: Specifies how the vector store should be queried.
+  min_similarity:
+    label: Minimum similarity
+    help: Results less similar to the question than this are dropped before reranking.
+      Applies to the Default query mode; 0 keeps every result.
   node_types:
     label: Node types
     help: Types of nodes to retrieve from the index.

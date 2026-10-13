@@ -10,6 +10,12 @@ from swiss_ai_hub.core.generative_ai.document.parsers.text_chunk import TextChun
 # CJK, so a character costs at most ~2 tokens even under byte-level BPE fallback for multi-byte accents.
 SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER = 2
 
+# Characters per token beyond which a chunk counts as over budget without being counted. Also the hard cap on every
+# piece the limiter emits: the splitter measures in tiktoken, which packs a run of `_`, `-` or `.` at ~64 characters
+# per token where bge-m3 spends one token per ~16, so a form's fill-in blanks leave it as one piece many times the
+# budget. Measured against a live bge-m3, a full-size piece costs ~1.8k tokens as blanks and ~5.7k as German prose.
+MAX_CHARACTERS_PER_TOKEN = 4
+
 
 class TextChunkSizeLimiter:
     """
@@ -25,6 +31,7 @@ class TextChunkSizeLimiter:
         self.max_tokens = max_tokens
         self.token_counter = token_counter
         self.splitter = SentenceSplitter(chunk_size=max_tokens, chunk_overlap=0)
+        self.max_characters = max_tokens * MAX_CHARACTERS_PER_TOKEN
 
     def enforce(self, chunks: list[TextChunk]) -> list[TextChunk]:
         limited: list[TextChunk] = []
@@ -33,9 +40,15 @@ class TextChunkSizeLimiter:
                 limited.append(chunk)
             else:
                 limited.extend(
-                    TextChunk(split, chunk.content_type) for split in self.splitter.split_text(chunk.content)
+                    TextChunk(piece, chunk.content_type)
+                    for split in self.splitter.split_text(chunk.content)
+                    for piece in self._cap_characters(split)
                 )
         return limited
+
+    def _cap_characters(self, text: str) -> list[str]:
+        """The splitter's pieces are sized in tiktoken, so one that tiktoken undercounts is cut at the character cap."""
+        return [text[start : start + self.max_characters] for start in range(0, len(text), self.max_characters)]
 
     def _within_budget(self, content: str) -> bool:
         """
@@ -49,6 +62,6 @@ class TextChunkSizeLimiter:
         """
         if len(content) <= self.max_tokens // SHORT_CIRCUIT_MAX_TOKENS_PER_CHARACTER:
             return True
-        if len(content) > self.max_tokens * 4:
+        if len(content) > self.max_characters:
             return False
         return self.token_counter(content) <= self.max_tokens

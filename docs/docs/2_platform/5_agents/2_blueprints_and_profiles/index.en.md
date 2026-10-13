@@ -157,6 +157,50 @@ Controls response creativity:
 
 For RAG-enabled agents, select which document collections the agent can search.
 
+### Restrict to the user's access
+
+A profile's collections are checked once, against whoever saved the profile. Without further settings, everyone allowed
+to use the agent gets answers from all its collections, including ones they cannot open in the knowledge area. With
+**Restrict to the user's access** on, every run is narrowed to the collections the asking user may read, using the
+knowledge area's own rules. The setting is on for new profiles and off for profiles saved before it existed, so nothing
+changes unannounced. If nothing is left for a user, the agent says that no knowledge is available to them instead of
+answering as if the documents held no answer. Runs without a user, such as scheduled or mail-triggered ones, keep the
+profile's scope. The Document Intelligence, Company Knowledge and Document Navigation assistants offer it.
+
+### Shared chat settings
+
+Every conversational agent (Instructed, Teachable, Document Intelligence, Company Knowledge, MCP Tool and Universal)
+brings the same building blocks, each with its own section in the form:
+
+- **User Memory** and **Organization Memory**: what the agent recalls about the user and the organization, and whether
+  it stores new facts. Recalled memories reach the model as part of its system instructions.
+- **Attached Files**: a user can attach files in the chat and the agent reads them itself. A file that fits is read
+  whole; a longer one is cut down to the sections most relevant to the question, and the answer says so. The embedding
+  and reranking models that pick those sections are preset (`embedding/bge-m3`, `reranker/bge`) and rarely need a
+  change.
+- **Knowledge Search**: the reranking model used when a user points the chat at a collection with `#`, or when the model
+  chooses to search one itself. It is preset to `reranker/bge`. Only collections the user may read are searched.
+- **Condense question** and **Task LLM**: described above.
+
+All of them cite what they read as sources in the chat. If a message alone, such as a very long pasted text, is larger
+than the model's context window, the agent replies that the input is too large instead of failing; the check uses the
+narrower of the answering model and the Task LLM.
+
+### Tool loop settings
+
+Agents that let the model choose its own tools, such as the Universal Agent, add a **Tools** section:
+
+| Setting                | What it does                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| **Maximum Decisions**  | How often the model may choose tools before it must answer with what it has.                |
+| **Maximum Tool Calls** | How many tool calls one answer may make in total.                                           |
+| **Disable Tools**      | Turn on to withhold some tools; the Disabled Tools picker appears only while it is on.      |
+| **Disabled Tools**     | Tools of the blueprint this profile never offers, while Disable Tools is on.                |
+| **Approvals**          | Per tool: never ask, ask for every call, ask once per answer, or ask once per conversation. |
+
+At either limit the model answers without tools and the chat says that it stopped early. A tool is also offered only
+while the chat toggle it needs (Code Interpreter or My Files) is on. See [Agents overview](../#tools-the-model-chooses).
+
 ### System Prompt
 
 Some agents allow customizing the system prompt to adjust behavior and personality.

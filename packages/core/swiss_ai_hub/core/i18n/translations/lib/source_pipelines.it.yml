@@ -111,3 +111,13 @@ rclone:
         label: Chiave privata (PEM)
         help: Chiave privata in formato PEM, in alternativa a una password. Archiviata
           cifrata.
+structured:
+  display_name: Sincronizzazione di applicazioni aziendali
+  description: Mantiene la base sincronizzata con i record di applicazioni aziendali
+    come issue tracker e wiki. Ogni record diventa un documento markdown e il suo
+    progetto o spazio diventa un namespace.
+  config:
+    source_kind:
+      label: Sistema sorgente
+      help: Applicazione da cui vengono letti i record. Le sue impostazioni compaiono
+        una volta selezionata.

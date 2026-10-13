@@ -48,6 +48,7 @@ _NO_FEATURES = {
     "image_generation": False,
     "memory": False,
     "file_context": False,
+    "terminal": False,
 }
 _SYNCED_META = {AIHUB_MANAGED_META_KEY: True, "capabilities": _NO_FEATURES, "filterIds": list(AGENT_FILTER_IDS)}
 _SYNCED_PARAMS = {"function_calling": "legacy"}
@@ -99,6 +100,12 @@ class TestAgentCapabilities:
 
         assert OpenWebuiProvisioner._agent_capabilities(agent)["memory"] is False
 
+    def test_openwebui_terminal_is_always_off_for_agents(self) -> None:
+        """The pipe ignores the chosen terminal, and a selected one hides the Code Interpreter toggle."""
+        agent = _RAG_AGENT.model_copy(update={"supported_features": list(ChatFeature)})
+
+        assert OpenWebuiProvisioner._agent_capabilities(agent)["terminal"] is False
+
     def test_agent_model_carries_capabilities_and_agent_filters(self, provisioner: OpenWebuiProvisioner) -> None:
         model_data = provisioner._build_model_data(_RAG_AGENT)
 
@@ -106,9 +113,15 @@ class TestAgentCapabilities:
         assert model_data["meta"]["filterIds"] == list(AGENT_FILTER_IDS)
 
     def test_native_features_add_no_toggle_filter(self) -> None:
-        agent = _RAG_AGENT.model_copy(update={"supported_features": list(ChatFeature)})
+        native = [feature for feature in ChatFeature if feature.openwebui_capability]
+        agent = _RAG_AGENT.model_copy(update={"supported_features": native})
 
         assert OpenWebuiProvisioner._agent_filter_ids(agent) == list(AGENT_FILTER_IDS)
+
+    def test_my_files_gets_its_own_toggle_filter(self) -> None:
+        agent = _RAG_AGENT.model_copy(update={"supported_features": [ChatFeature.USER_FILES]})
+
+        assert OpenWebuiProvisioner._agent_filter_ids(agent) == [*AGENT_FILTER_IDS, "aihub-feature-user-files"]
 
     def test_feature_without_native_toggle_gets_a_toggle_filter(self) -> None:
         custom = MagicMock(openwebui_capability=None, openwebui_toggle_filter_id="aihub-feature-deep-research")
@@ -194,6 +207,16 @@ class TestComputeModelDiff:
         assert to_create == []
         assert to_update == [_RAG_AGENT]
         assert to_delete == set()
+
+    def test_compute_models_to_update_when_synced_before_the_terminal_was_managed(self) -> None:
+        """A row synced before the terminal capability was written still shows the selector, so it must be updated."""
+        stale = {key: value for key, value in _NO_FEATURES.items() if key != "terminal"}
+        meta = {**_SYNCED_META, "capabilities": stale}
+        existing = {_RAG_MODEL_ID: _managed_row(_RAG_MODEL_ID, "RAG Agent", meta=meta)}
+
+        _, to_update, _ = OpenWebuiProvisioner._compute_model_diff([_RAG_AGENT], existing)
+
+        assert to_update == [_RAG_AGENT]
 
     def test_compute_models_to_update_when_capability_flipped(self) -> None:
         online = [_RAG_AGENT]

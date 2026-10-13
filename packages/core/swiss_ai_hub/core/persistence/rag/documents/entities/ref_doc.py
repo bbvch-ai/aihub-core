@@ -24,6 +24,12 @@ _IDX_NAMESPACE = "data.metadata.namespace"
 _IDX_IS_INGESTED = "data.metadata.is_ingested"
 _IDX_SOURCE = "data.metadata.source"
 
+# Stored field paths, for queries that bypass MongoEngine's field-name translation
+_RAW_NAMESPACE = "__data__.metadata.namespace"
+_RAW_IS_INGESTED = "__data__.metadata.is_ingested"
+_RAW_SOURCE = "__data__.metadata.source"
+_RAW_TEXT = "__data__.text"
+
 
 class Metadata(DynamicEmbeddedDocument):
     source = StringField(required=True)
@@ -98,6 +104,92 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def first_by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self | None:
+        """Safe to call from worker threads, unlike the `switch_db` readers: see `list_ingested_summaries`."""
+        son = get_db(db_alias)[cls._meta["collection"]].find_one({"_id": doc_id, _RAW_NAMESPACE: namespace})
+        return None if son is None else cls._from_son(son)
+
+    @classmethod
+    @trace_fn
+    def list_ingested_summaries(cls, db_alias: str, namespace: str) -> list["RefDoc"]:
+        """Every fully ingested document of a namespace, ordered by source and loaded with its metadata only.
+
+        Queries the alias's database directly instead of through `switch_db`, which rebinds `RefDoc` for the whole
+        process: two worker threads reading different knowledge databases at once were each handed the other's rows.
+        The parsed text is the bulk of every row, and llama-index stores it twice, in `text` and again in the
+        undeclared `text_resource`; projecting onto the fields a listing needs leaves out both. Legacy rows without
+        `is_ingested` count as ingested, as everywhere else.
+        """
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {
+                    _RAW_NAMESPACE: namespace,
+                    _RAW_IS_INGESTED: {"$ne": False},
+                    "__type__": {"$ne": "placeholder"},
+                },
+                {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1},
+            )
+            .sort(_RAW_SOURCE, 1)
+        )
+        return [cls._from_son(son) for son in rows]
+
+    @classmethod
+    @trace_fn
+    def search_ingested_ids(
+        cls,
+        db_alias: str,
+        namespace: str,
+        pattern: str,
+        options: str,
+        max_time_ms: int,
+        with_source: bool = False,
+    ) -> list[Self]:
+        """Fully ingested documents of a namespace whose parsed text matches a PCRE pattern, ordered by id.
+
+        FerretDB's backend decompresses the whole row, both copies of the text included, for every filter operator,
+        projection and sort it evaluates, in the order the filter lists them. The regex therefore comes first, so the
+        pending checks only run on the rows it matched, and rows carry only their id, sorted by the id column, unless
+        the caller needs the source to apply a path glob.
+        """
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {
+                    _RAW_TEXT: {"$regex": pattern, "$options": options},
+                    _RAW_NAMESPACE: namespace,
+                    _RAW_IS_INGESTED: {"$ne": False},
+                    "__type__": {"$ne": "placeholder"},
+                },
+                {_RAW_SOURCE: 1} if with_source else {"_id": 1},
+            )
+            .sort("_id", 1)
+            .max_time_ms(max_time_ms)
+        )
+        return [cls._from_son(son) for son in rows]
+
+    @classmethod
+    @trace_fn
+    def ingested_with_text_by_ids(cls, db_alias: str, namespace: str, ids: list[str], max_time_ms: int) -> list[Self]:
+        """Metadata and parsed text of the given documents that are still fully ingested, never the `text_resource`
+        copy; a document that turned pending since its id was found is left out."""
+        rows = (
+            get_db(db_alias)[cls._meta["collection"]]
+            .find(
+                {
+                    "_id": {"$in": ids},
+                    _RAW_NAMESPACE: namespace,
+                    _RAW_IS_INGESTED: {"$ne": False},
+                    "__type__": {"$ne": "placeholder"},
+                },
+                {"__type__": 1, "__data__.metadata": 1, "__data__.mimetype": 1, _RAW_TEXT: 1},
+            )
+            .max_time_ms(max_time_ms)
+        )
+        return [cls._from_son(son) for son in rows]
+
+    @classmethod
+    @trace_fn
     def by_namespace(
         cls,
         db_alias: str,
@@ -116,6 +208,20 @@ class RefDoc(Document):
     ) -> list["RefDoc"]:
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return list(SwitchedRefDoc.objects.filter(id__nin=(exclude_ids or [])))
+
+    @classmethod
+    @trace_fn
+    def get_all_ids(cls, db_alias: str) -> set[str]:
+        """Ids only, so a scan over a whole database does not load every document's text."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return set(SwitchedRefDoc.objects.scalar("id"))
+
+    @classmethod
+    @trace_fn
+    def get_existing_ids(cls, db_alias: str, doc_ids: list[str]) -> set[str]:
+        """The subset of ``doc_ids`` that still has a document."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return set(SwitchedRefDoc.objects.filter(id__in=doc_ids).scalar("id"))
 
     @classmethod
     @trace_fn

@@ -20,7 +20,7 @@ at a service boundary, you find every downstream consumer that could break.
 This is a monorepo with strict dependency direction:
 
 ```
-packages/agent (190 files), packages/api (132), packages/process (59), packages/pipeline (43), packages/bot (19)
+packages/agent, packages/api, packages/process, packages/pipeline, packages/bot, packages/backup, packages/sysadmin-api
                                     ↓ all import from
                                packages/core (foundation)
 ```
@@ -35,14 +35,14 @@ These are the most-imported modules. Changes here have the widest blast radius:
 | Module                                                 | Import Count | Consumers           | What breaks                                                   |
 | ------------------------------------------------------ | ------------ | ------------------- | ------------------------------------------------------------- |
 | `swiss_ai_hub.core.i18n` (LocaleString, LocaleHandler) | ~195         | All packages        | Every localized string, handler injection, translation lookup |
-| `swiss_ai_hub.core.nats.events` (~134 event files)     | ~165         | All packages        | Event serialization, dispatch, persistence, UI display        |
+| `swiss_ai_hub.core.events`                             | ~165         | All packages        | Event serialization, dispatch, persistence, UI display        |
 | `swiss_ai_hub.core.agents.AgentConfig`                 | ~53          | agent, api          | Config lifecycle, form duality, discovery, admin UI           |
 | `swiss_ai_hub.core.auth.identity.UserIdentity`         | ~36          | api, agent, bot     | Auth flow, permission checks, event attribution               |
 | `swiss_ai_hub.core.processes.ProcessConfig`            | ~27          | process, api        | Process config lifecycle (parallel to AgentConfig)            |
 | `swiss_ai_hub.core.routes.Controller`                  | ~24          | api                 | Every API endpoint's base class                               |
 | `swiss_ai_hub.core.infrastructure.*` (Settings)        | ~20 each     | All packages        | Service connections, env var loading                          |
 | `swiss_ai_hub.core.displayers.EventDisplayer`          | ~16          | agent               | All LLM streaming, display events                             |
-| `swiss_ai_hub.core.nats.topics.*`                      | ~15          | agent, process, api | NATS subject routing, subscriptions                           |
+| `swiss_ai_hub.core.topics.*`                           | ~15          | agent, process, api | NATS subject routing, subscriptions                           |
 | `swiss_ai_hub.core.persistence.*`                      | ~30+         | api, lib            | MongoDB entities, data access                                 |
 
 ### Change Categories and Their Ripple Patterns
@@ -96,12 +96,12 @@ For each changed class/function/field, find every import across all packages:
 ```bash
 # Find all files that import the changed class
 grep -rn "from swiss_ai_hub.core.{module}.{ClassName}" \
-  packages/agent packages/api packages/process packages/pipeline packages/bot \
+  packages/agent packages/api packages/process packages/pipeline packages/bot packages/backup packages/sysadmin-api \
   --include="*.py" | grep -v __pycache__ | grep -v .venv
 
 # Find usage of the changed method/field
 grep -rn "{method_or_field_name}" \
-  packages/agent packages/api packages/process packages/pipeline packages/bot \
+  packages/agent packages/api packages/process packages/pipeline packages/bot packages/backup packages/sysadmin-api \
   --include="*.py" | grep -v __pycache__ | grep -v .venv
 ```
 
@@ -114,7 +114,7 @@ Some changes ripple through chains:
 - **AgentConfig change** → check `AgentConfigClient` (RPC fetch) → check `AgentConfigResponder` (API side) → check
   `AgentEndpointsDiscoveryService` (dynamic endpoints) → check SDK types
 - **Entity field change** → check all Services that query this entity → check DTOs that expose it → check frontend
-- **Form element change** → check `useFormKitTransform` in frontend → check `.app/formkit.config.ts`
+- **Form element change** → check `useFormKitTransform` in frontend → check `packages/web/formkit.config.ts`
 - **Topic/subject change** → check all `TopicManager` usages → check all subscriber configurations → check
   `StreamManager` stream definitions
 

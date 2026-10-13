@@ -34,8 +34,8 @@ thoughts:
     \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\
     \ al modello viene rifiutata."
 messages:
-  input_too_large: Questo messaggio è troppo lungo perché io possa elaborarlo. Rispondo
-    in base ai miei esempi configurati e non leggo i documenti allegati. Per domande
-    su un file, usa un assistente pensato per i documenti.
+  input_too_large: 'Questo messaggio è troppo lungo perché io possa elaborarlo. Accorcialo
+    oppure allega il testo come file: leggo io stesso i file allegati e uso le parti
+    utili alla tua domanda.'
   unsuitable_request: Non sono l'assistente giusto per questa richiesta, quindi non
     posso rispondere. %{reason}

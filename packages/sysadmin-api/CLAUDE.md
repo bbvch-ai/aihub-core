@@ -18,6 +18,8 @@ runner's lifespan if those controllers need more infra.
 Code that lives in this package (must require sysadmin role + be sysadmin-only):
 
 - Tenant lifecycle management (`TenantAdminController` — list / get / create / update / delete tenant metadata).
+  Metadata includes the localized `chat_disclaimer` (max 100 chars per language; shown under the OpenWebUI chat input,
+  see `infra/deployment/openwebui-disclaimer.md`); the update validates before writing any field.
 
 Code that does NOT live here (lives in `packages/api`):
 

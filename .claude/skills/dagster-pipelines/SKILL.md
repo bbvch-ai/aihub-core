@@ -316,7 +316,7 @@ Resources read connection details from `packages/core` settings (Pydantic `BaseS
 
 | Settings Class                      | Env Prefix                     | Purpose                                     |
 | ----------------------------------- | ------------------------------ | ------------------------------------------- |
-| `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection                         |
+| `S3StorageSettings`                 | `S3_STORAGE_`                  | S3/MinIO connection                         |
 | `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB                            |
 | `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API (`URL`, `RC_USER/PASS`)       |
 | `RclonePipelineSettings`            | `RCLONE_PIPELINE_`             | Source pipeline schedule + `MAX_PARTITIONS` |

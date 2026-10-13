@@ -15,10 +15,14 @@ import { defineConfig, devices } from '@playwright/test'
  * - E2E_KEYCLOAK_ADMIN_USER  Keycloak test user (default: admin)
  * - E2E_KEYCLOAK_ADMIN_PASSWORD  Keycloak test user password (default: admin)
  *
+ * The `openwebui` project (agent-terminal-selector.spec.ts, universal-agent/) signs into OpenWebUI
+ * directly and reads its own environment variables; see tests/universal-agent/README.md.
+ *
  * Run: pnpm test
  */
 
 const DOMAIN = process.env.E2E_DOMAIN ?? '127.0.0.1.nip.io'
+const OPENWEBUI_SPECS = [/agent-terminal-selector\.spec\.ts$/, /universal-agent\/.*\.spec\.ts$/]
 
 export default defineConfig({
   testDir: './tests',
@@ -46,9 +50,18 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      testIgnore: OPENWEBUI_SPECS,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'tests/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'openwebui',
+      testMatch: OPENWEBUI_SPECS,
+      use: {
+        ...devices['Desktop Chrome'],
       },
       dependencies: ['setup'],
     },
