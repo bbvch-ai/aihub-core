@@ -193,7 +193,7 @@ Reference: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/data_lake_t
 
 Create resources in `packages/pipeline/swiss_ai_hub/pipeline/resources/<category>/`. Extend `ConfigurableResource`:
 
-Reference: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/DocumentParserResource.py`.
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/document_parser_resource.py`.
 
 Add the resource to the factory dict in `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`.
 

@@ -104,6 +104,10 @@ capabilities:
         conversation_metadata_description: Utiliser ce modèle. Il génère aussi les
           titres de conversation et les questions de suivi — sans accès, ces deux
           fonctions sont indisponibles.
+    files:
+      own:
+        label: "Utiliser votre espace de fichiers"
+        description: "Parcourir, envoyer, télécharger et gérer vos propres fichiers."
     memory:
       org:
         label: Utiliser la mémoire d'organisation

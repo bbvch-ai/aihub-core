@@ -24,9 +24,9 @@ An agent is only usable if every link in this chain is connected:
 ```
 AgentConfig subclass             → packages/core or packages/agent
   ↓ as_form() with FormkitElements
-AgentRunner(agent_type, config)  → packages/agent/{Name}/runners/{Name}Runner.py
+AgentRunner(agent_type, config)  → packages/agent/app/{name}/main.py (class in swiss_ai_hub/agent/runners/)
   ↓ responds to ClassDiscoveryRequestEvent
-AgentEndpointsDiscoveryService   → packages/api/swiss_ai_hub/api/services/AgentEndpointsDiscoveryService.py
+AgentEndpointsDiscoveryService   → packages/api/swiss_ai_hub/api/services/agent_endpoints_discovery_service.py
   ↓ creates dynamic API routes
 SDK types generated              → packages/web/sdk/client/ (pnpm generate-sdk)
   ↓ imported by composables
@@ -35,9 +35,10 @@ Frontend composables + pages     → packages/web/composables/agent/
 
 **What to check:**
 
-1. Agent has a Runner file that creates `AgentRunner(agent_type=..., agent_config=...as_form())`
+1. Agent has an app entrypoint (`packages/agent/app/{name}/main.py`) that creates
+   `AgentRunner(agent_type=..., agent_config=...as_form())`
 2. `as_form()` calls `super().as_form()` and returns an instance with all custom fields as FormkitElements
-3. Agent Runner is started somewhere (check `__main__.py` or runner scripts)
+3. Agent Runner is started somewhere (check `packages/agent/app/{name}/main.py`)
 4. i18n keys exist: `agent.{name}.metadata.name` and `.description` in all 4 locale files
    (`packages/agent/swiss_ai_hub/agent/i18n/translations/agent/*.{de,en,fr,it}.yml`)
 
@@ -48,9 +49,9 @@ Same pattern as agents but for processes:
 ```
 ProcessConfig subclass           → packages/core or packages/process
   ↓ as_form() with FormkitElements
-ProcessRunner(process_type, config) → packages/process runner
+ProcessRunner(process_type, config) → packages/process/swiss_ai_hub/process/runners/process_runner.py
   ↓ responds to ProcessClassDiscoveryRequestEvent
-ProcessEndpointsDiscoveryService → packages/api/swiss_ai_hub/api/services/ProcessEndpointsDiscoveryService.py
+ProcessEndpointsDiscoveryService → packages/api/swiss_ai_hub/api/services/process_endpoints_discovery_service.py
   ↓ creates dynamic API routes
 SDK types + composables          → packages/web/composables/process/
 ```
@@ -68,9 +69,9 @@ SDK types + composables          → packages/web/composables/process/
 Events only appear in the UI if the full display chain is connected:
 
 ```
-DisplayEvent subclass            → packages/core/swiss_ai_hub/core/nats/events/display/ or events/semantic/
+DisplayEvent subclass            → packages/core/swiss_ai_hub/core/events/agent/display/, events/agent/semantic/ or a ControlAndDisplayEvent
   ↓ published by EventDisplayer or agent step
-WebSocketSender                  → packages/api/swiss_ai_hub/api/sockets/sender/WebSocketSender.py
+WebSocketSender                  → packages/api/swiss_ai_hub/api/sockets/sender/web_socket_sender.py
   ↓ wraps in ContextualizedAgentEvent
 useThreadEvents composable       → packages/web/composables/thread/useThreadEvents.ts
   ↓ routes to component
@@ -92,23 +93,23 @@ Event display component          → packages/web/components/Event/Display/{Even
 Forms only render correctly if all elements map to registered FormKit inputs:
 
 ```
-Form subclass with Annotated fields → packages/core/swiss_ai_hub/core/nats/events/form/
+Form subclass with Annotated fields → packages/core/swiss_ai_hub/core/form/
   ↓ to_formkit_form() produces FormkitElement[]
 AgentConfig/ProcessConfig.as_form() → carries form in discovery response
   ↓ API stores and serves
 buildFormKitSchema()             → packages/web/composables/form/useFormKitTransform.ts
   ↓ transforms to FormKitSchemaNode[]
-FormKit renders                  → .app/formkit.config.ts has custom inputs registered
+FormKit renders                  → formkit.config.ts has custom inputs registered
 ```
 
 **What to check:**
 
 1. Each custom FormkitElement type used (e.g., `ModelSelect`, `LocaleInput`, `IconPicker`) has a corresponding
-   registration in `packages/web/.app/formkit.config.ts`
+   registration in `packages/web/formkit.config.ts`
 2. `Repeater`-type fields are handled by `extractRepeaterConfigs()` — check that the frontend component renders
    `<FormKitRepeater>` for them
-3. Form uses `swiss_ai_hub.core.nats.events.form.constraints.Ge/Le/etc.` (not Pydantic's built-in `ge=`), because
-   Pydantic validators reject FormkitElement instances in form mode
+3. Form uses `swiss_ai_hub.core.form.constraints.Ge/Le/etc.` (not Pydantic's built-in `ge=`), because Pydantic
+   validators reject FormkitElement instances in form mode
 4. Labels/placeholders use `LocaleString.from_i18n_path(...)` and the keys exist in all 4 locale files
 
 ### Chain 5: i18n Keys → All 4 Locales
@@ -153,7 +154,6 @@ For each chain, use targeted searches:
 ```
 # Chain 1: Find agent config and runner
 Grep "class {Name}Config" in packages/agent packages/core --include="*.py"
-Grep "class {Name}Runner" in packages/agent --include="*.py"
 Grep "AgentRunner.*agent_type.*{Name}" in packages/agent --include="*.py"
 
 # Chain 3: Check event display component mapping
@@ -161,7 +161,7 @@ Grep "{EventName}" in packages/web/composables/event/useEventComponent.ts
 Glob "packages/web/components/Event/Display/{EventName}.vue"
 
 # Chain 4: Check FormKit custom input registration
-Grep "{elementType}" in packages/web/.app/formkit.config.ts
+Grep "{elementType}" in packages/web/formkit.config.ts
 
 # Chain 5: Check all 4 locale files for a key
 Grep "{key_path}" in packages/*/swiss_ai_hub/*/i18n/ --include="*.yml"

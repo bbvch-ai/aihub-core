@@ -33,12 +33,6 @@ if ! grep -q 'area:' <<<"$LABELS"; then
   ERRORS=$((ERRORS + 1))
 fi
 
-# --- version label (advisory) ---
-if ! grep -qE '(^| )(major|minor|patch)( |$)' <<<"$LABELS"; then
-  echo "WARNING: No version label (major/minor/patch). The closing PR will need one." >&2
-  WARNINGS=$((WARNINGS + 1))
-fi
-
 # --- body structure: require the bold heading at line start, not just the phrase ---
 for SECTION in "In scope" "Out of scope" "Accepted when"; do
   if ! grep -qE "^\*\*${SECTION}\*\*" <<<"$BODY"; then
@@ -53,39 +47,37 @@ if ! grep -qE '^[[:space:]]*- \[[ xX]\]' <<<"$BODY"; then
   WARNINGS=$((WARNINGS + 1))
 fi
 
-# --- on the AI-Scrum board with an Item Type ---
-# Query the issue node directly: O(1) and immune to board growth (no item-list paging),
-# and reads the Item Type single-select by its field name.
+# --- native issue type ---
+# Read via the REST API: older gh releases reject `gh issue view --json issueType` as an unknown field.
+ISSUE_TYPE=$(gh api "repos/$REPO/issues/$ISSUE" --jq '.type.name // ""')
+if [ -z "$ISSUE_TYPE" ]; then
+  echo "WARNING: No issue type set (Task/Bug/Feature/Epic/Spike/Tech Debt)." >&2
+  WARNINGS=$((WARNINGS + 1))
+else
+  echo "Type:   $ISSUE_TYPE"
+fi
+
+# --- on the AI-Scrum board ---
 # shellcheck disable=SC2016  # $number is a GraphQL variable (bound via -F), not a shell expansion
 BOARD_JSON=$(gh api graphql -F number="$ISSUE" -f query='
   query($number: Int!) {
     repository(owner: "bbvch-ai", name: "aihub-core") {
       issue(number: $number) {
         projectItems(first: 20) {
-          nodes {
-            project { number }
-            fieldValueByName(name: "Item Type") {
-              ... on ProjectV2ItemFieldSingleSelectValue { name }
-            }
-          }
+          nodes { project { number } }
         }
       }
     }
-  }' 2>/dev/null || echo '{}')
+  }' 2>/dev/null) || BOARD_JSON='{}'
 
 ON_BOARD=$(jq -r --argjson pn "$PROJECT_NUMBER" \
   '[.data.repository.issue.projectItems.nodes[]? | select(.project.number == $pn)] | length' <<<"$BOARD_JSON")
-ITEM_TYPE=$(jq -r --argjson pn "$PROJECT_NUMBER" \
-  'first(.data.repository.issue.projectItems.nodes[]? | select(.project.number == $pn) | .fieldValueByName.name) // ""' <<<"$BOARD_JSON")
 
 if [ "${ON_BOARD:-0}" -eq 0 ]; then
   echo "ERROR: Issue #$ISSUE is not on the AI-Scrum board (project $PROJECT_NUMBER)." >&2
   ERRORS=$((ERRORS + 1))
-elif [ -z "$ITEM_TYPE" ]; then
-  echo "WARNING: On the board but Item Type (Epic/Story/Task) is unset." >&2
-  WARNINGS=$((WARNINGS + 1))
 else
-  echo "Board:  on AI-Scrum, Item Type=$ITEM_TYPE"
+  echo "Board:  on AI-Scrum"
 fi
 
 echo ""

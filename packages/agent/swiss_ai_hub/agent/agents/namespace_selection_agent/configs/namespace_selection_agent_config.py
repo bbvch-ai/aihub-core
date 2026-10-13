@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field, model_validator
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import InputNumber, KnowledgeDatabaseSelector, LocaleInput
+from swiss_ai_hub.core.form import Checkbox, InputNumber, KnowledgeDatabaseSelector, LocaleInput
 from swiss_ai_hub.core.form.constraints import Ge, MinLen
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
@@ -45,6 +45,10 @@ class NamespaceSelectionAgentConfig(AgentConfig):
         MinLen(1),
     ]
 
+    restrict_to_user_access: Annotated[
+        bool | Checkbox,
+        Field(description="Offer only the namespaces the asking user may read."),
+    ] = False
     rag_delegation: Annotated[
         RAGDelegationConfig,
         Field(description="Configuration for delegating queries to the RAG agent.", title="RAG Delegation"),
@@ -86,6 +90,15 @@ class NamespaceSelectionAgentConfig(AgentConfig):
             bucket_names=KnowledgeDatabaseSelector(
                 label=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.config.bucket_names.label"),
                 help=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.config.bucket_names.help"),
+            ),
+            restrict_to_user_access=Checkbox(
+                label=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.config.restrict_to_user_access.label"
+                ),
+                help=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.config.restrict_to_user_access.help"
+                ),
+                value=True,
             ),
             rag_delegation=RAGDelegationConfig.as_form(),
             max_conversation_history_entries=InputNumber(

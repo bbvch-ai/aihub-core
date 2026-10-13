@@ -7,17 +7,16 @@ from llama_index.llms.openai_like import OpenAILike
 from openai import BadRequestError
 from pydantic import ValidationError
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
+
 logger = logging.getLogger(__name__)
 
 STRUCTURED_OUTPUT_ATTEMPTS = 3
 
 # Reasoning models on Infomaniak emit clean JSON via ``response_format`` only with thinking disabled; a
 # structured extraction (title, follow-ups, routing) is a trivial task, so reasoning is pure latency and
-# the source of the fenced/truncated/omitted-field output the provider otherwise returns. Model families
-# read different keys — Qwen3 honours ``enable_thinking`` (and silently ignores ``thinking``, still burning
-# ~1k reasoning tokens), other vLLM templates honour ``thinking`` — so send both. Mistral-tokenizer models
-# (Ministral) reject ``chat_template_kwargs`` with a 400, so the call falls back to a plain request.
-_REASONING_DISABLED = {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}
+# the source of the fenced/truncated/omitted-field output the provider otherwise returns. The switch is
+# `ReasoningFreeChat`'s; a model that rejects it falls back to a plain request.
 
 # Usage on the final streamed chunk lets ``TokenCountingHandler`` read the gateway's real prompt/completion
 # counts instead of re-tokenizing the whole chat history locally. ``stream_options`` is a standard OpenAI
@@ -99,7 +98,7 @@ class ResilientOpenAILike(OpenAILike):
     def _reasoning_disabled_kwargs(self, kwargs: dict[str, Any]) -> dict[str, Any]:
         """Merge thinking-off into the call's ``llm_kwargs.extra_body`` without mutating the caller's dict."""
         llm_kwargs = dict(kwargs.get("llm_kwargs") or {})
-        llm_kwargs["extra_body"] = {**llm_kwargs.get("extra_body", {}), **_REASONING_DISABLED}
+        llm_kwargs["extra_body"] = {**llm_kwargs.get("extra_body", {}), **ReasoningFreeChat.EXTRA_BODY}
         return {**kwargs, "llm_kwargs": llm_kwargs}
 
     @override

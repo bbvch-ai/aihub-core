@@ -80,6 +80,7 @@ const VIEW_BY_ACTION: Record<string, string> = {
   'show-traces': 'tracing',
   'show-sources': 'sources',
   'show-memories': 'memories',
+  'show-files': 'files',
 }
 
 const HANDLED_MESSAGE_TYPES = new Set([...Object.keys(VIEW_BY_ACTION), 'set-model-context', 'set-context'])
@@ -88,6 +89,7 @@ const openPanelView = (): string | null => {
   if (route.path.endsWith('/tracing')) return 'tracing'
   if (route.path.endsWith('/sources')) return 'sources'
   if (route.path.endsWith('/memories')) return 'memories'
+  if (route.path.endsWith('/files')) return 'files'
   return null
 }
 

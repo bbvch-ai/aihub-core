@@ -102,24 +102,35 @@ watch(visible, (isVisible) => {
   selectedSource.value = props.database?.source ?? MANUAL_UPLOAD
 })
 
-// A source owns its database's content: on the next sync it removes every file it does not have. Handing a
-// manually filled database over is therefore confirmed first, and the API refuses it without the acknowledgement.
+// A source owns its database's content: on the next sync it removes every file it does not have. Handing a database
+// that holds documents to a different source, from manual upload or from another source, is therefore confirmed
+// first, and the API refuses it without the acknowledgement. Editing the current source's settings is no handover.
 const existingDocuments = computed(() =>
   (props.database?.namespaces ?? []).reduce((total, namespace) => total + namespace.number_of_documents, 0),
 )
-const isHandoverFromManualUpload = computed(() => props.database?.source === null && existingDocuments.value > 0)
+const isHandover = computed(() =>
+  existingDocuments.value > 0 && selectedSource.value !== (props.database?.source ?? MANUAL_UPLOAD),
+)
+const currentSourceName = computed(() =>
+  sourcePipelines.value?.find(source => source.name === props.database?.source)?.display_name
+  ?? props.database?.source,
+)
 
 function confirmHandoverThenSubmit(configuration: Record<string, unknown>) {
-  if (!isHandoverFromManualUpload.value) {
+  if (!isHandover.value) {
     submitSource(configuration)
     return
   }
+  const name = props.database?.display_name || props.database?.name
   confirm.require({
     header: t('knowledge.form.edit_source.replace_documents.header'),
-    message: t('knowledge.form.edit_source.replace_documents.message', {
-      name: props.database?.display_name || props.database?.name,
-      count: existingDocuments.value,
-    }),
+    message: props.database?.source
+      ? t('knowledge.form.edit_source.replace_documents.message_from_source', {
+          name,
+          count: existingDocuments.value,
+          source: currentSourceName.value,
+        })
+      : t('knowledge.form.edit_source.replace_documents.message', { name, count: existingDocuments.value }),
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: t('common.actions.cancel'),
     acceptLabel: t('knowledge.form.edit_source.replace_documents.accept'),

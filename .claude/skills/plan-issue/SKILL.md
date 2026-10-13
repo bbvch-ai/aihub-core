@@ -10,14 +10,15 @@ Fetch issue \$ARGUMENTS from `bbvch-ai/aihub-core` and produce a scoped implemen
 
 ## Step 1: Fetch the Issue
 
-Use the GitHub MCP server to gather structured issue data:
+Use the `gh` CLI (there is no GitHub MCP server) to gather structured issue data:
 
-1. **Issue details**: `mcp__github__issue_read` with `method: "get"` — title, body, author, assignees, milestone
-2. **Discussion**: `mcp__github__issue_read` with `method: "get_comments"` — clarifications, decisions, context
-3. **Sub-issues**: `mcp__github__issue_read` with `method: "get_sub_issues"` — task breakdown if present
-4. **Labels**: `mcp__github__issue_read` with `method: "get_labels"` — categorization and priority
+```bash
+gh issue view $ISSUE_NUMBER -R bbvch-ai/aihub-core --json title,body,author,assignees,labels,milestone,comments
+gh api repos/bbvch-ai/aihub-core/issues/$ISSUE_NUMBER/sub_issues
+gh api repos/bbvch-ai/aihub-core/issues/$ISSUE_NUMBER/dependencies/blocked_by
+```
 
-All calls use `owner: "bbvch-ai"`, `repo: "swiss-ai-hub"`, `issue_number: $ISSUE_NUMBER`.
+Comments hold clarifications and decisions; sub-issues hold the task breakdown if present.
 
 Optionally check the project board for priority and status context:
 
@@ -32,15 +33,18 @@ Extract from the issue: **Goal** (what needs to be achieved), **Constraints** (r
 
 Map the issue requirements to monorepo scopes:
 
-| Scope               | Responsibility                                                 |
-| ------------------- | -------------------------------------------------------------- |
-| `packages/core`     | Shared library (events, entities, NATS, auth, config)          |
-| `packages/api`      | REST API + WebSocket gateway (FastAPI controllers, services)   |
-| `packages/agent`    | AI agent definitions and workflows (LlamaIndex)                |
-| `packages/pipeline` | Data ingestion pipelines (Dagster assets, resources)           |
-| `packages/process`  | Business process orchestration (agent + human + program steps) |
-| `packages/bot`      | Collaboration platform integrations (MS Teams, Slack)          |
-| `packages/web`      | Frontend admin UI (Nuxt 3, Vue 3, PrimeVue)                    |
+| Scope                   | Responsibility                                                 |
+| ----------------------- | -------------------------------------------------------------- |
+| `packages/core`         | Shared library (events, entities, NATS, auth, config)          |
+| `packages/api`          | REST API + WebSocket gateway (FastAPI controllers, services)   |
+| `packages/agent`        | AI agent definitions and workflows (custom workflow engine)    |
+| `packages/pipeline`     | Data ingestion pipelines (Dagster assets, resources)           |
+| `packages/process`      | Business process orchestration (agent + human + program steps) |
+| `packages/bot`          | Collaboration platform integrations (MS Teams, Slack)          |
+| `packages/web`          | Frontend admin UI (Nuxt 3, Vue 3, PrimeVue)                    |
+| `packages/sysadmin-api` | Sysadmin-gated tenant lifecycle API (FastAPI)                  |
+| `packages/sysadmin-web` | Sysadmin UI (Nuxt layer extending `packages/web`)              |
+| `packages/backup`       | Backup/restore service (independent Dagster instance)          |
 
 For each affected scope:
 
@@ -64,11 +68,10 @@ Check if scaffold skills exist for the type of work needed:
 
 - New agent → `/scaffold-agent`
 - New pipeline → `/scaffold-pipeline`
-- New process → `/scaffold-process`
 - New API endpoint → `/scaffold-api-endpoint` + `/scaffold-api-service` + `/scaffold-api-repository`
 - New frontend page → `/scaffold-frontend-page` + `/scaffold-composable`
 - New bot handler → `/scaffold-bot-handler`
-- New event type → `/validate-events` + `/nats-events`
+- New event type → `/nats-events`
 
 Reference these in the plan so the implementer can invoke them.
 
@@ -77,7 +80,7 @@ Reference these in the plan so the implementer can invoke them.
 Structure the plan with these sections:
 
 1. **Issue Summary** — one-sentence goal
-2. **Affected Scopes** — which of the 7 scopes are touched and why
+2. **Affected Scopes** — which scopes are touched and why
 3. **Implementation Steps** — each step must reference:
    - Concrete file paths (not placeholders)
    - Existing pattern to follow (a real file in the codebase)
@@ -103,7 +106,7 @@ Structure the plan with these sections:
 | Issue is vague                | List what needs clarification, suggest asking the issue author |
 | Spans too many scopes         | Break into sub-tasks, suggest splitting the issue              |
 | No existing pattern to follow | Flag as risk — may need an ADR for the new pattern             |
-| Sub-issues exist              | Use `get_sub_issues` to get the task breakdown                 |
+| Sub-issues exist              | Use the `sub_issues` API call from Step 1 for the breakdown    |
 
 ## Done When
 

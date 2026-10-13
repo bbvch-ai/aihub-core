@@ -7,3 +7,5 @@ class FitMode(StrEnum):
     WHOLE = "whole"
     EXCERPTS = "excerpts"
     BEGINNING = "beginning"
+    PAGES = "pages"
+    PAGES_CUT = "pages_cut"

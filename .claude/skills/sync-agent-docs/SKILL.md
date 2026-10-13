@@ -1,6 +1,6 @@
 ---
 name: sync-agent-docs
-description: Bring an agent's user-facing documentation page under docs/docs/2_platform/5_agents/ back in line with its implementation. Nothing textually links a doc page to the code behind it, so this drift is invisible to grep and to the generic doc sweeps. Run it whenever a change lands in packages/agent/swiss_ai_hub/agent/{agents,imap,rag,mcp,steps}/, packages/agent/app/<agent>/, or an agent config model under packages/core/swiss_ai_hub/core/ -- especially for a feat( commit, which by definition adds behaviour a user-facing page should describe. Use when user says 'the agent docs are out of date', 'sync agent documentation', 'document the new email agent features', 'did the docs keep up with this agent', or after implementing any agent capability, config field or limit. Do NOT use for writing a brand-new agent page from scratch (use document-feature), the generic README/CLAUDE.md staleness sweep (use update-doc), or ADRs (use document-decision).
+description: Bring an agent's user-facing documentation page under docs/docs/2_platform/5_agents/ back in line with its implementation. Nothing textually links a doc page to the code behind it, so this drift is invisible to grep and to the generic doc sweeps. Run it whenever a change lands in packages/agent/swiss_ai_hub/agent/{agents,capabilities,imap,rag,mcp,steps}/, packages/agent/app/*/, or an agent config model under packages/core/swiss_ai_hub/core/ -- especially for a feat( commit, which by definition adds behaviour a user-facing page should describe. Use when user says 'the agent docs are out of date', 'sync agent documentation', 'document the new email agent features', 'did the docs keep up with this agent', or after implementing any agent capability, config field or limit. Do NOT use for writing a brand-new agent page from scratch (use document-feature), the generic README/CLAUDE.md staleness sweep (use update-doc), or ADRs (use document-decision).
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -27,7 +27,7 @@ reader until a customer hits it.
 ```bash
 BASE=$(git merge-base HEAD origin/main)
 git diff --name-only "$BASE"...HEAD | grep -E \
-  "^(packages/agent/(swiss_ai_hub/agent/(agents|imap|rag|mcp|steps)/|app/)|packages/core/swiss_ai_hub/core/imap/)" \
+  "^(packages/agent/(swiss_ai_hub/agent/(agents|capabilities|imap|rag|mcp|steps)/|app/)|packages/core/swiss_ai_hub/core/imap/)" \
   || echo "no agent-implementation change -- stop here"
 ```
 
@@ -37,8 +37,10 @@ Note what the paths imply: an agent's doc-relevant code is **not** confined to i
 
 ## Step 1: Map code to doc page
 
-The join key is the display name. `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/<module>.en.yml` has a
-top-level `name:` that equals the doc page's `title:`. Derive it rather than trusting the table below:
+The chat blueprints (`llm_wrapping`, `few_shot`, `rag`, `expert_rag`, `mcp_react`, `universal`) share behaviour through
+`agent/capabilities/` (memory, attached files, `#` references, tool loop): a change there can alter several pages at
+once. The join key is the display name. `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/<module>.en.yml` has
+a top-level `name:` that equals the doc page's `title:`. Derive it rather than trusting the table below:
 
 ```bash
 for f in packages/agent/swiss_ai_hub/agent/i18n/translations/agent/*.en.yml; do
@@ -50,16 +52,17 @@ Current mapping — note that code names and product names have almost nothing i
 
 | Doc page                            | Agent module (`agents/…`)    | Also reads from                       |
 | ----------------------------------- | ---------------------------- | ------------------------------------- |
-| `3_instructed_assistant`            | `llm_wrapping_agent`         |                                       |
-| `4_teachable_assistant`             | `few_shot_agent`             | `agent/steps/`                        |
-| `5_document_intelligence_assistant` | `rag_agent`                  | `agent/rag/`, `agent/self_awareness/` |
+| `3_instructed_assistant`            | `llm_wrapping_agent`         | `agent/capabilities/`                 |
+| `4_teachable_assistant`             | `few_shot_agent`             | `agent/steps/`, `agent/capabilities/` |
+| `5_document_intelligence_assistant` | `rag_agent`                  | `agent/rag/`, `agent/capabilities/`   |
 | `6_retrieval_agent`                 | `retrieval_agent`            | `agent/rag/`                          |
 | `7_document_navigation_assistant`   | `namespace_selection_agent`  |                                       |
-| `8_mcp_tool_agent`                  | `mcp_react_agent`            | `agent/mcp/`                          |
+| `8_mcp_tool_agent`                  | `mcp_react_agent`            | `agent/mcp/`, `agent/capabilities/`   |
 | `9_expert_coordinator_agent`        | `expert_asking_agent`        |                                       |
-| `10_company_knowledge_agent`        | `expert_rag_agent`           | `agent/rag/`                          |
+| `10_company_knowledge_agent`        | `expert_rag_agent`           | `agent/rag/`, `agent/capabilities/`   |
 | `11_email_agent`                    | `imap_agent`                 | `agent/imap/`, `core/imap/`           |
 | `12_email_classification_agent`     | `email_classification_agent` | `agent/imap/`, `core/imap/`           |
+| `13_universal_agent`                | `universal_agent`            | `agent/capabilities/` (tool loop)     |
 
 **Two exceptions the derivation cannot give you.** `imap_agent` and `memory_writer_agent` have no i18n file, so they are
 absent from the loop's output. `imap_agent` is `11_email_agent`. `memory_writer_agent` is a non-discoverable system

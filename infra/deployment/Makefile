@@ -1,4 +1,4 @@
-.PHONY: mirror-image build-and-push-postgres-image build-and-push-playwright-image build-and-push-open-terminal-image
+.PHONY: mirror-image build-and-push-postgres-image build-and-push-playwright-image build-and-push-open-terminal-image build-and-push-openwebui-image
 
 # Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
 #
@@ -30,14 +30,14 @@ build-and-push-postgres-image:
 # pinned base tag or the installed libraries change. After running, non-build
 # stages pick up the new image automatically via `docker compose pull`.
 build-and-push-open-terminal-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1..."
 	@docker login ghcr.io
 	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1 \
 		-f docker/open-terminal/Dockerfile \
 		docker/open-terminal
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34
-	@echo "Successfully published open-terminal-office:0.11.34"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
+	@echo "Successfully published open-terminal-office:0.11.34-1"
 
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.
@@ -47,14 +47,26 @@ build-and-push-open-terminal-image:
 # changes. After running, non-build stages pick up the new image automatically
 # via `docker compose pull`.
 build-and-push-playwright-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy..."
 	@docker login ghcr.io
-	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy \
+	@docker build --platform linux/amd64 \
+		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy \
 		-f docker/playwright/Dockerfile \
 		docker/playwright
-	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy
-	@echo "Successfully published playwright:v1.60.0-jammy"
+	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
+	@echo "Successfully published playwright:v1.63.0-jammy"
+
+# Keep OpenWebUI's Python client compatible with the project-managed browser server.
+# Publish both images before deploying their matching tags from compose-config.yml.
+build-and-push-openwebui-image:
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0..."
+	@docker login ghcr.io
+	@docker build --platform linux/amd64 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0 \
+		-f docker/open-webui/Dockerfile \
+		docker/open-webui
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0
+	@echo "Successfully published open-webui:v0.11.3-playwright1.63.0"
 
 # Mirror an image from source to target
 # Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag

@@ -51,5 +51,6 @@ This section covers the chat interface integration from several angles:
   communication
 - [Source attribution](3_chat_with_your_data/) describes the custom extensions for knowledge retrieval visibility
 - [Observability](10_observability/) covers execution tracing and workflow transparency
+- My Files is each user's own file space: attachments, files agents made, and uploads
 - [Feature overview](1_feature_overview/) catalogs the capabilities inherited from Open WebUI
 - [Strategic rationale](12_strategic_rationale/) analyzes the decision to integrate an existing solution

@@ -35,6 +35,9 @@ import type {
   GetAccessCapabilitiesResponse,
   GetAccessPresetsData,
   GetAccessPresetsResponse,
+  GetAuthProviderData,
+  GetAuthProviderError,
+  GetAuthProviderResponse,
   GetAuthProvidersData,
   GetAuthProvidersResponse,
   GetDefaultAccessRulesData,
@@ -687,3 +690,24 @@ export const getAuthProviders = <
     unknown,
     DefaultT
   >({ url: "/auth-providers/", ...options });
+
+/**
+ * Get Auth Provider
+ */
+export const getAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetAuthProviderResponse = GetAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetAuthProviderData,
+    GetAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetAuthProviderResponse | DefaultT,
+    GetAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/{alias}", ...options });
