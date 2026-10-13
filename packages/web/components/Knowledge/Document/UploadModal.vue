@@ -164,6 +164,7 @@ const emit = defineEmits<{
 const { uploadFile } = useFileUpload()
 const { supportedFileTypes } = useSupportedFileTypes()
 const { tenantId } = useTenant()
+const queryCache = useQueryCache()
 
 const acceptedFileTypesString = computed(() => {
   return (supportedFileTypes.value ?? []).join(', ')
@@ -276,6 +277,9 @@ const handleUpload = async () => {
     })
   }
 
+  // Invalidated here rather than by the caller: uploading from the knowledge overview into the namespace that is
+  // already open navigates nowhere, so no page would otherwise refetch its list.
+  queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'knowledge', 'databases', database, 'namespaces', namespace, 'documents'] })
   emit('success', { files: selectedFiles.value, namespace, database })
   closeModal()
 }

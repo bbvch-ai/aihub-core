@@ -114,10 +114,10 @@ Accessed as: `agent.rag_agent.metadata.name`, `agent.rag_agent.steps.retrieve_no
 `LocaleHandler` is the base class for runtime translation lookup. Each sub-package extends it to register its own
 translation directory while **inheriting lib-level translations**.
 
-### Base: `LocaleHandler` (`packages/core/swiss_ai_hub/core/i18n/LocaleHandler.py`)
+### Base: `LocaleHandler` (`packages/core/swiss_ai_hub/core/i18n/locale_handler.py`)
 
 - `DEFAULT_LOCALE = "en"`, `LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]`
-- `get_locale_paths()` returns `[packages/core/i18n/translations/]`
+- `get_locale_paths()` returns `[packages/core/swiss_ai_hub/core/i18n/translations/]`
 - `__call__(key, locale)` -> `i18n.t(key, locale=locale)` — translates a key
 - `t_object(key, locale)` -> returns raw YAML data (dict/list) instead of string
 - `extract(locale_data, locale)` -> extracts from `dict[str, Any]` or `LocaleString` objects
@@ -127,7 +127,7 @@ translation directory while **inheriting lib-level translations**.
 
 Each extends `LocaleHandler` and overrides `get_locale_paths()` to add its own translation directory:
 
-**`ApiLocaleHandler`** (`packages/api/swiss_ai_hub/api/i18n/ApiLocaleHandler.py`):
+**`ApiLocaleHandler`** (`packages/api/swiss_ai_hub/api/i18n/api_locale_handler.py`):
 
 ```python
 def get_locale_paths(self) -> list[str]:
@@ -136,10 +136,10 @@ def get_locale_paths(self) -> list[str]:
 
 Load paths: `[lib/translations/, api/translations/]` -> can resolve both `lib.*` and `api.*` keys.
 
-**`AgentLocaleHandler`** (`packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleHandler.py`): Same pattern. Load paths:
+**`AgentLocaleHandler`** (`packages/agent/swiss_ai_hub/agent/i18n/agent_locale_handler.py`): Same pattern. Load paths:
 `[lib/translations/, agent/translations/]`.
 
-**`ProcessLocaleHandler`** (`packages/process/swiss_ai_hub/process/i18n/ProcessLocaleHandler.py`): Same pattern. Load
+**`ProcessLocaleHandler`** (`packages/process/swiss_ai_hub/process/i18n/process_locale_handler.py`): Same pattern. Load
 paths: `[lib/translations/, process/translations/]`.
 
 **Key insight**: All sub-package handlers call `super().get_locale_paths()`, which includes `packages/core`
@@ -162,7 +162,7 @@ async def my_step(self, event: UserMessageEvent, t: AgentLocaleHandler) -> StopE
 `LocaleString` holds pre-resolved translations for all 4 locales in a single Pydantic model. Used at **definition time**
 (class attributes, config labels, event metadata).
 
-### Base: `LocaleString` (`packages/core/swiss_ai_hub/core/i18n/LocaleString.py`)
+### Base: `LocaleString` (`packages/core/swiss_ai_hub/core/i18n/locale_string.py`)
 
 Fields: `de: str | None`, `en: str | None`, `fr: str | None`, `it: str | None`
 
@@ -176,7 +176,7 @@ Key methods:
 
 Each sub-package has its own `LocaleString` subclass that uses the package-specific `LocaleHandler`:
 
-**`AgentLocaleString`** (`packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleString.py`):
+**`AgentLocaleString`** (`packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`):
 
 ```python
 @classmethod
@@ -189,9 +189,9 @@ def from_i18n_path(cls, path: str) -> Self:
     )
 ```
 
-**`ApiLocaleString`** (`packages/api/swiss_ai_hub/api/i18n/ApiLocaleString.py`): Uses `ApiLocaleHandler`.
+**`ApiLocaleString`** (`packages/api/swiss_ai_hub/api/i18n/api_locale_string.py`): Uses `ApiLocaleHandler`.
 
-**`ProcessLocaleString`** (`packages/process/swiss_ai_hub/process/i18n/ProcessLocaleString.py`): Uses
+**`ProcessLocaleString`** (`packages/process/swiss_ai_hub/process/i18n/process_locale_string.py`): Uses
 `ProcessLocaleHandler`.
 
 ### Definition-Time Usage
@@ -223,7 +223,7 @@ All 4 locales MUST be provided. This is common in event classes and form element
 
 ### Persistence: `LocaleStringEntity`
 
-`LocaleStringEntity` (`packages/core/swiss_ai_hub/core/persistence/i18n/LocaleStringEntity.py`) is a MongoEngine
+`LocaleStringEntity` (`packages/core/swiss_ai_hub/core/persistence/i18n/locale_string_entity.py`) is a MongoEngine
 `EmbeddedDocument` with the same 4 fields. Convert between them:
 
 - `LocaleStringEntity.from_locale_string(locale_string)` -> for storage

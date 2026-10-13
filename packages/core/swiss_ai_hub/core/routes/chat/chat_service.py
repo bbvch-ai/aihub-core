@@ -37,6 +37,7 @@ from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_eve
     HumanInTheLoopResponseEvent,
 )
 from swiss_ai_hub.core.events.agent.semantic.llm.message import Message
+from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
@@ -133,6 +134,7 @@ class ChatService:
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
+        requested_features: list[ChatFeature] | None = None,
         subscribe_to_thread: Annotated[
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
@@ -202,6 +204,7 @@ class ChatService:
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
+                requested_features=requested_features or [],
             )
 
         event = ExternalAgentEvent(
@@ -232,6 +235,7 @@ class ChatService:
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
+        requested_features: list[ChatFeature] | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> StreamingResources:
@@ -246,6 +250,7 @@ class ChatService:
             thread_id=thread_id,
             display_id=display_id,
             files=files,
+            requested_features=requested_features,
             subscribe_to_thread=True,
             locale=locale,
         )
@@ -313,6 +318,7 @@ class ChatService:
         thread_id: ObjectId | None = None,
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
+        requested_features: list[ChatFeature] | None = None,
         locale: str | None = None,
         aihub_headers: dict[str, str] | None = None,
     ) -> JsonResources:
@@ -327,6 +333,7 @@ class ChatService:
             thread_id=thread_id,
             display_id=display_id,
             files=files,
+            requested_features=requested_features,
             subscribe_to_thread=True,
             locale=locale,
         )

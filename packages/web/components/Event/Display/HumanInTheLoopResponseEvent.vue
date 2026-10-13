@@ -26,13 +26,23 @@ const props = defineProps<{
   thread: ThreadDto
 }>()
 
+const { t } = useI18n()
+
+const responseText = computed<string>(() => {
+  const response = props.event.event.response
+  if (typeof response === 'boolean') {
+    return t(`event.humanInTheLoopResponse.${response ? 'confirmed' : 'declined'}`)
+  }
+  return response
+})
+
 const message = computed<ChatMessage>(() => {
   return {
     role: 'user',
     blocks: [
       {
         block_type: 'text',
-        text: props.event.event.response,
+        text: responseText.value,
       },
     ],
   }

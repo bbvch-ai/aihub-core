@@ -643,6 +643,88 @@ export const HealthResponseSchema = {
   description: "Standard health check response.",
 } as const;
 
+export const LocaleStringSchema = {
+  properties: {
+    de: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "De",
+      description: "German",
+    },
+    en: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "En",
+      description: "English",
+    },
+    fr: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fr",
+      description: "French",
+    },
+    it: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "It",
+      description: "Italian",
+    },
+  },
+  type: "object",
+  title: "LocaleString",
+  description:
+    'A multi-language string container supporting German, English, French, and Italian.\n\nLocaleString serves as a data container for translated strings. For form rendering,\nuse the `LocaleInput` FormKit element with the duality pattern.\n\n## Basic Usage (Data Mode)\n\n```python\ngreeting = LocaleString(\n    de="Hallo",\n    en="Hello",\n    fr="Bonjour",\n    it="Ciao",\n)\nprint(greeting.in_locale("en"))  # "Hello"\n```\n\n## Form Duality Pattern\n\nFor form fields that accept LocaleString values, use the union type pattern:\n\n```python\nclass MyConfig(Form):\n    name: Annotated[LocaleString | LocaleInput, Field(description="Name")]\n\n# Form mode - for rendering:\nconfig = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))\n\n# Data mode - from submission:\nconfig = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))\n```\n\nFor convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:\n\n```python\nconfig = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))\n```',
+} as const;
+
+export const LoginOptionsResponseSchema = {
+  properties: {
+    welcome_page: {
+      type: "boolean",
+      title: "Welcome Page",
+      description:
+        "Show a welcome page pointing to the organisation's login link instead of provider buttons",
+    },
+    providers: {
+      items: {
+        $ref: "#/components/schemas/AuthProviderResponse",
+      },
+      type: "array",
+      title: "Providers",
+      description:
+        "Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use",
+    },
+  },
+  type: "object",
+  required: ["welcome_page", "providers"],
+  title: "LoginOptionsResponse",
+  description:
+    "What the generic login page may offer. A welcome-page instance never lists a federated provider here.",
+} as const;
+
 export const PaginatedUsersResponseSchema = {
   properties: {
     total: {
@@ -776,6 +858,10 @@ export const TenantResponseSchema = {
       title: "Access Rules",
       description: "Access rules granted to this tenant.",
     },
+    chat_disclaimer: {
+      $ref: "#/components/schemas/LocaleString",
+      description: "Chat disclaimer in each supported language.",
+    },
     state: {
       $ref: "#/components/schemas/TenantState",
       description:
@@ -800,6 +886,7 @@ export const TenantResponseSchema = {
     "name",
     "description",
     "access_rules",
+    "chat_disclaimer",
     "state",
     "created_at",
     "updated_at",
@@ -922,6 +1009,18 @@ export const UpdateTenantMetadataRequestSchema = {
       ],
       title: "Access Rules",
       description: "Access rules granted to this tenant.",
+    },
+    chat_disclaimer: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "Plain text below the chat input, up to 100 characters per language. At least one translation is required.",
     },
   },
   type: "object",
@@ -1122,6 +1221,19 @@ export const UserWithAccessDTOSchema = {
       title: "Access Rules",
       description:
         "The user's resolved access rules (union of their roles), to drive the capability view.",
+    },
+    preferred_locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Preferred Locale",
+      description:
+        "The user's persisted UI language, or null if they have never chosen one.",
     },
   },
   type: "object",

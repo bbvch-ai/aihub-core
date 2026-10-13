@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -62,3 +63,10 @@ def provisioner(mock_settings: MagicMock, mock_redis: MagicMock) -> OpenWebuiPro
         # exercising the migration itself override this with their own patch.object call.
         prov._openwebui.list_models = AsyncMock(return_value=[])
         return prov
+
+
+@pytest.fixture(autouse=True)
+def recorded_accounts() -> Iterator[MagicMock]:
+    """The group sync records each user's matched account; the tests have no database to record it in."""
+    with patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiAccountEntity") as entity:
+        yield entity

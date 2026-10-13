@@ -4,6 +4,9 @@ metadata:
   description: Assistente IA che ti aiuta a trovare e selezionare le giuste fonti
     di conoscenza per le tue domande
 config:
+  restrict_to_user_access:
+    label: "Limitare ai diritti dell'utente"
+    help: "Offri solo i namespace che la persona che chiede può leggere nell'area conoscenze."
   bucket_names:
     label: Database di conoscenza
     help: Seleziona i database di conoscenza da interrogare
@@ -31,6 +34,7 @@ thoughts:
   forwarding_to_rag: Ricerca di informazioni pertinenti
   rag_error: 'Si è verificato un errore durante la ricerca: %{error_message}'
 messages:
+  no_accessible_knowledge: "Nessuna delle conoscenze tra cui questo agente instrada è disponibile per te. Chiedi l'accesso a un amministratore se ti serve."
   determination_failed: Non sono riuscito a determinare quali fonti di conoscenza
     consultare per questa richiesta. Puoi riformularla o indicarmi l'argomento che
     ti interessa?

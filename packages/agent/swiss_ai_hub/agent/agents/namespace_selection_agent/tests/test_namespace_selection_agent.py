@@ -374,3 +374,128 @@ class TestAdvertisedStartEvents:
     def test_chat_message_is_still_the_entry_point(self):
         start_event_names = {event.__name__ for event in NamespaceSelectionAgent.get_start_events()}
         assert start_event_names == {"UserMessageEvent"}
+
+
+class _FakeAccess:
+    """Grants exactly the listed (database, namespace) pairs, the way the injected `AccessChecker` would."""
+
+    def __init__(self, readable: set[tuple[str, str]]):
+        self.readable = readable
+
+    def has_access_to_knowledge_namespace(self, database, namespace):
+        return (database, namespace) in self.readable
+
+
+class _FakeThreadContext(_FakeRunContext):
+    async def delete(self, key):
+        self.data.pop(key, None)
+
+
+SELECTION = {"defaultknowledge": "hr-policies", "sharedknowledge": "product-specs"}
+
+
+def _delegating_config(*, restrict: bool) -> MagicMock:
+    agent_config = MagicMock()
+    agent_config.restrict_to_user_access = restrict
+    agent_config.rag_delegation.rag_agent.agent_class = "RAGAgent"
+    agent_config.rag_delegation.rag_agent.agent_id = "rag-agent"
+    return agent_config
+
+
+def _user_message() -> MagicMock:
+    return MagicMock(messages=[], user=fake_user(), locale="en", files=[])
+
+
+def _forwarded_pairs(result) -> dict[str, str]:
+    return {pair.bucket_name: pair.namespace_name for pair in result.start_event.selected_namespaces}
+
+
+async def _approve(access, *, restrict=True):
+    agent = NamespaceSelectionAgent.__new__(NamespaceSelectionAgent)
+    thread_context = _FakeThreadContext({})
+    displayer = AsyncMock()
+    result = await NamespaceSelectionAgent.process_approval_approved_step(
+        agent,
+        MagicMock(),
+        _user_message(),
+        _delegating_config(restrict=restrict),
+        _FakeRunContext({"proposed_namespaces": SELECTION}),
+        thread_context,
+        displayer,
+        _FakeLocaleHandler(),
+        access,
+    )
+    return result, displayer, thread_context
+
+
+async def _forward(access, *, restrict=True):
+    agent = NamespaceSelectionAgent.__new__(NamespaceSelectionAgent)
+    thread_context = _FakeThreadContext({"namespace_selection": SELECTION})
+    displayer = AsyncMock()
+    result = await NamespaceSelectionAgent.forward_to_rag_step(
+        agent,
+        _user_message(),
+        _delegating_config(restrict=restrict),
+        thread_context,
+        displayer,
+        _FakeLocaleHandler(),
+        None,
+        access,
+    )
+    return result, displayer, thread_context
+
+
+class TestSelectionRevalidatedOnHandOver:
+    """An approved selection outlives its turn, so access revoked since then must hold on every hand-over to RAG."""
+
+    @pytest.mark.asyncio
+    async def test_approval_forwards_and_stores_only_what_the_user_may_still_read(self):
+        access = _FakeAccess({("defaultknowledge", "hr-policies")})
+
+        result, _, thread_context = await _approve(access)
+
+        assert _forwarded_pairs(result) == {"defaultknowledge": "hr-policies"}
+        assert thread_context.data["namespace_selection"] == {"defaultknowledge": "hr-policies"}
+
+    @pytest.mark.asyncio
+    async def test_approval_of_nothing_readable_stops_and_stores_nothing(self):
+        result, displayer, thread_context = await _approve(_FakeAccess(set()))
+
+        assert isinstance(result, StopEvent)
+        assert "namespace_selection" not in thread_context.data
+        assert (
+            displayer.display_chunk.await_args.args[0]
+            == "agent.namespace_selection_agent.messages.no_accessible_knowledge"
+        )
+
+    @pytest.mark.asyncio
+    async def test_forward_drops_namespaces_revoked_since_approval(self):
+        access = _FakeAccess({("sharedknowledge", "product-specs")})
+
+        result, _, thread_context = await _forward(access)
+
+        assert _forwarded_pairs(result) == {"sharedknowledge": "product-specs"}
+        assert thread_context.data["namespace_selection"] == SELECTION
+
+    @pytest.mark.asyncio
+    async def test_forward_with_everything_revoked_stops_and_clears_the_stale_selection(self):
+        result, displayer, thread_context = await _forward(_FakeAccess(set()))
+
+        assert isinstance(result, StopEvent)
+        assert "namespace_selection" not in thread_context.data
+        assert (
+            displayer.display_chunk.await_args.args[0]
+            == "agent.namespace_selection_agent.messages.no_accessible_knowledge"
+        )
+
+    @pytest.mark.asyncio
+    async def test_without_the_setting_the_stored_selection_is_forwarded_unchanged(self):
+        result, _, _ = await _forward(_FakeAccess(set()), restrict=False)
+
+        assert _forwarded_pairs(result) == SELECTION
+
+    @pytest.mark.asyncio
+    async def test_a_run_without_a_user_keeps_the_stored_selection(self):
+        result, _, _ = await _forward(None)
+
+        assert _forwarded_pairs(result) == SELECTION

@@ -30,6 +30,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
     from swiss_ai_hub.core.infrastructure.nats.nats_settings import NatsSettings
     from swiss_ai_hub.core.infrastructure.notification.notification_settings import NotificationSettings
+    from swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments import ConversationAttachments
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client import OpenTerminalClient
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error import OpenTerminalError
+    from swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings import OpenTerminalSettings
+    from swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path import SandboxHomePath
     from swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor import AihubInstrumentor
     from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings import OpenTelemetrySettings
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -42,14 +47,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
-    from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
-        azure_blob_source,
-        google_drive_source,
-        onedrive_source,
-        s3_source,
-        sftp_source,
-        sharepoint_source,
-    )
+    from swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings import RclonePipelineSettings
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
     from swiss_ai_hub.core.infrastructure.s3.s3_bucket_provisioner import S3BucketProvisioner
@@ -61,15 +59,13 @@ if TYPE_CHECKING:
         use_s3_service,
     )
     from swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings import SharePointSettings
+    from swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings import (
+        StructuredPipelineSettings,
+    )
 
 __all__ = [
-    "sharepoint_source",
-    "sftp_source",
-    "s3_source",
-    "onedrive_source",
-    "google_drive_source",
-    "azure_blob_source",
     "SharePointSettings",
+    "StructuredPipelineSettings",
     "OpenTelemetrySettings",
     "MemoryRelation",
     "Memory",
@@ -87,6 +83,11 @@ __all__ = [
     "LiteLLMService",
     "MilvusSettings",
     "MineruSettings",
+    "ConversationAttachments",
+    "OpenTerminalClient",
+    "OpenTerminalError",
+    "OpenTerminalSettings",
+    "SandboxHomePath",
     "MongoConnectionRegistry",
     "MongoSettings",
     "NatsSettings",
@@ -97,6 +98,7 @@ __all__ = [
     "OpenWebuiSettings",
     "OpenWebuiTokenService",
     "ParsingSettings",
+    "RclonePipelineSettings",
     "RedisSettings",
     "ConfigEncryptionSettings",
     "DocumentIngestionPipelineSettings",
@@ -118,13 +120,8 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
-    "sharepoint_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "sftp_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "s3_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "onedrive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "google_drive_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
-    "azure_blob_source": "swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory",
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
+    "StructuredPipelineSettings": "swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
     "MemoryRelation": "swiss_ai_hub.core.infrastructure.mem0.types.memory_relation",
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
@@ -142,6 +139,11 @@ _LAZY_IMPORTS = {
     "LiteLLMService": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_service",
     "MilvusSettings": "swiss_ai_hub.core.infrastructure.milvus.milvus_settings",
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
+    "ConversationAttachments": "swiss_ai_hub.core.infrastructure.open_terminal.conversation_attachments",
+    "OpenTerminalClient": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client",
+    "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
+    "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",
+    "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",
@@ -152,6 +154,7 @@ _LAZY_IMPORTS = {
     "OpenWebuiSettings": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings",
     "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
+    "RclonePipelineSettings": "swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
     "ConfigEncryptionSettings": "swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings",
     "DocumentIngestionPipelineSettings": "swiss_ai_hub.core.infrastructure.document_ingestion_pipeline.document_ingestion_pipeline_settings",

@@ -21,14 +21,16 @@ class DocumentIngestionPipelineSettings(EnvironmentSettings):
         str,
         Field(
             default="text-generation/gemma-4-31B-it",
-            description="LiteLLM model name used for summaries, table refinement and figure descriptions.",
+            description="LiteLLM model name used for summaries and table refinement, and for figure descriptions "
+            "when no vision model is set. Must support response schemas, which table refinement relies on.",
         ),
     ]
     VISION_MODEL: Annotated[
         str | None,
         Field(
             default=None,
-            description="LiteLLM model name used for figure descriptions; the text model when unset.",
+            description="LiteLLM model name used for figure descriptions; the text model when unset. Set it whenever "
+            "the text model cannot read images, or figures are sent to a model that cannot describe them.",
         ),
     ]
     WITH_SUMMARY_NODES: Annotated[

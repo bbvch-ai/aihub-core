@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from urllib.parse import quote, unquote
 
+import boto3
 import s3fs
-from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
+from dagster import ConfigurableIOManager, InputContext, OpExecutionContext, OutputContext, ResourceDependency
 from swiss_ai_hub.core.generative_ai.utils.path_utils import decode_partition_key
 
 from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client import S3_PROTOCOL_PREFIX, S3DataLakeClient
@@ -92,48 +93,42 @@ class S3DataLakeIOManager(ConfigurableIOManager):
     encode_partition_keys: bool = False
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
+        for data_lake_file in self.as_data_lake_files(obj):
+            self.write_data_lake_file(self.data_lake_client.raw_client, data_lake_file, context)
+
+    @staticmethod
+    def as_data_lake_files(obj: object) -> list[DataLakeFile]:
         if isinstance(obj, DataLakeFile):
-            data_lake_files = [obj]
-        elif isinstance(obj, list) and all(isinstance(item, DataLakeFile) for item in obj):
-            data_lake_files = obj
-        else:
-            context.log.error("Output is neither a DataLakeFile nor a list of DataLakeFiles.")
-            raise ValueError("Expected a DataLakeFile or a list of DataLakeFiles.")
+            return [obj]
+        if isinstance(obj, list) and all(isinstance(item, DataLakeFile) for item in obj):
+            return obj
+        raise ValueError("Expected a DataLakeFile or a list of DataLakeFiles.")
 
-        for data_lake_file in data_lake_files:
-            if data_lake_file.content is None:
-                context.log.error(f"No content found for file {data_lake_file.uri}. Cannot write to S3.")
-                raise ValueError(f"No content to write for file {data_lake_file.uri}.")
+    @staticmethod
+    def write_data_lake_file(
+        raw_client: boto3.client, data_lake_file: DataLakeFile, context: OpExecutionContext | OutputContext
+    ) -> None:
+        """Puts one file with its metadata; the bucket is whatever the URI names, so a routed pipeline can share it."""
+        if data_lake_file.content is None:
+            raise ValueError(f"No content to write for file {data_lake_file.uri}.")
 
-            path = data_lake_file.uri.removeprefix(S3_PROTOCOL_PREFIX).lstrip("/")
+        path = data_lake_file.uri.removeprefix(S3_PROTOCOL_PREFIX).lstrip("/")
+        parts = path.split("/", 1)
+        if len(parts) != 2:
+            raise ValueError(f"Invalid S3 URI format: {data_lake_file.uri}")
+        bucket_name, object_key = parts
 
-            # Split into bucket and key
-            parts = path.split("/", 1)
-            if len(parts) != 2:
-                context.log.error(f"Invalid S3 URI format: {data_lake_file.uri}")
-                raise ValueError(f"Invalid S3 URI format: {data_lake_file.uri}")
-
-            bucket_name = parts[0]
-            object_key = parts[1]
-
-            context.log.info(f"Writing file to S3: {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key}")
-
-            encoded_metadata = self._encode_metadata(data_lake_file.metadata)
-
-            put_params = {
-                "Bucket": bucket_name,
-                "Key": object_key,
-                "Body": data_lake_file.content,
-                "Metadata": encoded_metadata,
-            }
-
-            if data_lake_file.content_type:
-                put_params["ContentType"] = data_lake_file.content_type
-
-            # Write the content to S3 with metadata using put_object
-            self.data_lake_client.raw_client.put_object(**put_params)
-
-            context.log.info(f"Successfully wrote file {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key} to S3.")
+        context.log.info(f"Writing file to S3: {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key}")
+        put_params = {
+            "Bucket": bucket_name,
+            "Key": object_key,
+            "Body": data_lake_file.content,
+            "Metadata": S3DataLakeIOManager._encode_metadata(data_lake_file.metadata),
+        }
+        if data_lake_file.content_type:
+            put_params["ContentType"] = data_lake_file.content_type
+        raw_client.put_object(**put_params)
+        context.log.info(f"Successfully wrote file {S3_PROTOCOL_PREFIX}{bucket_name}/{object_key} to S3.")
 
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:

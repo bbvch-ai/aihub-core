@@ -2,11 +2,10 @@ from enum import StrEnum
 
 
 class RAGFailureReason(StrEnum):
-    """Why a RAG run failed to produce a useful answer."""
+    """Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`."""
 
-    CONDENSATION_EMPTY = "condensation_empty"
     CONTEXT_INSUFFICIENT = "context_insufficient"
     EXPERT_DECLINED = "expert_declined"
     EXPERT_ERRORED = "expert_errored"
     FEW_SHOT_REJECTED = "few_shot_rejected"
-    INPUT_TOO_LARGE = "input_too_large"
+    NO_ACCESSIBLE_KNOWLEDGE = "no_accessible_knowledge"

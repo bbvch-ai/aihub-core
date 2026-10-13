@@ -54,7 +54,9 @@ access.**
   `AgentService._grant_instance_access`, which grants each profile's own rule to the tenant that created it
   (`2026_06_15_auto_grant_creator_access_to_agent_instances`). The knowledge family still carries both forms, via
   `_CLASS_SUBTREE_POLICIES` below: a database's namespaces genuinely belong to the database, where a blueprint's
-  profiles belong to whoever built them.
+  profiles belong to whoever built them. Both forms are per database, though — the ceiling itself no longer holds
+  `aihub.admin.knowledge.>`, which leaked every database the same way (aihub-core-private#269, recorded in
+  `2026_09_04_model_curation_as_tenant_ceiling_policy.md`).
 
 - **The blueprint checkbox grants the root and revokes the subtree — for agents only.** The catalog's class-level rows
   are generic machinery shared by every enumerable family, so this is expressed as a *per-family* policy

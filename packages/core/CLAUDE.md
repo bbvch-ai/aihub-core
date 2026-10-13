@@ -55,18 +55,21 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 29 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
-│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password fields in an announced form
+│   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 29 concrete form elements
+│   └── elements/                    # 30 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
 │   │                                #   parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
+│   ├── knowledge_documents/         # KnowledgeDocumentReader: list, path-filter and load ingested documents;
+│   │                                #   KnowledgeContentSearch: exact and regex search over their parsed text
+│   ├── structured_extraction/       # RecordSchemaBuilder + RecordExtractor: runtime-schema record extraction
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0; per-agent extraction model)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
@@ -78,6 +81,8 @@ packages/core/swiss_ai_hub/core/
 │   └── utils/                       # Shared AI utilities
 ├── ingestors/                       # Ingestor config base (Form duality), the pipeline counterpart of AgentConfig
 │   └── ingestor_config.py            # IngestorConfig: identity fields a knowledge database is created with
+├── source_pipelines/                # Source pipeline config base (Stage 1: external system → data lake)
+│   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
 │   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
@@ -113,11 +118,11 @@ packages/core/swiss_ai_hub/core/
 │   ├── user/                        # UserDashboardEntity (user dashboard config)
 │   ├── form/                        # ConfigSpecsEntity (announced schema, stored as a JSON string)
 │   ├── i18n/                        # LocaleStringEntity
-│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, NamespaceEntity, …)
+│   ├── rag/                         # RAG document persistence (BucketEntity, IngestorEntity, SourcePipelineEntity, NamespaceEntity, …)
 │   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)
-├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral)
+├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral) + SourceUpdatedPublisher (data lake changed → owning ingestor)
 ├── records/                         # Record types
 ├── requester/                       # RPC request side (AbstractRequester, NCRequester)
 ├── responder/                       # RPC response side (AbstractResponder, NCResponder)
@@ -213,10 +218,10 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   ├── RerankerEvent, ToolEvent, ChainEvent
 │   │   ├── GuardEvent, AgentEvent
 │   │   └── ExceptionEvent
-│   └── MetaQuestionDetectedEvent (meta-question classification)  [events/agent/self_awareness/]
-│
-├── ControlEvent (drives workflow execution)
-│   └── NotAMetaQuestionEvent (all-clear gate for normal pipeline) [events/agent/self_awareness/]
+│   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
+│   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
+│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
+│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -237,7 +242,12 @@ Events are organized by which system they belong to:
 
 ### Creating a New Event
 
-1. Choose the correct base class from the hierarchy above
+1. Choose the correct base class from the hierarchy above. An event that is part of the protocol — a call between steps
+   or capabilities that an admin reading a run would want to see — is a `ControlAndDisplayEvent`, because the event
+   history lists display events only. Plain `ControlEvent` is for internal bookkeeping no reader needs. Give it
+   `_display_name`/`_display_description` from `lib.events.*` (the description is a short progress phrase: chat clients
+   show it as a live status), a component in `packages/web/components/Event/Display/`, and an entry in the
+   `DisplayEvents` union
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors
@@ -275,12 +285,12 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 29 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput.
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
 
 ### Nested Forms
 
@@ -293,6 +303,11 @@ VectorStoreInput, IconSelector, CronInput.
 - A nested `Form` that renders no elements (i.e. it was instantiated in data mode) is skipped entirely, unless it is
   nullable — a nullable group is still worth emitting for its enable toggle, but a non-nullable one would render as an
   empty fieldset. This is how `LLMConfig.as_form(include_default_parameter=False)` drops the parameter group.
+- A nested element's pre-filled `value` comes from the **parent field's default instance** first (e.g.
+  `knowledge: KnowledgeConfig = KnowledgeConfig()` whose `reranking_model` names `reranker/bge`), then from the leaf
+  field's own class default. The UI falls back to these values for keys a stored profile lacks, so a profile saved
+  before a sub-form existed opens with the declared model instead of an empty select. `default_factory` values are not
+  inherited — they come from deployment settings at build time, and the admin picks them (e.g. the org-memory tenant).
 
 ## NATS Messaging
 
@@ -520,19 +535,81 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                                                                                                                                                                                                                                                                                                |
-| --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                         |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                                                                                                                                                                                                                                            |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                                                                                                                                                                                                                                           |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                  |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                           |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                         |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                     |
-| `document/`     | Document loading and parsing          | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader`, `EmlLoader`, `MarkdownStructuralNodeParser`                                                                                                                                                                                               |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                            |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22)) |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                    |
+| Module                   | Purpose                                   | Key Entry Points                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `memory/`                | Agent-scoped memory (user + org)          | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `retrieval/`             | RAG node retrieval                        | `retrieve_nodes()` (dense results below `KnowledgeRetrieverConfig.min_similarity`, default 0.35, are dropped before neighbours and summaries are fetched; ADR `2026_10_12`), `condense_standalone_question()`                                                                                                                                                                                                                                                                                 |
+| `retrievers/`            | Vector store abstraction                  | `KnowledgeRetriever`, `BaseRetriever`, `MetadataFilterPair.to_llama_index()` (runtime filter: a text value matches a scalar or a list item, numbers by equality, booleans as `"true"`/`"false"` because llama-index filters reject them)                                                                                                                                                                                                                                                      |
+| `knowledge_documents/`   | Whole-document read access                | `KnowledgeDocumentReader.list_documents()`, `.load_document()`, `.load_document_by_path()`, `KnowledgeDocumentListing.matching_glob()` / `.matching_regex()`, `KnowledgeContentSearch.search()`                                                                                                                                                                                                                                                                                               |
+| `rerank/`                | Result reranking                          | `rerank_nodes()` (via LiteLLM)                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `guards/`                | Input/output guards                       | `agent_description_guard`, `context_sufficient_guard`                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `processors/`            | Retrieval post-processors                 | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `resources/`             | LLM/embedding model configs               | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `document/`              | Document loading and parsing              | `DocumentExtractor` (S3 → title + content), `DocumentLoaderSelector`, `MineruLoader` and `MarkItDownLoader` (conversions cached by content hash in the `parse-cache` bucket, `MineruParseCache` / `MarkItDownParseCache`; the agent's `AttachedFileSectionCache` keeps attached files' sections and embeddings there under `attached-files/`, through the exported `ParseCacheBucket`; xlsx streamed by `XlsxMarkdownConverter`, not MarkItDown), `EmlLoader`, `MarkdownStructuralNodeParser` |
+| `prompting/`             | Few-shot examples, language detection     | `FewShotExample`, `check_language()`                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `chat_history/`          | Chat context management                   | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()`, `usable_input_budget()` / `estimate_prompt_tokens()` (input-size guard — note `limit_chat_history` cannot bound a single oversized message -- `ChatMemoryBuffer.get` falls through to `chat_history[-1:]` (llama-index-core 0.14.22))                                                                                                                                     |
+| `routing/`               | LLM-based event routing                   | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+`knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
+`KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
+(id, path relative to the collection's **folder**, filename, title, type), loaded without their text and sorted by
+database, collection and path. `matching_glob()` and `matching_regex()` chain:
+
+- **Glob:** the shell/ripgrep dialect, matched against the whole path, ignoring case, with `{a,b}` expanded.
+- **Regex:** searched anywhere in the path, on the `regex` engine with one time budget per call.
+- **Limits:** patterns over 500 characters and brace globs over 64 alternatives are rejected.
+- **Both:** NFC-normalised.
+
+`load_document()` and `load_document_by_path()` take the caller's allowed collections, so an id or path from any other
+collection is reported as not found. Pending documents raise `KnowledgeDocumentPendingError`. A collection that does not
+exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
+range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
+passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
+against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
+
+`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_glob=, offset=, limits=)` finds
+every fully ingested document whose parsed text contains an exact term or matches a regex. Unlike vector or BM25
+retrieval it is exhaustive: pages of `max_documents` (default 20) are walked with `next_offset` until it is None. Each
+`KnowledgeContentMatch` carries the summary, the first `max_lines_per_document` (5) matching lines, located by
+`start`/`end` offsets that `load_document` takes, and the total `matching_line_count`. It has the same trust rule and
+collection errors as the reader. How it works:
+
+- **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
+  passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
+- **Two engines.** The database (PCRE2, prefixed `(*UCP)` so `\w`/`\b` handle umlauts) only finds candidates; Python's
+  `regex` decides the lines, and a candidate without one is dropped. A pattern PCRE2 rejects raises
+  `InvalidSearchPatternError`; so do empty, empty-matching, over-500-character and fuzzy (`{e<=1}`) queries.
+- **Cost.** The backend decompresses the whole row, both text copies included, for every filter operator, projection and
+  sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
+  and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
+  s on PostgreSQL's default pglz (#1024).
+- **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
+  not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
+  named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
+  repetition such as `(x+x+)+` can silently miss documents.
+
+`structured_extraction/` pulls records out of one document with a schema decided at request time (issue #1949, ADR
+`2026_10_02_runtime_record_schemas_for_structured_extraction`). Both entry points take their model as an argument and
+read no agent configuration:
+
+- **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
+  most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
+  `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None)`** returns a
+  `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only hardware");
+  filters never become fields. The document must be loaded whole.
+- **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
+  half the output limit, because the records come back as JSON. Windows break at line ends, so a table row is never cut.
+  `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
+  opening (`DOCUMENT_OPENING_TOKENS`, at most half a window), so header values such as an invoice number reach records
+  far below the header.
+- **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
+  Infrastructure errors still raise.
+
+Keep the schema model and the extraction model separate parameters. Each model is consistent with itself across runs,
+but models disagree with each other on names and types, so the schema model decides what a table looks like. `page`
+stays `None` because parsed text carries no page boundaries yet.
 
 `AgentMemory` takes an optional `llm_model_name` for extraction and reconciliation, falling back to `MEM0_LLM_NAME`
 (issue #1590). The fallback is a deployment setting rather than a sibling config field, which is why nothing resolves it
@@ -603,7 +680,7 @@ events report `None` for organization memory, which stores its text verbatim.
 
 - `core/form/form.py` — form duality system
 - `core/form/base/prime_vue_element.py` — form element base
-- `core/form/elements/` — 29 form elements
+- `core/form/elements/` — 30 form elements
 
 **Workflow engine**:
 

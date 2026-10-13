@@ -204,7 +204,9 @@ updates:
   # GitHub Actions — pinned action versions in workflows + reusable actions
   # ============================================================================
   - package-ecosystem: github-actions
-    directory: /
+    # `/` alone scans only .github/workflows — composite actions under
+    # .github/actions/<name>/action.yml must be listed or they are never bumped.
+    directories: [/, /.github/actions/*]
     schedule:
       interval: monthly
     # github-actions only supports cooldown.default-days (see docker note above).

@@ -4,7 +4,8 @@ import inspect
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, get_origin
+from types import UnionType
+from typing import Annotated, Any, Union, get_args, get_origin
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -316,7 +317,7 @@ class BaseDispatcher(abc.ABC):
                 return ListOfSize(all_matching_events[-required_size:], required_size)
             return None
 
-        elif get_origin(param.annotation) in (list, list):
+        elif _is_list_annotation(param.annotation):
             return all_matching_events
 
         else:
@@ -325,3 +326,10 @@ class BaseDispatcher(abc.ABC):
                 return trigger_event
             # Else return the latest available event
             return all_matching_events[-1]
+
+
+def _is_list_annotation(annotation: Any) -> bool:
+    """`list[Event]` as well as `list[Event] | None`, which a step declares when zero events is a valid count."""
+    if get_origin(annotation) is list:
+        return True
+    return get_origin(annotation) in (Union, UnionType) and any(get_origin(arg) is list for arg in get_args(annotation))

@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import StrEnum
 from types import UnionType
-from typing import Annotated, Union, get_args, get_origin
+from typing import Annotated, Any, Union, get_args, get_origin
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
 from swiss_ai_hub.core.events import BaseEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
@@ -858,3 +858,58 @@ class TestConfigRoundTrip:
         dump = model.model_validate(submitted).model_dump(mode="json", exclude_unset=True)
 
         assert dump["section"] == {"model": "text-generation/pick"}
+
+
+class _MapFieldEvent(BaseEvent):
+    toggles: Annotated[dict[str, bool], Field(description="A free-form map, the shape jambo cannot read.")] = {}
+    scores: Annotated[dict[str, int], Field(description="A required map of another value type.")]
+
+
+class TestFreeFormMapFields:
+    """jambo only reads `properties`, so a map field used to come back as an empty model and drop its data."""
+
+    @pytest.fixture
+    def model(self) -> type[BaseModel]:
+        return ModelCreationService.create_input_model_from_event_specs(EventSpecs.from_event_class(_MapFieldEvent))
+
+    def test_submitted_map_survives_validation(self, model: type[BaseModel]) -> None:
+        parsed = model.model_validate({"toggles": {"web_search": True}, "scores": {"a": 1}})
+
+        assert parsed.model_dump(mode="json")["toggles"] == {"web_search": True}
+        assert parsed.model_dump(mode="json")["scores"] == {"a": 1}
+
+    def test_value_type_is_enforced(self, model: type[BaseModel]) -> None:
+        with pytest.raises(ValidationError):
+            model.model_validate({"scores": {"a": "not a number"}})
+
+    def test_required_map_stays_required(self, model: type[BaseModel]) -> None:
+        with pytest.raises(ValidationError):
+            model.model_validate({"toggles": {}})
+
+    def test_optional_map_keeps_its_default(self, model: type[BaseModel]) -> None:
+        assert model.model_validate({"scores": {}}).model_dump()["toggles"] == {}
+
+
+class _NestedMapRequest(BaseEvent):
+    name: Annotated[str, Field(description="The tool.")] = "search"
+    arguments: Annotated[dict[str, Any], Field(description="Free-form call arguments.")] = {}
+
+
+class _NestedMapResponse(BaseEvent):
+    response: Annotated[bool, Field(description="Approved or not.")]
+    request_event: Annotated[_NestedMapRequest, Field(description="The request answered.")]
+
+
+class TestNestedFreeFormMapFields:
+    """A map inside a nested model, such as an approval response's request arguments, used to vanish the same way."""
+
+    def test_a_nested_map_survives_validation(self) -> None:
+        model = ModelCreationService.create_input_model_from_event_specs(
+            EventSpecs.from_event_class(_NestedMapResponse)
+        )
+
+        dumped = model.model_validate(
+            {"response": True, "request_event": {"name": "search", "arguments": {"query": "vacation days"}}}
+        ).model_dump()
+
+        assert dumped["request_event"]["arguments"] == {"query": "vacation days"}

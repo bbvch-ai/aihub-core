@@ -535,6 +535,94 @@ export type HealthResponse = {
 };
 
 /**
+ * LocaleString
+ *
+ * A multi-language string container supporting German, English, French, and Italian.
+ *
+ * LocaleString serves as a data container for translated strings. For form rendering,
+ * use the `LocaleInput` FormKit element with the duality pattern.
+ *
+ * ## Basic Usage (Data Mode)
+ *
+ * ```python
+ * greeting = LocaleString(
+ * de="Hallo",
+ * en="Hello",
+ * fr="Bonjour",
+ * it="Ciao",
+ * )
+ * print(greeting.in_locale("en"))  # "Hello"
+ * ```
+ *
+ * ## Form Duality Pattern
+ *
+ * For form fields that accept LocaleString values, use the union type pattern:
+ *
+ * ```python
+ * class MyConfig(Form):
+ * name: Annotated[LocaleString | LocaleInput, Field(description="Name")]
+ *
+ * # Form mode - for rendering:
+ * config = MyConfig(name=LocaleInput(label=LocaleString(en="Name", de="Name")))
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(name=LocaleString(en="Hello", de="Hallo", fr="Bonjour", it="Ciao"))
+ * ```
+ *
+ * For convenience, use `LocaleString.as_form()` to create a pre-configured `LocaleInput`:
+ *
+ * ```python
+ * config = MyConfig(name=LocaleString.as_form(label=LocaleString(en="Name", de="Name")))
+ * ```
+ */
+export type LocaleString = {
+  /**
+   * De
+   *
+   * German
+   */
+  de?: string | null;
+  /**
+   * En
+   *
+   * English
+   */
+  en?: string | null;
+  /**
+   * Fr
+   *
+   * French
+   */
+  fr?: string | null;
+  /**
+   * It
+   *
+   * Italian
+   */
+  it?: string | null;
+};
+
+/**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
+};
+
+/**
  * PaginatedUsersResponse
  *
  * Represents a paginated response containing a list of users.
@@ -673,6 +761,10 @@ export type TenantResponse = {
    */
   access_rules: Array<string>;
   /**
+   * Chat disclaimer in each supported language.
+   */
+  chat_disclaimer: LocaleString;
+  /**
    * Whether the tenant also exists in Keycloak (active) or not (orphaned).
    */
   state: TenantState;
@@ -781,6 +873,10 @@ export type UpdateTenantMetadataRequest = {
    * Access rules granted to this tenant.
    */
   access_rules?: Array<string> | null;
+  /**
+   * Plain text below the chat input, up to 100 characters per language. At least one translation is required.
+   */
+  chat_disclaimer?: LocaleString | null;
 };
 
 /**
@@ -949,6 +1045,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**
@@ -1004,7 +1106,7 @@ export type ListTenantsData = {
 
 export type ListTenantsResponses = {
   /**
-   * Response List Tenants Admin Tenants  Get
+   * Response List Tenants
    *
    * Successful Response
    */
@@ -1050,7 +1152,7 @@ export type ListUnconfiguredTenantsData = {
 
 export type ListUnconfiguredTenantsResponses = {
   /**
-   * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+   * Response List Unconfigured Tenants
    *
    * Successful Response
    */
@@ -1069,7 +1171,7 @@ export type GetDefaultAccessRulesData = {
 
 export type GetDefaultAccessRulesResponses = {
   /**
-   * Response Get Default Access Rules Admin Tenants Default Access Rules Get
+   * Response Get Default Access Rules
    *
    * Successful Response
    */
@@ -1311,7 +1413,7 @@ export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
 
 export type AssignRoleResponses = {
   /**
-   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   * Response Assign Role
    *
    * Successful Response
    */
@@ -1357,7 +1459,7 @@ export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
 
 export type RevokeRoleResponses = {
   /**
-   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   * Response Revoke Role
    *
    * Successful Response
    */
@@ -1491,7 +1593,7 @@ export type GetRolesData = {
 
 export type GetRolesResponses = {
   /**
-   * Response Get Roles  Tenant Id  Roles  Get
+   * Response Get Roles
    *
    * Successful Response
    */
@@ -1582,7 +1684,7 @@ export type GetAccessPresetsData = {
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Access Presets Get
+   * Response Get Access Presets
    *
    * Successful Response
    */
@@ -1601,12 +1703,46 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers Auth Providers  Get
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];

@@ -19,6 +19,7 @@ from swiss_ai_hub.core.persistence.form.config_specs_entity import ConfigSpecsEn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor import Ingestor
 from swiss_ai_hub.core.persistence.rag.datalake.entities.ingestor_type import IngestorType
+from swiss_ai_hub.core.persistence.rag.datalake.entities.source_pipeline_type import SourcePipelineType
 from swiss_ai_hub.core.topic_managers.pipeline.pipeline_subject_types import PipelineSourceType
 
 if TYPE_CHECKING:
@@ -59,11 +60,14 @@ class IngestorEntity(Document):
         The inert and frozen legacy routing tokens stay reserved after their code is gone so a new pipeline can
         never adopt a legacy corpus. The pipeline source types are reserved because the type-keyed subject
         grammar puts the ingestor id in the subject's source-type position, where ``datalake`` would collide
-        with the legacy per-instance streams.
+        with the legacy per-instance streams. Source pipeline tokens are reserved because both kinds of pipeline
+        derive their Dagster job names from their token and the single-flight guard matches runs by job name.
         """
-        return {ingestor_type.value for ingestor_type in IngestorType.legacy()} | {
-            source_type.value for source_type in PipelineSourceType
-        }
+        return (
+            {ingestor_type.value for ingestor_type in IngestorType.legacy()}
+            | {source_type.value for source_type in PipelineSourceType}
+            | {source_pipeline_type.value for source_pipeline_type in SourcePipelineType}
+        )
 
     @property
     def form_elements(self) -> list["FormkitElement"]:

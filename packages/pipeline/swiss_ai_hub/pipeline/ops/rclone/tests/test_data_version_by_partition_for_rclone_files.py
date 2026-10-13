@@ -8,122 +8,95 @@ from swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files
 )
 from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile
 
-
-def _make_file(
-    path: str,
-    modified: int = 100,
-    size: int = 1024,
-    hashes: dict[str, str] | None = None,
-) -> MinimalRcloneFile:
-    name = path.rsplit("/", 1)[-1]
-    return MinimalRcloneFile(name=name, path=path, size=size, modified=modified, hashes=hashes)
+_PATCH_TARGET = (
+    "swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files.replace_partition_keys_for_bucket"
+)
 
 
-def _make_context(existing_partitions: set[str]) -> MagicMock:
-    ctx = MagicMock()
-    ctx.instance.get_dynamic_partitions.return_value = existing_partitions
-    return ctx
+def _file(path: str, modified: int = 100, size: int = 1024, hashes: dict[str, str] | None = None) -> MinimalRcloneFile:
+    return MinimalRcloneFile(name=path.rsplit("/", 1)[-1], path=path, size=size, modified=modified, hashes=hashes)
 
 
-_PATCH_TARGET = "swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files.replace_partition_keys"
+def _context(existing: set[str]) -> MagicMock:
+    context = MagicMock()
+    context.instance.get_dynamic_partitions.return_value = existing
+    return context
 
 
-class TestDataVersionByPartitionForRcloneFiles:
+def _partition() -> MagicMock:
+    partition = MagicMock()
+    partition.name = "rclone_source_partitions"
+    return partition
+
+
+class TestCompositeKeys:
     @patch(_PATCH_TARGET)
-    def test_encode_true_produces_encoded_keys(self, mock_replace: MagicMock) -> None:
-        file = _make_file("docs/report, Q1.pdf", hashes={"md5": "abc123"})
-        encoded = encode_partition_key(file.path)
-        ctx = _make_context({encoded})
-        partition = MagicMock()
-        partition.name = "test_partitions"
+    def test_keys_are_bucket_prefixed_and_reconciled_per_bucket(self, replace: MagicMock) -> None:
+        file = _file("Policies/report, Q1.pdf", hashes={"md5": "abc123"})
+        key = f"hrdocs|{encode_partition_key(file.path)}"
+        context = _context({key})
 
         result = data_version_by_partition_for_rclone_files(
-            context=ctx,
-            asset_key=AssetKey(["test", "rclone"]),
-            partition=partition,
+            context=context,
+            asset_key=AssetKey(["g", "remote_files"]),
+            partition=_partition(),
+            bucket="hrdocs",
             rclone_files=[file],
             max_partitions=100,
-            encode_partition_keys=True,
         )
 
-        mock_replace.assert_called_once_with(ctx, "test_partitions", [encoded], max_partitions=100)
-        assert encoded in result.data_versions_by_partition
-        assert result.data_versions_by_partition[encoded].value == "hash:abc123"
+        replace.assert_called_once_with(context, "rclone_source_partitions", "hrdocs", [key], 100)
+        assert result.data_versions_by_partition[key].value == "hash:abc123"
 
     @patch(_PATCH_TARGET)
-    def test_encode_false_produces_raw_keys(self, mock_replace: MagicMock) -> None:
-        file = _make_file("docs/report.pdf", hashes={"md5": "def456"})
-        ctx = _make_context({file.path})
-        partition = MagicMock()
-        partition.name = "test_partitions"
+    def test_root_level_files_get_no_partition_and_are_counted(self, replace: MagicMock) -> None:
+        nested = _file("Policies/handbook.pdf", hashes={"md5": "x"})
+        context = _context({f"hrdocs|{encode_partition_key(nested.path)}"})
+
+        data_version_by_partition_for_rclone_files(
+            context=context,
+            asset_key=AssetKey(["g", "remote_files"]),
+            partition=_partition(),
+            bucket="hrdocs",
+            rclone_files=[_file("readme.txt"), nested],
+            max_partitions=100,
+        )
+
+        keys = replace.call_args.args[3]
+        assert keys == [f"hrdocs|{encode_partition_key(nested.path)}"]
+        materialization = context.instance.report_runless_asset_event.call_args.args[0]
+        assert materialization.metadata["Skipped root-level files"].value == 1
+        assert materialization.metadata["Bucket"].value == "hrdocs"
+
+
+class TestDataVersions:
+    @patch(_PATCH_TARGET)
+    def test_files_without_a_partition_yet_are_versioned_on_the_next_observation(self, replace: MagicMock) -> None:
+        file = _file("a/new.pdf", hashes={"md5": "x"})
 
         result = data_version_by_partition_for_rclone_files(
-            context=ctx,
-            asset_key=AssetKey(["test", "rclone"]),
-            partition=partition,
+            context=_context(set()),
+            asset_key=AssetKey(["g", "remote_files"]),
+            partition=_partition(),
+            bucket="hrdocs",
             rclone_files=[file],
             max_partitions=100,
-            encode_partition_keys=False,
         )
 
-        mock_replace.assert_called_once_with(ctx, "test_partitions", [file.path], max_partitions=100)
-        assert file.path in result.data_versions_by_partition
+        assert result.data_versions_by_partition == {}
 
     @patch(_PATCH_TARGET)
-    def test_filters_to_existing_partitions(self, mock_replace: MagicMock) -> None:
-        file1 = _make_file("docs/a.pdf", hashes={"md5": "h1"})
-        file2 = _make_file("docs/b.pdf", hashes={"md5": "h2"})
-        ctx = _make_context({file1.path})
-        partition = MagicMock()
-        partition.name = "test_partitions"
+    def test_mtime_and_size_version_backends_without_hashes(self, replace: MagicMock) -> None:
+        file = _file("a/plain.pdf", modified=5, size=9)
+        key = f"hrdocs|{encode_partition_key(file.path)}"
 
         result = data_version_by_partition_for_rclone_files(
-            context=ctx,
-            asset_key=AssetKey(["test", "rclone"]),
-            partition=partition,
-            rclone_files=[file1, file2],
+            context=_context({key}),
+            asset_key=AssetKey(["g", "remote_files"]),
+            partition=_partition(),
+            bucket="hrdocs",
+            rclone_files=[file],
             max_partitions=100,
-            encode_partition_keys=False,
         )
 
-        assert file1.path in result.data_versions_by_partition
-        assert file2.path not in result.data_versions_by_partition
-
-    @patch(_PATCH_TARGET)
-    def test_empty_files_list(self, mock_replace: MagicMock) -> None:
-        ctx = _make_context(set())
-        partition = MagicMock()
-        partition.name = "test_partitions"
-
-        result = data_version_by_partition_for_rclone_files(
-            context=ctx,
-            asset_key=AssetKey(["test", "rclone"]),
-            partition=partition,
-            rclone_files=[],
-            max_partitions=100,
-            encode_partition_keys=True,
-        )
-
-        ctx.instance.report_runless_asset_event.assert_not_called()
-        assert len(result.data_versions_by_partition) == 0
-
-    @patch(_PATCH_TARGET)
-    def test_hash_based_vs_mtime_based_versioning(self, mock_replace: MagicMock) -> None:
-        """Files with hashes use hash-based version; files without use mtime+size fallback."""
-        file_with_hash = _make_file("docs/a.pdf", modified=100, size=1024, hashes={"md5": "abc"})
-        file_without_hash = _make_file("docs/b.pdf", modified=200, size=2048, hashes=None)
-        ctx = _make_context({file_with_hash.path, file_without_hash.path})
-        partition = MagicMock()
-        partition.name = "test_partitions"
-
-        result = data_version_by_partition_for_rclone_files(
-            context=ctx,
-            asset_key=AssetKey(["test", "rclone"]),
-            partition=partition,
-            rclone_files=[file_with_hash, file_without_hash],
-            max_partitions=100,
-            encode_partition_keys=False,
-        )
-
-        assert result.data_versions_by_partition[file_with_hash.path].value == "hash:abc"
-        assert result.data_versions_by_partition[file_without_hash.path].value == "mtime:200-2048"
+        assert result.data_versions_by_partition[key].value == "mtime:5-9"

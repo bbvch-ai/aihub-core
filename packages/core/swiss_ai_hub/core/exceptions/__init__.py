@@ -4,13 +4,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.exceptions.model_gateway_error_handler import ModelGatewayErrorHandler
+    from swiss_ai_hub.core.exceptions.open_terminal_error_handler import OpenTerminalErrorHandler
 
 __all__ = [
     "ModelGatewayErrorHandler",
+    "OpenTerminalErrorHandler",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
     "ModelGatewayErrorHandler": "swiss_ai_hub.core.exceptions.model_gateway_error_handler",
+    "OpenTerminalErrorHandler": "swiss_ai_hub.core.exceptions.open_terminal_error_handler",
 }
 
 

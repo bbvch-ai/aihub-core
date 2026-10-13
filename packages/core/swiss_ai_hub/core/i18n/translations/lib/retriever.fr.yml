@@ -10,6 +10,10 @@ config:
   query_mode:
     label: Mode de requête
     help: Spécifie comment le magasin de vecteurs doit être interrogé.
+  min_similarity:
+    label: Similarité minimale
+    help: Les résultats moins similaires à la question sont écartés avant le reranking.
+      S'applique au mode de requête Default ; 0 conserve tous les résultats.
   node_types:
     label: Types de nœuds
     help: Types de nœuds à récupérer de l'index.

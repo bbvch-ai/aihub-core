@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class FormkitElement(BaseModel, abc.ABC):
@@ -37,6 +38,18 @@ class FormkitElement(BaseModel, abc.ABC):
             alias="defaultEnabled",
         ),
     ] = None
+    toggle_label: Annotated[
+        LocaleString | str | None,
+        Field(
+            description="For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', "
+            "which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+            alias="toggleLabel",
+        ),
+    ] = None
+    toggle_help: Annotated[
+        LocaleString | str | None,
+        Field(description="For a nullable element, the help text shown under its toggle.", alias="toggleHelp"),
+    ] = None
 
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> Self: ...
@@ -58,5 +71,14 @@ class FormkitElement(BaseModel, abc.ABC):
         cannot answer cross-tenant membership questions. `accessible_tenant_ids` is resolved
         once per request by the caller (Keycloak is the source of truth for membership) and
         passed down for elements that reference tenants.
+        """
+        return []
+
+    def validate_value(self, field_path: str, value: Any, t: LocaleHandler) -> list[str]:
+        """Messages for a submitted value that the config model would reject when the runtime loads it.
+
+        Override in elements whose data type carries a cross-field rule: the API validates saves against a
+        model rebuilt from the JSON Schema, which drops Python validators, so without this such a value is
+        stored and then aborts every run. The default accepts every value.
         """
         return []

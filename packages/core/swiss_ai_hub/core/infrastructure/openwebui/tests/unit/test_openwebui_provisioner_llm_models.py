@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from pydantic import ValidationError
 from scim2_models import Group
 
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
@@ -12,21 +13,26 @@ from swiss_ai_hub.core.infrastructure.openwebui.available_model import Available
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_LLM_MODEL_PREFIX,
     AIHUB_MANAGED_META_KEY,
+    FUNCTION_CALLING_MODEL_INFO_KEY,
     OpenWebuiProvisioner,
 )
 
 _GEMMA = AvailableModel(capability="text-generation", name="gemma-4-31B-it", display_name="gemma-4-31B-it")
 _GEMMA_ID = f"{AIHUB_LLM_MODEL_PREFIX}text-generation-gemma-4-31B-it"
 _GEMMA_LLM_ID = _GEMMA.litellm_name
+_KIMI = AvailableModel(
+    capability="text-generation", name="Kimi-K2.6", display_name="Kimi-K2.6", function_calling="native"
+)
+_KIMI_LLM_ID = _KIMI.litellm_name
 
 
-def _managed_row(model_id: str, name: str) -> dict:
+def _managed_row(model_id: str, name: str, function_calling: str = "legacy") -> dict:
     """A row already synced by a prior run of this provisioner — carries the current defaults."""
     return {
         "id": model_id,
         "name": name,
         "meta": {AIHUB_MANAGED_META_KEY: True},
-        "params": {"function_calling": "legacy"},
+        "params": {"function_calling": function_calling},
     }
 
 
@@ -80,6 +86,39 @@ class TestGetAvailableLlmModels:
 
         assert models == []
 
+    @pytest.mark.asyncio
+    async def test_reads_function_calling_from_model_info(self, provisioner: OpenWebuiProvisioner) -> None:
+        with _litellm_returning(
+            [
+                {
+                    "model_name": "text-generation/Kimi-K2.6",
+                    "model_info": {"mode": "chat", FUNCTION_CALLING_MODEL_INFO_KEY: "native"},
+                },
+                {"model_name": "text-generation/gemma-4-31B-it", "model_info": {"mode": "chat"}},
+            ]
+        ):
+            models = await provisioner._get_available_llm_models()
+
+        assert {m.litellm_name: m.function_calling for m in models} == {
+            "text-generation/Kimi-K2.6": "native",
+            "text-generation/gemma-4-31B-it": "legacy",
+        }
+
+    @pytest.mark.asyncio
+    async def test_rejects_unknown_function_calling(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A typo in the LiteLLM config must fail the sync loudly rather than provision a mode OpenWebUI
+        doesn't know."""
+        with _litellm_returning(
+            [
+                {
+                    "model_name": "text-generation/Kimi-K2.6",
+                    "model_info": {"mode": "chat", FUNCTION_CALLING_MODEL_INFO_KEY: "nativ"},
+                }
+            ]
+        ):
+            with pytest.raises(ValidationError):
+                await provisioner._get_available_llm_models()
+
 
 class TestBuildLlmModelData:
     def test_registers_raw_id_with_no_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -90,6 +129,11 @@ class TestBuildLlmModelData:
         assert data["name"] == "gemma-4-31B-it"
         assert data["meta"][AIHUB_MANAGED_META_KEY] is True
         assert data["params"]["function_calling"] == "legacy"
+
+    def test_provisions_declared_function_calling(self, provisioner: OpenWebuiProvisioner) -> None:
+        data = provisioner._build_llm_model_data(_KIMI)
+
+        assert data["params"]["function_calling"] == "native"
 
 
 class TestSyncLlmWorkspaceModels:
@@ -188,6 +232,73 @@ class TestSyncLlmWorkspaceModels:
             mock_delete.assert_not_called()
             mock_update.assert_called_once()
             assert mock_update.call_args[0][1]["params"]["function_calling"] == "legacy"
+
+    @pytest.mark.asyncio
+    async def test_creates_declared_native_model_as_native(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(provisioner._openwebui, "list_base_models", return_value=[]),
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_KIMI, _GEMMA])
+
+            created = {
+                call[0][1]["id"]: call[0][1]["params"]["function_calling"] for call in mock_create.call_args_list
+            }
+            assert created == {_KIMI_LLM_ID: "native", _GEMMA_LLM_ID: "legacy"}
+
+    @pytest.mark.asyncio
+    async def test_switches_legacy_row_to_declared_native(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Kimi rows already exist as legacy on every deployment, synced before the model_info key existed;
+        the first sync after it lands must switch them."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui, "list_base_models", return_value=[_managed_row(_KIMI_LLM_ID, "Kimi-K2.6")]
+            ),
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_KIMI])
+
+            mock_update.assert_called_once()
+            assert mock_update.call_args[0][1]["params"]["function_calling"] == "native"
+
+    @pytest.mark.asyncio
+    async def test_reverts_manually_set_mode(self, provisioner: OpenWebuiProvisioner) -> None:
+        """The LiteLLM model_info owns the mode: a value an admin set in the OpenWebUI admin panel is
+        reverted on the next sync."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[_managed_row(_GEMMA_LLM_ID, "gemma-4-31B-it", function_calling="native")],
+            ),
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_GEMMA])
+
+            mock_update.assert_called_once()
+            assert mock_update.call_args[0][1]["params"]["function_calling"] == "legacy"
+
+    @pytest.mark.asyncio
+    async def test_no_update_when_declared_native_already_stored(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_base_models",
+                return_value=[_managed_row(_KIMI_LLM_ID, "Kimi-K2.6", function_calling="native")],
+            ),
+            patch.object(provisioner._openwebui, "update_model") as mock_update,
+        ):
+            await provisioner._sync_llm_workspace_models(mock_client, [_KIMI])
+
+            mock_update.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_ignores_agent_pipe_rows(self, provisioner: OpenWebuiProvisioner) -> None:

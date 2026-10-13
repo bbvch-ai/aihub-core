@@ -36,8 +36,24 @@ def _bucket_entity(bucket: Annotated[str, "Data lake bucket of the knowledge dat
         return None
 
 
-def _deployment_defaults() -> dict:
-    settings = DocumentIngestionPipelineSettings()
+_registered_deployment_defaults: dict[str, DocumentIngestionPipelineSettings] = {}
+
+
+def register_deployment_defaults(
+    ingestor: Annotated[str, "Ingestor whose databases fall back to these settings"],
+    settings: Annotated[DocumentIngestionPipelineSettings, "Settings the pipeline was built with"],
+) -> None:
+    """Keeps the settings a pipeline was built with, so its runs fall back to them instead of re-reading the
+    environment — a model named in code must win over whatever the deployment's variables say.
+
+    Every run and sensor process imports the code location and so rebuilds its ``Definitions``, which re-registers.
+    """
+    _registered_deployment_defaults[ingestor] = settings
+
+
+def _deployment_defaults(entity: BucketEntity | None) -> dict:
+    registered = _registered_deployment_defaults.get(entity.ingestor) if entity else None
+    settings = registered or DocumentIngestionPipelineSettings()
     return {
         "llm_model": settings.LLM_MODEL,
         "embedding_model": settings.EMBEDDING_MODEL,
@@ -61,7 +77,7 @@ def ingestor_config_for_bucket[TConfig: DocumentIngestionConfig](
         "name": entity.name.to_locale_string() if entity else LocaleString(en=bucket),
         "description": entity.description.to_locale_string() if entity else LocaleString(),
     }
-    return config_type.model_validate({**identity, **_deployment_defaults(), **stored})
+    return config_type.model_validate({**identity, **_deployment_defaults(entity), **stored})
 
 
 def llm_model_name_for_bucket(bucket: str) -> str:

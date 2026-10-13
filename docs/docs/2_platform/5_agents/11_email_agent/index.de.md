@@ -1,7 +1,7 @@
 ---
 title: E-Mail-Agent
 description: Ein Postfach-Agent, der ungelesene E-Mails aus einem IMAP-Posteingang liest, sie ablegt und Antworten zur Prüfung durch einen Menschen entwirft — versendet wird nie.
-source_sha: fd9620f92f3f3cbfa6230c9c03c900e2adca9a34506f781c55471a10286d57fb
+source_sha: cde114ae1a4e60079fef584776be1c241e71285cc493851a5ce6e593d03af0a6
 ---
 
 # E-Mail-Agent
@@ -126,17 +126,132 @@ Postfach-Verbindung und die Entwurfs-Einstellungen.
 
 ### Postfach-Verbindung
 
-| Feld                              | Typ      | Standard    | Beschreibung                                                                                                                          |
-| --------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **IMAP-Host**                     | Text     | —           | Hostname des IMAP-Servers, z. B. `imap.example.com`. Erforderlich.                                                                    |
-| **IMAP-Port**                     | Zahl     | `993`       | Port des Servers. `993` ist der Standard für implizites TLS. Bereich 1–65535.                                                         |
-| **Benutzername**                  | Text     | —           | Postfach-Login, üblicherweise die vollständige E-Mail-Adresse. Erforderlich.                                                          |
-| **Passwort**                      | Passwort | *(leer)*    | Postfach-Passwort oder besser ein anwendungsspezifisches Token. Wird beim Agent-Profil gespeichert.                                   |
-| **TLS verwenden**                 | Schalter | An          | Verbindung über implizites TLS. Nur für einen Klartext-Testserver deaktivieren.                                                       |
-| **Posteingang-Ordner**            | Text     | `INBOX`     | Der Ordner, aus dem eingehende E-Mails gelesen werden.                                                                                |
-| **Max. ungelesene E-Mails**       | Zahl     | `50`        | Wie viele ungelesene Zusammenfassungen ein einzelner Lauf auflistet. Hält den Lauf klein, wenn der Posteingang überquillt. 1–500.     |
-| **Abgerufene E-Mail verschieben** | Schalter | Aus         | Wenn aktiviert, wird die abgerufene Nachricht in den Verarbeitet-Ordner verschoben. Wenn deaktiviert, entfällt der Verschiebeschritt. |
-| **Verarbeitet-Ordner**            | Text     | `Processed` | Wohin eine verarbeitete Nachricht abgelegt wird. Nur sichtbar — und erforderlich —, wenn **Abgerufene E-Mail verschieben** aktiv ist. |
+| Feld                              | Typ      | Standard                  | Beschreibung                                                                                                                                                                                                           |
+| --------------------------------- | -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **IMAP-Host**                     | Text     | —                         | Hostname des IMAP-Servers, z. B. `imap.example.com`. Erforderlich.                                                                                                                                                     |
+| **IMAP-Port**                     | Zahl     | `993`                     | Port des Servers. `993` ist der Standard für implizites TLS. Bereich 1–65535.                                                                                                                                          |
+| **Authentifizierung**             | Auswahl  | Benutzername und Passwort | **Benutzername und Passwort** oder **Microsoft 365 (OAuth 2.0)** für Microsoft-365-Postfächer, bei denen die Standardauthentifizierung deaktiviert ist. Bestimmt, welche der folgenden Anmeldefelder angezeigt werden. |
+| **Benutzername**                  | Text     | —                         | Postfach-Login, üblicherweise die vollständige E-Mail-Adresse. Bei Microsoft 365 (OAuth 2.0) die Adresse des zu verarbeitenden Postfachs. Erforderlich.                                                                |
+| **Passwort**                      | Passwort | *(leer)*                  | Postfach-Passwort oder besser ein anwendungsspezifisches Token. Wird beim Agent-Profil gespeichert. Nur bei Benutzername und Passwort sichtbar.                                                                        |
+| **Tenant-ID**                     | Text     | *(leer)*                  | Verzeichnis-ID (Tenant-ID) Ihres Microsoft-Entra-ID-Tenants. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                                          |
+| **Client-ID**                     | Text     | *(leer)*                  | Anwendungs-ID (Client-ID) der Entra-ID-App-Registrierung. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                                             |
+| **Geheimer Clientschlüssel**      | Passwort | *(leer)*                  | Client Secret der Entra-ID-App-Registrierung. Wird beim Agent-Profil gespeichert. Nur sichtbar — und erforderlich — bei Microsoft 365 (OAuth 2.0).                                                                     |
+| **TLS verwenden**                 | Schalter | An                        | Verbindung über implizites TLS. Nur für einen Klartext-Testserver deaktivieren.                                                                                                                                        |
+| **Posteingang-Ordner**            | Text     | `INBOX`                   | Der Ordner, aus dem eingehende E-Mails gelesen werden.                                                                                                                                                                 |
+| **Max. ungelesene E-Mails**       | Zahl     | `50`                      | Wie viele ungelesene Zusammenfassungen ein einzelner Lauf auflistet. Hält den Lauf klein, wenn der Posteingang überquillt. 1–500.                                                                                      |
+| **Abgerufene E-Mail verschieben** | Schalter | Aus                       | Wenn aktiviert, wird die abgerufene Nachricht in den Verarbeitet-Ordner verschoben. Wenn deaktiviert, entfällt der Verschiebeschritt.                                                                                  |
+| **Verarbeitet-Ordner**            | Text     | `Processed`               | Wohin eine verarbeitete Nachricht abgelegt wird. Nur sichtbar — und erforderlich —, wenn **Abgerufene E-Mail verschieben** aktiv ist.                                                                                  |
+
+### Microsoft 365 mit OAuth 2.0
+
+In Microsoft-365-Tenants ist die Standardauthentifizierung zunehmend abgeschaltet, und dann meldet sich kein
+Benutzername mit Passwort — nicht einmal ein App-Passwort — mehr über IMAP an. Wählen Sie für solche Postfächer
+**Microsoft 365 (OAuth 2.0)**. Der Agent holt sich dann mit dem Client-Credentials-Flow ein App-only-Access-Token von
+Microsoft Entra ID und meldet sich damit an (SASL `XOAUTH2`). Niemand muss sich interaktiv anmelden — genau das braucht
+ein zeitgesteuerter Agent.
+
+Die Einrichtung ist auf zwei Rollen verteilt. Die Microsoft-365-Administration bereitet den Tenant einmalig vor und
+übergibt vier Werte; wer den Agent konfiguriert, trägt sie anschliessend im Profil ein. Die Person, die den Agent
+konfiguriert, braucht weder Administratorrechte in Microsoft 365 noch PowerShell.
+
+#### Für die Microsoft-365-Administration (einmalig)
+
+Einmal pro Tenant, dazu Schritt 4 für jedes weitere Postfach. Die Schritte 1 und 2 erfolgen im Microsoft Entra Admin
+Center. Die Schritte 3 bis 5 brauchen Exchange Online PowerShell, weil Exchange keine Seite im Admin Center hat, über
+die man einer App Zugriff auf ein Postfach gewährt. Jeder Schritt ist erforderlich; fehlt einer, schlägt die Anmeldung
+fehl.
+
+1. **Registrieren Sie eine Anwendung** im Microsoft Entra Admin Center (**App-Registrierungen → Neue Registrierung**,
+   nur Konten in diesem Organisationsverzeichnis). Notieren Sie **Verzeichnis-ID (Tenant)** und **Anwendungs-ID
+   (Client)** von der Übersichtsseite, und erstellen Sie unter **Zertifikate & Geheimnisse** ein Client Secret —
+   kopieren Sie dessen **Wert**, nicht die Geheimnis-ID; der Wert wird nur einmal angezeigt.
+
+2. **Fügen Sie die IMAP-Berechtigung hinzu.** Wählen Sie unter **API-Berechtigungen → Berechtigung hinzufügen → Von
+   meiner Organisation verwendete APIs** den Eintrag **Office 365 Exchange Online → Anwendungsberechtigungen →
+   `IMAP.AccessAsApp`**, und klicken Sie dann auf **Administratorzustimmung erteilen**.
+
+3. **Registrieren Sie den Service Principal in Exchange Online.** Verbinden Sie sich zuerst mit dem Modul
+   `ExchangeOnlineManagement`:
+
+   ```powershell
+   Connect-ExchangeOnline -UserPrincipalName <admin@contoso.com>
+   ```
+
+   Meldet PowerShell, dass das Modul nicht geladen werden konnte, blockiert die Ausführungsrichtlinie es;
+   `Set-ExecutionPolicy Bypass -Scope Process` hebt das nur für das aktuelle Fenster auf. Registrieren Sie dann die App:
+
+   ```powershell
+   New-ServicePrincipal -AppId <client-id> -ObjectId <enterprise-app-object-id>
+   ```
+
+   Die Objekt-ID ist die von der Übersichtsseite der App unter **Unternehmensanwendungen**, **nicht** die von ihrer
+   Seite unter App-Registrierungen. Die falsche ID ist die häufigste Ursache einer fehlgeschlagenen Anmeldung.
+
+4. **Gewähren Sie dem Service Principal Zugriff auf jedes Postfach**, das der Agent verarbeitet:
+
+   ```powershell
+   Add-MailboxPermission -Identity "support@contoso.com" -User <service-principal-id> -AccessRights FullAccess
+   ```
+
+   `Get-ServicePrincipal | Format-List` zeigt die Identität des Service Principals.
+
+5. **Stellen Sie sicher, dass IMAP auf diesen Postfächern aktiviert ist**:
+
+   ```powershell
+   Set-CASMailbox -Identity "support@contoso.com" -ImapEnabled $true
+   ```
+
+6. **Übergeben Sie vier Werte** an die Person, die den Agent konfiguriert, über einen Kanal, dem Sie auch ein Passwort
+   anvertrauen würden: die Tenant-ID, die Client-ID, den Wert des Client Secrets und die Adresse jedes in Schritt 4
+   freigegebenen Postfachs. Nennen Sie auch das Ablaufdatum des Secrets.
+
+::: warning Schritt 4 ist die Zugriffsgrenze
+Die App kann genau die in Schritt 4 freigegebenen Postfächer öffnen und keine anderen. Geben Sie nur die Postfächer
+frei, die der Agent verarbeiten soll, und gehen Sie davon aus, dass jede Person, die `Add-MailboxPermission` ausführen —
+oder den **Benutzername** des Agent-Profils bearbeiten — kann, den Agent auf jedes freigegebene Postfach richten kann.
+Das Client Secret hat dasselbe Gewicht wie ein Postfach-Passwort: Wer es besitzt, kann jedes freigegebene Postfach
+lesen.
+:::
+
+#### Für die Person, die den Agent konfiguriert
+
+Sie brauchen die vier Werte von Ihrer Microsoft-365-Administration. Setzen Sie im Agent-Profil:
+
+| Feld                         | Wert                                                     |
+| ---------------------------- | -------------------------------------------------------- |
+| **IMAP-Host**                | `outlook.office365.com`                                  |
+| **IMAP-Port**                | `993`                                                    |
+| **TLS verwenden**            | An                                                       |
+| **Authentifizierung**        | **Microsoft 365 (OAuth 2.0)**                            |
+| **Benutzername**             | Eine von der Administration freigegebene Postfachadresse |
+| **Tenant-ID**                | Die Tenant-ID, die Sie erhalten haben                    |
+| **Client-ID**                | Die Client-ID, die Sie erhalten haben                    |
+| **Geheimer Clientschlüssel** | Der Wert des Client Secrets, den Sie erhalten haben      |
+
+Ein freigegebenes Postfach funktioniert als **Benutzername**. Ein Postfach, das die Administration nicht freigegeben
+hat, lässt sich nicht öffnen, so korrekt die übrigen Werte auch sind — lassen Sie es freigeben, statt etwas anderes zu
+ändern.
+
+::: tip Client Secrets laufen ab
+Client Secrets in Entra ID werden für höchstens zwei Jahre ausgestellt, und ein abgelaufenes Secret lässt jeden Lauf mit
+`AADSTS7000222` fehlschlagen. Tragen Sie das Ablaufdatum in Ihren Kalender ein: Bevor es abläuft, erstellt die
+Administration ein neues Secret, und Sie hinterlegen es im Profil.
+:::
+
+#### Wenn die Anmeldung fehlschlägt
+
+Der Fehler in der Event-Timeline des Laufs zeigt, welche Seite abgelehnt hat — und damit, wer es beheben kann:
+
+| Fehler                            | Ursache                                                                                                                                                                                            | Behoben durch                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `... these fields are empty: ...` | **Tenant-ID**, **Client-ID** oder **Geheimer Clientschlüssel** ist im Profil nicht ausgefüllt.                                                                                                     | Die Person, die den Agent konfiguriert.                                                        |
+| `AADSTS90002` / `AADSTS700016`    | Die Tenant-ID ist falsch, oder die Client-ID gehört zu keiner App in diesem Tenant.                                                                                                                | Die Person, die den Agent konfiguriert, durch Vergleich mit den übergebenen Werten.            |
+| `AADSTS7000215` / `AADSTS7000222` | Das Client Secret ist falsch — oft wurde die Geheimnis-ID statt des Werts eingefügt — oder abgelaufen.                                                                                             | Falsch: die Person, die den Agent konfiguriert. Abgelaufen: die Administration (neues Secret). |
+| `NO AUTHENTICATE failed`          | Entra hat ein Token ausgestellt, aber Exchange hat es abgelehnt — Schritt 3, 4 oder 5 fehlt, Schritt 3 hat die falsche Objekt-ID verwendet, oder **Benutzername** ist kein freigegebenes Postfach. | Die Administration, Schritte 3 bis 5.                                                          |
+
+Exchange antwortet auf alle seine Ursachen gleichermassen mit `NO AUTHENTICATE failed`. Prüfen Sie zuerst, ob
+**Benutzername** genau ein freigegebenes Postfach ist; wenn ja, geht die Administration die Schritte 3 bis 5 der Reihe
+nach durch.
 
 ### Entwurfs-Einstellungen
 
@@ -195,9 +310,11 @@ Nachricht.
 
 ## Best Practices
 
-**Verwenden Sie ein anwendungsspezifisches Passwort.** Die meisten Anbieter (Gmail, Microsoft 365 und andere) stellen
-Anmeldedaten pro Anwendung aus, die sich einzeln widerrufen lassen. Nutzen Sie eines davon statt des echten
-Konto-Passworts, und geben Sie dem Agent ein Postfach, das nur enthält, was er sehen muss.
+**Verwenden Sie ein anwendungsspezifisches Passwort — oder OAuth 2.0 bei Microsoft 365.** Die meisten Anbieter (Gmail
+und andere) stellen Anmeldedaten pro Anwendung aus, die sich einzeln widerrufen lassen. Nutzen Sie eines davon statt des
+echten Konto-Passworts, und geben Sie dem Agent ein Postfach, das nur enthält, was er sehen muss. Verwenden Sie bei
+Microsoft 365 stattdessen [OAuth 2.0](#microsoft-365-mit-oauth-2-0): App-Passwörter funktionieren nicht mehr, sobald die
+Standardauthentifizierung deaktiviert ist.
 
 **Starten Sie mit deaktiviertem Verschieben und Entwerfen.** Beides ist aus gutem Grund standardmässig aus. Lassen Sie
 den Agent zuerst nur lesend laufen, prüfen Sie in der Event-Timeline, dass er sich verbindet und die richtigen

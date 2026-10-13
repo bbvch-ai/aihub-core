@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-agent"
-version = "0.322.0"
+version = "0.324.0"
 description = "Swiss AI Hub Agent SDK: build transparent, workflow-based, event-driven AI agents."
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -23,12 +23,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "swiss-ai-hub-core==0.322.0",
+    "swiss-ai-hub-core==0.324.0",
     "fastmcp>=3.0.0",
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
     "stringcase>=1.2.0",
     "imapclient>=3.0.1",
+    "azure-identity>=1.19.0",
 ]
 
 [dependency-groups]
@@ -44,7 +45,7 @@ Documentation = "https://bbvch-ai.github.io/aihub-core/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
-requires = ["uv_build>=0.10.4,<0.11.0"]
+requires = ["uv_build>=0.10.4,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

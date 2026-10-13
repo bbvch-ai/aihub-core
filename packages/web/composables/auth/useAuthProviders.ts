@@ -1,14 +1,17 @@
 import { getAuthProviders } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
-import type { AuthProviderResponse } from '@core/sdk/client'
+import type { LoginOptionsResponse } from '@core/sdk/client'
 
 export const useAuthProviders = defineQuery(() => {
-  const { data: authProviders, isPending: isLoading } = useQuery<AuthProviderResponse[]>({
+  const { data: loginOptions, isPending: isLoading } = useQuery<LoginOptionsResponse>({
     key: () => ['auth-providers'],
     staleTime: minutesToMilliseconds(5),
     query: async () => await getAuthProviders({ composable: '$fetch' }),
   })
 
-  return { authProviders, isLoading }
+  const welcomePage = computed(() => loginOptions.value?.welcome_page ?? false)
+  const authProviders = computed(() => loginOptions.value?.providers)
+
+  return { welcomePage, authProviders, isLoading }
 })
