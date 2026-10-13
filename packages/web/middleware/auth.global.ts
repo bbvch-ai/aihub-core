@@ -15,7 +15,13 @@ let lastSyncedTenant: string | null = null
  * screen inside an app that still looks logged in. Probing once per page load
  * is enough: the cookie can only vanish together with the browser session.
  */
-let ssoSessionVerified = false
+let ssoSessionChecked = false
+
+/**
+ * The probe blocks the first navigation, so it must not inherit the 30 s
+ * silent-renew timeout; a healthy Keycloak answers well within this.
+ */
+const SSO_PROBE_TIMEOUT_SECONDS = 5
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
@@ -53,17 +59,22 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
  * A refresh-token renewal would succeed without the SSO cookie, because the
  * Keycloak session lives on server-side; only a `prompt=none` round trip
  * through the browser sees the cookie the iframe depends on.
+ *
+ * Only Keycloak's own answer rules the session out. A timeout or network error
+ * says nothing about the cookie, and logging out over it would end a session
+ * that may be fine, so the stored session is kept as it was before the probe.
  */
-const hasSsoSessionFor = async (auth: UserManager, user: User): Promise<boolean> => {
+const ssoSessionIsGone = async (auth: UserManager, user: User): Promise<boolean> => {
   try {
-    const session = await auth.querySessionStatus()
-    return session?.sub === user.profile.sub
+    const session = await auth.querySessionStatus({ silentRequestTimeoutInSeconds: SSO_PROBE_TIMEOUT_SECONDS })
+    return session?.sub !== user.profile.sub
   }
   catch (error) {
     if (error instanceof ErrorResponse) {
-      return false
+      return true
     }
-    throw error
+    console.warn('SSO session probe got no answer, keeping the stored session:', error)
+    return false
   }
 }
 
@@ -89,13 +100,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return `/${locale}/auth/login`
     }
 
-    if (!ssoSessionVerified) {
-      if (!await hasSsoSessionFor($auth, user)) {
+    if (!ssoSessionChecked) {
+      if (await ssoSessionIsGone($auth, user)) {
         await $auth.removeUser()
         rememberRedirect(to.fullPath, isAuthPath)
         return `/${locale}/auth/login`
       }
-      ssoSessionVerified = true
+      ssoSessionChecked = true
     }
 
     if (user.expired) {
