@@ -4,6 +4,7 @@ from typing import Annotated, override
 
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Security
+from fastapi.routing import APIRoute
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
@@ -170,10 +171,11 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         base_path = self._get_endpoint_base_path_for_process_class(process_class)
 
         for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
+            if isinstance(route, APIRoute) and route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
+        self.app.openapi_schema = None
         self.registered_classes.discard(process_class)
 
     def _register_human_endpoint(

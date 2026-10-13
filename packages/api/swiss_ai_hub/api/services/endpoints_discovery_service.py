@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import Controller
@@ -98,10 +99,11 @@ class EndpointsDiscoveryService(abc.ABC):
         base_path = self._get_endpoint_base_path_for_instance(entity_class, entity_id)
 
         for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
+            if isinstance(route, APIRoute) and route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
+        self.app.openapi_schema = None
         self.registered_entities.discard((entity_class, entity_id))
 
     def _deregister_endpoints_for_class(self, entity_class: str):
@@ -109,10 +111,11 @@ class EndpointsDiscoveryService(abc.ABC):
         base_path = self._get_endpoint_base_path_for_class(entity_class)
 
         for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
+            if isinstance(route, APIRoute) and route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
+        self.app.openapi_schema = None
         self.registered_classes.discard(entity_class)
 
     # Legacy method names for backward compatibility
