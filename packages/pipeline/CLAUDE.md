@@ -490,8 +490,8 @@ everything, while a rotated credential keeps the cursor.
 9. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
    step outputs are pickled into the `dagster` bucket.
 
-**Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira) in
-one `dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to check (see its
+**Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira) in one
+`dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to check (see its
 README). `make structured-demo` runs the ingestion pipeline and `playground.structured_demo` (token `structured_demo`)
 instead, which needs no external system:
 
@@ -515,26 +515,29 @@ be silent:
 - **Preflight before the sync and before the listing** (`JiraPreflight`: `/myself`, each project, the JQL clause). Jira
   answers a project the account cannot see, and on Cloud an invalid JQL clause, with zero issues, which the listing
   would take for deleted issues. Cloud's clause is checked with `POST /rest/api/3/jql/parse?validation=strict`; Data
-  Center's search answers 400 itself.
+  Center's search answers 400 itself. A renamed project still answers to its old key, so the preflight compares the key
+  Jira returns.
 - **Paging stops only on an empty page or `isLast`, never on a short page.** Cloud returns fewer issues than asked for
   when many fields are requested, and a partial listing deletes files. Cloud pages `/rest/api/2/search/jql` by
   `nextPageToken`; Data Center pages `/rest/api/2/search` by keyset (`id > N ORDER BY id ASC`), which also avoids the
-  10,000-result cap of Data Center 11.
+  10,000-result cap of Data Center 11. A page that repeats an issue fails the search (Cloud's tokens have been reported
+  to loop), and so does a Data Center search returning fewer issues than its first page counted.
 - **One query per project**: `project = "X" AND (clause)`, with the user's clause in parentheses. An issue of another
   project in the answer is refused (`_own_key`), so no clause can pull in a project the database was not given.
 - **File and listing keys come from Jira's returned key** through `JiraIssue.object_key_for`. The namespace keeps case,
   so a key built any other way could differ from the file's, and every file would be removed.
 - **Incremental**: the cursor is `updated_at` with `lag=300`. The JQL lower bound is taken from `start_value` once per
-  run, written in the `/myself` time zone (JQL dates are read in the account's zone), floored to the minute, and moved an
-  hour earlier on a DST fold. `lag` turns off dlt's boundary deduplication, so judge a run by "Files written", not "Rows
-  loaded".
+  run, written in the `/myself` time zone (JQL dates are read in the account's zone), floored to the minute, and moved
+  an hour earlier on a DST fold. `lag` turns off dlt's boundary deduplication, so judge a run by "Files written", not
+  "Rows loaded".
 - **Comments**: the embedded ones, or the comment endpoint when the issue has more. Restricted (`visibility`) and
   Service Management internal comments are dropped. Data Center marks an internal comment only with the
   `sd.public.comment` property, which search never returns, so service desk projects always read comments from the
   endpoint with `expand=renderedBody,properties`.
 - **Text is Jira's rendered HTML**, the one format both editions share, converted with markdownify. Images are dropped,
   mentions keep only the name, links are made absolute against the site (keeping a Data Center context path), and Data
-  Center's `<tt>` becomes code. Jira's rendered *dates* ("Today 10:15") are never used.
+  Center's `<tt>` becomes code. Plain `_` and `*` stay unescaped, so identifiers are indexed as written. Jira's rendered
+  *dates* ("Today 10:15") are never used.
 - **Options validators do not run when the API saves a source.** The URL and the edition therefore use type-level
   constraints (a 400 on save), and cross-field checks run in the adapter (`JiraOptions.problems()`).
   `hide_input_in_errors` keeps pydantic from echoing the decrypted token.
@@ -889,13 +892,13 @@ runs set it for you; only manual launches need it.
 `make playground`, `make quickstart`, `make document-ingestion-pipeline`, `make structured-pipeline` and
 `make structured-demo` each depend on the `dagster-home` target, which installs `dagster.local.yaml` into
 `$(DAGSTER_HOME)` as `dagster.yaml` (copy-if-absent), and source the repo-root `.env` for the dev-stack connection
-settings. Two failure modes this prevents: an unset
-`DAGSTER_HOME` makes `dagster dev` create a throwaway `.tmp_dagster_home_*` instance per start, and a missing instance
-config leaves `DefaultRunCoordinator` in place, which fans out runs with no cap and storms MinerU. `dagster.local.yaml`
-uses the same `QueuedRunCoordinator` as `infra/configs/dagster/dagster-config.<stage>.yml`, but with
-`max_concurrent_runs` as a literal instead of `env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed
-into `$DAGSTER_HOME`, so an unresolvable env var would raise `PostProcessingError` in every Dagster process on the
-machine, including ones started without the repo `.env` loaded.
+settings. Two failure modes this prevents: an unset `DAGSTER_HOME` makes `dagster dev` create a throwaway
+`.tmp_dagster_home_*` instance per start, and a missing instance config leaves `DefaultRunCoordinator` in place, which
+fans out runs with no cap and storms MinerU. `dagster.local.yaml` uses the same `QueuedRunCoordinator` as
+`infra/configs/dagster/dagster-config.<stage>.yml`, but with `max_concurrent_runs` as a literal instead of
+`env: DAGSTER_MAX_CONCURRENT_RUNS`. Keep it literal: the file is installed into `$DAGSTER_HOME`, so an unresolvable env
+var would raise `PostProcessingError` in every Dagster process on the machine, including ones started without the repo
+`.env` loaded.
 
 `DAGSTER_HOME ?= $(HOME)/.dagster_home` is defined in the Makefile and exported over whatever `.env` says — same
 directory, but already absolute, so the recipes can `mkdir`/`cp` with it. `.env` keeps the tilde form for the manual
@@ -932,8 +935,8 @@ where it sits, including inside the pipeline images that `COPY packages/pipeline
   Built by `structured_pipeline_definitions()` in `util/structured_pipeline_definitions_util.py`; Dockerfile as rclone's
   with `PIPELINE=structured_pipeline` and `RUNTIME__DLTHUB_TELEMETRY=false`. Compose service `structured_pipeline`
   (container `structured-pipeline`), workspace entry `structured_pipeline:4000`, env `AIHUB_CONFIG_ENCRYPTION_KEY`,
-  `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`. Unlike the rclone pipeline, which leaves the internet to its daemon,
-  it calls the business application's API itself, so it is the one pipeline on the `egress` network. See
+  `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR/MINUTE`. Unlike the rclone pipeline, which leaves the internet to its daemon, it
+  calls the business application's API itself, so it is the one pipeline on the `egress` network. See
   [Structured Source Pipeline](#structured-source-pipeline-stage-1-configured-per-database).
 
 The legacy `default_rag_pipeline` / `shared_rag_pipeline` are **gone**: their code is deleted and their last published
@@ -947,8 +950,8 @@ nothing can be created on top of them, and rows predating the `ingestor` field r
 
 Run it locally: `make document-ingestion-pipeline`. The rclone source pipeline runs on the host the same way with
 `dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`). The structured
-source pipeline runs with `make structured-pipeline` (Jira), or `make structured-demo` with the playground's demo source,
-each next to the ingestion pipeline as a second code location.
+source pipeline runs with `make structured-pipeline` (Jira), or `make structured-demo` with the playground's demo
+source, each next to the ingestion pipeline as a second code location.
 
 ## Testing
 

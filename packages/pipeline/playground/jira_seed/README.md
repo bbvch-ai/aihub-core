@@ -77,10 +77,10 @@ From `packages/pipeline`:
 
 ## 5. Checking Jira Data Center
 
-The Data Center path was checked live against Jira Software Data Center 10.3.26 on a local instance (§4 steps 1–4, 7
-and 8). Internal comments of Jira Service Management were not, since that instance had no Service Management: they are
-covered only by tests on responses shaped after its REST API (`swiss_ai_hub/pipeline/source_pipelines/jira/tests/data_center`).
-To check it again on a throwaway local instance:
+The Data Center path was checked live against Jira Software Data Center 10.3.26 on a local instance (§4 steps 1–4, 7 and
+8). Internal comments of Jira Service Management were not, since that instance had no Service Management: they are
+covered only by tests on responses shaped after its REST API
+(`swiss_ai_hub/pipeline/source_pipelines/jira/tests/data_center`). To check it again on a throwaway local instance:
 
 1. Jira 10 has no built-in evaluation database, so it runs next to a PostgreSQL. Put the database settings in an env
    file outside the repository:
@@ -99,8 +99,8 @@ To check it again on a throwaway local instance:
    JVM_MAXIMUM_MEMORY=2048m
    ```
 
-2. Start both. Jira needs about 3 GB of memory, so stop heavy dev-stack services first if the machine is short. Port 8090
-   is often taken by an agent. Use 10.3: the public test licences are reported to be refused by Jira 11.
+2. Start both. Jira needs about 3 GB of memory, so stop heavy dev-stack services first if the machine is short. Port
+   8090 is often taken by an agent. Use 10.3: the public test licences are reported to be refused by Jira 11.
 
    ```bash
    docker network create jira-dc-net
@@ -108,9 +108,9 @@ To check it again on a throwaway local instance:
    docker run -d --name jira-dc --network jira-dc-net --env-file ~/.jira-seed/jira-dc-docker.env -v jira-dc-data:/var/atlassian/application-data/jira -p 8093:8080 atlassian/jira-software:10.3
    ```
 
-3. Open http://localhost:8093 and complete the setup wizard in one browser session (it keeps its progress there):
-   *I'll set it up myself*, private mode, base URL `http://localhost:8093`, then the 10-user *Jira Software Data
-   Center* key from
+3. Open http://localhost:8093 and complete the setup wizard in one browser session (it keeps its progress there): *I'll
+   set it up myself*, private mode, base URL `http://localhost:8093`, then the 10-user *Jira Software Data Center* key
+   from
    [Atlassian's timebomb licences](https://developer.atlassian.com/platform/marketplace/timebomb-licenses-for-testing-server-apps/),
    an admin account, and no e-mail. The licence expires three hours after Jira starts; restarting the container starts
    the three hours again.
@@ -119,9 +119,9 @@ To check it again on a throwaway local instance:
    which needs that app and its timebomb key as well; without it, use a second software project. Over REST, Data Center
    accepts the template `com.pyxis.greenhopper.jira:gh-scrum-template`, not the Cloud template keys.
 
-5. Create a personal access token: profile → *Personal Access Tokens*. Over REST
-   (`POST /rest/pat/latest/tokens`), send basic auth without a session cookie, or Jira answers 403. Put the token in
-   `~/.jira-seed/dc.env` (see §1), then `seed --projects ENG,SD` with `--env-file ~/.jira-seed/dc.env`.
+5. Create a personal access token: profile → *Personal Access Tokens*. Over REST (`POST /rest/pat/latest/tokens`), send
+   basic auth without a session cookie, or Jira answers 403. Put the token in `~/.jira-seed/dc.env` (see §1), then
+   `seed --projects ENG,SD` with `--env-file ~/.jira-seed/dc.env`.
 
 6. Create a knowledge database with the Jira source, edition *Jira Data Center*, URL `http://localhost:8093`, the token
    and both project keys, and work through §4. On a service management project, the `internal-comment` case must show

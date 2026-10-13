@@ -66,8 +66,8 @@ as a safety net, catching anything a missed notification would otherwise have le
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
 database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
 application sync** keeps records such as Jira issues in sync, each record as one document. Credentials are stored
-encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the stored ones, so a rotation is
-a matter of editing the source. Either way, the system then:
+encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the stored ones, so a rotation
+is a matter of editing the source. Either way, the system then:
 
 - Syncs from the source on a daily schedule
 - Creates the collections itself, as described below
@@ -101,9 +101,9 @@ Pick **Jira** as the source system and enter:
 
 Each project becomes a collection and each issue one document. The document is titled with the issue key and summary,
 links back to the issue, and carries its type, status, priority, labels, components, fix versions, reporter and
-assignee, its description and its comments with author and date. Headings, lists, tables and code keep their
-formatting; images and attachments are not synced. Comments restricted to a project role or group, and internal
-comments of Jira Service Management, are left out.
+assignee, its description and its comments with author and date. Headings, lists, tables and code keep their formatting;
+images and attachments are not synced. Comments restricted to a project role or group, and internal comments of Jira
+Service Management, are left out.
 
 The issue's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the key and
 summary and opens the issue in Jira, and the fields `key`, `project`, `issue_type`, `status`, `priority`, `labels`,

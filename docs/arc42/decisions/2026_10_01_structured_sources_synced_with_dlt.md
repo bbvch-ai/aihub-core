@@ -103,8 +103,8 @@ configured, secured or ingested changes.**
    coercing ISO timestamps to `pendulum.DateTime`, which YAML cannot render. The first path segment is the namespace,
    and a path without a folder is rejected, because the ingestion pipeline never ingests a root-level object.
    Frontmatter uses the keys #1953 reserves (`title`, `url`, `created`; a record's `updated` is ordinary metadata) and
-   renders deterministically, with sorted keys. Adding a kind is one adapter, one options form, one field on `StructuredSyncConfig` and its labels,
-   with no change to the API or the UI.
+   renders deterministically, with sorted keys. Adding a kind is one adapter, one options form, one field on
+   `StructuredSyncConfig` and its labels, with no change to the API or the UI.
 
 3. **One sync run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source("structured"))` fans out one
    run per database, tagged `aihub/bucket`. The run is one `graph_asset` whose ops are, in order:
@@ -184,9 +184,8 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    ETag check keeps it from rewriting what is already there.
 
 7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
-   another sync of the same database running gives way, whichever was created first and whether the schedule, the
-   job's launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not
-   count.
+   another sync of the same database running gives way, whichever was created first and whether the schedule, the job's
+   launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not count.
 
 ## Consequences
 

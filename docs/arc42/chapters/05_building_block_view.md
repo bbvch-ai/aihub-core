@@ -264,8 +264,8 @@ complete Dagster Definitions object; `rclone_pipeline_definitions` does the same
 `structured_pipeline_definitions` for the structured source pipeline (API records such as Jira issues, written as
 markdown through dlt), and the `default_*_to_datalake_definitions` builders for the deploy-time SharePoint and
 local-filesystem sources. No route-per-run pipeline names a bucket — the Stage 2 pipeline serves every knowledge
-database whose `BucketEntity.ingestor` matches, each source pipeline every database whose `BucketEntity.source`
-matches, all resolving the target per run.
+database whose `BucketEntity.ingestor` matches, each source pipeline every database whose `BucketEntity.source` matches,
+all resolving the target per run.
 
 #### Resources and I/O managers
 

@@ -237,8 +237,8 @@ Docker host.
 An `AbstractStructuredSourceAdapter` subclass declares the kind, its options form, its dlt source, how a record becomes
 a file and how to list every record key in scope. One field on `StructuredSyncConfig` and labels in the
 `lib/source_pipelines.*.yml` translations offer it in the dialog; the API and the UI need no change.
-`source_pipelines/jira/` in `packages/pipeline` is the reference implementation, and the package's `CLAUDE.md` lists
-the rules an adapter must keep. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
+`source_pipelines/jira/` in `packages/pipeline` is the reference implementation, and the package's `CLAUDE.md` lists the
+rules an adapter must keep. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
 
 ## 3. The Data Lake to Vector Store Pipeline
 
