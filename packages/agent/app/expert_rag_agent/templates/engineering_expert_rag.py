@@ -82,4 +82,5 @@ def build() -> ExpertRAGAgentConfig:
                 agent_id="engineering-expert",
             ),
         ),
+        restrict_to_user_access=True,
     )
