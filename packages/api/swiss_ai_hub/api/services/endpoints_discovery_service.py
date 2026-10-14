@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import Controller
@@ -95,25 +96,25 @@ class EndpointsDiscoveryService(abc.ABC):
 
     def _deregister_endpoints_for_instance(self, entity_class: str, entity_id: str):
         """Deregister all endpoints for a specific entity instance."""
-        base_path = self._get_endpoint_base_path_for_instance(entity_class, entity_id)
-
-        for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
-                self.app.routes.remove(route)
-                logger.info(f"Deregistered endpoint: {route.path}")
-
+        self._deregister_routes_under(self._get_endpoint_base_path_for_instance(entity_class, entity_id))
         self.registered_entities.discard((entity_class, entity_id))
 
     def _deregister_endpoints_for_class(self, entity_class: str):
         """Deregister all endpoints for an entity class (class-level endpoints with dynamic {agent_id})."""
-        base_path = self._get_endpoint_base_path_for_class(entity_class)
+        self._deregister_routes_under(self._get_endpoint_base_path_for_class(entity_class))
+        self.registered_classes.discard(entity_class)
 
+    def _deregister_routes_under(self, base_path: str) -> None:
+        """Remove the dynamic endpoints below `base_path`.
+
+        Only `APIRoute`s are candidates: since FastAPI 0.14x every controller mounted through `include_router` sits in
+        `app.routes` as an `_IncludedRouter` wrapper without a `path`, and the dynamic endpoints are added with
+        `add_api_route`, so they are top-level `APIRoute`s.
+        """
         for route in list(self.app.routes):
-            if route.path.startswith(f"{base_path}/"):
+            if isinstance(route, APIRoute) and route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
-
-        self.registered_classes.discard(entity_class)
 
     # Legacy method names for backward compatibility
     def _get_endpoint_base_path(self, entity_class: str, entity_id: str) -> str:
