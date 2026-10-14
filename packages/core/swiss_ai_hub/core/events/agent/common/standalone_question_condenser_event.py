@@ -10,15 +10,11 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 class StandaloneQuestionCondenserEvent(ControlAndDisplayEvent):
     """
     Event to condense chat messages into a single standalone question as a chat message.
-
-    A blank condensation is refused by `condense_standalone_question`, before an event of this type can be
-    built. The invariant is deliberately *not* also a `field_validator` here: a validator on an event is not
-    only a publish-time contract, it runs on every `model_validate`, which is how the immutable log is read
-    back — JetStream replays the whole stream on each agent start, and the API rebuilds a thread's timeline
-    from the persisted display copy. Blank condensations did occur before the producer-side raise existed, so
-    validating on read makes that history undeserializable: replay drops the event and
-    `EventService.get_events_in_thread` fails the whole thread.
     """
+
+    # No blank-question validator on purpose: `condense_standalone_question` already refuses blanks, and a
+    # validator would also run when replay and the thread timeline read back older, pre-fix blank events.
+    # See ADR 2026_09_07_memory_operations_use_condensed_question.
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path(
         "lib.events.standalone_question_condenser_event.name"
