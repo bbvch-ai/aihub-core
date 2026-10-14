@@ -368,12 +368,14 @@ class BaseEvent(BaseModel):
             **data,
         }
 
-    @staticmethod
-    def _item_dump(item: Any, **kwargs: Any):
+    @classmethod
+    def _item_dump(cls, item: Any, **kwargs: Any):
         if isinstance(item, ChatMessage):
             return serialize_chat_message_blocks(item, **kwargs)
         elif isinstance(item, BaseModel):
             return item.model_dump(**kwargs)
+        elif isinstance(item, list | tuple):
+            return [cls._item_dump(nested, **kwargs) for nested in item]
         else:
             return item
 

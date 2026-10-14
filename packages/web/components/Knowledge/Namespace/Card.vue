@@ -36,7 +36,7 @@
           @click.stop="handleEditClick"
         />
         <Button
-          v-if="!autoSync"
+          v-if="!sourced"
           v-tooltip.top="t('knowledge.upload_documents')"
           icon="pi pi-upload"
           rounded
@@ -46,7 +46,7 @@
           @click.stop="handleUploadClick"
         />
         <Button
-          v-if="!autoSync"
+          v-if="!sourced"
           v-tooltip.top="t('knowledge.delete_namespace')"
           icon="pi pi-trash"
           rounded
@@ -78,10 +78,10 @@ import { capitalCase } from 'change-case'
 import type { NamespaceDto } from '@core/sdk/client'
 
 // Not gated on the database's `deletable`: a legacy database cannot be removed as a whole, but its
-// namespaces can. Only an auto-synced source, which would just re-sync them, blocks both affordances.
+// namespaces can. Only a sourced database, whose source would just re-sync them, blocks both affordances.
 const props = defineProps<{
   namespace: NamespaceDto
-  autoSync?: boolean
+  sourced?: boolean
 }>()
 
 const emit = defineEmits<{

@@ -363,6 +363,7 @@ export type AgentClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -373,6 +374,7 @@ export type AgentClassDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -497,6 +499,7 @@ export type AgentConfigDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -507,6 +510,7 @@ export type AgentConfigDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -557,6 +561,40 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileBatchValidationRequest
+ *
+ * All files of one chat turn, checked together so a turn costs one call and places its files once.
+ */
+export type AgentFileBatchValidationRequest = {
+  /**
+   * Thread Id
+   *
+   * The conversation the files are attached in; once none is missing, they are also placed in the user's files there.
+   */
+  thread_id?: string | null;
+  /**
+   * Files
+   *
+   * The uploaded files to check.
+   */
+  files: Array<AgentFileValidationItem>;
+};
+
+/**
+ * AgentFileBatchValidationResponse
+ *
+ * Which of the checked files the agent's bucket does not hold; uploads expire, so a known file can be gone.
+ */
+export type AgentFileBatchValidationResponse = {
+  /**
+   * Missing
+   *
+   * The file_ids not found in the agent's bucket.
+   */
+  missing: Array<string>;
+};
+
+/**
  * AgentFileUploadRequest
  *
  * Request to initiate a file upload to an agent's dedicated bucket.
@@ -603,11 +641,11 @@ export type AgentFileUploadResponse = {
 };
 
 /**
- * AgentFileValidationRequest
+ * AgentFileValidationItem
  *
- * Request to validate that a file was uploaded successfully.
+ * One uploaded file, named as the initiate endpoint stored it.
  */
-export type AgentFileValidationRequest = {
+export type AgentFileValidationItem = {
   /**
    * File Id
    *
@@ -620,26 +658,6 @@ export type AgentFileValidationRequest = {
    * Original filename with extension. Must not contain path separators.
    */
   filename: string;
-};
-
-/**
- * AgentFileValidationResponse
- *
- * Response confirming whether a file exists in the agent's bucket.
- */
-export type AgentFileValidationResponse = {
-  /**
-   * File Id
-   *
-   * The file_id that was checked.
-   */
-  file_id: string;
-  /**
-   * Exists
-   *
-   * True if the file was found in the agent's bucket.
-   */
-  exists: boolean;
 };
 
 /**
@@ -1099,6 +1117,18 @@ export type AgentSelector = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -1536,6 +1566,161 @@ export type AssignRoleRequest = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
+ */
+export type AttachedFileEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id the answer cites this file by, as [id].
+   */
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export const AttachedFileStatus = {
+  READ: "read",
+  TRUNCATED: "truncated",
+  FAILED: "failed",
+} as const;
+
+/**
+ * AttachedFileStatus
+ *
+ * How much of an attached file reached the model.
+ */
+export type AttachedFileStatus =
+  (typeof AttachedFileStatus)[keyof typeof AttachedFileStatus];
+
+/**
+ * AttachedFilesReadEvent
+ *
+ * The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.
+ */
+export type AttachedFilesReadEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the attached files' text, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * Audio
  *
  * Data about a previous audio response from the model.
@@ -1810,9 +1995,27 @@ export type BatchDeleteDocumentsResponse = {
 };
 
 /**
- * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
+ * Body_create_incident
  */
-export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
+export type BodyCreateIncident = {
+  /**
+   * Submission
+   *
+   * Answers to the form, as a JSON object
+   */
+  submission: string;
+  /**
+   * Attachments
+   *
+   * Files to file with the report
+   */
+  attachments?: Array<Blob | File>;
+};
+
+/**
+ * Body_create_transcription
+ */
+export type BodyCreateTranscription = {
   /**
    * File
    *
@@ -1855,6 +2058,18 @@ export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
    * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
    */
   timestamp_granularities?: Array<"word" | "segment"> | null;
+};
+
+/**
+ * Body_upload_user_file
+ */
+export type BodyUploadUserFile = {
+  /**
+   * File
+   *
+   * The file to add; one with the same name is replaced.
+   */
+  file: Blob | File;
 };
 
 /**
@@ -2078,6 +2293,18 @@ export type CascadeSelect = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue CascadeSelect element.
@@ -2269,10 +2496,12 @@ export type ChatCompletion = {
    * Object
    */
   object: "chat.completion";
+  moderation?: Moderation | null;
   /**
    * Service Tier
    */
-  service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+  service_tier?:
+    "auto" | "default" | "flex" | "scale" | "priority" | "fast" | null;
   /**
    * System Fingerprint
    */
@@ -2423,6 +2652,7 @@ export type ChatCompletionContentPartImageParam = {
    * Type
    */
   type: "image_url";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2437,6 +2667,7 @@ export type ChatCompletionContentPartInputAudioParam = {
    * Type
    */
   type: "input_audio";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2469,6 +2700,7 @@ export type ChatCompletionContentPartTextParam = {
    * Type
    */
   type: "text";
+  prompt_cache_breakpoint?: PromptCacheBreakpoint;
   [key: string]: unknown;
 };
 
@@ -2720,6 +2952,10 @@ export type ChatCompletionRequest = {
    */
   model:
     | string
+    | "gpt-5.6-sol"
+    | "gpt-5.6-terra"
+    | "gpt-5.6-luna"
+    | "gpt-5.5"
     | "gpt-5.4"
     | "gpt-5.4-mini"
     | "gpt-5.4-nano"
@@ -2862,7 +3098,7 @@ export type ChatCompletionRequest = {
    * Reasoning Effort
    */
   reasoning_effort?:
-    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | null;
+    "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
   /**
    * Response Format
    */
@@ -3030,6 +3266,33 @@ export type ChatCompletionUserMessageParam = {
 };
 
 /**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export const ChatFeature = {
+  WEB_SEARCH: "web_search",
+  CODE_INTERPRETER: "code_interpreter",
+  IMAGE_GENERATION: "image_generation",
+  USER_FILES: "user_files",
+} as const;
+
+/**
+ * ChatFeature
+ *
+ * A capability a user can request per message in a chat client, which the agent then decides how to serve.
+ *
+ * Web search, code interpreter and image generation map onto OpenWebUI's native toggles. A feature OpenWebUI
+ * has no toggle for is surfaced as one of our toggle filters instead (`openwebui_toggle_filter_id`), so adding
+ * a member here is all a new feature needs on the contract side.
+ */
+export type ChatFeature = (typeof ChatFeature)[keyof typeof ChatFeature];
+
+/**
  * ChatMessage
  *
  * Chat message.
@@ -3113,6 +3376,18 @@ export type Checkbox = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -3255,6 +3530,18 @@ export type ChipsInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -3521,6 +3808,18 @@ export type ColorPicker = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ColorPicker element.
@@ -3603,6 +3902,58 @@ export type ColorPicker = {
 };
 
 /**
+ * CompleteConversationEvent
+ *
+ * Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then
+ * emit the stop event.
+ *
+ * Built with `Conversation.complete(...)`. Anything that must be published before the run tears down, such
+ * as a memory-storage delegation, is returned from the same step ahead of this event.
+ */
+export type CompleteConversationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The answer the follow-up questions are grounded on.
+   */
+  answer: LlmEvent;
+  /**
+   * The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.
+   */
+  stop?: StopEvent | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * CompletionTokensDetails
  *
  * Breakdown of tokens used in a completion.
@@ -3651,6 +4002,61 @@ export type CompletionUsage = {
 };
 
 /**
+ * ComposeContextEvent
+ *
+ * Asks the conversation capability to merge context blocks into a chat history, in the given order, behind
+ * the leading system messages and within the input budget.
+ *
+ * Built with `Conversation.compose(...)`; answered with `ContextComposedEvent`.
+ */
+export type ComposeContextEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history to merge the blocks into.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Blocks
+   *
+   * Context blocks in the order they should reach the model. Empty blocks are skipped.
+   */
+  blocks?: Array<Array<ChatMessage>>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ConfigSpecs
  *
  * Validation specification for a form-duality configuration, as announced by the service that owns it.
@@ -3673,6 +4079,56 @@ export type ConfigSpecs = {
   config_schema?: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -3777,6 +4233,68 @@ export type ContextSufficientAcceptEvent = {
 };
 
 /**
+ * ContextualizeConversationEvent
+ *
+ * Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the
+ * message for a meta question, derive the query the turn is answered for, and title the thread.
+ *
+ * Built with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a
+ * stop event when the message was a meta question or could not be condensed.
+ */
+export type ContextualizeConversationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history, already limited to the budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * User Query
+   *
+   * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
+   */
+  user_query?: string | null;
+  /**
+   * Attached File Names
+   *
+   * The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.
+   */
+  attached_file_names?: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextualizedAgentEvent
  *
  * Wraps an agent event with context information like the agent's class, ID, and thread ID.
@@ -3861,23 +4379,48 @@ export type ContextualizedAgentEvent = {
     | StartEvent
     | AgentInTheLoopResponseEvent
     | HumanInTheLoopInputRequestEvent
+    | ToolApprovalRequestEvent
     | HumanInTheLoopConfirmationRequestEvent
     | HumanInTheLoopChatRequestEvent
     | HumanInTheLoopRequestEvent
     | AgentInTheLoopRequestEvent
     | AgentInTheLoopExceptionEvent
     | HumanInTheLoopInputResponseEvent
+    | ToolApprovalResponseEvent
     | HumanInTheLoopConfirmationResponseEvent
     | HumanInTheLoopChatResponseEvent
     | HumanInTheLoopResponseEvent
     | LimitChatHistoryEvent
     | AddMemoryToChatHistoryEvent
+    | ContextComposedEvent
+    | ContextualizeConversationEvent
+    | ConversationContextualizedEvent
+    | ComposeContextEvent
+    | CompleteConversationEvent
+    | NotAMetaQuestionEvent
+    | RecallMemoryEvent
+    | MemoryRecalledEvent
+    | MemoryStorageRequestedEvent
+    | SearchKnowledgeEvent
+    | ReadAttachedFilesEvent
+    | AttachedFilesReadEvent
+    | RunToolLoopEvent
+    | ToolLoopIterationEvent
+    | ToolCallsDecidedEvent
+    | ToolCallApprovedEvent
+    | ToolLoopFinishedEvent
     | AddUserMemoryToChatHistoryEvent
     | AddOrganizationMemoryToChatHistoryEvent
     | StandaloneQuestionCondenserEvent
     | LlmCostEvent
     | ChunkEvent
     | ThoughtEvent
+    | AttachedFileEvent
+    | KnowledgeSearchedEvent
+    | ToolResultEvent
+    | ToolLoopStatusEvent
+    | ToolLoopCondensedEvent
+    | SandboxFileDisplayedEvent
     | ConversationTitleEvent
     | FollowUpQuestionsEvent
     | GuardEvent
@@ -3889,6 +4432,7 @@ export type ContextualizedAgentEvent = {
     | EmbeddingEvent
     | LlmEvent
     | LlmStopEvent
+    | RefusalStopEvent
     | MetaQuestionDetectedEvent
     | RerankerEvent
     | RetrieverEvent
@@ -3949,6 +4493,65 @@ export type ControlEvent = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationContextualizedEvent
+ *
+ * The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query
+ * every capability and the blueprint answer it for.
+ */
+export type ConversationContextualizedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The limited chat history the request carried.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The question this turn is answered for. Blank when the message carried no text.
+   */
+  query: string;
+  /**
+   * Condensed
+   *
+   * Whether the query was condensed from the history rather than taken verbatim.
+   */
+  condensed?: boolean;
   /**
    * Event Name
    *
@@ -4057,6 +4660,32 @@ export type CreateDatabaseRequest = {
   configuration?: {
     [key: string]: unknown;
   };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database's data lake, as served by GET /knowledge/source-pipelines. Omit for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form (backend, credentials, root folder, patterns). Validated against the source's schema; secret fields are stored encrypted.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * CreateFolderRequest
+ */
+export type CreateFolderRequest = {
+  /**
+   * Path
+   *
+   * The new folder's path in the user's file space.
+   */
+  path: string;
 };
 
 /**
@@ -4209,6 +4838,36 @@ export type CreateTokenResponse = {
 };
 
 /**
+ * CreatedIncidentDTO
+ *
+ * What the reporter is shown after submitting.
+ *
+ * Carries the issue number so support and reporter can name the same report, but no issue
+ * URL: the reporter has no GitHub account and a link they cannot open reads as a broken
+ * promise rather than a receipt.
+ */
+export type CreatedIncidentDto = {
+  /**
+   * Number
+   *
+   * Issue number in the incident repository
+   */
+  number: number;
+  /**
+   * Reference
+   *
+   * Reference shown to the reporter and used in attachment paths
+   */
+  reference: string;
+  /**
+   * Attachments
+   *
+   * How many files were filed with the report
+   */
+  attachments?: number;
+};
+
+/**
  * CronInput
  *
  * A FormKit element for editing the cron schedule of a schedulable agent profile.
@@ -4276,6 +4935,18 @@ export type CronInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -4534,15 +5205,23 @@ export type DatabaseDto = {
    */
   display_name: string | null;
   /**
-   * Auto Sync
+   * Source
    *
-   * Whether this database auto-syncs namespaces
+   * Identifier of the source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null when documents are uploaded by hand. A sourced database accepts no manual uploads and generates its namespaces from the source's folders.
    */
-  auto_sync: boolean;
+  source: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked; empty for manual upload.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
   /**
    * Deletable
    *
-   * Whether the database itself may be deleted; false for auto-synced databases, whose content is owned by a source, and for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately and stay deletable.
+   * Whether the database itself may be deleted; false for the legacy default_rag/shared_rag databases, which are re-provisioned from deployment configuration. Namespaces and individual documents are governed separately.
    */
   deletable: boolean;
   /**
@@ -4587,6 +5266,20 @@ export type DatabaseResponse = {
    * The ingestor's settings for this database, as validated against its announced schema.
    */
   configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database; null for manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings for this database, secret fields masked.
+   */
+  source_configuration?: {
     [key: string]: unknown;
   };
   /**
@@ -4765,6 +5458,18 @@ export type DatePicker = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -5862,7 +6567,50 @@ export type File = {
    * Type
    */
   type: "file";
+  prompt_cache_breakpoint?: FilePromptCacheBreakpoint;
   [key: string]: unknown;
+};
+
+/**
+ * FileEntryDTO
+ */
+export type FileEntryDto = {
+  /**
+   * Name
+   *
+   * The file or folder name.
+   */
+  name: string;
+  /**
+   * Path
+   *
+   * Its path relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Kind
+   *
+   * Whether it is a file or a folder.
+   */
+  kind: "file" | "folder";
+  /**
+   * Size
+   *
+   * The file's size in bytes; none for a folder.
+   */
+  size?: number | null;
+  /**
+   * Modified
+   *
+   * When it last changed, as seconds since the epoch.
+   */
+  modified: number;
+  /**
+   * Conversation Title
+   *
+   * The title of the chat a conversation folder belongs to.
+   */
+  conversation_title?: string | null;
 };
 
 /**
@@ -5882,6 +6630,57 @@ export type FileFile = {
    */
   filename?: string;
   [key: string]: unknown;
+};
+
+/**
+ * FilePathDTO
+ */
+export type FilePathDto = {
+  /**
+   * Path
+   *
+   * The affected path, relative to the user's file space.
+   */
+  path: string;
+};
+
+/**
+ * FilePromptCacheBreakpoint
+ *
+ * Marks the exact end of a reusable prompt prefix.
+ *
+ * The breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.
+ */
+export type FilePromptCacheBreakpoint = {
+  /**
+   * Mode
+   */
+  mode: "explicit";
+  [key: string]: unknown;
+};
+
+/**
+ * FolderListingDTO
+ */
+export type FolderListingDto = {
+  /**
+   * Folder
+   *
+   * The listed folder, relative to the user's file space; '.' is its top.
+   */
+  folder: string;
+  /**
+   * Entries
+   *
+   * Its folders first, then its files, each by name.
+   */
+  entries: Array<FileEntryDto>;
+  /**
+   * Folder Title
+   *
+   * The title of the chat, when the folder is a conversation's own.
+   */
+  folder_title?: string | null;
 };
 
 /**
@@ -6094,6 +6893,7 @@ export type FullProcessInstanceDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6104,6 +6904,7 @@ export type FullProcessInstanceDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6238,6 +7039,18 @@ export type Group = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -6281,6 +7094,7 @@ export type Group = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6291,6 +7105,7 @@ export type Group = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6553,6 +7368,18 @@ export type HtmlElement = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $El
    *
    * HTML element tag name
@@ -6637,6 +7464,7 @@ export type HumanInDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6647,6 +7475,7 @@ export type HumanInDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -6718,6 +7547,7 @@ export type HumanInSpecs = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -6728,6 +7558,7 @@ export type HumanInSpecs = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -7438,6 +8269,18 @@ export type IconSelector = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -7681,6 +8524,133 @@ export type ImagesResponse = {
 };
 
 /**
+ * IncidentAttachmentsDTO
+ *
+ * How the reporter's file picker should be configured.
+ *
+ * Wording and accepted types come from the form definition, the two limits from the
+ * deployment — so an operator who raises `INCIDENT_MAX_ATTACHMENT_BYTES` does not also
+ * have to hunt down a translated string that repeats the old number.
+ */
+export type IncidentAttachmentsDto = {
+  /**
+   * Label
+   *
+   * Heading shown above the picker
+   */
+  label: string;
+  /**
+   * Description
+   *
+   * Guidance shown under the label
+   */
+  description: string | null;
+  /**
+   * Required
+   *
+   * Whether at least one file must be attached
+   */
+  required: boolean;
+  /**
+   * Accept
+   *
+   * Accepted extensions, each with its leading dot
+   */
+  accept: Array<string>;
+  /**
+   * Max Files
+   *
+   * How many files one report may carry
+   */
+  max_files: number;
+  /**
+   * Max Bytes
+   *
+   * Largest single attachment accepted, in bytes
+   */
+  max_bytes: number;
+};
+
+/**
+ * IncidentAvailabilityDTO
+ *
+ * Whether this deployment files reports at all.
+ *
+ * Answered with 200 on every deployment, unlike the form and submit endpoints, so the UI can
+ * decide whether to draw the report button without a 404 that the shell's global error handler
+ * would toast at a user who has not done anything yet.
+ */
+export type IncidentAvailabilityDto = {
+  /**
+   * Enabled
+   *
+   * True when an incident repository is configured
+   */
+  enabled: boolean;
+};
+
+/**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDto = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeCollectionSelector
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | SecretFileInput
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
+};
+
+/**
  * IngestedNode
  *
  * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
@@ -7873,6 +8843,12 @@ export type IngestedNode = {
    * Score representing the relevance of the document.
    */
   score?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id an agent's answer cites this node's document by; every node of one document shares it.
+   */
+  readonly citation_id: string;
 };
 
 /**
@@ -7917,6 +8893,7 @@ export type IngestorDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -7927,6 +8904,7 @@ export type IngestorDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -7989,6 +8967,18 @@ export type InputMask = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8137,6 +9127,18 @@ export type InputNumber = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8328,6 +9330,18 @@ export type InputOtp = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue InputOtp element.
@@ -8457,6 +9471,18 @@ export type InputText = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8621,6 +9647,18 @@ export type Knob = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Knob element.
@@ -8751,6 +9789,165 @@ export type Knob = {
 };
 
 /**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelector = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * KnowledgeDatabaseSelector
  *
  * A FormKit element for selecting multiple knowledge databases.
@@ -8812,6 +10009,18 @@ export type KnowledgeDatabaseSelector = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -8879,6 +10088,95 @@ export type KnowledgeDatabaseSelector = {
    * Validation
    */
   readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeReference
+ *
+ * A knowledge collection the user pointed the conversation at, e.g. with `#` in a chat client.
+ *
+ * A request, not a grant: the agent searches it only when the asking user may read it.
+ */
+export type KnowledgeReference = {
+  /**
+   * Database
+   *
+   * The knowledge database, by its vector collection name.
+   */
+  database: string;
+  /**
+   * Namespace
+   *
+   * The collection (namespace) within the database.
+   */
+  namespace: string;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -9363,6 +10661,18 @@ export type Listbox = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -9539,6 +10849,18 @@ export type LocaleInput = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Locale input element.
@@ -9707,6 +11029,26 @@ export type LocaleString = {
    * Italian
    */
   it?: string | null;
+};
+
+/**
+ * LoginOptionsResponse
+ *
+ * What the generic login page may offer. A welcome-page instance never lists a federated provider here.
+ */
+export type LoginOptionsResponse = {
+  /**
+   * Welcome Page
+   *
+   * Show a welcome page pointing to the organisation's login link instead of provider buttons
+   */
+  welcome_page: boolean;
+  /**
+   * Providers
+   *
+   * Providers to offer as login buttons; on a welcome-page instance at most the direct Keycloak login, which administrators use
+   */
+  providers: Array<AuthProviderResponse>;
 };
 
 /**
@@ -10360,6 +11702,64 @@ export type MemoryMetadata = {
 };
 
 /**
+ * MemoryRecalledEvent
+ *
+ * The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.
+ */
+export type MemoryRecalledEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Block
+   *
+   * System messages carrying the user's memories, or none.
+   */
+  user_block?: Array<ChatMessage>;
+  /**
+   * Organization Block
+   *
+   * System messages carrying the organization's memories, or none.
+   */
+  organization_block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * MemoryRelation
  *
  * Represents a knowledge graph triple
@@ -10441,6 +11841,72 @@ export type MemorySearchResponse = {
    * Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.
    */
   relations: Array<MemoryRelationDto>;
+};
+
+/**
+ * MemoryStorageRequestedEvent
+ *
+ * Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to
+ * persist user memory, WITHOUT awaiting a response (issue #1179).
+ *
+ * ### Why a dedicated event (not AgentInTheLoop)?
+ * `AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact
+ * symptom #1179 removes — and it opens a response subscription that would route a result back into the
+ * caller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the
+ * writer's subject and nothing is routed back. It is displayed like every protocol event, so the event
+ * history shows the delegation; chat clients show no more than a passing status. Its control copy lands in the
+ * caller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the
+ * run finalizes as soon as this cheap marker exists, not when storage completes.
+ */
+export type MemoryStorageRequestedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The start event published to the writer agent to begin its independent run.
+   */
+  start_event: StoreUserMemoryRequestedEvent;
+  /**
+   * Target Agent Class
+   *
+   * Writer agent class to route the start event to.
+   */
+  target_agent_class: string;
+  /**
+   * Target Agent Id
+   *
+   * Writer agent id (fixed system id) to route to.
+   */
+  target_agent_id: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -10631,12 +12097,18 @@ export type Metadata = {
    * List of files to attach to the request, if supported by the model.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Features
+   *
+   * Chat features requested for this message (e.g. web_search). The agent serves those its blueprint supports and ignores the rest.
+   */
+  features?: Array<ChatFeature>;
 };
 
 /**
  * MetadataFilterPair
  *
- * A metadata key/value equality filter for RAG retrieval.
+ * A metadata key/value filter for RAG retrieval: the stored value equals it, or a stored list contains it.
  */
 export type MetadataFilterPair = {
   /**
@@ -10648,7 +12120,7 @@ export type MetadataFilterPair = {
   /**
    * Value
    *
-   * The value the metadata key must equal.
+   * The value the metadata key must equal, or, where the key holds a list, contain.
    */
   value: string | number | number | boolean;
 };
@@ -11150,6 +12622,18 @@ export type ModelSelect = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -11256,6 +12740,204 @@ export type ModelTypeGroupDto = {
 };
 
 /**
+ * Moderation
+ *
+ * Moderation results for the request input and generated output, if moderated
+ * completions were requested.
+ */
+export type Moderation = {
+  /**
+   * Input
+   */
+  input: ModerationInputModerationResults | ModerationInputError;
+  /**
+   * Output
+   */
+  output: ModerationOutputModerationResults | ModerationOutputError;
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputError
+ *
+ * An error produced while attempting moderation.
+ */
+export type ModerationInputError = {
+  /**
+   * Code
+   */
+  code: string;
+  /**
+   * Message
+   */
+  message: string;
+  /**
+   * Type
+   */
+  type: "error";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputModerationResults
+ *
+ * Successful moderation results for the request input or generated output.
+ */
+export type ModerationInputModerationResults = {
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Results
+   */
+  results: Array<ModerationInputModerationResultsResult>;
+  /**
+   * Type
+   */
+  type: "moderation_results";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationInputModerationResultsResult
+ *
+ * A moderation result produced for the response input or output.
+ */
+export type ModerationInputModerationResultsResult = {
+  /**
+   * Categories
+   */
+  categories: {
+    [key: string]: boolean;
+  };
+  /**
+   * Category Applied Input Types
+   */
+  category_applied_input_types: {
+    [key: string]: Array<"text" | "image">;
+  };
+  /**
+   * Category Scores
+   */
+  category_scores: {
+    [key: string]: number;
+  };
+  /**
+   * Flagged
+   */
+  flagged: boolean;
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Type
+   */
+  type: "moderation_result";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputError
+ *
+ * An error produced while attempting moderation.
+ */
+export type ModerationOutputError = {
+  /**
+   * Code
+   */
+  code: string;
+  /**
+   * Message
+   */
+  message: string;
+  /**
+   * Type
+   */
+  type: "error";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputModerationResults
+ *
+ * Successful moderation results for the request input or generated output.
+ */
+export type ModerationOutputModerationResults = {
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Results
+   */
+  results: Array<ModerationOutputModerationResultsResult>;
+  /**
+   * Type
+   */
+  type: "moderation_results";
+  [key: string]: unknown;
+};
+
+/**
+ * ModerationOutputModerationResultsResult
+ *
+ * A moderation result produced for the response input or output.
+ */
+export type ModerationOutputModerationResultsResult = {
+  /**
+   * Categories
+   */
+  categories: {
+    [key: string]: boolean;
+  };
+  /**
+   * Category Applied Input Types
+   */
+  category_applied_input_types: {
+    [key: string]: Array<"text" | "image">;
+  };
+  /**
+   * Category Scores
+   */
+  category_scores: {
+    [key: string]: number;
+  };
+  /**
+   * Flagged
+   */
+  flagged: boolean;
+  /**
+   * Model
+   */
+  model: string;
+  /**
+   * Type
+   */
+  type: "moderation_result";
+  [key: string]: unknown;
+};
+
+/**
+ * MoveFileRequest
+ */
+export type MoveFileRequest = {
+  /**
+   * Source
+   *
+   * The file or folder to move or rename.
+   */
+  source: string;
+  /**
+   * Destination
+   *
+   * Its new path; a rename keeps the folder and changes the name.
+   */
+  destination: string;
+};
+
+/**
  * MultiSelect
  *
  * https://formkit-primevue.netlify.app/inputs/MultiSelect
@@ -11291,6 +12973,18 @@ export type MultiSelect = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -11391,6 +13085,20 @@ export type MultiSelect = {
    */
   readonly validation: string;
   [key: string]: unknown;
+};
+
+/**
+ * MyLocaleDTO
+ *
+ * The UI language the user wants persisted against their account.
+ */
+export type MyLocaleDto = {
+  /**
+   * Locale
+   *
+   * ISO 639-1 language code, one of: de, en, fr, it.
+   */
+  locale: string;
 };
 
 /**
@@ -11569,6 +13277,54 @@ export type NodeSummaryDto = {
    * List of nodes in the summary
    */
   nodes: Array<IngestedNode>;
+};
+
+/**
+ * NotAMetaQuestionEvent
+ *
+ * Internal "all-clear" gate signal: the user's message is a normal task, not a meta
+ * question about the agent. It releases the agent's normal entry steps, which depend
+ * on it so they cannot start until meta-question detection has cleared the message.
+ */
+export type NotAMetaQuestionEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a normal (non-meta) request.
+   */
+  reasoning: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
 };
 
 /**
@@ -12005,6 +13761,18 @@ export type Password = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Password element.
@@ -12175,6 +13943,7 @@ export type ProcessClassDto = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -12185,6 +13954,7 @@ export type ProcessClassDto = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -12557,6 +14327,21 @@ export type ProgramWorkResponseDto = {
 };
 
 /**
+ * PromptCacheBreakpoint
+ *
+ * Marks the exact end of a reusable prompt prefix.
+ *
+ * The breakpoint inherits its TTL from the request's `prompt_cache_options.ttl`; the boundary is not rounded to a token block.
+ */
+export type PromptCacheBreakpoint = {
+  /**
+   * Mode
+   */
+  mode: "explicit";
+  [key: string]: unknown;
+};
+
+/**
  * PromptTokensDetails
  *
  * Breakdown of tokens used in the prompt.
@@ -12567,6 +14352,10 @@ export type PromptTokensDetails = {
    */
   audio_tokens?: number | null;
   /**
+   * Cache Write Tokens
+   */
+  cache_write_tokens?: number | null;
+  /**
    * Cached Tokens
    */
   cached_tokens?: number | null;
@@ -12576,21 +14365,20 @@ export type PromptTokensDetails = {
 /**
  * RAGFailureReason
  *
- * Why a RAG run failed to produce a useful answer.
+ * Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`.
  */
 export const RagFailureReason = {
-  CONDENSATION_EMPTY: "condensation_empty",
   CONTEXT_INSUFFICIENT: "context_insufficient",
   EXPERT_DECLINED: "expert_declined",
   EXPERT_ERRORED: "expert_errored",
   FEW_SHOT_REJECTED: "few_shot_rejected",
-  INPUT_TOO_LARGE: "input_too_large",
+  NO_ACCESSIBLE_KNOWLEDGE: "no_accessible_knowledge",
 } as const;
 
 /**
  * RAGFailureReason
  *
- * Why a RAG run failed to produce a useful answer.
+ * Why a RAG run failed to produce a useful answer. Input refusals live on `RefusalStopEvent`.
  */
 export type RagFailureReason =
   (typeof RagFailureReason)[keyof typeof RagFailureReason];
@@ -12716,6 +14504,12 @@ export type RagStartEvent = {
    */
   org_memory_namespaces?: Array<string>;
   /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -12813,6 +14607,18 @@ export type RadioButton = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -12946,6 +14752,18 @@ export type Rating = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Rating element.
@@ -13046,6 +14864,315 @@ export type Rating = {
 };
 
 /**
+ * ReadAttachedFilesEvent
+ *
+ * Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.
+ *
+ * Built with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is
+ * attached. It carries the history the files will be composed into, since that is what decides how much room
+ * the files have.
+ */
+export type ReadAttachedFilesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Files
+   *
+   * The files attached to the current branch.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
+   * History
+   *
+   * The history the files will be composed into, for sizing them.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The turn's query, for picking the relevant sections of a file too large to fit.
+   */
+  query?: string;
+  /**
+   * First Page
+   *
+   * The first page to read when the question is about certain pages; any page otherwise.
+   */
+  first_page?: number | null;
+  /**
+   * Last Page
+   *
+   * The last page to read; `first_page` alone when none.
+   */
+  last_page?: number | null;
+  /**
+   * Reserve Tokens
+   *
+   * Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.
+   */
+  reserve_tokens?: number;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the files by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * RecallMemoryEvent
+ *
+ * Asks the memory capability for what the profile remembers about the user and the organization, for a query.
+ *
+ * Built with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the
+ * profile or the run has no identity to read for.
+ */
+export type RecallMemoryEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Query
+   *
+   * The question to search memories with.
+   */
+  query: string;
+  /**
+   * Org Memory Namespaces
+   *
+   * Organization-memory namespaces to narrow the search to; empty means the profile's own.
+   */
+  org_memory_namespaces?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * RefusalReason
+ *
+ * Why a conversational turn was refused before any answer was attempted.
+ */
+export const RefusalReason = {
+  CONDENSATION_EMPTY: "condensation_empty",
+  INPUT_TOO_LARGE: "input_too_large",
+  OUT_OF_SCOPE: "out_of_scope",
+} as const;
+
+/**
+ * RefusalReason
+ *
+ * Why a conversational turn was refused before any answer was attempted.
+ */
+export type RefusalReason = (typeof RefusalReason)[keyof typeof RefusalReason];
+
+/**
+ * RefusalStopEvent
+ *
+ * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
+ *
+ * Shaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through
+ * `output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The
+ * retrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.
+ */
+export type RefusalStopEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Input Messages
+   *
+   * List of messages sent to the LLM as input.
+   */
+  input_messages?: Array<Message> | null;
+  /**
+   * Output Messages
+   *
+   * List of messages received from the LLM as output.
+   */
+  output_messages?: Array<Message> | null;
+  /**
+   * Invocation Parameters
+   *
+   * Parameters used during the invocation of the LLM.
+   */
+  invocation_parameters?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Chat Model Name
+   *
+   * The name of the language model being utilized.
+   */
+  chat_model_name?: string | null;
+  /**
+   * Provider
+   *
+   * The hosting provider of the LLM, e.g., OpenAI, Azure.
+   */
+  provider?: string | null;
+  /**
+   * System
+   *
+   * The AI product as identified by the client or server.
+   */
+  system?: string | null;
+  /**
+   * Prompt Template
+   *
+   * The prompt template as a Python f-string.
+   */
+  prompt_template?: string | null;
+  /**
+   * Prompt Template Variables
+   *
+   * A dictionary of input variables to the prompt template.
+   */
+  prompt_template_variables?: {
+    [key: string]: string;
+  } | null;
+  /**
+   * Prompt Template Version
+   *
+   * The version of the prompt template being used.
+   */
+  prompt_template_version?: string | null;
+  /**
+   * Token Count Prompt
+   *
+   * The number of tokens in the prompt.
+   */
+  token_count_prompt?: number | null;
+  /**
+   * Token Count Completion
+   *
+   * The number of tokens in the completion.
+   */
+  token_count_completion?: number | null;
+  /**
+   * Token Count Total
+   *
+   * The total number of tokens, including both prompt and completion.
+   */
+  token_count_total?: number | null;
+  /**
+   * Tools
+   *
+   * List of tools that are advertised to the LLM to be able to call.
+   */
+  tools?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * What about the input made the turn unanswerable.
+   */
+  reason: RefusalReason;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * Repeater
  *
  * https://formkit.com/inputs/repeater
@@ -13103,6 +15230,18 @@ export type Repeater = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * $Formkit
    *
@@ -13183,6 +15322,7 @@ export type Repeater = {
     | InputNumber
     | InputOtp
     | InputText
+    | KnowledgeCollectionSelector
     | KnowledgeDatabaseSelector
     | Knob
     | Listbox
@@ -13193,6 +15333,7 @@ export type Repeater = {
     | RadioButton
     | Rating
     | Repeater
+    | SecretFileInput
     | Select
     | SelectButton
     | Slider
@@ -13293,6 +15434,18 @@ export const Resolution = {
  * Resolution
  */
 export type Resolution = (typeof Resolution)[keyof typeof Resolution];
+
+/**
+ * ResolveKnowledgeReferencesRequest
+ */
+export type ResolveKnowledgeReferencesRequest = {
+  /**
+   * Openwebui Ids
+   *
+   * Ids of the OpenWebUI knowledge entries a chat message referenced.
+   */
+  openwebui_ids: Array<string>;
+};
 
 /**
  * ResponseFormatJSONObject
@@ -13759,6 +15912,173 @@ export type RunStatistics = {
 };
 
 /**
+ * RunToolLoopEvent
+ *
+ * Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.
+ *
+ * Built with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's
+ * declaration, narrowed by the profile and by the features the user switched on for the message.
+ */
+export type RunToolLoopEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * History
+   *
+   * The conversation the model decides on.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode?: ToolLoopMode;
+  /**
+   * Tools
+   *
+   * Narrows the offered tools to these names for this call, if given.
+   */
+  tools?: Array<string> | null;
+  /**
+   * Max Iterations
+   *
+   * An iteration limit tighter than the profile's, e.g. 1 for routing.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return, off where it cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Files
+   *
+   * The files attached to the message, for tools that read them.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Knowledge References
+   *
+   * The collections the user referenced on the message, for tools that search knowledge.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SearchContextCostPerQueryDTO
  *
  * LiteLLM reports search context cost per query broken down by context size, not as a single value.
@@ -13782,6 +16102,199 @@ export type SearchContextCostPerQueryDto = {
    * Cost per query with high search context size
    */
   search_context_size_high?: number | null;
+};
+
+/**
+ * SearchKnowledgeEvent
+ *
+ * Asks the knowledge capability to search the collections the user referenced for the turn's query.
+ *
+ * Built with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.
+ */
+export type SearchKnowledgeEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * References
+   *
+   * The collections the user referenced on this message.
+   */
+  references?: Array<KnowledgeReference>;
+  /**
+   * Query
+   *
+   * The turn's query the collections are searched for.
+   */
+  query?: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the documents by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * SecretFileInput
+ *
+ * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
+ *
+ * The browser reads the file and submits its text contents, so the value is an ordinary string: it is
+ * encrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.
+ */
+export type SecretFileInput = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Secret file input element.
+   */
+  formkit?: "secretFileInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Accept
+   *
+   * File types the picker offers, e.g. '.json'
+   */
+  accept?: string | null;
+  /**
+   * Maxsizebytes
+   *
+   * Largest file accepted, checked before it is read
+   */
+  maxSizeBytes?: number;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -13820,6 +16333,18 @@ export type Select = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -13976,6 +16501,18 @@ export type SelectButton = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -14366,6 +16903,18 @@ export type Slider = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Slider element.
@@ -14474,6 +17023,71 @@ export const SortOrder = { 1: 1, "-1": -1 } as const;
  * SortOrder
  */
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDto = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelector
+    | CascadeSelect
+    | Checkbox
+    | ChipsInput
+    | ColorPicker
+    | CronInput
+    | DatePicker
+    | Group
+    | IconSelector
+    | InputMask
+    | InputNumber
+    | InputOtp
+    | InputText
+    | KnowledgeCollectionSelector
+    | KnowledgeDatabaseSelector
+    | Knob
+    | Listbox
+    | LocaleInput
+    | ModelSelect
+    | MultiSelect
+    | Password
+    | RadioButton
+    | Rating
+    | Repeater
+    | SecretFileInput
+    | Select
+    | SelectButton
+    | Slider
+    | TenantSelect
+    | Textarea
+    | ToggleButton
+    | ToggleSwitch
+    | VectorStoreInput
+  >;
+};
 
 /**
  * StandaloneQuestionCondenserEvent
@@ -14798,6 +17412,115 @@ export type StoreUserMemoryEvent = {
 };
 
 /**
+ * StoreUserMemoryRequestedEvent
+ *
+ * Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's
+ * critical path (issue #1179).
+ *
+ * It runs in a different execution context than the originating RAG run and cannot read that run's
+ * `run_context`, so it carries everything the writer needs as plain serializable data. The originating
+ * agent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*
+ * `AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.
+ *
+ * Scope: user memory only. Organization memory has a different API shape and is not on #1179's critical
+ * path; if it is decoupled later, add a `memory_type` discriminator here.
+ */
+export type StoreUserMemoryRequestedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * Originating run's locale, so extraction prompts stay in the user's language.
+   */
+  locale?: string;
+  /**
+   * User the memories belong to.
+   */
+  user: UserIdentity;
+  /**
+   * Messages
+   *
+   * Conversation the writer extracts user memories from.
+   */
+  messages: Array<ChatMessage>;
+  /**
+   * Origin Thread Id
+   *
+   * Originating run's thread id, kept as memory metadata.
+   */
+  origin_thread_id: string;
+  /**
+   * Origin Display Id
+   *
+   * Originating run's display id, kept as memory metadata.
+   */
+  origin_display_id: string;
+  /**
+   * Origin Run Id
+   *
+   * Originating run's run id, kept as memory metadata.
+   */
+  origin_run_id: string;
+  /**
+   * Origin Agent Class
+   *
+   * Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).
+   */
+  origin_agent_class: string;
+  /**
+   * Origin Agent Id
+   *
+   * Originating agent's id — part of the _agent_id scoping tag.
+   */
+  origin_agent_id: string;
+  /**
+   * Originating agent's name — used in the fact-extraction prompt.
+   */
+  origin_agent_name: LocaleString;
+  /**
+   * Originating agent's description — used in the fact-extraction prompt.
+   */
+  origin_agent_description: LocaleString;
+  /**
+   * Origin Memory Llm
+   *
+   * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
+   */
+  origin_memory_llm?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * SubmittedFormDTO
  */
 export type SubmittedFormDto = {
@@ -14857,6 +17580,20 @@ export type TemplateData = {
    */
   icon?: string | null;
   [key: string]: unknown;
+};
+
+/**
+ * TenantAuthProviderResponse
+ *
+ * Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.
+ */
+export type TenantAuthProviderResponse = {
+  /**
+   * Alias
+   *
+   * Keycloak IDP alias to start the tenant's login with, or null when it has no login link
+   */
+  alias: string | null;
 };
 
 /**
@@ -14972,6 +17709,18 @@ export type TenantSelect = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -15158,6 +17907,18 @@ export type Textarea = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -15512,7 +18273,7 @@ export type ThreadReference = {
   /**
    * Thread Id
    *
-   * The thread ID that owns the requested display
+   * The thread ID that owns the requested display, empty when no AI-Hub thread owns it — which a plain-LLM turn never does.
    */
   thread_id: string;
 };
@@ -15568,6 +18329,18 @@ export type ToggleButton = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -15705,6 +18478,18 @@ export type ToggleSwitch = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleSwitch element.
@@ -15829,6 +18614,219 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolApprovalRequestEvent
+ *
+ * Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.
+ */
+export type ToolApprovalRequestEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "confirmation";
+  /**
+   * Tool Call Id
+   *
+   * The call awaiting approval.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool the model wants to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolApprovalResponseEvent
+ *
+ * The user's answer to a tool approval request: run the call, or tell the model it was declined.
+ */
+export type ToolApprovalResponseEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Response
+   *
+   * Whether the user approved the call.
+   */
+  response: boolean;
+  /**
+   * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+   */
+  request_event: ToolApprovalRequestEvent;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolCallApprovedEvent
+ *
+ * A tool call cleared to run, either because it needs no approval or because the user approved it.
+ *
+ * Function tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own
+ * request, so the call runs the same sub-workflow, with the same events, as an explicit call would.
+ */
+export type ToolCallApprovedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call's id, which its result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: "function" | "capability";
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolCallBlock
  */
 export type ToolCallBlock = {
@@ -15858,6 +18856,84 @@ export type ToolCallBlock = {
         [key: string]: unknown;
       }
     | string;
+};
+
+/**
+ * ToolCallsDecidedEvent
+ *
+ * The model chose tools in this iteration; the loop continues once every one of them has a result.
+ */
+export type ToolCallsDecidedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state including the model's tool-calling turn.
+   */
+  state: ToolLoopState;
+  /**
+   * Tool Call Ids
+   *
+   * The calls this iteration waits for.
+   */
+  tool_call_ids: Array<string>;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolDefinition
+ *
+ * A tool as the model is offered it: what it is called, what it does and which arguments it takes.
+ */
+export type ToolDefinition = {
+  /**
+   * Name
+   *
+   * The name the model calls the tool by.
+   */
+  name: string;
+  /**
+   * Description
+   *
+   * What the tool does and when to use it, for the model.
+   */
+  description: string;
+  /**
+   * Parameters
+   *
+   * JSON schema of the tool's arguments.
+   */
+  parameters: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -15901,6 +18977,12 @@ export type ToolEvent = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -15916,6 +18998,411 @@ export type ToolEvent = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopFinishedEvent
+ *
+ * The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.
+ */
+export type ToolLoopFinishedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * The model's final reply, in answering mode.
+   */
+  answer?: LlmEvent | null;
+  /**
+   * Block
+   *
+   * The tool results as context for the blueprint's answer, gathering mode.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Stopped Early
+   *
+   * Whether the loop stopped at its limits.
+   */
+  stopped_early?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopIterationEvent
+ *
+ * The model's turn to decide: answer, or call tools. One per iteration of the loop.
+ */
+export type ToolLoopIterationEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state at the start of this iteration.
+   */
+  state: ToolLoopState;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopMode
+ *
+ * What the loop's last turn is for.
+ *
+ * ANSWER: the model's final turn is the reply, for blueprints that let the loop answer. GATHER: the loop collects
+ * tool results as context and the blueprint answers itself, keeping its own prompt, citations and checks.
+ */
+export const ToolLoopMode = { ANSWER: "answer", GATHER: "gather" } as const;
+
+/**
+ * ToolLoopMode
+ *
+ * What the loop's last turn is for.
+ *
+ * ANSWER: the model's final turn is the reply, for blueprints that let the loop answer. GATHER: the loop collects
+ * tool results as context and the blueprint answers itself, keeping its own prompt, citations and checks.
+ */
+export type ToolLoopMode = (typeof ToolLoopMode)[keyof typeof ToolLoopMode];
+
+/**
+ * ToolLoopState
+ *
+ * Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.
+ *
+ * Steps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it
+ * gathered travel with the iteration; the trace then shows the loop's full state at every step.
+ */
+export type ToolLoopState = {
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * Messages
+   *
+   * The loop's conversation so far, tool calls and results.
+   */
+  messages: Array<Message>;
+  /**
+   * Question
+   *
+   * What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.
+   */
+  question?: string | null;
+  /**
+   * Tools
+   *
+   * The tools offered to the model in this run.
+   */
+  tools?: Array<ToolDefinition>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode: ToolLoopMode;
+  /**
+   * Iteration
+   *
+   * How many decisions the model has made so far.
+   */
+  iteration?: number;
+  /**
+   * Tool Calls Made
+   *
+   * How many tool calls ran so far.
+   */
+  tool_calls_made?: number;
+  /**
+   * Max Iterations
+   *
+   * The call's own iteration limit, if any.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return.
+   */
+  cite_sources?: boolean;
+  /**
+   * Gathered
+   *
+   * The tool results as context, for the blueprint's own answer.
+   */
+  gathered?: Array<ChatMessage>;
+  /**
+   * Needs Condensing
+   *
+   * Whether the conversation outgrew the prompt and is condensed before the model decides.
+   */
+  needs_condensing?: boolean;
+};
+
+/**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolResultEvent
+ *
+ * What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.
+ */
+export type ToolResultEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call this result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool that ran.
+   */
+  name: string;
+  /**
+   * Content
+   *
+   * The result as the model reads it.
+   */
+  content: string;
+  /**
+   * Block
+   *
+   * The result as context for an answer, when the tool renders it richer than its content.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Is Error
+   *
+   * Whether the call failed or was declined.
+   */
+  is_error?: boolean;
   /**
    * Event Name
    *
@@ -15962,6 +19449,10 @@ export type Transcription = {
    */
   text: string;
   /**
+   * Languages
+   */
+  languages?: Array<TranscriptionLanguage> | null;
+  /**
    * Logprobs
    */
   logprobs?: Array<Logprob> | null;
@@ -15969,6 +19460,19 @@ export type Transcription = {
    * Usage
    */
   usage?: UsageTokens | UsageDuration | null;
+  [key: string]: unknown;
+};
+
+/**
+ * TranscriptionLanguage
+ *
+ * A language detected in transcribed audio.
+ */
+export type TranscriptionLanguage = {
+  /**
+   * Code
+   */
+  code: string;
   [key: string]: unknown;
 };
 
@@ -16202,6 +19706,32 @@ export type UpdateAgentInstanceDto = {
   configuration: {
     [key: string]: unknown;
   };
+};
+
+/**
+ * UpdateDatabaseSourceRequest
+ */
+export type UpdateDatabaseSourceRequest = {
+  /**
+   * Source
+   *
+   * The deployed source pipeline that fills this database, as served by GET /knowledge/source-pipelines; null switches the database back to manual upload.
+   */
+  source?: string | null;
+  /**
+   * Source Configuration
+   *
+   * The source's settings as submitted through its announced form. Secret fields may carry the mask returned by the API to keep the stored value.
+   */
+  source_configuration?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Replace Existing Documents
+   *
+   * Acknowledges that handing a database to a different source, from manual upload or from another source, gives its content to that source: documents the new source does not have are removed on its next sync. Required when the database already holds documents; not needed to edit the current source's settings or to switch back to manual upload.
+   */
+  replace_existing_documents?: boolean;
 };
 
 /**
@@ -16640,6 +20170,18 @@ export type UserMessageEvent = {
    */
   files?: Array<UserUploadedFile> | null;
   /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
+  /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -16738,6 +20280,12 @@ export type UserWithAccessDto = {
    * The user's resolved access rules (union of their roles), to drive the capability view.
    */
   access_rules: Array<string>;
+  /**
+   * Preferred Locale
+   *
+   * The user's persisted UI language, or null if they have never chosen one.
+   */
+  preferred_locale?: string | null;
 };
 
 /**
@@ -16851,6 +20399,18 @@ export type VectorStoreInput = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -17300,6 +20860,7 @@ export type AgentClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17310,6 +20871,7 @@ export type AgentClassDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -17434,6 +20996,7 @@ export type AgentConfigDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -17444,6 +21007,7 @@ export type AgentConfigDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -17764,6 +21328,18 @@ export type AgentSelectorWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Agent selector element.
@@ -18075,6 +21651,116 @@ export type AgentWorkResponseDtoWritable = {
 };
 
 /**
+ * AttachedFileEvent
+ *
+ * One file the user attached to the conversation, as the agent read it for this turn.
+ *
+ * Chat clients render it as a source on the answer, so the user sees which files the answer drew on and whether
+ * all of each file fit, and the trace shows exactly what the model read. `file_id` is the agent-side upload id; a
+ * client that uploaded the file maps it back to its own record. `citation_id` is what the answer cites.
+ */
+export type AttachedFileEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * File Id
+   *
+   * The agent-side id of the uploaded file.
+   */
+  file_id: string;
+  /**
+   * Filename
+   *
+   * The file's name as the user uploaded it.
+   */
+  filename: string;
+  /**
+   * Whether the file was read whole, in part, or not.
+   */
+  status: AttachedFileStatus;
+  /**
+   * Number Of Pages
+   *
+   * Pages in the document, when the parser knows.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Citation Id
+   *
+   * The id the answer cites this file by, as [id].
+   */
+  citation_id?: string;
+  /**
+   * Content
+   *
+   * The text of the file as the model received it: whole, excerpts, or its beginning.
+   */
+  content?: string;
+  /**
+   * Error
+   *
+   * Why the file could not be read, for a failed file.
+   */
+  error?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * AttachedFilesReadEvent
+ *
+ * The answer to `ReadAttachedFilesEvent`: one context block with every attached file, empty when there are none.
+ */
+export type AttachedFilesReadEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the attached files' text, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * BaseRetrieveMemoryEvent
  *
  * A control and display event emitted when an agent retrieves memories from long-term storage.
@@ -18240,6 +21926,18 @@ export type CascadeSelectWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -18426,6 +22124,18 @@ export type CheckboxWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Checkbox element.
@@ -18563,6 +22273,18 @@ export type ChipsInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -18707,6 +22429,18 @@ export type ColorPickerWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ColorPicker element.
@@ -18785,6 +22519,124 @@ export type ColorPickerWritable = {
 };
 
 /**
+ * CompleteConversationEvent
+ *
+ * Asks the conversation capability to end the turn: generate the follow-up questions from the answer, then
+ * emit the stop event.
+ *
+ * Built with `Conversation.complete(...)`. Anything that must be published before the run tears down, such
+ * as a memory-storage delegation, is returned from the same step ahead of this event.
+ */
+export type CompleteConversationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The answer the follow-up questions are grounded on.
+   */
+  answer: LlmEventWritable;
+  /**
+   * The stop event to end the run with. None ends it with an `LLMStopEvent` carrying the answer.
+   */
+  stop?: StopEventWritable | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ComposeContextEvent
+ *
+ * Asks the conversation capability to merge context blocks into a chat history, in the given order, behind
+ * the leading system messages and within the input budget.
+ *
+ * Built with `Conversation.compose(...)`; answered with `ContextComposedEvent`.
+ */
+export type ComposeContextEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history to merge the blocks into.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Blocks
+   *
+   * Context blocks in the order they should reach the model. Empty blocks are skipped.
+   */
+  blocks?: Array<Array<ChatMessage>>;
+  [key: string]: unknown;
+};
+
+/**
+ * ContextComposedEvent
+ *
+ * The answer to `ComposeContextEvent`: the chat history with the requested context blocks merged in behind
+ * the leading system messages, re-limited to the model's input budget.
+ *
+ * Displayed because it is exactly what the model receives, which the per-capability display events cannot
+ * show on their own.
+ */
+export type ContextComposedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * Chat history with the context blocks merged in, within the input budget.
+   */
+  history: Array<ChatMessage>;
+  [key: string]: unknown;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -18856,6 +22708,55 @@ export type ContextSufficientAcceptEventWritable = {
    * Reason why the guard accepted the request.
    */
   reason: string;
+  [key: string]: unknown;
+};
+
+/**
+ * ContextualizeConversationEvent
+ *
+ * Asks the conversation capability to turn a limited chat history into a contextualized turn: inspect the
+ * message for a meta question, derive the query the turn is answered for, and title the thread.
+ *
+ * Built with `Conversation.contextualize(...)`; answered with `ConversationContextualizedEvent`, or with a
+ * stop event when the message was a meta question or could not be condensed.
+ */
+export type ContextualizeConversationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The chat history, already limited to the budget.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * User Query
+   *
+   * The raw text of the user's message, inspected for a meta question. None for a programmatic start, which skips inspection.
+   */
+  user_query?: string | null;
+  /**
+   * Attached File Names
+   *
+   * The names of the files the user attached to the conversation. The inspection is told about them, since without them a question about a file's content reads as one about the assistant.
+   */
+  attached_file_names?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -18944,23 +22845,48 @@ export type ContextualizedAgentEventWritable = {
     | StartEventWritable
     | AgentInTheLoopResponseEventWritable
     | HumanInTheLoopInputRequestEventWritable
+    | ToolApprovalRequestEventWritable
     | HumanInTheLoopConfirmationRequestEventWritable
     | HumanInTheLoopChatRequestEventWritable
     | HumanInTheLoopRequestEventWritable
     | AgentInTheLoopRequestEventWritable
     | AgentInTheLoopExceptionEventWritable
     | HumanInTheLoopInputResponseEventWritable
+    | ToolApprovalResponseEventWritable
     | HumanInTheLoopConfirmationResponseEventWritable
     | HumanInTheLoopChatResponseEventWritable
     | HumanInTheLoopResponseEventWritable
     | LimitChatHistoryEventWritable
     | AddMemoryToChatHistoryEventWritable
+    | ContextComposedEventWritable
+    | ContextualizeConversationEventWritable
+    | ConversationContextualizedEventWritable
+    | ComposeContextEventWritable
+    | CompleteConversationEventWritable
+    | NotAMetaQuestionEventWritable
+    | RecallMemoryEventWritable
+    | MemoryRecalledEventWritable
+    | MemoryStorageRequestedEventWritable
+    | SearchKnowledgeEventWritable
+    | ReadAttachedFilesEventWritable
+    | AttachedFilesReadEventWritable
+    | RunToolLoopEventWritable
+    | ToolLoopIterationEventWritable
+    | ToolCallsDecidedEventWritable
+    | ToolCallApprovedEventWritable
+    | ToolLoopFinishedEventWritable
     | AddUserMemoryToChatHistoryEventWritable
     | AddOrganizationMemoryToChatHistoryEventWritable
     | StandaloneQuestionCondenserEventWritable
     | LlmCostEventWritable
     | ChunkEventWritable
     | ThoughtEventWritable
+    | AttachedFileEventWritable
+    | KnowledgeSearchedEventWritable
+    | ToolResultEventWritable
+    | ToolLoopStatusEventWritable
+    | ToolLoopCondensedEventWritable
+    | SandboxFileDisplayedEventWritable
     | ConversationTitleEventWritable
     | FollowUpQuestionsEventWritable
     | GuardEventWritable
@@ -18972,6 +22898,7 @@ export type ContextualizedAgentEventWritable = {
     | EmbeddingEventWritable
     | LlmEventWritable
     | LlmStopEventWritable
+    | RefusalStopEventWritable
     | MetaQuestionDetectedEventWritable
     | RerankerEventWritable
     | RetrieverEventWritable
@@ -19032,6 +22959,52 @@ export type ControlEventWritable = {
    * The time (in ns since epoch) the event was stored in the event store
    */
   created_at?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ConversationContextualizedEvent
+ *
+ * The answer to `ContextualizeConversationEvent`: the turn is a normal request, and this is the one query
+ * every capability and the blueprint answer it for.
+ */
+export type ConversationContextualizedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * History
+   *
+   * The limited chat history the request carried.
+   */
+  history: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The question this turn is answered for. Blank when the message carried no text.
+   */
+  query: string;
+  /**
+   * Condensed
+   *
+   * Whether the query was condensed from the history rather than taken verbatim.
+   */
+  condensed?: boolean;
   [key: string]: unknown;
 };
 
@@ -19141,6 +23114,18 @@ export type CronInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -19294,6 +23279,18 @@ export type DatePickerWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -19893,6 +23890,7 @@ export type FullProcessInstanceDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -19903,6 +23901,7 @@ export type FullProcessInstanceDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -19976,6 +23975,18 @@ export type GroupWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * $Formkit
    *
    * FormKit group element
@@ -20019,6 +24030,7 @@ export type GroupWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20029,6 +24041,7 @@ export type GroupWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -20223,6 +24236,7 @@ export type HumanInDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20233,6 +24247,7 @@ export type HumanInDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -20304,6 +24319,7 @@ export type HumanInSpecsWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20314,6 +24330,7 @@ export type HumanInSpecsWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -20728,6 +24745,18 @@ export type IconSelectorWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Icon selector element.
@@ -20794,6 +24823,262 @@ export type IconSelectorWritable = {
 };
 
 /**
+ * IncidentFormDTO
+ *
+ * The report form, already carrying what the platform knows about this reporter.
+ */
+export type IncidentFormDtoWritable = {
+  /**
+   * Elements
+   *
+   * Form elements to render, with known values prefilled
+   */
+  elements: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SecretFileInputWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
+  /**
+   * Submission Specs
+   *
+   * JSON Schema a submission to this form is validated against
+   */
+  submission_specs: {
+    [key: string]: unknown;
+  };
+  /**
+   * Picker configuration, when the definition declares an upload field
+   */
+  attachments?: IncidentAttachmentsDto | null;
+};
+
+/**
+ * IngestedNode
+ *
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type IngestedNodeWritable = {
+  /**
+   * Source
+   *
+   * Source URI (data lake URI).
+   */
+  source: string;
+  /**
+   * Source Origin
+   *
+   * Original source URI (e.g., SharePoint URL, external URL).
+   */
+  source_origin?: string | null;
+  /**
+   * Namespace
+   *
+   * The namespace of the document within its metadata.
+   */
+  namespace: string;
+  /**
+   * Version
+   *
+   * Document version.
+   */
+  version?: number;
+  /**
+   * Content Hash
+   *
+   * Hash of the document/node, helpful to track whether file changed.
+   */
+  content_hash?: string | null;
+  /**
+   * Number Of Pages
+   *
+   * Number of Pages in the Document.
+   */
+  number_of_pages?: number | null;
+  /**
+   * Document Title
+   *
+   * Document title.
+   */
+  document_title?: string | null;
+  /**
+   * Language
+   *
+   * Document language.
+   */
+  language?: "de" | "en" | "fr" | "it" | null;
+  /**
+   * Created At
+   *
+   * Date source document was created (ISO format string)
+   */
+  created_at: string;
+  /**
+   * Updated At
+   *
+   * Date source document was last updated (ISO format string)
+   */
+  updated_at: string;
+  /**
+   * Inserted At
+   *
+   * Date source document was inserted into document store (ISO format string)
+   */
+  inserted_at: string;
+  /**
+   * Metadata
+   *
+   * Additional metadata for the document.
+   */
+  metadata?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Id
+   *
+   * The unique identifier of the Node.
+   */
+  id: string;
+  /**
+   * Content
+   *
+   * The textual content of the Node.
+   */
+  content: string;
+  /**
+   * Type
+   *
+   * Type (content or summary).
+   */
+  type?: "content" | "summary";
+  /**
+   * Content Type
+   *
+   * Content type (text, figure or table).
+   */
+  content_type?: "text" | "figure" | "table";
+  /**
+   * Document Id
+   *
+   * ID of original ref_doc.
+   */
+  document_id: string;
+  /**
+   * Start Char Idx
+   *
+   * The start character index of the Node.
+   */
+  start_char_idx?: number | null;
+  /**
+   * End Char Idx
+   *
+   * The end character index of the Node.
+   */
+  end_char_idx?: number | null;
+  /**
+   * Index
+   *
+   * Index counting position of node in document
+   */
+  index?: number | null;
+  /**
+   * Section Start Line
+   *
+   * Start line of the node in document
+   */
+  section_start_line?: number | null;
+  /**
+   * Section End Line
+   *
+   * End line of the node in document
+   */
+  section_end_line?: number | null;
+  /**
+   * H1
+   *
+   * H1 of the node in document
+   */
+  h1?: string | null;
+  /**
+   * H2
+   *
+   * H2 of the node in document
+   */
+  h2?: string | null;
+  /**
+   * H3
+   *
+   * H3 of the node in document
+   */
+  h3?: string | null;
+  /**
+   * H4
+   *
+   * H4 of the node in document
+   */
+  h4?: string | null;
+  /**
+   * H5
+   *
+   * H5 of the node in document
+   */
+  h5?: string | null;
+  /**
+   * H6
+   *
+   * H6 of the node in document
+   */
+  h6?: string | null;
+  /**
+   * Heading Level
+   *
+   * Heading level of the node in document
+   */
+  heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Score
+   *
+   * Score representing the relevance of the document.
+   */
+  score?: number | null;
+};
+
+/**
  * IngestorDTO
  */
 export type IngestorDtoWritable = {
@@ -20835,6 +25120,7 @@ export type IngestorDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -20845,6 +25131,7 @@ export type IngestorDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -20892,6 +25179,18 @@ export type InputMaskWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21036,6 +25335,18 @@ export type InputNumberWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21223,6 +25534,18 @@ export type InputOtpWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue InputOtp element.
@@ -21348,6 +25671,18 @@ export type InputTextWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21481,6 +25816,18 @@ export type KnobWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Knob element.
@@ -21607,6 +25954,161 @@ export type KnobWritable = {
 };
 
 /**
+ * KnowledgeCollectionSelector
+ *
+ * A FormKit element for selecting collections out of the knowledge an agent elsewhere on the same form retrieves
+ * from.
+ *
+ * Renders as a multi-select whose options are the collections the agent named by `agent_ref` is configured to
+ * retrieve from, grouped by knowledge database. The options come from that agent rather than from the whole
+ * catalogue because that is the only list a selection can be made from safely: narrowing retrieval to a collection
+ * outside the agent's own configuration drops the retriever entirely and answers from nothing, which a check
+ * against the catalogue alone cannot catch.
+ *
+ * The output is the shape `RAGStartEvent.selected_namespaces` takes, so a selection can be handed to a delegated
+ * run unchanged: `list[BucketNamespacePair]`, i.e. `[{"bucket_name": ..., "namespace_name": ...}]`.
+ *
+ * ### Form Duality
+ *
+ * ```python
+ * class MyConfig(Form):
+ * knowledge_namespaces: Annotated[
+ * list[BucketNamespacePair] | KnowledgeCollectionSelector | None,
+ * Field(default=None, description="Collections replies are grounded in"),
+ * ] = None
+ *
+ * @classmethod
+ * def as_form(cls) -> "MyConfig":
+ * return cls(
+ * knowledge_namespaces=KnowledgeCollectionSelector(
+ * label=LocaleString(en="Knowledge Collections"),
+ * agent_ref="knowledge_delegation.rag_agent",
+ * ),
+ * )
+ *
+ * # Data mode - from submission:
+ * config = MyConfig(knowledge_namespaces=[BucketNamespacePair(bucket_name="kb", namespace_name="support")])
+ * ```
+ *
+ * Pair it with a nullable annotation as above: the platform renders a nullable field with an enable toggle, and
+ * `None` then means "every collection the agent retrieves from" while a list means "these and no others".
+ */
+export type KnowledgeCollectionSelectorWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Knowledge collection selector element.
+   */
+  formkit?: "knowledgeCollectionSelector";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Agentref
+   *
+   * Dot path, from the form root, of the agent selector whose configured knowledge supplies the options — e.g. 'knowledge_delegation.rag_agent'. Never prefix it with '$': FormKit compiles any schema string starting with one as an expression, so the path would be evaluated against the form data and reach the element as undefined. While it names no agent there is nothing to offer, and the element says so instead of listing collections the agent could not retrieve from.
+   */
+  agentRef?: string | null;
+  /**
+   * Placeholder
+   *
+   * Placeholder for the multi-select
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Filter
+   *
+   * Whether to enable filtering/search
+   */
+  filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
  * KnowledgeDatabaseSelector
  *
  * A FormKit element for selecting multiple knowledge databases.
@@ -21668,6 +26170,18 @@ export type KnowledgeDatabaseSelectorWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -21731,6 +26245,60 @@ export type KnowledgeDatabaseSelectorWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * KnowledgeSearchedEvent
+ *
+ * The answer to `SearchKnowledgeEvent`: one context block with what the referenced collections hold for the query.
+ *
+ * Displayed because `grounding_nodes` are the documents the model is handed, so a chat client lists and numbers
+ * exactly the sources the answer can cite, as it does for a knowledge agent's own retrieval.
+ */
+export type KnowledgeSearchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the documents found, or none.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The document sections the block holds, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Refused
+   *
+   * Referenced collections that were not searched, because the user may not read them.
+   */
+  refused?: Array<KnowledgeReference>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -22110,6 +26678,18 @@ export type ListboxWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Listbox element.
@@ -22281,6 +26861,18 @@ export type LocaleInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -22621,6 +27213,104 @@ export type MailMovedEventWritable = {
 };
 
 /**
+ * MemoryRecalledEvent
+ *
+ * The answer to `RecallMemoryEvent`: one context block per memory scope, each empty when nothing applies.
+ */
+export type MemoryRecalledEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * User Block
+   *
+   * System messages carrying the user's memories, or none.
+   */
+  user_block?: Array<ChatMessage>;
+  /**
+   * Organization Block
+   *
+   * System messages carrying the organization's memories, or none.
+   */
+  organization_block?: Array<ChatMessage>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * MemoryStorageRequestedEvent
+ *
+ * Detached delegation request: tells the dispatcher to start an independent `MemoryWriterAgent` run to
+ * persist user memory, WITHOUT awaiting a response (issue #1179).
+ *
+ * ### Why a dedicated event (not AgentInTheLoop)?
+ * `AgentInTheLoopRequestEvent` renders a delegation step in the user's chat after the answer — the exact
+ * symptom #1179 removes — and it opens a response subscription that would route a result back into the
+ * caller's run stores (deleted at stop). Here the dispatcher publishes the wrapped `start_event` to the
+ * writer's subject and nothing is routed back. It is displayed like every protocol event, so the event
+ * history shows the delegation; chat clients show no more than a passing status. Its control copy lands in the
+ * caller's event store when published, so it doubles as the stop-gate marker (`check_ready_for_stop`) — the
+ * run finalizes as soon as this cheap marker exists, not when storage completes.
+ */
+export type MemoryStorageRequestedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The start event published to the writer agent to begin its independent run.
+   */
+  start_event: StoreUserMemoryRequestedEventWritable;
+  /**
+   * Target Agent Class
+   *
+   * Writer agent class to route the start event to.
+   */
+  target_agent_class: string;
+  /**
+   * Target Agent Id
+   *
+   * Writer agent id (fixed system id) to route to.
+   */
+  target_agent_id: string;
+  [key: string]: unknown;
+};
+
+/**
  * Message
  */
 export type MessageWritable = {
@@ -22847,6 +27537,18 @@ export type ModelSelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * Model select element.
@@ -22985,6 +27687,18 @@ export type MultiSelectWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue MultiSelect element.
@@ -23079,6 +27793,59 @@ export type MultiSelectWritable = {
    * Whether to enable filtering
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * NodeSummaryDTO
+ */
+export type NodeSummaryDtoWritable = {
+  /**
+   * Level
+   *
+   * Level of the summary
+   */
+  level: number;
+  /**
+   * Nodes
+   *
+   * List of nodes in the summary
+   */
+  nodes: Array<IngestedNodeWritable>;
+};
+
+/**
+ * NotAMetaQuestionEvent
+ *
+ * Internal "all-clear" gate signal: the user's message is a normal task, not a meta
+ * question about the agent. It releases the agent's normal entry steps, which depend
+ * on it so they cannot start until meta-question detection has cleared the message.
+ */
+export type NotAMetaQuestionEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Reasoning
+   *
+   * Why the message was classified as a normal (non-meta) request.
+   */
+  reasoning: string;
   [key: string]: unknown;
 };
 
@@ -23210,6 +27977,18 @@ export type PasswordWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -23377,6 +28156,7 @@ export type ProcessClassDtoWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -23387,6 +28167,7 @@ export type ProcessClassDtoWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -23615,6 +28396,12 @@ export type RagStartEventWritable = {
    * Namespaces to scope organization-memory search to (department-level sub-scopes). Each entry must be in the agent profile's `tenant_namespaces` allow-list when that list is non-empty; raises otherwise. Empty list (default) falls back to the full configured set.
    */
   org_memory_namespaces?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the answer cites its documents inline as [id] markers. A caller that renders the answer somewhere citations cannot be resolved, such as an e-mail draft, switches it off.
+   */
+  cite_sources?: boolean;
   [key: string]: unknown;
 };
 
@@ -23687,6 +28474,18 @@ export type RadioButtonWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -23816,6 +28615,18 @@ export type RatingWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Rating element.
@@ -23912,6 +28723,258 @@ export type RatingWritable = {
 };
 
 /**
+ * ReadAttachedFilesEvent
+ *
+ * Asks the attached-files capability for the text of the files the user attached, sized to fit the prompt.
+ *
+ * Built with `AttachedFiles.read(...)`; answered with `AttachedFilesReadEvent`, empty when nothing readable is
+ * attached. It carries the history the files will be composed into, since that is what decides how much room
+ * the files have.
+ */
+export type ReadAttachedFilesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Files
+   *
+   * The files attached to the current branch.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Kept For Code
+   *
+   * Files the model chose that are not read but named back to it, because code in the sandbox works on them better than on their Markdown text.
+   */
+  kept_for_code?: Array<UserUploadedFile>;
+  /**
+   * History
+   *
+   * The history the files will be composed into, for sizing them.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Query
+   *
+   * The turn's query, for picking the relevant sections of a file too large to fit.
+   */
+  query?: string;
+  /**
+   * First Page
+   *
+   * The first page to read when the question is about certain pages; any page otherwise.
+   */
+  first_page?: number | null;
+  /**
+   * Last Page
+   *
+   * The last page to read; `first_page` alone when none.
+   */
+  last_page?: number | null;
+  /**
+   * Reserve Tokens
+   *
+   * Room the caller still needs after composing, e.g. for retrieved knowledge, which the files must leave free.
+   */
+  reserve_tokens?: number;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the files by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * RecallMemoryEvent
+ *
+ * Asks the memory capability for what the profile remembers about the user and the organization, for a query.
+ *
+ * Built with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the
+ * profile or the run has no identity to read for.
+ */
+export type RecallMemoryEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Query
+   *
+   * The question to search memories with.
+   */
+  query: string;
+  /**
+   * Org Memory Namespaces
+   *
+   * Organization-memory namespaces to narrow the search to; empty means the profile's own.
+   */
+  org_memory_namespaces?: Array<string>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose it in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * RefusalStopEvent
+ *
+ * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
+ *
+ * Shaped as an `LLMStopEvent` so the refusal text reaches every consumer the way an answer does, through
+ * `output_messages`, while `reason` tells a programmatic caller what was wrong with the input. The
+ * retrieval outcomes stay on `RAGFailureStopEvent`; this one is shared by every conversational blueprint.
+ */
+export type RefusalStopEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Input Messages
+   *
+   * List of messages sent to the LLM as input.
+   */
+  input_messages?: Array<MessageWritable> | null;
+  /**
+   * Output Messages
+   *
+   * List of messages received from the LLM as output.
+   */
+  output_messages?: Array<MessageWritable> | null;
+  /**
+   * Invocation Parameters
+   *
+   * Parameters used during the invocation of the LLM.
+   */
+  invocation_parameters?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Chat Model Name
+   *
+   * The name of the language model being utilized.
+   */
+  chat_model_name?: string | null;
+  /**
+   * Provider
+   *
+   * The hosting provider of the LLM, e.g., OpenAI, Azure.
+   */
+  provider?: string | null;
+  /**
+   * System
+   *
+   * The AI product as identified by the client or server.
+   */
+  system?: string | null;
+  /**
+   * Prompt Template
+   *
+   * The prompt template as a Python f-string.
+   */
+  prompt_template?: string | null;
+  /**
+   * Prompt Template Variables
+   *
+   * A dictionary of input variables to the prompt template.
+   */
+  prompt_template_variables?: {
+    [key: string]: string;
+  } | null;
+  /**
+   * Prompt Template Version
+   *
+   * The version of the prompt template being used.
+   */
+  prompt_template_version?: string | null;
+  /**
+   * Token Count Prompt
+   *
+   * The number of tokens in the prompt.
+   */
+  token_count_prompt?: number | null;
+  /**
+   * Token Count Completion
+   *
+   * The number of tokens in the completion.
+   */
+  token_count_completion?: number | null;
+  /**
+   * Token Count Total
+   *
+   * The total number of tokens, including both prompt and completion.
+   */
+  token_count_total?: number | null;
+  /**
+   * Tools
+   *
+   * List of tools that are advertised to the LLM to be able to call.
+   */
+  tools?: Array<{
+    [key: string]: unknown;
+  }> | null;
+  /**
+   * What about the input made the turn unanswerable.
+   */
+  reason: RefusalReason;
+  [key: string]: unknown;
+};
+
+/**
  * Repeater
  *
  * https://formkit.com/inputs/repeater
@@ -23969,6 +29032,18 @@ export type RepeaterWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * $Formkit
    *
@@ -24049,6 +29124,7 @@ export type RepeaterWritable = {
     | InputNumberWritable
     | InputOtpWritable
     | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
     | KnowledgeDatabaseSelectorWritable
     | KnobWritable
     | ListboxWritable
@@ -24059,6 +29135,7 @@ export type RepeaterWritable = {
     | RadioButtonWritable
     | RatingWritable
     | RepeaterWritable
+    | SecretFileInputWritable
     | SelectWritable
     | SelectButtonWritable
     | SliderWritable
@@ -24098,13 +29175,13 @@ export type RerankerEventWritable = {
    *
    * List of input documents provided to the reranker.
    */
-  input_nodes?: Array<IngestedNode> | null;
+  input_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Output Nodes
    *
    * List of documents outputted by the reranker.
    */
-  output_nodes?: Array<IngestedNode> | null;
+  output_nodes?: Array<IngestedNodeWritable> | null;
   /**
    * Query
    *
@@ -24243,7 +29320,7 @@ export type RetrieverEventWritable = {
    *
    * List of nodes retrieved by the retriever, including document IDs, scores, and content.
    */
-  nodes?: Array<IngestedNode> | null;
+  nodes?: Array<IngestedNodeWritable> | null;
   [key: string]: unknown;
 };
 
@@ -24428,6 +29505,323 @@ export type RunStatisticsWritable = {
 };
 
 /**
+ * RunToolLoopEvent
+ *
+ * Asks the tool loop to let the model decide which of the blueprint's tools to use, until it is done.
+ *
+ * Built with `ToolLoop.run(...)`; answered with `ToolLoopFinishedEvent`. The tools come from the blueprint's
+ * declaration, narrowed by the profile and by the features the user switched on for the message.
+ */
+export type RunToolLoopEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * History
+   *
+   * The conversation the model decides on.
+   */
+  history?: Array<ChatMessage>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode?: ToolLoopMode;
+  /**
+   * Tools
+   *
+   * Narrows the offered tools to these names for this call, if given.
+   */
+  tools?: Array<string> | null;
+  /**
+   * Max Iterations
+   *
+   * An iteration limit tighter than the profile's, e.g. 1 for routing.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return, off where it cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Files
+   *
+   * The files attached to the message, for tools that read them.
+   */
+  files?: Array<UserUploadedFile>;
+  /**
+   * Knowledge References
+   *
+   * The collections the user referenced on the message, for tools that search knowledge.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
+  [key: string]: unknown;
+};
+
+/**
+ * SandboxFileDisplayedEvent
+ *
+ * The agent showed the user a file from their code sandbox, copied into our storage so it outlives the sandbox.
+ *
+ * Chat clients attach it to the answer: OpenWebUI registers it as one of the message's files.
+ */
+export type SandboxFileDisplayedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Path
+   *
+   * Where the file lies in the user's sandbox home.
+   */
+  path: string;
+  /**
+   * Filename
+   *
+   * The file's name, as the attachment shows it.
+   */
+  filename: string;
+  /**
+   * Content Type
+   *
+   * The file's MIME type.
+   */
+  content_type: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Bucket
+   *
+   * The bucket holding the copy.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The copy's key within the bucket.
+   */
+  key: string;
+  [key: string]: unknown;
+};
+
+/**
+ * SearchKnowledgeEvent
+ *
+ * Asks the knowledge capability to search the collections the user referenced for the turn's query.
+ *
+ * Built with `Knowledge.search(...)`; answered with `KnowledgeSearchedEvent`, empty when nothing was referenced.
+ */
+export type SearchKnowledgeEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * References
+   *
+   * The collections the user referenced on this message.
+   */
+  references?: Array<KnowledgeReference>;
+  /**
+   * Query
+   *
+   * The turn's query the collections are searched for.
+   */
+  query?: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the documents by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the search in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * SecretFileInput
+ *
+ * A secret that is handed out as a file, such as a service-account key, picked instead of pasted.
+ *
+ * The browser reads the file and submits its text contents, so the value is an ordinary string: it is
+ * encrypted, masked and restored exactly like a ``Password`` value, and API clients keep sending a string.
+ */
+export type SecretFileInputWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Secret file input element.
+   */
+  formkit?: "secretFileInput";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Accept
+   *
+   * File types the picker offers, e.g. '.json'
+   */
+  accept?: string | null;
+  /**
+   * Maxsizebytes
+   *
+   * Largest file accepted, checked before it is read
+   */
+  maxSizeBytes?: number;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  [key: string]: unknown;
+};
+
+/**
  * Select
  *
  * https://formkit-primevue.netlify.app/inputs/Select
@@ -24463,6 +29857,18 @@ export type SelectWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -24615,6 +30021,18 @@ export type SelectButtonWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -24900,6 +30318,18 @@ export type SliderWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue Slider element.
@@ -24993,6 +30423,71 @@ export type SliderWritable = {
    */
   orientation?: "horizontal" | "vertical" | null;
   [key: string]: unknown;
+};
+
+/**
+ * SourcePipelineDTO
+ */
+export type SourcePipelineDtoWritable = {
+  /**
+   * Name
+   *
+   * Source pipeline identifier, as served by GET /knowledge/source-pipelines.
+   */
+  name: string;
+  /**
+   * Display Name
+   *
+   * Localized name of the source pipeline.
+   */
+  display_name: string | null;
+  /**
+   * Description
+   *
+   * Localized description of where the files come from.
+   */
+  description: string | null;
+  /**
+   * Form
+   *
+   * FormKit elements a database's source is configured through, localized.
+   */
+  form?: Array<
+    | HtmlElement
+    | AgentSelectorWritable
+    | CascadeSelectWritable
+    | CheckboxWritable
+    | ChipsInputWritable
+    | ColorPickerWritable
+    | CronInputWritable
+    | DatePickerWritable
+    | GroupWritable
+    | IconSelectorWritable
+    | InputMaskWritable
+    | InputNumberWritable
+    | InputOtpWritable
+    | InputTextWritable
+    | KnowledgeCollectionSelectorWritable
+    | KnowledgeDatabaseSelectorWritable
+    | KnobWritable
+    | ListboxWritable
+    | LocaleInputWritable
+    | ModelSelectWritable
+    | MultiSelectWritable
+    | PasswordWritable
+    | RadioButtonWritable
+    | RatingWritable
+    | RepeaterWritable
+    | SecretFileInputWritable
+    | SelectWritable
+    | SelectButtonWritable
+    | SliderWritable
+    | TenantSelectWritable
+    | TextareaWritable
+    | ToggleButtonWritable
+    | ToggleSwitchWritable
+    | VectorStoreInputWritable
+  >;
 };
 
 /**
@@ -25253,6 +30748,102 @@ export type StoreUserMemoryEventWritable = {
 };
 
 /**
+ * StoreUserMemoryRequestedEvent
+ *
+ * Start event for the `MemoryWriterAgent`: persist user memory in an independent run, off the chat run's
+ * critical path (issue #1179).
+ *
+ * It runs in a different execution context than the originating RAG run and cannot read that run's
+ * `run_context`, so it carries everything the writer needs as plain serializable data. The originating
+ * agent's identity (class/id/name/description) is carried explicitly so the writer rebuilds the *same*
+ * `AgentMemory` — preserving the agent-specific fact-extraction prompt and the `_agent_id` scoping tag.
+ *
+ * Scope: user memory only. Organization memory has a different API shape and is not on #1179's critical
+ * path; if it is decoupled later, add a `memory_type` discriminator here.
+ */
+export type StoreUserMemoryRequestedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Locale
+   *
+   * Originating run's locale, so extraction prompts stay in the user's language.
+   */
+  locale?: string;
+  /**
+   * User the memories belong to.
+   */
+  user: UserIdentity;
+  /**
+   * Messages
+   *
+   * Conversation the writer extracts user memories from.
+   */
+  messages: Array<ChatMessage>;
+  /**
+   * Origin Thread Id
+   *
+   * Originating run's thread id, kept as memory metadata.
+   */
+  origin_thread_id: string;
+  /**
+   * Origin Display Id
+   *
+   * Originating run's display id, kept as memory metadata.
+   */
+  origin_display_id: string;
+  /**
+   * Origin Run Id
+   *
+   * Originating run's run id, kept as memory metadata.
+   */
+  origin_run_id: string;
+  /**
+   * Origin Agent Class
+   *
+   * Originating agent's class — rebuilds the same AgentMemory (prompt + _agent_id tag).
+   */
+  origin_agent_class: string;
+  /**
+   * Origin Agent Id
+   *
+   * Originating agent's id — part of the _agent_id scoping tag.
+   */
+  origin_agent_id: string;
+  /**
+   * Originating agent's name — used in the fact-extraction prompt.
+   */
+  origin_agent_name: LocaleString;
+  /**
+   * Originating agent's description — used in the fact-extraction prompt.
+   */
+  origin_agent_description: LocaleString;
+  /**
+   * Origin Memory Llm
+   *
+   * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
+   */
+  origin_memory_llm?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * TenantSelect
  *
  * A FormKit element for selecting one of the tenants the user belongs to.
@@ -25313,6 +30904,18 @@ export type TenantSelectWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -25415,6 +31018,18 @@ export type TextareaWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -25728,6 +31343,18 @@ export type ToggleButtonWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleButton element.
@@ -25860,6 +31487,18 @@ export type ToggleSwitchWritable = {
    */
   defaultEnabled?: boolean | null;
   /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
    * Formkit
    *
    * PrimeVue ToggleSwitch element.
@@ -25950,6 +31589,217 @@ export type ToggleSwitchWritable = {
 };
 
 /**
+ * ToolApprovalRequestEvent
+ *
+ * Asks the user to approve a tool call before it runs; chat clients show it as a yes/no confirmation.
+ */
+export type ToolApprovalRequestEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Question
+   *
+   * The query or prompt presented to the human operator.
+   */
+  question: string;
+  /**
+   * Topic
+   *
+   * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+   */
+  topic: PartialAgentTopic | AgentInstanceTopic;
+  /**
+   * Hitl Type
+   */
+  hitl_type?: "confirmation";
+  /**
+   * Tool Call Id
+   *
+   * The call awaiting approval.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool the model wants to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: string;
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolApprovalResponseEvent
+ *
+ * The user's answer to a tool approval request: run the call, or tell the model it was declined.
+ */
+export type ToolApprovalResponseEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Response
+   *
+   * Whether the user approved the call.
+   */
+  response: boolean;
+  /**
+   * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+   */
+  request_event: ToolApprovalRequestEventWritable;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolCallApprovedEvent
+ *
+ * A tool call cleared to run, either because it needs no approval or because the user approved it.
+ *
+ * Function tools run in the loop itself; a capability tool's adapter step turns the call into the capability's own
+ * request, so the call runs the same sub-workflow, with the same events, as an explicit call would.
+ */
+export type ToolCallApprovedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call's id, which its result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool to run.
+   */
+  name: string;
+  /**
+   * Arguments
+   *
+   * The arguments the model passed.
+   */
+  arguments?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Kind
+   *
+   * Whether the loop runs it or a capability does.
+   */
+  kind: "function" | "capability";
+  /**
+   * Cite Sources
+   *
+   * Whether the tool tells the model to cite what it returns.
+   */
+  cite_sources?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolCallsDecidedEvent
+ *
+ * The model chose tools in this iteration; the loop continues once every one of them has a result.
+ */
+export type ToolCallsDecidedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state including the model's tool-calling turn.
+   */
+  state: ToolLoopStateWritable;
+  /**
+   * Tool Call Ids
+   *
+   * The calls this iteration waits for.
+   */
+  tool_call_ids: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventWritable = {
@@ -25990,6 +31840,12 @@ export type ToolEventWritable = {
    */
   description?: string | null;
   /**
+   * Label
+   *
+   * The tool's name as users read it, in the run's locale; the name otherwise
+   */
+  label?: string | null;
+  /**
    * Json Schema
    *
    * The json schema of a tool input
@@ -26005,6 +31861,326 @@ export type ToolEventWritable = {
   parameters?: {
     [key: string]: unknown;
   } | null;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopCondensedEvent
+ *
+ * The tool loop condensed its conversation to fit the prompt, so a trace shows what the model no longer sees.
+ */
+export type ToolLoopCondensedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * What was condensed, as users read it, in the run's locale.
+   */
+  description?: string;
+  /**
+   * Tokens Before
+   *
+   * The conversation's size before condensing.
+   */
+  tokens_before: number;
+  /**
+   * Tokens After
+   *
+   * The conversation's size after condensing.
+   */
+  tokens_after: number;
+  /**
+   * Condensed Results
+   *
+   * How many earlier tool results were condensed.
+   */
+  condensed_results?: number;
+  /**
+   * Condensed Turns
+   *
+   * How many earlier conversation turns were condensed.
+   */
+  condensed_turns?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopFinishedEvent
+ *
+ * The answer to `RunToolLoopEvent`: the reply in answering mode, the gathered context in gathering mode.
+ */
+export type ToolLoopFinishedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * The model's final reply, in answering mode.
+   */
+  answer?: LlmEventWritable | null;
+  /**
+   * Block
+   *
+   * The tool results as context for the blueprint's answer, gathering mode.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Stopped Early
+   *
+   * Whether the loop stopped at its limits.
+   */
+  stopped_early?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopIterationEvent
+ *
+ * The model's turn to decide: answer, or call tools. One per iteration of the loop.
+ */
+export type ToolLoopIterationEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The loop's state at the start of this iteration.
+   */
+  state: ToolLoopStateWritable;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolLoopState
+ *
+ * Everything the loop knows between two of its steps, carried on its events rather than kept elsewhere.
+ *
+ * Steps of one run may execute on different runners, so the loop's conversation, the tools it offers and what it
+ * gathered travel with the iteration; the trace then shows the loop's full state at every step.
+ */
+export type ToolLoopStateWritable = {
+  /**
+   * Loop
+   *
+   * The blueprint's tool set this loop runs, telling two loops of one run apart.
+   */
+  loop?: string;
+  /**
+   * Messages
+   *
+   * The loop's conversation so far, tool calls and results.
+   */
+  messages: Array<MessageWritable>;
+  /**
+   * Question
+   *
+   * What this run's tool calls are kept under for later turns, taken before any condensing merges the earlier questions it counts.
+   */
+  question?: string | null;
+  /**
+   * Tools
+   *
+   * The tools offered to the model in this run.
+   */
+  tools?: Array<ToolDefinition>;
+  /**
+   * Whether the loop answers or gathers context.
+   */
+  mode: ToolLoopMode;
+  /**
+   * Iteration
+   *
+   * How many decisions the model has made so far.
+   */
+  iteration?: number;
+  /**
+   * Tool Calls Made
+   *
+   * How many tool calls ran so far.
+   */
+  tool_calls_made?: number;
+  /**
+   * Max Iterations
+   *
+   * The call's own iteration limit, if any.
+   */
+  max_iterations?: number | null;
+  /**
+   * Cite Sources
+   *
+   * Whether tools tell the model to cite what they return.
+   */
+  cite_sources?: boolean;
+  /**
+   * Gathered
+   *
+   * The tool results as context, for the blueprint's own answer.
+   */
+  gathered?: Array<ChatMessage>;
+  /**
+   * Needs Condensing
+   *
+   * Whether the conversation outgrew the prompt and is condensed before the model decides.
+   */
+  needs_condensing?: boolean;
+};
+
+/**
+ * ToolLoopStatusEvent
+ *
+ * What the tool loop is doing while nothing else is visible: deciding in the background, or stopping early.
+ */
+export type ToolLoopStatusEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Loop
+   *
+   * The blueprint's tool set the loop runs.
+   */
+  loop: string;
+  /**
+   * Description
+   *
+   * The status as users read it, in the run's locale.
+   */
+  description: string;
+  /**
+   * Done
+   *
+   * Whether the step the status describes is over.
+   */
+  done?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * ToolResultEvent
+ *
+ * What a tool call returned, for the model's next decision and, in gathering mode, the blueprint's answer.
+ */
+export type ToolResultEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Tool Call Id
+   *
+   * The call this result answers.
+   */
+  tool_call_id: string;
+  /**
+   * Name
+   *
+   * The tool that ran.
+   */
+  name: string;
+  /**
+   * Content
+   *
+   * The result as the model reads it.
+   */
+  content: string;
+  /**
+   * Block
+   *
+   * The result as context for an answer, when the tool renders it richer than its content.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Is Error
+   *
+   * Whether the call failed or was declined.
+   */
+  is_error?: boolean;
   [key: string]: unknown;
 };
 
@@ -26108,6 +32284,18 @@ export type UserMessageEventWritable = {
    * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
    */
   files?: Array<UserUploadedFile> | null;
+  /**
+   * Requested Features
+   *
+   * Features the user asked for on this message, e.g. through a chat client's toggles. A request, not an order: the agent decides whether and how to serve each one, and ignores features its blueprint does not support.
+   */
+  requested_features?: Array<ChatFeature>;
+  /**
+   * Knowledge References
+   *
+   * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
+   */
+  knowledge_references?: Array<KnowledgeReference>;
   [key: string]: unknown;
 };
 
@@ -26194,6 +32382,18 @@ export type VectorStoreInputWritable = {
    * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
    */
   defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
   /**
    * Formkit
    *
@@ -26313,15 +32513,83 @@ export type GetAuthProvidersData = {
 
 export type GetAuthProvidersResponses = {
   /**
-   * Response Get Auth Providers Auth Providers  Get
-   *
    * Successful Response
    */
-  200: Array<AuthProviderResponse>;
+  200: LoginOptionsResponse;
 };
 
 export type GetAuthProvidersResponse =
   GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
+
+export type GetAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias taken from a /auth/login/<idp-alias> link
+     */
+    alias: string;
+  };
+  query?: never;
+  url: "/auth-providers/{alias}";
+};
+
+export type GetAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetAuthProviderError =
+  GetAuthProviderErrors[keyof GetAuthProviderErrors];
+
+export type GetAuthProviderResponses = {
+  /**
+   * Response Get Auth Provider
+   *
+   * Successful Response
+   */
+  200: AuthProviderResponse | null;
+};
+
+export type GetAuthProviderResponse =
+  GetAuthProviderResponses[keyof GetAuthProviderResponses];
+
+export type GetTenantAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant ID taken from the tenant's login link
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/auth-providers/tenants/{tenant_id}";
+};
+
+export type GetTenantAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetTenantAuthProviderError =
+  GetTenantAuthProviderErrors[keyof GetTenantAuthProviderErrors];
+
+export type GetTenantAuthProviderResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantAuthProviderResponse;
+};
+
+export type GetTenantAuthProviderResponse =
+  GetTenantAuthProviderResponses[keyof GetTenantAuthProviderResponses];
 
 export type GetSuiteData = {
   body?: never;
@@ -26471,7 +32739,7 @@ export type GetMyDashboardData = {
 
 export type GetMyDashboardResponses = {
   /**
-   * Response Get My Dashboard  Tenant Id  My Account Dashboard Get
+   * Response Get My Dashboard
    *
    * Successful Response
    */
@@ -26514,6 +32782,40 @@ export type UpdateMyDashboardResponses = {
 
 export type UpdateMyDashboardResponse =
   UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
+
+export type UpdateMyLocaleData = {
+  body: MyLocaleDto;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/my-account/locale";
+};
+
+export type UpdateMyLocaleErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateMyLocaleError =
+  UpdateMyLocaleErrors[keyof UpdateMyLocaleErrors];
+
+export type UpdateMyLocaleResponses = {
+  /**
+   * Successful Response
+   */
+  204: void;
+};
+
+export type UpdateMyLocaleResponse =
+  UpdateMyLocaleResponses[keyof UpdateMyLocaleResponses];
 
 export type GetUserData = {
   body?: never;
@@ -26629,7 +32931,7 @@ export type AssignRoleError = AssignRoleErrors[keyof AssignRoleErrors];
 
 export type AssignRoleResponses = {
   /**
-   * Response Assign Role  Tenant Id  Users  User Id  Roles Post
+   * Response Assign Role
    *
    * Successful Response
    */
@@ -26675,7 +32977,7 @@ export type RevokeRoleError = RevokeRoleErrors[keyof RevokeRoleErrors];
 
 export type RevokeRoleResponses = {
   /**
-   * Response Revoke Role  Tenant Id  Users  User Id  Roles  Role Name  Delete
+   * Response Revoke Role
    *
    * Successful Response
    */
@@ -26742,7 +33044,7 @@ export type GetAgentEventsInThreadError =
 
 export type GetAgentEventsInThreadResponses = {
   /**
-   * Response Get Agent Events In Thread  Tenant Id  Events Agents Threads  Thread Id  Get
+   * Response Get Agent Events In Thread
    *
    * Successful Response
    */
@@ -26880,7 +33182,7 @@ export type GetLlmSpendByUserError =
 
 export type GetLlmSpendByUserResponses = {
   /**
-   * Response Get Llm Spend By User  Tenant Id  Events Spend Users Get
+   * Response Get Llm Spend By User
    *
    * Successful Response
    */
@@ -26923,7 +33225,7 @@ export type GetLlmSpendByTenantError =
 
 export type GetLlmSpendByTenantResponses = {
   /**
-   * Response Get Llm Spend By Tenant  Tenant Id  Events Spend Tenants Get
+   * Response Get Llm Spend By Tenant
    *
    * Successful Response
    */
@@ -26949,7 +33251,7 @@ export type GetLitellmModelsData = {
 
 export type GetLitellmModelsResponses = {
   /**
-   * Response Get Litellm Models  Tenant Id  Models Get
+   * Response Get Litellm Models
    *
    * Successful Response
    */
@@ -26989,7 +33291,7 @@ export type GetLitellmModelsByModeError =
 
 export type GetLitellmModelsByModeResponses = {
   /**
-   * Response Get Litellm Models By Mode  Tenant Id  Models Mode  Mode  Get
+   * Response Get Litellm Models By Mode
    *
    * Successful Response
    */
@@ -27434,7 +33736,7 @@ export type GetAgentClassesError =
 
 export type GetAgentClassesResponses = {
   /**
-   * Response Get Agent Classes  Tenant Id  Agents Classes Get
+   * Response Get Agent Classes
    *
    * Successful Response
    */
@@ -27511,7 +33813,7 @@ export type GetAgentClassInstancesError =
 
 export type GetAgentClassInstancesResponses = {
   /**
-   * Response Get Agent Class Instances  Tenant Id  Agents Classes  Agent Class  Instances Get
+   * Response Get Agent Class Instances
    *
    * Successful Response
    */
@@ -27785,7 +34087,7 @@ export type GetAllAgentInstancesError =
 
 export type GetAllAgentInstancesResponses = {
   /**
-   * Response Get All Agent Instances  Tenant Id  Agents Instances Get
+   * Response Get All Agent Instances
    *
    * Successful Response
    */
@@ -27838,7 +34140,7 @@ export type InitiateFileUploadResponse =
   InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
 
 export type ValidateFileUploadData = {
-  body: AgentFileValidationRequest;
+  body: AgentFileBatchValidationRequest;
   path: {
     /**
      * Tenant Id
@@ -27873,7 +34175,7 @@ export type ValidateFileUploadResponses = {
   /**
    * Successful Response
    */
-  200: AgentFileValidationResponse;
+  200: AgentFileBatchValidationResponse;
 };
 
 export type ValidateFileUploadResponse =
@@ -27912,7 +34214,7 @@ export type GetProcessClassesError =
 
 export type GetProcessClassesResponses = {
   /**
-   * Response Get Process Classes  Tenant Id  Processes Classes Get
+   * Response Get Process Classes
    *
    * Successful Response
    */
@@ -27990,7 +34292,7 @@ export type GetProcessClassInstancesError =
 
 export type GetProcessClassInstancesResponses = {
   /**
-   * Response Get Process Class Instances  Tenant Id  Processes Classes  Process Class  Instances Get
+   * Response Get Process Class Instances
    *
    * Successful Response
    */
@@ -28197,7 +34499,7 @@ export type GetAllProcessInstancesError =
 
 export type GetAllProcessInstancesResponses = {
   /**
-   * Response Get All Process Instances  Tenant Id  Processes Instances Get
+   * Response Get All Process Instances
    *
    * Successful Response
    */
@@ -28296,7 +34598,7 @@ export type GetProcessStartFormsError =
 
 export type GetProcessStartFormsResponses = {
   /**
-   * Response Get Process Start Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id  Start Forms Get
+   * Response Get Process Start Forms
    *
    * Successful Response
    */
@@ -28344,7 +34646,7 @@ export type GetProcessOpenFormsError =
 
 export type GetProcessOpenFormsResponses = {
   /**
-   * Response Get Process Open Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id   Process Walkthrough Id  Open Forms Get
+   * Response Get Process Open Forms
    *
    * Successful Response
    */
@@ -28486,7 +34788,7 @@ export type ListTokensEndpointData = {
 
 export type ListTokensEndpointResponses = {
   /**
-   * Response List Tokens Endpoint  Tenant Id  Tokens  Get
+   * Response List Tokens Endpoint
    *
    * Successful Response
    */
@@ -28693,7 +34995,7 @@ export type GetRolesData = {
 
 export type GetRolesResponses = {
   /**
-   * Response Get Roles  Tenant Id  Roles  Get
+   * Response Get Roles
    *
    * Successful Response
    */
@@ -28784,7 +35086,7 @@ export type GetAccessPresetsData = {
 
 export type GetAccessPresetsResponses = {
   /**
-   * Response Get Access Presets  Tenant Id  Access Presets Get
+   * Response Get Access Presets
    *
    * Successful Response
    */
@@ -28810,7 +35112,7 @@ export type GetDefaultTenantRulesData = {
 
 export type GetDefaultTenantRulesResponses = {
   /**
-   * Response Get Default Tenant Rules  Tenant Id  Access Default Tenant Rules Get
+   * Response Get Default Tenant Rules
    *
    * Successful Response
    */
@@ -28819,6 +35121,32 @@ export type GetDefaultTenantRulesResponses = {
 
 export type GetDefaultTenantRulesResponse =
   GetDefaultTenantRulesResponses[keyof GetDefaultTenantRulesResponses];
+
+export type GetChatDisclaimerData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/openai/chat-disclaimer";
+};
+
+export type GetChatDisclaimerResponses = {
+  /**
+   * Response Get Chat Disclaimer
+   *
+   * Successful Response
+   */
+  200: string;
+};
+
+export type GetChatDisclaimerResponse =
+  GetChatDisclaimerResponses[keyof GetChatDisclaimerResponses];
 
 export type GetModelsData = {
   body?: never;
@@ -28982,7 +35310,7 @@ export type GenerateImageResponse =
   GenerateImageResponses[keyof GenerateImageResponses];
 
 export type CreateTranscriptionData = {
-  body: BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost;
+  body: BodyCreateTranscription;
   path: {
     /**
      * Tenant Id
@@ -29007,7 +35335,7 @@ export type CreateTranscriptionError =
 
 export type CreateTranscriptionResponses = {
   /**
-   * Response Create Transcription  Tenant Id  Openai Audio Transcriptions Post
+   * Response Create Transcription
    *
    * Successful Response
    */
@@ -29063,7 +35391,7 @@ export type GetDatasetsData = {
 
 export type GetDatasetsResponses = {
   /**
-   * Response Get Datasets  Tenant Id  Datasets  Get
+   * Response Get Datasets
    *
    * Successful Response
    */
@@ -29199,7 +35527,7 @@ export type GetIngestorsData = {
 
 export type GetIngestorsResponses = {
   /**
-   * Response Get Ingestors  Tenant Id  Knowledge Ingestors Get
+   * Response Get Ingestors
    *
    * Successful Response
    */
@@ -29208,6 +35536,32 @@ export type GetIngestorsResponses = {
 
 export type GetIngestorsResponse =
   GetIngestorsResponses[keyof GetIngestorsResponses];
+
+export type GetSourcePipelinesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/source-pipelines";
+};
+
+export type GetSourcePipelinesResponses = {
+  /**
+   * Response Get Source Pipelines
+   *
+   * Successful Response
+   */
+  200: Array<SourcePipelineDto>;
+};
+
+export type GetSourcePipelinesResponse =
+  GetSourcePipelinesResponses[keyof GetSourcePipelinesResponses];
 
 export type DeleteDatabaseData = {
   body?: never;
@@ -29283,6 +35637,44 @@ export type CreateDatabaseResponses = {
 
 export type CreateDatabaseResponse =
   CreateDatabaseResponses[keyof CreateDatabaseResponses];
+
+export type UpdateDatabaseSourceData = {
+  body: UpdateDatabaseSourceRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Database name
+     */
+    database: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/databases/{database}/source";
+};
+
+export type UpdateDatabaseSourceErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UpdateDatabaseSourceError =
+  UpdateDatabaseSourceErrors[keyof UpdateDatabaseSourceErrors];
+
+export type UpdateDatabaseSourceResponses = {
+  /**
+   * Successful Response
+   */
+  200: DatabaseResponse;
+};
+
+export type UpdateDatabaseSourceResponse =
+  UpdateDatabaseSourceResponses[keyof UpdateDatabaseSourceResponses];
 
 export type DeleteNamespaceData = {
   body?: never;
@@ -29423,7 +35815,7 @@ export type GetDatabasesData = {
 
 export type GetDatabasesResponses = {
   /**
-   * Response Get Databases  Tenant Id  Knowledge Databases Get
+   * Response Get Databases
    *
    * Successful Response
    */
@@ -29432,6 +35824,42 @@ export type GetDatabasesResponses = {
 
 export type GetDatabasesResponse =
   GetDatabasesResponses[keyof GetDatabasesResponses];
+
+export type ResolveOpenwebuiReferencesData = {
+  body: ResolveKnowledgeReferencesRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/knowledge/openwebui-references";
+};
+
+export type ResolveOpenwebuiReferencesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ResolveOpenwebuiReferencesError =
+  ResolveOpenwebuiReferencesErrors[keyof ResolveOpenwebuiReferencesErrors];
+
+export type ResolveOpenwebuiReferencesResponses = {
+  /**
+   * Response Resolve Openwebui References
+   *
+   * Successful Response
+   */
+  200: Array<KnowledgeReference>;
+};
+
+export type ResolveOpenwebuiReferencesResponse =
+  ResolveOpenwebuiReferencesResponses[keyof ResolveOpenwebuiReferencesResponses];
 
 export type BatchDeleteDocumentsData = {
   body: BatchDeleteDocumentsRequest;
@@ -29675,7 +36103,7 @@ export type GetNodesForDocumentError =
 
 export type GetNodesForDocumentResponses = {
   /**
-   * Response Get Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
+   * Response Get Nodes For Document
    *
    * Successful Response
    */
@@ -29723,7 +36151,7 @@ export type GetSummaryNodesForDocumentError =
 
 export type GetSummaryNodesForDocumentResponses = {
   /**
-   * Response Get Summary Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Summaries Get
+   * Response Get Summary Nodes For Document
    *
    * Successful Response
    */
@@ -29833,7 +36261,7 @@ export type GetSupportedFileTypesData = {
 
 export type GetSupportedFileTypesResponses = {
   /**
-   * Response Get Supported File Types  Tenant Id  Knowledge Supported Types Get
+   * Response Get Supported File Types
    *
    * Successful Response
    */
@@ -30125,7 +36553,7 @@ export type UpdateNotificationsBulkError =
 
 export type UpdateNotificationsBulkResponses = {
   /**
-   * Response Update Notifications Bulk  Tenant Id  Notifications  Patch
+   * Response Update Notifications Bulk
    *
    * Successful Response
    */
@@ -30172,6 +36600,300 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse =
   UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type GetIncidentAvailabilityData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/availability";
+};
+
+export type GetIncidentAvailabilityResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentAvailabilityDto;
+};
+
+export type GetIncidentAvailabilityResponse =
+  GetIncidentAvailabilityResponses[keyof GetIncidentAvailabilityResponses];
+
+export type GetIncidentFormData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/incidents/form";
+};
+
+export type GetIncidentFormResponses = {
+  /**
+   * Successful Response
+   */
+  200: IncidentFormDto;
+};
+
+export type GetIncidentFormResponse =
+  GetIncidentFormResponses[keyof GetIncidentFormResponses];
+
+export type CreateIncidentData = {
+  body: BodyCreateIncident;
+  path?: never;
+  query?: never;
+  url: "/incidents";
+};
+
+export type CreateIncidentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateIncidentError =
+  CreateIncidentErrors[keyof CreateIncidentErrors];
+
+export type CreateIncidentResponses = {
+  /**
+   * Successful Response
+   */
+  201: CreatedIncidentDto;
+};
+
+export type CreateIncidentResponse =
+  CreateIncidentResponses[keyof CreateIncidentResponses];
+
+export type DeleteUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file, or folder with everything in it, to delete.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type DeleteUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type DeleteUserFileError =
+  DeleteUserFileErrors[keyof DeleteUserFileErrors];
+
+export type DeleteUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type DeleteUserFileResponse =
+  DeleteUserFileResponses[keyof DeleteUserFileResponses];
+
+export type ListUserFilesData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to list; '.' is the top.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge";
+};
+
+export type ListUserFilesErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type ListUserFilesError = ListUserFilesErrors[keyof ListUserFilesErrors];
+
+export type ListUserFilesResponses = {
+  /**
+   * Successful Response
+   */
+  200: FolderListingDto;
+};
+
+export type ListUserFilesResponse =
+  ListUserFilesResponses[keyof ListUserFilesResponses];
+
+export type GetUserFileContentData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The file to read.
+     */
+    path: string;
+    /**
+     * Download
+     *
+     * Whether the browser saves the file instead of showing it.
+     */
+    download?: boolean;
+  };
+  url: "/{tenant_id}/user-knowledge/content";
+};
+
+export type GetUserFileContentErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetUserFileContentError =
+  GetUserFileContentErrors[keyof GetUserFileContentErrors];
+
+export type GetUserFileContentResponses = {
+  /**
+   * Successful Response
+   */
+  200: unknown;
+};
+
+export type UploadUserFileData = {
+  body: BodyUploadUserFile;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: {
+    /**
+     * Folder
+     *
+     * The folder to add it to.
+     */
+    folder?: string;
+  };
+  url: "/{tenant_id}/user-knowledge/files";
+};
+
+export type UploadUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type UploadUserFileError =
+  UploadUserFileErrors[keyof UploadUserFileErrors];
+
+export type UploadUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type UploadUserFileResponse =
+  UploadUserFileResponses[keyof UploadUserFileResponses];
+
+export type CreateUserFolderData = {
+  body: CreateFolderRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/folders";
+};
+
+export type CreateUserFolderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type CreateUserFolderError =
+  CreateUserFolderErrors[keyof CreateUserFolderErrors];
+
+export type CreateUserFolderResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type CreateUserFolderResponse =
+  CreateUserFolderResponses[keyof CreateUserFolderResponses];
+
+export type MoveUserFileData = {
+  body: MoveFileRequest;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/user-knowledge/move";
+};
+
+export type MoveUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type MoveUserFileError = MoveUserFileErrors[keyof MoveUserFileErrors];
+
+export type MoveUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePathDto;
+};
+
+export type MoveUserFileResponse =
+  MoveUserFileResponses[keyof MoveUserFileResponses];
 
 export type DeleteAllUserMemoriesData = {
   body?: never;

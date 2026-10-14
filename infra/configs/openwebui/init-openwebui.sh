@@ -22,6 +22,9 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Functions that shipped once and were removed; see the end of main.
+RETIRED_FUNCTION_IDS="aihub-turn-scope-filter"
+
 run_sql() {
     psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAq "$@"
 }
@@ -87,6 +90,13 @@ register_function() {
     description=$(extract_metadata "$file" "description")
     icon_url=$(extract_metadata "$file" "icon_url")
     func_type=$(get_function_type "$file")
+    # "global: false" in a function's frontmatter registers it for the models listing it in meta.filterIds only
+    # (the OpenWebUI provisioner attaches our agent filters that way); everything else stays global.
+    if [ "$(extract_metadata "$file" "global")" = "false" ]; then
+        is_global=false
+    else
+        is_global=true
+    fi
 
     # Default values if not found
     title="${title:-$func_id}"
@@ -98,7 +108,7 @@ register_function() {
     # Get current timestamp
     timestamp=$(date +%s)
 
-    log "Registering function: $func_id (type: $func_type, title: $title)"
+    log "Registering function: $func_id (type: $func_type, global: $is_global, title: $title)"
 
     # Read the file content and use a temp file for the SQL
     # This avoids shell escaping issues
@@ -126,7 +136,7 @@ SQLHEADER
         v_content,
         '${meta_json}'::jsonb,
         true,
-        true,
+        ${is_global},
         ${timestamp},
         ${timestamp}
     )
@@ -262,6 +272,12 @@ main() {
     done
 
     log "Function registration complete: $registered registered, $failed failed"
+
+    # Registration only upserts, so a function whose file was removed from the repo would keep running from the
+    # database. Ids listed here are deleted on every run.
+    for retired_id in $RETIRED_FUNCTION_IDS; do
+        run_sql -c "DELETE FROM function WHERE id = '${retired_id}';" && log "Removed retired function: $retired_id"
+    done
 }
 
 main "$@"

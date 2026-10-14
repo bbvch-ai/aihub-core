@@ -6,12 +6,31 @@ config:
   port:
     label: IMAP-Port
     help: Port des IMAP-Servers. 993 für implizites TLS verwenden.
+  auth_method:
+    label: Authentifizierung
+    help: Wie sich der Agent am Postfach anmeldet. Microsoft 365 (OAuth 2.0) für Microsoft-365-Postfächer
+      wählen, bei denen die Standardauthentifizierung deaktiviert ist; dafür ist eine
+      App-Registrierung in Microsoft Entra ID nötig.
+    password_label: Benutzername und Passwort
+    oauth2_label: Microsoft 365 (OAuth 2.0)
   username:
     label: Benutzername
-    help: Postfach-Login, üblicherweise die vollständige E-Mail-Adresse.
+    help: Postfach-Login, üblicherweise die vollständige E-Mail-Adresse. Bei Microsoft
+      365 (OAuth 2.0) die Adresse des zu verarbeitenden Postfachs.
   password:
     label: Passwort
     help: Postfach-Passwort oder anwendungsspezifisches Token.
+  tenant_id:
+    label: Tenant-ID
+    help: Verzeichnis-ID (Tenant-ID) Ihres Microsoft-Entra-ID-Tenants.
+  client_id:
+    label: Client-ID
+    help: Anwendungs-ID (Client-ID) der Entra-ID-App-Registrierung, der IMAP-Zugriff
+      auf dieses Postfach gewährt wurde.
+  client_secret:
+    label: Geheimer Clientschlüssel
+    help: Geheimer Clientschlüssel der Entra-ID-App-Registrierung. Schlüssel laufen
+      ab, daher hier vor dem Ablaufdatum erneuern.
   use_tls:
     label: TLS verwenden
     help: Verbindung über implizites TLS. Nur für Klartext-Testserver deaktivieren.
@@ -109,15 +128,13 @@ config:
     label: Zeichenlimit pro Anhang
     help: Anzahl der Zeichen, die aus dem extrahierten Text eines einzelnen Anhangs
       übernommen werden.
-  category_knowledge_namespace:
-    label: Wissenssammlung
-    help: Sammlung, auf der die Antworten dieser Kategorie basieren. Ist sie gesetzt,
-      wird die Antwort ausschliesslich aus den Dokumenten dieser Sammlung erstellt.
-      Bleibt sie leer, wird die Antwort allein aus der Nachricht verfasst, ohne Suche.
-  knowledge_databases:
-    label: Wissensdatenbanken
-    help: Datenbanken, in denen die Sammlungen der Kategorien gesucht werden. Nur
-      nötig, wenn eine Kategorie eine Sammlung nennt.
+  category_knowledge_namespaces:
+    label: Wissenssammlungen
+    help: Sammlungen, aus denen die Antworten dieser Kategorie erstellt werden. Angeboten
+      werden nur Sammlungen, für die der Wissensagent des Profils konfiguriert ist.
+    placeholder: Sammlungen auswählen
+    toggle_label: Wissenssammlungen auswählen
+    toggle_help: Deaktivieren, um in allen Sammlungen zu suchen.
   no_information_draft:
     label: Entwurf, wenn nichts gefunden wurde
     help: Entwurfstext, wenn die Suche nichts gefunden hat, das die Nachricht beantwortet.

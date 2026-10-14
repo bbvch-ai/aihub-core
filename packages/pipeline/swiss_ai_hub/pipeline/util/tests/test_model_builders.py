@@ -101,6 +101,39 @@ class TestVisionModel:
             assert model_builders.vision_model_name_for_bucket("contracts") == "text-generation/vision"
 
 
+class TestRegisteredDeploymentDefaults:
+    def test_settings_a_pipeline_was_built_with_win_over_the_environment(self, deployment_defaults):
+        """A model named in code must not be overridden by the deployment's variables (issue #171, AC4)."""
+        in_code = DocumentIngestionPipelineSettings(
+            LLM_MODEL="text-generation/from-code", VISION_MODEL="text-generation/vision-from-code"
+        )
+        bucket = _bucket({})
+        bucket.ingestor = "document_ingestion"
+        with (
+            patch.dict(model_builders._registered_deployment_defaults, clear=True),
+            patch(f"{_MODULE}._bucket_entity", return_value=bucket),
+        ):
+            model_builders.register_deployment_defaults("document_ingestion", in_code)
+            config = model_builders.ingestor_config_for_bucket("contracts")
+
+        assert config.llm_model == "text-generation/from-code"
+        assert config.vision_model == "text-generation/vision-from-code"
+
+    def test_a_database_of_another_ingestor_keeps_the_environment_defaults(self, deployment_defaults):
+        bucket = _bucket({})
+        bucket.ingestor = "some_other_ingestor"
+        with (
+            patch.dict(model_builders._registered_deployment_defaults, clear=True),
+            patch(f"{_MODULE}._bucket_entity", return_value=bucket),
+        ):
+            model_builders.register_deployment_defaults(
+                "document_ingestion", DocumentIngestionPipelineSettings(LLM_MODEL="text-generation/from-code")
+            )
+            config = model_builders.ingestor_config_for_bucket("contracts")
+
+        assert config.llm_model == "text-generation/default-llm"
+
+
 class TestEmbeddingDimension:
     def test_a_model_without_declared_width_is_refused_loudly(self, deployment_defaults):
         """Milvus would silently pad or truncate; the pipeline must fail instead."""

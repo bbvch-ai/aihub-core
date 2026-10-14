@@ -108,6 +108,27 @@ unchanged.
 Major core updates with breaking changes require coordinated updates. Customer code must be updated to work with the new
 core version. Both core and customer code are updated together during a maintenance window.
 
+### New storage buckets
+
+`seaweedfs-init` creates every missing SeaweedFS bucket each time it runs, and `docker compose up -d` starts it again on
+every run, so the update above creates the buckets a release adds. Only an update that starts selected services, such as
+`docker compose up -d <service>` or `--no-deps`, skips it. Then run it yourself:
+
+```bash
+docker compose up seaweedfs-init
+```
+
+A missing bucket fails at runtime, not at startup. Without the `parse-cache` bucket, every MinerU document parse fails
+with `NoSuchBucket`. Office documents are still parsed, only without the cache, so every read converts them again and
+logs a warning. The bucket caches parsed documents by content hash, and entries expire after 7 days. An expired entry is
+parsed again, so nothing needs a backup.
+
+The `sandbox-files` bucket holds the one-way mirror of every user's code-sandbox home (the files behind **My Files**).
+It is created the same way, and needs `SANDBOX_MIRROR_S3_ACCESS_KEY`, `SANDBOX_MIRROR_S3_SECRET_KEY` and
+`SANDBOX_MIRROR_INTERVAL_SECONDS` in your `.env` (the review step above shows them). The mirror uses an S3 identity
+limited to this bucket, so recreate `seaweedfs-s3` for the identity to take effect. Files deleted or overwritten in the
+sandbox are kept under `.deleted/` for 7 days.
+
 ### Customer code updates
 
 Customer code can be updated independently when the core version pin remains unchanged. Update the customer image tags
@@ -147,6 +168,19 @@ docker compose up -d
 
 Core and customer code can be rolled back independently if they were updated separately. If both were updated together,
 roll back core first, then customer code.
+
+::: warning Services with forward-only migrations cannot be rolled back this way
+"If data remains compatible" is the operative condition, and it does not hold for every service. Langfuse applies
+forward-only Postgres and ClickHouse migrations on startup, so once an update has run them, downloading the previous
+bundle restores the older **binaries** against the newer **schema**. There is no supported downgrade path.
+
+Restoring a pre-update backup is not a rollback either: the restore validates only that the expected artifacts are
+present, carries no schema-version stamp, and reverts Postgres and ClickHouse independently with no cross-consistency
+check and no post-restore migration step.
+
+Before updating a release that bumps Langfuse, take a backup you are willing to treat as one-way, and plan forward
+recovery rather than rollback.
+:::
 
 ______________________________________________________________________
 

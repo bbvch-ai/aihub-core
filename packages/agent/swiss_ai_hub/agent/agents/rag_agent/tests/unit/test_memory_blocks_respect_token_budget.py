@@ -1,26 +1,20 @@
 """Memory blocks are inside the token budget, not added on top of it.
 
-`add_memory_to_chat_history_step` extends the *already-limited* history (#1753), so without a re-limit
-`extended_history` could exceed `number_of_input_tokens` — and every consumer reads it unchecked:
-`context_sufficient_guard` formats it straight into a prompt, `do_respond_with_llm`'s reject paths prepend a
-system message and send it, and `limit_chat_history_with_context` *reserves* system messages rather than
-trimming them, so an oversized block raises there instead of being cut.
-
-Before the reorder this was structurally impossible: memory was added to the raw history and the single
-limiter ran afterwards. These tests pin that invariant back in place, including which side loses when the
-result does not fit.
+The memory block joins an *already-limited* history (#1753), and the composed prompt is sent to the model as it is,
+so the composition has to re-limit it. These tests pin that invariant, including which side loses when the result
+does not fit.
 """
 
 from unittest.mock import patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import (
-    LimitChatHistoryEvent,
-    RetrieveUserMemoryEvent,
-    UserMessageEvent,
+from swiss_ai_hub.core.generative_ai import (
+    EmbeddingModelConfig,
+    KnowledgeRetrieverConfig,
+    LLMConfig,
+    extend_chat_history_with_user_memory,
 )
-from swiss_ai_hub.core.generative_ai import EmbeddingModelConfig, KnowledgeRetrieverConfig, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_metadata import MemoryMetadata
@@ -30,8 +24,9 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.expert_rag_agent.expert_rag_agent import ExpertRAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 _MODEL = "text-generation/gemma-4-31B-it"
 
@@ -98,17 +93,21 @@ async def _run_step(
     """
     model_info = {"model_info": {} if window is None else {"max_input_tokens": window}}
     with patch.object(LLMConfig, "get_model_info", return_value=model_info):
-        return await agent_type().add_memory_to_chat_history_step(
-            chat_history_event=LimitChatHistoryEvent(limited_history=history),
-            start_event=UserMessageEvent(
-                messages=history,
-                user=fake_user(),
-            ),
-            user_memory_event=RetrieveUserMemoryEvent(memories=memories, relations=[]),
-            org_memory_event=None,
-            agent_config=config,
-            t=LocaleHandler(),
-        )
+        return await _run_spine_join(agent_type, config, history, memories)
+
+
+async def _run_spine_join(agent_type, config: RAGAgentConfig, history: list[ChatMessage], memories: list[Memory]):
+    """Both RAG blueprints ask the conversation to compose the prompt: the user-memory block arrives as a
+    block on the request and the capability merges it, so the budget invariant is asserted on
+    `compose_context_step`."""
+    block = extend_chat_history_with_user_memory(
+        chat_history=[], memories=memories, relations=[], user=fake_user(), t=LocaleHandler()
+    )
+    return await Conversation.compose_context_step(
+        agent_type(),
+        request=Conversation.compose(history, blocks=[block]),
+        conversation=config,
+    )
 
 
 def _token_count(config: RAGAgentConfig, messages: list[ChatMessage]) -> int:
@@ -124,7 +123,7 @@ async def test_extended_history_stays_within_the_configured_budget(agent_type):
 
     event = await _run_step(agent_type, config, _turns(12), _memories(10, "The user prefers a very specific thing"))
 
-    assert _token_count(config, event.extended_history) <= config.number_of_input_tokens
+    assert _token_count(config, event.history) <= config.number_of_input_tokens
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -135,7 +134,7 @@ async def test_memory_block_survives_when_the_budget_is_ample(agent_type):
 
     event = await _run_step(agent_type, config, _turns(4), _memories(3, "The user is based in Bern"))
 
-    system_messages = [m for m in event.extended_history if m.role == MessageRole.SYSTEM]
+    system_messages = [m for m in event.history if m.role == MessageRole.SYSTEM]
     assert system_messages, "the memory block was dropped despite a 128k budget"
     assert "Bern" in "\n".join(m.content or "" for m in system_messages)
 
@@ -154,8 +153,8 @@ async def test_the_memory_block_is_what_gives_way_not_the_latest_turn(agent_type
 
     event = await _run_step(agent_type, config, history, _memories(10, "A long remembered fact about the user"))
 
-    assert event.extended_history, "limiting must never empty the history"
-    assert event.extended_history[-1].content == history[-1].content
+    assert event.history, "limiting must never empty the history"
+    assert event.history[-1].content == history[-1].content
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -177,7 +176,7 @@ async def test_the_model_window_wins_over_a_higher_cost_ceiling(agent_type):
         window=600,
     )
 
-    assert _token_count(config, event.extended_history) <= 600
+    assert _token_count(config, event.history) <= 600
 
 
 @pytest.mark.parametrize("agent_type", [RAGAgent, ExpertRAGAgent], ids=lambda agent: agent.__name__)
@@ -194,5 +193,5 @@ async def test_an_undeclared_window_falls_back_to_the_configured_ceiling(agent_t
         window=None,
     )
 
-    assert event.extended_history
-    assert _token_count(config, event.extended_history) <= config.number_of_input_tokens
+    assert event.history
+    assert _token_count(config, event.history) <= config.number_of_input_tokens

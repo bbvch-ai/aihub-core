@@ -3,6 +3,26 @@ display_event:
   name: Événement d'Affichage
   description: Un événement qui affiche des informations à l'utilisateur sans affecter
     le flux de travail.
+attached_file_event:
+  name: Fichier joint
+  description: L'agent a lu un fichier que l'utilisateur a joint à la conversation.
+knowledge_searched_event:
+  name: Connaissances consultées
+  description: L'agent a recherché dans les collections de connaissances référencées
+    par l'utilisateur.
+tool_result_event:
+  name: Résultat d'outil
+  description: Ce qu'a renvoyé un outil choisi par l'agent.
+tool_loop_status_event:
+  name: État de la boucle d'outils
+  description: Ce que fait la boucle d'outils de l'agent.
+sandbox_file_displayed_event:
+  name: Fichier affiché
+  description: L'agent a montré à l'utilisateur un fichier de son bac à sable de code en pièce jointe.
+tool_loop_condensed_event:
+  name: Boucle d'outils condensée
+  description: L'agent a condensé les résultats d'outils et les échanges précédents
+    pour tenir dans le contexte du modèle.
 conversation_title_event:
   name: Titre de la Conversation
   description: L'agent a généré un titre résumant le sujet de la conversation.
@@ -255,3 +275,59 @@ mail_batch_drafted_event:
   name: Lot Rédigé
   description: L'agent a rédigé des réponses pour un lot de messages et les a ajoutées
     au dossier des brouillons pour qu'un humain les révise et les envoie.
+context_composed_event:
+  name: Contexte enrichi
+  description: L'historique de chat que le modèle reçoit, avec tous les blocs de contexte
+    récupérés
+refusal_stop_event:
+  name: Tour refusé
+  description: L'assistant a refusé ce tour à cause de l'entrée et en a expliqué la
+    raison à l'utilisateur.
+contextualize_conversation_event:
+  name: Contextualiser la conversation
+  description: Compréhension de la question
+conversation_contextualized_event:
+  name: Conversation contextualisée
+  description: Question comprise
+compose_context_event:
+  name: Composer le contexte
+  description: Préparation de ce que le modèle lit
+recall_memory_event:
+  name: Rappeler les souvenirs
+  description: Rappel des souvenirs
+memory_recalled_event:
+  name: Souvenirs rappelés
+  description: Souvenirs rappelés
+search_knowledge_event:
+  name: Rechercher dans les connaissances
+  description: Recherche dans les collections de connaissances
+read_attached_files_event:
+  name: Lire les fichiers joints
+  description: Lecture des fichiers joints
+attached_files_read_event:
+  name: Fichiers joints lus
+  description: Fichiers joints lus
+complete_conversation_event:
+  name: Terminer la conversation
+  description: Suggestion de questions de suivi
+run_tool_loop_event:
+  name: Lancer la boucle d'outils
+  description: Choix des outils à utiliser
+tool_calls_decided_event:
+  name: Appels d'outils décidés
+  description: Exécution des outils choisis
+tool_call_approved_event:
+  name: Appel d'outil approuvé
+  description: Exécution d'un outil
+tool_loop_iteration_event:
+  name: Itération de la boucle d'outils
+  description: Choix de la prochaine étape
+tool_loop_finished_event:
+  name: Boucle d'outils terminée
+  description: Outils terminés
+memory_storage_requested_event:
+  name: Enregistrement des souvenirs demandé
+  description: Enregistrement des souvenirs
+not_a_meta_question_event:
+  name: Pas une méta-question
+  description: Réponse à la demande

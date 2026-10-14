@@ -32,8 +32,8 @@ The websites it retrieved the information from are listed as references.
 ## Search configuration
 
 Web search can be enabled or disabled platform-wide, and restricted to specific user roles through role-based access
-control, so different policies apply to different use cases or user groups. It can be modified at runtime without
-system changes.
+control, so different policies apply to different use cases or user groups. It can be modified at runtime without system
+changes.
 
 ## Search restrictions
 

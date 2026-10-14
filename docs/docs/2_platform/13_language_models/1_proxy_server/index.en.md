@@ -53,8 +53,11 @@ pricing for cost tracking through Langfuse.
 Unified interface: LiteLLM provides an OpenAI-compatible API that works with Swiss LLM Cloud, locally hosted vLLM
 models, and other providers. Platform code uses the same interface regardless of which model handles the request.
 
-Request routing: The proxy routes requests based on configured strategy. Current configuration uses
-"usage-based-routing-v2" which distributes load across available models.
+Request routing: The proxy routes requests based on configured strategy. Current configuration uses "simple-shuffle":
+every model group has a single deployment, so a usage-based strategy would only add a Redis write to every call.
+
+Response caching: Only embeddings are cached in Valkey, for 24 hours. Chat completions are not cached, because their
+prompts carry whole attached files and are almost never repeated.
 
 Cost tracking: Usage tracking captures token consumption per request. Cost per token is configured for each model,
 allowing the platform to calculate and display costs per conversation. See [Cost control](../../14_cost_control/) for

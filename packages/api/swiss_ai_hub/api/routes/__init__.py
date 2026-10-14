@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.file.file_controller import FileController
     from swiss_ai_hub.api.routes.health.api_health_controller import ApiHealthController
     from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
+    from swiss_ai_hub.api.routes.incident.incident_controller import IncidentController
     from swiss_ai_hub.api.routes.knowledge.knowledge_controller import KnowledgeController
     from swiss_ai_hub.api.routes.memory.organization_memory_controller import OrganizationMemoryController
     from swiss_ai_hub.api.routes.memory.user_memory_controller import UserMemoryController
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.token.token_controller import TokenController
     from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
     from swiss_ai_hub.api.routes.user.user_controller import UserController
+    from swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller import UserKnowledgeController
     from swiss_ai_hub.api.routes.webhook.webhook_controller import WebhookController
 
 __all__ = [
@@ -42,6 +44,7 @@ __all__ = [
     "ModelController",
     "MyAccountController",
     "MyTenantController",
+    "IncidentController",
     "NotificationController",
     "OpenaiController",
     "OrganizationMemoryController",
@@ -53,6 +56,7 @@ __all__ = [
     "TokenController",
     "TranslationController",
     "UserController",
+    "UserKnowledgeController",
     "UserMemoryController",
     "WebhookController",
 ]
@@ -70,6 +74,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ModelController": "swiss_ai_hub.api.routes.model.model_controller",
     "MyAccountController": "swiss_ai_hub.api.routes.my_account.my_account_controller",
     "MyTenantController": "swiss_ai_hub.api.routes.my_tenant.my_tenant_controller",
+    "IncidentController": "swiss_ai_hub.api.routes.incident.incident_controller",
     "NotificationController": "swiss_ai_hub.api.routes.notification.notification_controller",
     "OpenaiController": "swiss_ai_hub.api.routes.openai.openai_controller",
     "OrganizationMemoryController": "swiss_ai_hub.api.routes.memory.organization_memory_controller",
@@ -81,6 +86,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "TokenController": "swiss_ai_hub.api.routes.token.token_controller",
     "TranslationController": "swiss_ai_hub.api.routes.translation.translation_controller",
     "UserController": "swiss_ai_hub.api.routes.user.user_controller",
+    "UserKnowledgeController": "swiss_ai_hub.api.routes.user_knowledge.user_knowledge_controller",
     "UserMemoryController": "swiss_ai_hub.api.routes.memory.user_memory_controller",
     "WebhookController": "swiss_ai_hub.api.routes.webhook.webhook_controller",
 }

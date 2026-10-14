@@ -22,7 +22,7 @@ from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent_config im
 from swiss_ai_hub.agent.agents.expert_rag_agent.configs.expert_rag_agent_config import ExpertRAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import ExpertEscalationConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 MEMORY_MODEL = "text-generation/memory-model"
 

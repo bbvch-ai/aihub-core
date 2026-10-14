@@ -2,11 +2,20 @@ import { UserManager, WebStorageStateStore } from 'oidc-client-ts'
 
 import { defineNuxtPlugin } from '#app'
 
-export default defineNuxtPlugin(async ({ $i18n, $router }) => {
+export default defineNuxtPlugin(async ({ $i18n }) => {
   const config = useRuntimeConfig()
+  const router = useRouter()
 
   // Keycloak-compatible OIDC configuration
   // Authority URL is the Keycloak realm URL (e.g., http://localhost:8180/realms/aihub)
+  //
+  // The locale in the three redirect URIs below is frozen at bootstrap: this
+  // plugin never re-runs when the user switches language (that is a client-side
+  // route push). They are bootstrap defaults only -- composables/auth/useAuth.ts
+  // overrides redirect_uri and post_logout_redirect_uri per call with the locale
+  // that is live at that moment. silent_redirect_uri keeps the bootstrap value
+  // because automaticSilentRenew reads it from here, and /auth/renew renders
+  // nothing the user sees.
   const auth = new UserManager({
     authority: config.public.oidc.authorityUrl,
     client_id: config.public.oidc.clientId,
@@ -33,20 +42,24 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     console.log('Access token expiring, attempting silent renewal')
   })
 
-  auth.events.addAccessTokenExpired(() => {
-    console.log('Access token expired')
-    // Redirect to login when token expires and cannot be renewed
-    const locale = $i18n.locale.value
-    $router.push(`/${locale}/auth/login`)
-  })
-
+  // No addAccessTokenExpired handler on purpose. For a stored user that is
+  // already expired it fires ~1s after load, while middleware/auth.global.ts is
+  // still refreshing that same session; a redirect from here races that initial
+  // navigation (login bounce, or a fatal 500 via home-redirect). A session that
+  // really cannot be renewed ends up in addSilentRenewError below or in the
+  // middleware's own refresh.
   auth.events.addSilentRenewError(async (error) => {
     console.error('Silent renew error:', error)
     // Refresh token rejected (e.g. Keycloak invalidated it): drop the dead
-    // session before redirecting so it is not reused.
+    // session, then re-run the route guard on the current page rather than
+    // pushing /auth/login, which on an instance with the welcome page offers no
+    // way back in. middleware/auth.global.ts then sends a tenant page to its
+    // identity provider and remembers the page for after login. isReady() lets
+    // an initial navigation that is still in flight finish first.
     await auth.removeUser()
-    const locale = $i18n.locale.value
-    $router.push(`/${locale}/auth/login`)
+    await router.isReady()
+    const { path, query, hash } = router.currentRoute.value
+    await router.replace({ path, query, hash, force: true })
   })
 
   // Session renewal is handled per-navigation by middleware/auth.global.ts;

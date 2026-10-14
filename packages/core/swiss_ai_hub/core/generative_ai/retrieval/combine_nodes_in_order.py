@@ -54,18 +54,18 @@ def combine_nodes_in_order(
     nodes_per_document: dict[str, list[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
-        key = context_node.source
-        nodes_per_document[key].append(context_node)
+        nodes_per_document[context_node.document_id].append(context_node)
 
     context_blocks: list[ImageBlock | TextBlock] = []
-    for key, nodes in nodes_per_document.items():
+    for nodes in nodes_per_document.values():
         if not nodes:
             continue
 
         node: IngestedNode = nodes[0]
 
         metadata_fields = {
-            SOURCE: key,
+            "id": node.citation_id,
+            SOURCE: node.source,
             DOCUMENT_TITLE: node.document_title,
             LANGUAGE: node.language,
             VERSION: node.version,

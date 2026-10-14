@@ -31,7 +31,10 @@ _NAMESPACE_SUBMODULE = re.compile(r"(^|/)swiss_ai_hub/[^/]+/__init__\.py$")
 # Files that must never ship in a public artifact.
 _SECRET_BASENAMES = {".env", ".pypirc", ".npmrc", ".netrc", "id_rsa", "id_dsa", "credentials"}
 _SECRET_GLOBS = (".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "*.keystore", "*.pwd")
-_SECRET_PATH_FRAGMENTS = ("/.git/", "/.ssh/", "/.aws/", "/secrets/")
+# Only tool-owned dot-directories. A plain directory name is not evidence of key material:
+# ``/secrets/`` used to live here and blocked swiss_ai_hub/core/secrets/, an ordinary source
+# package. Real key material is caught by the basename and glob rules above.
+_SECRET_PATH_FRAGMENTS = ("/.git/", "/.ssh/", "/.aws/")
 
 _LARGE_FILE_BYTES = 5 * 1024 * 1024
 

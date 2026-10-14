@@ -143,7 +143,7 @@ const isCreating = ref(false)
 
 const databaseOptions = computed(() =>
   (props.databases || [])
-    .filter(db => !db.auto_sync)
+    .filter(db => !db.source)
     .map(db => ({
       name: db.name,
       displayName: capitalCase(db.name),

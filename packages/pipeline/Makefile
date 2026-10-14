@@ -1,5 +1,5 @@
 .PHONY: lint format typecheck pr-ready test-cov test playground quickstart document-ingestion-pipeline \
-	check-dotenv dagster-home
+	structured-demo check-dotenv dagster-home
 
 DOTENV := ../../.env
 
@@ -68,3 +68,8 @@ quickstart: check-dotenv dagster-home
 document-ingestion-pipeline: check-dotenv dagster-home
 	@echo "Running document ingestion pipeline..."
 	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline
+
+# Two code locations in one dagster dev: the demo source writes, the ingestion pipeline ingests what it wrote.
+structured-demo: check-dotenv dagster-home
+	@echo "Running the structured source demo next to the document ingestion pipeline..."
+	@$(LOAD_ENV) && OTEL_ENABLED=false uv run dagster dev -m app.document_ingestion_pipeline -m playground.structured_demo

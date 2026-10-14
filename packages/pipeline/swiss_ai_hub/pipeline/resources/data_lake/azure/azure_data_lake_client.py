@@ -6,7 +6,10 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import FIGURES_DIRECTORY_N
 
 from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
 from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
+from swiss_ai_hub.pipeline.types.skipped_data_lake_file import SkippedDataLakeFile
 from swiss_ai_hub.pipeline.util.bucket_utils import get_or_create_namespace_for_directory
+from swiss_ai_hub.pipeline.util.namespace_collision_error import NamespaceCollisionError
 
 
 class AzureDataLakeClient(AbstractDataLakeClient):
@@ -30,27 +33,36 @@ class AzureDataLakeClient(AbstractDataLakeClient):
         return parts[1]
 
     def get_all_files(self) -> list[DataLakeFile]:
-        """Get all files using Azure FileSystemClient.get_paths()"""
-        paths = self._client.get_paths(recursive=True)
-        data_lake_files: list[DataLakeFile] = []
+        """Every ingestible file; files of a folder whose namespace collides with another folder's are left out."""
+        return self.list_files().files
 
-        for path in paths:
-            if path.is_directory:
-                continue
+    def list_files(self) -> DataLakeListing:
+        """Only a namespace collision skips a file, and a colliding directory is looked up once. Any other failure
+        propagates, because skipping on it would drop the partitions of every file of the database."""
+        listing = DataLakeListing()
+        collisions: dict[str, NamespaceCollisionError] = {}
+        for document_uri in self.list_ingestible_uris():
+            directory_name = document_uri.split("/")[1]
+            if directory_name not in collisions:
+                try:
+                    listing.files.append(self._create_data_lake_file_from_fs_uri(document_uri))
+                except NamespaceCollisionError as collision:
+                    collisions[directory_name] = collision
+            if directory_name in collisions:
+                listing.skipped.append(SkippedDataLakeFile(uri=document_uri, reason=str(collisions[directory_name])))
+        return listing
 
+    def list_ingestible_uris(self) -> list[str]:
+        """Files inside a top-level folder, minus figures and Dagster's own files, with no namespace lookup."""
+        uris: list[str] = []
+        for path in self._client.get_paths(recursive=True):
             path_parts = path.name.split("/")
-
             is_root_folder = len(path_parts) == 1
             is_figure_folder = FIGURES_DIRECTORY_NAME in path_parts
             is_dagster_folder = any(part.startswith(".") and part.endswith("dagster") for part in path_parts)
-            if is_root_folder or is_figure_folder or is_dagster_folder:
-                continue
-
-            document_uri = self.build_uri(path.name)
-            data_lake_file = self._create_data_lake_file_from_fs_uri(document_uri)
-            data_lake_files.append(data_lake_file)
-
-        return data_lake_files
+            if not (path.is_directory or is_root_folder or is_figure_folder or is_dagster_folder):
+                uris.append(self.build_uri(path.name))
+        return uris
 
     def get_file_metadata(self, file_path: str) -> dict:
         """Get file metadata using Azure client"""

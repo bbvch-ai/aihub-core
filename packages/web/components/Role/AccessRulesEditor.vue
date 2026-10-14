@@ -96,7 +96,7 @@
           :placeholder="t('role.add_access_role')"
           size="small"
           class="flex-1"
-          @keyup.enter="add"
+          @keydown.enter.prevent="add"
         />
         <Button
           type="button"

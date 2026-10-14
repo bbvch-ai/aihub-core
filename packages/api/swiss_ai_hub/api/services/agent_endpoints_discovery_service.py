@@ -1,6 +1,8 @@
 import hashlib
 import logging
-from asyncio import sleep
+from asyncio import sleep, to_thread
+from collections.abc import Awaitable, Callable
+from enum import StrEnum
 from functools import reduce
 from operator import or_
 from typing import Annotated, override
@@ -57,6 +59,11 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 logger = logging.getLogger(__name__)
 
 
+class SyncTarget(StrEnum):
+    LANGFUSE = "langfuse"
+    OPENWEBUI = "openwebui"
+
+
 class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
     This service ensures that new agents in the system are automatically registered.
@@ -67,7 +74,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     2. Registers/deregisters dynamic API endpoints for agent events
     """
 
-    _AGENTS_HASH_KEY = "discovery:agents:hash"
+    _AGENTS_HASH_KEY_PREFIX = "discovery:agents:hash"
     _AGENTS_HASH_TTL = 3600
 
     def __init__(
@@ -85,6 +92,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self._redis = redis
         self._langfuse_provisioner = LangfuseProvisioner()
         self._openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
+        self._synced_targets: set[SyncTarget] = set()
 
     @override
     async def _discover_and_register(self):
@@ -125,6 +133,15 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         # Step 4: Sync agent instances to external provisioners (Langfuse, OpenWebUI)
         await self._sync_agent_instances_to_provisioners()
+
+        # Step 5: Reconcile the OpenWebUI knowledge entries, since collections a pipeline creates signal nothing here
+        await self._sync_knowledge_to_openwebui()
+
+    async def _sync_knowledge_to_openwebui(self) -> None:
+        try:
+            await self._openwebui_provisioner.sync_knowledge()
+        except Exception as e:
+            logger.warning(f"OpenWebUI knowledge sync failed (non-fatal): {e}")
 
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
@@ -168,40 +185,65 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_class_dto = AgentClassDTO.from_discovery_event(response)
                 unique_agents_dict[unique_key] = agent_class_dto
 
-                AgentClassEntity.create_or_update(response)
+                # One blocking write per responding class would serialize on the loop that also serves
+                # every request in this process. Nothing else refreshes `last_discovered`, and
+                # `AgentClassEntity.is_online` is only a 5-minute window on it — so a round that stalls
+                # here marks *every* agent class offline at once, not just the slow one.
+                await to_thread(AgentClassEntity.create_or_update, response)
 
         return list(unique_agents_dict.values())
 
     async def _sync_agent_instances_to_provisioners(self) -> None:
-        """Sync online agent instances to external provisioners when the set changes."""
+        """Each target carries its own hash so a permanently failing one does not re-drive the healthy one."""
         name_locale_handler = ApiLocaleHandler(locale=self._openwebui_provisioner.model_name_locale)
         instances = await AgentService.get_all_agent_instances(t=name_locale_handler, online=True)
 
-        current_set = {(inst.agent_class, inst.agent_id, inst.name) for inst in instances}
+        features_by_class = await to_thread(self._supported_features_by_class)
+        current_set = {
+            (inst.agent_class, inst.agent_id, inst.name, ",".join(features_by_class.get(inst.agent_class, [])))
+            for inst in instances
+        }
         current_hash = self._compute_agents_hash(current_set)
 
-        if await self._agents_hash_unchanged(current_hash):
+        await self._sync_target(SyncTarget.LANGFUSE, self._sync_agent_instances_to_langfuse, instances, current_hash)
+        await self._sync_target(SyncTarget.OPENWEBUI, self._sync_agent_instances_to_openwebui, instances, current_hash)
+
+    async def _sync_target(
+        self,
+        target: SyncTarget,
+        sync: Callable[[list[FullAgentInstanceDTO]], Awaitable[bool]],
+        instances: list[FullAgentInstanceDTO],
+        current_hash: str,
+    ) -> None:
+        """Startup provisioning re-registers the connections with an empty model list, so a hash left behind by a
+        previous process describes state this one has already discarded — each target syncs once before trusting it."""
+        if target in self._synced_targets and await self._agents_hash_unchanged(target, current_hash):
             return
 
-        langfuse_ok = await self._sync_agent_instances_to_langfuse(instances)
-        openwebui_ok = await self._sync_agent_instances_to_openwebui(instances)
-
-        if langfuse_ok and openwebui_ok:
-            await self._store_agents_hash(current_hash)
+        if await sync(instances):
+            self._synced_targets.add(target)
+            await self._store_agents_hash(target, current_hash)
 
     @staticmethod
-    def _compute_agents_hash(agent_set: set[tuple[str, str, str]]) -> str:
-        normalized = sorted(f"{ac}:{ai}:{name}" for ac, ai, name in agent_set)
+    def _compute_agents_hash(agent_set: set[tuple[str, str, str, str]]) -> str:
+        """The supported features are part of the hash, so a blueprint gaining one re-syncs its toggles."""
+        normalized = sorted(f"{ac}:{ai}:{name}:{features}" for ac, ai, name, features in agent_set)
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
-    async def _agents_hash_unchanged(self, current_hash: str) -> bool:
-        stored_hash = await self._redis.get(self._AGENTS_HASH_KEY)
-        if stored_hash and stored_hash.decode() == current_hash:
-            return True
-        return False
+    @staticmethod
+    def _supported_features_by_class() -> dict[str, list[str]]:
+        return {entity.agent_class: sorted(entity.supported_features) for entity in AgentClassEntity.objects()}
 
-    async def _store_agents_hash(self, agents_hash: str) -> None:
-        await self._redis.set(self._AGENTS_HASH_KEY, agents_hash, ex=self._AGENTS_HASH_TTL)
+    @classmethod
+    def _agents_hash_key(cls, target: SyncTarget) -> str:
+        return f"{cls._AGENTS_HASH_KEY_PREFIX}:{target}"
+
+    async def _agents_hash_unchanged(self, target: SyncTarget, current_hash: str) -> bool:
+        stored_hash = await self._redis.get(self._agents_hash_key(target))
+        return bool(stored_hash) and stored_hash.decode() == current_hash
+
+    async def _store_agents_hash(self, target: SyncTarget, agents_hash: str) -> None:
+        await self._redis.set(self._agents_hash_key(target), agents_hash, ex=self._AGENTS_HASH_TTL)
 
     async def _sync_agent_instances_to_langfuse(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
@@ -216,8 +258,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
+            features_by_class = await to_thread(self._supported_features_by_class)
             online_agents = [
-                OnlineAgent(agent_class=inst.agent_class, agent_id=inst.agent_id, display_name=inst.name)
+                OnlineAgent(
+                    agent_class=inst.agent_class,
+                    agent_id=inst.agent_id,
+                    display_name=inst.name,
+                    supported_features=features_by_class.get(inst.agent_class, []),
+                )
                 for inst in instances
                 if inst.is_conversational
             ]

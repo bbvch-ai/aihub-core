@@ -40,8 +40,8 @@ deployment/
 │                                      #   30-clients, 40-auth-flows, 60-service-accounts
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py               # Agent connector pipe (relays title/follow-ups, tags conversations)
-    ├── aihub_title_filter.py           # Outlet filter: restores agent title after OpenWebUI's first-turn fallback
-    ├── aihub_turn_scope_filter.py      # Inlet filter: scopes OpenWebUI file context to the files of the current turn
+    ├── aihub_feature_filter.py         # Inlet filter (agent models only): chat toggles → requested features for the pipe
+    ├── aihub_title_filter.py           # Outlet filter (agent models only): restores agent title after OpenWebUI's first-turn fallback
     ├── openai_pipeline.py
     ├── memory_action.py
     ├── source_action.py
@@ -52,7 +52,48 @@ deployment/
 
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
 - `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
+- `infra/configs/litellm/litellm-config.{variant}.{stage}{.gpu}.yml` — 20 files, see "LiteLLM provider variants"
 - `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+
+### LiteLLM provider variants
+
+The LiteLLM config carries a **third axis** on top of stage x hardware: `LITELLM_VARIANTS` in `generate_compose.py`
+(`infomaniak`, `stoney`). Any spec whose name pattern contains `{variant}` is rendered once per entry; everything else
+keeps the two-axis shape.
+
+Both files ship in every compose variant and in every release bundle, mounted side by side. The deployment chooses one
+at `docker compose up` via **`LITELLM_CONFIG_VARIANT`**, which compose interpolates into the litellm `command:`. Only
+the default chat model (`text-generation/gemma-4-31B-it`) differs between them — stoney-cloud with a 155648-token input
+limit on `stoney`, Infomaniak with 91824 on `infomaniak`. Every other model is identical.
+
+**`max_input_tokens` is the provider's window minus `max_output_tokens`.** Both providers count input and output against
+one window, and every agent call requests the full `max_output_tokens`, so agents fitting prompts to the provider's
+whole window get a "maximum context length" 400 on every long conversation (issue #2077). The window is the number in
+that 400, not what a provider's model catalogue declares as its input limit: Infomaniak lists 100000 for gemma (window
+100016\) and for Ministral (window 80000). To measure it, send one prompt twice, with `max_tokens=1` and with
+`max_output_tokens`; the second one's 400 names the window.
+
+This is deliberately **not** a stage or channel conditional. Every release bundle renders as `stage='latest'`
+(`generate_release`), and all customers deploy the same `latest` artifact, so which provider serves a model is a
+per-deployment property — not something the build can decide. It also makes switching or rolling back an env change plus
+a `litellm` restart rather than a rebuild. An unset or misspelled value points `--config` at a file that does not exist,
+so LiteLLM fails to start loudly instead of silently falling back.
+
+`max_input_tokens` and the cost fields must stay **literal numbers** in the template. LiteLLM does resolve `os.environ/`
+inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
+and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
+
+`aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
+`model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
+Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
+multi-tool orchestration.
+
+At runtime, an unknown value aborts that API start's **whole** OpenWebUI provisioning run, not just that model's sync.
+No LLM model is created, renamed or updated, so a model newly added to LiteLLM never appears. Access grants are not
+refreshed either, until the next agent sync. The only sign is one logged exception, because startup provisioning is
+non-fatal. To keep that from reaching a VM, `generate_compose.py` rejects any value other than `native` or `legacy`, so
+`make generate-compose`, and with it CI's Env / Compose Consistency job, fails on a typo. Keep its
+`OPENWEBUI_FUNCTION_CALLING_MODES` in sync with `AvailableModel.function_calling` in `packages/core`.
 
 ## Generation Pipeline
 
@@ -71,6 +112,13 @@ changes AND the regenerated output files.
 Note that `make generate-compose` also runs `make format-yaml`, which is repo-wide: if any YAML outside `infra/` is not
 yamlfix-clean on `main`, it gets reformatted into your working tree. Revert that churn before committing so the diff
 stays reviewable.
+
+### Global and per-model OpenWebUI functions
+
+`init-openwebui.sh` registers every function as global unless its frontmatter says `global: false`, and deletes the ids
+listed in `RETIRED_FUNCTION_IDS` so a function removed from the repo stops running. A non-global filter runs only on the
+models listing it in `meta.filterIds`, which is how the OpenWebUI provisioner attaches our agent filters
+(`AGENT_FILTER_IDS` in `openwebui_provisioner.py`) to agent models and keeps them off plain LLM chats.
 
 ### Applying an OpenWebUI function change to a running stack
 
@@ -164,7 +212,7 @@ in `docs/docs/2_platform/10_chat_ui/13_file_generation/index.en.md` whenever the
 After publishing, all stages pull the new image automatically via `docker compose pull`. See ADR:
 `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
-> **Deployment checklist:** Publish `open-terminal-office:0.11.34` to ghcr **before any non-dev stage pulls it**.
+> **Deployment checklist:** Publish `open-terminal-office:0.11.34-1` to ghcr **before any non-dev stage pulls it**.
 > Non-dev stages (`local`/`build` build locally, but `nightly`/`latest` pull from the registry) reference this exact
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.

@@ -1,4 +1,4 @@
-"""The store step only ever delegates (ADR `2026_09_11_async_user_memory_storage_as_the_only_mode`).
+"""Remembering only ever delegates (ADR `2026_09_11_async_user_memory_storage_as_the_only_mode`).
 
 Pinned here because the step used to branch on a config flag between an inline mem0 write and this
 delegation. The inline branch is what made the blueprint announce `StoreUserMemoryEvent` and what made the
@@ -9,14 +9,11 @@ the blueprint's contract with the API, and a step parameter is resolved by type,
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     MemoryStorageRequestedEvent,
     Message,
-    StandaloneQuestionCondenserEvent,
     StoreUserMemoryEvent,
-    UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
@@ -26,7 +23,8 @@ from swiss_ai_hub.core.topics import AgentInstanceTopic
 from swiss_ai_hub.agent.agents.memory_writer_agent.configs.memory_writer_agent_config import MemoryWriterAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent import RAGAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.configs.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
 
 MEMORY_MODEL = "text-generation/memory-model"
 
@@ -61,19 +59,15 @@ async def test_the_step_delegates_to_the_memory_writer():
     locale_handler = MagicMock()
     locale_handler.locale = "en"
 
-    event = await RAGAgent().store_user_memory_step(
-        user_message_event=UserMessageEvent(
-            user=fake_user(), messages=[ChatMessage(role=MessageRole.USER, content="hi")]
-        ),
-        llm_event=LLMEvent(output_messages=[Message(role="assistant", content="hello")]),
-        condense_event=StandaloneQuestionCondenserEvent(
-            condensed_chat_message=ChatMessage(role=MessageRole.USER, content="what is the vacation policy?")
-        ),
+    event = Memory.remember(
+        query="what is the vacation policy?",
+        answer=LLMEvent(output_messages=[Message(role="assistant", content="hello")]),
+        user=fake_user(),
         topic=_topic(),
         agent_config=_config(),
-        t=locale_handler,
+        memory=_config(),
+        locale=locale_handler.locale,
     )
-
     assert isinstance(event, MemoryStorageRequestedEvent)
     assert (event.target_agent_class, event.target_agent_id) == (
         MemoryWriterAgentConfig.AGENT_CLASS,

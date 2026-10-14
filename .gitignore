@@ -33,6 +33,7 @@ aihub_*/.idea/
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/mcp.local.json
+.claude/launch.json
 .claude/mcp/bin/*
 .claude/.deps-fingerprint
 .claude/statusline.sh
