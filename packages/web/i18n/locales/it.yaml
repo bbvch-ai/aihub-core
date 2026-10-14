@@ -1134,6 +1134,8 @@ userFiles:
     noTargets: Nessuna cartella in cui spostarlo.
   preview:
     unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
+    truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
+      vederlo tutto.
   name:
     invalid: Un nome non può essere vuoto né contenere una barra.
   delete:

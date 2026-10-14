@@ -9630,6 +9630,32 @@ export const FilePathDTOSchema = {
   title: "FilePathDTO",
 } as const;
 
+export const FilePreviewDTOSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The previewed file, relative to the user's file space.",
+    },
+    markdown: {
+      type: "string",
+      title: "Markdown",
+      description: "The document's content as markdown, without its images.",
+    },
+    truncated: {
+      type: "boolean",
+      title: "Truncated",
+      description:
+        "Whether the content was cut short; the download has all of it.",
+    },
+  },
+  type: "object",
+  required: ["path", "markdown", "truncated"],
+  title: "FilePreviewDTO",
+  description:
+    "An office document as the text a reader sees, for a browser that cannot show the file itself.",
+} as const;
+
 export const FilePromptCacheBreakpointSchema = {
   properties: {
     mode: {

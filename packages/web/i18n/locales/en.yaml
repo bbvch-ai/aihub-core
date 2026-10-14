@@ -1121,6 +1121,8 @@ userFiles:
     noTargets: No folder to move it to.
   preview:
     unavailable: No preview for this file type. Download it to open it.
+    truncated: This preview shows only the beginning of the document. Download it
+      to see all of it.
   name:
     invalid: A name must not be empty or contain a slash.
   delete:

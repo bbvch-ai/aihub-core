@@ -7,6 +7,7 @@ from urllib.parse import quote
 from bson import ObjectId
 from fastapi import HTTPException, Response, UploadFile, status
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.generative_ai import DocumentExtractor
 from swiss_ai_hub.core.infrastructure import (
     ConversationAttachments,
     OpenTerminalClient,
@@ -18,6 +19,7 @@ from swiss_ai_hub.core.persistence import OpenWebuiAccountEntity, ThreadEntity
 
 from swiss_ai_hub.api.routes.user_knowledge.dto.file_entry_dto import FileEntryDTO
 from swiss_ai_hub.api.routes.user_knowledge.dto.file_path_dto import FilePathDTO
+from swiss_ai_hub.api.routes.user_knowledge.dto.file_preview_dto import FilePreviewDTO
 from swiss_ai_hub.api.routes.user_knowledge.dto.folder_listing_dto import FolderListingDTO
 
 
@@ -32,6 +34,10 @@ class UserKnowledgeService:
     SHOWN_IN_PLACE = frozenset(
         {"application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp", "text/plain", "text/csv"}
     )
+    PREVIEWED_AS_MARKDOWN = frozenset({".docx", ".xlsx", ".xls", ".pptx"})
+    # A preview is for glancing at a file, and a large workbook converts to far more text than a browser renders
+    # comfortably; the download keeps the whole of it.
+    MAX_PREVIEW_CHARS = 200_000
 
     @staticmethod
     def client_for(user: UserIdentity) -> OpenTerminalClient:
@@ -88,6 +94,27 @@ class UserKnowledgeService:
                 "X-Content-Type-Options": "nosniff",
                 "Content-Security-Policy": "sandbox; default-src 'none'",
             },
+        )
+
+    @staticmethod
+    @trace_fn
+    async def preview(user: UserIdentity, path: str) -> FilePreviewDTO:
+        """Office documents a browser cannot show, converted the way an agent reads them, so both see the same text."""
+        relative = SandboxHomePath.shown(path)
+        filename = posixpath.basename(relative)
+        if posixpath.splitext(filename)[1].lower() not in UserKnowledgeService.PREVIEWED_AS_MARKDOWN:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="This file type has no preview."
+            )
+        content, content_type = await UserKnowledgeService.client_for(user).view(relative)
+        document = await DocumentExtractor.extract_from_bytes(
+            content=content, filename=filename, content_type=content_type.split(";")[0].strip().lower()
+        )
+        truncated = len(document.content) > UserKnowledgeService.MAX_PREVIEW_CHARS
+        return FilePreviewDTO(
+            path=relative,
+            markdown=document.content[: UserKnowledgeService.MAX_PREVIEW_CHARS],
+            truncated=truncated,
         )
 
     @staticmethod

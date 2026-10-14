@@ -1139,6 +1139,8 @@ userFiles:
   preview:
     unavailable: Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter,
       um sie zu öffnen.
+    truncated: Diese Vorschau zeigt nur den Anfang des Dokuments. Laden Sie es herunter,
+      um alles zu sehen.
   name:
     invalid: Ein Name darf nicht leer sein und keinen Schrägstrich enthalten.
   delete:

@@ -1137,6 +1137,8 @@ userFiles:
     noTargets: Aucun dossier vers lequel le déplacer.
   preview:
     unavailable: Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir.
+    truncated: Cet aperçu ne montre que le début du document. Téléchargez-le pour
+      le voir en entier.
   name:
     invalid: Un nom ne doit pas être vide ni contenir de barre oblique.
   delete:
