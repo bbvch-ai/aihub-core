@@ -1,45 +1,45 @@
 ---
 tools:
   run_command:
-    label: "Run Command"
+    label: Run Command
     approval: "Run in the code sandbox:\n{command}"
   get_process_status:
-    label: "Check Command"
-    approval: "Check on command {process_id}"
+    label: Check Command
+    approval: Check on command {process_id}
   send_process_input:
-    label: "Type into Command"
+    label: Type into Command
     approval: "Type into command {process_id}:\n{text}"
   kill_process:
-    label: "Stop Command"
-    approval: "Stop command {process_id}"
+    label: Stop Command
+    approval: Stop command {process_id}
   list_processes:
-    label: "List Commands"
-    approval: "List the commands in the code sandbox"
+    label: List Commands
+    approval: List the commands in the code sandbox
   list_files:
-    label: "List Files"
-    approval: "List the files in {directory}"
+    label: List Files
+    approval: List the files in {directory}
   read_file:
-    label: "Read File"
-    approval: "Read {path}"
+    label: Read File
+    approval: Read {path}
   write_file:
-    label: "Write File"
-    approval: "Write {path}"
+    label: Write File
+    approval: Write {path}
   replace_file_content:
-    label: "Edit File"
-    approval: "Edit {path}"
+    label: Edit File
+    approval: Edit {path}
   grep_search:
-    label: "Search Files"
-    approval: "Search for «{query}» in {path}"
+    label: Search Files
+    approval: Search for «{query}» in {path}
   glob_search:
-    label: "Find Files"
-    approval: "Find files named {pattern} in {path}"
+    label: Find Files
+    approval: Find files named {pattern} in {path}
   display_file:
-    label: "Show File"
-    approval: "Attach {path} to the answer"
+    label: Show File
+    approval: Attach {path} to the answer
 user_files:
   list_my_files:
-    label: "List My Files"
-    approval: "List your files in {folder}"
+    label: List My Files
+    approval: List your files in {folder}
   read_my_file:
-    label: "Read My File"
-    approval: "Read your file {path}"
+    label: Read My File
+    approval: Read your file {path}
