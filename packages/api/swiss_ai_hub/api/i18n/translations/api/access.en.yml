@@ -105,8 +105,8 @@ capabilities:
           unavailable.
     files:
       own:
-        label: "Use your own file space"
-        description: "Browse, upload, download and manage your own files."
+        label: Use your own file space
+        description: Browse, upload, download and manage your own files.
     memory:
       org:
         label: Use organization memory

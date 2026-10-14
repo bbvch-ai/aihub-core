@@ -5,8 +5,10 @@ metadata:
     context-aware answers
 config:
   restrict_to_user_access:
-    label: "Restrict to the user's access"
-    help: "Retrieve only from the configured collections the person asking may read in the knowledge area. Without it, everyone who can use this agent gets answers from all its collections."
+    label: Restrict to the user's access
+    help: Retrieve only from the configured collections the person asking may read
+      in the knowledge area. Without it, everyone who can use this agent gets answers
+      from all its collections.
   number_of_input_tokens:
     label: Max input tokens
     help: Maximum number of tokens allowed in the LLM input. Limits context size to
@@ -114,7 +116,9 @@ thoughts:
   input_too_large: 'The input does not fit the model context window: about %{tokens}
     tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
 messages:
-  no_accessible_knowledge: "This agent's knowledge is not available to you: you do not have access to any of the collections it answers from. Ask an administrator for access if you need it."
+  no_accessible_knowledge: "This agent's knowledge is not available to you: you do\
+    \ not have access to any of the collections it answers from. Ask an administrator\
+    \ for access if you need it."
   condensation_empty: I could not work out what to search for from that message. Please
     rephrase your question and try again.
   input_too_large: This file is too large for me to read in one go. Please upload
