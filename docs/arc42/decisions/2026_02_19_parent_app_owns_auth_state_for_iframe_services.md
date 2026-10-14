@@ -102,3 +102,29 @@ subsequent loads.
 
 - `2025_12_28_keycloak_as_identity_broker.md` — Establishes Keycloak as the sole identity provider for all services
 - `2026_02_18_seamless_openwebui_sso_via_iframe.md` — Describes the iframe SSO login flow that this decision complements
+
+## Addendum (2026-10-13): parent logs out on the next page load
+
+**Context.** The stored OIDC user lives in localStorage and survives a browser restart; Keycloak's SSO cookie is a
+session cookie and does not. Refresh-token renewal still succeeds afterwards, because the Keycloak session is
+server-side, so the parent app looks fully logged in — but the OpenWebUI iframe signs in through the cookie and shows
+Keycloak's login screen instead of the chat.
+
+**Change.** On the first protected navigation of each page load, `middleware/auth.global.ts` probes the SSO session with
+a `prompt=none` round trip (`UserManager.querySessionStatus`). If Keycloak answers that there is no session, or that it
+belongs to another user, the parent removes its stored user and redirects to login. A probe that gets no answer (timeout
+after 5 s, network error) keeps the stored session: it says nothing about the cookie, and an unreachable Keycloak must
+not log users out.
+
+**Effect on this decision.** The probe cannot tell a lost cookie from an SSO session ended by an embedded service's
+logout — both answer `login_required`. After an OpenWebUI logout, the parent therefore logs out on the next page load.
+This narrows Decision 3: the parent session is still preserved for the rest of the current page load (no
+`monitorSession`, the `@load` handler still redirects home), but no longer across a reload. It is accepted because the
+preserved state was only half-working: every later visit to the chat sent the iframe to Keycloak's login page while the
+parent looked logged in, and the Context above already expected a logout on the next refresh. Live mirroring via
+`monitorSession` remains rejected.
+
+**Correction to Decision 4.** There is no `accessTokenExpired` handler; one would race the middleware's own renewal on
+load (see `plugins/oidc-client.ts`). A failed renewal logs out through the `silentRenewError` handler or through the
+renewal in `middleware/auth.global.ts` and `useAuth().getToken()`. Together with the probe above, these are the paths
+that log the user out of the parent application.

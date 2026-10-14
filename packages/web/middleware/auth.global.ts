@@ -1,10 +1,28 @@
 import { getTenantAuthProvider } from '@core/sdk/client'
+import { ErrorResponse } from 'oidc-client-ts'
+
+import type { User, UserManager } from 'oidc-client-ts'
 
 /**
  * Tracks the last tenant synced with the backend to avoid redundant PUT calls
  * on every navigation within the same tenant.
  */
 let lastSyncedTenant: string | null = null
+
+/**
+ * The stored OIDC user lives in localStorage and survives a browser restart,
+ * but Keycloak's SSO cookie is a session cookie and does not. The OpenWebUI
+ * iframe signs in through that cookie, so without it the chat shows a login
+ * screen inside an app that still looks logged in. Probing once per page load
+ * is enough: the cookie can only vanish together with the browser session.
+ */
+let ssoSessionChecked = false
+
+/**
+ * The probe blocks the first navigation, so it must not inherit the 30 s
+ * silent-renew timeout; a healthy Keycloak answers well within this.
+ */
+const SSO_PROBE_TIMEOUT_SECONDS = 5
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
@@ -35,6 +53,29 @@ const isAnonymousPath = (path: string, localeCodes: string[]): boolean => {
 const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
   if (import.meta.client && fullPath !== '/' && !isAuthPath) {
     sessionStorage.setItem(REDIRECT_KEY, fullPath)
+  }
+}
+
+/**
+ * A refresh-token renewal would succeed without the SSO cookie, because the
+ * Keycloak session lives on server-side; only a `prompt=none` round trip
+ * through the browser sees the cookie the iframe depends on.
+ *
+ * Only Keycloak's own answer rules the session out. A timeout or network error
+ * says nothing about the cookie, and logging out over it would end a session
+ * that may be fine, so the stored session is kept as it was before the probe.
+ */
+const ssoSessionIsGone = async (auth: UserManager, user: User): Promise<boolean> => {
+  try {
+    const session = await auth.querySessionStatus({ silentRequestTimeoutInSeconds: SSO_PROBE_TIMEOUT_SECONDS })
+    return session?.sub !== user.profile.sub
+  }
+  catch (error) {
+    if (error instanceof ErrorResponse) {
+      return true
+    }
+    console.warn('SSO session probe got no answer, keeping the stored session:', error)
+    return false
   }
 }
 
@@ -86,6 +127,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     if (!user) {
       return await sendToLogin()
+    }
+
+    if (!ssoSessionChecked) {
+      if (await ssoSessionIsGone($auth, user)) {
+        await $auth.removeUser()
+        return await sendToLogin()
+      }
+      ssoSessionChecked = true
     }
 
     if (user.expired) {
