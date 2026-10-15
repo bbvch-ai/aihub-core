@@ -4402,6 +4402,7 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | FetchWebPagesEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
     | RunToolLoopEvent
@@ -4417,6 +4418,7 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | WebPagesFetchedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
@@ -6438,6 +6440,67 @@ export type ExceptionEvent = {
    * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
    */
   http_status_code?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   /**
    * Event Name
    *
@@ -15985,6 +16048,12 @@ export type RunToolLoopEvent = {
    */
   knowledge_references?: Array<KnowledgeReference>;
   /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20174,6 +20243,12 @@ export type UserMessageEvent = {
    */
   knowledge_references?: Array<KnowledgeReference>;
   /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -20531,6 +20606,118 @@ export type VoiceId = {
    * Id
    */
   id: string;
+  [key: string]: unknown;
+};
+
+/**
+ * WebFetchFailure
+ *
+ * A linked page the agent could not read, with the reason the answer reports to the user.
+ */
+export type WebFetchFailure = {
+  /**
+   * Url
+   *
+   * The URL as the user sent it.
+   */
+  url: string;
+  /**
+   * Why the page could not be read.
+   */
+  reason: WebFetchFailureReason;
+};
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export const WebFetchFailureReason = {
+  MALFORMED_URL: "malformed_url",
+  UNSUPPORTED_URL: "unsupported_url",
+  BLOCKED_HOST: "blocked_host",
+  NOT_FOUND: "not_found",
+  ACCESS_DENIED: "access_denied",
+  HTTP_ERROR: "http_error",
+  TIMEOUT: "timeout",
+  UNSUPPORTED_CONTENT: "unsupported_content",
+  EMPTY_CONTENT: "empty_content",
+  URL_LIMIT_REACHED: "url_limit_reached",
+} as const;
+
+/**
+ * WebFetchFailureReason
+ *
+ * Why a linked page could not be read, so the answer can tell the user instead of inventing the page.
+ */
+export type WebFetchFailureReason =
+  (typeof WebFetchFailureReason)[keyof typeof WebFetchFailureReason];
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNode>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
 };
 
@@ -22860,6 +23047,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | FetchWebPagesEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
     | RunToolLoopEventWritable
@@ -22875,6 +23063,7 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | WebPagesFetchedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
@@ -23606,6 +23795,54 @@ export type ExceptionEventWritable = {
    * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
    */
   http_status_code?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * FetchWebPagesEvent
+ *
+ * Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.
+ *
+ * Built with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the
+ * profile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.
+ */
+export type FetchWebPagesEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Urls
+   *
+   * The links to read, in the order the user gave them.
+   */
+  urls?: Array<string>;
+  /**
+   * Cite Sources
+   *
+   * Whether the model is told to cite the pages by id, off where citations cannot resolve.
+   */
+  cite_sources?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -29569,6 +29806,12 @@ export type RunToolLoopEventWritable = {
    * The collections the user referenced on the message, for tools that search knowledge.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * The web pages the message links or references, for tools that read them.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -32280,6 +32523,12 @@ export type UserMessageEventWritable = {
    * Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.
    */
   knowledge_references?: Array<KnowledgeReference>;
+  /**
+   * Web References
+   *
+   * Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.
+   */
+  web_references?: Array<string>;
   [key: string]: unknown;
 };
 
@@ -32453,6 +32702,61 @@ export type VectorStoreInputWritable = {
    * Whether to enable filtering/search
    */
   filter?: boolean;
+  [key: string]: unknown;
+};
+
+/**
+ * WebPagesFetchedEvent
+ *
+ * The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.
+ *
+ * Displayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources
+ * the answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of
+ * those pages, with the failures beside them.
+ */
+export type WebPagesFetchedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Block
+   *
+   * System messages carrying the pages read and the links that failed.
+   */
+  block?: Array<ChatMessage>;
+  /**
+   * Grounding Nodes
+   *
+   * The pages the block holds, one per page, for listing as sources.
+   */
+  grounding_nodes?: Array<IngestedNodeWritable>;
+  /**
+   * Failures
+   *
+   * The links that could not be read, with the reason for each.
+   */
+  failures?: Array<WebFetchFailure>;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when the model chose the fetch in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 

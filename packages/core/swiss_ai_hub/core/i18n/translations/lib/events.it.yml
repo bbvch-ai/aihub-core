@@ -9,6 +9,9 @@ attached_file_event:
 knowledge_searched_event:
   name: Conoscenza consultata
   description: L'agente ha cercato nelle raccolte di conoscenza indicate dall'utente.
+web_pages_fetched_event:
+  name: Pagine web lette
+  description: L'agente ha letto le pagine web indicate dall'utente.
 tool_result_event:
   name: Risultato dello strumento
   description: Ciò che ha restituito uno strumento scelto dall'agente.
@@ -302,6 +305,9 @@ memory_recalled_event:
 search_knowledge_event:
   name: Cercare nella conoscenza
   description: Ricerca nelle raccolte di conoscenza
+fetch_web_pages_event:
+  name: Leggere le pagine web
+  description: Lettura delle pagine web indicate
 read_attached_files_event:
   name: Leggere i file allegati
   description: Lettura dei file allegati

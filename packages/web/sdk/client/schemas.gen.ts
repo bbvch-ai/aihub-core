@@ -6493,6 +6493,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEvent",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEvent",
+        },
+        {
           $ref: "#/components/schemas/ReadAttachedFilesEvent",
         },
         {
@@ -6536,6 +6539,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEvent",
         },
         {
           $ref: "#/components/schemas/ToolResultEvent",
@@ -9390,6 +9396,95 @@ export const ExceptionEventSchema = {
   title: "ExceptionEvent",
   description:
     "An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.",
+} as const;
+
+export const FetchWebPagesEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -23958,6 +24053,16 @@ export const RunToolLoopEventSchema = {
         "The collections the user referenced on the message, for tools that search knowledge.",
       default: [],
     },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -30097,6 +30202,16 @@ export const UserMessageEventSchema = {
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
     },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -30628,6 +30743,147 @@ export const VoiceIDSchema = {
   required: ["id"],
   title: "VoiceID",
   description: "Custom voice reference.",
+} as const;
+
+export const WebFetchFailureSchema = {
+  properties: {
+    url: {
+      type: "string",
+      title: "Url",
+      description: "The URL as the user sent it.",
+    },
+    reason: {
+      $ref: "#/components/schemas/WebFetchFailureReason",
+      description: "Why the page could not be read.",
+    },
+  },
+  type: "object",
+  required: ["url", "reason"],
+  title: "WebFetchFailure",
+  description:
+    "A linked page the agent could not read, with the reason the answer reports to the user.",
+} as const;
+
+export const WebFetchFailureReasonSchema = {
+  type: "string",
+  enum: [
+    "malformed_url",
+    "unsupported_url",
+    "blocked_host",
+    "not_found",
+    "access_denied",
+    "http_error",
+    "timeout",
+    "unsupported_content",
+    "empty_content",
+    "url_limit_reached",
+  ],
+  title: "WebFetchFailureReason",
+  description:
+    "Why a linked page could not be read, so the answer can tell the user instead of inventing the page.",
+} as const;
+
+export const WebPagesFetchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNode",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
 } as const;
 
 export const WebhookResponseSchema = {
@@ -34137,6 +34393,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEventWritable",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ReadAttachedFilesEventWritable",
         },
         {
@@ -34180,6 +34439,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEventWritable",
         },
         {
           $ref: "#/components/schemas/ToolResultEventWritable",
@@ -35316,6 +35578,77 @@ export const ExceptionEventWritableSchema = {
   title: "ExceptionEvent",
   description:
     "An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.",
+} as const;
+
+export const FetchWebPagesEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -45042,6 +45375,16 @@ export const RunToolLoopEventWritableSchema = {
         "The collections the user referenced on the message, for tools that search knowledge.",
       default: [],
     },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
+      default: [],
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -49253,6 +49596,16 @@ export const UserMessageEventWritableSchema = {
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
     },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
+      default: [],
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -49504,4 +49857,89 @@ export const VectorStoreInputWritableSchema = {
   title: "VectorStoreInput",
   description:
     'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+} as const;
+
+export const WebPagesFetchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
 } as const;

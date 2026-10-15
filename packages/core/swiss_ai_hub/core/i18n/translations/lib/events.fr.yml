@@ -10,6 +10,9 @@ knowledge_searched_event:
   name: Connaissances consultées
   description: L'agent a recherché dans les collections de connaissances référencées
     par l'utilisateur.
+web_pages_fetched_event:
+  name: Pages web lues
+  description: L'agent a lu les pages web indiquées par l'utilisateur.
 tool_result_event:
   name: Résultat d'outil
   description: Ce qu'a renvoyé un outil choisi par l'agent.
@@ -302,6 +305,9 @@ memory_recalled_event:
 search_knowledge_event:
   name: Rechercher dans les connaissances
   description: Recherche dans les collections de connaissances
+fetch_web_pages_event:
+  name: Lire les pages web
+  description: Lecture des pages web indiquées
 read_attached_files_event:
   name: Lire les fichiers joints
   description: Lecture des fichiers joints
