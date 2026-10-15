@@ -10,7 +10,10 @@ import pytest
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 
+from app.expert_rag_agent.templates import get_all_templates as get_all_expert_rag_templates
+from app.namespace_selection_agent.templates import get_all_templates as get_all_namespace_selection_templates
 from app.rag_agent.templates import get_all_templates
+from swiss_ai_hub.agent.agents.namespace_selection_agent.configs import NamespaceSelectionAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent import RAGAgentConfig
 
 _LOCALES = ("de", "en", "fr", "it")
@@ -62,3 +65,19 @@ def test_agent_ids_are_unique():
 def test_templates_ship_unscheduled(template: RAGAgentConfig):
     """Scheduling is opt-in per profile; a shipped cron would start firing the moment the profile is saved."""
     assert template.cron is None
+
+
+@pytest.mark.parametrize(
+    "template",
+    [*_TEMPLATES, *get_all_expert_rag_templates(), *get_all_namespace_selection_templates()],
+    ids=lambda template: template.agent_id,
+)
+def test_templates_restrict_to_the_user_s_access_like_a_blank_profile(
+    template: RAGAgentConfig | NamespaceSelectionAgentConfig,
+):
+    """A template is dumped from the model, whose default is off for profiles stored before the setting existed.
+
+    The blank form starts with it on, so a template must say so itself or creating from it ships an unrestricted agent.
+    """
+    assert template.restrict_to_user_access is True
+    assert type(template).as_form().restrict_to_user_access.value is True
