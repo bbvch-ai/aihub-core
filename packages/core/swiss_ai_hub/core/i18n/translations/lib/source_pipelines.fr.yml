@@ -121,3 +121,66 @@ structured:
       label: Système source
       help: Application d'où les enregistrements sont lus. Ses paramètres s'affichent
         une fois qu'elle est sélectionnée.
+    jira:
+      display_name: Jira
+      base_url:
+        label: URL de Jira
+        help: L'adresse à laquelle vous ouvrez Jira, p. ex. https://acme.atlassian.net
+          pour Jira Cloud ou https://jira.acme.ch/jira pour Jira Data Center.
+      deployment:
+        label: Édition de Jira
+        help: Jira Cloud se connecte avec l'e-mail d'un compte et un jeton d'API,
+          Jira Data Center avec un jeton d'accès personnel.
+        cloud: Jira Cloud
+        data_center: Jira Data Center
+      email:
+        label: E-mail du compte
+        help: E-mail du compte Jira Cloud auquel appartient le jeton d'API.
+      api_token:
+        label: Jeton
+        help: Un jeton d'API Jira Cloud sans portées, ou un jeton d'accès personnel
+          Jira Data Center. Stocké chiffré. La base contient tous les tickets et commentaires
+          que ce compte peut lire, sauf les commentaires restreints ; utilisez donc
+          un compte dédié en lecture seule.
+      project_keys:
+        label: Projets
+        help: Clés des projets à synchroniser, p. ex. ABC. Chaque projet devient un
+          espace de noms.
+      jql:
+        label: Filtre JQL supplémentaire
+        help: Facultatif. Seuls les tickets qui correspondent aussi à ce JQL sont
+          synchronisés, p. ex. issuetype != "Service Request". Sans ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: URL de Confluence
+        help: L'adresse à laquelle vous ouvrez Confluence, p. ex. https://acme.atlassian.net/wiki
+          pour Confluence Cloud ou https://confluence.acme.ch pour Confluence Data
+          Center.
+      deployment:
+        label: Édition de Confluence
+        help: Confluence Cloud se connecte avec l'e-mail d'un compte et un jeton d'API,
+          Confluence Data Center avec un jeton d'accès personnel.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: E-mail du compte
+        help: E-mail du compte Confluence Cloud auquel appartient le jeton d'API.
+      api_token:
+        label: Jeton
+        help: Un jeton d'API Confluence Cloud sans portées, ou un jeton d'accès personnel
+          Confluence Data Center. Stocké chiffré. La base contient toutes les pages
+          que ce compte peut lire dans les espaces indiqués ; utilisez donc un compte
+          dédié en lecture seule.
+      space_keys:
+        label: Espaces
+        help: Clés des espaces à synchroniser, p. ex. ENG. Chaque espace devient un
+          espace de noms, et son arborescence de pages des dossiers.
+      labels:
+        label: Étiquettes
+        help: Facultatif. Seules les pages portant au moins une de ces étiquettes
+          sont synchronisées.
+      ancestor_page_ids:
+        label: Pages parentes
+        help: Facultatif. Seules ces pages et les pages situées en dessous sont synchronisées.
+          L'ID d'une page est le nombre figurant dans son URL.

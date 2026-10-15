@@ -24,3 +24,37 @@ def test_every_shipped_source_pipeline_is_labelled_in_every_language(source: str
 @pytest.mark.parametrize("field", ["label", "help"])
 def test_the_structured_source_kind_selector_is_labelled_in_every_language(field: str):
     _assert_translated(f"lib.source_pipelines.structured.config.source_kind.{field}")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "display_name",
+        *(
+            f"{field}.{part}"
+            for field in ("base_url", "deployment", "email", "api_token", "project_keys", "jql")
+            for part in ("label", "help")
+        ),
+        "deployment.cloud",
+        "deployment.data_center",
+    ],
+)
+def test_the_jira_form_is_labelled_in_every_language(path: str):
+    _assert_translated(f"lib.source_pipelines.structured.config.jira.{path}")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "display_name",
+        *(
+            f"{field}.{part}"
+            for field in ("base_url", "deployment", "email", "api_token", "space_keys", "labels", "ancestor_page_ids")
+            for part in ("label", "help")
+        ),
+        "deployment.cloud",
+        "deployment.data_center",
+    ],
+)
+def test_the_confluence_form_is_labelled_in_every_language(path: str):
+    _assert_translated(f"lib.source_pipelines.structured.config.confluence.{path}")

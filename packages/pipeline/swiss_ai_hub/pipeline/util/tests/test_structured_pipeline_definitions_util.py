@@ -4,6 +4,8 @@ import pytest
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence import IngestorType
 
+from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
+from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 from swiss_ai_hub.pipeline.source_pipelines.tests.fake_structured_source_adapter import FakeStructuredSyncConfig
 from swiss_ai_hub.pipeline.util.document_ingestion_definitions_util import document_ingestion_pipeline_definitions
 from swiss_ai_hub.pipeline.util.rclone_pipeline_definitions_util import rclone_pipeline_definitions
@@ -44,12 +46,21 @@ class TestEveryNameDerivesFromTheSource:
             assert structured[kind].isdisjoint(ingestion[kind]), kind
 
 
+class _NoKindSyncConfig(StructuredSyncConfig):
+    @classmethod
+    def adapters(cls) -> list[type[AbstractStructuredSourceAdapter]]:
+        return []
+
+
 class TestRegistration:
     def test_a_pipeline_offering_no_kind_is_not_announced(self):
         """The create-database dialog would otherwise offer a source nothing can be configured for."""
-        assert (
-            "SourcePipelineRegistrationSensorFor_structured" not in _names(structured_pipeline_definitions())["sensors"]
-        )
+        names = _names(structured_pipeline_definitions(config=_NoKindSyncConfig.as_form()))
+
+        assert "SourcePipelineRegistrationSensorFor_structured" not in names["sensors"]
+
+    def test_the_shipped_pipeline_is_announced_now_that_it_offers_jira(self):
+        assert "SourcePipelineRegistrationSensorFor_structured" in _names(structured_pipeline_definitions())["sensors"]
 
     def test_a_pipeline_offering_a_kind_is_announced(self):
         names = _names(structured_pipeline_definitions(config=FakeStructuredSyncConfig.as_form()))

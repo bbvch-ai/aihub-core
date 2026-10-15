@@ -594,6 +594,13 @@ knowledge:
   source:
     description: Sincronizzato da {name}
     edit: Modifica sorgente
+    next_sync: La sorgente si sincronizza una volta al giorno, quindi i suoi contenuti
+      compaiono dopo la prossima sincronizzazione pianificata.
+    awaiting_sync:
+      title: Nessun contenuto ancora sincronizzato
+      description: La sorgente sincronizza questo database una volta al giorno, quindi
+        le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
+        Se ancora non compaiono, controlla le impostazioni della sorgente.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'

@@ -64,22 +64,115 @@ as a safety net, catching anything a missed notification would otherwise have le
 ### Syncing from an external source
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
-database. Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials,
-the folder to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the
-`.json` file downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with.
+database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
+application sync** keeps records such as Jira issues and Confluence pages in sync, each record as one document.
 Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
-stored ones, so a rotation is a matter of editing the source. The system then:
+stored ones, so a rotation is a matter of editing the source. Either way, the system then:
 
-- Syncs files from the source on a daily schedule
-- Creates collections automatically from the top-level folders of the synced root (files directly in the root are
-  skipped and counted in the run)
-- Processes each synced file within a minute or two, like an upload
+- Syncs from the source on a daily schedule; until the first sync has filled it, the database shows **Nothing synced
+  yet**
+- Creates the collections itself, as described below
+- Processes each synced document within a minute or two, like an upload
 - Disables manual uploads, hand-made collections and manual document deletion for that database
+
+#### Files from cloud storage
+
+Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials, the folder
+to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the `.json` file
+downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with. Each top-level
+folder of the synced root becomes a collection; files directly in the root are skipped and counted in the run.
 
 If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
 name and the second is skipped: its files reach the data lake but are never ingested, and the ingestion run names the
 skipped files and the reason in its metadata and logs. Other folders and the database's other files are unaffected;
 renaming the folder at the source fixes it.
+
+#### Jira issues
+
+Pick **Jira** as the source system and enter:
+
+- **Jira URL**: the address you open Jira at, such as `https://acme.atlassian.net` for Jira Cloud or
+  `https://jira.acme.ch/jira` for a Jira Data Center served under a path
+- **Jira edition**: Jira Cloud signs in with the account's e-mail and an
+  [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Jira Data Center with a
+  personal access token (profile → *Personal Access Tokens*)
+- **Projects**: the keys of the projects to sync, such as `ABC`
+- **Additional JQL filter** (optional): a clause every synced issue must also match, such as
+  `issuetype != "Service Request"`
+
+Each project becomes a collection and each issue one document. The document is titled with the issue key and summary,
+links back to the issue, and carries its type, status, priority, labels, components, fix versions, reporter and
+assignee, its description and its comments with author and date. Headings, lists, tables and code keep their formatting;
+images and attachments are not synced. Comments restricted to a project role or group, and internal comments of Jira
+Service Management, are left out.
+
+The issue's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the key and
+summary and opens the issue in Jira, and the fields `key`, `project`, `issue_type`, `status`, `priority`, `labels`,
+`components`, `fix_versions`, `reporter`, `assignee` and `updated` are metadata a retriever can filter on once they are
+among its allowed filter fields.
+
+::: warning Use a dedicated account
+The database holds every issue and comment the token's account can read, and everyone with access to the database can
+find them, whatever their own permissions in Jira. Sync with a dedicated read-only account that sees only what the
+database's readers may see.
+:::
+
+The first sync reads every issue in scope. Later syncs read only the issues changed since the previous one, and compare
+the list of issue keys in scope, so issues deleted in Jira, moved to another project or no longer matching the filter
+are removed. Changing the projects or the filter reads everything again. On Jira Cloud, deleting a comment updates its
+issue, so the next sync removes the comment as well.
+
+A sync whose token Jira rejects, whose project does not exist or is not visible to the account, or whose filter is not
+valid JQL fails before it changes anything. The reason is shown on the failed run in the Dagster UI, and in the failure
+notification when notifications are configured.
+
+#### Confluence pages
+
+Pick **Confluence** as the source system and enter:
+
+- **Confluence URL**: the address you open Confluence at, such as `https://acme.atlassian.net/wiki` for Confluence Cloud
+  (including `/wiki`) or `https://confluence.acme.ch` for Confluence Data Center
+- **Confluence edition**: Confluence Cloud signs in with the account's e-mail and an
+  [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Confluence Data Center with a
+  personal access token (profile → *Settings* → *Personal Access Tokens*)
+- **Spaces**: the keys of the spaces to sync, such as `ENG`
+- **Labels** (optional): only pages carrying at least one of these labels are synced
+- **Parent pages** (optional): the IDs of pages whose subtrees are synced, each page included. A page's ID is the number
+  in its address, such as `123456` in `…/pages/123456/Runbook`
+
+Each space becomes a collection and each page one document, filed under the titles of the pages above it, so the page
+tree becomes folders: `Deploy` below `Runbooks` below the space's home page `Engineering` is
+`Engineering/Runbooks/Deploy` in the `ENG` collection. The document is titled with the page title, links back to the
+page, and holds its text: headings, lists, tables and code blocks keep their formatting, and panels and expandable
+sections keep their content under their title. Images, attachments, blog posts and comments are not synced. A link to
+another Confluence page keeps its text, and macros that only show content kept elsewhere, such as a table of contents,
+child pages, Jira issues or an included page, are left out.
+
+The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
+and opens the page in Confluence, and the fields `space`, `labels`, `ancestors`, `author`, `page_id`, `page_version` and
+`updated` are metadata a retriever can filter on once they are among its allowed filter fields, for example to search a
+single space or the pages with a given label.
+
+::: warning Use a dedicated account
+The database holds every page the token's account can read in the listed spaces, and everyone with access to the
+database can find them, whatever page restrictions apply in Confluence. Sync with a dedicated read-only account that
+sees only what the database's readers may see.
+:::
+
+The first sync reads every page in scope. Later syncs list every page with its version and its place in the tree, and
+read the text only of pages that are new, edited, renamed or moved. Renaming or moving a page moves the documents of the
+pages below it in the same sync. Pages deleted or archived in Confluence, moved out of the listed spaces or parent
+pages, or no longer carrying a listed label are removed. Changing the spaces, labels or parent pages reads everything
+again.
+
+Two pages whose titles end up as the same file name keep one document between them, such as `Q1/Q2` and `Q1_Q2` below
+the same parent, or titles that only differ after their 120th character. The run's log names both pages; renaming one of
+them in Confluence brings the other back.
+
+A sync fails before it changes anything when Confluence rejects the token, when a space or parent page does not exist or
+is not visible to the account, when a parent page lies outside the listed spaces, or when the Confluence URL points to a
+service inside the platform, such as a container name or an address on the platform's own networks. The reason is shown
+on the failed run in the Dagster UI, and in the failure notification when notifications are configured.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

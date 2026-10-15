@@ -360,7 +360,8 @@ async function handleFormSubmit() {
     toast.add({
       severity: 'success',
       summary: t('knowledge.form.create_database.success'),
-      life: 3000,
+      detail: selectedSourceData.value ? t('knowledge.source.next_sync') : undefined,
+      life: selectedSourceData.value ? 6000 : 3000,
     })
 
     emit('success', { database })

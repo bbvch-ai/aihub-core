@@ -102,9 +102,9 @@ configured, secured or ingested changes.**
    Records become files in the extract step (`add_map`), not in the destination: dlt normalises rows before loading,
    coercing ISO timestamps to `pendulum.DateTime`, which YAML cannot render. The first path segment is the namespace,
    and a path without a folder is rejected, because the ingestion pipeline never ingests a root-level object.
-   Frontmatter uses the reserved keys of #1953 (`title`, `url`, `created`, `updated`) and renders deterministically,
-   with sorted keys. Adding a kind is one adapter, one options form, one field on `StructuredSyncConfig` and its labels,
-   with no change to the API or the UI.
+   Frontmatter uses the keys #1953 reserves (`title`, `url`, `created`; a record's `updated` is ordinary metadata) and
+   renders deterministically, with sorted keys. Adding a kind is one adapter, one options form, one field on
+   `StructuredSyncConfig` and its labels, with no change to the API or the UI.
 
 3. **One sync run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source("structured"))` fans out one
    run per database, tagged `aihub/bucket`. The run is one `graph_asset` whose ops are, in order:
@@ -184,9 +184,8 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    ETag check keeps it from rewriting what is already there.
 
 7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
-   another sync of the same database running gives way, whichever was created first and whether the schedule, the
-   job's launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not
-   count.
+   another sync of the same database running gives way, whichever was created first and whether the schedule, the job's
+   launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not count.
 
 ## Consequences
 
@@ -204,8 +203,13 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 ### Trade-offs
 
 - **dlt brings no ready-made Jira or Confluence connector.** The verified Jira source has no incremental cursor, and
-  there is no verified Confluence source. #1954 and #1955 build their adapters on dlt's REST API source, which declares
-  pagination, authentication and incremental cursors.
+  there is no verified Confluence source. The Jira adapter (#1954) uses dlt's `RESTClient`, which brings authentication
+  and retries, in a hand-written resource rather than the declarative REST API source: it pages each project with its
+  own query, writes the incremental lower bound into JQL in the account's time zone, and merges an issue's comments into
+  its record, none of which the declarative source expresses. The Confluence adapter (#1955) uses it the same way, and
+  finds changes without a cursor: it compares every page's version and path with the previous sync's, kept in the
+  resource state, because renaming or moving a page moves the files of the pages below it while their versions stay the
+  same. Its state grows with the number of pages, some tens of bytes each, instead of staying at about 1 KB.
 - **A sync is daily.** This is inherited from the source-pipelines ADR. Creating a database or changing its source
   triggers nothing, so a new database stays empty until the next scheduled run. A first-sync or on-demand trigger is a
   follow-up; the guard against two concurrent runs of the same database (rule 7) is already in place for it.
@@ -224,8 +228,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 - **The code location needs outbound internet access.** The rclone code location reaches its sources through the rclone
   daemon and sits only on `backend`, `data` and `storage`. This one calls the source APIs itself, so it also joins
   `egress`.
-- **Frontmatter is plain text until #1953 lands.** Until then the ingestion pipeline chunks and embeds it like any
-  paragraph.
+- **Frontmatter is a contract with ingestion.** Since #1953, ingestion sets a document's title, link and creation date
+  from `title`, `url` and `created`, and stores every other key as filterable metadata that is not embedded. Markdown
+  ingested before #1953 keeps its frontmatter as text until the file changes, because that step changes no data version.
 
 ## Related Decisions
 

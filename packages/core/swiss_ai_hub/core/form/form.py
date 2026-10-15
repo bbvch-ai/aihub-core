@@ -429,9 +429,11 @@ class Form(BaseModel):
         if len(conditions) == 1:
             return conditions.pop()
 
-        # Multiple different conditions: combine with OR (show group if ANY child would show)
-        # FormKit expression syntax: $: condition1 || condition2
-        combined = " || ".join(sorted(conditions))
+        # Multiple different conditions: combine with OR (show group if ANY child would show).
+        # Each is parenthesised because FormKit's expression parser does not bind && tighter than ||:
+        # `a || a && b` evaluates as `(a || a) && b`, which hides the group until `b` holds — and `b` may be a
+        # field inside that very group, which never mounts.
+        combined = " || ".join(f"({condition.removeprefix('$:').strip()})" for condition in sorted(conditions))
         return f"$: {combined}"
 
     @classmethod
