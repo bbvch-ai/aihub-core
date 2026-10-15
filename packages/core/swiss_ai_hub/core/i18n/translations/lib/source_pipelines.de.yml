@@ -122,3 +122,32 @@ structured:
       label: Quellsystem
       help: Aus welcher Anwendung die Datensätze gelesen werden. Ihre Einstellungen
         erscheinen, sobald sie ausgewählt ist.
+    jira:
+      display_name: Jira
+      base_url:
+        label: Jira-URL
+        help: Die Adresse, unter der Sie Jira öffnen, z. B. https://acme.atlassian.net
+          für Jira Cloud oder https://jira.acme.ch/jira für Jira Data Center.
+      deployment:
+        label: Jira-Edition
+        help: Jira Cloud meldet sich mit der E-Mail-Adresse eines Kontos und einem
+          API-Token an, Jira Data Center mit einem persönlichen Zugriffstoken.
+        cloud: Jira Cloud
+        data_center: Jira Data Center
+      email:
+        label: E-Mail-Adresse des Kontos
+        help: E-Mail-Adresse des Jira-Cloud-Kontos, zu dem das API-Token gehört.
+      api_token:
+        label: Token
+        help: Ein Jira-Cloud-API-Token ohne Bereiche oder ein persönliches Zugriffstoken
+          von Jira Data Center. Wird verschlüsselt gespeichert. Die Datenbank enthält
+          alle Vorgänge und Kommentare, die dieses Konto lesen darf, ausser eingeschränkten
+          Kommentaren. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      project_keys:
+        label: Projekte
+        help: Schlüssel der zu synchronisierenden Projekte, z. B. ABC. Jedes Projekt
+          wird zu einem Namespace.
+      jql:
+        label: Zusätzlicher JQL-Filter
+        help: Optional. Synchronisiert werden nur Vorgänge, die auch diese JQL erfüllen,
+          z. B. issuetype != "Service Request". Ohne ORDER BY.

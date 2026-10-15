@@ -1,6 +1,7 @@
 import pytest
 from dlt.common.configuration.container import Container
 from dlt.common.pipeline import PipelineContext
+from pydantic import ValidationError
 from swiss_ai_hub.core.form import ConfigSpecs
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
 from swiss_ai_hub.core.form.elements.group import Group
@@ -36,11 +37,20 @@ def _config(**options) -> FakeStructuredSyncConfig:
 
 
 class TestAnnouncedForm:
-    def test_the_shipped_pipeline_offers_no_kind_until_an_adapter_lands(self):
+    def test_the_shipped_pipeline_offers_jira(self):
         elements = StructuredSyncConfig.as_form().to_formkit_form()
 
-        assert [element.name for element in elements] == ["source_kind"]
-        assert elements[0].options == []
+        assert [element.name for element in elements] == ["source_kind", "jira"]
+        assert [option["value"] for option in elements[0].options] == ["jira"]
+
+    def test_a_validation_error_never_quotes_the_decrypted_configuration(self):
+        """The configuration is validated after decryption, and the error reaches the run's log."""
+        with pytest.raises(ValidationError) as raised:
+            StructuredSyncConfig.model_validate(
+                {"source_kind": "jira", "jira": {"api_token": "s3cret-token", "deployment": "server"}}
+            )
+
+        assert "s3cret-token" not in str(raised.value)
 
     def test_each_kind_gets_one_group_shown_only_while_it_is_selected(self):
         elements = {element.name: element for element in FakeStructuredSyncConfig.as_form().to_formkit_form()}

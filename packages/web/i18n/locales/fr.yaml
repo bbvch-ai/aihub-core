@@ -594,6 +594,13 @@ knowledge:
   source:
     description: Synchronisé depuis {name}
     edit: Modifier la source
+    next_sync: 'La source se synchronise une fois par jour : son contenu apparaît
+      après la prochaine synchronisation planifiée.'
+    awaiting_sync:
+      title: Rien n'a encore été synchronisé
+      description: "La source synchronise cette base de données une fois par jour\
+        \ : ses collections apparaissent ici après la prochaine synchronisation planifiée.\
+        \ Si elles n'apparaissent toujours pas, vérifiez les paramètres de la source."
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'

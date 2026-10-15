@@ -2,7 +2,7 @@ import hashlib
 import json
 from typing import Annotated, Any, Self
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from swiss_ai_hub.core.form import Form, Select
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
@@ -11,6 +11,8 @@ from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter i
     KIND_REF,
     AbstractStructuredSourceAdapter,
 )
+from swiss_ai_hub.pipeline.source_pipelines.jira.jira_adapter import JiraAdapter
+from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 
 _I18N = "lib.source_pipelines.structured.config"
 
@@ -21,14 +23,20 @@ class StructuredSyncConfig(SourcePipelineConfig):
     ``source_kind`` picks the application; each offered kind adds its options as a field named after it, shown only
     while it is selected, as ``RcloneSyncConfig`` does per backend. Offering a kind takes that field plus its adapter
     in ``adapters``.
+
+    Validation errors never quote their input: the configuration is validated after its credentials are decrypted,
+    and the error would reach the run's log.
     """
 
+    model_config = ConfigDict(hide_input_in_errors=True)
+
     source_kind: Annotated[str | Select, Field(description="Application the records are read from.")]
+    jira: Annotated[JiraOptions, Field(description="Jira options.")] = Field(default_factory=JiraOptions)
 
     @classmethod
     def adapters(cls) -> list[type[AbstractStructuredSourceAdapter]]:
-        """The kinds this pipeline offers. None ships yet; Jira and Confluence follow in #1954 and #1955."""
-        return []
+        """The kinds this pipeline offers: Jira; Confluence follows in #1955."""
+        return [JiraAdapter]
 
     @classmethod
     def as_form(cls) -> Self:

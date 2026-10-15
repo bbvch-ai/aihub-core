@@ -1,0 +1,4 @@
+{
+  "message": "Client must be authenticated to access this resource.",
+  "status-code": 401
+}

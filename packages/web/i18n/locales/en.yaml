@@ -587,6 +587,13 @@ knowledge:
   source:
     description: Synchronised from {name}
     edit: Edit source
+    next_sync: The source syncs once a day, so its content appears after the next
+      scheduled sync.
+    awaiting_sync:
+      title: Nothing synced yet
+      description: The source syncs this database once a day, so its collections appear
+        here after the next scheduled sync. If they still do not, check the source
+        settings.
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
