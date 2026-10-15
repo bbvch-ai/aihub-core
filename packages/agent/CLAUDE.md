@@ -240,6 +240,23 @@ searched; the rest, and collections that no longer exist, are named in the block
 `KnowledgeConfig.context_reserve()` for it in `AttachedFiles.read` when a reference is present. In RAG it adds to the
 configured retrieval rather than replacing it.
 
+**`WebFetch`** (needs `WebFetchFields`: `web_fetch: WebFetchConfig | None`, off unless the profile turns it on, with
+`max_urls`, `timeout_seconds` and `max_page_characters`): `fetch(urls, cite_sources)` → `WebFetch.Fetched`
+(`WebPagesFetchedEvent`), one block with the pages read and a note naming every link that was not and why, empty when
+fetching is off. Pass `WebFetch.links_of(message)`: the links in the last user message's text, then the
+`UserMessageEvent.web_references` chat clients send for `#` references, once each. Links are sorted out by
+`UrlExtractor.classify` (malformed and non-http(s) links are reported, never fetched), the first `max_urls` are read and
+the rest reported as over the limit. Pages load through the platform's Playwright server (core's `PlaywrightSettings`;
+agents have no internet access of their own) via `WebPageFetcher`, the one class that knows the engine. `RequestGuard`
+performs every request of the page itself, redirects and subresources included, checked by `UrlSafetyPolicy`, which
+refuses internal hosts and any URL Python and the browser could read as different hosts; a catch-all on the browser
+context refuses requests from pages the fetched page opens. `PageContentConverter` keeps the main content as markdown
+(Trafilatura). Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL, `source_origin`
+the URL chat clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge; the result is a
+`SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser raises (a platform fault,
+not an unreadable page). Reserve `WebFetchConfig.context_reserve(len(links))` in `AttachedFiles.read` when the message
+links pages.
+
 **`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and approval
 rules; the runner publishes its form with the blueprint's tools as options, so `as_form()` spreads nothing): the model
 decides which tools of a tool set to use, until it is done. A blueprint declares sets as class attributes, each named
@@ -274,16 +291,18 @@ user refers to (a disabled file reader otherwise answers that no file was attach
 the model:
 
 - **Capability tools**: a capability sets `tool_name` and `tool_options`, overrides `tool_definition(context)` (the
-  run's `ToolContext`: config, user, access, locale and the message's `files` and `knowledge_references`, which
-  `tools.run(..., files=..., knowledge_references=...)` passes; `None` when there is nothing to do) and adds two adapter
-  steps with names of their own, `ToolCallApprovedEvent` → its ordinary request with `tool_call_id`, and its ordinary
-  result with a `tool_call_id` → `ToolResultEvent`, so a model-chosen call shows the same events as an explicit one. A
-  capability may name a `tool_config` mixin that validation requires wherever it sits in a tool set. Three ship:
-  `Knowledge` (`search_knowledge`, `KnowledgeToolFields`: the profile's databases and collections via
-  `VectorStoreInput`, or every collection the user can read, plus the message's `#` references, all narrowed to what the
-  user may read by `KnowledgeToolScope`), `AttachedFiles` (`read_attached_files`: the readable files listed in the
-  description, a call reads the chosen ones fitted to `max_result_tokens`) and `Memory` (`recall_memory`, offered when
-  the profile reads a scope the run can use).
+  run's `ToolContext`: config, user, access, locale and the message's `files`, `knowledge_references` and
+  `web_references`, which `tools.run(..., files=..., knowledge_references=..., web_references=...)` passes; `None` when
+  there is nothing to do) and adds two adapter steps with names of their own, `ToolCallApprovedEvent` → its ordinary
+  request with `tool_call_id`, and its ordinary result with a `tool_call_id` → `ToolResultEvent`, so a model-chosen call
+  shows the same events as an explicit one. A capability may name a `tool_config` mixin that validation requires
+  wherever it sits in a tool set. Four ship: `Knowledge` (`search_knowledge`, `KnowledgeToolFields`: the profile's
+  databases and collections via `VectorStoreInput`, or every collection the user can read, plus the message's `#`
+  references, all narrowed to what the user may read by `KnowledgeToolScope`), `AttachedFiles` (`read_attached_files`:
+  the readable files listed in the description, a call reads the chosen ones fitted to `max_result_tokens`), `Memory`
+  (`recall_memory`, offered when the profile reads a scope the run can use) and `WebFetch` (`fetch_web_pages`, offered
+  when the profile turned web fetch on; the description lists the pages the message links, within the 1024-character
+  limit).
 - **LlamaIndex tool specs** (`BaseToolSpec` subclasses, built per run with a `ToolContext`) and **LlamaIndex tools**
   (`FunctionTool.from_defaults(...)`), run in `run_function_step`; a raising tool returns an error result instead of
   ending the run. `@ToolOptions.of(...)` on the function sets its label, approval summary, default approval, whether
