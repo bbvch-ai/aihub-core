@@ -303,8 +303,9 @@ the model:
   references, all narrowed to what the user may read by `KnowledgeToolScope`), `AttachedFiles` (`read_attached_files`:
   the readable files listed in the description, a call reads the chosen ones fitted to `max_result_tokens`), `Memory`
   (`recall_memory`, offered when the profile reads a scope the run can use) and `WebFetch` (`fetch_web_pages`, offered
-  when the profile turned web fetch on; the description lists the pages the message links, within the 1024-character
-  limit).
+  when the profile turned web fetch on and the message links pages, listed in the description within the 1024-character
+  limit). It reads only those pages: a call naming any other URL is refused whole, since a URL the model wrote could
+  carry the conversation to a site an instruction hidden in a page or file named.
 - **LlamaIndex tool specs** (`BaseToolSpec` subclasses, built per run with a `ToolContext`) and **LlamaIndex tools**
   (`FunctionTool.from_defaults(...)`), run in `run_function_step`; a raising tool returns an error result instead of
   ending the run. `@ToolOptions.of(...)` on the function sets its label, approval summary, default approval, whether

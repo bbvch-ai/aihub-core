@@ -4,6 +4,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import ValidationError
 from swiss_ai_hub.core.events.agent import (
     FetchWebPagesEvent,
+    RunToolLoopEvent,
     ToolCallApprovedEvent,
     ToolCallsDecidedEvent,
     ToolDefinition,
@@ -73,17 +74,17 @@ class WebFetch(Capability):
 
     @classmethod
     def tool_definition(cls, context: ToolContext) -> ToolDefinition | None:
-        """Offered when the profile reads web pages; the description lists the pages the message links, so the
-        model reads each of them without being asked."""
+        """Offered when the profile reads web pages and the message links some, since only those may be read; the
+        description lists them, so the model reads each of them without being asked."""
         config = context.agent_config
-        if not isinstance(config, WebFetchFields) or config.web_fetch is None:
+        if not isinstance(config, WebFetchFields) or config.web_fetch is None or not context.web_references:
             return None
         t = context.t
         description = t("agent.web_fetch.tool.description", max_urls=config.web_fetch.max_urls)
-        if context.web_references:
-            description = cls._with_links(description, context.web_references, t)
         return ToolDefinition(
-            name=FETCH_WEB_PAGES_TOOL, description=description, parameters=WebFetchArguments.schema_for(t)
+            name=FETCH_WEB_PAGES_TOOL,
+            description=cls._with_links(description, context.web_references, t),
+            parameters=WebFetchArguments.schema_for(t),
         )
 
     @staticmethod
@@ -132,15 +133,35 @@ class WebFetch(Capability):
         icon="mdi:web",
         precondition=fetches_web_pages,
     )
-    async def fetch_tool_call_step(agent: Agent, call: ToolCallApprovedEvent) -> FetchWebPagesEvent | ToolResultEvent:
-        """The model chose to read pages: the same fetch as a linked page, of the URLs it named."""
+    async def fetch_tool_call_step(
+        agent: Agent, call: ToolCallApprovedEvent, request: RunToolLoopEvent, t: LocaleHandler
+    ) -> FetchWebPagesEvent | ToolResultEvent:
+        """The model chose to read pages: the same fetch as a linked page, of the ones it named.
+
+        Only pages the user linked are read. A URL the model wrote itself could carry what it read elsewhere in the
+        conversation to a site an instruction hidden in a page or file named, and the request alone would deliver
+        it. A call naming any other URL is refused whole, with the linked pages listed for the model to choose from.
+        """
         try:
             arguments = WebFetchArguments.model_validate(call.arguments)
         except ValidationError as error:
             return ToolResultEvent(
                 tool_call_id=call.tool_call_id, name=call.name, content=f"Invalid arguments: {error}", is_error=True
             )
-        return FetchWebPagesEvent(urls=arguments.urls, cite_sources=call.cite_sources, tool_call_id=call.tool_call_id)
+        urls = [url.strip() for url in arguments.urls]
+        unlinked = [url for url in urls if url not in request.web_references]
+        if unlinked:
+            return ToolResultEvent(
+                tool_call_id=call.tool_call_id,
+                name=call.name,
+                content=t(
+                    "agent.web_fetch.tool.unlinked",
+                    urls=", ".join(unlinked),
+                    linked="\n".join(f"- {url}" for url in request.web_references),
+                ),
+                is_error=True,
+            )
+        return FetchWebPagesEvent(urls=urls, cite_sources=call.cite_sources, tool_call_id=call.tool_call_id)
 
     @staticmethod
     @step(
