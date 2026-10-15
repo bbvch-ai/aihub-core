@@ -78,9 +78,9 @@ class Filter:
         body: Annotated[dict[str, Any], "Request body"],
         __metadata__: Annotated[dict[str, Any] | None, "Request metadata"] = None,
         __model__: Annotated[dict[str, Any] | None, "Model OpenWebUI resolved"] = None,
-        __event_call__: Annotated[Any, "Event caller"] = None,
+        __event_emitter__: Annotated[Any, "Event emitter"] = None,
     ) -> dict[str, Any]:
-        if not __event_call__:
+        if not __event_emitter__:
             return body
 
         model_id = str(body.get("model") or "")
@@ -98,8 +98,10 @@ class Filter:
             model: {json.dumps(described["model"])},
         }}, {json.dumps(self.valves.AIHUB_FRONTEND_URL)});
         """
+        # Emitted, not called: an event call waits until the browser answers, and a tab that has
+        # switched chats or lost its socket never does, which held the turn back from the pipe forever.
         try:
-            await __event_call__({"type": "execute", "data": {"code": code}})
+            await __event_emitter__({"type": "execute", "data": {"code": code}})
         except Exception as publish_error:
             # The answer the user asked for matters more than the context a later report carries.
             logger.warning(f"Failed to publish UI context: {publish_error}")
