@@ -61,6 +61,11 @@ class RequestGuard:
         await web_socket.close()
 
     @staticmethod
+    async def refuse_unguarded(route: Route) -> None:
+        """A request no guard checked is never sent."""
+        await route.abort("blockedbyclient")
+
+    @staticmethod
     def reason_for_response(status: int, content_type: str) -> WebFetchFailureReason | None:
         if status >= 400:
             return STATUS_REASONS.get(status, WebFetchFailureReason.HTTP_ERROR)

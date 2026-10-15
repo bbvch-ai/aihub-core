@@ -48,6 +48,7 @@ class WebPageFetcher:
             browser = await playwright.chromium.connect(settings.WS_URL)
             try:
                 context = await browser.new_context(service_workers="block", accept_downloads=False)
+                await cls.refuse_unguarded_pages(context)
                 results = await asyncio.gather(
                     *(
                         cls._fetch_limited(semaphore, context, policy, url, timeout_seconds, max_page_characters)
@@ -57,6 +58,13 @@ class WebPageFetcher:
             finally:
                 await browser.close()
         return list(results)
+
+    @staticmethod
+    async def refuse_unguarded_pages(context: BrowserContext) -> None:
+        """Refuses every request of a page the fetcher did not open, such as a popup the fetched page opens: its
+        guard is routed on the page it reads, and a page's routes take precedence over the context's."""
+        await context.route("**/*", RequestGuard.refuse_unguarded)
+        await context.route_web_socket("**/*", RequestGuard.refuse_web_socket)
 
     @classmethod
     async def _fetch_limited(

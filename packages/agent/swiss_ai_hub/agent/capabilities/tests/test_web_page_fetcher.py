@@ -2,10 +2,14 @@ import os
 
 import pytest
 from playwright.async_api import Error as PlaywrightError
+from playwright.async_api import async_playwright
 from swiss_ai_hub.core.events.agent import WebFetchFailure, WebFetchFailureReason
 
 from swiss_ai_hub.agent.capabilities.web_fetch.fetched_web_page import FetchedWebPage
 from swiss_ai_hub.agent.capabilities.web_fetch.web_page_fetcher import WebPageFetcher
+
+POPUP_URL = "http://popup.example/opened"
+POPUP_PAGE = f"<script>window.open('{POPUP_URL}')</script>"
 
 
 class TestReasonForNavigationError:
@@ -34,6 +38,30 @@ class TestReasonForNavigationError:
 async def test_fetches_nothing_for_no_urls():
     """No browser connection is opened, so a message without links costs nothing."""
     assert await WebPageFetcher.fetch_all([], timeout_seconds=5, max_page_characters=1000) == []
+
+
+@pytest.mark.integration
+@pytest.mark.flaky
+@pytest.mark.asyncio
+async def test_a_page_the_fetched_page_opens_sends_nothing():
+    """Needs the dev stack's Playwright server, which CI does not run. The fetched page is checked by its own
+    routes; a popup it opens has none, so the context refuses that page's requests instead."""
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.connect(os.environ.get("PLAYWRIGHT_WS_URL", "ws://localhost:3036"))
+        try:
+            context = await browser.new_context()
+            await WebPageFetcher.refuse_unguarded_pages(context)
+            page = await context.new_page()
+            await page.route("**/*", lambda route: route.fulfill(content_type="text/html", body=POPUP_PAGE))
+
+            async with context.expect_event(
+                "requestfailed", predicate=lambda request: request.url == POPUP_URL, timeout=10_000
+            ) as failed:
+                await page.goto("http://page.example/")
+
+            assert (await failed.value).failure == "net::ERR_BLOCKED_BY_CLIENT"
+        finally:
+            await browser.close()
 
 
 @pytest.mark.integration
