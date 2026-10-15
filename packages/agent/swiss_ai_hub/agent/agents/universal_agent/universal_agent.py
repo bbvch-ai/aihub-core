@@ -16,14 +16,15 @@ from swiss_ai_hub.agent.capabilities.memory.memory import Memory
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class UniversalAgent(Agent):
     """One agent an admin configures once: the model decides for itself whether to search our knowledge, read the
-    attached files, recall memory or, with Code Interpreter on, work in the user's code sandbox, and keeps going
-    until it can answer.
+    attached files, recall memory, read the web pages the user links or, with Code Interpreter on, work in the
+    user's code sandbox, and keeps going until it can answer.
 
     Three steps of its own: hand the instructed history to the conversation, let the model work through its tools,
     and complete with the reply. Nothing is loaded into the prompt up front; every tool call shows in the chat as the
@@ -35,7 +36,7 @@ class UniversalAgent(Agent):
         "agent.universal_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:stars-c"
-    tools = ToolLoop.over(Knowledge, AttachedFiles, Memory, SandboxTools, UserFilesTools)
+    tools = ToolLoop.over(Knowledge, AttachedFiles, Memory, WebFetch, SandboxTools, UserFilesTools)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.universal_agent.steps.contextualize.name"),
@@ -69,7 +70,12 @@ class UniversalAgent(Agent):
         icon="mdi:toolbox-outline",
     )
     async def loop_step(self, ctx: Conversation.Contextualized, event: UserMessageEvent) -> ToolLoop.RunRequest:
-        return UniversalAgent.tools.run(ctx.history, files=event.files, knowledge_references=event.knowledge_references)
+        return UniversalAgent.tools.run(
+            ctx.history,
+            files=event.files,
+            knowledge_references=event.knowledge_references,
+            web_references=WebFetch.links_of(event),
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.universal_agent.steps.complete.name"),

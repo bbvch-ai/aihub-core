@@ -11,6 +11,7 @@ from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import Knowledge
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_fields import WebFetchFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
@@ -19,6 +20,7 @@ class UniversalAgentConfig(
     AttachedFilesFields,
     KnowledgeToolFields,
     KnowledgeFields,
+    WebFetchFields,
     ToolLoopFields,
     ConversationFields,
     AgentConfig,
@@ -52,4 +54,5 @@ class UniversalAgentConfig(
             **cls.attached_files_form_elements(),
             **cls.knowledge_form_elements(),
             **cls.knowledge_tool_form_elements(),
+            **cls.web_fetch_form_elements(),
         )

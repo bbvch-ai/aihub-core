@@ -46,7 +46,7 @@ def _message(*messages: ChatMessage) -> UserMessageEvent:
     )
 
 
-def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop():
+def test_the_blueprint_offers_knowledge_files_memory_web_pages_and_the_sandbox_in_one_loop():
     UniversalAgent.validate_workflow(UniversalAgentConfig)
 
     assert {capability.__name__ for capability in UniversalAgent.installed_capabilities()} == {
@@ -55,11 +55,13 @@ def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop
         "Knowledge",
         "AttachedFiles",
         "Memory",
+        "WebFetch",
     }
     assert UniversalAgent.tools.names() == [
         "search_knowledge",
         "read_attached_files",
         "recall_memory",
+        "fetch_web_pages",
         "run_command",
         "get_process_status",
         "send_process_input",
@@ -96,12 +98,14 @@ async def test_the_agents_instructions_lead_one_system_message_ahead_of_the_clie
 
 @pytest.mark.asyncio
 async def test_the_loop_gets_the_messages_files_and_references():
-    event = _message(ChatMessage(role=MessageRole.USER, content="Summarise the report"))
+    event = _message(ChatMessage(role=MessageRole.USER, content="Summarise the report and https://example.com/a"))
+    event.web_references = ["https://example.com/b"]
     ctx = ConversationContextualizedEvent(history=event.messages, query="Summarise the report")
 
     request = await UniversalAgent().loop_step(ctx, event)
 
     assert (request.loop, request.files, request.knowledge_references) == ("tools", [REPORT], [POLICIES])
+    assert request.web_references == ["https://example.com/a", "https://example.com/b"]
 
 
 @pytest.mark.asyncio

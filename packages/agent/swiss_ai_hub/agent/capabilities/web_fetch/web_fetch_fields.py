@@ -22,6 +22,10 @@ class WebFetchFields(Form):
         ),
     ] = None
 
+    def web_fetch_reserve(self, links: list[str]) -> int:
+        """Tokens a blueprint keeps free for the pages these links lead to; none while fetching is off."""
+        return self.web_fetch.context_reserve(len(links)) if self.web_fetch and links else 0
+
     @classmethod
     def web_fetch_form_elements(cls) -> dict[str, Any]:
         """The form elements for this class's own fields, for a subclass's `as_form()` to spread."""

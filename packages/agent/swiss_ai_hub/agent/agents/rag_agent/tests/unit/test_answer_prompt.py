@@ -16,6 +16,7 @@ from swiss_ai_hub.core.events.agent import (
     KnowledgeSearchedEvent,
     MemoryRecalledEvent,
     UserMessageEvent,
+    WebPagesFetchedEvent,
 )
 from swiss_ai_hub.core.generative_ai import EmbeddingModelConfig, KnowledgeRetrieverConfig, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
@@ -57,13 +58,14 @@ def _config() -> RAGAgentConfig:
     )
 
 
-async def _compose(agent, outcome, documents=None):
+async def _compose(agent, outcome, documents=None, pages=None):
     return await agent.assemble_prompt_step(
         outcome=outcome,
         ctx=ConversationContextualizedEvent(history=[QUESTION], query="What is AI Hub?"),
         memories=MemoryRecalledEvent(user_block=MEMORY),
         files=AttachedFilesReadEvent(),
         knowledge=KnowledgeSearchedEvent(),
+        pages=pages or WebPagesFetchedEvent(),
         start_event=UserMessageEvent(messages=[QUESTION], user=fake_user()),
         agent_config=_config(),
         guard_config=ContextSufficientGuardStepConfig(context_insufficient_prompt=LocaleString(en="Say you cannot.")),
@@ -85,6 +87,21 @@ async def test_an_accepted_context_puts_the_documents_into_the_system_head(agent
     assert request.history[-1] == QUESTION
     assert request.blocks[0] == MEMORY
     assert request.blocks[-1][0].role == MessageRole.SYSTEM, "the documents join the system head, not the turns"
+    assert "AI Hub is a platform." in request.blocks[-1][0].content
+
+
+@pytest.mark.parametrize("agent", [RAGAgent(), ExpertRAGAgent()], ids=lambda agent: type(agent).__name__)
+@pytest.mark.asyncio
+async def test_the_linked_pages_join_the_prompt_ahead_of_the_retrieved_documents(agent):
+    """Under pressure blocks give way from the front, so the pages outlast the memories and the knowledge search."""
+    page = [ChatMessage(role=MessageRole.SYSTEM, content="<REFERENCE_DOCUMENT>The linked page says Z.")]
+
+    accepted = ContextSufficientAcceptEvent(reason="enough")
+
+    request = await _compose(agent, accepted, DOCUMENTS, WebPagesFetchedEvent(block=page))
+
+    assert request.blocks[0] == MEMORY
+    assert request.blocks.index(page) == len(request.blocks) - 3
     assert "AI Hub is a platform." in request.blocks[-1][0].content
 
 
@@ -122,6 +139,7 @@ async def test_the_expert_reply_is_the_context_of_an_escalated_answer():
 async def test_the_sufficiency_guard_weighs_the_documents_against_the_gathered_context(agent):
     """A recalled memory or an attached file may already answer the question, so the guard sees them too."""
     attached_file = [ChatMessage(role=MessageRole.SYSTEM, content="<REFERENCE_DOCUMENT>The handbook says Y.")]
+    linked_page = [ChatMessage(role=MessageRole.SYSTEM, content="<REFERENCE_DOCUMENT>The linked page says Z.")]
 
     with patch(f"{RAG_MODULE}.do_context_sufficient_guard", new=AsyncMock()) as guard:
         await agent.context_sufficient_guard_step(
@@ -134,10 +152,12 @@ async def test_the_sufficiency_guard_weighs_the_documents_against_the_gathered_c
             memories=MemoryRecalledEvent(user_block=MEMORY),
             files=AttachedFilesReadEvent(block=attached_file),
             knowledge=KnowledgeSearchedEvent(),
+            pages=WebPagesFetchedEvent(block=linked_page),
             run_context=MagicMock(),
         )
 
     seen = _texts([message for block in guard.await_args.kwargs["blocks"] for message in block])
     assert "The user works in Bern." in seen
     assert "The handbook says Y." in seen
+    assert "The linked page says Z." in seen
     assert guard.await_args.kwargs["history"][-1] == QUESTION

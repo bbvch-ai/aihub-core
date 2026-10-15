@@ -31,6 +31,7 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files import Attach
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import generate_follow_up_questions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.rag.answer_hand_back import AnswerHandBack
@@ -93,6 +94,7 @@ class ExpertRAGAgent(RAGAgent):
         memories: Memory.Recalled,
         files: AttachedFiles.Contents,
         knowledge: Knowledge.Searched,
+        pages: WebFetch.Fetched,
         start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         guard_config: ContextSufficientGuardStepConfig,
@@ -112,7 +114,7 @@ class ExpertRAGAgent(RAGAgent):
             rejection,
             context,
             ctx,
-            (memories, files, knowledge),
+            (memories, files, knowledge, pages),
             start_event,
             agent_config.system_prompt,
             guard_config.context_insufficient_prompt,

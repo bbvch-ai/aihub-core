@@ -99,25 +99,25 @@ def test_a_step_name_collision_is_refused():
         ClashingAgent.validate_workflow(EchoAgentConfig)
 
 
+SPINE = {"Conversation", "Memory", "AttachedFiles", "Knowledge"}
+
+
 @pytest.mark.parametrize(
-    ("agent", "config"),
+    ("agent", "config", "capabilities"),
     [
-        (RAGAgent, RAGAgentConfig),
-        (ExpertRAGAgent, ExpertRAGAgentConfig),
-        (LLMWrappingAgent, LLMWrappingAgentConfig),
-        (FewShotAgent, FewShotAgentConfig),
-        (McpReactAgent, McpReactAgentConfig),
+        (RAGAgent, RAGAgentConfig, {*SPINE, "WebFetch"}),
+        (ExpertRAGAgent, ExpertRAGAgentConfig, {*SPINE, "WebFetch"}),
+        (LLMWrappingAgent, LLMWrappingAgentConfig, {*SPINE, "WebFetch"}),
+        (FewShotAgent, FewShotAgentConfig, SPINE),
+        (McpReactAgent, McpReactAgentConfig, SPINE),
     ],
-    ids=lambda value: getattr(value, "__name__", value),
+    ids=lambda value: getattr(value, "__name__", None) or "capabilities",
 )
-def test_every_conversational_blueprint_validates(agent: type[Agent], config: type[AgentConfig]):
+def test_every_conversational_blueprint_validates(
+    agent: type[Agent], config: type[AgentConfig], capabilities: set[str]
+):
     agent.validate_workflow(config)
-    assert {capability.__name__ for capability in agent.installed_capabilities()} == {
-        "Conversation",
-        "Memory",
-        "AttachedFiles",
-        "Knowledge",
-    }
+    assert {capability.__name__ for capability in agent.installed_capabilities()} == capabilities
 
 
 class SearchEvent(ControlEvent):
