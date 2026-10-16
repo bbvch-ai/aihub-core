@@ -21,6 +21,7 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import UniversalAgentConfig
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch_config import WebFetchConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 T = AgentLocaleHandler("en")
@@ -94,6 +95,30 @@ async def test_the_agents_instructions_lead_one_system_message_ahead_of_the_clie
     assert [message.role for message in request.history] == [MessageRole.SYSTEM, MessageRole.USER]
     assert head.content.startswith(T("agent.universal_agent.prompt.instructions"))
     assert head.content.index("Answer briefly.") < head.content.index("Client prompt.")
+
+
+@pytest.mark.asyncio
+async def test_the_pages_referenced_with_hash_are_named_in_the_instructions():
+    """A `#` link is not in the message text, only in the tool's description; without this a model asked to
+    summarise "this page" answered that it saw no link."""
+    event = _message(ChatMessage(role=MessageRole.USER, content="Please summarize this page"))
+    event.web_references = ["https://github.com"]
+
+    request = await UniversalAgent().contextualize_step(event, agent_config=_config(web_fetch=WebFetchConfig()), t=T)
+
+    head = request.history[0].content
+    assert "- https://github.com" in head
+    assert "fetch_web_pages" in head
+
+
+@pytest.mark.asyncio
+async def test_with_web_fetch_off_the_referenced_pages_are_not_mentioned():
+    event = _message(ChatMessage(role=MessageRole.USER, content="Please summarize this page"))
+    event.web_references = ["https://github.com"]
+
+    request = await UniversalAgent().contextualize_step(event, agent_config=_config(), t=T)
+
+    assert "https://github.com" not in request.history[0].content
 
 
 @pytest.mark.asyncio

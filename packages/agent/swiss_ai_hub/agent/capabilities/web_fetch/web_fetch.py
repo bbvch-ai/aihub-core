@@ -93,6 +93,16 @@ class WebFetch(Capability):
         return list(dict.fromkeys([*UrlExtractor.find(message.user_query), *message.web_references]))
 
     @staticmethod
+    def referenced_pages_note(message: UserMessageEvent, web: WebFetchFields, t: LocaleHandler) -> str | None:
+        """What a tool loop's instructions say about the pages a message references with `#`, while the profile
+        reads web pages. Such a link is not in the message text, only in the tool's description, and a model asked
+        to summarise "this page" answered that it saw no link instead of reading it."""
+        if web.web_fetch is None or not message.web_references:
+            return None
+        links = "\n".join(f"- {url}" for url in message.web_references)
+        return t("agent.web_fetch.prompt.referenced_pages", links=links, tool=FETCH_WEB_PAGES_TOOL)
+
+    @staticmethod
     def fetch(urls: list[str], cite_sources: bool = True) -> FetchWebPagesEvent:
         return FetchWebPagesEvent(urls=list(urls), cite_sources=cite_sources)
 
