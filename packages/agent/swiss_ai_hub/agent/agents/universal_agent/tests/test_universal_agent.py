@@ -112,13 +112,26 @@ async def test_the_pages_referenced_with_hash_are_named_in_the_instructions():
 
 
 @pytest.mark.asyncio
-async def test_with_web_fetch_off_the_referenced_pages_are_not_mentioned():
-    event = _message(ChatMessage(role=MessageRole.USER, content="Please summarize this page"))
+async def test_with_web_fetch_off_the_linked_pages_are_named_as_unreadable():
+    """Without the note a model handed a bare URL summarised the page it imagined from it."""
+    event = _message(ChatMessage(role=MessageRole.USER, content="Summarize https://example.com/a"))
     event.web_references = ["https://github.com"]
 
     request = await UniversalAgent().contextualize_step(event, agent_config=_config(), t=T)
 
-    assert "https://github.com" not in request.history[0].content
+    head = request.history[0].content
+    assert "- https://example.com/a\n- https://github.com" in head
+    assert "cannot open links" in head
+    assert "fetch_web_pages" not in head
+
+
+@pytest.mark.asyncio
+async def test_with_web_fetch_off_a_message_without_links_gets_no_note():
+    event = _message(ChatMessage(role=MessageRole.USER, content="Hi"))
+
+    request = await UniversalAgent().contextualize_step(event, agent_config=_config(), t=T)
+
+    assert "cannot open links" not in request.history[0].content
 
 
 @pytest.mark.asyncio

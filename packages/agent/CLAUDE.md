@@ -242,22 +242,26 @@ configured retrieval rather than replacing it.
 
 **`WebFetch`** (needs `WebFetchFields`: `web_fetch: WebFetchConfig | None`, off unless the profile turns it on, with
 `max_urls`, `timeout_seconds` and `max_page_characters`): `fetch(urls, cite_sources)` → `WebFetch.Fetched`
-(`WebPagesFetchedEvent`), one block with the pages read and a note naming every link that was not and why, empty when
-fetching is off. Pass `WebFetch.links_of(message)`: the links in the last user message's text, then the
-`UserMessageEvent.web_references` chat clients send for `#` references, once each. Links are sorted out by
-`UrlExtractor.classify` (malformed and non-http(s) links are reported, never fetched), the first `max_urls` are read and
-the rest reported as over the limit. Pages load through the platform's Playwright server (core's `PlaywrightSettings`;
-agents have no internet access of their own) via `WebPageFetcher`, the one class that knows the engine. `RequestGuard`
-performs every request of the page itself, redirects and subresources included, checked by `UrlSafetyPolicy`, which
-refuses internal hosts and any URL Python and the browser could read as different hosts; a catch-all on the browser
-context refuses requests from pages the fetched page opens. `PageContentConverter` keeps the main content as markdown
-(Trafilatura). Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from the URL, `source_origin`
-the URL chat clients link), rendered with `combine_nodes_in_order` and cited like retrieved knowledge; the result is a
-`SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser raises (a platform fault,
-not an unreadable page). `RAGAgent`, `ExpertRAGAgent` and `LLMWrappingAgent` call it from `gather_context_step`,
-reserving `WebFetchFields.web_fetch_reserve(links)` in `AttachedFiles.read`, and compose its block after the knowledge
-and before the files; RAG's sufficiency guard weighs it too, so a page that answers the question is not rejected for
-retrieval finding nothing. `UniversalAgent` offers it as a tool with `web_references=WebFetch.links_of(event)`.
+(`WebPagesFetchedEvent`), one block with the pages read and a note naming every link that was not and why. While
+fetching is off nothing is read, and a message with links gets a note that the assistant cannot open them, since a model
+handed a bare URL summarised the page it imagined from it; without links the block is empty. Tool-loop blueprints put
+`WebFetch.links_note(message, config, t)` into their instructions instead: the `#` references while fetching is on (they
+are not in the message text), the same "cannot open" note while it is off. Pass `WebFetch.links_of(message)`: the links
+in the last user message's text, then the `UserMessageEvent.web_references` chat clients send for `#` references, once
+each. Links are sorted out by `UrlExtractor.classify` (malformed and non-http(s) links are reported, never fetched), the
+first `max_urls` are read and the rest reported as over the limit. Pages load through the platform's Playwright server
+(core's `PlaywrightSettings`; agents have no internet access of their own) via `WebPageFetcher`, the one class that
+knows the engine. `RequestGuard` performs every request of the page itself, redirects and subresources included, checked
+by `UrlSafetyPolicy`, which refuses internal hosts and any URL Python and the browser could read as different hosts; a
+catch-all on the browser context refuses requests from pages the fetched page opens. `PageContentConverter` keeps the
+main content as markdown (Trafilatura). Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from
+the URL, `source_origin` the URL chat clients link), rendered with `combine_nodes_in_order` and cited like retrieved
+knowledge; the result is a `SemanticEvent`, so the fetch shows in the trace as a retrieval. Failing to reach the browser
+raises (a platform fault, not an unreadable page). `RAGAgent`, `ExpertRAGAgent` and `LLMWrappingAgent` call it from
+`gather_context_step`, reserving `WebFetchFields.web_fetch_reserve(links)` in `AttachedFiles.read`, and compose its
+block after the knowledge and before the files; RAG's sufficiency guard weighs it too, so a page that answers the
+question is not rejected for retrieval finding nothing. `UniversalAgent` offers it as a tool with
+`web_references=WebFetch.links_of(event)`.
 
 **`ToolLoop`** (needs `ToolLoopFields`: iteration and call limits, the per-result token cap, disabled tools and approval
 rules; the runner publishes its form with the blueprint's tools as options, so `as_form()` spreads nothing): the model

@@ -147,7 +147,7 @@ class RAGAgent(Agent):
             Memory.recall(ctx.query, namespaces),
             files,
             Knowledge.search(references, ctx.query, cite_sources),
-            WebFetch.fetch(links, cite_sources),
+            WebFetch.fetch(links, agent_config, cite_sources),
         ]
 
     @step(

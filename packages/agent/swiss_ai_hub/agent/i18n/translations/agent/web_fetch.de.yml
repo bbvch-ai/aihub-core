@@ -25,7 +25,15 @@ prompt:
     Diese Links konnten nicht gelesen werden:
     %{failures}
     Du weisst nicht, was auf diesen Seiten steht, also rate nicht und beschreibe ihren Inhalt nicht. Sage dem Benutzer, welche Links du nicht lesen konntest und warum, und schlage vor, den Text der Seite stattdessen in den Chat einzufügen.
-  referenced_pages: "Der Benutzer hat diese Webseiten mit # referenziert, daher stehen sie nicht im Text der Nachricht. Spricht der Benutzer von \"dieser Seite\" oder \"diesen Seiten\", meint er sie. Lies sie mit %{tool}, bevor du antwortest:\n%{links}"
+  referenced_pages: "Der Benutzer hat diese Webseiten mit # referenziert, daher stehen\
+    \ sie nicht im Text der Nachricht. Spricht der Benutzer von \"dieser Seite\" oder\
+    \ \"diesen Seiten\", meint er sie. Lies sie mit %{tool}, bevor du antwortest:\n\
+    %{links}"
+  unreadable_links: "Die Nachricht des Benutzers verlinkt diese Webseiten, aber dieser\
+    \ Assistent kann keine Links öffnen:\n%{links}\nDu weisst nicht, was auf diesen\
+    \ Seiten steht. Hängt die Antwort davon ab, rate nicht und beschreibe ihren Inhalt\
+    \ nicht: Sage dem Benutzer, dass du keine Links öffnen kannst, und bitte ihn,\
+    \ den Text der Seite in den Chat einzufügen."
 failure_reasons:
   malformed_url: der Link ist keine gültige Webadresse
   unsupported_url: nur http- und https-Links können gelesen werden

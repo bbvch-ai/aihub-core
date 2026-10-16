@@ -135,7 +135,7 @@ class LLMWrappingAgent(Agent):
             Memory.recall(ctx.query),
             AttachedFiles.read(event.files, ctx.history, ctx.query, reserve_tokens=reserve),
             Knowledge.search(references, ctx.query),
-            WebFetch.fetch(links),
+            WebFetch.fetch(links, agent_config),
         ]
 
     @step(

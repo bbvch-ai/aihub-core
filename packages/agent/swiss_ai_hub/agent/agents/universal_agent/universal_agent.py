@@ -47,12 +47,12 @@ class UniversalAgent(Agent):
         self, event: UserMessageEvent, agent_config: UniversalAgentConfig, t: LocaleHandler
     ) -> Conversation.ContextualizeRequest:
         """The agent's instructions and the profile's lead a single system message, ahead of the client's own,
-        followed by the pages the user referenced with `#`, which the message text does not show."""
-        referenced_pages = WebFetch.referenced_pages_note(event, agent_config, t)
+        followed by what it should know about the pages the message links."""
+        links_note = WebFetch.links_note(event, agent_config, t)
         instructions = [
             t("agent.universal_agent.prompt.instructions"),
             *([agent_config.instructions.in_locale(event.locale)] if agent_config.instructions else []),
-            *([referenced_pages] if referenced_pages else []),
+            *([links_note] if links_note else []),
         ]
         history = merge_consecutive_messages(
             [

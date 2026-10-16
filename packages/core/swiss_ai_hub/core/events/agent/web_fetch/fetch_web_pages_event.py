@@ -20,6 +20,13 @@ class FetchWebPagesEvent(ControlAndDisplayEvent):
     )
 
     urls: Annotated[list[str], Field(description="The links to read, in the order the user gave them.")] = []
+    reading: Annotated[
+        bool,
+        Field(
+            description="Whether the pages are read: false while the profile has web fetch off, so a chat client "
+            "shows no reading progress for links that are left unread."
+        ),
+    ] = True
     cite_sources: Annotated[
         bool,
         Field(description="Whether the model is told to cite the pages by id, off where citations cannot resolve."),

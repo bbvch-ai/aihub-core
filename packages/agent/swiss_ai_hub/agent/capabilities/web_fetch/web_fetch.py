@@ -93,18 +93,27 @@ class WebFetch(Capability):
         return list(dict.fromkeys([*UrlExtractor.find(message.user_query), *message.web_references]))
 
     @staticmethod
-    def referenced_pages_note(message: UserMessageEvent, web: WebFetchFields, t: LocaleHandler) -> str | None:
-        """What a tool loop's instructions say about the pages a message references with `#`, while the profile
-        reads web pages. Such a link is not in the message text, only in the tool's description, and a model asked
-        to summarise "this page" answered that it saw no link instead of reading it."""
-        if web.web_fetch is None or not message.web_references:
+    def links_note(message: UserMessageEvent, web: WebFetchFields, t: LocaleHandler) -> str | None:
+        """What a tool loop's instructions say about the pages a message links.
+
+        While the profile reads web pages, only the pages referenced with `#` need naming: such a link is not in the
+        message text, only in the tool's description, and a model asked to summarise "this page" answered that it saw
+        no link. While it does not, every link is named as unreadable, since a model handed a bare URL summarised the
+        page it imagined from it.
+        """
+        if web.web_fetch is None:
+            links = WebFetch.links_of(message)
+            return WebFetch._unreadable_links(links, t) if links else None
+        if not message.web_references:
             return None
         links = "\n".join(f"- {url}" for url in message.web_references)
         return t("agent.web_fetch.prompt.referenced_pages", links=links, tool=FETCH_WEB_PAGES_TOOL)
 
     @staticmethod
-    def fetch(urls: list[str], cite_sources: bool = True) -> FetchWebPagesEvent:
-        return FetchWebPagesEvent(urls=list(urls), cite_sources=cite_sources)
+    def fetch(urls: list[str], web: WebFetchFields, cite_sources: bool = True) -> FetchWebPagesEvent:
+        """The request says whether the profile reads the pages, so a chat client shows reading progress only when
+        it happens; the step answers either way."""
+        return FetchWebPagesEvent(urls=list(urls), reading=web.web_fetch is not None, cite_sources=cite_sources)
 
     @staticmethod
     @step(
@@ -118,8 +127,11 @@ class WebFetch(Capability):
         """Read the linked pages within the profile's limits, and answer with them and the unreadable links as one
         block. Failing to reach the browser itself raises: that is a platform fault, not an unreadable page."""
         config = web.web_fetch
-        if config is None or not request.urls:
+        if not request.urls:
             return WebPagesFetchedEvent(tool_call_id=request.tool_call_id)
+        if config is None:
+            note = ChatMessage(role=MessageRole.SYSTEM, content=WebFetch._unreadable_links(request.urls, t))
+            return WebPagesFetchedEvent(block=[note], tool_call_id=request.tool_call_id)
         links = UrlExtractor.classify(request.urls)
         to_read, beyond_limit = links.urls[: config.max_urls], links.urls[config.max_urls :]
         results = await WebPageFetcher.fetch_all(to_read, config.timeout_seconds, config.max_page_characters)
@@ -221,6 +233,12 @@ class WebFetch(Capability):
                 )
             )
         return block
+
+    @staticmethod
+    def _unreadable_links(links: list[str], t: LocaleHandler) -> str:
+        """Said to the model when the profile does not read web pages, so the answer asks for the text instead of
+        describing a page it never saw."""
+        return t("agent.web_fetch.prompt.unreadable_links", links="\n".join(f"- {link}" for link in links))
 
     @staticmethod
     def _reason(failure: WebFetchFailure, config: WebFetchConfig, t: LocaleHandler) -> str:

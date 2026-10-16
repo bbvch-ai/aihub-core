@@ -6490,6 +6490,12 @@ export type FetchWebPagesEvent = {
    */
   urls?: Array<string>;
   /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
+  /**
    * Cite Sources
    *
    * Whether the model is told to cite the pages by id, off where citations cannot resolve.
@@ -23831,6 +23837,12 @@ export type FetchWebPagesEventWritable = {
    * The links to read, in the order the user gave them.
    */
   urls?: Array<string>;
+  /**
+   * Reading
+   *
+   * Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.
+   */
+  reading?: boolean;
   /**
    * Cite Sources
    *

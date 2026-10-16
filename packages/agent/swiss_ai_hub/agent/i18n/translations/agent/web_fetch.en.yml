@@ -25,7 +25,13 @@ prompt:
     These links could not be read:
     %{failures}
     You do not know what these pages say, so do not guess or describe their content. Tell the user which links you could not read and why, and suggest they paste the page's text into the chat instead.
-  referenced_pages: "The user referenced these web pages with #, so they do not appear in the message text. When the user speaks of \"this page\" or \"these pages\", they mean them. Read them with %{tool} before you answer:\n%{links}"
+  referenced_pages: "The user referenced these web pages with #, so they do not appear\
+    \ in the message text. When the user speaks of \"this page\" or \"these pages\"\
+    , they mean them. Read them with %{tool} before you answer:\n%{links}"
+  unreadable_links: "The user's message links these web pages, but this assistant\
+    \ cannot open links:\n%{links}\nYou do not know what these pages say. If the answer\
+    \ depends on them, do not guess or describe their content: tell the user you cannot\
+    \ open links and ask them to paste the page's text into the chat."
 failure_reasons:
   malformed_url: the link is not a valid web address
   unsupported_url: only http and https links can be read

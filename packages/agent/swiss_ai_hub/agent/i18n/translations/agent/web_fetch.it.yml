@@ -25,7 +25,14 @@ prompt:
     Questi link non sono stati letti:
     %{failures}
     Non sai cosa contengono queste pagine, quindi non indovinare e non descriverne il contenuto. Di' all'utente quali link non hai potuto leggere e perché, e suggerisci di incollare il testo della pagina nella chat.
-  referenced_pages: "L'utente ha indicato queste pagine web con #, quindi non compaiono nel testo del messaggio. Quando l'utente parla di \"questa pagina\" o \"queste pagine\", intende loro. Leggile con %{tool} prima di rispondere:\n%{links}"
+  referenced_pages: "L'utente ha indicato queste pagine web con #, quindi non compaiono\
+    \ nel testo del messaggio. Quando l'utente parla di \"questa pagina\" o \"queste\
+    \ pagine\", intende loro. Leggile con %{tool} prima di rispondere:\n%{links}"
+  unreadable_links: "Il messaggio dell'utente collega queste pagine web, ma questo\
+    \ assistente non può aprire i link:\n%{links}\nNon sai cosa contengono queste\
+    \ pagine. Se la risposta dipende da esse, non indovinare e non descriverne il\
+    \ contenuto: di' all'utente che non puoi aprire i link e chiedigli di incollare\
+    \ il testo della pagina nella chat."
 failure_reasons:
   malformed_url: il link non è un indirizzo web valido
   unsupported_url: si possono leggere solo link http e https

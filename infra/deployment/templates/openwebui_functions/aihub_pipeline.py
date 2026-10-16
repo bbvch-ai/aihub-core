@@ -1278,8 +1278,8 @@ class AttachedFileEventHandler(EventHandler):
 
 
 class FetchWebPagesEventHandler(EventHandler):
-    """Shows that the agent is reading the pages the user linked. A web-fetching agent asks on every turn, so a turn
-    that links nothing stays silent."""
+    """Shows that the agent is reading the pages the user linked. Every turn asks, so a turn that links nothing
+    stays silent, and so does one whose profile has web fetch off, since its links are left unread."""
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
@@ -1291,7 +1291,7 @@ class FetchWebPagesEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Web page fetch request"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        if event.get("urls"):
+        if event.get("urls") and event.get("reading", True):
             description = event.get("display_description", {}).get("en", "Reading the linked web pages")
             status = {"action": None, "description": description, "done": False}
             await context.emitter({"type": "status", "data": status})

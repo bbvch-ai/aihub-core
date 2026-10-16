@@ -61,7 +61,7 @@ async def _fetch(
 ) -> tuple[WebPagesFetchedEvent, AsyncMock]:
     fetch_all = AsyncMock(side_effect=results) if isinstance(results, Exception) else AsyncMock(return_value=results)
     with patch(FETCH_ALL, new=fetch_all):
-        event = await WebFetch.fetch_step(Agent(), WebFetch.fetch(urls, cite_sources), fields, T)
+        event = await WebFetch.fetch_step(Agent(), WebFetch.fetch(urls, fields, cite_sources), fields, T)
     return event, fetch_all
 
 
@@ -71,11 +71,24 @@ def _text(event: WebPagesFetchedEvent) -> str:
 
 @pytest.mark.asyncio
 class TestFetch:
-    async def test_off_for_the_profile_leaves_the_links_alone(self):
+    async def test_off_for_the_profile_reads_nothing_and_says_the_links_cannot_be_opened(self):
+        """A model handed a bare URL summarised the page it imagined from it, so it is told it cannot open links."""
         event, fetch_all = await _fetch([ARTICLE], [_page()], fields=WebFetchFields())
 
-        assert (event.block, event.grounding_nodes, event.failures) == ([], [], [])
         fetch_all.assert_not_awaited()
+        assert (event.grounding_nodes, event.failures) == ([], [])
+        assert f"- {ARTICLE}" in _text(event)
+        assert "cannot open links" in _text(event)
+
+    def test_the_request_says_whether_the_pages_are_read(self):
+        """A chat client shows reading progress only when pages are read, not for links left unread."""
+        assert WebFetch.fetch([ARTICLE], ON).reading
+        assert not WebFetch.fetch([ARTICLE], WebFetchFields()).reading
+
+    async def test_off_for_the_profile_a_message_without_links_answers_empty(self):
+        event, _ = await _fetch([], [], fields=WebFetchFields())
+
+        assert event.block == []
 
     async def test_a_message_without_links_answers_empty_without_fetching(self):
         event, fetch_all = await _fetch([], [])
@@ -265,8 +278,8 @@ class ReaderAgent(Agent):
     """Reads the linked pages and answers from them, with no tool loop."""
 
     @step()
-    async def open_step(self, event: UserMessageEvent) -> WebFetch.FetchRequest:
-        return WebFetch.fetch(WebFetch.links_of(event))
+    async def open_step(self, event: UserMessageEvent, config: ReaderConfig) -> WebFetch.FetchRequest:
+        return WebFetch.fetch(WebFetch.links_of(event), config)
 
     @step()
     async def respond_step(self, pages: WebFetch.Fetched) -> Conversation.CompleteRequest:

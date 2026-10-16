@@ -171,6 +171,22 @@ class TestFetchStatus:
 
         assert emitter.events == []
 
+    @pytest.mark.asyncio
+    async def test_links_a_profile_does_not_read_show_no_progress(self, pipe: Any) -> None:
+        """With web fetch off the links are left unread, so claiming to read them would mislead."""
+        emitter = _Recorder()
+        request = {
+            "_event_name": "FetchWebPagesEvent",
+            "_parent_event_names": ["DisplayEvent"],
+            "urls": [ARTICLE],
+            "reading": False,
+            "display_description": {"en": "Reading the linked web pages"},
+        }
+
+        await _process(pipe, request, _context(pipe, emitter))
+
+        assert emitter.events == []
+
 
 class TestFetchedPages:
     @pytest.mark.asyncio

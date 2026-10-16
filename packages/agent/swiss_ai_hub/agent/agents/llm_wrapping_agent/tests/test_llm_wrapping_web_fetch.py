@@ -49,15 +49,17 @@ async def test_the_linked_pages_are_requested_and_get_room_while_fetching_is_on(
     fetch, read = await _gather(WebFetchConfig(max_page_characters=4_000))
 
     assert fetch.urls == ["https://example.com/a", "https://example.com/b"]
+    assert fetch.reading
     assert read.reserve_tokens == 2 * 4_000 // 4
 
 
 @pytest.mark.asyncio
 async def test_with_fetching_off_the_request_still_goes_out_but_takes_no_room():
-    """The fetch step answers empty, so the prompt never waits on a request nobody made."""
+    """The step answers, telling the model it cannot open the links, and the chat shows no reading progress."""
     fetch, read = await _gather(None)
 
     assert fetch.urls == ["https://example.com/a", "https://example.com/b"]
+    assert not fetch.reading
     assert read.reserve_tokens == 0
 
 

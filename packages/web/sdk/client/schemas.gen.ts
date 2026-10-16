@@ -9441,6 +9441,13 @@ export const FetchWebPagesEventSchema = {
       description: "The links to read, in the order the user gave them.",
       default: [],
     },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
+    },
     cite_sources: {
       type: "boolean",
       title: "Cite Sources",
@@ -35622,6 +35629,13 @@ export const FetchWebPagesEventWritableSchema = {
       title: "Urls",
       description: "The links to read, in the order the user gave them.",
       default: [],
+    },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
     },
     cite_sources: {
       type: "boolean",
