@@ -480,8 +480,10 @@ everything, while a rotated credential keeps the cursor.
 4. **List after the sync, never before.** A failing listing raises, and an empty listing while the bucket holds files
    raises.
 5. **Never remove a file the same run wrote.**
-6. **A listed record without a file means the cursor is ahead of the data.** The state is discarded, and the next run
-   re-reads everything.
+6. **A record listed without a file in two runs in a row means the cursor is ahead of the data.** The state is
+   discarded, and the next run re-reads everything. Missing once is remembered in the state (`missing_keys`), not acted
+   on: a record created while a run is between its sync and its listing is missing too, and the next incremental run
+   fetches it. Discarding at once made a busy source re-read everything night after night.
 7. **One sync per database at a time.** A run that finds another sync of the same database running gives way, whichever
    was created first. "Another sync" is a run of the sync job or one launched from the asset page (`__ASSET_JOB` with
    the asset selected); never match on the bucket tag alone, because the database's ingestion runs carry it too.
