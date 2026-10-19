@@ -132,7 +132,7 @@ structured:
         help: Jira Cloud se connecte avec l'e-mail d'un compte et un jeton d'API,
           Jira Data Center avec un jeton d'accès personnel.
         cloud: Jira Cloud
-        data_center: Jira Data Center
+        data_center: Jira Data Center (11.3)
       email:
         label: E-mail du compte
         help: E-mail du compte Jira Cloud auquel appartient le jeton d'API.

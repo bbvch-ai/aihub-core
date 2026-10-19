@@ -95,7 +95,7 @@ Pick **Jira** as the source system and enter:
   `https://jira.acme.ch/jira` for a Jira Data Center served under a path
 - **Jira edition**: Jira Cloud signs in with the account's e-mail and an
   [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Jira Data Center with a
-  personal access token (profile → *Personal Access Tokens*)
+  personal access token (profile → *Personal Access Tokens*). Jira Data Center 11.3 is supported, as the option says.
 - **Projects**: the keys of the projects to sync, such as `ABC`
 - **Additional JQL filter** (optional): a clause every synced issue must also match, such as
   `issuetype != "Service Request"`
