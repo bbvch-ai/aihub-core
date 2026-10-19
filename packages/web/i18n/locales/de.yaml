@@ -1141,9 +1141,11 @@ userFiles:
       um sie zu öffnen.
     truncated: Diese Vorschau zeigt nur den Anfang des Dokuments. Laden Sie es herunter,
       um alles zu sehen.
-    failed: Für diese Datei konnte keine Vorschau erstellt werden. Laden Sie sie herunter, um sie zu öffnen.
+    failed: Für diese Datei konnte keine Vorschau erstellt werden. Laden Sie sie herunter,
+      um sie zu öffnen.
     empty: Dieses Dokument enthält keinen Text.
-    tooLarge: Diese Datei ist für eine Vorschau zu gross. Laden Sie sie herunter, um sie zu öffnen.
+    tooLarge: Diese Datei ist für eine Vorschau zu gross. Laden Sie sie herunter,
+      um sie zu öffnen.
   name:
     invalid: Ein Name darf nicht leer sein und keinen Schrägstrich enthalten.
   delete:

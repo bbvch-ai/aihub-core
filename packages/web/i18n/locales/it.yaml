@@ -1136,7 +1136,8 @@ userFiles:
     unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
     truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
       vederlo tutto.
-    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per aprirlo.
+    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per
+      aprirlo.
     empty: Questo documento non contiene testo.
     tooLarge: Questo file è troppo grande per l'anteprima. Scaricalo per aprirlo.
   name:

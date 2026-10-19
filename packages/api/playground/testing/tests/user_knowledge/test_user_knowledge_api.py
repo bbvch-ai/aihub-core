@@ -257,9 +257,7 @@ async def test_a_table_the_cut_lands_in_is_closed_after_its_last_whole_row(clien
 
 
 @pytest.mark.asyncio
-async def test_a_file_too_large_to_preview_is_refused_before_it_is_converted(
-    client: AsyncClient, sandbox: Any
-) -> None:
+async def test_a_file_too_large_to_preview_is_refused_before_it_is_converted(client: AsyncClient, sandbox: Any) -> None:
     limit = user_knowledge_service.UserKnowledgeService.MAX_PREVIEW_BYTES
     sandbox.view.return_value = (b"x" * (limit + 1), "application/vnd.ms-excel")
     with patch.object(user_knowledge_service.DocumentExtractor, "extract_from_bytes", AsyncMock()) as extract:
