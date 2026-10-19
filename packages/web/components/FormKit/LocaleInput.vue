@@ -84,6 +84,7 @@ interface LocaleInputProps {
 
 const props = defineProps<LocaleInputProps>()
 const { t } = useI18n()
+const toast = useToast()
 const { translate, isTranslating } = useTranslate()
 const { tenantId } = useTenant()
 
@@ -149,15 +150,47 @@ const canTranslate = computed(() => {
   return locales.some(lang => lang !== activeLocale.value && !hasValue(lang))
 })
 
-// Handle translation
-async function handleTranslate() {
-  const response = await translate({
-    request: {
-      text: localeValue.value,
-      source_locale: activeLocale.value,
-    },
-    tenantId: tenantId.value!,
+function notifyTranslationFailed() {
+  toast.add({
+    severity: 'error',
+    summary: t('form.locale_input.translate_failed_summary'),
+    detail: t('form.locale_input.translate_failed_detail'),
+    life: 6000,
   })
-  props.context.node.input(response.translated)
+}
+
+// The backend translates each locale separately, so a partial result is still worth applying.
+async function handleTranslate() {
+  const sourceLocale = activeLocale.value
+  const targetCount = locales.filter(lang => lang !== sourceLocale).length
+  try {
+    const response = await translate({
+      request: {
+        text: localeValue.value,
+        source_locale: sourceLocale,
+      },
+      tenantId: tenantId.value!,
+    })
+    const failedLocales = response.failed_locales ?? []
+    if (failedLocales.length >= targetCount) {
+      notifyTranslationFailed()
+      return
+    }
+    props.context.node.input(response.translated)
+    if (failedLocales.length > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: t('form.locale_input.translate_partial_summary'),
+        detail: t('form.locale_input.translate_partial_detail', {
+          locales: failedLocales.map(lang => lang.toUpperCase()).join(', '),
+        }),
+        life: 6000,
+      })
+    }
+  }
+  catch (error) {
+    console.error('Failed to translate:', error)
+    notifyTranslationFailed()
+  }
 }
 </script>

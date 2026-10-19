@@ -705,7 +705,8 @@ auth:
     welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
     pleaseLoginWith: Bitte melden Sie sich mit {provider} an
-    useOrganisationLink: "Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls Sie ihn nicht haben, kontaktieren Sie Ihren Administrator."
+    useOrganisationLink: Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls
+      Sie ihn nicht haben, kontaktieren Sie Ihren Administrator.
     adminLogin: Anmeldung für Administratoren
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
@@ -951,6 +952,12 @@ form:
     invalid_json: Die Datei ist kein gültiges JSON.
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
+    translate_partial_summary: Einige Sprachen wurden nicht übersetzt
+    translate_partial_detail: Übersetzung nach {locales} nicht möglich. Die anderen
+      Sprachen wurden aktualisiert — versuchen Sie es erneut, um den Rest zu ergänzen.
+    translate_failed_summary: Die Übersetzung hat diesmal nicht geklappt
+    translate_failed_detail: Keine der Sprachen konnte übersetzt werden. Ihr Text
+      ist unverändert — bitte versuchen Sie es gleich noch einmal.
   warnings:
     org_memory_performance: Diese Funktion funktioniert in manchen Fällen möglicherweise
       nicht wie erwartet. Um unerwartetes Verhalten zu vermeiden, deaktivieren Sie

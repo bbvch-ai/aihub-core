@@ -1,57 +1,195 @@
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from swiss_ai_hub.core.i18n import LocaleString
 
+from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.translation.translation_service"
 
 
-class TestParseLocaleString:
-    def test_parses_bare_json(self):
-        result = TranslationService._parse_locale_string('{"en": "hi", "de": "hallo"}')
-        assert result is not None
-        assert result.model_dump(exclude_unset=True) == {"en": "hi", "de": "hallo"}
+class TestExtractTranslation:
+    def test_extracts_text_between_markers(self):
+        assert TranslationService._extract_translation("<translation>Hallo</translation>") == "Hallo"
 
-    def test_parses_json_wrapped_in_markdown_fence(self):
-        result = TranslationService._parse_locale_string('```json\n{"de": "hallo"}\n```')
-        assert result is not None
-        assert result.model_dump(exclude_unset=True) == {"de": "hallo"}
+    def test_ignores_preamble_and_trailing_prose(self):
+        response = "Voici la traduction :\n<translation>\nBonjour\n</translation>\nJ'espère que cela aide."
+        assert TranslationService._extract_translation(response) == "Bonjour"
 
-    def test_extracts_json_object_surrounded_by_prose(self):
-        result = TranslationService._parse_locale_string('Sure! Here it is: {"fr": "bonjour"} — done.')
-        assert result is not None
-        assert result.model_dump(exclude_unset=True) == {"fr": "bonjour"}
+    def test_extracts_from_inside_markdown_fence(self):
+        response = "```\n<translation>Ciao</translation>\n```"
+        assert TranslationService._extract_translation(response) == "Ciao"
 
-    def test_returns_none_when_response_is_prose_without_json(self):
-        result = TranslationService._parse_locale_string("Bitte geben Sie den zu übersetzenden Text an.")
-        assert result is None
+    def test_keeps_inner_tags_and_backslashes_verbatim(self):
+        translated = '<persona>\nDu bist ein Assistent.\n</persona>\n<tone>\n- Antworte "präzise" \\ knapp.\n</tone>'
+        assert TranslationService._extract_translation(f"<translation>{translated}</translation>") == translated
 
-    def test_returns_none_when_json_is_malformed(self):
-        result = TranslationService._parse_locale_string('{"de": ')
-        assert result is None
+    def test_takes_outermost_pair_when_text_mentions_the_tag(self):
+        response = "<translation>Use <translation> and </translation> as markers.</translation>"
+        assert TranslationService._extract_translation(response) == "Use <translation> and </translation> as markers."
+
+    def test_raises_when_markers_are_missing(self):
+        with pytest.raises(ValueError, match="no <translation> block"):
+            TranslationService._extract_translation("Bitte geben Sie den zu übersetzenden Text an.")
+
+    def test_raises_when_markers_are_empty(self):
+        with pytest.raises(ValueError, match="no <translation> block"):
+            TranslationService._extract_translation("<translation>   </translation>")
 
 
-class TestTranslateFallsBackWhenModelReturnsNoJson:
+def _locale_handler() -> MagicMock:
+    t = MagicMock(side_effect=lambda key: key)
+    t.locale = "en"
+    t.supported_locales = ["en", "de", "fr", "it"]
+    return t
+
+
+def _llm_config_returning(apredict: AsyncMock) -> MagicMock:
+    llm = MagicMock()
+    llm.apredict = apredict
+    llm_config = MagicMock()
+    llm_config.to_llama_index.return_value = (llm, None)
+    return llm_config
+
+
+def _per_locale_responses(responses: dict[str, str | Exception]) -> AsyncMock:
+    async def respond(_prompt, **kwargs):
+        response = responses[kwargs["target_language"].rsplit(".", 1)[-1]]
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+    return AsyncMock(side_effect=respond)
+
+
+async def _translate(source: LocaleString, apredict: AsyncMock, source_locale: str = "en"):
+    with (
+        patch(f"{_SERVICE_MODULE}.PromptTemplate"),
+        patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+    ):
+        return await TranslationService.translate(
+            locale_string=source,
+            llm_config=_llm_config_returning(apredict),
+            t=_locale_handler(),
+            user=MagicMock(),
+            source_locale=source_locale,
+        )
+
+
+class TestTranslate:
     @pytest.mark.asyncio
-    async def test_returns_source_locale_string_untranslated_on_unparseable_response(self):
-        source = LocaleString(en="My Namespace")
-        t = MagicMock(side_effect=lambda key: key)
-        t.locale = "en"
-        t.supported_locales = ["en", "de", "fr", "it"]
+    async def test_translates_every_target_locale_in_its_own_call(self):
+        apredict = _per_locale_responses(
+            {
+                "de": "<translation>Hallo</translation>",
+                "fr": "<translation>Bonjour</translation>",
+                "it": "<translation>Ciao</translation>",
+            }
+        )
 
-        llm = MagicMock()
-        llm.apredict = AsyncMock(return_value="Bitte geben Sie den zu übersetzenden Text an.")
-        llm_config = MagicMock()
-        llm_config.to_llama_index.return_value = (llm, None)
+        outcome = await _translate(LocaleString(en="Hello"), apredict)
+
+        assert apredict.await_count == 3
+        assert outcome.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": "Bonjour", "it": "Ciao"}
+        assert outcome.failed_locales == []
+
+    @pytest.mark.asyncio
+    async def test_runs_the_locale_calls_concurrently(self):
+        in_flight = 0
+        peak = 0
+
+        async def respond(_prompt, **_kwargs):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0.01)
+            in_flight -= 1
+            return "<translation>x</translation>"
+
+        await _translate(LocaleString(en="Hello"), AsyncMock(side_effect=respond))
+
+        assert peak == 3
+
+    @pytest.mark.asyncio
+    async def test_a_failing_locale_keeps_its_prior_value_and_does_not_affect_the_others(self):
+        apredict = _per_locale_responses(
+            {
+                "de": "<translation>Hallo</translation>",
+                "fr": RuntimeError("gateway timeout"),
+                "it": "<translation>Ciao</translation>",
+            }
+        )
+
+        outcome = await _translate(LocaleString(en="Hello", fr="Salut (old)"), apredict)
+
+        assert outcome.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": "Salut (old)", "it": "Ciao"}
+        assert outcome.failed_locales == ["fr"]
+
+    @pytest.mark.asyncio
+    async def test_a_response_without_markers_counts_as_failed(self):
+        apredict = _per_locale_responses(
+            {
+                "de": "Bitte geben Sie den zu übersetzenden Text an.",
+                "fr": "<translation>Bonjour</translation>",
+                "it": "<translation>Ciao</translation>",
+            }
+        )
+
+        outcome = await _translate(LocaleString(en="Hello"), apredict)
+
+        assert outcome.translated.de is None
+        assert outcome.failed_locales == ["de"]
+
+    @pytest.mark.asyncio
+    async def test_all_locales_failing_returns_the_source_untouched(self):
+        apredict = AsyncMock(side_effect=RuntimeError("model unavailable"))
+
+        outcome = await _translate(LocaleString(en="Hello"), apredict)
+
+        assert outcome.translated.model_dump(exclude_unset=True) == {"en": "Hello"}
+        assert outcome.failed_locales == ["de", "fr", "it"]
+
+    @pytest.mark.asyncio
+    async def test_cancellation_propagates_instead_of_counting_as_a_failed_locale(self):
+        apredict = AsyncMock(side_effect=asyncio.CancelledError())
+
+        with pytest.raises(asyncio.CancelledError):
+            await _translate(LocaleString(en="Hello"), apredict)
+
+    @pytest.mark.asyncio
+    async def test_missing_source_text_skips_the_llm(self):
+        apredict = AsyncMock()
+
+        outcome = await _translate(LocaleString(de="Hallo"), apredict, source_locale="en")
+
+        apredict.assert_not_awaited()
+        assert outcome.translated.model_dump(exclude_unset=True) == {"de": "Hallo"}
+        assert outcome.failed_locales == []
+
+
+class TestTranslateFromRequest:
+    @pytest.mark.asyncio
+    async def test_uses_default_model_and_exposes_failed_locales(self):
+        apredict = _per_locale_responses(
+            {
+                "de": "<translation>Hallo</translation>",
+                "fr": RuntimeError("boom"),
+                "it": "<translation>Ciao</translation>",
+            }
+        )
+        llm_config = _llm_config_returning(apredict)
 
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
             patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
+            patch(f"{_SERVICE_MODULE}.LLMConfig", return_value=llm_config) as llm_config_class,
         ):
-            result = await TranslationService.translate(
-                locale_string=source, llm_config=llm_config, t=t, user=MagicMock(), source_locale="en"
+            response = await TranslationService.translate_from_request(
+                TranslationRequest(text=LocaleString(en="Hello")), _locale_handler(), MagicMock()
             )
 
-        assert result.model_dump(exclude_unset=True) == {"en": "My Namespace"}
+        llm_config_class.assert_called_once_with(model_name=TranslationService.DEFAULT_MODEL)
+        assert response.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": None, "it": "Ciao"}
+        assert response.failed_locales == ["fr"]

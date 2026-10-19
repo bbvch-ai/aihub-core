@@ -256,10 +256,10 @@ class KnowledgeService:
 
         locale_string = LocaleString(**{t.locale: text})
 
-        translated_locale_string = await TranslationService.translate(
+        outcome = await TranslationService.translate(
             locale_string=locale_string, llm_config=llm_config, t=t, user=user, source_locale=t.locale
         )
-        return LocaleStringEntity.from_locale_string(translated_locale_string)
+        return LocaleStringEntity.from_locale_string(outcome.translated)
 
     @staticmethod
     def _knowledge_admin_role_name(database: str, namespace: str | None = None) -> str:

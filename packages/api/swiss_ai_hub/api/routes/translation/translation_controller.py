@@ -18,7 +18,7 @@ class TranslationController(TenantScopedController):
     Controller for handling translation operations using LLM-based translation.
 
     Provides endpoints to translate LocaleString objects to all supported locales
-    (de, en, fr, it) using a single LLM call.
+    (de, en, fr, it), one concurrent LLM call per target locale.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.translation.name")
@@ -42,6 +42,7 @@ class TranslationController(TenantScopedController):
 
             Takes a LocaleString with at least one locale populated and translates it
             to all other supported locales (de, en, fr, it) using an LLM.
+            Locales that could not be translated keep their prior value and are listed in failed_locales.
             """
             return await TranslationService.translate_from_request(request, t, user)
 
