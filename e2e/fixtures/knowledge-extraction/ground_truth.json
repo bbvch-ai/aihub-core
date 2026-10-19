@@ -1,0 +1,2699 @@
+{
+  "finance/invoices/2025/q1/acme-2025-001.pdf": [
+    {
+      "item": "Server rack R100",
+      "amount": 1200.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Network switch 48 ports",
+      "amount": 890.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Rack PDU",
+      "amount": 310.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "SSD 2 TB",
+      "amount": 240.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Patch cables (50)",
+      "amount": 95.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q2/acme-2025-002.docx": [
+    {
+      "item": "Laptop T14",
+      "amount": 1450.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Docking station",
+      "amount": 220.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q3/inv-77.pdf": [
+    {
+      "item": "Monitor 27 inch",
+      "amount": 380.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q4/acme-2025-003.pdf": [],
+  "finance/invoices/2025/q4/acme-2025-long.pdf": [
+    {
+      "item": "Spare power supply PSU-750",
+      "amount": 310.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q3/globex-2025-010.pdf": [
+    {
+      "item": "Firewall appliance",
+      "amount": 2300.0,
+      "supplier": "Globex GmbH",
+      "year": 2025
+    },
+    {
+      "item": "Access point",
+      "amount": 180.0,
+      "supplier": "Globex GmbH",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q4/initech-2025-020.xlsx": [
+    {
+      "item": "UPS 1500 VA",
+      "amount": 420.0,
+      "supplier": "Initech SA",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2024/acme-2024-050.pdf": [
+    {
+      "item": "Monitor 24 inch",
+      "amount": 250.0,
+      "supplier": "ACME AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard",
+      "amount": 45.0,
+      "supplier": "ACME AG",
+      "year": 2024
+    }
+  ],
+  "finance/contracts/acme-hardware-frame.md": [
+    {
+      "item": "Framework hardware budget",
+      "amount": 50000.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-001.md": [
+    {
+      "item": "USB-C hub HB1",
+      "amount": 36.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS1",
+      "amount": 61.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-002.md": [
+    {
+      "item": "USB-C hub HB2",
+      "amount": 37.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS2",
+      "amount": 62.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-003.md": [
+    {
+      "item": "USB-C hub HB3",
+      "amount": 38.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS3",
+      "amount": 63.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-004.md": [
+    {
+      "item": "USB-C hub HB4",
+      "amount": 39.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS4",
+      "amount": 64.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-005.md": [
+    {
+      "item": "USB-C hub HB5",
+      "amount": 40.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS5",
+      "amount": 65.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-006.md": [
+    {
+      "item": "USB-C hub HB6",
+      "amount": 41.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS6",
+      "amount": 66.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-007.md": [
+    {
+      "item": "USB-C hub HB7",
+      "amount": 42.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS7",
+      "amount": 67.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-008.md": [
+    {
+      "item": "USB-C hub HB8",
+      "amount": 43.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS8",
+      "amount": 68.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-009.md": [
+    {
+      "item": "USB-C hub HB9",
+      "amount": 44.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS9",
+      "amount": 69.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-010.md": [
+    {
+      "item": "USB-C hub HB10",
+      "amount": 45.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS10",
+      "amount": 70.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-011.md": [
+    {
+      "item": "USB-C hub HB11",
+      "amount": 46.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS11",
+      "amount": 71.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-012.md": [
+    {
+      "item": "USB-C hub HB12",
+      "amount": 47.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS12",
+      "amount": 72.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-013.md": [
+    {
+      "item": "USB-C hub HB13",
+      "amount": 48.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS13",
+      "amount": 73.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-014.md": [
+    {
+      "item": "USB-C hub HB14",
+      "amount": 49.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS14",
+      "amount": 74.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-015.md": [
+    {
+      "item": "USB-C hub HB15",
+      "amount": 50.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS15",
+      "amount": 75.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-016.md": [
+    {
+      "item": "USB-C hub HB16",
+      "amount": 51.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS16",
+      "amount": 76.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-017.md": [
+    {
+      "item": "USB-C hub HB17",
+      "amount": 52.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS17",
+      "amount": 77.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-018.md": [
+    {
+      "item": "USB-C hub HB18",
+      "amount": 53.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS18",
+      "amount": 78.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-019.md": [
+    {
+      "item": "USB-C hub HB19",
+      "amount": 54.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS19",
+      "amount": 79.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-020.md": [
+    {
+      "item": "USB-C hub HB20",
+      "amount": 55.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS20",
+      "amount": 80.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-021.md": [
+    {
+      "item": "USB-C hub HB21",
+      "amount": 56.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS21",
+      "amount": 81.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-022.md": [
+    {
+      "item": "USB-C hub HB22",
+      "amount": 57.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS22",
+      "amount": 82.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-023.md": [
+    {
+      "item": "USB-C hub HB23",
+      "amount": 58.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS23",
+      "amount": 83.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-024.md": [
+    {
+      "item": "USB-C hub HB24",
+      "amount": 59.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS24",
+      "amount": 84.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-025.md": [
+    {
+      "item": "USB-C hub HB25",
+      "amount": 60.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS25",
+      "amount": 85.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-026.md": [
+    {
+      "item": "USB-C hub HB26",
+      "amount": 61.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS26",
+      "amount": 86.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-027.md": [
+    {
+      "item": "USB-C hub HB27",
+      "amount": 62.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS27",
+      "amount": 87.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-028.md": [
+    {
+      "item": "USB-C hub HB28",
+      "amount": 63.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS28",
+      "amount": 88.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-029.md": [
+    {
+      "item": "USB-C hub HB29",
+      "amount": 64.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS29",
+      "amount": 89.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/bulk/acme-b-030.md": [
+    {
+      "item": "USB-C hub HB30",
+      "amount": 65.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    },
+    {
+      "item": "Headset HS30",
+      "amount": 90.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "hr/invoices/2025/q1/acme-2025-001.pdf": [
+    {
+      "item": "Ergonomic chair",
+      "amount": 640.0,
+      "supplier": "ACME AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-000.md": [
+    {
+      "item": "Thin client TC0",
+      "amount": 300.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB0",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-001.md": [
+    {
+      "item": "Thin client TC1",
+      "amount": 301.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB1",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-002.md": [
+    {
+      "item": "Thin client TC2",
+      "amount": 302.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB2",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-003.md": [
+    {
+      "item": "Thin client TC3",
+      "amount": 303.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB3",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-004.md": [
+    {
+      "item": "Thin client TC4",
+      "amount": 304.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB4",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-005.md": [
+    {
+      "item": "Thin client TC5",
+      "amount": 305.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB5",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-006.md": [
+    {
+      "item": "Thin client TC6",
+      "amount": 306.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB6",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-007.md": [
+    {
+      "item": "Thin client TC7",
+      "amount": 307.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB7",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-008.md": [
+    {
+      "item": "Thin client TC8",
+      "amount": 308.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB8",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-009.md": [
+    {
+      "item": "Thin client TC9",
+      "amount": 309.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB9",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-010.md": [
+    {
+      "item": "Thin client TC10",
+      "amount": 310.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB10",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-011.md": [
+    {
+      "item": "Thin client TC11",
+      "amount": 311.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB11",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-012.md": [
+    {
+      "item": "Thin client TC12",
+      "amount": 312.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB12",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-013.md": [
+    {
+      "item": "Thin client TC13",
+      "amount": 313.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB13",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-014.md": [
+    {
+      "item": "Thin client TC14",
+      "amount": 314.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB14",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-015.md": [
+    {
+      "item": "Thin client TC15",
+      "amount": 315.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB15",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-016.md": [
+    {
+      "item": "Thin client TC16",
+      "amount": 316.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB16",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-017.md": [
+    {
+      "item": "Thin client TC17",
+      "amount": 317.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB17",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-018.md": [
+    {
+      "item": "Thin client TC18",
+      "amount": 318.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB18",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-019.md": [
+    {
+      "item": "Thin client TC19",
+      "amount": 319.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB19",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-020.md": [
+    {
+      "item": "Thin client TC20",
+      "amount": 320.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB20",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-021.md": [
+    {
+      "item": "Thin client TC21",
+      "amount": 321.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB21",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-022.md": [
+    {
+      "item": "Thin client TC22",
+      "amount": 322.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB22",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-023.md": [
+    {
+      "item": "Thin client TC23",
+      "amount": 323.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB23",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-024.md": [
+    {
+      "item": "Thin client TC24",
+      "amount": 324.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB24",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-025.md": [
+    {
+      "item": "Thin client TC25",
+      "amount": 325.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB25",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-026.md": [
+    {
+      "item": "Thin client TC26",
+      "amount": 326.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB26",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-027.md": [
+    {
+      "item": "Thin client TC27",
+      "amount": 327.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB27",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-028.md": [
+    {
+      "item": "Thin client TC28",
+      "amount": 328.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB28",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-029.md": [
+    {
+      "item": "Thin client TC29",
+      "amount": 329.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB29",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-030.md": [
+    {
+      "item": "Thin client TC30",
+      "amount": 330.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB30",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-031.md": [
+    {
+      "item": "Thin client TC31",
+      "amount": 331.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB31",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-032.md": [
+    {
+      "item": "Thin client TC32",
+      "amount": 332.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB32",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-033.md": [
+    {
+      "item": "Thin client TC33",
+      "amount": 333.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB33",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-034.md": [
+    {
+      "item": "Thin client TC34",
+      "amount": 334.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB34",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-035.md": [
+    {
+      "item": "Thin client TC35",
+      "amount": 335.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB35",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-036.md": [
+    {
+      "item": "Thin client TC36",
+      "amount": 336.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB36",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-037.md": [
+    {
+      "item": "Thin client TC37",
+      "amount": 337.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB37",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-038.md": [
+    {
+      "item": "Thin client TC38",
+      "amount": 338.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB38",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-039.md": [
+    {
+      "item": "Thin client TC39",
+      "amount": 339.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB39",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-040.md": [
+    {
+      "item": "Thin client TC40",
+      "amount": 340.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB40",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-041.md": [
+    {
+      "item": "Thin client TC41",
+      "amount": 341.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB41",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-042.md": [
+    {
+      "item": "Thin client TC42",
+      "amount": 342.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB42",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-043.md": [
+    {
+      "item": "Thin client TC43",
+      "amount": 343.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB43",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-044.md": [
+    {
+      "item": "Thin client TC44",
+      "amount": 344.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB44",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-045.md": [
+    {
+      "item": "Thin client TC45",
+      "amount": 345.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB45",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-046.md": [
+    {
+      "item": "Thin client TC46",
+      "amount": 346.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB46",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-047.md": [
+    {
+      "item": "Thin client TC47",
+      "amount": 347.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB47",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-048.md": [
+    {
+      "item": "Thin client TC48",
+      "amount": 348.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB48",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-049.md": [
+    {
+      "item": "Thin client TC49",
+      "amount": 349.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB49",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-050.md": [
+    {
+      "item": "Thin client TC50",
+      "amount": 350.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB50",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-051.md": [
+    {
+      "item": "Thin client TC51",
+      "amount": 351.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB51",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-052.md": [
+    {
+      "item": "Thin client TC52",
+      "amount": 352.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB52",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-053.md": [
+    {
+      "item": "Thin client TC53",
+      "amount": 353.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB53",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-054.md": [
+    {
+      "item": "Thin client TC54",
+      "amount": 354.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB54",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-055.md": [
+    {
+      "item": "Thin client TC55",
+      "amount": 355.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB55",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-056.md": [
+    {
+      "item": "Thin client TC56",
+      "amount": 356.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB56",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-057.md": [
+    {
+      "item": "Thin client TC57",
+      "amount": 357.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB57",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-058.md": [
+    {
+      "item": "Thin client TC58",
+      "amount": 358.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB58",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-059.md": [
+    {
+      "item": "Thin client TC59",
+      "amount": 359.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB59",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-060.md": [
+    {
+      "item": "Thin client TC60",
+      "amount": 360.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB60",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-061.md": [
+    {
+      "item": "Thin client TC61",
+      "amount": 361.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB61",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-062.md": [
+    {
+      "item": "Thin client TC62",
+      "amount": 362.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB62",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-063.md": [
+    {
+      "item": "Thin client TC63",
+      "amount": 363.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB63",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-064.md": [
+    {
+      "item": "Thin client TC64",
+      "amount": 364.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB64",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-065.md": [
+    {
+      "item": "Thin client TC65",
+      "amount": 365.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB65",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-066.md": [
+    {
+      "item": "Thin client TC66",
+      "amount": 366.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB66",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-067.md": [
+    {
+      "item": "Thin client TC67",
+      "amount": 367.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB67",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-068.md": [
+    {
+      "item": "Thin client TC68",
+      "amount": 368.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB68",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-069.md": [
+    {
+      "item": "Thin client TC69",
+      "amount": 369.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB69",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-070.md": [
+    {
+      "item": "Thin client TC70",
+      "amount": 370.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB70",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-071.md": [
+    {
+      "item": "Thin client TC71",
+      "amount": 371.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB71",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-072.md": [
+    {
+      "item": "Thin client TC72",
+      "amount": 372.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB72",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-073.md": [
+    {
+      "item": "Thin client TC73",
+      "amount": 373.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB73",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-074.md": [
+    {
+      "item": "Thin client TC74",
+      "amount": 374.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB74",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-075.md": [
+    {
+      "item": "Thin client TC75",
+      "amount": 375.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB75",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-076.md": [
+    {
+      "item": "Thin client TC76",
+      "amount": 376.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB76",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-077.md": [
+    {
+      "item": "Thin client TC77",
+      "amount": 377.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB77",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-078.md": [
+    {
+      "item": "Thin client TC78",
+      "amount": 378.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB78",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-079.md": [
+    {
+      "item": "Thin client TC79",
+      "amount": 379.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB79",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-080.md": [
+    {
+      "item": "Thin client TC80",
+      "amount": 380.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB80",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-081.md": [
+    {
+      "item": "Thin client TC81",
+      "amount": 381.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB81",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-082.md": [
+    {
+      "item": "Thin client TC82",
+      "amount": 382.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB82",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-083.md": [
+    {
+      "item": "Thin client TC83",
+      "amount": 383.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB83",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-084.md": [
+    {
+      "item": "Thin client TC84",
+      "amount": 384.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB84",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-085.md": [
+    {
+      "item": "Thin client TC85",
+      "amount": 385.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB85",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-086.md": [
+    {
+      "item": "Thin client TC86",
+      "amount": 386.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB86",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-087.md": [
+    {
+      "item": "Thin client TC87",
+      "amount": 387.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB87",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-088.md": [
+    {
+      "item": "Thin client TC88",
+      "amount": 388.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB88",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-089.md": [
+    {
+      "item": "Thin client TC89",
+      "amount": 389.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB89",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-090.md": [
+    {
+      "item": "Thin client TC90",
+      "amount": 390.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB90",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-091.md": [
+    {
+      "item": "Thin client TC91",
+      "amount": 391.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB91",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-092.md": [
+    {
+      "item": "Thin client TC92",
+      "amount": 392.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB92",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-093.md": [
+    {
+      "item": "Thin client TC93",
+      "amount": 393.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB93",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-094.md": [
+    {
+      "item": "Thin client TC94",
+      "amount": 394.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB94",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-095.md": [
+    {
+      "item": "Thin client TC95",
+      "amount": 395.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB95",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-096.md": [
+    {
+      "item": "Thin client TC96",
+      "amount": 396.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB96",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-097.md": [
+    {
+      "item": "Thin client TC97",
+      "amount": 397.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB97",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-098.md": [
+    {
+      "item": "Thin client TC98",
+      "amount": 398.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB98",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-099.md": [
+    {
+      "item": "Thin client TC99",
+      "amount": 399.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB99",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-100.md": [
+    {
+      "item": "Thin client TC100",
+      "amount": 400.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB100",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-101.md": [
+    {
+      "item": "Thin client TC101",
+      "amount": 401.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB101",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-102.md": [
+    {
+      "item": "Thin client TC102",
+      "amount": 402.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB102",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-103.md": [
+    {
+      "item": "Thin client TC103",
+      "amount": 403.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB103",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-104.md": [
+    {
+      "item": "Thin client TC104",
+      "amount": 404.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB104",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-105.md": [
+    {
+      "item": "Thin client TC105",
+      "amount": 405.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB105",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-106.md": [
+    {
+      "item": "Thin client TC106",
+      "amount": 406.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB106",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-107.md": [
+    {
+      "item": "Thin client TC107",
+      "amount": 407.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB107",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-108.md": [
+    {
+      "item": "Thin client TC108",
+      "amount": 408.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB108",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-109.md": [
+    {
+      "item": "Thin client TC109",
+      "amount": 409.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB109",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-110.md": [
+    {
+      "item": "Thin client TC110",
+      "amount": 410.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB110",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-111.md": [
+    {
+      "item": "Thin client TC111",
+      "amount": 411.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB111",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-112.md": [
+    {
+      "item": "Thin client TC112",
+      "amount": 412.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB112",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-113.md": [
+    {
+      "item": "Thin client TC113",
+      "amount": 413.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB113",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-114.md": [
+    {
+      "item": "Thin client TC114",
+      "amount": 414.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB114",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-115.md": [
+    {
+      "item": "Thin client TC115",
+      "amount": 415.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB115",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-116.md": [
+    {
+      "item": "Thin client TC116",
+      "amount": 416.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB116",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-117.md": [
+    {
+      "item": "Thin client TC117",
+      "amount": 417.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB117",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-118.md": [
+    {
+      "item": "Thin client TC118",
+      "amount": 418.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB118",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-119.md": [
+    {
+      "item": "Thin client TC119",
+      "amount": 419.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB119",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-120.md": [
+    {
+      "item": "Thin client TC120",
+      "amount": 420.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB120",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-121.md": [
+    {
+      "item": "Thin client TC121",
+      "amount": 421.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB121",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-122.md": [
+    {
+      "item": "Thin client TC122",
+      "amount": 422.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB122",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-123.md": [
+    {
+      "item": "Thin client TC123",
+      "amount": 423.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB123",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-124.md": [
+    {
+      "item": "Thin client TC124",
+      "amount": 424.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB124",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-125.md": [
+    {
+      "item": "Thin client TC125",
+      "amount": 425.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB125",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-126.md": [
+    {
+      "item": "Thin client TC126",
+      "amount": 426.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB126",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-127.md": [
+    {
+      "item": "Thin client TC127",
+      "amount": 427.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB127",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-128.md": [
+    {
+      "item": "Thin client TC128",
+      "amount": 428.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB128",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-129.md": [
+    {
+      "item": "Thin client TC129",
+      "amount": 429.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB129",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-130.md": [
+    {
+      "item": "Thin client TC130",
+      "amount": 430.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB130",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-131.md": [
+    {
+      "item": "Thin client TC131",
+      "amount": 431.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB131",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-132.md": [
+    {
+      "item": "Thin client TC132",
+      "amount": 432.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB132",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-133.md": [
+    {
+      "item": "Thin client TC133",
+      "amount": 433.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB133",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-134.md": [
+    {
+      "item": "Thin client TC134",
+      "amount": 434.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB134",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-135.md": [
+    {
+      "item": "Thin client TC135",
+      "amount": 435.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB135",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-136.md": [
+    {
+      "item": "Thin client TC136",
+      "amount": 436.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB136",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-137.md": [
+    {
+      "item": "Thin client TC137",
+      "amount": 437.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB137",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q3/hooli-2023-138.md": [
+    {
+      "item": "Thin client TC138",
+      "amount": 438.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB138",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q4/hooli-2024-139.md": [
+    {
+      "item": "Thin client TC139",
+      "amount": 439.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB139",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q1/hooli-2025-140.md": [
+    {
+      "item": "Thin client TC140",
+      "amount": 440.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB140",
+      "amount": 40.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q2/hooli-2023-141.md": [
+    {
+      "item": "Thin client TC141",
+      "amount": 441.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB141",
+      "amount": 41.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q3/hooli-2024-142.md": [
+    {
+      "item": "Thin client TC142",
+      "amount": 442.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB142",
+      "amount": 42.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q4/hooli-2025-143.md": [
+    {
+      "item": "Thin client TC143",
+      "amount": 443.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB143",
+      "amount": 43.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q1/hooli-2023-144.md": [
+    {
+      "item": "Thin client TC144",
+      "amount": 444.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB144",
+      "amount": 44.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q2/hooli-2024-145.md": [
+    {
+      "item": "Thin client TC145",
+      "amount": 445.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB145",
+      "amount": 45.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q3/hooli-2025-146.md": [
+    {
+      "item": "Thin client TC146",
+      "amount": 446.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB146",
+      "amount": 46.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2023/hooli/q4/hooli-2023-147.md": [
+    {
+      "item": "Thin client TC147",
+      "amount": 447.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    },
+    {
+      "item": "Keyboard KB147",
+      "amount": 47.0,
+      "supplier": "Hooli AG",
+      "year": 2023
+    }
+  ],
+  "finance/invoices/2024/hooli/q1/hooli-2024-148.md": [
+    {
+      "item": "Thin client TC148",
+      "amount": 448.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    },
+    {
+      "item": "Keyboard KB148",
+      "amount": 48.0,
+      "supplier": "Hooli AG",
+      "year": 2024
+    }
+  ],
+  "finance/invoices/2025/hooli/q2/hooli-2025-149.md": [
+    {
+      "item": "Thin client TC149",
+      "amount": 449.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    },
+    {
+      "item": "Keyboard KB149",
+      "amount": 49.0,
+      "supplier": "Hooli AG",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q2/vandelay-2025-001.md": [
+    {
+      "item": "Workstation W-900",
+      "amount": 2400.0,
+      "supplier": "Vandelay Industries",
+      "year": 2025
+    },
+    {
+      "item": "Spare SSD 4 TB",
+      "amount": 380.0,
+      "supplier": "Vandelay Industries",
+      "year": 2025
+    }
+  ],
+  "finance/invoices/2025/q3/initrode-2025-01.pdf": [
+    {
+      "item": "Laptop X1 Carbon",
+      "amount": 1900.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": false
+    },
+    {
+      "item": "27-inch monitor",
+      "amount": 410.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": false
+    }
+  ],
+  "finance/invoices/2025/q3/initrode-2025-02.pdf": [
+    {
+      "item": "Wireless mouse",
+      "amount": 35.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": false
+    },
+    {
+      "item": "Printer toner cartridges",
+      "amount": 120.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": true
+    }
+  ],
+  "finance/invoices/2025/q3/initrode-2025-03.pdf": [
+    {
+      "item": "Extended laptop warranty (3 years)",
+      "amount": 250.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": true
+    },
+    {
+      "item": "Barcode scanner",
+      "amount": 180.0,
+      "supplier": "Initrode AG",
+      "year": 2025,
+      "borderline": false
+    }
+  ]
+}
