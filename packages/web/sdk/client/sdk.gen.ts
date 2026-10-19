@@ -4344,6 +4344,7 @@ export const processDocument = <
  *
  * Takes a LocaleString with at least one locale populated and translates it
  * to all other supported locales (de, en, fr, it) using an LLM.
+ * Locales that could not be translated keep their prior value and are listed in failed_locales.
  */
 export const translateText = <
   TComposable extends Composable = "$fetch",

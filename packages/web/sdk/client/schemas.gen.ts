@@ -29382,14 +29382,23 @@ export const TranslationResponseSchema = {
     translated: {
       $ref: "#/components/schemas/LocaleString",
       description:
-        "The LocaleString with translations for all supported locales",
+        "The LocaleString with translations for all supported locales that succeeded",
+    },
+    failed_locales: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Failed Locales",
+      description:
+        "Target locales whose translation failed and kept their prior value",
     },
   },
   type: "object",
   required: ["translated"],
   title: "TranslationResponse",
   description:
-    "Response containing the translated LocaleString with all supported locales populated.",
+    "Response containing the translated LocaleString and the locales that could not be translated.",
 } as const;
 
 export const UnreadMailListedEventSchema = {
