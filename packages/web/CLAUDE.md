@@ -42,7 +42,7 @@ packages/web/
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
 ├── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
-└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook)
+└── utils/                   # Plain helpers with no Vue/Nuxt context (apiResponseGuard — SDK onResponse hook; ssoSessionCheck — once-per-session SSO probe flag)
 ```
 
 ## Auth and locale
