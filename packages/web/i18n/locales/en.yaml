@@ -702,7 +702,8 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
-    useOrganisationLink: "Please use the login link your organisation gave you. If you don't have it, contact your administrator."
+    useOrganisationLink: Please use the login link your organisation gave you. If
+      you don't have it, contact your administrator.
     adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
@@ -770,6 +771,8 @@ evaluation:
 role:
   title: Access Roles
   name: Name
+  name_immutable_hint: The name cannot be changed after the role is created, because
+    users are assigned to roles by name.
   description: Description
   edit: Edit Role
   create_new: New Role

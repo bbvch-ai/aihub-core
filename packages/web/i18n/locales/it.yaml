@@ -712,7 +712,8 @@ auth:
     welcomeProvider: Benvenuti nell'AI Hub — accesso con {provider}
     pleaseLogin: Effettua il login
     pleaseLoginWith: Effettua il login con {provider}
-    useOrganisationLink: "Usa il link di accesso fornito dalla tua organizzazione. Se non lo hai, contatta il tuo amministratore."
+    useOrganisationLink: Usa il link di accesso fornito dalla tua organizzazione.
+      Se non lo hai, contatta il tuo amministratore.
     adminLogin: Accesso amministratore
     loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
@@ -781,6 +782,8 @@ evaluation:
 role:
   title: Ruoli di accesso
   name: Nome
+  name_immutable_hint: Il nome non può essere modificato dopo la creazione del ruolo,
+    perché gli utenti sono assegnati ai ruoli tramite il nome.
   description: Descrizione
   edit: Modifica ruolo
   create_new: Nuovo ruolo

@@ -59,6 +59,9 @@ class RoleService:
             raise HTTPException(status_code=403, detail="Cannot modify system roles.")
         if role.tenant_id != tenant_id:
             raise HTTPException(status_code=404, detail=_ROLE_NOT_FOUND)
+        # Users are assigned roles by name, so a rename would orphan every existing assignment.
+        if "name" in data.model_fields_set and data.name != role.name:
+            raise HTTPException(status_code=400, detail="Roles cannot be renamed.")
 
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:

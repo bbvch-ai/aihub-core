@@ -83,6 +83,9 @@ The tenant defines what exists. Roles define what users with that role can do wi
 
 Select a role and click **Edit**. Changes affect all users with that role immediately.
 
+A role's name is fixed once the role is created: users are assigned to roles by name, so renaming would detach them. To
+use a different name, create a new role, assign it to the users, then delete the old one.
+
 Adding permissions to a role grants those permissions to everyone who has it. Removing permissions revokes them from
 everyone with that role.
 

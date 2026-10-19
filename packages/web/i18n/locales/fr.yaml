@@ -712,7 +712,8 @@ auth:
     welcomeProvider: Bienvenue sur le AI Hub — connexion avec {provider}
     pleaseLogin: Veuillez vous connecter
     pleaseLoginWith: Veuillez vous connecter avec {provider}
-    useOrganisationLink: "Veuillez utiliser le lien de connexion fourni par votre organisation. Si vous ne l'avez pas, contactez votre administrateur."
+    useOrganisationLink: Veuillez utiliser le lien de connexion fourni par votre organisation.
+      Si vous ne l'avez pas, contactez votre administrateur.
     adminLogin: Connexion administrateur
     loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
@@ -781,6 +782,8 @@ evaluation:
 role:
   title: Rôles d'accès
   name: Nom
+  name_immutable_hint: Le nom ne peut pas être modifié après la création du rôle,
+    car les utilisateurs sont associés aux rôles par leur nom.
   description: Description
   edit: Modifier le rôle
   create_new: Nouveau rôle
