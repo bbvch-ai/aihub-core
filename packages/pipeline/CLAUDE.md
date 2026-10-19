@@ -513,7 +513,13 @@ be silent:
 - **Credentials go through `auth=` only** (`HttpBasicAuth` on Cloud, `BearerTokenAuth` on Data Center), never through
   headers, which dlt logs at DEBUG.
 - **Every request carries the error hook.** It raises `JiraRequestError`, an `HTTPError` with `.response` set, which is
-  what keeps dlt's retry of 429 and 5xx (honouring `Retry-After`). Everything else fails at once.
+  what keeps dlt's retry of 429 and 5xx (honouring `Retry-After`). Everything else fails at once, a redirect included:
+  requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
+- **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
+  own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
+  `SourceHostGuard` (`resources/structured/`) refuses, first thing in the preflight, a host without a dot (Docker
+  service names, `localhost`) and one resolving to any non-global address. `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`
+  exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the check and the request is not covered.
 - **Preflight before the sync and before the listing** (`JiraPreflight`: `/myself`, each project, the JQL clause). Jira
   answers a project the account cannot see, and on Cloud an invalid JQL clause, with zero issues, which the listing
   would take for deleted issues. Cloud's clause is checked with `POST /rest/api/3/jql/parse?validation=strict`; Data

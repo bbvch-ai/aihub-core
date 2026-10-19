@@ -221,6 +221,11 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   The ETag check keeps writes and announcements at zero. A record created at the source while a run is between its fetch
   and its listing does not cause it: rule 6 waits for a second run, which fetches that record. The price is that a
   really lost file is restored one run later.
+- **A source URL may only name a public host.** A knowledge administrator enters it, while the pipeline is on the
+  networks of the platform's own services. Before a run's first request, a host without a domain (a Docker service,
+  `localhost`) or one resolving to a non-global address is refused unless the deployment allows it
+  (`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`), and redirects are never followed. A host that resolves differently
+  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it.
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.

@@ -178,6 +178,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
 | `STONEY_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
 | `STONEY_CLOUD_API_KEY` | `litellm-config.yml` | `litellm` |  |
+| `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` | `StructuredPipelineSettings.ALLOWED_PRIVATE_HOSTS` | `structured_pipeline` | Comma-separated host names a source URL may name although they are internal, such as a Jira Data Center reachable only on the company network. Every other internal host is refused, because a knowledge administrator sets the URL and the pipeline can reach the platform's own services. |
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` | `StructuredPipelineSettings.OBSERVE_JOB_HOUR` | `structured_pipeline` | Hour of the daily per-database sync. Before the ingestion pipeline's midnight observation, so a day's sync is vectorised by the same night's backstop run. |
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE` | `StructuredPipelineSettings.OBSERVE_JOB_MINUTE` | `structured_pipeline` | Minute of the daily per-database sync. |
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |

@@ -146,9 +146,20 @@ class TestUnusableConfiguration:
     def test_data_center_needs_no_email(self, jira: FakeJira):
         assert _config(deployment="data_center", email="").options().problems() == []
 
-    @pytest.mark.parametrize("base_url", ["ftp://jira.acme.ch", "https://bot:token@acme.atlassian.net", "jira.acme.ch"])
+    @pytest.mark.parametrize(
+        "base_url",
+        [
+            "ftp://jira.acme.ch",
+            "https://bot:token@acme.atlassian.net",
+            "jira.acme.ch",
+            "http://seaweedfs-filer:8888/buckets/other/x.md?",
+            "https://jira.acme.ch/jira#",
+            "https://jira.acme.ch/jira?os_authType=basic",
+        ],
+    )
     def test_a_url_that_is_not_plain_http_is_refused_when_saved(self, base_url: str):
-        """The constraint sits in the type, so the API's schema validation refuses it before anything is stored."""
+        """The constraint sits in the type, so the API's schema validation refuses it before anything is stored. A
+        query or fragment would turn the API path appended to the URL into a query, so it could name any path."""
         with pytest.raises(ValidationError):
             _config(base_url=base_url)
 

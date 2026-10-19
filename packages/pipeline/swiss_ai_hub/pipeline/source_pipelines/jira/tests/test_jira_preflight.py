@@ -101,6 +101,26 @@ class TestPreflight:
             _check(options)
 
 
+class TestHost:
+    def test_an_internal_host_is_refused_before_any_request(self, jira: FakeJira):
+        """The pipeline can reach the platform's own services; a URL naming one must never be called."""
+        options = _for(jira, base_url="http://seaweedfs-filer:8888")
+
+        with pytest.raises(ValueError, match="points at seaweedfs-filer, a name only an internal network resolves"):
+            _check(options)
+
+        assert jira.requests == []
+
+    def test_a_host_the_deployment_allows_is_called(self, jira: FakeJira, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS", "intranet-jira, other")
+        jira.site = "https://intranet-jira"
+        options = _for(jira, base_url="https://intranet-jira")
+
+        _check(options)
+
+        assert jira.requests
+
+
 class TestPreflightRunsBeforeAnythingIsRead:
     def test_the_sync_and_the_listing_stop_before_any_search(self, monkeypatch: pytest.MonkeyPatch):
         fake = FakeJira()

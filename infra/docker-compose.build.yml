@@ -3843,6 +3843,8 @@ services:
       # Structured Source Pipeline schedule
       STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR: ${STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR}
       STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE: ${STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE}
+      # Internal hosts a source URL may name (comma-separated); every other internal host is refused
+      STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS: ${STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
