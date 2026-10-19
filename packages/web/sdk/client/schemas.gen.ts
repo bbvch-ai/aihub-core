@@ -23964,6 +23964,13 @@ export const RunToolLoopEventSchema = {
         "Whether tools tell the model to cite what they return, off where it cannot resolve.",
       default: true,
     },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.",
+      default: true,
+    },
     files: {
       items: {
         $ref: "#/components/schemas/UserUploadedFile",
@@ -28897,6 +28904,13 @@ export const ToolLoopStateSchema = {
       type: "boolean",
       title: "Cite Sources",
       description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop collects its tool results in `gathered`.",
       default: true,
     },
     gathered: {
@@ -45056,6 +45070,13 @@ export const RunToolLoopEventWritableSchema = {
         "Whether tools tell the model to cite what they return, off where it cannot resolve.",
       default: true,
     },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.",
+      default: true,
+    },
     files: {
       items: {
         $ref: "#/components/schemas/UserUploadedFile",
@@ -48986,6 +49007,13 @@ export const ToolLoopStateWritableSchema = {
       type: "boolean",
       title: "Cite Sources",
       description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop collects its tool results in `gathered`.",
       default: true,
     },
     gathered: {

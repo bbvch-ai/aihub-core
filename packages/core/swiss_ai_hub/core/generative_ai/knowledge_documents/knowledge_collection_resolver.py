@@ -2,6 +2,7 @@ import asyncio
 
 from mongoengine import DoesNotExist
 
+from swiss_ai_hub.core.events.agent.user.knowledge_reference import KnowledgeReference
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_not_found_error import (
     KnowledgeCollectionNotFoundError,
 )
@@ -24,6 +25,17 @@ class KnowledgeCollectionResolver:
     @staticmethod
     def same(first: BucketNamespacePair, second: BucketNamespacePair) -> bool:
         return first.bucket_name == second.bucket_name and first.namespace_name == second.namespace_name
+
+    @staticmethod
+    def pair_of(reference: KnowledgeReference) -> BucketNamespacePair:
+        """The collection a knowledge reference names. References carry the database's vector collection name, which
+        can differ from the bucket name every reader resolves, so it is looked up rather than copied across."""
+        try:
+            bucket = BucketEntity.get_bucket_by_db_name(reference.database)
+        except DoesNotExist as does_not_exist:
+            missing = BucketNamespacePair(bucket_name=reference.database, namespace_name=reference.namespace)
+            raise KnowledgeCollectionNotFoundError(missing, "does not exist") from does_not_exist
+        return BucketNamespacePair(bucket_name=bucket.bucket_name, namespace_name=reference.namespace)
 
     @staticmethod
     async def resolve_all(collections: list[BucketNamespacePair]) -> list[ResolvedKnowledgeCollection]:

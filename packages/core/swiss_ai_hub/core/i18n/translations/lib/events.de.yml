@@ -335,3 +335,9 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Keine Metafrage
   description: Anfrage wird beantwortet
+extract_records_event:
+  name: Datensätze extrahieren
+  description: Extrahiert eine Tabelle aus den ausgewählten Dokumenten
+records_extracted_event:
+  name: Datensätze extrahiert
+  description: Die aus den ausgewählten Dokumenten extrahierte Tabelle

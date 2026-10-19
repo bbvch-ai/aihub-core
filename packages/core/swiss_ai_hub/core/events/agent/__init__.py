@@ -136,6 +136,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.memory.store.base_store_memory_event import BaseStoreMemoryEvent
     from swiss_ai_hub.core.events.agent.memory.store.store_organization_memory_event import StoreOrganizationMemoryEvent
     from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
+    from swiss_ai_hub.core.events.agent.record_extraction.extract_records_event import ExtractRecordsEvent
+    from swiss_ai_hub.core.events.agent.record_extraction.records_extracted_event import RecordsExtractedEvent
     from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
     from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
     from swiss_ai_hub.core.events.agent.sandbox.sandbox_file_displayed_event import SandboxFileDisplayedEvent
@@ -300,6 +302,8 @@ __all__ = [
     "KnowledgeReference",
     "KnowledgeSearchedEvent",
     "SearchKnowledgeEvent",
+    "ExtractRecordsEvent",
+    "RecordsExtractedEvent",
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
@@ -433,6 +437,8 @@ _LAZY_IMPORTS: dict[str, str] = {
     "KnowledgeReference": "swiss_ai_hub.core.events.agent.user.knowledge_reference",
     "KnowledgeSearchedEvent": "swiss_ai_hub.core.events.agent.knowledge.knowledge_searched_event",
     "SearchKnowledgeEvent": "swiss_ai_hub.core.events.agent.knowledge.search_knowledge_event",
+    "ExtractRecordsEvent": "swiss_ai_hub.core.events.agent.record_extraction.extract_records_event",
+    "RecordsExtractedEvent": "swiss_ai_hub.core.events.agent.record_extraction.records_extracted_event",
 }
 
 

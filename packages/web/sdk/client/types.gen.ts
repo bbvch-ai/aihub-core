@@ -15999,6 +15999,12 @@ export type RunToolLoopEvent = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
+  /**
    * Files
    *
    * The files attached to the message, for tools that read them.
@@ -19295,6 +19301,12 @@ export type ToolLoopState = {
    * Whether tools tell the model to cite what they return.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
   /**
    * Gathered
    *
@@ -29590,6 +29602,12 @@ export type RunToolLoopEventWritable = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
+  /**
    * Files
    *
    * The files attached to the message, for tools that read them.
@@ -32084,6 +32102,12 @@ export type ToolLoopStateWritable = {
    * Whether tools tell the model to cite what they return.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
   /**
    * Gathered
    *
