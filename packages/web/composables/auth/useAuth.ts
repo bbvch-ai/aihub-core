@@ -1,3 +1,5 @@
+import { ErrorResponse } from 'oidc-client-ts'
+
 import type { User } from 'oidc-client-ts'
 
 // Renew slightly before expiry so a token is not rejected while in flight.
@@ -48,19 +50,27 @@ export const useAuth = () => {
   // sleeps and throttle in background tabs; the auth middleware only renews on
   // navigation. Without this, the first API calls after waking go out with an
   // expired token and surface the backend's raw 401 as an error toast.
+  //
+  // Only Keycloak rejecting the renewal ends the session. Any other failure,
+  // such as a fetch that fails because Wi-Fi is not back yet after waking, fails
+  // just this request and keeps the session. The route guard is re-run on the
+  // current page rather than pushing /auth/login, for the same reason as the
+  // silentRenewError handler in plugins/oidc-client.ts.
   const renewSession = async () => {
-    const { $auth, $i18n, $router } = useNuxtApp()
-    pendingRenewal ??= $auth.signinSilent().finally(() => {
-      pendingRenewal = null
-    })
-    try {
-      return await pendingRenewal
-    }
-    catch (error) {
-      await $auth.removeUser()
-      await $router.push(`/${$i18n.locale.value}/auth/login`)
-      throw error
-    }
+    const { $auth, $router } = useNuxtApp()
+    pendingRenewal ??= $auth.signinSilent()
+      .catch(async (error: unknown) => {
+        if (error instanceof ErrorResponse) {
+          await $auth.removeUser()
+          const { path, query, hash } = $router.currentRoute.value
+          await $router.replace({ path, query, hash, force: true })
+        }
+        throw error
+      })
+      .finally(() => {
+        pendingRenewal = null
+      })
+    return await pendingRenewal
   }
 
   const getToken = async () => {

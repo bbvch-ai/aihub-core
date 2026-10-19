@@ -111,10 +111,12 @@ server-side, so the parent app looks fully logged in — but the OpenWebUI ifram
 Keycloak's login screen instead of the chat.
 
 **Change.** On the first protected navigation of each page load, `middleware/auth.global.ts` probes the SSO session with
-a `prompt=none` round trip (`UserManager.querySessionStatus`). If Keycloak answers that there is no session, or that it
-belongs to another user, the parent removes its stored user and redirects to login. A probe that gets no answer (timeout
-after 5 s, network error) keeps the stored session: it says nothing about the cookie, and an unreachable Keycloak must
-not log users out.
+a `prompt=none` round trip (`UserManager.querySessionStatus`). If Keycloak answers that there is no session
+(`login_required`, `interaction_required`, `consent_required`), or that it belongs to another user, the parent removes
+its stored user and redirects to login. Any other outcome keeps the stored session: no answer (timeout after 5 s,
+network error), a server-side OAuth error (`server_error`, `temporarily_unavailable`, a failed code exchange), or a
+status without `session_state`. None of these says anything about the cookie, and an unhealthy Keycloak must not log
+users out.
 
 **Effect on this decision.** The probe cannot tell a lost cookie from an SSO session ended by an embedded service's
 logout — both answer `login_required`. After an OpenWebUI logout, the parent therefore logs out on the next page load.
@@ -125,6 +127,8 @@ parent looked logged in, and the Context above already expected a logout on the 
 `monitorSession` remains rejected.
 
 **Correction to Decision 4.** There is no `accessTokenExpired` handler; one would race the middleware's own renewal on
-load (see `plugins/oidc-client.ts`). A failed renewal logs out through the `silentRenewError` handler or through the
-renewal in `middleware/auth.global.ts` and `useAuth().getToken()`. Together with the probe above, these are the paths
-that log the user out of the parent application.
+load (see `plugins/oidc-client.ts`). A renewal that Keycloak rejects logs out through the `silentRenewError` handler or
+through the renewal in `middleware/auth.global.ts` and `useAuth().getToken()`; a renewal that gets no answer keeps the
+session and only fails the request. `useAuth().getToken()` re-runs the route guard on the current page, as the
+`silentRenewError` handler does, so a tenant page goes to its identity provider and is restored after login. Together
+with the probe above, these are the paths that log the user out of the parent application.

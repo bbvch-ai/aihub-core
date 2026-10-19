@@ -24,6 +24,13 @@ let ssoSessionChecked = false
  */
 const SSO_PROBE_TIMEOUT_SECONDS = 5
 
+/**
+ * The `prompt=none` answers that mean the iframe cannot sign in either. Other
+ * OAuth errors (`server_error`, `temporarily_unavailable`, a failed code
+ * exchange) describe an unhealthy Keycloak, not the session.
+ */
+const SSO_SESSION_GONE_ERRORS = new Set(['login_required', 'interaction_required', 'consent_required'])
+
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 const normalize = (path: string) => (path.endsWith('/') ? path.slice(0, -1) : path)
@@ -61,20 +68,22 @@ const rememberRedirect = (fullPath: string, isAuthPath: boolean) => {
  * Keycloak session lives on server-side; only a `prompt=none` round trip
  * through the browser sees the cookie the iframe depends on.
  *
- * Only Keycloak's own answer rules the session out. A timeout or network error
- * says nothing about the cookie, and logging out over it would end a session
- * that may be fine, so the stored session is kept as it was before the probe.
+ * Only Keycloak's own answer rules the session out. A timeout, network error or
+ * server-side error says nothing about the cookie, and logging out over it
+ * would end a session that may be fine, so the stored session is kept as it was
+ * before the probe. The same holds for a `null` status: oidc-client-ts returns
+ * it whenever the answer lacks `session_state`, even for a live session.
  */
 const ssoSessionIsGone = async (auth: UserManager, user: User): Promise<boolean> => {
   try {
     const session = await auth.querySessionStatus({ silentRequestTimeoutInSeconds: SSO_PROBE_TIMEOUT_SECONDS })
-    return session?.sub !== user.profile.sub
+    return session !== null && session.sub !== user.profile.sub
   }
   catch (error) {
-    if (error instanceof ErrorResponse) {
+    if (error instanceof ErrorResponse && SSO_SESSION_GONE_ERRORS.has(error.error ?? '')) {
       return true
     }
-    console.warn('SSO session probe got no answer, keeping the stored session:', error)
+    console.warn('SSO session probe was inconclusive, keeping the stored session:', error)
     return false
   }
 }
@@ -137,13 +146,18 @@ export default defineNuxtRouteMiddleware(async (to) => {
       ssoSessionChecked = true
     }
 
+    // A renewal that gets no answer (e.g. Wi-Fi not back after waking) keeps the
+    // session; useAuth().getToken() retries it on the page's first API call.
     if (user.expired) {
       try {
         await $auth.signinSilent()
       }
-      catch {
-        await $auth.removeUser()
-        return await sendToLogin()
+      catch (error) {
+        if (error instanceof ErrorResponse) {
+          await $auth.removeUser()
+          return await sendToLogin()
+        }
+        console.warn('Session renewal got no answer, keeping the stored session:', error)
       }
     }
 
