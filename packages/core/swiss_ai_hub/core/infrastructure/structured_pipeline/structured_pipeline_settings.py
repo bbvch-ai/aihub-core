@@ -37,5 +37,5 @@ class StructuredPipelineSettings(EnvironmentSettings):
         ),
     ]
 
-    def allowed_private_hosts(self) -> frozenset[str]:
+    def private_host_allow_list(self) -> frozenset[str]:
         return frozenset(host.strip().lower() for host in self.ALLOWED_PRIVATE_HOSTS.split(",") if host.strip())

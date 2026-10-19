@@ -28,7 +28,7 @@ class JiraPreflight:
     ) -> JiraScope:
         """Returns what the sync needs again: the account's time zone and which projects are service desks. The host
         is checked first, so no request reaches an internal one."""
-        SourceHostGuard.require_public(options.base_url, StructuredPipelineSettings().allowed_private_hosts())
+        SourceHostGuard.require_public(options.base_url, StructuredPipelineSettings().private_host_allow_list())
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or "this account"
         projects = {project: cls._require_visible(client, project, name) for project in options.projects()}

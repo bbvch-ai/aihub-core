@@ -16,14 +16,14 @@ class TestDefaults:
         """Set explicitly: a developer's environment, and CI's taken from .env.dev, allow localhost."""
         monkeypatch.setenv("STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS", "")
 
-        assert StructuredPipelineSettings().allowed_private_hosts() == frozenset()
+        assert StructuredPipelineSettings().private_host_allow_list() == frozenset()
 
 
 class TestAllowedPrivateHosts:
     def test_hosts_are_read_comma_separated_trimmed_and_lower_cased(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS", " Jira.Intra.Acme.ch , localhost,, ")
 
-        assert StructuredPipelineSettings().allowed_private_hosts() == frozenset({"jira.intra.acme.ch", "localhost"})
+        assert StructuredPipelineSettings().private_host_allow_list() == frozenset({"jira.intra.acme.ch", "localhost"})
 
 
 class TestEnvironmentOverrides:
