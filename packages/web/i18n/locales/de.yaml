@@ -705,7 +705,8 @@ auth:
     welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
     pleaseLoginWith: Bitte melden Sie sich mit {provider} an
-    useOrganisationLink: "Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls Sie ihn nicht haben, kontaktieren Sie Ihren Administrator."
+    useOrganisationLink: Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls
+      Sie ihn nicht haben, kontaktieren Sie Ihren Administrator.
     adminLogin: Anmeldung für Administratoren
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
@@ -774,6 +775,8 @@ evaluation:
 role:
   title: Zugriffsrollen
   name: Name
+  name_immutable_hint: Der Name kann nach dem Erstellen der Rolle nicht geändert werden,
+    da Benutzer Rollen über ihren Namen zugewiesen werden.
   description: Beschreibung
   edit: Rolle bearbeiten
   create_new: Neue Rolle
