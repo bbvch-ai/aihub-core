@@ -34,6 +34,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+BASE64_IMAGE_PATTERN = r"!\[([^\]]*)\]\((data:image/[^;]+;base64,[^)]+)\)"
+
 # dHash on a downscaled image is translation-tolerant: it encodes neighbor-pixel
 # gradients, which barely shift when the crop bounds move a few pixels. pHash was
 # evaluated and rejected — high-frequency DCT coefficients flip dramatically on
@@ -228,8 +230,6 @@ def extract_base64_images_from_markdown(markdown_content: str) -> tuple[str, dic
     """
     images: dict[str, str] = {}
 
-    pattern = r"!\[([^\]]*)\]\((data:image/[^;]+;base64,[^)]+)\)"
-
     def replace_with_placeholder(match: re.Match) -> str:
         alt_text = match.group(1)
         data_uri = match.group(2)
@@ -240,9 +240,24 @@ def extract_base64_images_from_markdown(markdown_content: str) -> tuple[str, dic
 
         return f"![{alt_text}]({placeholder})"
 
-    cleaned_markdown = re.sub(pattern, replace_with_placeholder, markdown_content)
+    cleaned_markdown = re.sub(BASE64_IMAGE_PATTERN, replace_with_placeholder, markdown_content)
 
     return cleaned_markdown, images
+
+
+def strip_base64_images_from_markdown(markdown_content: str) -> str:
+    """
+    Replace inline base64 images with a short marker, for a reader that wants the text without its images.
+
+    One embedded photo is hundreds of thousands of characters that would otherwise crowd out the text in a prompt
+    or preview; the marker keeps the alt text, which often describes the image.
+    """
+
+    def replace_with_marker(match: re.Match) -> str:
+        alt_text = match.group(1).strip()
+        return f"[image: {alt_text}]" if alt_text else "[image]"
+
+    return re.sub(BASE64_IMAGE_PATTERN, replace_with_marker, markdown_content)
 
 
 async def replace_s3_paths_with_signed_urls(

@@ -7,7 +7,7 @@ from urllib.parse import quote
 from bson import ObjectId
 from fastapi import HTTPException, Response, UploadFile, status
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.generative_ai import DocumentExtractor
+from swiss_ai_hub.core.generative_ai import DocumentExtractor, MarkItDownLoader
 from swiss_ai_hub.core.infrastructure import (
     ConversationAttachments,
     OpenTerminalClient,
@@ -34,10 +34,17 @@ class UserKnowledgeService:
     SHOWN_IN_PLACE = frozenset(
         {"application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp", "text/plain", "text/csv"}
     )
-    PREVIEWED_AS_MARKDOWN = frozenset({".docx", ".xlsx", ".xls", ".pptx"})
+    # The office formats the agent reads through MarkItDown; mail is left out, and the web lists the same set.
+    PREVIEWED_AS_MARKDOWN = frozenset(f".{extension}" for extension in MarkItDownLoader.SUPPORTED_EXTENSIONS) - {
+        ".msg",
+        ".eml",
+    }
     # A preview is for glancing at a file, and a large workbook converts to far more text than a browser renders
     # comfortably; the download keeps the whole of it.
     MAX_PREVIEW_CHARS = 200_000
+    # The conversion runs in the API process and holds the whole document several times over while it does, so a
+    # file past this is offered as a download instead of converted.
+    MAX_PREVIEW_BYTES = 20 * 1024 * 1024
 
     @staticmethod
     def client_for(user: UserIdentity) -> OpenTerminalClient:
@@ -83,7 +90,7 @@ class UserKnowledgeService:
         """
         relative = SandboxHomePath.shown(path)
         content, content_type = await UserKnowledgeService.client_for(user).view(relative)
-        media_type = content_type.split(";")[0].strip().lower()
+        media_type = UserKnowledgeService._media_type(content_type)
         shown = not download and media_type in UserKnowledgeService.SHOWN_IN_PLACE
         filename = quote(posixpath.basename(relative))
         return Response(
@@ -107,13 +114,18 @@ class UserKnowledgeService:
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="This file type has no preview."
             )
         content, content_type = await UserKnowledgeService.client_for(user).view(relative)
+        if len(content) > UserKnowledgeService.MAX_PREVIEW_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="This file is too large to preview; download it instead.",
+            )
         document = await DocumentExtractor.extract_from_bytes(
-            content=content, filename=filename, content_type=content_type.split(";")[0].strip().lower()
+            content=content, filename=filename, content_type=UserKnowledgeService._media_type(content_type)
         )
         truncated = len(document.content) > UserKnowledgeService.MAX_PREVIEW_CHARS
         return FilePreviewDTO(
             path=relative,
-            markdown=document.content[: UserKnowledgeService.MAX_PREVIEW_CHARS],
+            markdown=UserKnowledgeService._shortened(document.content) if truncated else document.content,
             truncated=truncated,
         )
 
@@ -177,6 +189,21 @@ class UserKnowledgeService:
         if len(content) > UserKnowledgeService.MAX_UPLOAD_BYTES:
             raise too_large
         return content
+
+    @staticmethod
+    def _media_type(content_type: str) -> str:
+        return content_type.split(";")[0].strip().lower()
+
+    @staticmethod
+    def _shortened(markdown: str) -> str:
+        """Cut at the last whole line, closing a table the cut lands in, so the last row and table still render."""
+        head = markdown[: UserKnowledgeService.MAX_PREVIEW_CHARS]
+        last_line_end = head.rfind("\n")
+        if last_line_end != -1:
+            head = head[: last_line_end + 1]
+        if head.rfind("<table>") > head.rfind("</table>"):
+            head += "</table>"
+        return head
 
     @staticmethod
     def _below_top(path: str) -> str:

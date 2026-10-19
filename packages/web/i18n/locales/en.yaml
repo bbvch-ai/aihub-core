@@ -1123,6 +1123,9 @@ userFiles:
     unavailable: No preview for this file type. Download it to open it.
     truncated: This preview shows only the beginning of the document. Download it
       to see all of it.
+    failed: This file could not be previewed. Download it to open it.
+    empty: This document has no text to show.
+    tooLarge: This file is too large to preview. Download it to open it.
   name:
     invalid: A name must not be empty or contain a slash.
   delete:

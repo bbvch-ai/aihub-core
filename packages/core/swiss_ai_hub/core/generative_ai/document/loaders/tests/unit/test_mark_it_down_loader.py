@@ -79,9 +79,20 @@ async def test_one_entry_serves_callers_with_and_without_images(loader: MarkItDo
     without_images = await loader.aload_data_from_bytes(DOCX_BYTES, "order.docx", include_images=False)
     with_images = await loader.aload_data_from_bytes(DOCX_BYTES, "order.docx", embed_base64=True)
 
-    assert IMAGE in without_images[0].text
+    assert "data:image" not in without_images[0].text
+    assert "[image: chart]" in without_images[0].text
     assert "image/png" in with_images[0].text
     markitdown.convert.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_a_reader_without_images_gets_the_text_instead_of_base64(loader: MarkItDownLoader, tmp_path: Path):
+    stored = tmp_path / "order.docx"
+    stored.write_bytes(DOCX_BYTES)
+
+    documents = await loader.aload_data(str(stored), include_images=False)
+
+    assert documents[0].text == "# Order\n\n[image: chart]"
 
 
 @pytest.mark.asyncio
