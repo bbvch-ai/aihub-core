@@ -10,15 +10,6 @@ import type { User, UserManager } from 'oidc-client-ts'
 let lastSyncedTenant: string | null = null
 
 /**
- * The stored OIDC user lives in localStorage and survives a browser restart,
- * but Keycloak's SSO cookie is a session cookie and does not. The OpenWebUI
- * iframe signs in through that cookie, so without it the chat shows a login
- * screen inside an app that still looks logged in. Probing once per page load
- * is enough: the cookie can only vanish together with the browser session.
- */
-let ssoSessionChecked = false
-
-/**
  * The probe blocks the first navigation, so it must not inherit the 30 s
  * silent-renew timeout; a healthy Keycloak answers well within this.
  */
@@ -138,12 +129,17 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return await sendToLogin()
     }
 
-    if (!ssoSessionChecked) {
+    // The stored user lives in localStorage and survives a browser restart, but
+    // Keycloak's SSO cookie does not. The OpenWebUI iframe signs in through that
+    // cookie, so without it the chat shows a login screen inside an app that
+    // still looks logged in. Probed once per browser session, see
+    // utils/ssoSessionCheck.ts.
+    if (!isSsoSessionChecked(user.profile.sub)) {
       if (await ssoSessionIsGone($auth, user)) {
         await $auth.removeUser()
         return await sendToLogin()
       }
-      ssoSessionChecked = true
+      markSsoSessionChecked(user.profile.sub)
     }
 
     // A renewal that gets no answer (e.g. Wi-Fi not back after waking) keeps the

@@ -37,7 +37,12 @@ definePageMeta({
 const { t, locale } = useI18n()
 
 try {
-  await $auth.signinRedirectCallback()
+  const user = await $auth.signinRedirectCallback()
+  // Keycloak just set its SSO cookie on this top-level login, so the probe in
+  // middleware/auth.global.ts has nothing to find out. Probing anyway would
+  // loop back to login wherever the hidden iframe cannot see that cookie
+  // (Keycloak on another site with third-party cookies blocked).
+  markSsoSessionChecked(user.profile.sub)
   navigateTo('/')
 }
 catch (err) {

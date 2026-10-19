@@ -103,25 +103,34 @@ subsequent loads.
 - `2025_12_28_keycloak_as_identity_broker.md` — Establishes Keycloak as the sole identity provider for all services
 - `2026_02_18_seamless_openwebui_sso_via_iframe.md` — Describes the iframe SSO login flow that this decision complements
 
-## Addendum (2026-10-13): parent logs out on the next page load
+## Addendum (2026-10-13): parent logs out when the SSO session is gone
 
 **Context.** The stored OIDC user lives in localStorage and survives a browser restart; Keycloak's SSO cookie is a
 session cookie and does not. Refresh-token renewal still succeeds afterwards, because the Keycloak session is
 server-side, so the parent app looks fully logged in — but the OpenWebUI iframe signs in through the cookie and shows
 Keycloak's login screen instead of the chat.
 
-**Change.** On the first protected navigation of each page load, `middleware/auth.global.ts` probes the SSO session with
-a `prompt=none` round trip (`UserManager.querySessionStatus`). If Keycloak answers that there is no session
+**Change.** On the first protected navigation of each browser session, `middleware/auth.global.ts` probes the SSO
+session with a `prompt=none` round trip (`UserManager.querySessionStatus`). If Keycloak answers that there is no session
 (`login_required`, `interaction_required`, `consent_required`), or that it belongs to another user, the parent removes
 its stored user and redirects to login. Any other outcome keeps the stored session: no answer (timeout after 5 s,
 network error), a server-side OAuth error (`server_error`, `temporarily_unavailable`, a failed code exchange), or a
 status without `session_state`. None of these says anything about the cookie, and an unhealthy Keycloak must not log
 users out.
 
+The probe is costly: the hidden iframe boots the whole app a second time on `/auth/renew`, and a code exchange runs whose
+tokens are discarded, all before the first page renders. It therefore runs once per browser session, not per page load:
+a passed probe records the user's `sub` in sessionStorage (`utils/ssoSessionCheck.ts`), and later loads in that tab skip
+it. sessionStorage ends together with the session cookie, so the skip cannot hide a lost cookie. The login callback
+records the `sub` too, since Keycloak has just set the cookie; this also keeps a deployment where the iframe cannot see
+the cookie (Keycloak on another site, third-party cookies blocked) from looping between login and the probe. Keycloak
+must still be on the same site as the app, or the OpenWebUI iframe cannot sign in at all.
+
 **Effect on this decision.** The probe cannot tell a lost cookie from an SSO session ended by an embedded service's
-logout — both answer `login_required`. After an OpenWebUI logout, the parent therefore logs out on the next page load.
-This narrows Decision 3: the parent session is still preserved for the rest of the current page load (no
-`monitorSession`, the `@load` handler still redirects home), but no longer across a reload. It is accepted because the
+logout — both answer `login_required`. A new tab after an OpenWebUI logout therefore logs the parent out. In a tab that
+already passed the probe, the parent logs out at its next token renewal instead: ending the Keycloak session also
+invalidates the refresh token. This narrows Decision 3: the parent session is still preserved for a while (no
+`monitorSession`, the `@load` handler still redirects home), but no longer indefinitely. It is accepted because the
 preserved state was only half-working: every later visit to the chat sent the iframe to Keycloak's login page while the
 parent looked logged in, and the Context above already expected a logout on the next refresh. Live mirroring via
 `monitorSession` remains rejected.
