@@ -3,6 +3,14 @@ import { setMyActiveTenant } from '@core/sdk/client'
 /** Other tabs of this browser re-check the chat's tenant when a message arrives here. */
 export const ACTIVE_TENANT_CHANNEL = 'aihub-active-tenant'
 
+async function activateTenant(id: string) {
+  await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: id } })
+
+  const channel = new BroadcastChannel(ACTIVE_TENANT_CHANNEL)
+  channel.postMessage(id)
+  channel.close()
+}
+
 /**
  * Single source of truth for tenant context.
  *
@@ -24,14 +32,6 @@ export function useTenant() {
   const tenantId = computed(
     () => (route.params.tenant as string | undefined) ?? (route.params.tenant_id as string | undefined),
   )
-
-  async function activateTenant(id: string) {
-    await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: id } })
-
-    const channel = new BroadcastChannel(ACTIVE_TENANT_CHANNEL)
-    channel.postMessage(id)
-    channel.close()
-  }
 
   async function setTenant(id: string) {
     if (id === tenantId.value) return

@@ -31,7 +31,7 @@ export function useTenantPolling() {
 
   const visibility = useDocumentVisibility()
   watch(visibility, (visibilityState: DocumentVisibilityState) => {
-    if (visibilityState === 'visible') poll()
+    if (visibilityState === 'visible') void poll()
   })
 
   const channel = new BroadcastChannel(ACTIVE_TENANT_CHANNEL)
