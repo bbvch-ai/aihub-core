@@ -27,6 +27,7 @@ _PROJECTABLE_PARENTS = {
     "ChunkEvent",
     "HumanInTheLoopRequestEvent",
     "StopEvent",
+    "RecordsExtractedEvent",
 }
 
 
@@ -276,6 +277,10 @@ class ConversationHistoryProjector:
                         event.display_id,
                         ConversationHistoryProjector._required_text(event, "content"),
                     )
+                elif "RecordsExtractedEvent" in parents:
+                    table_text = ChatService.extracted_table_text(dict(ConversationHistoryProjector._event_data(event)))
+                    if table_text:
+                        transcript.add_assistant_text(event.display_id, table_text, is_answer=False)
                 elif "HumanInTheLoopRequestEvent" in parents:
                     transcript.add_assistant_text(
                         event.display_id,
