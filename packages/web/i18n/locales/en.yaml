@@ -587,6 +587,13 @@ knowledge:
   source:
     description: Synchronised from {name}
     edit: Edit source
+    next_sync: The source syncs once a day, so its content appears after the next
+      scheduled sync.
+    awaiting_sync:
+      title: Nothing synced yet
+      description: The source syncs this database once a day, so its collections appear
+        here after the next scheduled sync. If they still do not, check the source
+        settings.
   manual_management:
     description: Collections can be created and managed manually
   pipeline: 'Pipeline: {name}'
@@ -695,7 +702,8 @@ auth:
     welcomeProvider: Welcome to the AI Hub — sign in with {provider}
     pleaseLogin: Please log in
     pleaseLoginWith: Please log in with {provider}
-    useOrganisationLink: "Please use the login link your organisation gave you. If you don't have it, contact your administrator."
+    useOrganisationLink: Please use the login link your organisation gave you. If
+      you don't have it, contact your administrator.
     adminLogin: Administrator login
     loginWith: Login with {provider}
     customSolutions: Custom AI solutions for your company
@@ -763,6 +771,8 @@ evaluation:
 role:
   title: Access Roles
   name: Name
+  name_immutable_hint: The name cannot be changed after the role is created, because
+    users are assigned to roles by name.
   description: Description
   edit: Edit Role
   create_new: New Role
@@ -1121,6 +1131,11 @@ userFiles:
     noTargets: No folder to move it to.
   preview:
     unavailable: No preview for this file type. Download it to open it.
+    truncated: This preview shows only the beginning of the document. Download it
+      to see all of it.
+    failed: This file could not be previewed. Download it to open it.
+    empty: This document has no text to show.
+    tooLarge: This file is too large to preview. Download it to open it.
   name:
     invalid: A name must not be empty or contain a slash.
   delete:

@@ -1,5 +1,6 @@
 """Real syncs of the structured asset, in process: dlt runs for real, every system around it is faked."""
 
+import json
 from typing import Annotated, ClassVar
 from unittest.mock import MagicMock, patch
 
@@ -154,6 +155,18 @@ def _issue(project: str, key: str, day: int, body: str = "Body text") -> dict:
     return fake_issue(project, key, f"2026-09-{day:02}T10:00:00Z", body=body)
 
 
+def _create_during_the_next_listing(monkeypatch: pytest.MonkeyPatch, issues: list[dict], issue: dict) -> None:
+    """The record appears at the source after the sync fetched it but before the listing does."""
+    list_record_paths = FakeTrackerAdapter.list_record_paths
+
+    def created_in_the_gap(self, options):
+        if issue not in issues:
+            issues.append(issue)
+        return list_record_paths(self, options)
+
+    monkeypatch.setattr(FakeTrackerAdapter, "list_record_paths", created_in_the_gap)
+
+
 class TestWrites:
     def test_two_databases_of_the_same_kind_never_share_files_or_state(self, world):
         world.database("db-a", [_issue("ABC", "ABC-1", 1, body="A's issue")])
@@ -300,17 +313,49 @@ class TestGuards:
 
         assert world.files("db-a") == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
 
-    def test_a_listed_record_without_its_file_makes_the_next_run_read_everything(self, world):
+    def test_a_record_missing_in_two_runs_in_a_row_makes_the_next_run_read_everything(self, world):
         """The cursor passed a record whose file is gone: only a full re-read writes it again."""
         world.database("db-a", [_issue("ABC", "ABC-1", 1), _issue("XYZ", "XYZ-1", 2)])
         world.sync("db-a")
         world.s3.delete_object(Bucket="db-a", Key="XYZ/XYZ-1.md")
 
-        assert world.sync("db-a").success
+        first = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (first["Listed records without a file"], first["State discarded"]) == (1, False)
+        assert world.state("db-a") is not None
+
+        second = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (second["Missing in two runs in a row"], second["State discarded"]) == (1, True)
         assert world.state("db-a") is None
 
         assert world.sync("db-a").success
         assert world.files("db-a") == ["ABC/ABC-1.md", "XYZ/XYZ-1.md"]
+
+    def test_a_record_created_between_the_sync_and_the_listing_is_fetched_without_a_full_read(self, world, monkeypatch):
+        """The listing sees a record the sync could not: the next incremental run fetches it, so no state is lost."""
+        issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.sync("db-a")
+        _create_during_the_next_listing(monkeypatch, issues, _issue("ABC", "ABC-2", 5))
+
+        gap = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+        assert (gap["Listed records without a file"], gap["State discarded"]) == (1, False)
+
+        result = world.sync("db-a")
+        assert world.step_metadata(result, "sync_structured_records")["Resumed from stored state"] is True
+        assert world.step_metadata(result, "reconcile_structured_bucket")["Listed records without a file"] == 0
+        assert world.files("db-a") == ["ABC/ABC-1.md", "ABC/ABC-2.md"]
+        assert json.loads(world.state("db-a"))["missing_keys"] == []
+
+    def test_different_records_missing_in_consecutive_runs_keep_the_state(self, world, monkeypatch):
+        """A busy source creates a record in the gap of every run; each is fetched by the run after."""
+        issues = world.database("db-a", [_issue("ABC", "ABC-1", 1)])
+        world.sync("db-a")
+
+        for number, day in ((2, 5), (3, 6)):
+            _create_during_the_next_listing(monkeypatch, issues, _issue("ABC", f"ABC-{number}", day))
+            reconcile = world.step_metadata(world.sync("db-a"), "reconcile_structured_bucket")
+            assert (reconcile["Listed records without a file"], reconcile["State discarded"]) == (1, False)
+
+        assert world.state("db-a") is not None
 
     def test_a_second_sync_of_a_database_still_syncing_is_refused(self, world):
         world.database("db-a", [_issue("ABC", "ABC-1", 1)])

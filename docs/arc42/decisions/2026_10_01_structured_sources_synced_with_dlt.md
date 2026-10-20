@@ -102,9 +102,9 @@ configured, secured or ingested changes.**
    Records become files in the extract step (`add_map`), not in the destination: dlt normalises rows before loading,
    coercing ISO timestamps to `pendulum.DateTime`, which YAML cannot render. The first path segment is the namespace,
    and a path without a folder is rejected, because the ingestion pipeline never ingests a root-level object.
-   Frontmatter uses the reserved keys of #1953 (`title`, `url`, `created`, `updated`) and renders deterministically,
-   with sorted keys. Adding a kind is one adapter, one options form, one field on `StructuredSyncConfig` and its labels,
-   with no change to the API or the UI.
+   Frontmatter uses the keys #1953 reserves (`title`, `url`, `created`; a record's `updated` is ordinary metadata) and
+   renders deterministically, with sorted keys. Adding a kind is one adapter, one options form, one field on
+   `StructuredSyncConfig` and its labels, with no change to the API or the UI.
 
 3. **One sync run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source("structured"))` fans out one
    run per database, tagged `aihub/bucket`. The run is one `graph_asset` whose ops are, in order:
@@ -179,14 +179,15 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    credentials must fail the run, as they already do in the sync step, before any removal. An empty listing while the
    bucket holds files fails the run too.
 
-6. **A listed record without a file discards the state.** The cursor is then ahead of the data, after a lost file, a
-   source switch or a layout change, and would never fetch that record again. The next run re-reads everything, and the
-   ETag check keeps it from rewriting what is already there.
+6. **A record listed without a file in two runs in a row discards the state.** The cursor is then ahead of the data,
+   after a lost file, a source switch or a sync slower than the cursor's overlap, and would never fetch that record
+   again. The next run re-reads everything, and the ETag check keeps it from rewriting what is already there. A record
+   missing once is only remembered: one created while a run is between its fetch and its listing is missing too, and the
+   next incremental run fetches it.
 
 7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
-   another sync of the same database running gives way, whichever was created first and whether the schedule, the
-   job's launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not
-   count.
+   another sync of the same database running gives way, whichever was created first and whether the schedule, the job's
+   launchpad or the asset page started it. The database's ingestion runs carry the same bucket tag and do not count.
 
 ## Consequences
 
@@ -204,8 +205,10 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
 ### Trade-offs
 
 - **dlt brings no ready-made Jira or Confluence connector.** The verified Jira source has no incremental cursor, and
-  there is no verified Confluence source. #1954 and #1955 build their adapters on dlt's REST API source, which declares
-  pagination, authentication and incremental cursors.
+  there is no verified Confluence source. The Jira adapter (#1954) uses dlt's `RESTClient`, which brings authentication
+  and retries, in a hand-written resource rather than the declarative REST API source: it pages each project with its
+  own query, writes the incremental lower bound into JQL in the account's time zone, and merges an issue's comments into
+  its record, none of which the declarative source expresses.
 - **A sync is daily.** This is inherited from the source-pipelines ADR. Creating a database or changing its source
   triggers nothing, so a new database stays empty until the next scheduled run. A first-sync or on-demand trigger is a
   follow-up; the guard against two concurrent runs of the same database (rule 7) is already in place for it.
@@ -215,17 +218,23 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   metadata. Its asset-per-resource model is not used. If it ever gets in the way, calling `pipeline.run()` directly
   changes nothing else in this decision.
 - **Losing the state is safe but expensive.** Deleting a database's state file makes the next run re-read every record.
-  The ETag check keeps writes and announcements at zero. It also happens without anyone deleting anything: a record
-  created at the source while a run is between its fetch and its listing is listed without a file (rule 6), so on a busy
-  source an occasional night is a full re-read.
+  The ETag check keeps writes and announcements at zero. A record created at the source while a run is between its fetch
+  and its listing does not cause it: rule 6 waits for a second run, which fetches that record. The price is that a
+  really lost file is restored one run later.
+- **A source URL may only name a public host.** A knowledge administrator enters it, while the pipeline is on the
+  networks of the platform's own services. Before a run's first request, a host without a domain (a Docker service,
+  `localhost`) or one resolving to a non-global address is refused unless the deployment allows it
+  (`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`), and redirects are never followed. A host that resolves differently
+  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it.
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.
 - **The code location needs outbound internet access.** The rclone code location reaches its sources through the rclone
   daemon and sits only on `backend`, `data` and `storage`. This one calls the source APIs itself, so it also joins
   `egress`.
-- **Frontmatter is plain text until #1953 lands.** Until then the ingestion pipeline chunks and embeds it like any
-  paragraph.
+- **Frontmatter is a contract with ingestion.** Since #1953, ingestion sets a document's title, link and creation date
+  from `title`, `url` and `created`, and stores every other key as filterable metadata that is not embedded. Markdown
+  ingested before #1953 keeps its frontmatter as text until the file changes, because that step changes no data version.
 
 ## Related Decisions
 

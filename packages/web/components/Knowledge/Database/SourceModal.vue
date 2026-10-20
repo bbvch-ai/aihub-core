@@ -157,7 +157,12 @@ async function submitSource(
             replace_existing_documents: options.replaceExistingDocuments ?? false,
           },
     })
-    toast.add({ severity: 'success', summary: t('knowledge.form.edit_source.success'), life: 3000 })
+    toast.add({
+      severity: 'success',
+      summary: t('knowledge.form.edit_source.success'),
+      detail: configuration === null ? undefined : t('knowledge.source.next_sync'),
+      life: configuration === null ? 3000 : 6000,
+    })
     visible.value = false
   }
   catch (error) {

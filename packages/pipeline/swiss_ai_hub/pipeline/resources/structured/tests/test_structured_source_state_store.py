@@ -82,6 +82,39 @@ class TestStore:
         assert s3.keys("db-a") == []
 
 
+class TestMissingRecords:
+    def test_a_save_keeps_the_keys_remembered_by_the_previous_run(self, tmp_path, s3):
+        """The next run's sync saves before its listing compares against them."""
+        store = StructuredSourceStateStore("structured", "db-a")
+        store.save(_working_dir_with_state(tmp_path / "run1", "2026-09-01"), "scope-1")
+        store.remember_missing({"ABC/ABC-2.md", "ABC/ABC-1.md"})
+
+        store.save(_working_dir_with_state(tmp_path / "run2", "2026-09-02"), "scope-1")
+
+        assert store.missing_at_last_run() == {"ABC/ABC-1.md", "ABC/ABC-2.md"}
+        assert store.restore(tmp_path / "run3", "scope-1") is True
+        assert json.loads((tmp_path / "run3" / "state.json").read_text()) == {"sources": {"cursor": "2026-09-02"}}
+
+    def test_a_changed_scope_forgets_remembered_keys(self, tmp_path, s3):
+        """A changed scope re-reads everything, so nothing remembered under the old one can be judged."""
+        store = StructuredSourceStateStore("structured", "db-a")
+        store.save(_working_dir_with_state(tmp_path / "run1", "x"), "scope-1")
+        store.remember_missing({"ABC/ABC-1.md"})
+
+        store.save(_working_dir_with_state(tmp_path / "run2", "y"), "scope-2")
+
+        assert store.missing_at_last_run() == set()
+
+    def test_remembering_keys_without_a_stored_state_writes_nothing(self, s3):
+        """The sync may have chosen not to keep a state, for a database that left the source during the run."""
+        store = StructuredSourceStateStore("structured", "db-a")
+
+        store.remember_missing({"ABC/ABC-1.md"})
+
+        assert s3.keys("db-a") == []
+        assert store.missing_at_last_run() == set()
+
+
 class TestResume:
     def test_a_restored_state_lets_a_new_process_skip_every_record_already_synced(self, tmp_path, s3):
         """Every Dagster step starts with an empty working directory; the stored state is all that carries the
