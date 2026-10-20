@@ -1314,7 +1314,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend  # Internal service communication
+      - browser  # Reached only by its callers, never by the rest of backend
       - egress  # Outbound internet access for web browsing
 
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
@@ -1797,6 +1797,12 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
+  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
+  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  browser:
+    name: browser
     driver: bridge
 # ===================================================================
 # Named Volumes

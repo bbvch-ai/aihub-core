@@ -235,7 +235,7 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (6 Zones)
+## Network Isolation (7 Zones)
 
 | Network        | Purpose                           | Internal | ICC | Key Services                                                  |
 | -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
@@ -245,6 +245,7 @@ routes through Traefik.
 | `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
 | `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
+| `browser`      | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -257,6 +258,13 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
+internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
+connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
+callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
+Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
+reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

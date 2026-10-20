@@ -1618,7 +1618,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend  # Internal service communication
+      - browser  # Reached only by its callers, never by the rest of backend
       - egress  # Outbound internet access for web browsing
 
   # License: AGPL-3.0 — third-party (see LICENSE_REPORT.md)
@@ -2080,6 +2080,7 @@ services:
       - data
       - storage
       - code-sandbox  # Caller of the open-terminal sandbox zone
+      - browser  # Caller of the Playwright browser zone (web loader)
 
   # License: PostgreSQL License — third-party (see LICENSE_REPORT.md)
   openwebui-init:
@@ -2889,6 +2890,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
   web_fetch_agent:
     container_name: web-fetch-agent
@@ -2980,6 +2982,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
   universal_agent:
     container_name: universal-agent
@@ -3076,6 +3079,7 @@ services:
       - data
       - storage
       - code-sandbox
+      - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent
@@ -3167,6 +3171,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
   expert_rag_agent:
     container_name: expert-rag-agent
@@ -3258,6 +3263,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   # License: Apache-2.0 — own image (see LICENSES.md)
   expert_asking_agent:
     container_name: expert-asking-agent
@@ -4028,6 +4034,13 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+    internal: true
+  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
+  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
+  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  browser:
+    name: browser
     driver: bridge
     internal: true
 # ===================================================================

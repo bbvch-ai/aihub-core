@@ -2045,7 +2045,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend  # Internal service communication
+      - browser  # Reached only by its callers, never by the rest of backend
       - egress   # Outbound internet access for web browsing
 
   {{ service_license('searxng') }}
@@ -2588,6 +2588,7 @@ services:
       - data
       - storage
       - code-sandbox  # Caller of the open-terminal sandbox zone
+      - browser  # Caller of the Playwright browser zone (web loader)
     {%- endif %}
 
   {{ service_license('openwebui-init') }}
@@ -3505,6 +3506,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
   {%- if image_tags.web_fetch_agent[stage] %}
   {{ service_license('web_fetch_agent') }}
@@ -3602,6 +3604,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.universal_agent[stage] %}
@@ -3705,6 +3708,7 @@ services:
       - data
       - storage
       - code-sandbox
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.rag_agent[stage] %}
@@ -3803,6 +3807,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.expert_rag_agent[stage] %}
@@ -3901,6 +3906,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.expert_asking_agent[stage] %}
@@ -4905,6 +4911,15 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
+  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
+  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  browser:
+    name: browser
     driver: bridge
     {%- if stage != 'dev' %}
     internal: true
