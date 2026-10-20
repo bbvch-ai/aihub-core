@@ -65,19 +65,19 @@
 </template>
 
 <script setup lang="ts">
-import type { LocaleStringDto } from '@core/sdk/client'
+import type { LocaleString } from '@core/sdk/client'
 
 interface LocaleInputProps {
   context: {
     node: {
-      input: (value: LocaleStringDto) => void
+      input: (value: LocaleString) => void
     }
-    value?: LocaleStringDto
+    value?: LocaleString
     attrs: Record<string, unknown>
     // Custom props are passed through context, not as direct Vue props
     inputType?: 'text' | 'textarea'
     rows?: number
-    placeholder?: LocaleStringDto
+    placeholder?: LocaleString
     allowTranslation?: boolean
   }
 }
@@ -108,7 +108,7 @@ function isLocale(value: unknown): value is Locale {
 }
 
 // Get the current locale string value
-const localeValue = computed<LocaleStringDto>(() => {
+const localeValue = computed<LocaleString>(() => {
   return props.context.value ?? { de: null, en: null, fr: null, it: null }
 })
 
@@ -121,7 +121,7 @@ const currentValue = computed({
   get: () => (isLocale(activeLocale.value) ? localeValue.value[activeLocale.value] ?? '' : ''),
   set: (newVal: string) => {
     if (!isLocale(activeLocale.value)) return
-    const updated: LocaleStringDto = {
+    const updated: LocaleString = {
       ...localeValue.value,
       [activeLocale.value]: newVal || null,
     }
@@ -159,10 +159,21 @@ function notifyTranslationFailed() {
   })
 }
 
-// The backend translates each locale separately, so a partial result is still worth applying.
+// Merged into the value as it is now, not as it was sent: a large prompt takes a minute to translate,
+// and anything typed meanwhile must survive.
+function applyTranslations(translated: LocaleString, translatedLocales: Locale[]) {
+  const updated: LocaleString = { ...localeValue.value }
+  for (const lang of translatedLocales) {
+    if (!hasValue(lang)) updated[lang] = translated[lang] ?? null
+  }
+  props.context.node.input(updated)
+}
+
+// The backend fills in only the empty locales, each separately, so a partial result is worth applying
+// and a retry translates just the ones still missing.
 async function handleTranslate() {
   const sourceLocale = activeLocale.value
-  const targetCount = locales.filter(lang => lang !== sourceLocale).length
+  const requestedLocales = locales.filter(lang => lang !== sourceLocale && !hasValue(lang))
   try {
     const response = await translate({
       request: {
@@ -172,11 +183,12 @@ async function handleTranslate() {
       tenantId: tenantId.value!,
     })
     const failedLocales = response.failed_locales ?? []
-    if (failedLocales.length >= targetCount) {
+    const translatedLocales = requestedLocales.filter(lang => !failedLocales.includes(lang))
+    if (translatedLocales.length === 0) {
       notifyTranslationFailed()
       return
     }
-    props.context.node.input(response.translated)
+    applyTranslations(response.translated, translatedLocales)
     if (failedLocales.length > 0) {
       toast.add({
         severity: 'warn',

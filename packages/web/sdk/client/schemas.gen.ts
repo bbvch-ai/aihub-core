@@ -29382,7 +29382,7 @@ export const TranslationResponseSchema = {
     translated: {
       $ref: "#/components/schemas/LocaleString",
       description:
-        "The LocaleString with translations for all supported locales that succeeded",
+        "The LocaleString with every empty locale that could be translated filled in",
     },
     failed_locales: {
       items: {
@@ -29390,8 +29390,7 @@ export const TranslationResponseSchema = {
       },
       type: "array",
       title: "Failed Locales",
-      description:
-        "Target locales whose translation failed and kept their prior value",
+      description: "Empty locales that could not be translated and stay empty",
     },
   },
   type: "object",

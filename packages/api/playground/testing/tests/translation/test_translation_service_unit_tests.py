@@ -5,6 +5,7 @@ import pytest
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
+from swiss_ai_hub.api.routes.translation.missing_translation_error import MissingTranslationError
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 _SERVICE_MODULE = "swiss_ai_hub.api.routes.translation.translation_service"
@@ -12,31 +13,46 @@ _SERVICE_MODULE = "swiss_ai_hub.api.routes.translation.translation_service"
 
 class TestExtractTranslation:
     def test_extracts_text_between_markers(self):
-        assert TranslationService._extract_translation("<translation>Hallo</translation>") == "Hallo"
+        assert TranslationService._extract_translation("<translation>Hallo</translation>", "Hello") == "Hallo"
 
     def test_ignores_preamble_and_trailing_prose(self):
         response = "Voici la traduction :\n<translation>\nBonjour\n</translation>\nJ'espère que cela aide."
-        assert TranslationService._extract_translation(response) == "Bonjour"
+        assert TranslationService._extract_translation(response, "Hello") == "Bonjour"
 
     def test_extracts_from_inside_markdown_fence(self):
         response = "```\n<translation>Ciao</translation>\n```"
-        assert TranslationService._extract_translation(response) == "Ciao"
+        assert TranslationService._extract_translation(response, "Hello") == "Ciao"
 
     def test_keeps_inner_tags_and_backslashes_verbatim(self):
         translated = '<persona>\nDu bist ein Assistent.\n</persona>\n<tone>\n- Antworte "präzise" \\ knapp.\n</tone>'
-        assert TranslationService._extract_translation(f"<translation>{translated}</translation>") == translated
+        assert TranslationService._extract_translation(f"<translation>{translated}</translation>", "...") == translated
 
-    def test_takes_outermost_pair_when_text_mentions_the_tag(self):
-        response = "<translation>Use <translation> and </translation> as markers.</translation>"
-        assert TranslationService._extract_translation(response) == "Use <translation> and </translation> as markers."
+    def test_keeps_the_tag_when_the_source_text_mentions_it(self):
+        source = "Use <translation> and </translation> as markers."
+        response = "<translation>Verwende <translation> und </translation> als Marker.</translation>"
+        assert TranslationService._extract_translation(response, source) == (
+            "Verwende <translation> und </translation> als Marker."
+        )
+
+    def test_takes_only_the_first_block_when_the_model_repeats_it(self):
+        response = "<translation>Hallo</translation>\n<translation>Hallo</translation>"
+        assert TranslationService._extract_translation(response, "Hello") == "Hallo"
+
+    def test_drops_a_trailing_note_that_mentions_the_tag(self):
+        response = "<translation>Hallo</translation>\nNote: everything up to </translation> is the translation."
+        assert TranslationService._extract_translation(response, "Hello") == "Hallo"
 
     def test_raises_when_markers_are_missing(self):
-        with pytest.raises(ValueError, match="no <translation> block"):
-            TranslationService._extract_translation("Bitte geben Sie den zu übersetzenden Text an.")
+        with pytest.raises(MissingTranslationError, match="no <translation> block"):
+            TranslationService._extract_translation("Bitte geben Sie den zu übersetzenden Text an.", "Hello")
+
+    def test_raises_when_the_block_is_not_closed(self):
+        with pytest.raises(MissingTranslationError, match="unclosed <translation> block"):
+            TranslationService._extract_translation("<translation>Hallo, wie geht", "Hello, how are you")
 
     def test_raises_when_markers_are_empty(self):
-        with pytest.raises(ValueError, match="no <translation> block"):
-            TranslationService._extract_translation("<translation>   </translation>")
+        with pytest.raises(MissingTranslationError, match="empty <translation> block"):
+            TranslationService._extract_translation("<translation>   </translation>", "Hello")
 
 
 def _locale_handler() -> MagicMock:
@@ -113,7 +129,31 @@ class TestTranslate:
         assert peak == 3
 
     @pytest.mark.asyncio
-    async def test_a_failing_locale_keeps_its_prior_value_and_does_not_affect_the_others(self):
+    async def test_translates_only_the_locales_that_are_still_empty(self):
+        apredict = _per_locale_responses({"de": "<translation>Hallo</translation>"})
+
+        outcome = await _translate(LocaleString(en="Hello", fr="Salut (corrigé)", it="Ciao (corretto)"), apredict)
+
+        assert apredict.await_count == 1
+        assert outcome.translated.model_dump() == {
+            "en": "Hello",
+            "de": "Hallo",
+            "fr": "Salut (corrigé)",
+            "it": "Ciao (corretto)",
+        }
+        assert outcome.failed_locales == []
+
+    @pytest.mark.asyncio
+    async def test_skips_the_llm_when_every_locale_already_has_a_value(self):
+        apredict = AsyncMock()
+
+        outcome = await _translate(LocaleString(en="Hello", de="Hallo", fr="Salut", it="Ciao"), apredict)
+
+        apredict.assert_not_awaited()
+        assert outcome.failed_locales == []
+
+    @pytest.mark.asyncio
+    async def test_a_gateway_error_propagates_instead_of_counting_as_a_failed_locale(self):
         apredict = _per_locale_responses(
             {
                 "de": "<translation>Hallo</translation>",
@@ -122,10 +162,8 @@ class TestTranslate:
             }
         )
 
-        outcome = await _translate(LocaleString(en="Hello", fr="Salut (old)"), apredict)
-
-        assert outcome.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": "Salut (old)", "it": "Ciao"}
-        assert outcome.failed_locales == ["fr"]
+        with pytest.raises(RuntimeError, match="gateway timeout"):
+            await _translate(LocaleString(en="Hello"), apredict)
 
     @pytest.mark.asyncio
     async def test_a_response_without_markers_counts_as_failed(self):
@@ -144,7 +182,7 @@ class TestTranslate:
 
     @pytest.mark.asyncio
     async def test_all_locales_failing_returns_the_source_untouched(self):
-        apredict = AsyncMock(side_effect=RuntimeError("model unavailable"))
+        apredict = AsyncMock(return_value="I cannot translate this text.")
 
         outcome = await _translate(LocaleString(en="Hello"), apredict)
 
@@ -175,7 +213,7 @@ class TestTranslateFromRequest:
         apredict = _per_locale_responses(
             {
                 "de": "<translation>Hallo</translation>",
-                "fr": RuntimeError("boom"),
+                "fr": "Bitte geben Sie den zu übersetzenden Text an.",
                 "it": "<translation>Ciao</translation>",
             }
         )

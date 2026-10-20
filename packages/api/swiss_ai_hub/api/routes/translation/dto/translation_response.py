@@ -11,11 +11,11 @@ class TranslationResponse(BaseModel):
 
     translated: Annotated[
         LocaleString,
-        Field(description="The LocaleString with translations for all supported locales that succeeded"),
+        Field(description="The LocaleString with every empty locale that could be translated filled in"),
     ]
     failed_locales: Annotated[
         list[str],
-        Field(default_factory=list, description="Target locales whose translation failed and kept their prior value"),
+        Field(default_factory=list, description="Empty locales that could not be translated and stay empty"),
     ]
 
     @classmethod
