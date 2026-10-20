@@ -50,6 +50,9 @@ run-namespace-selection-agent:
 run-universal-agent:
 	uv run python app/universal_agent/main.py
 
+run-web-fetch-agent:
+	uv run python app/web_fetch_agent/main.py
+
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
 

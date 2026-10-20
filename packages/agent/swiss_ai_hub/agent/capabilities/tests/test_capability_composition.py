@@ -28,6 +28,8 @@ from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config im
 from swiss_ai_hub.agent.agents.mcp_react_agent.mcp_react_agent import McpReactAgent
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
+from swiss_ai_hub.agent.agents.web_fetch_agent.web_fetch_agent import WebFetchAgent
+from swiss_ai_hub.agent.agents.web_fetch_agent.web_fetch_agent_config import WebFetchAgentConfig
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.catalog import CapabilityCatalog
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
@@ -108,6 +110,7 @@ SPINE = {"Conversation", "Memory", "AttachedFiles", "Knowledge"}
         (RAGAgent, RAGAgentConfig, {*SPINE, "WebFetch"}),
         (ExpertRAGAgent, ExpertRAGAgentConfig, {*SPINE, "WebFetch"}),
         (LLMWrappingAgent, LLMWrappingAgentConfig, {*SPINE, "WebFetch"}),
+        (WebFetchAgent, WebFetchAgentConfig, {*SPINE, "WebFetch"}),
         (FewShotAgent, FewShotAgentConfig, SPINE),
         (McpReactAgent, McpReactAgentConfig, SPINE),
     ],

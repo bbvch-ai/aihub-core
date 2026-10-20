@@ -1,0 +1,5 @@
+---
+metadata:
+  name: Assistant pages web
+  description: Assistant IA qui lit les pages web liées dans votre message et répond
+    à partir de celles-ci, en citant chaque page
