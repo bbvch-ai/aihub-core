@@ -48,7 +48,7 @@ page it imagined.
 
 ### The engine: the shared Playwright server
 
-The agent connects to `ws://playwright:3000` with the Playwright 1.60 client, renders the page, and Trafilatura keeps
+The agent connects to `ws://playwright:3000` with the Playwright 1.63 client, renders the page, and Trafilatura keeps
 the main content as markdown. Each page becomes one node, rendered and cited like a retrieved document. The result event
 is a semantic event, so the fetch shows in Langfuse as a retrieval with the pages as its documents. Malformed and
 non-http(s) links, timeouts, 4xx/5xx answers, non-HTML content (PDFs, downloads) and pages without text are reported per
@@ -112,6 +112,9 @@ status while pages load, one source chip per page read, and an error status nami
   prompt at 1.7 tokens per second against 23 for a short one, so a turn with several pages can take minutes. Admins tune
   the limits per profile.
 - **Every new agent that fetches pages must join `browser`**, or it cannot reach `ws://playwright:3000`.
+- **The server and its clients upgrade together.** Playwright refuses a client of another version ("Playwright version
+  mismatch"), so a new Playwright server image needs the agents' `playwright` package bumped to the same version, like
+  Open WebUI's image.
 - **Dev does not exercise the zone.** Dev agents and Open WebUI reach Playwright through `localhost:3036`, so the
   network change is verified on a deployed stage (nightly).
 - **A failed `#` reference never reaches the agent.** Open WebUI 0.11.3 fetches it itself when it is picked and drops it

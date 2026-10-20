@@ -253,7 +253,8 @@ in the last user message's text, then the `UserMessageEvent.web_references` chat
 each. Links are sorted out by `UrlExtractor.classify` (malformed and non-http(s) links are reported, never fetched), the
 first `max_urls` are read and the rest reported as over the limit. Pages load through the platform's Playwright server
 (core's `PlaywrightSettings`; agents have no internet access of their own) via `WebPageFetcher`, the one class that
-knows the engine. `RequestGuard` performs every request of the page itself, redirects and subresources included, checked
+knows the engine. The `playwright` package must have the server image's version (`image_tags.playwright` in
+`compose-config.yml`): the server refuses any other client, so a server bump is a package bump. `RequestGuard` performs every request of the page itself, redirects and subresources included, checked
 by `UrlSafetyPolicy`, which refuses internal hosts and any URL Python and the browser could read as different hosts; a
 catch-all on the browser context refuses requests from pages the fetched page opens. `PageContentConverter` keeps the
 main content as markdown (Trafilatura). Each page becomes one `IngestedNode` (`FetchedWebPage.to_ingested_node`, id from
