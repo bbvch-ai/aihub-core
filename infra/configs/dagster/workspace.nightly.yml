@@ -26,3 +26,7 @@ load_from:
       host: rclone_pipeline
       port: 4000
       location_name: rclone_pipeline
+  - grpc_server:
+      host: structured_pipeline
+      port: 4000
+      location_name: structured_pipeline

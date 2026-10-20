@@ -19,7 +19,8 @@ tool_loop_status_event:
   description: Was die Werkzeugschleife des Agenten gerade tut.
 sandbox_file_displayed_event:
   name: Datei angezeigt
-  description: Der Agent hat dem Benutzer eine Datei aus seiner Code-Sandbox als Anhang gezeigt.
+  description: Der Agent hat dem Benutzer eine Datei aus seiner Code-Sandbox als Anhang
+    gezeigt.
 tool_loop_condensed_event:
   name: Werkzeugschleife verdichtet
   description: Der Agent hat frühere Werkzeugergebnisse und Gesprächsrunden verdichtet,

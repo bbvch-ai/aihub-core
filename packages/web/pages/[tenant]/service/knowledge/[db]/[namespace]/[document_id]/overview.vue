@@ -28,13 +28,6 @@ const md = computed<string>(() => {
     return ''
   }
 
-  return content
-    // Replace our custom <figure>-tags surrounding our images
-    .replace(/(?:<|&lt;)figure(?:>|&gt;)/g, '::MarkdownFigure\n')
-    .replace(/(?:<|&lt;)\/figure(?:>|&gt;)/g, '\n::')
-
-    // Replace our custom <table>-tag surrounding our tables
-    .replace(/(?:<|&lt;)table(?:>|&gt;)/g, '::MarkdownTable\n')
-    .replace(/(?:<|&lt;)\/table(?:>|&gt;)/g, '\n::')
+  return toMdcMarkdown(content)
 })
 </script>

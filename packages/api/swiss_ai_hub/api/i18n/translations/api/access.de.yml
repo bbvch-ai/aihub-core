@@ -96,7 +96,8 @@ capabilities:
         description: Dokumente in diesen Namespace konfigurieren und einspeisen.
       manage_database:
         label: Verwalten
-        description: Diese Wissensdatenbank konfigurieren, Ordner hinzufügen und sie löschen.
+        description: Diese Wissensdatenbank konfigurieren, Ordner hinzufügen und sie
+          löschen.
     model:
       use:
         description: Dieses Modell nutzen.
@@ -104,8 +105,8 @@ capabilities:
           Chat-Titel und Folgefragen — ohne Zugriff darauf fehlen beide Funktionen.
     files:
       own:
-        label: "Eigenen Dateibereich nutzen"
-        description: "Eigene Dateien durchsuchen, hochladen, herunterladen und verwalten."
+        label: Eigenen Dateibereich nutzen
+        description: Eigene Dateien durchsuchen, hochladen, herunterladen und verwalten.
     memory:
       org:
         label: Organisationsspeicher nutzen

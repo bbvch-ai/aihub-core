@@ -6645,6 +6645,32 @@ export type FilePathDto = {
 };
 
 /**
+ * FilePreviewDTO
+ *
+ * An office document as the text a reader sees, for a browser that cannot show the file itself.
+ */
+export type FilePreviewDto = {
+  /**
+   * Path
+   *
+   * The previewed file, relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Markdown
+   *
+   * The document's content as markdown, without its images.
+   */
+  markdown: string;
+  /**
+   * Truncated
+   *
+   * Whether the content was cut short; the download has all of it.
+   */
+  truncated: boolean;
+};
+
+/**
  * FilePromptCacheBreakpoint
  *
  * Marks the exact end of a reusable prompt prefix.
@@ -36770,6 +36796,47 @@ export type GetUserFileContentResponses = {
    */
   200: unknown;
 };
+
+export type PreviewUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The office document to preview.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge/preview";
+};
+
+export type PreviewUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type PreviewUserFileError =
+  PreviewUserFileErrors[keyof PreviewUserFileErrors];
+
+export type PreviewUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePreviewDto;
+};
+
+export type PreviewUserFileResponse =
+  PreviewUserFileResponses[keyof PreviewUserFileResponses];
 
 export type UploadUserFileData = {
   body: BodyUploadUserFile;

@@ -34,7 +34,8 @@ tenant_admin:
       que l'API de la plateforme et la passerelle de modèles sont accessibles.
   form:
     chat_disclaimer: Avertissement du chat
-    chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères par langue.
+    chat_disclaimer_help: Affiché sous le champ de saisie du chat. Maximum 100 caractères
+      par langue.
     chat_disclaimer_too_long: Utilisez au maximum 100 caractères par langue.
     name: Nom du tenant
     description: Description

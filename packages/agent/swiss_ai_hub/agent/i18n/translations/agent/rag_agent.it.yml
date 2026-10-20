@@ -5,8 +5,10 @@ metadata:
     informate e consapevoli del contesto
 config:
   restrict_to_user_access:
-    label: "Limitare ai diritti dell'utente"
-    help: "Cerca solo nelle raccolte configurate che la persona che chiede può leggere nell'area conoscenze. Senza questa impostazione, chiunque possa usare questo agente riceve risposte da tutte le sue raccolte."
+    label: Limitare ai diritti dell'utente
+    help: Cerca solo nelle raccolte configurate che la persona che chiede può leggere
+      nell'area conoscenze. Senza questa impostazione, chiunque possa usare questo
+      agente riceve risposte da tutte le sue raccolte.
   number_of_input_tokens:
     label: Token di input max
     help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione
@@ -120,7 +122,9 @@ thoughts:
     \ %{tokens} token a fronte di un budget utilizzabile di %{budget}. La chiamata\
     \ al modello viene rifiutata."
 messages:
-  no_accessible_knowledge: "Le conoscenze di questo agente non sono disponibili per te: non hai accesso a nessuna delle raccolte da cui risponde. Chiedi l'accesso a un amministratore se ti serve."
+  no_accessible_knowledge: "Le conoscenze di questo agente non sono disponibili per\
+    \ te: non hai accesso a nessuna delle raccolte da cui risponde. Chiedi l'accesso\
+    \ a un amministratore se ti serve."
   condensation_empty: Non sono riuscito a capire cosa cercare da questo messaggio.
     Riformula la domanda e riprova.
   input_too_large: Questo file è troppo grande perché io possa leggerlo in una volta

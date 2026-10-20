@@ -593,6 +593,13 @@ knowledge:
   source:
     description: Synchronisiert aus {name}
     edit: Quelle bearbeiten
+    next_sync: Die Quelle synchronisiert einmal täglich, ihre Inhalte erscheinen also
+      nach der nächsten geplanten Synchronisierung.
+    awaiting_sync:
+      title: Noch nichts synchronisiert
+      description: Die Quelle synchronisiert diese Datenbank einmal täglich, ihre
+        Sammlungen erscheinen hier also nach der nächsten geplanten Synchronisierung.
+        Fehlen sie danach noch, prüfen Sie die Einstellungen der Quelle.
   manual_management:
     description: Sammlungen können manuell erstellt und verwaltet werden
   pipeline: 'Pipeline: {name}'
@@ -705,7 +712,8 @@ auth:
     welcomeProvider: Willkommen im AI Hub — Anmeldung mit {provider}
     pleaseLogin: Bitte melden Sie sich an
     pleaseLoginWith: Bitte melden Sie sich mit {provider} an
-    useOrganisationLink: "Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls Sie ihn nicht haben, kontaktieren Sie Ihren Administrator."
+    useOrganisationLink: Bitte verwenden Sie den Anmeldelink Ihrer Organisation. Falls
+      Sie ihn nicht haben, kontaktieren Sie Ihren Administrator.
     adminLogin: Anmeldung für Administratoren
     loginWith: Anmelden mit {provider}
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
@@ -774,6 +782,8 @@ evaluation:
 role:
   title: Zugriffsrollen
   name: Name
+  name_immutable_hint: Der Name kann nach dem Erstellen der Rolle nicht geändert werden,
+    da Benutzer Rollen über ihren Namen zugewiesen werden.
   description: Beschreibung
   edit: Rolle bearbeiten
   create_new: Neue Rolle
@@ -1105,43 +1115,54 @@ support:
   unavailable: Die Meldefunktion ist auf dieser Installation nicht konfiguriert. Bitte
     wenden Sie sich an Ihre Administration.
 userFiles:
-  title: "Meine Dateien"
-  description: "Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Chat-Anhänge, Dateien, die Agenten für Sie erstellt haben, und Ihre eigenen Uploads."
-  conversation: "Chat"
+  title: Meine Dateien
+  description: 'Die Dateien, mit denen Sie und Ihre Agenten arbeiten: Chat-Anhänge,
+    Dateien, die Agenten für Sie erstellt haben, und Ihre eigenen Uploads.'
+  conversation: Chat
   actions:
-    move: "Verschieben"
-    upload: "Hochladen"
-    newFolder: "Neuer Ordner"
-    refresh: "Aktualisieren"
-    download: "Herunterladen"
-    rename: "Umbenennen"
-    delete: "Löschen"
-    close: "Schliessen"
-    cancel: "Abbrechen"
-    save: "Speichern"
-    openFolder: "Ordner {name} öffnen"
-    preview: "Vorschau von {name}"
+    move: Verschieben
+    upload: Hochladen
+    newFolder: Neuer Ordner
+    refresh: Aktualisieren
+    download: Herunterladen
+    rename: Umbenennen
+    delete: Löschen
+    close: Schliessen
+    cancel: Abbrechen
+    save: Speichern
+    openFolder: Ordner {name} öffnen
+    preview: Vorschau von {name}
   columns:
-    name: "Name"
-    size: "Grösse"
-    modified: "Geändert"
+    name: Name
+    size: Grösse
+    modified: Geändert
   empty:
-    folder: "Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen."
-    noSpace: "Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den Chat einmal und kommen Sie dann zurück."
+    folder: Dieser Ordner ist leer. Dateien hierher ziehen, um sie hochzuladen.
+    noSpace: Ihr Dateibereich wird mit Ihrem Chat-Konto eingerichtet. Öffnen Sie den
+      Chat einmal und kommen Sie dann zurück.
   error:
-    load: "Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren erneut."
+    load: Dieser Ordner konnte nicht geladen werden. Versuchen Sie es mit Aktualisieren
+      erneut.
   move:
-    header: "{name} verschieben nach"
-    noTargets: "Kein Ordner zum Verschieben vorhanden."
+    header: '{name} verschieben nach'
+    noTargets: Kein Ordner zum Verschieben vorhanden.
   preview:
-    unavailable: "Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter, um sie zu öffnen."
+    unavailable: Keine Vorschau für diesen Dateityp. Laden Sie die Datei herunter,
+      um sie zu öffnen.
+    truncated: Diese Vorschau zeigt nur den Anfang des Dokuments. Laden Sie es herunter,
+      um alles zu sehen.
+    failed: Für diese Datei konnte keine Vorschau erstellt werden. Laden Sie sie herunter,
+      um sie zu öffnen.
+    empty: Dieses Dokument enthält keinen Text.
+    tooLarge: Diese Datei ist für eine Vorschau zu gross. Laden Sie sie herunter,
+      um sie zu öffnen.
   name:
-    invalid: "Ein Name darf nicht leer sein und keinen Schrägstrich enthalten."
+    invalid: Ein Name darf nicht leer sein und keinen Schrägstrich enthalten.
   delete:
-    header: "Löschen"
-    file: "{name} löschen?"
-    folder: "Den Ordner {name} mit allem Inhalt löschen?"
+    header: Löschen
+    file: '{name} löschen?'
+    folder: Den Ordner {name} mit allem Inhalt löschen?
   toast:
-    uploaded: "{count} Datei(en) hochgeladen"
-    uploadFailed: "Hochladen fehlgeschlagen"
-    changeFailed: "Die Änderung ist fehlgeschlagen"
+    uploaded: '{count} Datei(en) hochgeladen'
+    uploadFailed: Hochladen fehlgeschlagen
+    changeFailed: Die Änderung ist fehlgeschlagen
