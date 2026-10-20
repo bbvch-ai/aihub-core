@@ -243,7 +243,7 @@ routes through Traefik.
 | `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
 | `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
 | `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`       | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
+| `egress`       | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
 | `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
 | `browser`      | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
 

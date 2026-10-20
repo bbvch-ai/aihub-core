@@ -118,3 +118,31 @@ structured:
       label: Source system
       help: Which application the records are read from. Its settings appear once
         it is selected.
+    jira:
+      display_name: Jira
+      base_url:
+        label: Jira URL
+        help: The address you open Jira at, e.g. https://acme.atlassian.net for Jira
+          Cloud or https://jira.acme.ch/jira for Jira Data Center.
+      deployment:
+        label: Jira edition
+        help: Jira Cloud signs in with an account e-mail and an API token, Jira Data
+          Center with a personal access token.
+        cloud: Jira Cloud
+        data_center: Jira Data Center (11.3)
+      email:
+        label: Account e-mail
+        help: E-mail of the Jira Cloud account the API token belongs to.
+      api_token:
+        label: Token
+        help: A Jira Cloud API token without scopes, or a Jira Data Center personal
+          access token. Stored encrypted. The database holds every issue and comment
+          this account can read, except restricted comments, so use a dedicated read-only
+          account.
+      project_keys:
+        label: Projects
+        help: Keys of the projects to sync, e.g. ABC. Each project becomes a namespace.
+      jql:
+        label: Additional JQL filter
+        help: Optional. Only issues that also match this JQL are synced, e.g. issuetype
+          != "Service Request". Without ORDER BY.

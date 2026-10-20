@@ -142,8 +142,11 @@ use SeaweedFS for data persistence (Milvus for vector segment storage, Langfuse 
 uploads). etcd attaches to storage because SeaweedFS filer uses it for directory metadata.
 
 The **egress** network provides outbound internet access with inter-container communication disabled
-(`com.docker.network.bridge.enable_icc: "false"`). Services that need the internet attach to it, among them Playwright
-and SearXNG; none of them can reach another container through it.
+(`com.docker.network.bridge.enable_icc: "false"`). Only services that call the internet themselves attach to it:
+Playwright and SearXNG (web pages and search engines), the rclone daemon (cloud storage), the structured source pipeline
+(business application APIs such as Jira), the IMAP and e-mail classification agents (mail servers), and the OTEL
+Collector (external telemetry backends). A compromised container can reach the internet through it but no other
+container; each reaches its peers only over its other networks.
 
 The **code-sandbox** network is a single-tenant zone for Open Terminal, the code-execution sandbox for OpenWebUI, which
 runs arbitrary user-submitted code. Its only resident is the sandbox; its callers join in addition to their own networks

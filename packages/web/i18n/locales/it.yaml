@@ -609,6 +609,13 @@ knowledge:
   source:
     description: Sincronizzato da {name}
     edit: Modifica sorgente
+    next_sync: La sorgente si sincronizza una volta al giorno, quindi i suoi contenuti
+      compaiono dopo la prossima sincronizzazione pianificata.
+    awaiting_sync:
+      title: Nessun contenuto ancora sincronizzato
+      description: La sorgente sincronizza questo database una volta al giorno, quindi
+        le sue collezioni compaiono qui dopo la prossima sincronizzazione pianificata.
+        Se ancora non compaiono, controlla le impostazioni della sorgente.
   manual_management:
     description: Le collezioni possono essere create e gestite manualmente
   pipeline: 'Pipeline: {name}'
@@ -790,6 +797,8 @@ evaluation:
 role:
   title: Ruoli di accesso
   name: Nome
+  name_immutable_hint: Il nome non può essere modificato dopo la creazione del ruolo,
+    perché gli utenti sono assegnati ai ruoli tramite il nome.
   description: Descrizione
   edit: Modifica ruolo
   create_new: Nuovo ruolo
@@ -1150,6 +1159,12 @@ userFiles:
     noTargets: Nessuna cartella in cui spostarlo.
   preview:
     unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
+    truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
+      vederlo tutto.
+    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per
+      aprirlo.
+    empty: Questo documento non contiene testo.
+    tooLarge: Questo file è troppo grande per l'anteprima. Scaricalo per aprirlo.
   name:
     invalid: Un nome non può essere vuoto né contenere una barra.
   delete:

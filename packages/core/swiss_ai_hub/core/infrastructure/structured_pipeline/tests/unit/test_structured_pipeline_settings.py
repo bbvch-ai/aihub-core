@@ -12,6 +12,19 @@ class TestDefaults:
         assert settings.OBSERVE_JOB_HOUR == 22
         assert settings.OBSERVE_JOB_MINUTE == 0
 
+    def test_an_empty_setting_allows_no_internal_host(self, monkeypatch: pytest.MonkeyPatch):
+        """Set explicitly: a developer's environment, and CI's taken from .env.dev, allow localhost."""
+        monkeypatch.setenv("STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS", "")
+
+        assert StructuredPipelineSettings().private_host_allow_list() == frozenset()
+
+
+class TestAllowedPrivateHosts:
+    def test_hosts_are_read_comma_separated_trimmed_and_lower_cased(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS", " Jira.Intra.Acme.ch , localhost,, ")
+
+        assert StructuredPipelineSettings().private_host_allow_list() == frozenset({"jira.intra.acme.ch", "localhost"})
+
 
 class TestEnvironmentOverrides:
     def test_the_schedule_comes_from_the_environment(self, monkeypatch: pytest.MonkeyPatch):

@@ -609,6 +609,13 @@ knowledge:
   source:
     description: Synchronisé depuis {name}
     edit: Modifier la source
+    next_sync: 'La source se synchronise une fois par jour : son contenu apparaît
+      après la prochaine synchronisation planifiée.'
+    awaiting_sync:
+      title: Rien n'a encore été synchronisé
+      description: "La source synchronise cette base de données une fois par jour\
+        \ : ses collections apparaissent ici après la prochaine synchronisation planifiée.\
+        \ Si elles n'apparaissent toujours pas, vérifiez les paramètres de la source."
   manual_management:
     description: Les collections peuvent être créées et gérées manuellement
   pipeline: 'Pipeline : {name}'
@@ -790,6 +797,8 @@ evaluation:
 role:
   title: Rôles d'accès
   name: Nom
+  name_immutable_hint: Le nom ne peut pas être modifié après la création du rôle,
+    car les utilisateurs sont associés aux rôles par leur nom.
   description: Description
   edit: Modifier le rôle
   create_new: Nouveau rôle
@@ -1153,6 +1162,11 @@ userFiles:
     noTargets: Aucun dossier vers lequel le déplacer.
   preview:
     unavailable: Pas d'aperçu pour ce type de fichier. Téléchargez-le pour l'ouvrir.
+    truncated: Cet aperçu ne montre que le début du document. Téléchargez-le pour
+      le voir en entier.
+    failed: L'aperçu de ce fichier a échoué. Téléchargez-le pour l'ouvrir.
+    empty: Ce document ne contient aucun texte.
+    tooLarge: Ce fichier est trop volumineux pour un aperçu. Téléchargez-le pour l'ouvrir.
   name:
     invalid: Un nom ne doit pas être vide ni contenir de barre oblique.
   delete:

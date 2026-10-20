@@ -74,14 +74,20 @@ export class AgentProfiles {
     await this.http.dispose()
   }
 
-  /** OpenWebUI lists a new profile only once the API's provisioner has synced it. */
+  /** The pipe can list a profile before its workspace capabilities are provisioned. */
   static async waitUntilListed(owui: OpenWebuiApi, profile: ThrowawayProfile): Promise<void> {
     await expect
-      .poll(async () => (await owui.models(true)).some((model) => model.id === profile.modelId), {
-        timeout: 60_000,
-        intervals: [3_000],
-        message: `OpenWebUI lists ${profile.modelId} (provisioner sync, and the e2e user's access to the profile)`,
-      })
+      .poll(
+        async () =>
+          (await owui.models(true)).some(
+            (model) => model.id === profile.modelId && model.info?.meta?.capabilities?.terminal === false,
+          ),
+        {
+          timeout: 60_000,
+          intervals: [3_000],
+          message: `OpenWebUI lists ${profile.modelId} with provisioned capabilities and access`,
+        },
+      )
       .toBe(true)
   }
 

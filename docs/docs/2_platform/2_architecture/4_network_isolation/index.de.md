@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 4431f97f9c73c0c522d3fa64267717a06602eb4141441a4daab08ffad289f8b4
+source_sha: 39a4d8782761edc04f45efee9864edd8b3ce6e1ea068dbefaa5b816e55dcfd9b
 ---
 
 # Docker-Netzwerkisolation
@@ -104,6 +104,12 @@ Verteilter Objektspeicher-Cluster:
 Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benötigen:
 
 - **playwright**: Headless-Browser, der die von Benutzern verlinkten Webseiten lädt (muss Webseiten abrufen)
+- **searxng**: Websuche (fragt externe Suchmaschinen ab)
+- **rclone**: Der Daemon, den die rclone-Source-Pipeline steuert (erreicht den Cloud-Speicher, aus dem sie
+  synchronisiert)
+- **structured_pipeline**: Die Structured-Source-Pipeline (ruft APIs von Geschäftsanwendungen wie Jira auf)
+- **imap_agent**, **email_classification_agent**: Lesen E-Mails auf externen IMAP-Servern und legen sie ab
+- **otel-collector**: Exportiert Telemetrie an externe Backends
 
 Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern
 in diesem Netzwerk verhindert. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen
