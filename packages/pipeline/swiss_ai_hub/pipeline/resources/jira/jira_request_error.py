@@ -22,6 +22,10 @@ class JiraRequestError(HTTPError):
         reason = response.reason or _STANDARD_REASONS.get(response.status_code, "")
         status = f"{response.status_code} {reason}".strip()
         message = f"Jira answered {status} to {request}"
+        if response.is_redirect:
+            return cls(
+                f"{message}; redirects are not followed, so enter the address Jira answers at", response=response
+            )
         detail = cls.jira_messages_of(response)
         return cls(f"{message}: {detail}" if detail else message, response=response)
 

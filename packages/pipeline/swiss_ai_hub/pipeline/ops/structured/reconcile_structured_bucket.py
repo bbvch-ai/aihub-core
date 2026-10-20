@@ -13,9 +13,11 @@ def reconcile_structured_bucket_op(
 ) -> OpDefinition:
     """The step that compares the source's listing with the database's files and decides what to remove.
 
-    A file the source no longer lists is removed, except one this run wrote. A listed record without a file means
-    the cursor is ahead of the data, after a source switch, a lost file or a layout change, which the cursor alone
-    would never repair: the stored state is then discarded, so the next run reads everything again.
+    A file the source no longer lists is removed, except one this run wrote. A record listed without a file in two
+    runs in a row means the cursor is ahead of the data, after a source switch, a lost file or a sync slower than the
+    cursor's overlap, which the cursor alone would never repair: the stored state is then discarded, so the next run
+    reads everything again. Missing once is not enough, because a record created while a run is between its sync and
+    its listing is missing too, and the next run fetches it anyway.
     """
 
     @op(name=f"{source}_reconcile_structured_bucket", code_version="v1")
@@ -30,20 +32,40 @@ def reconcile_structured_bucket_op(
                 f"The source listed no records while '{bucket}' holds {len(present)} files; refusing to empty the "
                 "database. Check the source's credentials and scope."
             )
-        missing = listed - present
-        if missing:
-            StructuredSourceStateStore(source, bucket).delete()
-            context.log.warning(
-                f"{len(missing)} listed record(s) of '{bucket}' have no file; the next run re-reads the whole source."
-            )
+        missing = {key for key in listing.listed_keys if client.build_uri(key) not in present}
+        missing_again = _settle_missing(context, StructuredSourceStateStore(source, bucket), bucket, missing)
         to_remove = sorted(present - listed - written)
         return Output(
             to_remove,
             metadata={
                 "Files to remove": len(to_remove),
                 "Listed records without a file": len(missing),
+                "Missing in two runs in a row": len(missing_again),
+                "State discarded": bool(missing_again),
                 "Written but not listed": len(written - listed),
             },
         )
 
     return reconcile_structured_bucket
+
+
+def _settle_missing(
+    context: OpExecutionContext, store: StructuredSourceStateStore, bucket: str, missing: set[str]
+) -> set[str]:
+    """Discards the state when a record was already missing at the last run, else remembers this run's missing
+    records for the next one. Returns the records missing in both runs."""
+    missing_again = missing & store.missing_at_last_run()
+    if missing_again:
+        store.delete()
+        context.log.warning(
+            f"{len(missing_again)} listed record(s) of '{bucket}' were missing in two runs in a row; the next run "
+            "re-reads the whole source."
+        )
+        return missing_again
+    store.remember_missing(missing)
+    if missing:
+        context.log.info(
+            f"{len(missing)} listed record(s) of '{bucket}' have no file; if they are still missing at the next run, "
+            "that run discards the state."
+        )
+    return missing_again

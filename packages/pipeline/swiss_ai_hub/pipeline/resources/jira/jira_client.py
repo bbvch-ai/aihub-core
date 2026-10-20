@@ -167,6 +167,8 @@ class JiraClient:
 
     @staticmethod
     def _raise_for_jira_error(response: Response, *args: Any, **kwargs: Any) -> None:
-        """A response hook, so the error is raised inside the retrying ``send`` and a 429 is waited out."""
-        if not response.ok:
+        """A response hook, so the error is raised inside the retrying ``send`` and a 429 is waited out. requests
+        runs it before following a redirect, so raising here also keeps a redirect from leading anywhere the URL
+        check never saw."""
+        if response.is_redirect or not response.ok:
             raise JiraRequestError.from_response(response)

@@ -7,6 +7,7 @@ and error handling run exactly as in production.
 import itertools
 import json
 import re
+import socket
 from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -25,6 +26,10 @@ _UPDATED_SINCE = re.compile(r'updated >= "(\d{4}/\d{2}/\d{2} \d{2}:\d{2})"')
 ZONE = ZoneInfo("Europe/Zurich")
 
 
+# What every host resolves to in these tests: a public address, so the host check lets it through.
+PUBLIC_ADDRESS = "93.184.216.34"
+
+
 class FakeJiraTransport(BaseAdapter):
     def __init__(self, jira: "FakeJira"):
         super().__init__()
@@ -35,8 +40,15 @@ class FakeJiraTransport(BaseAdapter):
         status, body = self.jira.answer(request)
         response = Response()
         response.status_code = status
-        response.reason = {200: "OK", 400: "Bad Request", 401: "Unauthorized", 429: "Too Many Requests"}.get(status, "")
+        response.reason = {
+            200: "OK",
+            302: "Found",
+            400: "Bad Request",
+            401: "Unauthorized",
+            429: "Too Many Requests",
+        }.get(status, "")
         response.headers["Content-Type"] = "application/json"
+        response.headers.update(self.jira.answer_headers)
         response._content = body if isinstance(body, bytes) else json.dumps(body).encode()
         response.url = request.url
         response.request = request
@@ -57,7 +69,8 @@ class FakeJira:
         self.issues: dict[str, list[dict[str, Any]]] = {}
         self.paged_comments: dict[str, list[dict[str, Any]]] = {}
         self.requests: list[PreparedRequest] = []
-        self.queued_failures: list[tuple[int, dict[str, Any] | bytes]] = []
+        self.queued_failures: list[tuple[int, dict[str, Any] | bytes, dict[str, str]]] = []
+        self.answer_headers: dict[str, str] = {}
         self.projects: set[str] = set()
         self.project_types: dict[str, str] = {}
         self.account: dict[str, Any] = {
@@ -73,9 +86,14 @@ class FakeJira:
         self._ids = itertools.count(10001)
 
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Also answers DNS for the host check, with a public address, so no test resolves a real name."""
         client = Client(raise_for_status=False, request_backoff_factor=0, request_max_retry_delay=0)
         client.session.mount("https://", FakeJiraTransport(self))
         monkeypatch.setattr("swiss_ai_hub.pipeline.resources.jira.jira_client.Client", lambda **_: client)
+        monkeypatch.setattr(
+            "swiss_ai_hub.pipeline.resources.structured.source_host_guard.socket.getaddrinfo",
+            lambda host, port, **_: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (PUBLIC_ADDRESS, port))],
+        )
 
     def add_issue(self, key: str, *, comments: int = 0, **fields: Any) -> dict[str, Any]:
         project = key.rsplit("-", 1)[0]
@@ -111,9 +129,16 @@ class FakeJira:
         self.paged_comments[key] = [{**c, "renderedBody": f"<p>Comment {c['id']}</p>"} for c in raw_comments]
         return hit
 
-    def fail_next(self, status: int, body: dict[str, Any] | bytes | None = None, times: int = 1) -> None:
-        """``bytes`` are sent as they are, for a gateway that answers JSON errors without a JSON body."""
-        self.queued_failures.extend([(status, {} if body is None else body)] * times)
+    def fail_next(
+        self,
+        status: int,
+        body: dict[str, Any] | bytes | None = None,
+        times: int = 1,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """``bytes`` are sent as they are, for a gateway that answers JSON errors without a JSON body; ``headers``
+        carry e.g. the ``Location`` of a redirect."""
+        self.queued_failures.extend([(status, {} if body is None else body, headers or {})] * times)
 
     def sent_jql(self) -> list[str]:
         """The searches made for issues, without the zero-result query Data Center validates a clause with."""
@@ -121,8 +146,10 @@ class FakeJira:
         return [params.get("jql", "") for params in searches if params.get("maxResults") != "0"]
 
     def answer(self, request: PreparedRequest) -> tuple[int, dict[str, Any] | bytes]:
+        self.answer_headers = {}
         if self.queued_failures:
-            return self.queued_failures.pop(0)
+            status, body, self.answer_headers = self.queued_failures.pop(0)
+            return status, body
         path = urlparse(request.url).path
         params = self._params(request)
         if comments := _COMMENTS.search(path):

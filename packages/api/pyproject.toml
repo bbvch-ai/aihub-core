@@ -28,7 +28,7 @@ dependencies = [
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",
-    "uvicorn[standard]>=0.34.0",
+    "uvicorn[standard]>=0.48.0",
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
     "cryptography>=44.0.0",
@@ -56,7 +56,7 @@ Documentation = "https://bbvch-ai.github.io/aihub-core/"
 Issues = "https://github.com/bbvch-ai/aihub-core/issues"
 
 [build-system]
-requires = ["uv_build>=0.10.4,<0.11.0"]
+requires = ["uv_build>=0.10.4,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

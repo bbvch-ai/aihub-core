@@ -4,8 +4,10 @@ from typing import Annotated, Literal
 from pydantic import Field, StringConstraints, field_validator
 from swiss_ai_hub.core.form import ChipsInput, Form, InputText, Password, Select, Textarea
 
-# An http(s) URL with no credentials in it; empty is allowed, because a hidden option group validates as its defaults.
-_BASE_URL_PATTERN = r"^(https?://[^\s/@]+(/\S*)?)?$"
+# An http(s) URL with no credentials, query or fragment: a "?" or "#" would turn the API path appended to it into a
+# query, so the URL could name any path on any host. Empty is allowed, because a hidden option group validates as its
+# defaults. Which hosts it may name is checked on every run, against the deployment (SourceHostGuard).
+_BASE_URL_PATTERN = r"^(https?://[^\s/@?#]+(/[^\s?#]*)?)?$"
 _PROJECT_KEY = re.compile(r"^[A-Z][A-Z0-9_]*$")
 _ORDER_BY = re.compile(r"\border\s+by\b", re.IGNORECASE)
 

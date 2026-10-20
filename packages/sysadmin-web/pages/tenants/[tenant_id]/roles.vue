@@ -52,7 +52,10 @@
         v-if="editDraft"
         class="flex flex-col gap-4"
       >
-        <RoleEdit v-model="editDraft" />
+        <RoleEdit
+          v-model="editDraft"
+          name-readonly
+        />
         <div class="flex justify-end gap-2">
           <Button
             type="button"

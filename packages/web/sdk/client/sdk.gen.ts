@@ -258,6 +258,9 @@ import type {
   GetSummaryNodesForDocumentResponse,
   GetSupportedFileTypesData,
   GetSupportedFileTypesResponse,
+  GetTenantAuthProviderData,
+  GetTenantAuthProviderError,
+  GetTenantAuthProviderResponse,
   GetThreadData,
   GetThreadError,
   GetThreadResponse,
@@ -289,6 +292,9 @@ import type {
   MoveUserFileData,
   MoveUserFileError,
   MoveUserFileResponse,
+  PreviewUserFileData,
+  PreviewUserFileError,
+  PreviewUserFileResponse,
   ProcessDocumentData,
   ProcessDocumentError,
   ProcessDocumentResponse,
@@ -476,6 +482,28 @@ export const getAuthProvider = <
     GetAuthProviderError,
     DefaultT
   >({ url: "/auth-providers/{alias}", ...options });
+
+/**
+ * Get Tenant Auth Provider
+ */
+export const getTenantAuthProvider = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends GetTenantAuthProviderResponse =
+    GetTenantAuthProviderResponse,
+>(
+  options: Options<
+    TComposable,
+    GetTenantAuthProviderData,
+    GetTenantAuthProviderResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    GetTenantAuthProviderResponse | DefaultT,
+    GetTenantAuthProviderError,
+    DefaultT
+  >({ url: "/auth-providers/tenants/{tenant_id}", ...options });
 
 /**
  * Get Suite
@@ -3857,6 +3885,34 @@ export const getUserFileContent = <
       { scheme: "bearer", type: "http" },
     ],
     url: "/{tenant_id}/user-knowledge/content",
+    ...options,
+  });
+
+/**
+ * Preview User File
+ */
+export const previewUserFile = <
+  TComposable extends Composable = "$fetch",
+  DefaultT extends PreviewUserFileResponse = PreviewUserFileResponse,
+>(
+  options: Options<
+    TComposable,
+    PreviewUserFileData,
+    PreviewUserFileResponse,
+    DefaultT
+  >,
+) =>
+  (options.client ?? client).get<
+    TComposable,
+    PreviewUserFileResponse | DefaultT,
+    PreviewUserFileError,
+    DefaultT
+  >({
+    security: [
+      { scheme: "bearer", type: "http" },
+      { scheme: "bearer", type: "http" },
+    ],
+    url: "/{tenant_id}/user-knowledge/preview",
     ...options,
   });
 

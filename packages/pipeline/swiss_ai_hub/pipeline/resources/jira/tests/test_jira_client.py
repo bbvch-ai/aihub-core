@@ -169,6 +169,19 @@ class TestErrors:
         with pytest.raises(JiraRequestError, match="Jira answered 401 Unauthorized to GET /rest/api/2/search/jql$"):
             _keys(client)
 
+    def test_a_redirect_is_never_followed(self, monkeypatch: pytest.MonkeyPatch):
+        """A public address could otherwise send the request on to a host the URL check never saw."""
+        jira = _jira(monkeypatch, "cloud")
+        jira.fail_next(302, headers={"Location": "http://seaweedfs-filer:8888/buckets/other/x.md"})
+        client = _client("cloud")
+
+        with pytest.raises(
+            JiraRequestError, match="302 Found to GET /rest/api/2/search/jql; redirects are not followed"
+        ):
+            _keys(client)
+
+        assert len(jira.requests) == 1
+
     def test_rate_limiting_is_waited_out(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud", issues=1)
         jira.fail_next(429, times=2)

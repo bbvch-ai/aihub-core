@@ -9630,6 +9630,32 @@ export const FilePathDTOSchema = {
   title: "FilePathDTO",
 } as const;
 
+export const FilePreviewDTOSchema = {
+  properties: {
+    path: {
+      type: "string",
+      title: "Path",
+      description: "The previewed file, relative to the user's file space.",
+    },
+    markdown: {
+      type: "string",
+      title: "Markdown",
+      description: "The document's content as markdown, without its images.",
+    },
+    truncated: {
+      type: "boolean",
+      title: "Truncated",
+      description:
+        "Whether the content was cut short; the download has all of it.",
+    },
+  },
+  type: "object",
+  required: ["path", "markdown", "truncated"],
+  title: "FilePreviewDTO",
+  description:
+    "An office document as the text a reader sees, for a browser that cannot show the file itself.",
+} as const;
+
 export const FilePromptCacheBreakpointSchema = {
   properties: {
     mode: {
@@ -26385,6 +26411,29 @@ export const TemplateDataSchema = {
   title: "TemplateData",
   description:
     "Typed container for template data extracted from Form.to_template_data().\n\nEach agent/process type has different configurable fields, so extra fields\nare allowed and preserved through serialization.",
+} as const;
+
+export const TenantAuthProviderResponseSchema = {
+  properties: {
+    alias: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Alias",
+      description:
+        "Keycloak IDP alias to start the tenant's login with, or null when it has no login link",
+    },
+  },
+  type: "object",
+  required: ["alias"],
+  title: "TenantAuthProviderResponse",
+  description:
+    "Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.",
 } as const;
 
 export const TenantIdentitySchema = {

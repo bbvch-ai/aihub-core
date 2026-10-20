@@ -179,9 +179,11 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
    credentials must fail the run, as they already do in the sync step, before any removal. An empty listing while the
    bucket holds files fails the run too.
 
-6. **A listed record without a file discards the state.** The cursor is then ahead of the data, after a lost file, a
-   source switch or a layout change, and would never fetch that record again. The next run re-reads everything, and the
-   ETag check keeps it from rewriting what is already there.
+6. **A record listed without a file in two runs in a row discards the state.** The cursor is then ahead of the data,
+   after a lost file, a source switch or a sync slower than the cursor's overlap, and would never fetch that record
+   again. The next run re-reads everything, and the ETag check keeps it from rewriting what is already there. A record
+   missing once is only remembered: one created while a run is between its fetch and its listing is missing too, and the
+   next incremental run fetches it.
 
 7. **One sync per database at a time.** Two runs of the same database would race on its state file. A run that finds
    another sync of the same database running gives way, whichever was created first and whether the schedule, the job's
@@ -219,9 +221,14 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   metadata. Its asset-per-resource model is not used. If it ever gets in the way, calling `pipeline.run()` directly
   changes nothing else in this decision.
 - **Losing the state is safe but expensive.** Deleting a database's state file makes the next run re-read every record.
-  The ETag check keeps writes and announcements at zero. It also happens without anyone deleting anything: a record
-  created at the source while a run is between its fetch and its listing is listed without a file (rule 6), so on a busy
-  source an occasional night is a full re-read.
+  The ETag check keeps writes and announcements at zero. A record created at the source while a run is between its fetch
+  and its listing does not cause it: rule 6 waits for a second run, which fetches that record. The price is that a
+  really lost file is restored one run later.
+- **A source URL may only name a public host.** A knowledge administrator enters it, while the pipeline is on the
+  networks of the platform's own services. Before a run's first request, a host without a domain (a Docker service,
+  `localhost`) or one resolving to a non-global address is refused unless the deployment allows it
+  (`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`), and redirects are never followed. A host that resolves differently
+  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it.
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.

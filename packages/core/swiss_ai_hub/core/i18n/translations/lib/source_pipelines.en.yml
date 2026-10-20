@@ -129,7 +129,7 @@ structured:
         help: Jira Cloud signs in with an account e-mail and an API token, Jira Data
           Center with a personal access token.
         cloud: Jira Cloud
-        data_center: Jira Data Center
+        data_center: Jira Data Center (11.3)
       email:
         label: Account e-mail
         help: E-mail of the Jira Cloud account the API token belongs to.

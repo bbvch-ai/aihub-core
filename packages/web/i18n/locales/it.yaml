@@ -712,7 +712,8 @@ auth:
     welcomeProvider: Benvenuti nell'AI Hub — accesso con {provider}
     pleaseLogin: Effettua il login
     pleaseLoginWith: Effettua il login con {provider}
-    useOrganisationLink: "Usa il link di accesso fornito dalla tua organizzazione. Se non lo hai, contatta il tuo amministratore."
+    useOrganisationLink: Usa il link di accesso fornito dalla tua organizzazione.
+      Se non lo hai, contatta il tuo amministratore.
     adminLogin: Accesso amministratore
     loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
@@ -781,6 +782,8 @@ evaluation:
 role:
   title: Ruoli di accesso
   name: Nome
+  name_immutable_hint: Il nome non può essere modificato dopo la creazione del ruolo,
+    perché gli utenti sono assegnati ai ruoli tramite il nome.
   description: Descrizione
   edit: Modifica ruolo
   create_new: Nuovo ruolo
@@ -1109,43 +1112,51 @@ support:
   unavailable: La segnalazione non è configurata su questa installazione. Contatta
     l'amministratore.
 userFiles:
-  title: "I miei file"
-  description: "I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file creati per te dagli agenti e i tuoi caricamenti."
-  conversation: "Chat"
+  title: I miei file
+  description: 'I file con cui lavorate tu e i tuoi agenti: allegati delle chat, file
+    creati per te dagli agenti e i tuoi caricamenti.'
+  conversation: Chat
   actions:
-    move: "Sposta"
-    upload: "Carica"
-    newFolder: "Nuova cartella"
-    refresh: "Aggiorna"
-    download: "Scarica"
-    rename: "Rinomina"
-    delete: "Elimina"
-    close: "Chiudi"
-    cancel: "Annulla"
-    save: "Salva"
-    openFolder: "Apri la cartella {name}"
-    preview: "Anteprima di {name}"
+    move: Sposta
+    upload: Carica
+    newFolder: Nuova cartella
+    refresh: Aggiorna
+    download: Scarica
+    rename: Rinomina
+    delete: Elimina
+    close: Chiudi
+    cancel: Annulla
+    save: Salva
+    openFolder: Apri la cartella {name}
+    preview: Anteprima di {name}
   columns:
-    name: "Nome"
-    size: "Dimensione"
-    modified: "Modificato"
+    name: Nome
+    size: Dimensione
+    modified: Modificato
   empty:
-    folder: "Questa cartella è vuota. Trascina qui i file per caricarli."
-    noSpace: "Il tuo spazio file viene creato con il tuo account chat. Apri la chat una volta, poi torna qui."
+    folder: Questa cartella è vuota. Trascina qui i file per caricarli.
+    noSpace: Il tuo spazio file viene creato con il tuo account chat. Apri la chat
+      una volta, poi torna qui.
   error:
-    load: "Impossibile caricare questa cartella. Riprova con Aggiorna."
+    load: Impossibile caricare questa cartella. Riprova con Aggiorna.
   move:
-    header: "Sposta {name} in"
-    noTargets: "Nessuna cartella in cui spostarlo."
+    header: Sposta {name} in
+    noTargets: Nessuna cartella in cui spostarlo.
   preview:
-    unavailable: "Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo."
+    unavailable: Nessuna anteprima per questo tipo di file. Scaricalo per aprirlo.
+    truncated: Questa anteprima mostra solo l'inizio del documento. Scaricalo per
+      vederlo tutto.
+    failed: Non è stato possibile creare l'anteprima di questo file. Scaricalo per
+      aprirlo.
+    empty: Questo documento non contiene testo.
+    tooLarge: Questo file è troppo grande per l'anteprima. Scaricalo per aprirlo.
   name:
-    invalid: "Un nome non può essere vuoto né contenere una barra."
+    invalid: Un nome non può essere vuoto né contenere una barra.
   delete:
-    header: "Elimina"
-    file: "Eliminare {name}?"
-    folder: "Eliminare la cartella {name} con tutto il contenuto?"
+    header: Elimina
+    file: Eliminare {name}?
+    folder: Eliminare la cartella {name} con tutto il contenuto?
   toast:
-    uploaded: "{count} file caricati"
-    uploadFailed: "Caricamento non riuscito"
-    changeFailed: "La modifica non è riuscita"
+    uploaded: '{count} file caricati'
+    uploadFailed: Caricamento non riuscito
+    changeFailed: La modifica non è riuscita

@@ -44,14 +44,32 @@ class StructuredSourceStateStore:
         return True
 
     def save(self, pipeline_dir: Path, scope_fingerprint: str) -> None:
+        """Keeps the keys the previous run listed without a file, which the listing after this sync compares
+        against; a changed scope drops them, since that run re-reads everything anyway."""
+        stored = self._load()
+        missing_keys = stored.missing_keys if stored and stored.scope_fingerprint == scope_fingerprint else []
         state = StructuredSourceState(
             scope_fingerprint=scope_fingerprint,
             pipeline_state=json.loads((pipeline_dir / _STATE_FILE).read_text()),
+            missing_keys=missing_keys,
         )
-        self._client().put_object(Bucket=self.bucket, Key=self.object_key, Body=state.model_dump_json())
+        self._put(state)
+
+    def missing_at_last_run(self) -> set[str]:
+        stored = self._load()
+        return set(stored.missing_keys) if stored else set()
+
+    def remember_missing(self, keys: Annotated[set[str], "Keys this run listed without a file"]) -> None:
+        """Does nothing without a stored state, so it never brings back a state the sync chose not to keep."""
+        stored = self._load()
+        if stored is not None:
+            self._put(stored.model_copy(update={"missing_keys": sorted(keys)}))
 
     def delete(self) -> None:
         self._client().delete_object(Bucket=self.bucket, Key=self.object_key)
+
+    def _put(self, state: StructuredSourceState) -> None:
+        self._client().put_object(Bucket=self.bucket, Key=self.object_key, Body=state.model_dump_json())
 
     def _load(self) -> StructuredSourceState | None:
         try:

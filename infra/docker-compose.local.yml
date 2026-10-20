@@ -1594,7 +1594,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.60.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
     restart: always
     ports: [3036:3000]
     environment:
@@ -1767,7 +1767,7 @@ services:
   # License: Open WebUI License (modified BSD-3-Clause) — third-party (see LICENSE_REPORT.md)
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -2365,6 +2365,7 @@ services:
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
       KEYCLOAK_SHOW_KEYCLOAK_LOGIN: ${KEYCLOAK_SHOW_KEYCLOAK_LOGIN}
       KEYCLOAK_LOGIN_WELCOME_PAGE: ${KEYCLOAK_LOGIN_WELCOME_PAGE}
+      KEYCLOAK_TENANT_IDP_ALIASES: ${KEYCLOAK_TENANT_IDP_ALIASES}
 
       # Oauth2 config
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -3796,6 +3797,8 @@ services:
       # Structured Source Pipeline schedule
       STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR: ${STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR}
       STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE: ${STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE}
+      # Internal hosts a source URL may name (comma-separated); every other internal host is refused
+      STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS: ${STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home

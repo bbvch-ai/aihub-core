@@ -86,6 +86,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `oauth2proxy-seaweed` |  |
 | `KEYCLOAK_OPENWEBUI_CLIENT_SECRET` | `30-clients.json` | `keycloak`, `keycloak-config`, `open-webui` |  |
 | `KEYCLOAK_SHOW_KEYCLOAK_LOGIN` | `KeycloakSettings.SHOW_KEYCLOAK_LOGIN` | `api`, `sysadmin-api` | Show a direct Keycloak login button alongside federated IDPs |
+| `KEYCLOAK_TENANT_IDP_ALIASES` | `KeycloakSettings.TENANT_IDP_ALIASES` | `api` | Tenant login links as comma-separated tenant_id=idp_alias pairs (e.g. 'acme=acme-entra,beta=shared-idp'). A logged-out visit to /<tenant_id> goes straight to that identity provider. Empty turns tenant login links off. |
 | `LANGFUSE_ALLOWED_ORGANIZATION_CREATORS` |  | `langfuse-web` |  |
 | `LANGFUSE_CLICKHOUSE_PASSWORD` |  | `backup-code`, `clickhouse`, `langfuse-web`, `langfuse-worker` |  |
 | `LANGFUSE_ENCRYPTION_KEY` |  | `langfuse-web`, `langfuse-worker` |  |
@@ -178,6 +179,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `SLACK_SERVICE_URL` |  | `expert_asking_agent` |  |
 | `STONEY_CLOUD_API_BASE_URL` | `litellm-config.yml` | `litellm` |  |
 | `STONEY_CLOUD_API_KEY` | `litellm-config.yml` | `litellm` |  |
+| `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` | `StructuredPipelineSettings.ALLOWED_PRIVATE_HOSTS` | `structured_pipeline` | Comma-separated host names a source URL may name although they are internal, such as a Jira Data Center reachable only on the company network. Every other internal host is refused, because a knowledge administrator sets the URL and the pipeline can reach the platform's own services. |
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` | `StructuredPipelineSettings.OBSERVE_JOB_HOUR` | `structured_pipeline` | Hour of the daily per-database sync. Before the ingestion pipeline's midnight observation, so a day's sync is vectorised by the same night's backstop run. |
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_MINUTE` | `StructuredPipelineSettings.OBSERVE_JOB_MINUTE` | `structured_pipeline` | Minute of the daily per-database sync. |
 | `SUPERUSER_EMAIL` | `SuperuserSettings.EMAIL` | `api`, `keycloak`, `sysadmin-api` | Keycloak email used to look up the superuser. |

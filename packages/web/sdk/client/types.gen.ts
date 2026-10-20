@@ -6645,6 +6645,32 @@ export type FilePathDto = {
 };
 
 /**
+ * FilePreviewDTO
+ *
+ * An office document as the text a reader sees, for a browser that cannot show the file itself.
+ */
+export type FilePreviewDto = {
+  /**
+   * Path
+   *
+   * The previewed file, relative to the user's file space.
+   */
+  path: string;
+  /**
+   * Markdown
+   *
+   * The document's content as markdown, without its images.
+   */
+  markdown: string;
+  /**
+   * Truncated
+   *
+   * Whether the content was cut short; the download has all of it.
+   */
+  truncated: boolean;
+};
+
+/**
  * FilePromptCacheBreakpoint
  *
  * Marks the exact end of a reusable prompt prefix.
@@ -17572,6 +17598,20 @@ export type TemplateData = {
    */
   icon?: string | null;
   [key: string]: unknown;
+};
+
+/**
+ * TenantAuthProviderResponse
+ *
+ * Unknown and unlisted tenants both get a null alias, so the answer never reveals whether a tenant exists.
+ */
+export type TenantAuthProviderResponse = {
+  /**
+   * Alias
+   *
+   * Keycloak IDP alias to start the tenant's login with, or null when it has no login link
+   */
+  alias: string | null;
 };
 
 /**
@@ -32527,6 +32567,40 @@ export type GetAuthProviderResponses = {
 export type GetAuthProviderResponse =
   GetAuthProviderResponses[keyof GetAuthProviderResponses];
 
+export type GetTenantAuthProviderData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant ID taken from the tenant's login link
+     */
+    tenant_id: string;
+  };
+  query?: never;
+  url: "/auth-providers/tenants/{tenant_id}";
+};
+
+export type GetTenantAuthProviderErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetTenantAuthProviderError =
+  GetTenantAuthProviderErrors[keyof GetTenantAuthProviderErrors];
+
+export type GetTenantAuthProviderResponses = {
+  /**
+   * Successful Response
+   */
+  200: TenantAuthProviderResponse;
+};
+
+export type GetTenantAuthProviderResponse =
+  GetTenantAuthProviderResponses[keyof GetTenantAuthProviderResponses];
+
 export type GetSuiteData = {
   body?: never;
   path: {
@@ -36722,6 +36796,47 @@ export type GetUserFileContentResponses = {
    */
   200: unknown;
 };
+
+export type PreviewUserFileData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+  };
+  query: {
+    /**
+     * Path
+     *
+     * The office document to preview.
+     */
+    path: string;
+  };
+  url: "/{tenant_id}/user-knowledge/preview";
+};
+
+export type PreviewUserFileErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type PreviewUserFileError =
+  PreviewUserFileErrors[keyof PreviewUserFileErrors];
+
+export type PreviewUserFileResponses = {
+  /**
+   * Successful Response
+   */
+  200: FilePreviewDto;
+};
+
+export type PreviewUserFileResponse =
+  PreviewUserFileResponses[keyof PreviewUserFileResponses];
 
 export type UploadUserFileData = {
   body: BodyUploadUserFile;
