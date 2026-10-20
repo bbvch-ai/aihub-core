@@ -1,6 +1,6 @@
 ---
 title: Die Infrastruktur-Ebenen
-source_sha: d70aff00759fc72f2058d71d24a5b8d83a96d731635f471cfe6271b64b4fbbab
+source_sha: 45dbc23827cafde186ef852718b589877ba515bd33fb02b51781c7620b2d9279
 ---
 
 # Die Infrastruktur-Ebenen
@@ -58,7 +58,7 @@ und Lebenszyklusrichtlinien. Der SeaweedFS Filer verwendet **etcd** als sein Met
 Hochverfügbarkeits-Deployments mit mehreren Filer-Instanzen. Die Plattform stellt zwei Schnittstellen bereit: die **S3
 API** unter `s3.${DOMAIN}` mit AWS-Signaturauthentifizierung für den programmatischen Zugriff und die **Filer web UI**
 unter `datalake.${DOMAIN}` über einen OAuth2 Proxy für Entwickler, um Dateien zu durchsuchen und zu debuggen (erfordert
-die Rolle AIHubDeveloper). MongoDB speichert Gesprächsverläufe, Benutzerpräferenzen, Anwendungsdaten und
+die Realm-Rolle `AIHubSysAdmin`). MongoDB speichert Gesprächsverläufe, Benutzerpräferenzen, Anwendungsdaten und
 Ereignisverläufe dauerhaft. Diese Auswahl bietet Cloud-native Speicherstrategien, die On-Premise oder in
 Cloud-Umgebungen identisch funktionieren.
 
@@ -67,11 +67,11 @@ Code-Ausführung, wenn Benutzer ein reines LLM-Modell bitten, Daten zu analysier
 Modell schreibt Python-Code, der in einer isolierten Sandbox pro Benutzer mit vorinstallierten gängigen
 Dokumentbibliotheken ausgeführt wird; erzeugte Dateien (Berichte, Tabellen, Diagramme) erscheinen zum Download im Chat.
 **SearXNG** bietet Web-Suchfunktionen, wenn Benutzer aktuelle Informationen benötigen, indem es Ergebnisse von mehreren
-Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt. **Playwright** extrahiert Inhalte von Websites, die
-über die Suche entdeckt wurden, und extrahiert den vollständigen Text, wenn Such-Snippets nicht ausreichen. **MinerU**
-parst Dokumente, die Benutzer in den Chat hochladen, und extrahiert Text und Struktur aus PDFs, Word-Dokumenten und
-Präsentationen, wobei Tabellen und Formatierungen erhalten bleiben, die für eine präzise Beantwortung von Fragen
-erforderlich sind.
+Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt. **Playwright** lädt Webseiten: die Seiten, die
+Benutzer verlinken, damit ein Agent sie liest, und den vollständigen Text von Suchergebnissen, wenn Snippets nicht
+ausreichen. **MinerU** parst Dokumente, die Benutzer in den Chat hochladen, und extrahiert Text und Struktur aus PDFs,
+Word-Dokumenten und Präsentationen, wobei Tabellen und Formatierungen erhalten bleiben, die für eine präzise
+Beantwortung von Fragen erforderlich sind.
 
 Die Observability beginnt vom ersten Tag an, wobei **OpenTelemetry** Metriken, Traces und Logs von jeder Komponente
 sammelt. Die Daten fliessen an entsprechende Backends: Metriken an Prometheus, Traces an Jaeger, Logs an Loki. Dieser

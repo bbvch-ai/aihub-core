@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: d1395f6d1f0b8f6cce6a038cab5f974560c4c4cb9fa36bf987920c321e6cafaf
+source_sha: cc988e7ef0ab2a4719e979cd4956e16440505206ab9d8858e474d63e4cbeafb2
 ---
 
 # Universal Agent
@@ -55,9 +55,10 @@ drei Suchen braucht, bekommt drei.
 | **Gedächtnis abrufen**       | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                                                                                                          | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                           |
 | **Code-Sandbox**             | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                          |
 | **Meine Dateien**            | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend.                                                                                                                                           | Der Benutzer hat im Chat **My Files** eingeschaltet.                                      |
+| **Verlinkte Webseiten lesen** | Liest die Webseiten, die der Benutzer in der Nachricht verlinkt oder mit `#` angehängt hat, und nur diese: Ein Aufruf, der eine andere Adresse nennt, wird abgelehnt, sodass eine in einer Seite oder Datei versteckte Anweisung die Unterhaltung nicht anderswohin lenken kann. Siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/). | **Read Linked Web Pages** ist im Profil eingeschaltet und die Nachricht verlinkt eine Seite. |
 
-Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten, Bildgenerierung und der
-eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.
+Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche und Bildgenerierung fügen diesem Agenten jeweils
+ihr Werkzeug hinzu.
 
 Jeder Werkzeugaufruf ist im Chat sichtbar: Die Wissenssuche und die Dateien erscheinen als Quellen, jeder Aufruf als
 aufklappbarer Block mit dem, was das Werkzeug zurückgegeben hat, und der Agenten-Trace zeichnet jeden Schritt auf.

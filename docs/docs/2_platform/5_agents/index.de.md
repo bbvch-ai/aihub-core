@@ -28,6 +28,34 @@ Beispiele:
 Agents kombinieren grosse Sprachmodelle (LLMs) für das Verständnis natürlicher Sprache mit strukturierten Prozessen für
 einen zuverlässigen Betrieb.
 
+## Was jeder Chat-Agent kann
+
+Die konversationellen Blueprints, die auf den gemeinsamen Fähigkeiten aufbauen (Instructed, Teachable, Document
+Intelligence, Company Knowledge, MCP Tool, Universal und Webseiten-Assistent), verhalten sich in der Unterhaltung
+gleich:
+
+- **Angehängte Dateien.** Im Chat angehängte Dateien liest der Agent selbst und führt sie als Quellen auf. Eine lange
+  Datei wird auf die Abschnitte gekürzt, die für die Frage relevant sind, und die Antwort weist darauf hin.
+- **Wissensverweise.** Wer in Open WebUI `#` tippt, verweist den Agenten auf eine der Wissenssammlungen des
+  Unternehmens, beschränkt auf das, was der Benutzer lesen darf.
+- **Verlinkte Webseiten.** Wo das Profil **Read Linked Web Pages** einschaltet, liest der Agent die Seiten, die eine
+  Nachricht verlinkt oder mit `#` anhängt, zitiert sie und nennt die, die er nicht lesen konnte. Verfügbar bei den
+  Agents Instructed, Document Intelligence, Company Knowledge und Universal und im Webseiten-Assistenten immer
+  eingeschaltet; siehe [Verlinkte Webseiten](../10_chat_ui/15_linked_web_pages/).
+- **Inline-Zitate.** Aussagen verlinken als nummerierte Chips in der Antwort auf das Dokument, aus dem sie stammen.
+- **Gedächtnis.** Was sich der Agent über den Benutzer und die Organisation merkt, fliesst in die Anweisungen des
+  Modells ein.
+- **Chat-Toggles.** Ein Chat-Toggle ist eine Anfrage an den Agenten, der sie als nachverfolgte, kostenzugeordnete
+  Schritte ausführt. Ein Agent zeigt einen Toggle nur, wenn er ihn bedienen kann; heute sind das Code Interpreter
+  und My Files beim Universal Agent.
+- **Ablehnungen statt Fehler.** Eine Nachricht, die grösser ist als das Kontextfenster des Modells, oder eine Anfrage
+  ausserhalb des Aufgabenbereichs eines Teachable Assistant wird im Chat mit einer kurzen Erklärung statt mit einem
+  Fehler beantwortet.
+
+Wie diese in Open WebUI erscheinen, ist unter [Integrationsarchitektur](../10_chat_ui/11_integration_architecture/)
+beschrieben; die Einstellungen finden Sie unter
+[Blueprints & Profile](2_blueprints_and_profiles/#gemeinsame-chat-einstellungen).
+
 ## Agenten-"Training"
 
 Eine häufige Frage ist, ob Agents mit Unternehmensdaten "trainiert" werden können. Der Swiss AI Hub bietet kein

@@ -250,6 +250,7 @@ Import any of these from `swiss_ai_hub.agent.agents.<name>` and run them as-is, 
 | Agent                     | Purpose                                                             |
 | ------------------------- | ------------------------------------------------------------------- |
 | `LLMWrappingAgent`        | Simple LLM chat passthrough (minimal 2-step workflow)               |
+| `WebFetchAgent`           | `LLMWrappingAgent` that always reads the web pages a message links  |
 | `RAGAgent`                | Knowledge QA — multi-source retrieval + reranking + user/org memory |
 | `RetrievalAgent`          | Pure document retrieval, no LLM — returns structured context        |
 | `FewShotAgent`            | Pattern-matching with few-shot examples + a suitability guard       |

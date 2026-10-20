@@ -10,7 +10,7 @@ development and production deployments.
 
 ### Network topology
 
-The following diagram shows the production deployment topology with all six network zones and the services assigned to
+The following diagram shows the production deployment topology with all seven network zones and the services assigned to
 each. Services that span multiple zones appear at the boundary. The API is the most connected service, attaching to four
 networks.
 
@@ -60,6 +60,10 @@ graph TB
         end
 
         subgraph egress["egress  · outbound only, ICC disabled"]
+            SearX["SearXNG :8881"]
+        end
+
+        subgraph browser["browser  · browser + callers only"]
             PW["Playwright :3036"]
         end
 
@@ -74,6 +78,8 @@ graph TB
     Traefik --> LfWeb
 
     OWUI --- OpenTerm
+    OWUI --- PW
+    AgentC --- PW
 
     API --- NATS2
     API --- FDB
@@ -104,7 +110,8 @@ graph TB
     LfWeb --- CH2
     LiteLLM --- PG
 
-    PW -->|"outbound only"| Internet
+    PW -->|"outbound via egress"| Internet
+    SearX -->|"outbound only"| Internet
 
     style proxy fill:#fef3c7,stroke:#d97706
     style backend fill:#dbeafe,stroke:#2563eb
@@ -112,10 +119,11 @@ graph TB
     style storage fill:#ede9fe,stroke:#7c3aed
     style egress fill:#fee2e2,stroke:#dc2626
     style codesandbox fill:#ffe4e6,stroke:#e11d48
+    style browser fill:#ffedd5,stroke:#ea580c
     style host fill:#f8fafc,stroke:#64748b
 ```
 
-Five Docker networks isolate services by role. Each service connects only to the networks it requires.
+Seven Docker networks isolate services by role. Each service connects only to the networks it requires.
 
 The **proxy** network carries external ingress traffic. In non-dev stages, Traefik listens on ports 80 and 443 and
 routes requests to backend services. Services that need to be directly reachable from outside (API, OpenWebUI, Langfuse
@@ -134,8 +142,8 @@ use SeaweedFS for data persistence (Milvus for vector segment storage, Langfuse 
 uploads). etcd attaches to storage because SeaweedFS filer uses it for directory metadata.
 
 The **egress** network provides outbound internet access with inter-container communication disabled
-(`com.docker.network.bridge.enable_icc: "false"`). Only Playwright attaches to this network. A compromised Playwright
-container can reach the internet (necessary for web scraping) but cannot reach any other container.
+(`com.docker.network.bridge.enable_icc: "false"`). Services that need the internet attach to it, among them Playwright
+and SearXNG; none of them can reach another container through it.
 
 The **code-sandbox** network is a single-tenant zone for Open Terminal, the code-execution sandbox for OpenWebUI, which
 runs arbitrary user-submitted code. Its only resident is the sandbox; its callers join in addition to their own networks
@@ -144,10 +152,16 @@ what prevents a breakout from laterally reaching LiteLLM, vLLM, MinerU, Presidio
 the sandbox can reach only its callers. `internal: true` in non-dev stages additionally denies it outbound internet. See
 ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
+The **browser** network applies the same pattern to Playwright, which loads the web pages users link. Its only resident
+is the browser; its callers, OpenWebUI's web loader and the agents that read linked pages, join in addition to their own
+networks. The agents check each URL before the browser loads it, but the browser resolves the name again, so a name
+re-pointed to an internal address in between (DNS rebinding) would pass the check. Off `backend`, such a page load has
+no path to LiteLLM, Langfuse, MinerU or the Docker socket proxy. See ADR
+`docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`.
+
 The API service is the most connected, attaching to four networks (proxy, backend, data, storage) because it must accept
 external requests, communicate with application services, query databases, and access file storage. A database like
-PostgreSQL attaches only to data. Playwright attaches to backend (for agent communication) and egress (for internet
-access).
+PostgreSQL attaches only to data. Playwright attaches to browser (for its callers) and egress (for internet access).
 
 ## Infrastructure level 2
 

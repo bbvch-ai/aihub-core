@@ -108,6 +108,18 @@ Steuert die Kreativität der Antworten:
 
 Wählen Sie für RAG-fähige Agents aus, welche Dokumentensammlungen der Agent durchsuchen kann.
 
+### Gemeinsame Chat-Einstellungen
+
+Jeder konversationelle Agent (Instructed, Teachable, Document Intelligence, Company Knowledge, MCP Tool und Universal) bringt dieselben Bausteine mit, jeweils mit einem eigenen Abschnitt im Formular:
+
+- **User Memory** und **Organization Memory**: was der Agent über den Benutzer und die Organisation abruft und ob er neue Fakten speichert. Abgerufene Erinnerungen erreichen das Modell als Teil seiner Systemanweisungen.
+- **Attached Files**: Ein Benutzer kann im Chat Dateien anhängen, und der Agent liest sie selbst. Eine Datei, die hineinpasst, wird ganz gelesen; eine längere wird auf die für die Frage relevantesten Abschnitte gekürzt, und die Antwort weist darauf hin. Die Embedding- und Reranking-Modelle, die diese Abschnitte auswählen, sind voreingestellt (`embedding/bge-m3`, `reranker/bge`) und müssen selten geändert werden.
+- **Knowledge Search**: das Reranking-Modell, das verwendet wird, wenn ein Benutzer den Chat mit `#` auf eine Sammlung verweist oder wenn das Modell selbst eine durchsucht. Es ist auf `reranker/bge` voreingestellt. Durchsucht werden nur Sammlungen, die der Benutzer lesen darf.
+- **Read Linked Web Pages**: standardmäßig ausgeschaltet. Eingeschaltet liest der Agent die Webseiten, die eine Nachricht verlinkt oder mit `#` anhängt, und antwortet daraus; seine Limits sind Links pro Nachricht (5), Sekunden pro Seite (15) und Zeichen pro Seite (20.000). Angeboten bei den Agents Instructed, Document Intelligence, Company Knowledge und Universal; der Webseiten-Assistent liest Links immer. Siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/).
+- **Condense question** und **Task LLM**: oben beschrieben.
+
+Alle zitieren, was sie lesen, als Quellen im Chat. Ist eine Nachricht allein, etwa ein sehr langer eingefügter Text, größer als das Kontextfenster des Modells, antwortet der Agent, dass die Eingabe zu groß ist, statt fehlzuschlagen; die Prüfung richtet sich nach dem kleineren Kontextfenster von antwortendem Modell und Task LLM.
+
 ### System-Prompt
 
 Einige Agents ermöglichen die Anpassung des System-Prompts, um Verhalten und Persönlichkeit anzupassen.
