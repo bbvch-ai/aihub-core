@@ -1,9 +1,11 @@
 from typing import Annotated, Any
 
+from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
+
 from swiss_ai_hub.pipeline.resources.confluence.confluence_client import ConfluenceClient
 from swiss_ai_hub.pipeline.resources.confluence.confluence_request_error import ConfluenceRequestError
+from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
-from swiss_ai_hub.pipeline.source_pipelines.structured_source_address_guard import StructuredSourceAddressGuard
 
 _REFUSED_SIGN_IN = (401, 403)
 
@@ -13,7 +15,7 @@ class ConfluencePreflight:
 
     Each mistake it catches would otherwise pass silently: Confluence answers a search in a space the account cannot
     see, or below a parent page that does not exist, with no pages at all, and an empty listing removes that space's
-    files. The address guard comes first, so no request, and no credential, goes to an address inside the platform.
+    files. The host check comes first, so no request, and no credential, goes to an address inside the platform.
     Spaces and parent pages are found through CQL search, which both editions answer: Cloud's REST v1 no longer serves
     a space by its key or a page by its ID. Failing here also keeps the message ours, instead of one dlt wraps around
     the first failed request.
@@ -25,7 +27,7 @@ class ConfluencePreflight:
         client: Annotated[ConfluenceClient, "Client built from the configuration being checked"],
         options: Annotated[ConfluenceOptions, "The configuration, already checked for missing values"],
     ) -> None:
-        StructuredSourceAddressGuard.require_external(options.base_url)
+        SourceHostGuard.require_public(options.base_url, StructuredPipelineSettings().private_host_allow_list())
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or account.get("publicName") or "this account"
         for space in options.spaces():

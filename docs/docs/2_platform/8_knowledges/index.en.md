@@ -134,7 +134,9 @@ notification when notifications are configured.
 Pick **Confluence** as the source system and enter:
 
 - **Confluence URL**: the address you open Confluence at, such as `https://acme.atlassian.net/wiki` for Confluence Cloud
-  (including `/wiki`) or `https://confluence.acme.ch` for Confluence Data Center
+  (including `/wiki`) or `https://confluence.acme.ch` for Confluence Data Center. As for Jira, it must be a public
+  address, without `?` or `#`, and a redirect is not followed. An operator can allow a Confluence reachable only on the
+  company network with `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`.
 - **Confluence edition**: Confluence Cloud signs in with the account's e-mail and an
   [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Confluence Data Center with a
   personal access token (profile → *Settings* → *Personal Access Tokens*)
@@ -173,9 +175,10 @@ the same parent, or titles that only differ after their 120th character. The run
 them in Confluence brings the other back.
 
 A sync fails before it changes anything when Confluence rejects the token, when a space or parent page does not exist or
-is not visible to the account, when a parent page lies outside the listed spaces, or when the Confluence URL points to a
-service inside the platform, such as a container name or an address on the platform's own networks. The reason is shown
-on the failed run in the Dagster UI, and in the failure notification when notifications are configured.
+is not visible to the account, when a parent page lies outside the listed spaces, or when the Confluence URL points to
+an internal address, such as a Docker service, `localhost` or a private network address, that no operator has allowed.
+The reason is shown on the failed run in the Dagster UI, and in the failure notification when notifications are
+configured.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

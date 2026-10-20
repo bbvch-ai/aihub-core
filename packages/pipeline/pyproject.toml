@@ -36,7 +36,6 @@ dependencies = [
     "dagster-dlt>=0.29.24",
     "markdownify>=1.2.2",
     "beautifulsoup4>=4.14.3",
-    "psutil>=7.2.2",
 ]
 
 [dependency-groups]

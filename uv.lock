@@ -6093,7 +6093,6 @@ dependencies = [
     { name = "markdownify" },
     { name = "matplotlib" },
     { name = "openai" },
-    { name = "psutil" },
     { name = "swiss-ai-hub-core" },
 ]
 
@@ -6111,7 +6110,6 @@ requires-dist = [
     { name = "markdownify", specifier = ">=1.2.2" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "openai", specifier = ">=1.76.2" },
-    { name = "psutil", specifier = ">=7.2.2" },
     { name = "swiss-ai-hub-core", editable = "packages/core" },
 ]
 

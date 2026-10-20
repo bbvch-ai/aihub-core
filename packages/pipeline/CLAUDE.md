@@ -75,7 +75,6 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
 │   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file, HTML → markdown
 │   │   ├── confluence/                    # The Confluence kind: options, preflight, page → markdown file, storage → markdown
-│   │   ├── structured_source_address_guard.py # Refuses a source URL that points inside the platform
 │   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
@@ -562,11 +561,10 @@ Cloud and Confluence Data Center over REST v1 (`content/search` with CQL); v2 ha
 Data Center. It keeps the Jira adapter's rules on credentials (`auth=` only), the error hook (`ConfluenceRequestError`,
 an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `problems()`. In addition:
 
-- **The address guard runs first in the preflight** (`StructuredSourceAddressGuard` in `source_pipelines/`, written to
-  be shared by every kind). It refuses single-label hosts (compose service names), link-local, multicast and unspecified
-  addresses and, inside a container, any address on the container's own networks. Loopback stays allowed for a
-  Confluence running next to a developer's pipeline, and private ranges for an on-premise Data Center. It checks once
-  per step, so a name that resolves elsewhere by the time of a later request is not caught.
+- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `SourceHostGuard` runs first in
+  the preflight with the same `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exemptions. A Confluence next to a developer's
+  pipeline is reached through the dev default `localhost`; an on-premise Data Center on a private address needs an
+  operator to allow its host.
 - **No redirect is followed.** Every request sends `allow_redirects=False`, and the hook raises on a 3xx naming its
   target, because the guard checked the configured host only.
 - **Next links are joined onto the configured site.** Confluence gives `_links.next` relative to the site (`…/wiki` on

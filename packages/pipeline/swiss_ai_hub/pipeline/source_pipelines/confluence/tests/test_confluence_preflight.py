@@ -3,9 +3,9 @@ import pytest
 from swiss_ai_hub.pipeline.resources.confluence.confluence_client import ConfluenceClient
 from swiss_ai_hub.pipeline.resources.confluence.confluence_request_error import ConfluenceRequestError
 from swiss_ai_hub.pipeline.resources.confluence.tests.fake_confluence import FakeConfluence
+from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_preflight import ConfluencePreflight
-from swiss_ai_hub.pipeline.source_pipelines.structured_source_address_guard import StructuredSourceAddressGuard
 
 
 @pytest.fixture(params=["cloud", "data_center"])
@@ -21,7 +21,7 @@ def confluence(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) 
 def guarded(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """The addresses the guard was asked about; the fake site's name never reaches a real resolver."""
     checked: list[str] = []
-    monkeypatch.setattr(StructuredSourceAddressGuard, "require_external", checked.append)
+    monkeypatch.setattr(SourceHostGuard, "require_public", lambda url, allowed_hosts: checked.append(url))
     return checked
 
 
@@ -49,7 +49,7 @@ class TestPreflight:
         assert guarded == [confluence.site]
 
     def test_an_address_inside_the_platform_is_refused_before_any_request(self, confluence: FakeConfluence):
-        with pytest.raises(ValueError, match="service inside the platform"):
+        with pytest.raises(ValueError, match="points at ferretdb, a name only an internal network resolves"):
             _check(_options(confluence, base_url="http://ferretdb:27017"))
         assert confluence.requests == []
 

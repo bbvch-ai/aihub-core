@@ -41,9 +41,19 @@ class TestProblems:
         assert _options(ancestor_page_ids=["١٢٣"]).problems() == ["١٢٣ is not a Confluence page ID"]
 
     @pytest.mark.parametrize(
-        "url", ["ftp://acme.test", "https://bot:token@acme.atlassian.net/wiki", "acme.atlassian.net", "https://a b"]
+        "url",
+        [
+            "ftp://acme.test",
+            "https://bot:token@acme.atlassian.net/wiki",
+            "acme.atlassian.net",
+            "https://a b",
+            "http://seaweedfs-filer:8888/buckets/other/x.md?",
+            "https://confluence.acme.ch#",
+            "https://acme.atlassian.net/wiki?os_authType=basic",
+        ],
     )
     def test_a_url_that_is_not_plain_http_is_refused_when_saved(self, url: str):
+        """A query or fragment would turn the API path appended to the URL into a query, so it could name any path."""
         with pytest.raises(ValidationError):
             _options(base_url=url)
 
