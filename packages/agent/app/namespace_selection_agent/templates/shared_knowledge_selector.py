@@ -54,4 +54,5 @@ def build() -> NamespaceSelectionAgentConfig:
             ),
         ),
         max_conversation_history_entries=20,
+        restrict_to_user_access=True,
     )
