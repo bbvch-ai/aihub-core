@@ -708,7 +708,7 @@ def test_restoring_copies_stored_rows_into_the_namespace_partition_and_flushes()
     store = _store_for_document_deletes(client)
     store.batch_size = 1
 
-    copied = store.restore_stranded_nodes(["n1", "n2"], "alpha")
+    copied = store.restore_stranded_nodes({"alpha": ["n1", "n2"]})
 
     assert copied == 2
     scan = client.query_iterator.call_args.kwargs
@@ -725,6 +725,37 @@ def test_restoring_copies_stored_rows_into_the_namespace_partition_and_flushes()
     assert client.mock_calls.index(call.flush("tenant_db")) > client.mock_calls.index(
         call.upsert(collection_name="tenant_db", data=[rows[1]], partition_name=target)
     )
+
+
+def test_restoring_several_namespaces_flushes_once_after_the_last_copy() -> None:
+    """Milvus allows a collection one flush every 10 s; a flush per namespace or document throttles the repair."""
+    client = MagicMock()
+    alpha_row = {"id": "n1", "text": "a", "embedding": [0.1]}
+    beta_row = {"id": "n2", "text": "b", "embedding": [0.2]}
+    client.query_iterator.side_effect = [_iterator_over([alpha_row]), _iterator_over([beta_row])]
+    store = _store_for_document_deletes(client)
+    store.batch_size = 10
+
+    copied = store.restore_stranded_nodes({"alpha": ["n1"], "beta": ["n2"], "gamma": []})
+
+    assert copied == 2
+    assert client.upsert.call_args_list == [
+        call(collection_name="tenant_db", data=[alpha_row], partition_name=get_partition_name_for_namespace("alpha")),
+        call(collection_name="tenant_db", data=[beta_row], partition_name=get_partition_name_for_namespace("beta")),
+    ]
+    client.flush.assert_called_once_with("tenant_db")
+    assert client.mock_calls[-1] == call.flush("tenant_db")
+    assert client.query_iterator.call_count == 2
+
+
+def test_restoring_nothing_neither_loads_nor_flushes() -> None:
+    client = MagicMock()
+    store = _store_for_document_deletes(client)
+
+    assert store.restore_stranded_nodes({"alpha": []}) == 0
+    client.load_partitions.assert_not_called()
+    client.query_iterator.assert_not_called()
+    client.flush.assert_not_called()
 
 
 def test_stranded_nodes_are_deleted_from_default_only() -> None:

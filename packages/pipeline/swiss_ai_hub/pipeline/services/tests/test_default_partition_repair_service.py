@@ -13,8 +13,10 @@ NAMESPACE = "hr"
 WIDTH = 3072
 
 
-def _key(node_id: str, node_type: str = NODE_TYPE_CONTENT, document_id: str = "doc1") -> StoredNodeKey:
-    return StoredNodeKey(node_id=node_id, document_id=document_id, namespace=NAMESPACE, node_type=node_type)
+def _key(
+    node_id: str, node_type: str = NODE_TYPE_CONTENT, document_id: str = "doc1", namespace: str = NAMESPACE
+) -> StoredNodeKey:
+    return StoredNodeKey(node_id=node_id, document_id=document_id, namespace=namespace, node_type=node_type)
 
 
 class _FakeVectorStore:
@@ -41,8 +43,9 @@ class _FakeVectorStore:
     def node_keys_of_document(self, document_id: str, namespace: str) -> list[StoredNodeKey]:
         return [node for node in self.present if node.document_id == document_id and node.namespace == namespace]
 
-    def restore_stranded_nodes(self, node_ids: list[str], namespace: str) -> int:
-        self.calls.append(("restore", sorted(node_ids), namespace))
+    def restore_stranded_nodes(self, node_ids_by_namespace: dict[str, list[str]]) -> int:
+        self.calls.append(("restore", {namespace: sorted(ids) for namespace, ids in node_ids_by_namespace.items()}))
+        node_ids = {node_id for ids in node_ids_by_namespace.values() for node_id in ids}
         self.present += [node for node in self.stranded if node.node_id in node_ids]
         return len(node_ids)
 
@@ -80,11 +83,33 @@ def test_stranded_nodes_are_copied_before_they_are_deleted() -> None:
 
     assert vector_store.calls == [
         ("ensure_partitions",),
-        ("restore", ["c1", "c2"], NAMESPACE),
+        ("restore", {NAMESPACE: ["c1", "c2"]}),
         ("delete", ["c1", "c2"]),
     ]
     assert report.moved_nodes == 2
     assert report.document_ids == ["doc1"]
+
+
+def test_every_stranded_document_is_restored_in_one_call_so_the_collection_is_flushed_once() -> None:
+    """Milvus allows a collection one flush every 10 s; a restore per document would stretch a repair into hours."""
+    vector_store = _FakeVectorStore(
+        [
+            _key("c1"),
+            _key("s1", NODE_TYPE_SUMMARY),
+            _key("c2", document_id="doc2"),
+            _key("f1", document_id="doc3", namespace="finance"),
+        ]
+    )
+
+    report = _repair(vector_store)
+
+    assert vector_store.calls == [
+        ("ensure_partitions",),
+        ("restore", {NAMESPACE: ["c1", "c2", "s1"], "finance": ["f1"]}),
+        ("delete", ["c1", "c2", "f1", "s1"]),
+    ]
+    assert report.moved_nodes == 4
+    assert report.document_ids == ["doc1", "doc2", "doc3"]
 
 
 def test_summaries_stranded_next_to_content_already_in_place_are_moved_not_deleted() -> None:
@@ -96,9 +121,7 @@ def test_summaries_stranded_next_to_content_already_in_place_are_moved_not_delet
 
     report = _repair(vector_store)
 
-    assert ("restore", ["s1"], NAMESPACE) in vector_store.calls
-    assert ("delete", ["c1"]) in vector_store.calls
-    assert ("restore", ["c1"], NAMESPACE) not in vector_store.calls
+    assert vector_store.calls[1:] == [("restore", {NAMESPACE: ["s1"]}), ("delete", ["c1", "s1"])]
     assert report.moved_nodes == 1
     assert vector_store.stranded == []
 
@@ -119,7 +142,7 @@ def test_an_interrupted_move_is_completed_rather_than_taken_for_a_newer_ingestio
 
     report = _repair(vector_store)
 
-    assert vector_store.calls[1:] == [("restore", ["c2"], NAMESPACE), ("delete", ["c1", "c2"])]
+    assert vector_store.calls[1:] == [("restore", {NAMESPACE: ["c2"]}), ("delete", ["c1", "c2"])]
     assert report.moved_nodes == 1
 
 

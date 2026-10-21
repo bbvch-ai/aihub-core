@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from swiss_ai_hub.core.persistence import PartitionAwareMilvusVectorStore, StoredNodeKey
+from swiss_ai_hub.core.persistence import StoredNodeKey
 
 from swiss_ai_hub.pipeline.types.default_partition_repair_report import DefaultPartitionRepairReport
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
@@ -17,17 +17,33 @@ class DefaultPartitionRepairService:
     collection, and the collection is created with the width of the database's own embedding model.
 
     Stranded nodes are copied as stored, so nothing is parsed or embedded again. A document's nodes of one type move
-    as a unit, copied and flushed before they are deleted from ``_default``: an interruption leaves duplicates, which
-    the next run deletes, never a gap. Node ids are fresh uuids per ingestion, so a node id in the namespace partition
-    that ``_default`` lacks means a later ingestion superseded the stranded copies, which are then deleted instead.
+    as a unit. Every copy is made and flushed in one call before any original is deleted from ``_default``, since
+    Milvus allows a collection one flush every 10 s: an interruption leaves duplicates, which the next run deletes,
+    never a gap. Node ids are fresh uuids per ingestion, so a node id in the namespace partition that ``_default``
+    lacks means a later ingestion superseded the stranded copies, which are then deleted instead.
     """
 
     @classmethod
     def repair(cls, bucket: Annotated[str, "S3 bucket backing the knowledge database"]) -> DefaultPartitionRepairReport:
         vector_store = build_vector_store(get_db_name_from_bucket_name(bucket), embedding_dimension_for_bucket(bucket))
         report = DefaultPartitionRepairReport(partition_state=vector_store.ensure_partitions())
+        missing_by_namespace: dict[str, list[str]] = {}
+        originals: list[str] = []
         for (namespace, document_id), stranded_by_type in cls._by_document(vector_store.stranded_nodes()).items():
-            cls._repair_document(vector_store, namespace, document_id, stranded_by_type, report)
+            present = vector_store.node_keys_of_document(document_id, namespace)
+            for node_type, stranded_ids in stranded_by_type.items():
+                present_ids = {node.node_id for node in present if node.node_type == node_type}
+                if present_ids - set(stranded_ids):
+                    report.superseded_nodes += vector_store.delete_stranded_nodes(stranded_ids)
+                    continue
+                missing = [node_id for node_id in stranded_ids if node_id not in present_ids]
+                missing_by_namespace.setdefault(namespace, []).extend(missing)
+                originals.extend(stranded_ids)
+            report.document_ids.append(document_id)
+
+        if originals:
+            report.moved_nodes = vector_store.restore_stranded_nodes(missing_by_namespace)
+            vector_store.delete_stranded_nodes(originals)
         return report
 
     @staticmethod
@@ -37,24 +53,3 @@ class DefaultPartitionRepairService:
             by_type = by_document.setdefault((node.namespace, node.document_id), {})
             by_type.setdefault(node.node_type, []).append(node.node_id)
         return by_document
-
-    @staticmethod
-    def _repair_document(
-        vector_store: PartitionAwareMilvusVectorStore,
-        namespace: str,
-        document_id: str,
-        stranded_by_type: dict[str | None, list[str]],
-        report: DefaultPartitionRepairReport,
-    ) -> None:
-        present = vector_store.node_keys_of_document(document_id, namespace)
-        for node_type, stranded_ids in stranded_by_type.items():
-            present_ids = {node.node_id for node in present if node.node_type == node_type}
-            if present_ids - set(stranded_ids):
-                report.superseded_nodes += vector_store.delete_stranded_nodes(stranded_ids)
-                continue
-
-            missing_ids = [node_id for node_id in stranded_ids if node_id not in present_ids]
-            if missing_ids:
-                report.moved_nodes += vector_store.restore_stranded_nodes(missing_ids, namespace)
-            vector_store.delete_stranded_nodes(stranded_ids)
-        report.document_ids.append(document_id)

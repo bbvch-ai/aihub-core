@@ -524,13 +524,24 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             for row in page
         ]
 
-    def restore_stranded_nodes(self, node_ids: list[str], namespace: str) -> int:
-        """Copy nodes from ``_default`` into their namespace's partition as stored; returns the number copied.
+    def restore_stranded_nodes(self, node_ids_by_namespace: dict[str, list[str]]) -> int:
+        """Copy nodes from ``_default`` into their namespaces' partitions as stored; returns the number copied.
 
         Nothing is parsed or embedded again. ``*`` leaves out the BM25 output, which Milvus refuses to return and
-        recomputes from ``text`` on insert. The flush makes the copy durable before the caller deletes the originals.
+        recomputes from ``text`` on insert. The flush makes the copies durable before the caller deletes the
+        originals. It runs once for every namespace: Milvus allows a collection one flush every 10 s
+        (``quotaAndLimits.flushRate``), so a flush per document would stretch a large repair into hours.
         """
-        partition_name = get_partition_name_for_namespace(namespace)
+        copied = sum(
+            self._copy_from_default(node_ids, get_partition_name_for_namespace(namespace))
+            for namespace, node_ids in node_ids_by_namespace.items()
+            if node_ids
+        )
+        if copied:
+            self.client.flush(self.collection_name)
+        return copied
+
+    def _copy_from_default(self, node_ids: list[str], partition_name: str) -> int:
         self._ensure_collection_loaded([DEFAULT_PARTITION_NAME, partition_name])
         copied = 0
         for batch in iter_batch(node_ids, NODE_IDS_PER_DELETE):
@@ -539,7 +550,6 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
                 for rows in iter_batch(page, self.batch_size):
                     self.client.upsert(collection_name=self.collection_name, data=rows, partition_name=partition_name)
                 copied += len(page)
-        self.client.flush(self.collection_name)
         return copied
 
     def delete_stranded_nodes(self, node_ids: list[str]) -> int:
