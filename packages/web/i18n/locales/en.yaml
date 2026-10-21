@@ -948,6 +948,12 @@ form:
     invalid_json: The file is not valid JSON.
   locale_input:
     translate_tooltip: Translate to all languages
+    translate_partial_summary: Some languages were not translated
+    translate_partial_detail: Could not translate into {locales}. The other languages
+      were updated — try again to fill in the rest.
+    translate_failed_summary: Translation didn't work this time
+    translate_failed_detail: None of the languages could be translated. Your text
+      is unchanged — please try again in a moment.
   warnings:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.

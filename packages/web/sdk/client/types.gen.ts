@@ -19617,13 +19617,19 @@ export type TranslationRequest = {
 /**
  * TranslationResponse
  *
- * Response containing the translated LocaleString with all supported locales populated.
+ * Response containing the translated LocaleString and the locales that could not be translated.
  */
 export type TranslationResponse = {
   /**
-   * The LocaleString with translations for all supported locales
+   * The LocaleString with every empty locale that could be translated filled in
    */
   translated: LocaleString;
+  /**
+   * Failed Locales
+   *
+   * Empty locales that could not be translated and stay empty
+   */
+  failed_locales?: Array<string>;
 };
 
 /**

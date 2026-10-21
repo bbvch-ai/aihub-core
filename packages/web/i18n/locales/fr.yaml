@@ -962,6 +962,12 @@ form:
     invalid_json: Le fichier n'est pas un JSON valide.
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+    translate_partial_summary: Certaines langues n'ont pas été traduites
+    translate_partial_detail: Impossible de traduire en {locales}. Les autres langues
+      ont été mises à jour — réessayez pour compléter le reste.
+    translate_failed_summary: La traduction n'a pas fonctionné cette fois
+    translate_failed_detail: Aucune langue n'a pu être traduite. Votre texte est inchangé
+      — veuillez réessayer dans un instant.
   warnings:
     org_memory_performance: Cette fonctionnalité peut ne pas fonctionner comme prévu
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
