@@ -54,6 +54,53 @@ class TestUpsertRemote:
             with pytest.raises(ValueError, match="pre-obtained token"):
                 client.upsert_remote(config)
 
+    def test_a_pasted_token_is_kept_rather_than_refreshed_and_the_remote_completes(self):
+        """rclone 1.71 asks every OAuth backend given a token whether to refresh it, then Drive asks about Shared
+        Drives; both are answered no."""
+        answers: list[tuple[str, str]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            opt = json.loads(request.read())["opt"]
+            if not opt.get("continue"):
+                return httpx.Response(
+                    200, json={"State": "*oauth-confirm,teamdrive,,", "Option": {"Name": "config_refresh_token"}}
+                )
+            answers.append((opt["state"], opt["result"]))
+            if opt["state"] == "*oauth-confirm,teamdrive,,":
+                return httpx.Response(
+                    200, json={"State": "teamdrive_ok", "Option": {"Name": "config_change_team_drive"}}
+                )
+            return httpx.Response(200, json={})
+
+        config = RcloneSourceConfig(name="r", backend_type=RcloneBackendType.DRIVE, options={"token": "{}"})
+        for client in _client(handler):
+            client.upsert_remote(config)
+
+        assert answers == [("*oauth-confirm,teamdrive,,", "false"), ("teamdrive_ok", "false")]
+
+    def test_a_setup_step_rclone_fails_raises_its_message_not_the_request(self):
+        """OneDrive checks the drive against Microsoft Graph while the remote is created; a failure comes back as
+        ``Error`` with no question, and is reported instead of being mistaken for one."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "State": "choose_type",
+                    "Option": None,
+                    "Error": 'Failed to query root for drive "b!x": HTTP error 403 (403 Forbidden)',
+                    "Result": "",
+                },
+            )
+
+        config = RcloneSourceConfig(
+            name="r", backend_type=RcloneBackendType.ONEDRIVE, options={"client_secret": "TOPSECRET"}
+        )
+        for client in _client(handler):
+            with pytest.raises(ValueError, match="could not be configured: Failed to query root") as exc_info:
+                client.upsert_remote(config)
+        assert "TOPSECRET" not in str(exc_info.value)
+
     def test_an_rclone_error_surfaces_the_daemons_message_not_the_request(self):
         """rclone echoes the request under ``input`` in every error body, credentials included."""
 
