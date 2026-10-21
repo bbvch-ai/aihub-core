@@ -1359,24 +1359,6 @@ services:
       - pii-detection  # Isolated zone: callers (litellm, agents) join it to reach the analyzer
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
-  presidio-anonymizer:
-    container_name: presidio-anonymizer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
-    restart: always
-    labels:
-      healthcheck.enabled: 'true'
-      healthcheck.protocol: http
-      healthcheck.port: '3000'
-      healthcheck.path: /health
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
-  # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
     image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable
@@ -1406,8 +1388,9 @@ services:
       SWISS_LLM_CLOUD_OCR_API_KEY: ${SWISS_LLM_CLOUD_OCR_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
+      # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
-      PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
@@ -1424,16 +1407,16 @@ services:
       - ./configs/litellm/litellm-config.infomaniak.dev.gpu.yml:/app/config.infomaniak.yml
       - ./configs/litellm/litellm-config.stoney.dev.gpu.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
+      - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
       postgres:
         condition: service_healthy
+      # The guardrail blocks calls to external models while the analyzer cannot answer
       presidio-analyzer:
-        condition: service_started
-      presidio-anonymizer:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test:
         - CMD

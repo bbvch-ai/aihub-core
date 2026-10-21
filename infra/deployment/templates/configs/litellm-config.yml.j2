@@ -30,6 +30,7 @@ model_list:
       api_key: os.environ/LOCAL_LLM_TOKEN
       drop_params: true
     model_info:
+      aihub_hosting_location: local
       mode: chat
       max_input_tokens: 131072
       max_output_tokens: 8192
@@ -52,6 +53,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       max_input_tokens: 65536
       max_output_tokens: 32768
@@ -69,6 +71,7 @@ model_list:
       api_key: os.environ/STONEY_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       # stoney's max_model_len 163840 is input + output combined, so these two must sum to it.
       max_input_tokens: 155648
@@ -86,6 +89,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       # Infomaniak serves a 100016-token window, input + output combined (its 400 names it), so these two must
       # sum to it. Their GET /1/ai/models declares max_token_input: 100000, which is the whole window, and their
@@ -105,6 +109,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       max_input_tokens: 131072
       max_output_tokens: 65536
@@ -124,6 +129,7 @@ model_list:
       # Ministral's Mistral tokenizer 400s on `chat_template_kwargs`, and has no reasoning to disable.
       additional_drop_params: [ "chat_template_kwargs" ]
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       # Infomaniak serves an 80000-token window, input + output combined (its 400 names it), so these two must sum
       # to it. Their GET /1/ai/models declares max_token_input: 100000, more than the model accepts at all.
@@ -141,6 +147,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: chat
       max_input_tokens: 131072
       max_output_tokens: 8192
@@ -168,6 +175,7 @@ model_list:
 {%- endif %}
       drop_params: true
     model_info:
+      aihub_hosting_location: {{ 'local' if has_mineru_vlm else 'swiss_cloud' }}
       mode: chat
       max_input_tokens: 8192
       max_output_tokens: 8192
@@ -197,6 +205,7 @@ model_list:
 {%- endif %}
       drop_params: true
     model_info:
+      aihub_hosting_location: {{ 'local' if has_local_models else 'swiss_cloud' }}
       mode: embedding
       # The chunker reads this to size nodes. Without it LiteLLM reports null and callers have to guess,
       # which is how oversized chunks reached the model and failed the whole document.
@@ -229,6 +238,7 @@ model_list:
 {%- endif %}
       drop_params: true
     model_info:
+      aihub_hosting_location: {{ 'local' if has_local_models else 'swiss_cloud' }}
       mode: rerank
       max_input_tokens: 8192
 {%- if has_local_models %}
@@ -249,6 +259,7 @@ model_list:
       api_key: XXX
       drop_params: true
     model_info:
+      aihub_hosting_location: local
       mode: audio_transcription
       base_model: openai/whisper-1
       input_cost_per_second: 0
@@ -266,6 +277,7 @@ model_list:
       api_version: '2024-06-01'
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: audio_transcription
       base_model: openai/whisper-1
       input_cost_per_second: 0.00004083
@@ -283,6 +295,7 @@ model_list:
       api_key: os.environ/SWISS_LLM_CLOUD_IMAGE_API_KEY
       drop_params: true
     model_info:
+      aihub_hosting_location: swiss_cloud
       mode: image_generation
 {%- endif %}
 
@@ -291,30 +304,28 @@ model_list:
 # Guardrails Configuration
 # ===================================================================
 guardrails:
-  - guardrail_name: "presidio-mask-guard"
+  # Anonymises chat requests through the Presidio analyzer and restores the answer, streamed or not
+  # (litellm_functions/pii_anonymisation_guardrail.py). It runs on every call to a model whose
+  # model_info.aihub_hosting_location is not `local`, and on a local model when the call requests it by name
+  # ("guardrails": ["pii-anonymisation"]). default_on stays false: the guardrail itself decides by hosting location.
+  - guardrail_name: "pii-anonymisation"
     litellm_params:
-      guardrail: presidio
+      guardrail: pii_anonymisation_guardrail.PiiAnonymisationGuardrail
+      mode: [pre_call, post_call]
       default_on: false
-      mode: "pre_call"
       presidio_language: "de"
-      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-      output_parse_pii: true
       pii_entities_config:
         PERSON: "MASK"
+        LOCATION: "MASK"
+        CH_ADDRESS: "MASK"
         EMAIL_ADDRESS: "MASK"
-
-  - guardrail_name: "presidio-block-guard"
-    litellm_params:
-      guardrail: presidio
-      default_on: false
-      mode: "pre_call"
-      presidio_language: "de"
-      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-      output_parse_pii: true
-      pii_entities_config:
-        CREDIT_CARD: "BLOCK"
+        PHONE_NUMBER: "MASK"
+        IBAN_CODE: "MASK"
+        NATIONAL_ID: "MASK"
+        CH_MRN: "MASK"
+        CH_ID_DOCUMENT: "MASK"
+        CH_INSURANCE_CARD: "MASK"
+        DATE_OF_BIRTH: "MASK"
 
 # ===================================================================
 # General Settings
