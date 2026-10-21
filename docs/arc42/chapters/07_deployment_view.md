@@ -34,7 +34,7 @@ graph TB
             vLLMRerank["vLLM BGE-Reranker :8184 (GPU only)"]
             Speech["Speaches :8185 (GPU only)"]
             MinerU2["MinerU :8002 (GPU only)"]
-            Pres["Presidio :3001"]
+            Pres["Presidio analyzer :3000"]
             OTELc["OTEL Collector"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
