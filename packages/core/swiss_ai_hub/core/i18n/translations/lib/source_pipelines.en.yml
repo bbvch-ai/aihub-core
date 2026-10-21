@@ -5,12 +5,19 @@ manual_upload:
     synchronises them.
 rclone:
   display_name: Cloud storage sync (rclone)
-  description: Keeps the database in sync with a Google Drive folder or an S3 bucket.
-    Each top-level folder becomes a namespace.
+  description: Keeps the database in sync with a SharePoint document library, a OneDrive,
+    a Google Drive folder or an S3 bucket. Each top-level folder becomes a namespace.
   config:
     backend_type:
       label: Storage backend
       help: Which kind of system the files are pulled from.
+      options:
+        onedrive: OneDrive / SharePoint
+        drive: Google Drive
+        s3: Amazon S3 / S3-compatible
+        azureblob: Azure Blob Storage
+        sftp: SFTP
+        local: Local folder
     root_path:
       label: Root folder
       help: Folder inside the source to sync. Each of its top-level folders becomes
@@ -34,10 +41,12 @@ rclone:
         help: Entra ID tenant (directory) ID.
       drive_id:
         label: Drive ID
-        help: ID of the drive to sync; for SharePoint the document library's drive.
+        help: ID of the drive to sync. For SharePoint, the drive of the document library,
+          an ID starting with b! as Microsoft Graph lists it among the site's drives.
       drive_type:
         label: Drive type
-        help: personal, business or documentLibrary (SharePoint).
+        help: personal, business or documentLibrary (SharePoint). rclone takes the
+          value Microsoft Graph reports for the drive when it connects.
       region:
         label: Region
         help: 'Microsoft cloud: global, us, de or cn.'

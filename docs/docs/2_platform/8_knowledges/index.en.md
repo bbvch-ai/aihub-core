@@ -77,10 +77,13 @@ is a matter of editing the source. Either way, the system then:
 
 #### Files from cloud storage
 
-Pick the storage system (Google Drive or S3 — the two backends verified end to end), enter its credentials, the folder
-to sync and optional include/exclude patterns. For Google Drive the service-account key is uploaded as the `.json` file
-downloaded from Google Cloud, and the dialog shows the `client_email` to share the Drive folder with. Each top-level
-folder of the synced root becomes a collection; files directly in the root are skipped and counted in the run.
+Pick the storage system (OneDrive / SharePoint, Google Drive or S3 — the backends verified end to end), enter its
+credentials, the folder to sync and optional include/exclude patterns. For SharePoint the credentials belong to an Entra
+ID application with read access to the site, and the drive is the document library's
+([setup](../../3_sdk/3_building_pipelines/3_data_ingestion_pipeline/#connecting-a-sharepoint-document-library)). For
+Google Drive the service-account key is uploaded as the `.json` file downloaded from Google Cloud, and the dialog shows
+the `client_email` to share the Drive folder with. Each top-level folder of the synced root becomes a collection; files
+directly in the root are skipped and counted in the run.
 
 If two top-level folders would end up as the same collection name (`hr docs` and `hr_docs`), the first one keeps the
 name and the second is skipped: its files reach the data lake but are never ingested, and the ingestion run names the
