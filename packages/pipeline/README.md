@@ -94,11 +94,11 @@ Upload a document to that database, and watch it flow: `observe → documents (p
 RAG agent pointed at it can now answer questions over it.
 
 To also pull from an external source, no extra code is needed: the platform's `rclone_pipeline` image
-(`rclone_pipeline_definitions()`) syncs every knowledge database that picks a **Source** in the create dialog — Google
-Drive, S3 or, where enabled, a local path (the backends tested end to end; OneDrive, Azure Blob and SFTP are hidden but
-still sync databases that use them) — from the backend and credentials stored on that database, with no code location,
-compose service or environment variable per source. Each top-level folder of the synced root becomes a namespace, and
-every synced file is announced to the ingestion pipeline the way an upload is.
+(`rclone_pipeline_definitions()`) syncs every knowledge database that picks a **Source** in the create dialog — OneDrive
+/ SharePoint, Google Drive, S3 or, where enabled, a local path (the backends tested end to end; Azure Blob and SFTP are
+hidden but still sync databases that use them) — from the backend and credentials stored on that database, with no code
+location, compose service or environment variable per source. Each top-level folder of the synced root becomes a
+namespace, and every synced file is announced to the ingestion pipeline the way an upload is.
 
 Records that are not files, such as Jira issues or Confluence pages, come through the `structured_pipeline`
 (`structured_pipeline_definitions()`). It runs a [dlt](https://dlthub.com/) source per database and writes each record

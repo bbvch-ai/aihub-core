@@ -5,12 +5,20 @@ manual_upload:
     ; rien ne les synchronise.
 rclone:
   display_name: Synchronisation de stockage cloud (rclone)
-  description: Maintient la base synchronisée avec un dossier Google Drive ou un bucket
-    S3. Chaque dossier de premier niveau devient un espace de noms.
+  description: Maintient la base synchronisée avec une bibliothèque de documents SharePoint,
+    un OneDrive, un dossier Google Drive ou un bucket S3. Chaque dossier de premier
+    niveau devient un espace de noms.
   config:
     backend_type:
       label: Backend de stockage
       help: Type de système d'où les fichiers sont récupérés.
+      options:
+        onedrive: OneDrive / SharePoint
+        drive: Google Drive
+        s3: Amazon S3 / compatible S3
+        azureblob: Azure Blob Storage
+        sftp: SFTP
+        local: Dossier local
     root_path:
       label: Dossier racine
       help: Dossier de la source à synchroniser. Chacun de ses dossiers de premier
@@ -35,11 +43,13 @@ rclone:
         help: ID du tenant (annuaire) Entra ID.
       drive_id:
         label: ID de lecteur
-        help: ID du lecteur à synchroniser ; pour SharePoint, le lecteur de la bibliothèque
-          de documents.
+        help: ID du lecteur à synchroniser. Pour SharePoint, le lecteur de la bibliothèque
+          de documents, un ID commençant par b! tel que Microsoft Graph le liste parmi
+          les lecteurs du site.
       drive_type:
         label: Type de lecteur
-        help: personal, business ou documentLibrary (SharePoint).
+        help: personal, business ou documentLibrary (SharePoint). rclone reprend à
+          la connexion la valeur que Microsoft Graph indique pour le lecteur.
       region:
         label: Région
         help: 'Cloud Microsoft : global, us, de ou cn.'

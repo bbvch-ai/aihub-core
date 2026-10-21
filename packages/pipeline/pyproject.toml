@@ -33,7 +33,7 @@ dependencies = [
     "apprise>=1.9.9",
     "openai>=1.76.2",
     "dlt>=1.30.0",
-    "dagster-dlt>=0.29.23",
+    "dagster-dlt>=0.29.24",
     "markdownify>=1.2.2",
     "beautifulsoup4>=4.14.3",
 ]

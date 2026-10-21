@@ -116,6 +116,8 @@ class EndpointsDiscoveryService(abc.ABC):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
+        self.app.openapi_schema = None
+
     # Legacy method names for backward compatibility
     def _get_endpoint_base_path(self, entity_class: str, entity_id: str) -> str:
         """Legacy method - delegates to _get_endpoint_base_path_for_instance."""
