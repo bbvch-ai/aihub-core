@@ -36,7 +36,7 @@ class TranslationService:
         """
         Fills in the empty locales of the LocaleString from the request.
         """
-        llm_config = LLMConfig(model_name=request.model_name or cls.DEFAULT_MODEL)
+        llm_config = LLMConfig.deterministic(request.model_name or cls.DEFAULT_MODEL)
         outcome = await cls.translate(
             locale_string=request.text,
             llm_config=llm_config,

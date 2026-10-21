@@ -477,6 +477,9 @@ class TestCreateAgentInstanceGrantWiring:
         stack.enter_context(patch(f"{_MODULE}.AccessChecker"))
         stack.enter_context(patch(f"{_MODULE}.ModelCreationService"))
         stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        stack.enter_context(
+            patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
+        )
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         stack.enter_context(patch(f"{_MODULE}.FullAgentInstanceDTO"))
@@ -556,6 +559,9 @@ class TestUpdateAgentInstanceLocksAgentId:
         config_auth = stack.enter_context(patch(f"{_MODULE}.ConfigAuthorizationService"))
         config_auth.validate_for_user_or_raise = AsyncMock()
         helper = stack.enter_context(patch(f"{_MODULE}.InstanceConfigHelper"))
+        stack.enter_context(
+            patch(f"{_MODULE}.ModelLimitValidator.reject_values_beyond_model_limits", AsyncMock(return_value=None))
+        )
         helper.normalize_form_configuration.side_effect = lambda configuration: configuration
         helper.apply_metadata_to_entity.side_effect = lambda _config_instance, entity: entity
         config_doc = stack.enter_context(patch(f"{_MODULE}.AgentConfigEntityDocument"))

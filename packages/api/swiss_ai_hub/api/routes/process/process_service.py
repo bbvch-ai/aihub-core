@@ -30,6 +30,7 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
+from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
 
 
 class ProcessService:
@@ -348,6 +349,7 @@ class ProcessService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -400,6 +402,7 @@ class ProcessService:
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

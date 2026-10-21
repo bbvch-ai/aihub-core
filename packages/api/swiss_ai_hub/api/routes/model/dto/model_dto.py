@@ -73,6 +73,15 @@ class ModelInfoDTO(BaseModel):
         bool | None, Field(None, description="Whether the model supports structured response schemas")
     ]
     supports_vision: Annotated[bool | None, Field(None, description="Whether the model supports vision/image input")]
+    max_images: Annotated[
+        int | None, Field(None, description="Most images one request may carry, curated in the LiteLLM config")
+    ]
+    default_temperature: Annotated[
+        float | None, Field(None, description="Sampling temperature used when a profile sets none, curated per model")
+    ]
+    default_top_p: Annotated[
+        float | None, Field(None, description="Nucleus-sampling top_p used when a profile sets none, curated per model")
+    ]
     supports_function_calling: Annotated[
         bool | None, Field(None, description="Whether the model supports function calling")
     ]

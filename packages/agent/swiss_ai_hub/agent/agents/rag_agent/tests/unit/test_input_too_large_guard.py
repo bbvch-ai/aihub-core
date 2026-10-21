@@ -90,6 +90,33 @@ class TestAnInputThatFitsIsUntouched:
         displayer.display_chunk.assert_not_called()
 
 
+class TestAnUnsetLimitLeavesTheHistoryToTheWindow:
+    @pytest.mark.asyncio
+    async def test_the_history_is_trimmed_to_the_window_alone(self):
+        """No ceiling of the admin's own: what precedes the last turn may fill everything the window leaves."""
+        history = [_message(2_000) for _ in range(60)]
+
+        with _with_window(MODEL_WINDOW):
+            result = await do_limit_chat_history(
+                history, None, history[-1], [_llm_config()], _displayer(), _locale_handler()
+            )
+
+        assert isinstance(result, LimitChatHistoryEvent)
+        assert 40 < len(result.limited_history) < len(history)
+
+    @pytest.mark.asyncio
+    async def test_without_a_known_window_the_fallback_limit_applies(self):
+        history = [_message(2_000) for _ in range(80)]
+
+        with _with_window(None):
+            result = await do_limit_chat_history(
+                history, None, history[-1], [_llm_config()], _displayer(), _locale_handler()
+            )
+
+        assert isinstance(result, LimitChatHistoryEvent)
+        assert len(result.limited_history) < len(history)
+
+
 class TestAnInputTooLargeForTheModelIsRefused:
     @pytest.mark.asyncio
     async def test_a_single_oversized_turn_stops_the_run(self):

@@ -7,7 +7,20 @@ config:
   temperature:
     label: Temperatur
     help: 'Steuert Zufälligkeit: 0 = deterministisch, 2 = sehr kreativ. Niedrigere
-      Werte für sachliche Aufgaben.'
+      Werte für sachliche Aufgaben. Hilfsschritte (z. B. Prüfungen, Titel) verwenden
+      0, solange hier kein Wert gesetzt ist.'
+    toggle_label: Standard-Temperatur des Modells überschreiben
+  top_p:
+    label: Breite der Wortauswahl (top_p)
+    help: 'Wie viele Alternativen das Modell für jedes nächste Wort in Betracht zieht:
+      nur die wahrscheinlichsten Wörter, die zusammen diese Wahrscheinlichkeit erreichen.
+      Niedrigere Werte ergeben fokussiertere und vorhersehbarere Antworten, höhere
+      Werte vielfältigere.'
+    toggle_label: Standard-Breite der Wortauswahl (top_p) des Modells überschreiben
+  accept_images:
+    label: Bilder akzeptieren
+    help: Bilder in der Unterhaltung an das Modell weitergeben. Nur für Modelle verfügbar,
+      die Bildeingaben unterstützen.
   logprobs:
     label: Log-Wahrscheinlichkeiten zurückgeben
     help: Token-Level Log-Wahrscheinlichkeiten in der Antwort einschliessen. Nützlich

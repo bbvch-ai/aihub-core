@@ -90,8 +90,8 @@ The Teachable Assistant is delivered as a **blueprint** from which you create co
    three categories").
 4. **Add your examples.** This is the core of the setup. Add several **example pairs**, each with the user's input and
    the exact response you want. Three to ten well-chosen examples usually beat a long written prompt.
-5. **Choose the model and parameters.** Pick a chat model and set the temperature — low for classification and
-   formatting, where consistency matters.
+5. **Choose the model and parameters.** Pick a chat model and, where consistency matters (classification, formatting),
+   switch on the temperature override and set it low.
 6. **Save**, then test with inputs that resemble (but don't copy) your examples, plus a few off-topic ones to confirm
    the suitability guard declines them.
 
@@ -133,25 +133,28 @@ Each example is one pair:
 
 ### Input budget
 
-| Field                | Type   | Default  | Description                                                                                                                          |
-| -------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Max Input Tokens** | Number | `100000` | Size of the input budget; the conversation is trimmed to fit. Range 1,000–200,000. Keep it within the chosen model's context window. |
+| Field                | Type              | Default            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------- | ----------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Max Input Tokens** | Number (optional) | Model window (85%) | Size of the input budget; the conversation is trimmed to fit. Optional. Unticked by default: the agent fills about 85% of the selected chat model's input window, which is shown in the checkbox label and the disabled field (e.g. "(78,050)" for gemma on Infomaniak) and follows the model when you switch models. The 15% margin allows for differences between the token counter and the model's tokenizer. Tick **Set your own input limit** to set a lower limit and cut cost: minimum 1,024, maximum that same 85% figure, which the hint under the field names next to the model's full window; a higher value is blocked in the form and rejected by the API. Profiles that stored a limit above that figure have it unset automatically when the platform is upgraded. |
 
 ### Language model
 
-| Field                        | Type             | Default | Description                                                                                                                |
-| ---------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Model**                    | Model picker     | —       | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                            |
-| **Temperature**              | Number           | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for classification and strict formatting; raise only for creative tasks. Range 0.0–2.0. |
-| **Return Log Probabilities** | Toggle           | Off     | Advanced/diagnostic option for token-level confidence scores. Leave off unless needed.                                     |
-| **Top Log Probabilities**    | Number           | `0`     | How many alternative tokens to report per position; only applies when log probabilities are enabled. Range 0–20.           |
-| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up.                                                                           |
+| Field                              | Type              | Default       | Description                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------- | ----------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**                          | Model picker      | —             | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                                                                                                                                                                                                                                                                                                                                        |
+| **Temperature**                    | Number (optional) | Model default | Randomness. Unticked by default: the model's own recommended default is used and shown in the checkbox label and the disabled field. Tick **Override the model's default temperature** and keep it low (`0.0`–`0.3`) for classification and strict formatting; raise only for creative tasks. Range 0.0–2.0. Helper steps (checks, titles, question condensation) use `0.0` while it is unticked; a value you set applies to them too. |
+| **Breadth of word choice (top_p)** | Number (optional) | Model default | How many alternatives the model considers for each next word (0–1), with the same override checkbox.                                                                                                                                                                                                                                                                                                                                   |
+| **Accept images**                  | Checkbox          | On            | Whether images in the conversation are passed to the model. Disabled for models without image support.                                                                                                                                                                                                                                                                                                                                 |
+| **Return Log Probabilities**       | Toggle            | Off           | Advanced/diagnostic option for token-level confidence scores. Leave off unless needed.                                                                                                                                                                                                                                                                                                                                                 |
+| **Top Log Probabilities**          | Number            | `0`           | How many alternative tokens to report per position; only applies when log probabilities are enabled. Range 0–20.                                                                                                                                                                                                                                                                                                                       |
+| **Timeout**                        | Number (seconds)  | `600`         | How long to wait for the model before giving up.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ::: details How the settings combine at runtime
 A message is trimmed to **Max Input Tokens**, checked against the **Description** by the suitability guard, and (if
 accepted) condensed into a standalone question. The assistant then builds the context as
 `[ system prompt → your example pairs → condensed question ]` and calls the selected **Model** with the configured
-**Temperature**, **Timeout**, and log-probability options, streaming the reply to the chat UI.
+**Temperature**, **Breadth of word choice (top_p)**, **Timeout**, and log-probability options, streaming the reply to
+the chat UI.
 :::
 
 ## Best practices
@@ -169,5 +172,6 @@ single word.
 **Write a tight Description.** It is the on/off switch for the suitability guard. State exactly what's in scope so
 unrelated questions are declined cleanly.
 
-**Use a low temperature for structured tasks.** Classification, extraction, and formatting benefit from `0.0`–`0.2` so
-the output stays consistent across runs.
+**Use a low temperature for structured tasks.** Classification, extraction, and formatting benefit from `0.0`–`0.2`
+(switch the temperature override on and set it, since the default now follows the model) so the output stays consistent
+across runs.

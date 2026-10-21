@@ -80,7 +80,7 @@ class FewShotAgent(Agent):
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
             limited = limit_chat_history(
-                chat_history=event.messages, number_of_input_tokens=agent_config.number_of_input_tokens
+                chat_history=event.messages, number_of_input_tokens=agent_config.input_ceiling()
             )
             return Conversation.contextualize(history=limited, message=event)
 
@@ -101,7 +101,7 @@ class FewShotAgent(Agent):
 
         # Trim only what precedes the last turn: handing the trimmer a list that still holds it charges it twice, and
         # `ChatMemoryBuffer` then drops the whole earlier conversation.
-        older_limit = min(agent_config.number_of_input_tokens, budget - irreducible_tokens)
+        older_limit = agent_config.held_to_ceiling(budget - irreducible_tokens)
         older = (
             limit_chat_history(chat_history=conversation[:-1], number_of_input_tokens=older_limit)
             if older_limit > 0

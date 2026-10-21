@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 32 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
 │   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 30 concrete form elements
+│   └── elements/                    # 32 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -285,12 +285,31 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 32 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text),
+ModelBoundInputNumber and ModelGatedCheckbox.
+
+**Model-bound elements**:
+
+- **What they do**: `ModelBoundInputNumber` takes its maximum (`max_from`) and its default hint (`default_from`) from
+  the LiteLLM `model_info` of the model picked elsewhere on the form. `ModelGatedCheckbox` can only be switched on while
+  that model does not set `requires` to false.
+- **How the model is referenced**: `model_ref` is written relative to the declaring form, with `../` for a parent.
+  `FormkitElement.anchored_at`, called from `_prepare_formkit_element`, rewrites it to the path from the form root.
+- **Where they are enforced**: the frontend applies them, and `ModelLimitValidator` in `packages/api` enforces them at
+  save time, since the JSON schema cannot carry a bound that depends on another field.
+- **Where they are used**: `LLMParameter` (temperature, top_p, accept_images) and
+  `ConversationFields.number_of_input_tokens`.
+- **Own override instead of the generic toggle**: a nullable `ModelBoundInputNumber` with an `override_label` reports
+  `renders_own_unset_state()`, so `_prepare_formkit_element` does not mark it `nullable` and the frontend renders no
+  "Enable X" toggle. The component shows its own checkbox with the model's default (or `fallback_default`, or "provider
+  default") in the label, keeps the input visible but disabled while unset, and pre-fills the default when ticked. A
+  budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
+  that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
 ### Nested Forms
 

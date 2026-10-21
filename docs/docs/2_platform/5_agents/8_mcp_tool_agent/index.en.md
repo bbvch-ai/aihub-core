@@ -89,7 +89,8 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 2. **Create a profile** with an **Agent ID**, **Name**, **Description**, and **Icon**.
 3. **Configure the MCP connection.** Give it a name, the server URL, and choose how to authenticate (see auth modes
    below).
-4. **Choose the chat model.** Pick a capable, tool-calling model and keep the temperature low.
+4. **Choose the chat model.** Pick a capable, tool-calling model and keep the temperature low (switch on the temperature
+   override and set it).
 5. **Write a system prompt** describing the agent's role and any rules about how it should use the tools.
 6. **Set the iteration limit** to bound how many reason-act loops it may run.
 7. **Save and test** with a request that should trigger a tool call, and confirm the tool runs and the result comes
@@ -128,14 +129,15 @@ How the agent reaches the external tool server.
 
 ### Reasoning
 
-| Field                | Type         | Default   | Description                                                                                                   |
-| -------------------- | ------------ | --------- | ------------------------------------------------------------------------------------------------------------- |
-| **Model**            | Model picker | —         | The chat model that reasons and selects tools. Prefer a strong tool-calling model. Required.                  |
-| **System Prompt**    | Long text    | *(empty)* | Instructions for how the agent should behave and use the tools.                                               |
-| **Max Iterations**   | Number       | `10`      | How many reason-act loops the agent may run before stopping gracefully. Range 1–100. Bounds runaway tool use. |
-| **Max Input Tokens** | Number       | `128000`  | The input budget; the conversation is trimmed to fit. Range 1,000–200,000.                                    |
+| Field                | Type              | Default            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------- | ----------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**            | Model picker      | —                  | The chat model that reasons and selects tools. Prefer a strong tool-calling model. Required.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **System Prompt**    | Long text         | *(empty)*          | Instructions for how the agent should behave and use the tools.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Max Iterations**   | Number            | `10`               | How many reason-act loops the agent may run before stopping gracefully. Range 1–100. Bounds runaway tool use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Max Input Tokens** | Number (optional) | Model window (85%) | The input budget; the conversation is trimmed to fit. Optional. Unticked by default: the agent fills about 85% of the selected chat model's input window, which is shown in the checkbox label and the disabled field (e.g. "(78,050)" for gemma on Infomaniak) and follows the model when you switch models. The 15% margin allows for differences between the token counter and the model's tokenizer. Tick **Set your own input limit** to set a lower limit and cut cost: minimum 1,024, maximum that same 85% figure, which the hint under the field names next to the model's full window; a higher value is blocked in the form and rejected by the API. Profiles that stored a limit above that figure have it unset automatically when the platform is upgraded. |
 
-The **Model** also exposes the standard parameters (temperature, timeout, log-probability options) described on the
+The **Model** also exposes the standard parameters (temperature and breadth-of-word-choice (top_p) overrides, image
+handling, timeout, log-probability options) described on the
 [Document Intelligence Assistant](../5_document_intelligence_assistant/#language-model) page.
 
 ## Best practices
@@ -151,7 +153,8 @@ account.
 raise it cautiously for multi-step workflows. The limit is your guardrail against the agent looping indefinitely.
 
 **Use a capable, tool-calling model at low temperature.** Reliable tool selection depends on the model. A strong model
-at a low temperature picks the right tool with the right arguments far more consistently.
+at a low temperature picks the right tool with the right arguments far more consistently. Switch the temperature
+override on and set it, since the default now follows the model.
 
 **Be explicit in the system prompt.** Tell the agent what it's for, which tools to prefer, and what it must not do.
 Clear instructions reduce wrong or unnecessary tool calls.

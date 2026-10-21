@@ -136,7 +136,7 @@ def document_ingestion_pipeline_definitions(
     )
     registration_sensor = _registration_sensor(ingestor, display_name, description, announced_config)
 
-    llm_config = LLMConfig(model_name=settings.LLM_MODEL)
+    llm_config = LLMConfig.deterministic(settings.LLM_MODEL)
     embedding_config = EmbeddingModelConfig(model_name=settings.EMBEDDING_MODEL)
 
     resources: dict = {
