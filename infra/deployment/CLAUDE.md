@@ -221,8 +221,10 @@ After publishing, all stages pull the new image automatically via `docker compos
 
 The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
 (`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
-and Presidio's stock REST server with one change: every route but `/health` needs
-`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`. The recognizer config (`templates/configs/presidio-analyzer.yaml`,
+and Presidio's stock REST server with two changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
+recognizer config (`templates/configs/presidio-analyzer.yaml`,
 copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
 `make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
 header.

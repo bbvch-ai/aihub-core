@@ -35,7 +35,7 @@ RUN python -c "from gliner import GLiNER; GLiNER.from_pretrained('urchade/gliner
     && mkdir -p "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs" \
     && printf '%s' "${GLINER_REVISION}" > "${HF_HOME}/hub/models--urchade--gliner_multi_pii-v1/refs/main"
 
-COPY --chown=1001:1001 app.py logging.ini /app/
+COPY --chown=1001:1001 app.py word_aligned_text_chunker.py logging.ini /app/
 
 ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 

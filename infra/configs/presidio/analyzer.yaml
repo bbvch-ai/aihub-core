@@ -197,7 +197,8 @@ recognizer_registry:
             ]\((?-i:[A-Z]{2})\))?
           score: 0.4
         - name: postcode_city
-          regex: \b(?:CH-)?[1-9]\d{3}[ ](?-i:[A-ZÄÖÜÉ])[\w\-/]+(?:\.?[ ](?-i:[A-ZÄÖÜÉ])[\w\-/]+)?
+          regex: \b(?:CH-)?[1-9]\d{3}[ ](?:(?:st|ste)\.[ ](?-i:[A-ZÄÖÜÉ])[\w\-/]+|(?-i:[A-ZÄÖÜÉ])[\w\-/]+(?:[
+            ](?-i:[A-ZÄÖÜÉ])[\w\-/]+)?)
           score: 0.5
       supported_languages:
         - {language: de, context: [adresse, wohnhaft, strasse, plz, ort, domicile,

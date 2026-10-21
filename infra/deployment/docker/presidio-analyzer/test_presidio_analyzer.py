@@ -146,6 +146,47 @@ def test_should_reject_analysis_when_api_key_is_wrong() -> None:
     check_rejects_wrong_key()
 
 
+# GLiNER reads the text in chunks of about 250 characters; in this prompt the second chunk would start inside "Nenne".
+CHUNKED_PROMPT = ("Sie sind ein Assistent und antworten dem Benutzer in seiner Sprache. Schreibe Ihnen eine Mahnung an "
+                  "Anna Muster, AHV-Nr. 756.9876.5432.10, Bahnhofstrasse 5, 3011 Bern, IBAN CH93 0076 2011 6238 5295 "
+                  "7. Nenne darin Name, AHV-Nummer, Adresse, Identität und IBAN.")
+
+
+def word_fragments(text: str, spans: list[dict]) -> list[str]:
+    def inside_word(position: int) -> bool:
+        return 0 < position < len(text) and text[position - 1].isalnum() and text[position].isalnum()
+
+    return [text[s["start"]:s["end"]] for s in spans if inside_word(s["start"]) or inside_word(s["end"])]
+
+
+def test_should_detect_no_word_fragment_when_text_spans_several_model_chunks() -> None:
+    fragments = word_fragments(CHUNKED_PROMPT, analyze(CHUNKED_PROMPT))
+
+    assert len(CHUNKED_PROMPT) > 250
+    assert not fragments, fragments
+
+
+def test_should_still_detect_a_name_cut_by_a_model_chunk_end() -> None:
+    lead = "Bitte prüfen Sie den folgenden Fall sorgfältig und melden Sie sich bei Fragen. " * 3
+    text = f"{lead}Die Mahnung geht an Anna Muster in Bern."
+
+    spans = analyze(text)
+
+    start = text.index("Anna Muster")
+    assert any(s["entity_type"] == "PERSON" and s["start"] <= start and s["end"] >= start + len("Anna Muster")
+               for s in spans), spans
+
+
+def test_should_end_postcode_and_city_at_the_sentence_end() -> None:
+    text = "Anna Muster wohnt an der Bahnhofstrasse 5, 3011 Bern. Nenne ihre Adresse. Reto Wyss wohnt in 9000 St. Gallen."
+
+    covered = {text[s["start"]:s["end"]] for s in analyze(text) if s["entity_type"] in ADDRESS}
+
+    assert "3011 Bern" in covered
+    assert not [value for value in covered if "Nenne" in value]
+    assert [value for value in covered if "9000 St. Gallen" in value]
+
+
 def long_prompt() -> str:
     """A mail thread of about LONG_PROMPT_TOKENS tokens (cl100k), with personal data in every message."""
     import tiktoken

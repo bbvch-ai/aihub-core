@@ -1585,7 +1585,7 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-1
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-2
     restart: always
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
