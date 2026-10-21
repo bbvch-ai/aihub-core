@@ -325,6 +325,63 @@ def test_should_analyse_in_de_when_request_hints_another_language() -> None:
     assert {call["language"] for call in guardrail.analyzed} == {"de"}
 
 
+# ---------------------------------------------------------------- allow-list
+
+# How the analyzer applies an allow-list in regex mode: its default flags, then search() on each detected span.
+PRESIDIO_REGEX_FLAGS = re.DOTALL | re.MULTILINE | re.IGNORECASE
+
+
+def guardrail_capturing_requests(allow_list: list[str] | None) -> tuple:
+    sent: list[dict] = []
+    guardrail = guardrail_module.PiiAnonymisationGuardrail(
+        guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False,
+        pii_allow_list=allow_list)
+
+    def answer(analyzer_request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(analyzer_request.content))
+        return httpx.Response(200, json=[])
+
+    guardrail.client = httpx.AsyncClient(transport=httpx.MockTransport(answer))
+    return guardrail, sent
+
+
+def test_should_send_the_allow_list_with_every_analysis_when_configured() -> None:
+    guardrail, sent = guardrail_capturing_requests(["Sie", "Adresse"])
+
+    run(mask(guardrail, request("Sie wohnen an der Adresse Seefeldstrasse 18")))
+
+    assert sent[0]["allow_list_match"] == "regex"
+    assert len(sent[0]["allow_list"]) == 1
+
+
+def test_should_send_no_allow_list_when_none_is_configured() -> None:
+    guardrail, sent = guardrail_capturing_requests(None)
+
+    run(mask(guardrail, request("Patient Reto Wyss")))
+
+    assert "allow_list" not in sent[0]
+
+
+@pytest.mark.parametrize("span", ["Sie", "SIE", "sie", "Adresse", "AHV-Nr.", "date de naissance"])
+def test_should_allow_a_span_that_is_exactly_an_allowed_word_in_any_case(span: str) -> None:
+    pattern = guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(
+        ["Sie", "Adresse", "AHV-Nr.", "date de naissance"])
+
+    assert re.compile(pattern, PRESIDIO_REGEX_FLAGS).search(span)
+
+
+@pytest.mark.parametrize("span", ["Siegfried", "Sie Anna Muster", "Sie\nAnna Muster", "Anna Muster\nSie",
+                                  "AHV-Nrx", "Adressen"])
+def test_should_keep_masking_a_span_that_only_contains_an_allowed_word(span: str) -> None:
+    pattern = guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(["Sie", "Adresse", "AHV-Nr."])
+
+    assert not re.compile(pattern, PRESIDIO_REGEX_FLAGS).search(span)
+
+
+def test_should_send_no_allow_list_when_it_holds_only_blanks() -> None:
+    assert guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(["", "  "]) is None
+
+
 def test_should_keep_the_map_out_of_request_metadata() -> None:
     guardrail = make_guardrail()
 

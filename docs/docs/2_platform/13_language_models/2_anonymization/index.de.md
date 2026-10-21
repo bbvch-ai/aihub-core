@@ -64,6 +64,10 @@ internationale Formate, auf Deutsch, Französisch, Italienisch und Englisch:
 Andere Daten, Firmennamen und Beschreibungen, die eine Person nur über den Kontext identifizieren (eine Funktion
 zusammen mit einer Firma), werden nicht maskiert.
 
+Pronomen, Rollen und Feldbezeichnungen («Sie», «vous», «Benutzer», «Adresse», «IBAN») werden in Deutsch, Französisch,
+Italienisch und Englisch nie maskiert: Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
+ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
+
 ## Konfiguration
 
 ::: details Gateway-Konfiguration (generiert aus `litellm-config.yml.j2`):
@@ -80,6 +84,7 @@ guardrails:
         CH_ADDRESS: "MASK"
         NATIONAL_ID: "MASK"
         # ... die vollständige Liste steht im Template
+      pii_allow_list: [sie, ihnen, Benutzer, Adresse, IBAN]   # nie maskiert; vollständige Liste im Template
 
 model_list:
   - model_name: text-generation/gemma-4-31B-it
