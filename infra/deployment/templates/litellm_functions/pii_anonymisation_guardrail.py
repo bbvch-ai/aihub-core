@@ -13,6 +13,10 @@ user anonymised by hand) are passed through, never re-detected and never reused 
 is PII, so it lives only in this process, keyed by the request's litellm_call_id, and is never written into request
 metadata, which LiteLLM forwards to spend logs and callbacks. A failed or timed-out analysis fails the call.
 
+GLiNER also tags pronouns ("Sie", "vous") as PERSON and field labels ("Adresse", "IBAN") as their own type. Masking
+them garbles the prompt and the answer ("Adresse: Adresse"), so the words in `pii_allow_list` are never masked when a
+detection is exactly that word, in any case.
+
 The module is bind-mounted into the upstream LiteLLM image like custom_callbacks.py, so it may only depend on the
 stdlib, httpx and LiteLLM. The analyzer URL and key come from PRESIDIO_ANALYZER_API_BASE and PRESIDIO_ANALYZER_API_KEY.
 """
@@ -133,7 +137,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
     """Masks chat requests through the Presidio analyzer and restores the answer, streamed or not."""
 
     def __init__(self, presidio_language: str | None = None, pii_entities_config: dict | None = None,
-                 **kwargs: Any) -> None:
+                 pii_allow_list: list[str] | None = None, **kwargs: Any) -> None:
         self.analyze_url = os.environ.get("PRESIDIO_ANALYZER_API_BASE", "http://presidio-analyzer:3000").rstrip("/")
         self.analyze_url += "/analyze"
         self.api_key = os.environ.get("PRESIDIO_ANALYZER_API_KEY", "")
@@ -141,6 +145,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         # language hint (guardrail_config.language) would hit languages it has no recognizers for.
         self.language = presidio_language or "de"
         self.entities = [str(getattr(key, "value", key)) for key in (pii_entities_config or {})]
+        self.allow_list = self.allow_list_pattern(pii_allow_list or [])
         self.client = httpx.AsyncClient(timeout=ANALYZER_TIMEOUT_SECONDS)
         self._maps: dict[str, tuple[float, dict[str, str], bool]] = {}
         self._external: dict[str, bool] = {}
@@ -169,11 +174,20 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
 
     # ------------------------------------------------------------------ request
 
+    @staticmethod
+    def allow_list_pattern(words: list[str]) -> str | None:
+        """One pattern that must match the whole span. Anchored with string anchors, not ^ and $: the analyzer matches
+        with MULTILINE, so ^ and $ would let a span over a line break pass on its first line ("Sie" + "Anna Muster")."""
+        words = [word.strip() for word in words if word and word.strip()]
+        return rf"\A(?:{'|'.join(re.escape(word) for word in words)})\Z" if words else None
+
     async def analyze(self, text: str) -> list[dict]:
+        request = {"text": text, "language": self.language, "entities": self.entities or None}
+        if self.allow_list:
+            request |= {"allow_list": [self.allow_list], "allow_list_match": "regex"}
         try:
             response = await self.client.post(self.analyze_url, headers={"Authorization": f"Bearer {self.api_key}"},
-                                              json={"text": text, "language": self.language,
-                                                    "entities": self.entities or None})
+                                              json=request)
             response.raise_for_status()
             return response.json()
         except (httpx.HTTPError, ValueError) as error:

@@ -125,6 +125,137 @@ guardrails:
         CH_ID_DOCUMENT: MASK
         CH_INSURANCE_CARD: MASK
         DATE_OF_BIRTH: MASK
+      # Never masked when a detection is exactly one of these words (any case): pronouns, roles and field labels
+      # that GLiNER tags as PERSON or as the type the label names. Masking them garbles prompts and answers.
+      pii_allow_list:
+        - ich
+        - du
+        - er
+        - sie
+        - es
+        - wir
+        - ihr
+        - mich
+        - mir
+        - dich
+        - dir
+        - ihn
+        - ihm
+        - uns
+        - euch
+        - ihnen
+        - ihre
+        - ihren
+        - ihrem
+        - ihrer
+        - ihres
+        - je
+        - moi
+        - tu
+        - toi
+        - il
+        - elle
+        - lui
+        - nous
+        - vous
+        - ils
+        - elles
+        - eux
+        - io
+        - lei
+        - noi
+        - voi
+        - loro
+        - i
+        - me
+        - you
+        - he
+        - she
+        - him
+        - her
+        - we
+        - us
+        - they
+        - them
+        - Benutzer
+        - Benutzerin
+        - Nutzer
+        - Nutzerin
+        - Kunde
+        - Kundin
+        - Person
+        - Absender
+        - Empfänger
+        - utilisateur
+        - utilisatrice
+        - client
+        - cliente
+        - destinataire
+        - expéditeur
+        - personne
+        - utente
+        - destinatario
+        - mittente
+        - persona
+        - user
+        - customer
+        - recipient
+        - sender
+        - Name
+        - Vorname
+        - Nachname
+        - Adresse
+        - Anschrift
+        - Wohnadresse
+        - Strasse
+        - Straße
+        - PLZ
+        - Ort
+        - Wohnort
+        - Telefon
+        - Telefonnummer
+        - E-Mail
+        - E-Mail-Adresse
+        - IBAN
+        - Kontonummer
+        - AHV
+        - AHV-Nr.
+        - AHV-Nummer
+        - Sozialversicherungsnummer
+        - Geburtsdatum
+        - Identität
+        - Ausweis
+        - Passnummer
+        - Versichertenkarte
+        - Patientennummer
+        - nom
+        - prénom
+        - téléphone
+        - courriel
+        - AVS
+        - numéro AVS
+        - date de naissance
+        - identité
+        - passeport
+        - nome
+        - cognome
+        - indirizzo
+        - telefono
+        - numero AVS
+        - data di nascita
+        - identità
+        - passaporto
+        - first name
+        - last name
+        - address
+        - phone
+        - phone number
+        - email
+        - email address
+        - account number
+        - date of birth
+        - identity
+        - passport
 # ===================================================================
 # General Settings
 # ===================================================================

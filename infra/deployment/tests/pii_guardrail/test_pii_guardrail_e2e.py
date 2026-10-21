@@ -117,6 +117,34 @@ def test_should_stream_the_restored_answer_when_model_is_external() -> None:
     assert not [value for value in PII if value in last_prompt_seen()]
 
 
+def test_should_keep_pronouns_and_field_labels_when_they_surround_personal_data() -> None:
+    prompt = ("Sie sind ein Assistent und antworten dem Benutzer in seiner Sprache. Schreibe Ihnen eine Mahnung an "
+              "Anna Muster, AHV-Nr. 756.9876.5432.10, Bahnhofstrasse 5, 3011 Bern, IBAN CH93 0076 2011 6238 5295 7. "
+              "Nenne darin Name, AHV-Nummer, Adresse, Identität und IBAN.")
+
+    answer = chat("echo-external", prompt).json()["choices"][0]["message"]["content"]
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}")
+    assert seen.startswith("Sie sind ein Assistent und antworten dem Benutzer in seiner Sprache. Schreibe Ihnen")
+    assert seen.endswith("Nenne darin Name, AHV-Nummer, Adresse, Identität und IBAN.")
+    assert not [value for value in ["Anna Muster", "756.9876.5432.10", "3011 Bern", "CH93 0076 2011 6238 5295 7"]
+                if value in seen]
+    assert answer == prompt
+
+
+@pytest.mark.parametrize(("address", "masked"), [("3011 Bern. Nenne", "3011 Bern"),
+                                                ("9000 St. Gallen. Nenne", "9000 St. Gallen"),
+                                                ("2300 La Chaux-de-Fonds. Nenne", "2300 La Chaux-de-Fonds")])
+def test_should_end_the_postcode_and_city_at_the_sentence_end(address: str, masked: str) -> None:
+    chat("echo-external", f"Anna Muster wohnt an der Bahnhofstrasse 5, {address} ihre Adresse.")
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}")
+    assert masked not in seen
+    assert re.search(r"<[A-Z_]+_\d+>\. Nenne ihre Adresse\.$", seen)
+
+
 def tools() -> list[dict]:
     return [{"type": "function", "function": {"name": "lookup_patient", "description": "Find a patient",
                                               "parameters": {"type": "object",

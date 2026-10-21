@@ -34,14 +34,18 @@ The gateway anonymises chat requests through a project-managed Presidio analyzer
   (`infra/deployment/docker/presidio-analyzer`, hub offline at run time, pinned model revision). Every text is analysed
   under the language code `de`, where all recognizers are registered; GLiNER is multilingual, so one language means one
   model copy in memory. The recognizers (Swiss and international patterns, GLiNER labels) are a mounted deployment
-  template, not part of the image. The stock REST server gets one change: a shared API key on every route but the health
-  probe. The analyzer lives alone with its callers in the internal `pii-detection` network.
+  template, not part of the image. The stock REST server gets two changes: a shared API key on every route but the
+  health probe, and a GLiNER text chunker whose chunks start at a word (Presidio's own starts the next chunk inside a
+  word, and GLiNER then tags word tails such as "nne" as names). The analyzer lives alone with its callers in the
+  internal `pii-detection` network.
 - **Guardrail** (`litellm_functions/pii_anonymisation_guardrail.py`, mounted like the RAG-figure callback): one numbered
   placeholder per distinct value, overlapping detections merged before numbering, placeholders already in the input
   passed through and never reused. The answer is restored in its text, reasoning and tool-call arguments (JSON kept
   valid), streamed chunk by chunk with only a possible placeholder prefix held back. The placeholder map stays in the
   gateway process, keyed by the request's call id, and never enters request metadata, which LiteLLM forwards to spend
-  logs and callbacks. A failed or timed-out analysis fails the call.
+  logs and callbacks. A failed or timed-out analysis fails the call. Pronouns, roles and field labels in the four
+  languages ("Sie", "Benutzer", "Adresse", "IBAN") are an allow-list in the gateway config: GLiNER tags them as names or
+  as the type they name, and masking them garbles the prompt and the answer.
 - **Which calls**: every model declares `model_info.aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`).
   The guardrail runs on every call to a model that is not `local`; a model without the field counts as external, and the
   compose generator rejects missing or unknown values. Calls to local models run it when they request
