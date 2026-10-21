@@ -501,6 +501,16 @@ inverse; read it that way rather than expecting `child_nodes`, which comes back 
 field fits before writing any node, so a new metadata key that reintroduces the overflow fails with the offending
 document and node named instead of Milvus' `code=1100`.
 
+**Vector store — partition layout**: a knowledge collection has 1023 manual partitions plus `_default`, and a
+namespace's nodes live in the partition its name hashes to. Creating the partitions takes 15–25 s while the collection
+is already visible, so `PartitionAwareMilvusVectorStore.partition_state()` tells three layouts apart: `COMPLETE` (all
+1023), `LEGACY` (none, and no `MANUAL_PARTITIONS_MARKER` in the schema description, which the factory writes at
+creation) and `PARTIAL` (anything else). Only the first two are cached; `PARTIAL` is read again every time, because
+caching it is what sent a whole process's writes into `_default` (#1923). `add` completes a `PARTIAL` collection before
+writing; reads and deletes go through `document_partition_names`, which adds `_default` and skips hashed partitions that
+do not exist yet. `stranded_nodes` / `restore_stranded_nodes` / `delete_stranded_nodes` are the primitives the
+pipeline's `DefaultPartitionRepairService` moves stranded nodes with.
+
 ## Infrastructure Settings
 
 ~20 Pydantic `BaseSettings` classes for external service connections. Environment variables are NOT auto-loaded — they
