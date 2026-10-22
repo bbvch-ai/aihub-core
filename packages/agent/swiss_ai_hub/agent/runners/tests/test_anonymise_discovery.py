@@ -46,6 +46,7 @@ def test_should_offer_the_toggle_on_every_blueprint(package: str, agent_name: st
     platform = [name for name in names if name in (ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY)]
 
     assert isinstance(runner.published_config.anonymise, Checkbox)
-    assert names[-len(platform) :] == platform and platform[0] == ANONYMISE_CONFIG_KEY
+    assert names[-len(platform) :] == platform
+    assert platform[0] == ANONYMISE_CONFIG_KEY
     specs = ConfigSpecs.from_form(runner.published_config, runner.agent_class)
     assert specs.config_schema["properties"][ANONYMISE_CONFIG_KEY]["type"] == "boolean"
