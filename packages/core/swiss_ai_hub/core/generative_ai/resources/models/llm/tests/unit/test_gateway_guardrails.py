@@ -35,7 +35,8 @@ async def test_should_reach_tasks_and_threads_started_inside_the_block() -> None
         in_task = await asyncio.create_task(asyncio.sleep(0, result=GatewayGuardrails.anonymising()))
         in_thread = await asyncio.to_thread(GatewayGuardrails.anonymising)
 
-    assert in_task and in_thread
+    assert in_task
+    assert in_thread
 
 
 def test_should_add_the_guardrails_to_the_extra_body_and_keep_what_it_carries() -> None:
