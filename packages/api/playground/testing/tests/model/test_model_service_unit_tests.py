@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
+import httpx
 import pytest
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
@@ -23,24 +24,33 @@ _LITELLM_MODELS = [
 class _FakeAsyncClient:
     """Fakes the shared, never-closed client ``get_model_list`` drives."""
 
-    async def get(self, url: str, headers: dict[str, str]) -> Mock:
+    def __init__(self, response: httpx.Response) -> None:
+        self.response = response
+
+    async def get(self, url: str, headers: dict[str, str]) -> httpx.Response:
         assert headers == {"Authorization": "Bearer sk-user"}
-        return Mock(json=Mock(return_value={"data": _LITELLM_MODELS}))
+        return self.response
 
 
 @contextmanager
-def _patched_backend(access_rules: list[str], *, is_sys_admin: bool = False):
+def _patched_backend(
+    access_rules: list[str],
+    *,
+    is_sys_admin: bool = False,
+    response: httpx.Response | None = None,
+):
     """Stubs the LiteLLM model listing and pins the AccessChecker to explicit rules.
 
     Patching ``AccessChecker.from_user`` avoids the DB round-trip it makes via
     ``RoleEntity.get_access_rules_for_roles`` and lets each test state the grant directly.
     """
     checker = AccessChecker(access_rules, tenant_access_rules=["aihub.admin.>"], is_sys_admin=is_sys_admin)
+    gateway_response = response or httpx.Response(200, json={"data": _LITELLM_MODELS})
 
     with (
         patch(
             f"{_MODEL_SERVICE}.LiteLLMProxySettings",
-            return_value=Mock(httpx_aclient=_FakeAsyncClient()),
+            return_value=Mock(httpx_aclient=_FakeAsyncClient(gateway_response)),
         ),
         patch(
             f"{_MODEL_SERVICE}.LiteLLMService.authorization_header_for_user",
@@ -107,3 +117,27 @@ class TestModelServiceAccessFiltering:
             groups = await ModelService.get_grouped_model_list(fake_user())
         assert {group.name for group in groups} == {"chat"}
         assert _names(groups[0].models) == {"text-generation/gpt-4.1"}
+
+
+class TestModelServiceGatewayErrors:
+    @pytest.mark.asyncio
+    async def test_rejected_key_reports_502_with_the_gateways_message(self):
+        """A key LiteLLM never registered used to surface as ``KeyError: 'data'`` and a bare 500."""
+        rejection = httpx.Response(
+            401,
+            json={"error": {"message": "Authentication Error, Invalid proxy server token passed.", "code": "401"}},
+        )
+        with _patched_backend(["aihub.user.model.>"], response=rejection):
+            with pytest.raises(HTTPException) as exc:
+                await ModelService.get_model_list(fake_user())
+        assert exc.value.status_code == 502
+        assert exc.value.detail == "Authentication Error, Invalid proxy server token passed."
+
+    @pytest.mark.asyncio
+    async def test_non_json_gateway_error_reports_502_with_the_body(self):
+        rejection = httpx.Response(503, text="Service Unavailable")
+        with _patched_backend(["aihub.user.model.>"], response=rejection):
+            with pytest.raises(HTTPException) as exc:
+                await ModelService.get_model_list(fake_user())
+        assert exc.value.status_code == 502
+        assert exc.value.detail == "Service Unavailable"

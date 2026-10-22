@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -21,6 +22,7 @@ class ModelService:
         response = await LiteLLMProxySettings().httpx_aclient.get(
             url="v1/model/info", headers=await LiteLLMService.authorization_header_for_user(user)
         )
+        ModelService._raise_for_gateway_error(response)
         data = response.json()["data"]
         models: list[ModelDTO] = []
         access_checker = AccessChecker.from_user(user)
@@ -44,6 +46,32 @@ class ModelService:
             models.append(updated_model)
 
         return models
+
+    @staticmethod
+    def _raise_for_gateway_error(response: httpx.Response) -> None:
+        """
+        A gateway failure is this deployment's fault rather than the caller's, so it is reported as 502 carrying
+        LiteLLM's own message, matching `ModelGatewayErrorHandler` on the routes that go through the OpenAI SDK.
+        """
+        if not response.is_error:
+            return
+
+        message = ModelService._gateway_message(response)
+        logger.error(f"Model gateway returned {response.status_code} for the model listing: {message}")
+        raise HTTPException(status_code=502, detail=message)
+
+    @staticmethod
+    def _gateway_message(response: httpx.Response) -> str:
+        """Unwraps LiteLLM's ``error.message``; a proxy in front of it may answer with a non-JSON body instead."""
+        is_json = response.headers.get("content-type", "").startswith("application/json")
+        body = response.json() if is_json else None
+        error = body.get("error") if isinstance(body, dict) else None
+
+        if isinstance(error, dict) and error.get("message"):
+            return str(error["message"])
+        if isinstance(error, str):
+            return error
+        return response.text
 
     @staticmethod
     @trace_fn
