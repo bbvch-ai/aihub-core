@@ -8,8 +8,8 @@ title: Anonymisierter Text
 steps:
   respond:
     name: Anonymisieren oder wiederherstellen
-    description: Anonymisiert die Nachricht mit dem PII-Analyzer der Installation oder
-      setzt die Platzhalter dieses Chats zurück.
+    description: Anonymisiert die Nachricht mit dem PII-Analyzer der Installation
+      oder setzt die Platzhalter dieses Chats zurück.
 thoughts:
   anonymising: Suche mit dem Analyzer der Installation nach Personendaten.
 messages:

@@ -18,7 +18,7 @@ messages:
   restored: 'Ecco il testo con i valori originali:'
   nothing_found: Non ho trovato dati personali in questo testo, quindi non c'è nulla
     da sostituire.
-  unknown_placeholders: 'Questi segnaposto non sono stati emessi in questa chat e restano
-    invariati: %{placeholders}'
+  unknown_placeholders: 'Questi segnaposto non sono stati emessi in questa chat e
+    restano invariati: %{placeholders}'
   empty: Inviami un testo da anonimizzare, oppure incolla una risposta con i segnaposto
     di questa chat per ripristinarla.

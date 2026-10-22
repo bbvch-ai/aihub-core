@@ -16,7 +16,7 @@ messages:
     then paste the answer back into this chat to get the original values back:'
   restored: 'Here is the text with the original values back:'
   nothing_found: I found no personal data in this text, so there is nothing to replace.
-  unknown_placeholders: 'These placeholders were not issued in this chat, so they stay
-    as they are: %{placeholders}'
+  unknown_placeholders: 'These placeholders were not issued in this chat, so they
+    stay as they are: %{placeholders}'
   empty: Send me a text to anonymise, or paste an answer with this chat's placeholders
     to restore it.
