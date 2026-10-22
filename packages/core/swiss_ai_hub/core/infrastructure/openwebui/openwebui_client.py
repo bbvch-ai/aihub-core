@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 SCIM_BASE_PATH = "/api/v1/scim/v2"
 MODELS_ENDPOINT = "/api/v1/models"
 KNOWLEDGE_ENDPOINT = "/api/v1/knowledge"
+DEFAULT_PERMISSIONS_ENDPOINT = "/api/v1/users/default/permissions"
 
 # SCIM list endpoints are paginated; OpenWebUI defaults to a small page size, so a
 # bare query returns only the first page. Request this many per page (the server may
@@ -341,6 +342,23 @@ class OpenWebuiClient:
             f"{self._base_url}/api/v1/retrieval/config/update",
             headers=self._jwt_headers,
             json=settings,
+        )
+        _raise_with_detail(response)
+
+    async def update_default_user_permissions(
+        self, http: httpx.AsyncClient, overrides: dict[str, dict[str, bool]]
+    ) -> None:
+        """Partial update: OpenWebUI replaces the whole set and resets every permission the form leaves out, so the
+        stored set is read back and only the overridden fields change."""
+        response = await http.get(f"{self._base_url}{DEFAULT_PERMISSIONS_ENDPOINT}", headers=self._jwt_headers)
+        _raise_with_detail(response)
+        permissions = response.json()
+        for section, fields in overrides.items():
+            permissions[section] = {**permissions.get(section, {}), **fields}
+        response = await http.post(
+            f"{self._base_url}{DEFAULT_PERMISSIONS_ENDPOINT}",
+            headers=self._jwt_headers,
+            json=permissions,
         )
         _raise_with_detail(response)
 
