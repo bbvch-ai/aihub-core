@@ -20,13 +20,16 @@ import yaml
 from pydantic import BaseModel, Field
 
 SEED_LABEL = "aihub-seed"
+RELEASE_LABEL = "aihub-case-release"
 _SCENARIOS = Path(__file__).with_name("scenarios.yaml")
+_RELEASE_TICKETS = Path(__file__).with_name("release_tickets.yaml")
 _BULK_BATCH = 50
 _STATUS_CATEGORIES = {"in_progress": "indeterminate", "done": "done"}
 _TYPE_PREFERENCES = {
     "task": ["Task", "Story", "Service Request", "Service request"],
     "story": ["Story", "Task"],
     "bug": ["Bug", "Incident", "Problem"],
+    "improvement": ["Improvement", "New Feature", "Story", "Task"],
 }
 _INTERNAL_COMMENT = {"key": "sd.public.comment", "value": {"internal": True}}
 _PREFERRED_ROLES = ["Administrators", "Administrator", "Developers", "Member"]
@@ -99,6 +102,41 @@ class SeedScenario(BaseModel):
             raise RuntimeError(f"Unknown case(s): {', '.join(sorted(unknown))}. Run `cases` to list them.")
         chosen = [issue for issue in self.issues if not only or issue.case in only]
         return sorted(chosen, key=lambda issue: issue.parent_case is not None)
+
+
+class ReleaseTicketText(BaseModel):
+    summary: Annotated[str, Field(description="Summary template; {area} becomes a product area.")]
+    description: Annotated[list[str], Field(description="Wiki-markup blocks, joined by blank lines.")]
+
+
+class ReleaseTickets(BaseModel):
+    """What the tickets of a seeded release say, for the release-notes agent (#1889): each ticket takes the next of
+    the requested kinds, and one of that kind's templates with a product area filled in."""
+
+    areas: list[str]
+    kinds: dict[str, list[ReleaseTicketText]]
+
+    @classmethod
+    def load(cls, path: Path = _RELEASE_TICKETS) -> Self:
+        return cls.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    def ticket(self, number: int, kinds: list[str]) -> tuple[str, str, str]:
+        """Kind, summary and description of ticket ``number`` (from 0). The area changes every round of kinds and
+        the template every round of areas, so no two of the first few dozen tickets of a kind read the same. The
+        area is filled in by replacement, since a wiki ``{{monospace}}`` would not survive ``str.format``."""
+        unknown = set(kinds) - set(self.kinds)
+        if unknown:
+            raise RuntimeError(
+                f"Unknown release ticket kind(s): {', '.join(sorted(unknown))}; use {sorted(self.kinds)}."
+            )
+        kind = kinds[number % len(kinds)]
+        round_number = number // len(kinds)
+        templates = self.kinds[kind]
+        template = templates[(round_number // len(self.areas)) % len(templates)]
+        area = self.areas[round_number % len(self.areas)]
+        summary = template.summary.replace("{area}", area)
+        description = "\n\n".join(block.replace("{area}", area) for block in template.description)
+        return kind, summary[:1].upper() + summary[1:], description
 
 
 class JiraSite:
@@ -257,6 +295,37 @@ class JiraSeeder:
             for created in result["issues"]:
                 self._assign_to_me(created["key"])
             print(f"  created bulk issues {numbers.start}-{numbers.stop - 1}")
+
+    def release(self, project: str, version: str, count: int, kinds: list[str], tickets: ReleaseTickets) -> None:
+        """A fix version holding ``count`` tickets of mixed types, worded like real ones, so a release-notes agent
+        has a release of a realistic size to write about. The version is created first, because Data Center refuses
+        a search naming a version that does not exist."""
+        if version not in self._ensure_named(project, "versions", {version}):
+            raise RuntimeError(f"Version {version} does not exist in {project} and could not be created.")
+        present = self.site.search(f'project = "{project}" AND labels = "{RELEASE_LABEL}" AND fixVersion = "{version}"')
+        if present:
+            print(f"  release {version}: {len(present)} tickets already there (`clean` for a fresh start)")
+            return
+        for start in range(0, count, _BULK_BATCH):
+            numbers = range(start, min(start + _BULK_BATCH, count))
+            updates = [{"fields": self.release_fields(project, version, tickets.ticket(n, kinds))} for n in numbers]
+            result = self.site.call("POST", "/rest/api/2/issue/bulk", json={"issueUpdates": updates})
+            if result.get("errors"):
+                raise RuntimeError(f"Bulk create failed: {result['errors']}")
+            for created in result["issues"]:
+                self._assign_to_me(created["key"])
+            print(f"  created release {version} tickets {numbers.start + 1}-{numbers.stop}")
+
+    def release_fields(self, project: str, version: str, ticket: tuple[str, str, str]) -> dict[str, Any]:
+        kind, summary, description = ticket
+        return {
+            "project": {"key": project},
+            "issuetype": {"id": self._issue_type(project, kind)["id"]},
+            "summary": summary,
+            "description": description,
+            "labels": [SEED_LABEL, RELEASE_LABEL],
+            "fixVersions": [{"name": version}],
+        }
 
     def edit(self, project: str) -> str:
         key = self._case_key(project, "edit-me")
@@ -509,6 +578,11 @@ class JiraSeedCli:
             if name == "seed":
                 command.add_argument("--only", help="Comma-separated cases to create, e.g. delete-me")
                 command.add_argument("--bulk", type=int, default=0, help="Also create this many small issues")
+                command.add_argument("--release", help="Also create a fix version holding many typed tickets, e.g. 2.0")
+                command.add_argument("--release-count", type=int, default=120, help="Tickets in the release")
+                command.add_argument(
+                    "--release-types", default="bug,story,improvement,task", help="Kinds of the release's tickets"
+                )
         return parser
 
     @classmethod
@@ -533,6 +607,9 @@ class JiraSeedCli:
                 seeder.seed(project, scenario.selected(only))
                 if arguments.bulk:
                     seeder.bulk(project, arguments.bulk)
+                if arguments.release:
+                    kinds = [kind.strip() for kind in arguments.release_types.split(",") if kind.strip()]
+                    seeder.release(project, arguments.release, arguments.release_count, kinds, ReleaseTickets.load())
             case "list":
                 cls._print_seeded(seeder.site, project)
             case "check":
