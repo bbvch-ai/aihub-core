@@ -1,5 +1,5 @@
 import hashlib
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import httpx
 import openai
@@ -46,6 +46,8 @@ class LiteLLMService:
             user_response.raise_for_status()
             return False
 
+        await LiteLLMService._release_email_from_stale_users(client, user)
+
         new_user_response = await client.post(
             "/user/new",
             json={
@@ -72,10 +74,38 @@ class LiteLLMService:
         return True
 
     @staticmethod
+    async def _release_email_from_stale_users(client: httpx.AsyncClient, user: UserIdentity) -> None:
+        """
+        LiteLLM answers a duplicate email with the 409 the race handling swallows, leaving the user without a row
+        and so without budgets. Keycloak allows one account per email, so any other holder is a deleted or
+        re-emailed account; renaming rather than deleting it keeps its key working and its spend.
+        """
+        if not user.email:
+            return
+
+        # The filter is a case-insensitive substring match, so holders are narrowed to exact matches below.
+        users_response = await client.get("/user/list", params={"user_email": user.email, "page_size": 100})
+        users_response.raise_for_status()
+
+        for holder in users_response.json()["users"]:
+            if LiteLLMService._is_stale_holder_of_email(holder, user):
+                update_response = await client.post(
+                    "/user/update",
+                    json={"user_id": holder["user_id"], "user_email": f"{user.email}#released-{holder['user_id']}"},
+                )
+                update_response.raise_for_status()
+
+    @staticmethod
+    def _is_stale_holder_of_email(holder: dict[str, Any], user: UserIdentity) -> bool:
+        holder_email = holder.get("user_email") or ""
+        return holder["user_id"] != user.id and holder_email.strip().lower() == user.email.strip().lower()
+
+    @staticmethod
     async def _generate_key(client: httpx.AsyncClient, user: UserIdentity, api_key: str) -> None:
+        # LiteLLM requires unique aliases across all keys, and display names are not unique.
         key_response = await client.post(
             "/key/generate",
-            json={"key_alias": f"{user.name} - Auto Generated Key", "user_id": user.id, "key": api_key},
+            json={"key_alias": f"{user.name} ({user.id}) - Auto Generated Key", "user_id": user.id, "key": api_key},
         )
         # A concurrent provisioner may have already created this deterministic key; 409 means it exists already.
         if key_response.status_code != 409:
