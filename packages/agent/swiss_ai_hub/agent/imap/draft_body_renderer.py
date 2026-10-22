@@ -1,32 +1,26 @@
-import re
-
 from markdown_it import MarkdownIt
 
+from swiss_ai_hub.agent.imap.highlight_markdown_rule import HighlightMarkdownRule
 from swiss_ai_hub.agent.imap.mail_html_sanitizer import MailHtmlSanitizer
-
-# `==text==` is the highlight syntax the draft prompt offers. CommonMark has none, so it becomes `<mark>` before
-# rendering and the sanitiser turns that into the inline background Outlook understands.
-_HIGHLIGHT = re.compile(r"==(?=\S)(.+?)(?<=\S)==")
 
 
 class DraftBodyRenderer:
     """Turns the Markdown a drafting model writes into the HTML and plain-text parts of a draft.
 
     Markdown rather than HTML is what the model is asked for: models already write it unprompted (the knowledge agent's
-    answers are Markdown), and it reads acceptably as the plain-text alternative. Raw HTML in the output is still
-    rendered, because a prompt asking for highlighting often gets a `<span style=...>` back, and the sanitiser decides
-    what of it survives.
+    answers are Markdown). Raw HTML in the output is escaped, not rendered: replies routinely contain angle brackets
+    that are not markup — a `<Ihr Name>` sign-off placeholder, `a<b` in a comparison — and parsing those as tags made
+    them vanish or left the rest of the reply bold. `==text==` is the one highlight syntax, handled by the parser.
     """
 
-    _markdown = MarkdownIt("commonmark", {"html": True, "breaks": True}).enable("table")
+    _markdown = HighlightMarkdownRule.install(MarkdownIt("commonmark", {"html": False, "breaks": True}).enable("table"))
 
     @staticmethod
     def html(body: str) -> str:
         """The reply as sanitised HTML."""
-        rendered = DraftBodyRenderer._markdown.render(_HIGHLIGHT.sub(r"<mark>\1</mark>", body))
-        return MailHtmlSanitizer.reply(rendered)
+        return MailHtmlSanitizer.reply(DraftBodyRenderer._markdown.render(body))
 
     @staticmethod
     def text(body: str) -> str:
-        """The reply as plain text: the Markdown as written, minus highlight markers and any HTML tags."""
-        return MailHtmlSanitizer.to_text(_HIGHLIGHT.sub(r"\1", body).replace("\n", "<br>"))
+        """The reply as plain text, derived from the rendered HTML so it reads the way the HTML part does."""
+        return MailHtmlSanitizer.to_text(DraftBodyRenderer.html(body))

@@ -221,11 +221,12 @@ verirrte neue Nachricht.
 
 **Formatierung und Zitat.** Entwürfe sind HTML mit einer Nur-Text-Alternative. Das Modell schreibt Markdown, sodass
 Fettdruck und Listen erhalten bleiben, und Text in `==doppelten Gleichheitszeichen==` wird gelb hervorgehoben —
-verlangen Sie das im **Entwurfs-Prompt** (z. B. *«markiere das Lieferdatum mit ==…==»*). Vor dem Ablegen wird alles
-bereinigt: Skripte, Bilder und unsichere Links aus der Modellausgabe erreichen das Postfach nie. Ist **Originalnachricht
-zitieren** aktiv, folgt die ursprüngliche E-Mail unter der Antwort mit einem Kopfblock wie in Outlook (Von / Gesendet /
-An / Cc / Betreff), ihr HTML bereinigt und ohne Bilder. Das Zitat wird erst nach dem Verfassen angefügt; das Modell
-sieht es nie, und die Antwort ändert sich dadurch nicht.
+verlangen Sie das im **Entwurfs-Prompt** (z. B. *«markiere das Lieferdatum mit ==…==»*). HTML, das das Modell schreibt,
+erscheint als Text und wird nie dargestellt: Ein Platzhalter wie `<Ihr Name>` bleibt im Entwurf, und Skripte, Bilder und
+unsichere Links erreichen das Postfach nie. Ist **Originalnachricht zitieren** aktiv, folgt die ursprüngliche E-Mail
+unter der Antwort mit einem Kopfblock wie in Outlook (Von / Gesendet / An / Cc / Betreff), ihr HTML bereinigt und ohne
+Bilder. Das Zitat wird erst nach dem Verfassen angefügt; das Modell sieht es nie, und die Antwort ändert sich dadurch
+nicht.
 
 ::: warning Ein Entwurf ist ein erster Wurf, keine Antwort
 Lesen Sie jeden Entwurf, bevor Sie ihn senden. Selbst ein in Ihren eigenen Dokumenten verankerter Entwurf (unten) ist

@@ -208,11 +208,11 @@ appears inside the original conversation in your mail client rather than as a st
 
 **Formatting and quoting.** Drafts are HTML with a plain-text alternative. The model writes Markdown, so bold text and
 lists come through, and text it wraps in `==double equals==` is highlighted in yellow — ask for it in the **Draft
-Prompt** (e.g. *"highlight the delivery date with ==…=="*). Everything is sanitised before the draft is written:
-scripts, images and unsafe links in the model's output never reach the mailbox. With **Quote Original Message** on, the
-original email follows the reply under an Outlook-style From / Sent / To / Cc / Subject block, its own HTML sanitised
-and its images left out. The quote is added after the reply is written, so the model never sees it and the reply does
-not change.
+Prompt** (e.g. *"highlight the delivery date with ==…=="*). HTML the model writes is shown as text, never rendered, so a
+placeholder such as `<Your name>` stays in the draft and scripts, images and unsafe links never reach the mailbox. With
+**Quote Original Message** on, the original email follows the reply under an Outlook-style From / Sent / To / Cc /
+Subject block, its own HTML sanitised and its images left out. The quote is added after the reply is written, so the
+model never sees it and the reply does not change.
 
 ::: warning A draft is a first pass, not an answer
 Read every draft before sending it. Even a draft grounded in your own documents (below) is only as good as the documents

@@ -78,7 +78,7 @@ def test_draft_carries_an_html_part_with_a_plain_text_alternative():
 
     assert _parse(composed.raw).get_content_type() == "multipart/alternative"
     assert "<strong>Thanks</strong>" in _html(composed)
-    assert _plain(composed).strip() == "**Thanks**"
+    assert _plain(composed).strip() == "Thanks"
 
 
 def test_highlight_renders_as_an_inline_yellow_background_and_leaves_no_markers():
@@ -91,16 +91,81 @@ def test_highlight_renders_as_an_inline_yellow_background_and_leaves_no_markers(
     assert _plain(composed).strip() == "Note: the deadline is Friday."
 
 
-def test_unsafe_html_in_the_model_output_does_not_reach_the_draft():
-    body = 'Hi <script>alert(1)</script><img src="https://tracker.example/p.gif"> [x](javascript:alert(1)) <b onclick="x()">ok</b>'
+def test_html_in_the_model_output_is_shown_as_text_never_parsed():
+    body = (
+        'Hi <script>alert(1)</script><img src="https://tracker.example/p.gif"> <b onclick="x()">ok</b> '
+        "[x](javascript:alert(1))"
+    )
 
     html = _html(ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body=body))
 
-    assert "<script" not in html
-    assert "<img" not in html
-    assert "onclick" not in html
+    for tag in ("<script", "<img", "<b ", "<b>"):
+        assert tag not in html
+    assert "&lt;script&gt;" in html
     assert 'href="javascript' not in html
-    assert "<b>ok</b>" in html
+
+
+def test_angle_bracket_placeholder_survives_in_both_parts():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="Freundliche Grüsse\n<Ihr Name>"
+    )
+
+    assert "&lt;Ihr Name&gt;" in _html(composed)
+    assert _plain(composed).strip() == "Freundliche Grüsse\n<Ihr Name>"
+
+
+def test_a_stray_angle_bracket_does_not_format_the_rest_of_the_reply():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="Compare a<b and c>d.\n\nSecond paragraph."
+    )
+
+    assert "<b>" not in _html(composed)
+    assert "<p>Second paragraph.</p>" in _html(composed)
+    assert _plain(composed).strip() == "Compare a<b and c>d.\n\nSecond paragraph."
+
+
+def test_plain_text_keeps_addresses_and_link_targets():
+    body = "Contact Alice <alice@example.com>, see <https://example.com> or [the docs](https://example.com/d?a=1&b=2)."
+
+    plain = _plain(ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body=body))
+
+    assert plain.strip() == (
+        "Contact Alice alice@example.com, see https://example.com or the docs <https://example.com/d?a=1&b=2>."
+    )
+
+
+def test_plain_text_keeps_list_markers_and_numbers():
+    body = "- one\n- two\n    - nested\n- three\n\n1. first\n2. second"
+
+    plain = _plain(ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body=body))
+
+    assert plain.strip() == "- one\n- two\n   - nested\n- three\n\n1. first\n2. second"
+
+
+def test_double_equals_inside_words_is_not_a_highlight():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="Set status==active and mode==test."
+    )
+
+    assert "background-color" not in _html(composed)
+    assert _plain(composed).strip() == "Set status==active and mode==test."
+
+
+def test_highlight_markers_in_a_code_span_stay_literal():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="Use `==literal==` in the config."
+    )
+
+    assert "<code>==literal==</code>" in _html(composed)
+    assert "mark" not in _html(composed)
+
+
+def test_highlight_may_wrap_other_formatting():
+    html = _html(
+        ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body="==**bold** inside==!")
+    )
+
+    assert '<span style="background-color:#ffff00"><strong>bold</strong> inside</span>!' in html
 
 
 def test_without_a_quote_the_draft_contains_only_the_reply():
@@ -151,7 +216,7 @@ def test_quoted_original_falls_back_to_text_derived_from_html_when_there_is_no_t
         _parsed(body_text=None, body_html="<p>First &amp; foremost</p><p>Second</p>"), LocaleHandler("en")
     )
 
-    assert quoted.text.endswith("First & foremost\nSecond")
+    assert quoted.text.endswith("First & foremost\n\nSecond")
 
 
 def test_plain_text_original_is_escaped_in_the_html_quote():

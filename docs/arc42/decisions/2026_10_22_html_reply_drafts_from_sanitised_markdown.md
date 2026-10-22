@@ -7,8 +7,8 @@ customer requests needed more than that:
 
 - aihub-core-private#368: formatting in the draft, above all highlighting a sentence in yellow so the reviewer sees it.
   HTML the model wrote showed up as literal tags.
-- aihub-core-private#369: the original email quoted below the reply, the way a reply in Outlook does, with a header block
-  and the original's own HTML body.
+- aihub-core-private#369: the original email quoted below the reply, the way a reply in Outlook does, with a header
+  block and the original's own HTML body.
 
 Both put untrusted HTML into a message that a person opens in their mail client. The quoted original is written by the
 sender. The reply is written by a model that read the sender's mail. Neither can be trusted, and the platform had no
@@ -26,15 +26,23 @@ HTML sanitiser at all: `ParsedMessage.body_html` was documented as "must be sani
 ## Decision
 
 - **Markdown in, HTML out.** `DraftBodyRenderer` renders the model's body with `markdown-it-py` (CommonMark plus
-  tables). Raw HTML in the output is passed to the sanitiser rather than escaped, because a prompt that asks for
-  highlighting often gets a `<span style=...>` back. `==text==` is the highlight syntax the default prompt offers. It is
-  turned into `<mark>`, and after sanitising into `<span style="background-color:#ffff00">`, which Outlook renders.
+  tables). Raw HTML in the output is escaped, never parsed. Replies routinely contain angle brackets that are not
+  markup, such as a `<Ihr Name>` sign-off placeholder or `a<b` in a comparison. Parsing those as tags made them vanish,
+  or left the rest of the reply bold.
+- **Highlighting is a parser rule.** `==text==` is the highlight syntax the default prompt offers.
+  `HighlightMarkdownRule` registers it with markdown-it as a paired delimiter, like strikethrough, so code spans and
+  autolinks are never touched. Like `_emphasis_`, it never opens or closes inside a word, so `status==active` stays
+  text. No `mark` plugin exists in `mdit-py-plugins` (0.6.1), and the JavaScript `markdown-it-mark` plugin would match
+  inside words. The rule emits `<mark>`, which the sanitiser turns into `<span style="background-color:#ffff00">`,
+  because Outlook ignores `<mark>`.
 - **nh3 is the sanitiser.** `MailHtmlSanitizer` holds two allowlists: a narrow one for the reply (text formatting,
   lists, tables, links, `background-color`/`color` styles) and a wider one for the quoted original that keeps its layout
   (tables, fonts, spacing CSS). Neither allows `img`. `script`, `style`, `title` and `head` lose their content. Links
   are restricted to `http`, `https` and `mailto`.
-- **Every draft is `multipart/alternative`.** The plain-text part is the Markdown as written, minus highlight markers
-  and tags. Clients that do not render HTML still get a readable draft.
+- **Every draft is `multipart/alternative`.** The plain-text part is derived from the sanitised HTML, not from the
+  Markdown source. It keeps line breaks, list bullets and numbers, and each link's target next to its text
+  (`the docs <https://…>`). Stripping tags from the source had dropped autolinked addresses such as
+  `<alice@example.com>`.
 - **Quoting is a toggle** (`DraftEmailSettings.quote_original`, off by default). `QuotedOriginal` builds the separator,
   a From/Sent/To/Cc/Subject block in the run's locale (labels and date format in `lib.imap.quote.*`) and the sanitised
   original, or its text body escaped when it has no HTML. It is built after the reply is generated and only appended.
@@ -54,5 +62,7 @@ HTML sanitiser at all: `ParsedMessage.body_html` was documented as "must be sani
   `markdown-it-py` (already in the lockfile through `rich`).
 - Drafts change shape for every profile, including those with quoting off. A body that was plain text renders as
   paragraphs, and stray Markdown characters (`*`, `_`, leading `1.`) in a model's reply are now interpreted.
+- A model that answers a highlighting request with HTML (`<span style="background:yellow">`) gets that HTML shown as
+  text. The prompt has to ask for `==…==`.
 - Inline images of the original (signature logos) are not in the quote. Re-attaching them was out of scope for #369.
 - Stored profiles keep their own draft prompt. An admin who wants highlighting adds the `==…==` instruction to it.

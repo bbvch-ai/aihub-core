@@ -36,8 +36,14 @@ _ORIGINAL_STYLE_PROPERTIES = _REPLY_STYLE_PROPERTIES | {
 }  # fmt: skip
 
 _URL_SCHEMES = {"http", "https", "mailto"}
-_BLOCK_BOUNDARY = re.compile(r"(?i)<br\s*/?>|</(?:p|div|tr|li|h[1-6]|table|blockquote|pre)\s*>")
+# A source newline right after a boundary is consumed, so a `<br>\n` the renderer wrote is one break, not two, and a
+# run of closers (`</li></li>` after a nested list, nested `</div>`s) ends one line rather than several.
+_LINE_END = re.compile(r"(?i)(?:<br\s*/?>|(?:\s*</(?:div|tr|li)\s*>)+)\n?")
+_PARAGRAPH_END = re.compile(r"(?i)</(?:p|h[1-6]|table|blockquote|pre)\s*>\n?")
 _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
+# Matched only on nh3 output, which always writes `<a href="...">` with nothing else on the tag.
+_LINK = re.compile(r'<a href="(?P<href>[^"]*)">(?P<label>.*?)</a>', re.DOTALL)
+_LIST_TAG = re.compile(r"(?i)<(?P<closing>/?)(?P<tag>ol|ul|li)>\n?")
 
 
 class MailHtmlSanitizer:
@@ -75,8 +81,54 @@ class MailHtmlSanitizer:
 
     @staticmethod
     def to_text(any_html: str) -> str:
-        """Readable plain text of an HTML fragment, line breaks kept at block boundaries."""
-        with_breaks = _BLOCK_BOUNDARY.sub(lambda match: f"{match.group(0)}\n", any_html)
+        """Readable plain text of an HTML fragment: line breaks at block boundaries, a dash per list item, and each
+        link's target kept next to its text, since stripping the tag would otherwise drop the address with it."""
+        normalised = nh3.clean(any_html, tags=_ORIGINAL_TAGS, clean_content_tags=_CONTENT_DROPPING_TAGS,
+                               attributes={"a": {"href"}}, url_schemes=_URL_SCHEMES, link_rel=None)  # fmt: skip
+        with_links = _LINK.sub(MailHtmlSanitizer._link_as_text, normalised)
+        with_markers = MailHtmlSanitizer._with_list_markers(with_links)
+        with_breaks = _PARAGRAPH_END.sub("\n\n", _LINE_END.sub("\n", with_markers))
         text = html.unescape(nh3.clean(with_breaks, tags=set(), clean_content_tags=_CONTENT_DROPPING_TAGS))
         lines = [line.rstrip() for line in text.splitlines()]
         return _EXCESS_BLANK_LINES.sub("\n\n", "\n".join(lines)).strip()
+
+    @staticmethod
+    def _with_list_markers(normalised: str) -> str:
+        """Prefix each list item with `-` or its number, indented by nesting depth, the way the Markdown read."""
+        open_lists: list[list[int]] = []
+        return _LIST_TAG.sub(lambda match: MailHtmlSanitizer._list_marker(match, open_lists), normalised)
+
+    @staticmethod
+    def _list_marker(match: re.Match[str], open_lists: list[list[int]]) -> str:
+        """The text replacing one list tag. `open_lists` holds one entry per open list: empty for a bulleted list,
+        the running item number for a numbered one."""
+        tag = match.group("tag").lower()
+        closing = bool(match.group("closing"))
+        if tag == "li":
+            return match.group(0) if closing or not open_lists else MailHtmlSanitizer._item_prefix(open_lists)
+        if closing:
+            if open_lists:
+                open_lists.pop()
+            return "" if open_lists else "\n\n"
+        open_lists.append([0] if tag == "ol" else [])
+        return ""
+
+    @staticmethod
+    def _item_prefix(open_lists: list[list[int]]) -> str:
+        indent = "   " * (len(open_lists) - 1)
+        counter = open_lists[-1]
+        if not counter:
+            return f"{indent}- "
+        counter[0] += 1
+        return f"{indent}{counter[0]}. "
+
+    @staticmethod
+    def _link_as_text(match: re.Match[str]) -> str:
+        """`text <target>`, or the bare target when the text already is it (an autolinked URL or address).
+
+        The brackets go in escaped, so the final tag strip keeps them as text."""
+        target = html.unescape(match.group("href")).removeprefix("mailto:")
+        label = match.group("label")
+        if html.unescape(nh3.clean(label, tags=set())).strip() == target:
+            return label
+        return f"{label} &lt;{html.escape(target)}&gt;"
