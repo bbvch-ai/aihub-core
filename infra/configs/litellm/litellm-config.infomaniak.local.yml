@@ -292,6 +292,11 @@ guardrails:
         - customer
         - recipient
         - sender
+        - assistant
+        - Assistent
+        - Assistentin
+        - assistante
+        - assistente
         - Name
         - Vorname
         - Nachname
