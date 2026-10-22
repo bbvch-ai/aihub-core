@@ -76,6 +76,15 @@ somewhere other than the invoking identity. Declaring a tenant for background an
 - **Tenant attribution is not visible in the gateway.** Anyone debugging spend in the LiteLLM UI sees users but never
   tenants, and must know to query the event store instead.
 
+## Amendment 2026-10-22: tags on LiteLLM v1.106.2
+
+The statement that request tags are discarded no longer holds for the gateway version we run. On v1.106.2, a tag sent as
+`x-litellm-tags` and one sent as `metadata.tags` both reach `LiteLLM_SpendLogs.request_tags`, and the tag reports
+(`/spend/tags`, `/tag/list`, `/tag/daily/activity`) answer without an Enterprise license; verified by sending both forms
+and reading the spend log back. The Hub still sends no tenant tag, so nothing above changes in behaviour: tenant
+attribution stays on `LLMCostEvent`. A gateway-side tenant carrier is now possible with tags as well as with teams, and
+that choice belongs to the tenant usage tracking work.
+
 ## Related Decisions
 
 - `2026_04_28_litellm_pipeline_message_redaction.md` — also constrained by the free tier, and establishes the
