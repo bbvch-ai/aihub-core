@@ -70,7 +70,7 @@ internationale Formate, auf Deutsch, Französisch, Italienisch und Englisch:
 
 | Typ                                   | Beispiele                                                                                                      |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Personennamen, Adressen, Orte         | Reto Wyss, Seefeldstrasse 18, 8008 Zürich                                                                      |
+| Personennamen, Adressen, Orte         | Reto Wyss, «Name: Brunner», «Frau Gerber», Seefeldstrasse 18, 8008 Zürich                                      |
 | E-Mail-Adressen, Telefonnummern, IBAN | +41 44 270 41 87, CH93 0076 2011 6238 5295 7                                                                   |
 | Nationale Identifikatoren             | AHV-Nummern; US-SSN, UK National Insurance, französische NIR, italienischer Codice fiscale, deutsche Steuer-ID |
 | Gesundheitsdaten-Identifikatoren      | Patienten- und Fallnummern, Versichertenkartennummern                                                          |
@@ -79,8 +79,9 @@ internationale Formate, auf Deutsch, Französisch, Italienisch und Englisch:
 Andere Daten, Firmennamen und Beschreibungen, die eine Person nur über den Kontext identifizieren (eine Funktion
 zusammen mit einer Firma), werden nicht maskiert.
 
-Pronomen, Rollen und Feldbezeichnungen («Sie», «vous», «Benutzer», «Adresse», «IBAN») werden in Deutsch, Französisch,
-Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer («Position 2», «Art. 5»): Das Erkennungsmodell hält
+Pronomen, Rollen, Anreden, Feld- und Zimmerbezeichnungen («Sie», «vous», «Benutzer», «Patientin», «Grüezi», «Adresse»,
+«IBAN», «Zimmer») werden in Deutsch, Französisch, Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer
+(«Position 2», «Art. 5», «Zimmer 12»): Das Erkennungsmodell hält
 sie für Namen oder für den Typ, den sie benennen, und ihre Maskierung würde die Anfrage verfälschen. Die Liste ist
 `pii_allow_list` in der Gateway-Konfiguration.
 
