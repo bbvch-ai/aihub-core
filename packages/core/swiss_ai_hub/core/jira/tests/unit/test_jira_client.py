@@ -33,6 +33,16 @@ async def _keys(deployment: str, jql: str = _SCOPE, limit: int | None = None, **
         return [hit["key"] async for page in client.search(jql, ["summary"], limit=limit) for hit in page]
 
 
+async def _project(key: str) -> dict:
+    async with JiraClient.connect(_connection("cloud")) as client:
+        return await client.project(key)
+
+
+async def _jql_problems(deployment: str, jql: str) -> list[str]:
+    async with JiraClient.connect(_connection(deployment)) as client:
+        return await client.jql_problems(jql)
+
+
 async def _myself(deployment: str = "cloud") -> dict:
     async with JiraClient.connect(_connection(deployment)) as client:
         return await client.myself()
@@ -239,8 +249,7 @@ class TestErrors:
         jira = _jira(monkeypatch, "cloud", issues=0)
 
         with pytest.raises(JiraRequestError):
-            async with JiraClient.connect(_connection("cloud")) as client:
-                await client.project("../myself")
+            await _project("../myself")
 
         assert jira.requests[0].url.raw_path == b"/rest/api/2/project/..%2Fmyself"
 
@@ -352,5 +361,4 @@ class TestJqlProblems:
         jira.fail_next(401)
 
         with pytest.raises(JiraRequestError, match="401"):
-            async with JiraClient.connect(_connection("data_center")) as client:
-                await client.jql_problems(_SCOPE)
+            await _jql_problems("data_center", _SCOPE)

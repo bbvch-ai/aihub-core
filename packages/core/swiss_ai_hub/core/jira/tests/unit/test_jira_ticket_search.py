@@ -87,21 +87,23 @@ class TestDistinctErrors:
     @pytest.mark.parametrize("deployment", _EDITIONS)
     async def test_wrong_credentials(self, monkeypatch: pytest.MonkeyPatch, deployment: str):
         _jira(monkeypatch, deployment).fail_next(401)
+        connection = _connection(deployment)
 
         with pytest.raises(
             JiraAuthenticationError, match="Jira rejected the credentials for https://acme.atlassian.net"
         ):
-            await JiraTicketSearch.find_tickets(_connection(deployment), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("deployment", _EDITIONS)
     async def test_an_unknown_project(self, monkeypatch: pytest.MonkeyPatch, deployment: str):
         _jira(monkeypatch, deployment)
+        connection = _connection(deployment)
 
         with pytest.raises(
             JiraProjectNotFoundError, match="Jira project ZZZ does not exist, or Release Bot cannot see it"
         ):
-            await JiraTicketSearch.find_tickets(_connection(deployment), ["AAA", "ZZZ"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA", "ZZZ"])
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("deployment", _EDITIONS)
@@ -109,9 +111,10 @@ class TestDistinctErrors:
         """Cloud would answer this with no tickets at all; the query is checked before the search."""
         jira = _jira(monkeypatch, deployment)
         jira.unknown_jql_fields = {"statuz"}
+        connection = _connection(deployment)
 
         with pytest.raises(JiraInvalidQueryError, match="Field 'statuz' does not exist") as refused:
-            await JiraTicketSearch.find_tickets(_connection(deployment), ["AAA"], ["statuz = Done"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"], ["statuz = Done"])
 
         assert refused.value.problems == ["Field 'statuz' does not exist or you do not have permission to view it."]
         assert jira.sent_jql() == []
@@ -120,14 +123,15 @@ class TestDistinctErrors:
     async def test_the_three_messages_differ(self, monkeypatch: pytest.MonkeyPatch):
         messages = set()
         for fail in ("credentials", "project", "jql"):
-            with monkeypatch.context() as patched, pytest.raises(JiraError) as refused:
+            with monkeypatch.context() as patched:
                 jira = _jira(patched, "cloud")
                 jira.unknown_jql_fields = {"statuz"}
                 if fail == "credentials":
                     jira.fail_next(401)
-                await JiraTicketSearch.find_tickets(
-                    _connection(), ["AAA", "ZZZ"] if fail == "project" else ["AAA"], ["statuz = Done"]
-                )
+                connection = _connection()
+                projects = ["AAA", "ZZZ"] if fail == "project" else ["AAA"]
+                with pytest.raises(JiraError) as refused:
+                    await JiraTicketSearch.find_tickets(connection, projects, ["statuz = Done"])
             messages.add(f"{type(refused.value).__name__}: {refused.value}")
 
         assert len(messages) == 3
@@ -136,9 +140,10 @@ class TestDistinctErrors:
     @pytest.mark.parametrize("deployment", _EDITIONS)
     async def test_an_unknown_fix_version_is_named_by_jira(self, monkeypatch: pytest.MonkeyPatch, deployment: str):
         _jira(monkeypatch, deployment)
+        connection = _connection(deployment)
 
         with pytest.raises(JiraInvalidQueryError, match="The value '9.9.9' does not exist for the field 'fixVersion'"):
-            await JiraTicketSearch.find_tickets(_connection(deployment), ["AAA"], ['fixVersion = "9.9.9"'])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"], ['fixVersion = "9.9.9"'])
 
 
 class TestScope:
@@ -146,9 +151,10 @@ class TestScope:
     async def test_a_value_crafted_to_widen_the_query_stays_one_value(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         crafted = JiraJql.string_literal('2.4.0" OR project = HR OR fixVersion = "')
+        connection = _connection()
 
         with pytest.raises(JiraInvalidQueryError, match="does not exist for the field 'fixVersion'"):
-            await JiraTicketSearch.find_tickets(_connection(), ["AAA"], [f"fixVersion = {crafted}"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"], [f"fixVersion = {crafted}"])
 
         assert jira.sent_jql() == []
 
@@ -159,17 +165,19 @@ class TestScope:
     ):
         jira = _jira(monkeypatch, deployment)
         jira.leaked_issue = jira.add_issue("HR-1")
+        connection = _connection(deployment)
 
         with pytest.raises(JiraInvalidQueryError, match="Jira returned HR-1, which is outside the configured projects"):
-            await JiraTicketSearch.find_tickets(_connection(deployment), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
     @pytest.mark.asyncio
     async def test_a_renamed_project_names_its_new_key(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
         jira.renamed_projects = {"AAA": "NEW"}
+        connection = _connection()
 
         with pytest.raises(JiraProjectNotFoundError, match="AAA has been renamed to NEW") as refused:
-            await JiraTicketSearch.find_tickets(_connection(), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
         assert refused.value.renamed_to == "NEW"
 
@@ -179,18 +187,20 @@ class TestScope:
         self, monkeypatch: pytest.MonkeyPatch, deployment: str
     ):
         _jira(monkeypatch, deployment, tuple(f"AAA-{number}" for number in range(1, 6)))
+        connection = _connection(deployment, max_tickets=3)
 
         with pytest.raises(JiraTooManyTicketsError):
-            await JiraTicketSearch.find_tickets(_connection(deployment, max_tickets=3), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
 
 class TestConfiguration:
     @pytest.mark.asyncio
     async def test_missing_values_are_named_before_any_request(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
+        connection = JiraConnectionConfig()
 
         with pytest.raises(JiraConfigurationError) as refused:
-            await JiraTicketSearch.find_tickets(JiraConnectionConfig(), [])
+            await JiraTicketSearch.find_tickets(connection, [])
 
         assert refused.value.problems == [
             "the Jira URL is missing",
@@ -203,9 +213,10 @@ class TestConfiguration:
     @pytest.mark.asyncio
     async def test_a_malformed_project_key_is_refused(self, monkeypatch: pytest.MonkeyPatch):
         _jira(monkeypatch, "cloud")
+        connection = _connection()
 
         with pytest.raises(JiraConfigurationError, match="ENG-1 is not a Jira project key"):
-            await JiraTicketSearch.find_tickets(_connection(), ["eng-1"])
+            await JiraTicketSearch.find_tickets(connection, ["eng-1"])
 
     @pytest.mark.asyncio
     async def test_a_url_without_jira_behind_it_is_not_taken_for_wrong_credentials(
@@ -214,24 +225,27 @@ class TestConfiguration:
         _jira(monkeypatch, "data_center").fail_next(
             404, b"<html>Not Found</html>", headers={"Content-Type": "text/html"}
         )
+        connection = _connection("data_center")
 
         with pytest.raises(JiraConfigurationError, match=r"has no Jira REST API \(404 on /rest/api/2/myself\)"):
-            await JiraTicketSearch.find_tickets(_connection("data_center"), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
     @pytest.mark.asyncio
     async def test_a_url_jira_redirects_is_a_configuration_problem(self, monkeypatch: pytest.MonkeyPatch):
         """Data Center 11.3 answers a wrong context path with a redirect to its own error page."""
         _jira(monkeypatch, "data_center").fail_next(302, headers={"Location": "https://acme.atlassian.net/404"})
+        connection = _connection("data_center")
 
         with pytest.raises(JiraConfigurationError, match="302 Found .* redirects are not followed"):
-            await JiraTicketSearch.find_tickets(_connection("data_center"), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
     @pytest.mark.asyncio
     async def test_order_by_is_refused_before_any_request(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "cloud")
+        connection = _connection()
 
         with pytest.raises(JiraInvalidQueryError, match="must not contain ORDER BY"):
-            await JiraTicketSearch.find_tickets(_connection(), ["AAA"], ["status = Done ORDER BY created"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"], ["status = Done ORDER BY created"])
 
         assert jira.requests == []
 
@@ -240,11 +254,12 @@ class TestHostGuard:
     @pytest.mark.asyncio
     async def test_an_internal_host_is_refused_before_any_request(self, monkeypatch: pytest.MonkeyPatch):
         jira = _jira(monkeypatch, "data_center")
+        connection = _connection("data_center", base_url="http://litellm:4000")
 
         with pytest.raises(
             JiraConfigurationError, match="An operator can allow it with JIRA_ALLOWED_PRIVATE_HOSTS"
         ) as refused:
-            await JiraTicketSearch.find_tickets(_connection("data_center", base_url="http://litellm:4000"), ["AAA"])
+            await JiraTicketSearch.find_tickets(connection, ["AAA"])
 
         assert jira.requests == []
         assert str(refused.value).endswith("JIRA_ALLOWED_PRIVATE_HOSTS.")

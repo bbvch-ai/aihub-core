@@ -177,27 +177,36 @@ class JiraClient:
     async def _send(self, method: str, path: str, **request: Any) -> dict[str, Any]:
         """Only GETs and Cloud's read-only parse POST pass through here, so a retried request changes nothing."""
         for attempt in range(1, self.MAX_ATTEMPTS + 1):
-            try:
-                response = await self._http.request(method, path, **request)
-            except (httpx.ConnectError, httpx.ConnectTimeout) as unreachable:
-                if attempt == self.MAX_ATTEMPTS:
-                    raise self._unreachable(unreachable) from unreachable
+            response = await self._attempt(method, path, request, last=attempt == self.MAX_ATTEMPTS)
+            if response is None:
                 await asyncio.sleep(self._backoff(attempt))
                 continue
-            except httpx.TransportError as failed:
-                raise self._unreachable(failed) from failed
             if response.status_code in self.RETRIED_STATUSES and attempt < self.MAX_ATTEMPTS:
-                wait = self._retry_wait(response, attempt)
-                if wait > self.MAX_RETRY_WAIT_SECONDS:
-                    raise JiraRequestError.from_response(
-                        response, f"Jira asks to wait {wait:.0f} s, so try again later"
-                    )
-                await asyncio.sleep(wait)
+                await asyncio.sleep(self._allowed_wait(response, attempt))
                 continue
             if not response.is_success:
                 raise JiraRequestError.from_response(response)
             return self._json(response)
         raise AssertionError("unreachable: the last attempt returns or raises")
+
+    async def _attempt(self, method: str, path: str, request: dict[str, Any], last: bool) -> httpx.Response | None:
+        """None when the connection was refused and another attempt may follow: the request never reached Jira."""
+        try:
+            return await self._http.request(method, path, **request)
+        except (httpx.ConnectError, httpx.ConnectTimeout) as unreachable:
+            if last:
+                raise self._unreachable(unreachable) from unreachable
+            return None
+        except httpx.TransportError as failed:
+            raise self._unreachable(failed) from failed
+
+    @classmethod
+    def _allowed_wait(cls, response: httpx.Response, attempt: int) -> float:
+        """A wait longer than a chat can take fails at once instead of being slept."""
+        wait = cls._retry_wait(response, attempt)
+        if wait > cls.MAX_RETRY_WAIT_SECONDS:
+            raise JiraRequestError.from_response(response, f"Jira asks to wait {wait:.0f} s, so try again later")
+        return wait
 
     def _unreachable(self, failure: httpx.TransportError) -> JiraError:
         """Names the host, never the full URL, whose query string carries the JQL."""

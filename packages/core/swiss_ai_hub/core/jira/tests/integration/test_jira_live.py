@@ -109,8 +109,9 @@ async def test_a_fix_version_returns_its_tickets_with_their_components(connectio
 async def test_wrong_credentials_unknown_project_and_invalid_jql_each_say_what_they_are(
     connection: JiraConnectionConfig,
 ):
+    wrong_token = connection.model_copy(update={"api_token": "wrong-token"})
     with pytest.raises(JiraAuthenticationError) as wrong_credentials:
-        await JiraTicketSearch.find_tickets(connection.model_copy(update={"api_token": "wrong-token"}), _PROJECTS)
+        await JiraTicketSearch.find_tickets(wrong_token, _PROJECTS)
     with pytest.raises(JiraProjectNotFoundError) as unknown_project:
         await JiraTicketSearch.find_tickets(connection, ["ENG", "ZZZ"])
     with pytest.raises(JiraInvalidQueryError) as invalid_jql:
