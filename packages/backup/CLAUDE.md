@@ -132,8 +132,8 @@ failing. Operators can install `pg_repack` later and the next monthly run picks 
 
 **lz4 rewrite (`FerretdbLz4RewriteHandler`)**: unlike the others it targets `postgres-ferretdb` (with the
 `MONGO_USERNAME` superuser), not the dagster DB, and it is a one-off, so it is never scheduled. It refuses to run unless
-`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in
-`documentdb_data`, 50 rows at a time by primary key:
+`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in `documentdb_data`, 50
+rows at a time by primary key:
 `SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. That builds a
 new value with the same bytes, which PostgreSQL compresses with the new default (`SET document = document` would copy
 the compressed bytes unchanged). It writes DocumentDB's tables directly, not through FerretDB, so readers never see a

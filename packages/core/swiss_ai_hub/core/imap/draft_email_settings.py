@@ -15,7 +15,8 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 _DEFAULT_DRAFT_PROMPT = (
     "You draft concise, polite email replies for a human to review before sending. "
     "Reply in the same language as the original message, keep a professional tone, "
-    "and never invent facts. Output only the reply body, without a subject line or signature."
+    "and never invent facts. Output only the reply body, without a subject line or signature. "
+    "You may format it with Markdown (bold, lists); wrap text in ==double equals== only when asked to highlight it."
 )
 
 # Grounded drafting never leaves a message without a draft. That is not politeness: filing is this blueprint's only
@@ -92,7 +93,19 @@ class DraftEmailSettings(StepConfig):
     ]
     draft_prompt: Annotated[
         str | Textarea,
-        Field(default=_DEFAULT_DRAFT_PROMPT, description="Instructions steering how the LLM drafts the reply body."),
+        Field(
+            default=_DEFAULT_DRAFT_PROMPT,
+            description="Instructions steering how the LLM drafts the reply body. The body is read as Markdown, with "
+            "==text== highlighted in yellow, and rendered to sanitised HTML in the draft.",
+        ),
+    ]
+    quote_original: Annotated[
+        bool | ToggleSwitch,
+        Field(
+            default=False,
+            description="Quote the original message below the reply, with an Outlook-style header block. Added after "
+            "the reply is generated, so the model never sees it twice and the reply does not change.",
+        ),
     ]
     number_of_input_tokens: Annotated[
         int | InputNumber,
@@ -209,6 +222,11 @@ class DraftEmailSettings(StepConfig):
                 help=LocaleString.from_i18n_path("lib.imap.config.draft_prompt.help"),
                 rows=6,
                 auto_resize=True,
+                condition_if=_VISIBLE_WHEN_ENABLED,
+            ),
+            quote_original=ToggleSwitch(
+                label=LocaleString.from_i18n_path("lib.imap.config.quote_original.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.quote_original.help"),
                 condition_if=_VISIBLE_WHEN_ENABLED,
             ),
             number_of_input_tokens=InputNumber(

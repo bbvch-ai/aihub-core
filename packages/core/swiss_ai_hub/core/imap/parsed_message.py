@@ -23,6 +23,8 @@ class ParsedMessage(BaseModel):
     rfc_message_id: str | None = None
     references: str | None = None
     reply_to: str | None = None
+    to: str | None = None
+    cc: str | None = None
     body_text: str | None = None
     body_html: str | None = None
     attachments: list[ParsedAttachment] = []

@@ -288,6 +288,7 @@ class EmailClassificationAgent(Agent):
                 topic=topic,
                 displayer=displayer,
                 redis=redis,
+                t=t,
             )
 
         # Built once for the batch, exactly as the ungrounded path does it: it owns the token budget, and a budget
@@ -347,6 +348,7 @@ class EmailClassificationAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         redis: Redis,
+        t: LocaleHandler,
     ) -> MailBatchDraftedEvent:
         """Turn every delegated answer into a threaded draft and append the whole batch in one pass.
 
@@ -380,6 +382,7 @@ class EmailClassificationAgent(Agent):
             topic=topic,
             displayer=displayer,
             redis=redis,
+            t=t,
         )
 
     @step(

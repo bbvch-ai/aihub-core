@@ -4,10 +4,12 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import DraftedReplyRef
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig, ParsedMessage
 
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
+from swiss_ai_hub.agent.imap.quoted_original import QuotedOriginal
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,7 @@ class ReplyDrafter:
         imap_config: ImapClientConfig,
         displayer: EventDisplayer,
         user: UserIdentity | None,
+        t: LocaleHandler,
     ) -> ComposedReply:
         """Draft the reply body with the LLM (no IMAP connection held) and wrap it in a threaded envelope.
 
@@ -54,7 +57,9 @@ class ReplyDrafter:
         async with llm_config.cost_reporting_llm(displayer, user=user) as llm:
             llm_event = await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=False)
         body = llm_event.chat_messages[-1].content or ""
-        return ReplyComposer.compose_from_parsed(parsed, from_address=imap_config.username, body=body)
+        return ReplyComposer.compose_from_parsed(
+            parsed, from_address=imap_config.username, body=body, quoted=QuotedOriginal.for_draft(parsed, draft, t)
+        )
 
     @staticmethod
     async def persist(

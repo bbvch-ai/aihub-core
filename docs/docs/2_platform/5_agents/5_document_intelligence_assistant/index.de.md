@@ -139,16 +139,16 @@ Owner einen Vorschlag übernimmt.
 
 ### Was die Vorlage einstellt
 
-| Einstellung                                                     | Wert                                          | Warum                                                                                                                                 |
-| --------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Wissensquellen**                                              | Ein Platzhalter auf der geteilten Sammlung    | Eine Vorlage kann Ihre Datenbanken nicht kennen. Ersetzen Sie ihn, siehe unten.                                                       |
-| **Abfragemodus**                                                | `hybrid`                                      | Die Stichwortsuche findet überschneidende Stories und Arbeitsvereinbarungen, die eine Entwurfsanfrage über die Ähnlichkeit verfehlt. |
-| **Frage kondensieren**                                          | An                                            | Eine Folgefrage wie „mach Kriterium 2 strenger“ sucht weiter zum Thema der Story.                                                     |
-| **Kontext-Suffizienz prüfen**                                   | Aus                                           | Für eine neue Story gibt es kein Dokument, das sie schon beantwortet, der Guard würde den Entwurf verweigern.                         |
-| **Auf die Rechte der Benutzerin oder des Benutzers beschränken** | An                                            | Product Owner erhalten nur Inhalte aus Datenbanken, die sie lesen dürfen.                                                             |
-| **Benutzer- und Organisationsspeicher**                         | Aus                                           | Fakten aus einem Entwurf würden sonst in fremde Stories einfliessen.                                                                  |
-| **System-Prompt**                                               | Story-Vorlagen und Antwortregeln              | Auf Englisch verfasst. Der Agent antwortet in der Sprache der Nachricht.                                                              |
-| **Kontext-Prompt**                                              | Ein eigener der Vorlage                       | Der Standard endet mit einer Anweisung in der Oberflächensprache, die Antworten in diese Sprache zieht.                               |
+| Einstellung                                                      | Wert                                       | Warum                                                                                                                                |
+| ---------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Wissensquellen**                                               | Ein Platzhalter auf der geteilten Sammlung | Eine Vorlage kann Ihre Datenbanken nicht kennen. Ersetzen Sie ihn, siehe unten.                                                      |
+| **Abfragemodus**                                                 | `hybrid`                                   | Die Stichwortsuche findet überschneidende Stories und Arbeitsvereinbarungen, die eine Entwurfsanfrage über die Ähnlichkeit verfehlt. |
+| **Frage kondensieren**                                           | An                                         | Eine Folgefrage wie „mach Kriterium 2 strenger“ sucht weiter zum Thema der Story.                                                    |
+| **Kontext-Suffizienz prüfen**                                    | Aus                                        | Für eine neue Story gibt es kein Dokument, das sie schon beantwortet, der Guard würde den Entwurf verweigern.                        |
+| **Auf die Rechte der Benutzerin oder des Benutzers beschränken** | An                                         | Product Owner erhalten nur Inhalte aus Datenbanken, die sie lesen dürfen.                                                            |
+| **Benutzer- und Organisationsspeicher**                          | Aus                                        | Fakten aus einem Entwurf würden sonst in fremde Stories einfliessen.                                                                 |
+| **System-Prompt**                                                | Story-Vorlagen und Antwortregeln           | Auf Englisch verfasst. Der Agent antwortet in der Sprache der Nachricht.                                                             |
+| **Kontext-Prompt**                                               | Ein eigener der Vorlage                    | Der Standard endet mit einer Anweisung in der Oberflächensprache, die Antworten in diese Sprache zieht.                              |
 
 ### Einrichtung
 

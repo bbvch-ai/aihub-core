@@ -118,13 +118,13 @@ network error), a server-side OAuth error (`server_error`, `temporarily_unavaila
 status without `session_state`. None of these says anything about the cookie, and an unhealthy Keycloak must not log
 users out.
 
-The probe is costly: the hidden iframe boots the whole app a second time on `/auth/renew`, and a code exchange runs whose
-tokens are discarded, all before the first page renders. It therefore runs once per browser session, not per page load:
-a passed probe records the user's `sub` in sessionStorage (`utils/ssoSessionCheck.ts`), and later loads in that tab skip
-it. sessionStorage ends together with the session cookie, so the skip cannot hide a lost cookie. The login callback
-records the `sub` too, since Keycloak has just set the cookie; this also keeps a deployment where the iframe cannot see
-the cookie (Keycloak on another site, third-party cookies blocked) from looping between login and the probe. Keycloak
-must still be on the same site as the app, or the OpenWebUI iframe cannot sign in at all.
+The probe is costly: the hidden iframe boots the whole app a second time on `/auth/renew`, and a code exchange runs
+whose tokens are discarded, all before the first page renders. It therefore runs once per browser session, not per page
+load: a passed probe records the user's `sub` in sessionStorage (`utils/ssoSessionCheck.ts`), and later loads in that
+tab skip it. sessionStorage ends together with the session cookie, so the skip cannot hide a lost cookie. The login
+callback records the `sub` too, since Keycloak has just set the cookie; this also keeps a deployment where the iframe
+cannot see the cookie (Keycloak on another site, third-party cookies blocked) from looping between login and the probe.
+Keycloak must still be on the same site as the app, or the OpenWebUI iframe cannot sign in at all.
 
 **Effect on this decision.** The probe cannot tell a lost cookie from an SSO session ended by an embedded service's
 logout — both answer `login_required`. A new tab after an OpenWebUI logout therefore logs the parent out. In a tab that

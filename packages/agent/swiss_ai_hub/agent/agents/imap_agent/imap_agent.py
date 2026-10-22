@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     StopEvent,
     UnreadMailListedEvent,
 )
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.imap import DraftEmailSettings, ImapClientConfig
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -160,6 +161,7 @@ class ImapAgent(Agent):
         imap_config: ImapClientConfig,
         draft: DraftEmailSettings,
         displayer: EventDisplayer,
+        t: LocaleHandler,
         # Optional, unlike the conversational agents: this agent is triggered programmatically and its
         # start events default user to None, so a scheduler-driven run has no identity to attribute.
         user: UserIdentity | None = None,
@@ -185,7 +187,7 @@ class ImapAgent(Agent):
         )
 
         replies = [
-            (parsed, await ReplyDrafter.compose_reply(parsed, draft, imap_config, displayer, user))
+            (parsed, await ReplyDrafter.compose_reply(parsed, draft, imap_config, displayer, user, t))
             for parsed in parsed_messages
         ]
         drafted = await ReplyDrafter.persist(imap_config, draft, drafted_flag, replies)

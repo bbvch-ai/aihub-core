@@ -131,3 +131,24 @@ def test_an_enormous_subject_is_capped_at_parse_time():
     parsed = _parse(message)
 
     assert len(parsed.subject) == MAX_SUBJECT_CHARACTERS
+
+
+def test_parse_message_carries_the_recipients_a_quoted_reply_shows():
+    message = EmailMessage()
+    message["From"] = "Alice <alice@example.com>"
+    message["To"] = "support@example.com"
+    message["Cc"] = "Bob <bob@example.com>"
+    message["Subject"] = "Question"
+    message.set_content("body")
+
+    parsed = _parse(_from_bytes(message))
+
+    assert parsed.to == "support@example.com"
+    assert parsed.cc == "Bob <bob@example.com>"
+
+
+def test_parse_message_leaves_absent_recipients_empty():
+    parsed = _parse(_build_message())
+
+    assert parsed.to is None
+    assert parsed.cc is None
