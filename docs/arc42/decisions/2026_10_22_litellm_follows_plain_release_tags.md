@@ -21,10 +21,16 @@ embedding caching, per-user keys and spend logs, and the model info fields the H
   upgrade pins `v1.106.2` (`image_tags.litellm`), mirrored from `ghcr.io/berriai/litellm:v1.106.2`.
 - Every upgrade re-runs the guardrail's unit tests with the matching `litellm` package and its live tests through a real
   proxy (`infra/deployment/CLAUDE.md`), and the gateway smoke checks: chat, streamed chat, embeddings, reranking,
-  transcription, RAG figure inlining, a per-user key with its spend log, and prompt injection detection.
+  transcription, RAG figure inlining, a per-user key with its spend log, and that ordinary messages are not rejected as
+  prompt injection.
 - Rollback is the previous image tag. Migrations between `v1.83.10-stable` and `v1.106.2` only add tables, columns and
   indexes, and `v1.83.10-stable` starts and serves on the migrated database. A `pg_dump -Fc` of the `litellm` database
   taken before the upgrade is the fallback when an older version must also see the old schema.
+- The prompt injection callback's LLM check (`llm_api_check`) is switched off. On `v1.106.2` it runs for the first time:
+  it sends the whole conversation to the configured model through LiteLLM's router, which bypasses the
+  `pii-anonymisation` guardrail, so personal data would reach an external model in clear text. Its SAFE/UNSAFE verdict
+  also rejected ordinary messages ("Say: Hello", a question about the assistant itself), which failed the agent and API
+  test suites. `heuristics_check` stays off as before, so the callback rejects nothing, as on `v1.83.10-stable`.
 
 ## Consequences
 
@@ -33,13 +39,12 @@ embedding caching, per-user keys and spend logs, and the model info fields the H
 - The gateway receives LiteLLM's security fixes again.
 - 98 migrations ran in 2.1 s on a copy with 1.5 million spend log rows (3.3 GB); the spend log changes are column
   additions with constant defaults, which PostgreSQL applies without rewriting the table.
-- Prompt injection detection now rejects similarity matches with a 400. On `v1.83.10-stable` the same request passed.
 
 ### Trade-offs
 
 - Plain release tags appear several times a week; picking one is a judgement call rather than following a label.
-- Prompt injection detection can now reject a legitimate message that resembles a known attack. Callers see a 400
-  "Rejected message. This is a prompt injection attack."
+- There is still no working prompt injection detection. A replacement that runs after anonymisation (or on a model
+  inside the deployment) is separate work.
 - Models priced per second or per image report `input_cost_per_token` and `output_cost_per_token` as missing rather than
   `0`; the Hub's model DTO accepts both.
 - Image generation was not verified: the dev deployment reaches no image provider, on either version.
