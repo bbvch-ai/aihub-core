@@ -176,7 +176,9 @@ class TestUnusableConfiguration:
 
 class TestForm:
     def test_the_token_is_the_one_secret(self):
-        assert StructuredSyncConfig.secret_field_paths() == {"jira.api_token"}
+        assert {path for path in StructuredSyncConfig.secret_field_paths() if path.startswith("jira.")} == {
+            "jira.api_token"
+        }
 
     def test_the_email_is_asked_only_for_jira_cloud(self):
         [group] = [element for element in StructuredSyncConfig.as_form().to_formkit_form() if element.name == "jira"]
