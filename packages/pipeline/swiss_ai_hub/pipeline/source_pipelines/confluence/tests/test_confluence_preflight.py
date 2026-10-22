@@ -49,8 +49,10 @@ class TestPreflight:
         assert guarded == [confluence.site]
 
     def test_an_address_inside_the_platform_is_refused_before_any_request(self, confluence: FakeConfluence):
+        options = _options(confluence, base_url="http://ferretdb:27017")
+
         with pytest.raises(ValueError, match="points at ferretdb, a name only an internal network resolves"):
-            _check(_options(confluence, base_url="http://ferretdb:27017"))
+            _check(options)
         assert confluence.requests == []
 
     @pytest.mark.parametrize("status", [401, 403])
@@ -58,33 +60,42 @@ class TestPreflight:
         self, confluence: FakeConfluence, guarded: list[str], status: int
     ):
         confluence.fail_next(status)
+        options = _options(confluence)
 
         with pytest.raises(ValueError, match=rf"rejected the credentials for {confluence.site} \({status}\)\. Check"):
-            _check(_options(confluence))
+            _check(options)
 
     def test_an_anonymous_answer_is_refused(self, confluence: FakeConfluence, guarded: list[str]):
         """Anonymous access reads public pages only; the listing would remove everything else."""
         confluence.account = {"type": "anonymous"}
+        options = _options(confluence)
 
         with pytest.raises(ValueError, match="as if no credentials were sent"):
-            _check(_options(confluence))
+            _check(options)
 
     def test_a_space_the_account_cannot_see_is_named_with_the_account(
         self, confluence: FakeConfluence, guarded: list[str]
     ):
+        options = _options(confluence, space_keys=["ENG", "SALES"])
+
         with pytest.raises(ValueError, match="Confluence space SALES does not exist, or Sync Bot cannot see it"):
-            _check(_options(confluence, space_keys=["ENG", "SALES"]))
+            _check(options)
 
     def test_a_missing_parent_page_is_named(self, confluence: FakeConfluence, guarded: list[str]):
+        options = _options(confluence, ancestor_page_ids=["999"])
+
         with pytest.raises(ValueError, match="Confluence page 999 does not exist, or Sync Bot cannot see it"):
-            _check(_options(confluence, ancestor_page_ids=["999"]))
+            _check(options)
 
     def test_a_parent_page_outside_the_spaces_is_refused(self, confluence: FakeConfluence, guarded: list[str]):
+        options = _options(confluence, space_keys=["ENG"], ancestor_page_ids=["200"])
+
         with pytest.raises(ValueError, match="page 200 is in space OPS, which is not one of the database's spaces"):
-            _check(_options(confluence, space_keys=["ENG"], ancestor_page_ids=["200"]))
+            _check(options)
 
     def test_a_failing_site_is_not_mistaken_for_wrong_credentials(self, confluence: FakeConfluence, guarded: list[str]):
         confluence.fail_next(500, times=10)
+        options = _options(confluence)
 
         with pytest.raises(ConfluenceRequestError, match="500"):
-            _check(_options(confluence))
+            _check(options)

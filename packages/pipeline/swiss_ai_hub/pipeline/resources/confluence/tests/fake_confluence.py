@@ -17,8 +17,10 @@ from requests.adapters import BaseAdapter
 
 SITES = {"cloud": "https://acme.atlassian.net/wiki", "data_center": "https://confluence.acme.ch"}
 _ID_LIST = re.compile(r"^id in \(([0-9, ]+)\)$")
-_ONE_ID = re.compile(r"^id = ([0-9]+)$")
+_ONE_ID = re.compile(r"^id = (\d+)$")
 _SPACE_QUERY = re.compile(r'^type = space and space = "((?:[^"\\]|\\.)*)"$')
+# Properties a search result carries only when asked to expand them, by the key they appear under.
+_EXPANDABLE = {"body.storage": "body", "metadata.labels": "metadata"}
 _REASONS = {
     200: "OK",
     302: "Found",
@@ -131,6 +133,10 @@ class FakeConfluence:
             elif page_id in ids:
                 page["ancestors"] = [*new_chain, *page["ancestors"][old_depth:]]
 
+    def relabel(self, page_id: str, labels: list[str]) -> None:
+        """Labels are not part of a page's content, so changing them gives the page no new version."""
+        self.page(page_id)["metadata"]["labels"]["results"] = [{"name": label} for label in labels]
+
     def remove(self, page_id: str) -> None:
         self.pages = [page for page in self.pages if page["id"] != page_id]
 
@@ -173,9 +179,11 @@ class FakeConfluence:
         return {"results": results, "size": len(results)}
 
     def _search(self, params: dict[str, str]) -> dict[str, Any]:
-        matched = self._matching(params["cql"])
-        if "body.storage" not in params.get("expand", ""):
-            matched = [{key: value for key, value in page.items() if key != "body"} for page in matched]
+        expanded = params.get("expand", "").split(",")
+        hidden = {key for expansion, key in _EXPANDABLE.items() if expansion not in expanded}
+        matched = [
+            {key: value for key, value in page.items() if key not in hidden} for page in self._matching(params["cql"])
+        ]
         start = int(params.get("cursor", 0))
         answer: dict[str, Any] = {"results": matched[start : start + self.page_size], "_links": {"base": self.site}}
         if start + self.page_size < len(matched):

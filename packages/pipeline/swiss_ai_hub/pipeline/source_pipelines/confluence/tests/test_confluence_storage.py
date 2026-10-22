@@ -144,6 +144,18 @@ class TestTables:
         assert markdown.count("<table>") == 1
         assert "| API | Ada Grace |" in markdown
 
+    def test_every_table_of_a_page_with_more_than_ten_stays_in_its_place(self):
+        """The eleventh table's marker starts with the second's; replacing one must not take the other."""
+        storage = "".join(
+            f"<p>Section {index}</p><table><tbody><tr><th>Table</th></tr><tr><td>T{index}</td></tr></tbody></table>"
+            for index in range(12)
+        )
+
+        sections = _markdown(storage).split("Section ")[1:]
+
+        assert [section.split("\n", 1)[0] for section in sections] == [str(index) for index in range(12)]
+        assert all(f"| T{index} |" in section for index, section in enumerate(sections))
+
 
 class TestLinksAndImages:
     def test_a_link_to_another_page_keeps_its_text(self):

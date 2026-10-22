@@ -70,9 +70,10 @@ class TestSearch:
     def test_a_next_link_leaving_the_site_is_refused(self, monkeypatch: pytest.MonkeyPatch):
         confluence = _confluence(monkeypatch)
         confluence.next_link_prefix = "@elsewhere.test"
+        client = _client()
 
         with pytest.raises(ValueError, match="next page outside the site"):
-            _ids(_client())
+            _ids(client)
 
 
 class TestAuthentication:
@@ -96,9 +97,10 @@ class TestErrors:
     def test_a_refused_sign_in_fails_at_once_naming_status_and_path(self, monkeypatch: pytest.MonkeyPatch):
         confluence = _confluence(monkeypatch)
         confluence.fail_next(401, {"message": "Basic authentication with passwords is deprecated."}, times=3)
+        client = _client()
 
         with pytest.raises(ConfluenceRequestError) as refused:
-            _client().current_user()
+            client.current_user()
 
         assert refused.value.status_code == 401
         assert str(refused.value) == (
@@ -127,17 +129,19 @@ class TestErrors:
         """The address guard checked the configured host only; a redirect could lead anywhere."""
         confluence = _confluence(monkeypatch)
         confluence.fail_next(302, headers={"Location": "http://ferretdb:27017/"})
+        client = _client()
 
         with pytest.raises(ConfluenceRequestError, match="it redirects to http://ferretdb:27017/"):
-            _client().current_user()
+            client.current_user()
         assert len(confluence.requests) == 1
 
     def test_a_missing_endpoint_carries_confluence_s_own_message(self, monkeypatch: pytest.MonkeyPatch):
         confluence = _confluence(monkeypatch)
         confluence.fail_next(404, {"message": "No space with key : OPS"})
+        client = _client()
 
         with pytest.raises(ConfluenceRequestError, match="404 Not Found to GET /wiki/rest/api/search: No space"):
-            _client().find_space("OPS")
+            client.find_space("OPS")
 
 
 class TestLookups:

@@ -216,8 +216,9 @@ lake, one folder (namespace) per project or space, so the Stage 2 pipeline parse
   tree.
 - **Incremental**: a sync reads only the records changed since the previous one, and a listing of every record key in
   scope removes the files of records deleted at the source. Jira finds the changes with a cursor on each issue's last
-  update; Confluence compares every page's version and place in the tree with the previous sync's, because renaming or
-  moving a page moves the pages below it without changing their versions.
+  update; Confluence compares every page's version, place in the tree and labels with the previous sync's, because
+  renaming or moving a page moves the pages below it without changing their versions, and a label change gives the page
+  no new version.
 - **Fails before it removes**: an adapter checks its credentials and scope before reading, and a failing listing, or an
   empty one while the database holds files, fails the run, so a wrong token or a typo never empties a database.
 

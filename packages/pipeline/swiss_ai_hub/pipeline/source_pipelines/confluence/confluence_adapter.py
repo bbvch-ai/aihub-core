@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 _I18N = "lib.source_pipelines.structured.config.confluence"
 _DEPLOYMENT_REF = "confluence_deployment"
 # Enough to place a page in the tree and tell whether it changed; bodies are read only for the pages that did.
-_SUMMARY_EXPAND = "ancestors,version,space"
+_SUMMARY_EXPAND = "ancestors,version,space,metadata.labels"
 _PAGE_EXPAND = "body.storage,ancestors,version,history,metadata.labels,space"
 _SEEN = "seen"
 
@@ -29,8 +29,9 @@ class ConfluenceAdapter(AbstractStructuredSourceAdapter[ConfluenceOptions]):
     ``{space}/{ancestor titles}/{title}.md``.
 
     Each space becomes a namespace and its page tree becomes folders. What changed is found by comparing every page's
-    version and path with the previous sync's, not by a last-modified cursor: renaming or moving a page moves its
-    descendants' files too, while their own versions stay the same, and a moved page keeps its version as well.
+    version, path and labels with the previous sync's, not by a last-modified cursor: renaming or moving a page moves
+    its descendants' files too, while their own versions stay the same, and neither a move nor a label change gives a
+    page a new version.
     """
 
     kind = "confluence"
@@ -73,11 +74,12 @@ class ConfluenceAdapter(AbstractStructuredSourceAdapter[ConfluenceOptions]):
         )
 
     def dlt_source(self, options: ConfluenceOptions) -> DltSource:
-        """The pages that are new, edited, renamed or moved since the last successful sync, all of them on the first.
+        """The pages that are new, edited, renamed, moved or relabelled since the last successful sync, all of them on
+        the first.
 
-        Every page's ``version|path`` is kept in the resource state, which is saved only after a sync succeeded. A page
-        is recorded only once it was read or did not need to be, so one whose body could not be read this time, say
-        because it was deleted between the two queries, is compared again next time instead of being taken as done.
+        Every page's ``version|path|labels`` is kept in the resource state, which is saved only after a sync succeeded.
+        A page is recorded only once it was read or did not need to be, so one whose body could not be read this time,
+        say because it was deleted between the two queries, is compared again next time instead of being taken as done.
         """
         client = self._checked_client(options)
 
@@ -137,7 +139,8 @@ class ConfluenceAdapter(AbstractStructuredSourceAdapter[ConfluenceOptions]):
 
     @staticmethod
     def _fingerprint(page: dict[str, Any]) -> str:
-        return f"{page['version']['number']}|{ConfluencePage.object_key_of(page)}"
+        labels = ",".join(ConfluencePage.labels_of(page))
+        return f"{page['version']['number']}|{ConfluencePage.object_key_of(page)}|{labels}"
 
     @staticmethod
     def _checked_client(options: ConfluenceOptions) -> ConfluenceClient:

@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
@@ -15,6 +16,7 @@ _CODE_MACROS = {"code", "noformat"}
 _DROPPED = ["ac:image", "img", "ac:emoticon", "ac:placeholder", "ri:attachment"]
 _UNWRAPPED = ["ac:layout", "ac:layout-section", "ac:layout-cell", "ac:inline-comment-marker", "ac:adf-fallback"]
 _TABLE_MARKER = "CONFLUENCETABLE{}"
+_TABLE_MARKERS = re.compile(_TABLE_MARKER.format(r"(\d+)"))
 
 
 class ConfluenceStorage:
@@ -50,9 +52,7 @@ class ConfluenceStorage:
         for moment in soup.find_all("time"):
             cls._replace_with_text(moment, str(moment.get("datetime") or moment.get_text()))
         tables = cls._take_tables(soup)
-        markdown = _CONVERTER.convert_soup(soup)
-        for index, table in enumerate(tables):
-            markdown = markdown.replace(_TABLE_MARKER.format(index), table)
+        markdown = _TABLE_MARKERS.sub(lambda marker: tables[int(marker.group(1))], _CONVERTER.convert_soup(soup))
         return markdown.replace("\xa0", " ").strip()
 
     @staticmethod
@@ -85,7 +85,7 @@ class ConfluenceStorage:
     def _code_block(cls, soup: BeautifulSoup, macro: Tag) -> Tag:
         body = macro.find("ac:plain-text-body", recursive=False)
         pre = soup.new_tag("pre", attrs={"data-language": cls._parameter(macro, "language")})
-        pre.string = body.get_text() if body else ""
+        pre.string = body.get_text() if body is not None else ""
         return pre
 
     @classmethod
@@ -111,7 +111,7 @@ class ConfluenceStorage:
     @staticmethod
     def _parameter(macro: Tag, name: str) -> str:
         parameter = macro.find("ac:parameter", attrs={"ac:name": name}, recursive=False)
-        return parameter.get_text().strip() if parameter else ""
+        return parameter.get_text().strip() if parameter is not None else ""
 
     @staticmethod
     def _rewrite_task_lists(soup: BeautifulSoup) -> None:
@@ -123,7 +123,7 @@ class ConfluenceStorage:
                 item = soup.new_tag("li")
                 item.append(f"[{'x' if done else ' '}] ")
                 body = task.find("ac:task-body")
-                item.extend(list(body.contents) if body else [])
+                item.extend(list(body.contents) if body is not None else [])
                 items.append(item)
             task_list.replace_with(items)
 
@@ -132,19 +132,25 @@ class ConfluenceStorage:
         """A link to another page keeps its text only: storage format names the page by title, not by an address the
         file could link to. A user mention without text is dropped rather than written as an account ID."""
         for link in soup.find_all("ac:link"):
-            body = link.find(["ac:link-body", "ac:plain-text-link-body"])
-            target = link.find(["ri:page", "ri:blog-post", "ri:space"])
-            text = body.get_text() if body else (target.get("ri:content-title", "") if target else "")
+            text = cls._link_text(link)
             url = link.find("ri:url")
             address = str(url.get("ri:value") or "") if url is not None else ""
             if address:
                 anchor = soup.new_tag("a", attrs={"href": address})
-                anchor.string = str(text) or address
+                anchor.string = text or address
                 link.replace_with(anchor)
             else:
-                cls._replace_with_text(link, str(text or ""))
+                cls._replace_with_text(link, text)
         for anchor in soup.find_all("a", href=True):
             anchor["href"] = urljoin(f"{site}/", str(anchor["href"]))
+
+    @staticmethod
+    def _link_text(link: Tag) -> str:
+        body = link.find(["ac:link-body", "ac:plain-text-link-body"])
+        if body is not None:
+            return body.get_text()
+        target = link.find(["ri:page", "ri:blog-post", "ri:space"])
+        return str(target.get("ri:content-title", "")) if target is not None else ""
 
     @staticmethod
     def _take_tables(soup: BeautifulSoup) -> list[str]:

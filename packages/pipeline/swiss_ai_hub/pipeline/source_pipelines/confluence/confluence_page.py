@@ -42,9 +42,7 @@ class ConfluencePage(BaseModel):
             space=space,
             ancestors=[ancestor["title"] for ancestor in page.get("ancestors") or []],
             path_segments=path_segments,
-            labels=sorted(
-                label["name"] for label in ((page.get("metadata") or {}).get("labels") or {}).get("results", [])
-            ),
+            labels=cls.labels_of(page),
             author=(history.get("createdBy") or {}).get("displayName"),
             version=page["version"]["number"],
             created=history.get("createdDate"),
@@ -64,6 +62,12 @@ class ConfluencePage(BaseModel):
     @classmethod
     def object_key_of(cls, page: dict[str, Any]) -> str:
         return StructuredRecordFile.object_key_for(*cls.path_of(page))
+
+    @staticmethod
+    def labels_of(page: dict[str, Any]) -> list[str]:
+        """The label names, sorted, from a result expanded with ``metadata.labels``: the file shows them, and the sync
+        compares them, because adding or removing a label leaves the page's version as it was."""
+        return sorted(label["name"] for label in ((page.get("metadata") or {}).get("labels") or {}).get("results", []))
 
     def to_record_file(self) -> StructuredRecordFile:
         return StructuredRecordFile(

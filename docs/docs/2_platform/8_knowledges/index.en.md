@@ -164,11 +164,11 @@ database can find them, whatever page restrictions apply in Confluence. Sync wit
 sees only what the database's readers may see.
 :::
 
-The first sync reads every page in scope. Later syncs list every page with its version and its place in the tree, and
-read the text only of pages that are new, edited, renamed or moved. Renaming or moving a page moves the documents of the
-pages below it in the same sync. Pages deleted or archived in Confluence, moved out of the listed spaces or parent
-pages, or no longer carrying a listed label are removed. Changing the spaces, labels or parent pages reads everything
-again.
+The first sync reads every page in scope. Later syncs list every page with its version, its place in the tree and its
+labels, and read the text only of pages that are new, edited, renamed, moved or relabelled. Renaming or moving a page
+moves the documents of the pages below it in the same sync. Pages deleted or archived in Confluence, moved out of the
+listed spaces or parent pages, or no longer carrying a listed label are removed. Changing the spaces, labels or parent
+pages reads everything again.
 
 Two pages whose titles end up as the same file name keep one document between them, such as `Q1/Q2` and `Q1_Q2` below
 the same parent, or titles that only differ after their 120th character. The run's log names both pages; renaming one of

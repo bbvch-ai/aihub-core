@@ -578,12 +578,12 @@ an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `pro
   (`find_space`: `search?cql=type = space and space = "KEY"`; `find_page`: `content/search?cql=id = N`), because Cloud's
   REST v1 no longer serves `space/{key}` or `content/{id}`; v2 does, but Data Center has no v2. A sync's requests
   therefore need only `search:confluence`, plus `read:confluence-user` for `user/current`.
-- **Changes are found by `version|path`, not by a cursor.** Renaming or moving a page changes the path of every page
-  below it without changing their versions, and a move changes no version at all. Each run lists every page in scope
-  without its body (`expand=ancestors,version,space`), compares each page's `version|object key` with the `seen` map in
-  the resource state, and reads bodies only of the pages that differ, 25 IDs per CQL query. A page is recorded only once
-  its body was read, so one that vanished between the two queries is compared again next time. The map grows with the
-  spaces, some tens of bytes per page.
+- **Changes are found by `version|path|labels`, not by a cursor.** Renaming or moving a page changes the path of every
+  page below it without changing their versions, and neither a move nor adding or removing a label changes any version.
+  Each run lists every page in scope without its body (`expand=ancestors,version,space,metadata.labels`), compares each
+  page's `version|object key|sorted labels` with the `seen` map in the resource state, and reads bodies only of the
+  pages that differ, 25 IDs per CQL query. A page is recorded only once its body was read, so one that vanished between
+  the two queries is compared again next time. The map grows with the spaces, some tens of bytes per page.
 - **File and listing keys come from `ConfluencePage.path_of`**: the space key, then the titles of the page's ancestors
   and its own. The sync uses it on a full result and the listing on a summary, so the two cannot drift. A title of dots
   alone is written as `page {id}`, since it cannot be a folder or file name. Two pages mapping to one key (a `/`

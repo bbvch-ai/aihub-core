@@ -136,6 +136,19 @@ class TestConfluenceSync:
         assert "ENG/Engineering/Deploy.md" in world.files("wiki-db")
         assert "ENG/Engineering/Runbooks/Deploy.md" not in world.files("wiki-db")
 
+    def test_a_relabelled_page_is_read_again_although_no_version_changed(
+        self, world: World, confluence: FakeConfluence
+    ):
+        world.sync("wiki-db", asset=_ASSET)
+        writes, searches = world.file_writes(), len(confluence.searches())
+        confluence.relabel("3", ["runbook", "deprecated"])
+
+        assert world.sync("wiki-db", asset=_ASSET).success
+
+        assert _bodies_read(confluence, since=searches) == {"3"}
+        assert world.file_writes() == writes + 1
+        assert "labels:\n- deprecated\n- runbook\n" in world.body("wiki-db", "ENG/Engineering/Runbooks/Deploy.md")
+
     @pytest.mark.parametrize("change", ["delete", "archive"])
     def test_a_deleted_or_archived_page_is_removed(self, world: World, confluence: FakeConfluence, change: str):
         world.sync("wiki-db", asset=_ASSET)

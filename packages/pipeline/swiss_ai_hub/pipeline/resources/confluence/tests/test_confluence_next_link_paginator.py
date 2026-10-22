@@ -61,6 +61,7 @@ def test_the_last_page_has_no_next_link():
 def test_a_link_that_would_leave_the_site_is_refused(next_link: str):
     """A site without a path is the easy case to bend: the link is appended right after the host."""
     paginator = ConfluenceNextLinkPaginator("https://confluence.example.com")
+    response = _response({"base": "https://confluence.example.com", "next": next_link})
 
     with pytest.raises(ValueError, match="next page outside the site"):
-        paginator.update_state(_response({"base": "https://confluence.example.com", "next": next_link}))
+        paginator.update_state(response)
