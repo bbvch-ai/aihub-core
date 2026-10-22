@@ -48,6 +48,14 @@ an Modelle innerhalb des Deployments werden nicht anonymisiert, ausser der Aufru
 
 Nur Chat-Anfragen werden anonymisiert. Embeddings, Reranking, Transkription und Bildgenerierung nicht.
 
+### Ein Agentenprofil anonymisieren
+
+Jedes Agentenprofil hat am Ende seines Konfigurationsformulars die Checkbox **Personendaten anonymisieren**, unabhängig
+vom Blueprint. Ist sie aktiv, verlangt jeder LLM-Aufruf der Läufe des Profils den Guardrail, auch für Modelle innerhalb
+des Deployments: die Antwort, die Meta-Fragen-Prüfung, der Titel, die Follow-ups, die Memory-Extraktion und die Läufe,
+an die das Profil delegiert. Die Antwort beginnt mit einem kurzen Hinweis, dass Personendaten ersetzt wurden, bevor sie
+das Modell erreichten. Gedacht für Profile mit sensiblen Daten, etwa im HR, auch wenn ihre Modelle on-premises laufen.
+
 ## Was erkannt wird
 
 Der Analyzer verwendet Presidio mit dem mehrsprachigen PII-Modell von GLiNER und Mustern für Schweizer und
@@ -67,6 +75,19 @@ zusammen mit einer Firma), werden nicht maskiert.
 Pronomen, Rollen und Feldbezeichnungen («Sie», «vous», «Benutzer», «Adresse», «IBAN») werden in Deutsch, Französisch,
 Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer («Position 2», «Art. 5»): Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
 ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
+
+## Prüfen in Langfuse
+
+Jeder Aufruf, den das Gateway anonymisiert, hinterlässt in Langfuse eine Observation `pii-anonymisation`. In einem
+Agentenlauf steht sie im Trace des Laufs, neben dem Schritt, der den Aufruf gemacht hat: Ihr Input ist die Anfrage genau
+so, wie der Anbieter sie erhalten hat, mit Platzhaltern, ihr Output nennt, wie viele Werte welchen Typs ersetzt wurden,
+und ihre Metadaten nennen das Modell und den Grund der Anonymisierung (ein Modell ausserhalb des Deployments oder vom
+Aufruf verlangt, etwa durch die Checkbox eines Profils). Alle anonymisierten Aufrufe zeigt Tracing → Observations mit der
+Suche nach `pii-anonymisation`. Aufrufe ausserhalb eines Agentenlaufs, etwa einfache Chats, erscheinen nur mit ihren
+Zählungen. Ein abgelehnter Aufruf, weil der Analyzer nicht erreichbar war, erscheint als Fehler.
+
+Die übrigen Observations eines Laufs zeichnet der Agent auf, bevor der Aufruf das Gateway erreicht; sie zeigen deshalb
+den Originaltext. Langfuse läuft innerhalb des Deployments.
 
 ## Konfiguration
 

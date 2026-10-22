@@ -36,6 +36,8 @@ KNOWN_PII = {"Reto Wyss": "PERSON", "Anna Muster": "PERSON", "756.1234.5678.97":
 
 
 def load_module():
+    # The guardrail imports its audit module by name, as LiteLLM's /app holds both files.
+    sys.path.insert(0, str(MODULE_PATH.parent))
     sys.modules.pop("pii_anonymisation_guardrail", None)
     spec = importlib.util.spec_from_file_location("pii_anonymisation_guardrail", MODULE_PATH)
     module = importlib.util.module_from_spec(spec)
@@ -50,6 +52,14 @@ def fake_spans(text: str) -> list[dict]:
     """Every occurrence of every known value, overlapping ones included, as Presidio would return them."""
     return [{"start": m.start(), "end": m.end(), "entity_type": entity, "score": 1.0}
             for value, entity in KNOWN_PII.items() for m in re.finditer(re.escape(value), text)]
+
+
+def bare_guardrail(**settings):
+    """A guardrail on the real analyzer client, for the model the test requests (no router in unit tests)."""
+    guardrail = guardrail_module.PiiAnonymisationGuardrail(
+        guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False, **settings)
+    guardrail._external["external-model"] = True
+    return guardrail
 
 
 def make_guardrail(external: dict[str, bool] | None = None):
@@ -298,8 +308,7 @@ def test_should_read_hosting_location_from_model_info(monkeypatch, locations: li
 # ---------------------------------------------------------------- failure, language, map handling
 
 def test_should_refuse_the_call_when_analyzer_is_unavailable() -> None:
-    guardrail = guardrail_module.PiiAnonymisationGuardrail(
-        guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False)
+    guardrail = bare_guardrail()
     guardrail.analyze_url = "http://127.0.0.1:9/analyze"  # nothing listens on the discard port
     data = request("Patient Reto Wyss")
 
@@ -309,8 +318,7 @@ def test_should_refuse_the_call_when_analyzer_is_unavailable() -> None:
 
 
 def test_should_refuse_the_call_when_analyzer_answers_with_an_error(monkeypatch) -> None:
-    guardrail = guardrail_module.PiiAnonymisationGuardrail(
-        guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False)
+    guardrail = bare_guardrail()
     guardrail.client = httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(401)))
 
     with pytest.raises(guardrail_module.AnonymisationUnavailableError):
@@ -333,9 +341,7 @@ PRESIDIO_REGEX_FLAGS = re.DOTALL | re.MULTILINE | re.IGNORECASE
 
 def guardrail_capturing_requests(allow_list: list[str] | None) -> tuple:
     sent: list[dict] = []
-    guardrail = guardrail_module.PiiAnonymisationGuardrail(
-        guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False,
-        pii_allow_list=allow_list)
+    guardrail = bare_guardrail(pii_allow_list=allow_list)
 
     def answer(analyzer_request: httpx.Request) -> httpx.Response:
         sent.append(json.loads(analyzer_request.content))

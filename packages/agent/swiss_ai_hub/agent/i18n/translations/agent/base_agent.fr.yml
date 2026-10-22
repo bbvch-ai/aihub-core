@@ -2,3 +2,6 @@
 metadata:
   name: Agent
   description: ''
+notice:
+  anonymised: Les données personnelles ont été remplacées par des espaces réservés
+    avant que cette requête n'atteigne le modèle de langage.

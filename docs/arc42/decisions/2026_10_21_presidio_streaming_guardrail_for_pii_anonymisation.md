@@ -51,6 +51,19 @@ The gateway anonymises chat requests through a project-managed Presidio analyzer
   The guardrail runs on every call to a model that is not `local`; a model without the field counts as external, and the
   compose generator rejects missing or unknown values. Calls to local models run it when they request
   `pii-anonymisation` by name.
+- **Per profile**: an `anonymise` checkbox on the agent config base, offered on every blueprint's form by discovery
+  like the schedule. The dispatcher puts the guardrail name into a context variable around every step
+  (`GatewayGuardrails`), and the one OpenAI client all agent LLM calls go through adds it to each request's body, so
+  side calls need no code of their own. mem0 runs its calls on worker threads of its own, so its client gets the names
+  explicitly; asynchronous memory writes carry the flag on their request event; a delegated run inherits it through an
+  `X-AIHub-Anonymise` header, which can only switch anonymisation on. Chat runs start with a localized notice.
+- **Audit**: the Hub's Langfuse traces are written by the agents before the gateway, so they cannot show what a
+  provider received. The guardrail adds a `pii-anonymisation` span (OpenInference GUARDRAIL kind, so the collector
+  forwards it to Langfuse) for every call it handles: inside the caller's trace when the request carries a
+  `traceparent`, with the messages as sent, the values replaced by type, the model and the reason; in a trace of its
+  own with counts only for calls outside an agent run, whose text Langfuse does not store otherwise. A refused call
+  leaves an error span. LiteLLM's own Langfuse callback was not used: it would duplicate every call in a separate trace
+  and log the restored answer.
 - The built-in Presidio guardrails and the Presidio anonymizer service are removed.
 
 ### Rejected: LiteLLM's built-in Presidio guardrail

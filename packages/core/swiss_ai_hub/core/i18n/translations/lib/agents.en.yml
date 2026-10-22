@@ -15,6 +15,12 @@ config:
   icon:
     label: Icon
     help: Select a preset icon or enter any Iconify icon name
+  anonymise:
+    label: Anonymise personal data
+    help: Replace names, addresses, IBANs, AHV numbers and other personal data with
+      placeholders before any request of this profile reaches a language model, also
+      when the model runs inside this deployment. Answers still show the original
+      values.
   cron:
     label: Schedule
     help: When this profile runs automatically. Leave empty to disable scheduled runs.

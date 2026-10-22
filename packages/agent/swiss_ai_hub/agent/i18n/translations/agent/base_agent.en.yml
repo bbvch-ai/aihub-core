@@ -2,3 +2,6 @@
 metadata:
   name: Agent
   description: ''
+notice:
+  anonymised: Personal data was replaced with placeholders before this request reached
+    the language model.

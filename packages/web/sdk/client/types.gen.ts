@@ -17523,6 +17523,12 @@ export type StoreUserMemoryRequestedEvent = {
    */
   origin_memory_llm?: string | null;
   /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
+  /**
    * Event Name
    *
    * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -30856,6 +30862,12 @@ export type StoreUserMemoryRequestedEventWritable = {
    * Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.
    */
   origin_memory_llm?: string | null;
+  /**
+   * Origin Anonymise
+   *
+   * Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.
+   */
+  origin_anonymise?: boolean;
   [key: string]: unknown;
 };
 

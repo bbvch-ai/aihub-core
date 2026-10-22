@@ -10,7 +10,12 @@ from swiss_ai_hub.core.events.agent import (
     RetrieveUserMemoryEvent,
     StoreUserMemoryRequestedEvent,
 )
-from swiss_ai_hub.core.generative_ai import AgentMemory, OrgMemoryNamespaceResolver, OrgMemoryReadConfig
+from swiss_ai_hub.core.generative_ai import (
+    AgentMemory,
+    GatewayGuardrails,
+    OrgMemoryNamespaceResolver,
+    OrgMemoryReadConfig,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
@@ -151,6 +156,7 @@ def build_memory_storage_request(
             origin_agent_name=agent_config.name,
             origin_agent_description=agent_config.description,
             origin_memory_llm=agent_config.memory_llm_model_name,
+            origin_anonymise=GatewayGuardrails.anonymising(),
         ),
         # Routing target carried on the event (not hard-coded in the dispatcher by design) so the delegation
         # primitive stays generic; today it resolves to the single MemoryWriterAgent system instance.
