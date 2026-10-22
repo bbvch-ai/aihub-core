@@ -111,6 +111,16 @@ async def test_should_restore_an_answer_with_a_placeholder_repeated_several_time
 
 
 @pytest.mark.asyncio
+async def test_should_keep_a_separator_a_separator_when_the_pasted_answer_lost_its_blank_lines(displayer, t) -> None:
+    chat = FakeThreadContext()
+    await send(LETTER, chat, displayer, t)
+
+    reply = await send("Variante 1 für <PERSON_1>\r\n---\r\nVariante 2\r\n===\r\nEnde", chat, displayer, t)
+
+    assert reply.split("\n\n", 1)[1] == "Variante 1 für Anna Muster\n\n---\nVariante 2\n\n===\nEnde"
+
+
+@pytest.mark.asyncio
 async def test_should_give_the_same_person_the_same_placeholder_in_later_messages(displayer, t) -> None:
     chat = FakeThreadContext()
     await send(LETTER, chat, displayer, t)

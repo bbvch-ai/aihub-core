@@ -22,6 +22,8 @@ class AnonymiserTurn:
     PLACEHOLDER_MAP_KEY: ClassVar[str] = "anonymiser_placeholder_map"
     SOURCE_NAME: ClassVar[str] = "presidio-analyzer"
     BACKTICK_RUN: ClassVar[re.Pattern[str]] = re.compile(r"`+")
+    # A rule line (`---`, `===`) directly under text, with no blank line between them.
+    RULE_UNDER_TEXT: ClassVar[re.Pattern[str]] = re.compile(r"(?m)(?<=\S)\n(?=[ ]{0,3}(?:-{3,}|={3,})[ \t]*$)")
 
     @classmethod
     async def answer(
@@ -38,7 +40,7 @@ class AnonymiserTurn:
         if not text.strip():
             reply = t("agent.anonymiser_agent.messages.empty")
         elif placeholders.issued_in(text):
-            reply = f"{t('agent.anonymiser_agent.messages.restored')}\n\n{placeholders.restore(text)}"
+            reply = f"{t('agent.anonymiser_agent.messages.restored')}\n\n{cls.readable(placeholders.restore(text))}"
         else:
             reply = await cls._anonymised_reply(text, placeholders, analyzer, displayer, t)
             await thread_context.set(cls.PLACEHOLDER_MAP_KEY, placeholders.model_dump())
@@ -72,6 +74,12 @@ class AnonymiserTurn:
             return
         await displayer.display_event(ConversationTitleEvent(title=t("agent.anonymiser_agent.title")))
         await thread_context.set(TITLE_GENERATED_KEY, True)
+
+    @classmethod
+    def readable(cls, text: str) -> str:
+        """A pasted answer often lost its blank lines on the way (chat copy buttons drop them), and then a `---`
+        separator right under a line turns that line into a heading. A blank line before it keeps it a separator."""
+        return cls.RULE_UNDER_TEXT.sub("\n\n", text.replace("\r\n", "\n"))
 
     @classmethod
     def code_block(cls, text: str) -> str:
