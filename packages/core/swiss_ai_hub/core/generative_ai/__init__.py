@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
     from swiss_ai_hub.core.generative_ai.document.refinement import refine_document_tables_with_metadata
+    from swiss_ai_hub.core.generative_ai.document.tables.html_table_converter import HtmlTableConverter
     from swiss_ai_hub.core.generative_ai.document.types.file_type_config import FileTypeConfig
     from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
     from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
@@ -192,6 +193,7 @@ __all__ = [
     "FewShotExample",
     "FewShotGuardExample",
     "FileTypeConfig",
+    "HtmlTableConverter",
     "ImageLoader",
     "IngestedDocument",
     "IngestedNode",
@@ -271,6 +273,7 @@ _LAZY_IMPORTS = {
     "FewShotExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example",
     "FewShotGuardExample": "swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example",
     "FileTypeConfig": "swiss_ai_hub.core.generative_ai.document.types.file_type_config",
+    "HtmlTableConverter": "swiss_ai_hub.core.generative_ai.document.tables.html_table_converter",
     "ImageLoader": "swiss_ai_hub.core.generative_ai.document.loaders.image_loader",
     "IngestedDocument": "swiss_ai_hub.core.generative_ai.document.types.ingested_document",
     "IngestedNode": "swiss_ai_hub.core.generative_ai.document.types.ingested_node",
