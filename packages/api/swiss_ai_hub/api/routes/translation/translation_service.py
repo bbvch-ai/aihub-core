@@ -78,10 +78,13 @@ class TranslationService:
 
         api_key = await LiteLLMService.api_key_for_user(user)
         llm, _ = llm_config.to_llama_index(api_key=api_key)
-        results = await asyncio.gather(
-            *(cls._translate_into_locale(source_text, source_locale, locale, llm, t) for locale in target_locales),
-            return_exceptions=True,
-        )
+        try:
+            results = await asyncio.gather(
+                *(cls._translate_into_locale(source_text, source_locale, locale, llm, t) for locale in target_locales),
+                return_exceptions=True,
+            )
+        finally:
+            await llm.aclose()
         return cls._merge_results(locale_string, target_locales, results)
 
     @staticmethod

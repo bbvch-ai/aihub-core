@@ -145,7 +145,7 @@ Each example is one pair:
 | **Temperature**              | Number           | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for classification and strict formatting; raise only for creative tasks. Range 0.0–2.0. |
 | **Return Log Probabilities** | Toggle           | Off     | Advanced/diagnostic option for token-level confidence scores. Leave off unless needed.                                     |
 | **Top Log Probabilities**    | Number           | `0`     | How many alternative tokens to report per position; only applies when log probabilities are enabled. Range 0–20.           |
-| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up.                                                                           |
+| **Timeout**                  | Number (seconds) | `300`   | How long to wait for the model before giving up.                                                                           |
 
 ::: details How the settings combine at runtime
 A message is trimmed to **Max Input Tokens**, checked against the **Description** by the suitability guard, and (if
