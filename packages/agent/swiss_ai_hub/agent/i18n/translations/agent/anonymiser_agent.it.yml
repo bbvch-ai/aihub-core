@@ -1,0 +1,24 @@
+---
+metadata:
+  name: Anonimizzatore
+  description: Sostituisce i dati personali del testo con segnaposto e reinserisce
+    i valori originali in una risposta che incolli. Nessun modello di IA vede il tuo
+    testo.
+title: Testo anonimizzato
+steps:
+  respond:
+    name: Anonimizzare o ripristinare
+    description: Anonimizza il messaggio con l'analizzatore PII dell'installazione,
+      oppure ripristina i segnaposto emessi in questa chat.
+thoughts:
+  anonymising: Ricerca di dati personali con l'analizzatore dell'installazione.
+messages:
+  anonymised: 'Ecco il testo con i dati personali sostituiti. Usalo in qualsiasi strumento,
+    poi incolla la risposta in questa chat per riavere i valori originali:'
+  restored: 'Ecco il testo con i valori originali:'
+  nothing_found: Non ho trovato dati personali in questo testo, quindi non c'è nulla
+    da sostituire.
+  unknown_placeholders: 'Questi segnaposto non sono stati emessi in questa chat e
+    restano invariati: %{placeholders}'
+  empty: Inviami un testo da anonimizzare, oppure incolla una risposta con i segnaposto
+    di questa chat per ripristinarla.

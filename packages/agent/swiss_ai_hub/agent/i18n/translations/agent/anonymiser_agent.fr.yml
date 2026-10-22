@@ -1,0 +1,25 @@
+---
+metadata:
+  name: Anonymiseur
+  description: Remplace les données personnelles de votre texte par des espaces réservés
+    et remet les valeurs d'origine dans une réponse que vous collez. Aucun modèle
+    d'IA ne voit votre texte.
+title: Texte anonymisé
+steps:
+  respond:
+    name: Anonymiser ou restaurer
+    description: Anonymise le message avec l'analyseur PII du déploiement, ou restaure
+      les espaces réservés émis dans ce chat.
+thoughts:
+  anonymising: Recherche de données personnelles avec l'analyseur du déploiement.
+messages:
+  anonymised: "Voici votre texte avec les données personnelles remplacées. Utilisez-le\
+    \ dans n'importe quel outil, puis collez la réponse dans ce chat pour retrouver\
+    \ les valeurs d'origine :"
+  restored: "Voici le texte avec les valeurs d'origine :"
+  nothing_found: Je n'ai trouvé aucune donnée personnelle dans ce texte, il n'y a
+    donc rien à remplacer.
+  unknown_placeholders: "Ces espaces réservés n'ont pas été émis dans ce chat et restent\
+    \ tels quels : %{placeholders}"
+  empty: Envoyez-moi un texte à anonymiser, ou collez une réponse contenant les espaces
+    réservés de ce chat pour la restaurer.

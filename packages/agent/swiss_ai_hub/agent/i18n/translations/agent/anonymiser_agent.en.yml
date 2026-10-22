@@ -1,0 +1,22 @@
+---
+metadata:
+  name: Anonymiser
+  description: Replaces personal data in your text with placeholders, and puts the
+    original values back into an answer you paste in. No AI model sees your text.
+title: Anonymised text
+steps:
+  respond:
+    name: Anonymise or Restore
+    description: Anonymises the message with the deployment's PII analyzer, or restores
+      the placeholders this chat issued.
+thoughts:
+  anonymising: Looking for personal data with the deployment's analyzer.
+messages:
+  anonymised: 'Here is your text with the personal data replaced. Use it in any tool,
+    then paste the answer back into this chat to get the original values back:'
+  restored: 'Here is the text with the original values back:'
+  nothing_found: I found no personal data in this text, so there is nothing to replace.
+  unknown_placeholders: 'These placeholders were not issued in this chat, so they
+    stay as they are: %{placeholders}'
+  empty: Send me a text to anonymise, or paste an answer with this chat's placeholders
+    to restore it.
