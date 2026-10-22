@@ -2,7 +2,7 @@ import socket
 
 import pytest
 
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
+from swiss_ai_hub.core.network.source_host_guard import SourceHostGuard
 
 _PUBLIC = "93.184.216.34"
 
@@ -20,19 +20,22 @@ def dns(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
             for ip in answers[host]
         ]
 
-    monkeypatch.setattr("swiss_ai_hub.pipeline.resources.structured.source_host_guard.socket.getaddrinfo", getaddrinfo)
+    monkeypatch.setattr("swiss_ai_hub.core.network.source_host_guard.socket.getaddrinfo", getaddrinfo)
     return answers
 
 
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
+
+
 def _require(url: str, allowed: frozenset[str] = frozenset()) -> None:
-    SourceHostGuard.require_public(url, allowed)
+    SourceHostGuard.require_public(url, allowed, _ALLOW_LIST_VARIABLE)
 
 
 class TestRefused:
     @pytest.mark.parametrize("url", ["http://seaweedfs-filer:8888", "http://api:8000/jira", "http://localhost:8094"])
     def test_a_name_without_a_domain_is_an_internal_service(self, url: str, dns: dict[str, list[str]]):
         """Docker answers its service and container names; no public host is called that."""
-        with pytest.raises(ValueError, match="a name only an internal network resolves; only public hosts are synced"):
+        with pytest.raises(ValueError, match="a name only an internal network resolves; only public hosts are allowed"):
             _require(url)
 
     @pytest.mark.parametrize(
@@ -50,7 +53,7 @@ class TestRefused:
         ],
     )
     def test_an_internal_address_is_refused(self, url: str, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="an internal address; only public hosts are synced"):
+        with pytest.raises(ValueError, match="an internal address; only public hosts are allowed"):
             _require(url)
 
     def test_a_public_name_that_resolves_inside_is_refused(self, dns: dict[str, list[str]]):
@@ -71,8 +74,18 @@ class TestRefused:
             _require("https://jira.acme.invalid")
 
     def test_the_message_names_the_setting_that_allows_it(self, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"):
-            _require("http://localhost:8094")
+        """Each caller has its own setting, so the operator is told the one that applies."""
+        with pytest.raises(ValueError, match="An operator can allow it with JIRA_ALLOWED_PRIVATE_HOSTS"):
+            SourceHostGuard.require_public("http://localhost:8094", frozenset(), "JIRA_ALLOWED_PRIVATE_HOSTS")
+
+    @pytest.mark.asyncio
+    async def test_the_async_check_refuses_the_same_hosts(self, dns: dict[str, list[str]]):
+        dns["jira.attacker.example"] = ["10.0.0.5"]
+
+        with pytest.raises(ValueError, match="which resolves to the internal address 10.0.0.5"):
+            await SourceHostGuard.require_public_async(
+                "https://jira.attacker.example", frozenset(), _ALLOW_LIST_VARIABLE
+            )
 
 
 class TestAllowed:
@@ -89,3 +102,9 @@ class TestAllowed:
         dns["jira.intra.acme.ch"] = ["10.1.2.3"]
 
         _require(url, frozenset({"localhost", "jira.intra.acme.ch", "10.0.0.5"}))
+
+    @pytest.mark.asyncio
+    async def test_the_async_check_passes_a_public_host(self, dns: dict[str, list[str]]):
+        dns["acme.atlassian.net"] = [_PUBLIC]
+
+        await SourceHostGuard.require_public_async("https://acme.atlassian.net", frozenset(), _ALLOW_LIST_VARIABLE)
