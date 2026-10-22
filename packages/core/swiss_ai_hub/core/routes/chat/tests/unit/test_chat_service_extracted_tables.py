@@ -58,7 +58,8 @@ def test_an_earlier_table_is_condensed_before_the_message_is_sent_on():
     condensed = ChatService._without_earlier_tables(messages)
 
     assert condensed[1].content == "[A table of 1 extracted rows was shown here.]\n\n**Files:** 1"
-    assert condensed[0] is messages[0] and condensed[2] is messages[2]
+    assert condensed[0] is messages[0]
+    assert condensed[2] is messages[2]
 
 
 def test_a_lost_answer_stream_is_still_completed_after_a_table_was_shown():

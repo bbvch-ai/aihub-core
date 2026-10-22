@@ -140,7 +140,8 @@ async def test_a_large_table_is_capped_inline_and_says_so(pipe: Any):
     await _process(pipe, context, _extracted(rows=250))
 
     html = context.state_manager.serialize_to_html()
-    assert "item 99 " in html and "item 100 " not in html
+    assert "item 99 " in html
+    assert "item 100 " not in html
     assert "Showing the first 100 of 250 rows here." in html
     assert '[aihub-extracted-table]: # "rows=250"' in html
 

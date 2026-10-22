@@ -14,8 +14,10 @@ def test_every_marked_table_of_an_answer_is_condensed():
 
     condensed = ExtractedTableMarkup.condensed(answer)
 
-    assert "| a |" not in condensed and "| b |" not in condensed
-    assert "3 extracted rows" in condensed and "4 extracted rows" in condensed
+    assert "| a |" not in condensed
+    assert "| b |" not in condensed
+    assert "3 extracted rows" in condensed
+    assert "4 extracted rows" in condensed
 
 
 def test_a_cell_quoting_a_marker_does_not_end_the_table_early():

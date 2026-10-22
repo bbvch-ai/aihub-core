@@ -310,9 +310,11 @@ async def test_a_long_document_is_read_in_part_and_says_so() -> None:
         row_terms="special",
     )
 
-    assert result.partial and result.window_count > 2
+    assert result.partial
+    assert result.window_count > 2
     positions = [record.values["position"] for record in result.records]
-    assert 1 in positions and 999 in positions
+    assert 1 in positions
+    assert 999 in positions
 
 
 @pytest.mark.asyncio

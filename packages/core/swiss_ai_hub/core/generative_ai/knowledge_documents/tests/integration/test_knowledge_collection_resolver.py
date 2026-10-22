@@ -43,5 +43,6 @@ def test_a_reference_names_the_bucket_by_its_vector_collection_name() -> None:
 
 
 def test_a_reference_to_a_gone_database_is_reported_as_not_found() -> None:
+    reference = KnowledgeReference(database=f"gone{_RUN}", namespace="finance")
     with pytest.raises(KnowledgeCollectionNotFoundError, match="does not exist"):
-        KnowledgeCollectionResolver.pair_of(KnowledgeReference(database=f"gone{_RUN}", namespace="finance"))
+        KnowledgeCollectionResolver.pair_of(reference)

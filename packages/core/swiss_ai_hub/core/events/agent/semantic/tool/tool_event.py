@@ -46,7 +46,9 @@ class ToolEvent(SemanticEvent):
         if name in definitions and name not in expanding:
             merged = {**definitions[name], **{key: value for key, value in node.items() if key != "$ref"}}
             return cls._inlined(merged, definitions, expanding | {name})
-        return {key: cls._inlined(value, definitions, expanding) for key, value in node.items() if key[:1] != "$"}
+        return {
+            key: cls._inlined(value, definitions, expanding) for key, value in node.items() if not key.startswith("$")
+        }
 
     def to_semantic_convention(self) -> dict[str, str]:
         attributes = {
