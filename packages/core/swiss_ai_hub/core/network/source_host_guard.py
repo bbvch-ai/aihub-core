@@ -1,3 +1,4 @@
+import asyncio
 import ipaddress
 import socket
 from ipaddress import IPv4Address, IPv6Address
@@ -10,10 +11,11 @@ _DEFAULT_PORTS = {"http": 80, "https": 443}
 class SourceHostGuard:
     """Keeps a source's URL from pointing inside the platform.
 
-    A knowledge administrator sets the URL, while the pipeline sits on the networks of the platform's own services:
-    a Docker service name such as ``seaweedfs-filer``, ``localhost`` or a private address would let that
-    administrator send requests to them. Checked before every run's first request, against what the host resolves
-    to then. Hosts the deployment allows are exempt, for a source reachable only on the company network.
+    An administrator sets the URL (of a knowledge database's source, or of a system an agent reads), while the
+    pipeline and the agents sit on the networks of the platform's own services: a Docker service name such as
+    ``seaweedfs-filer``, ``localhost`` or a private address would let that administrator send requests to them.
+    Checked before every run's first request, against what the host resolves to then. Hosts the deployment allows are
+    exempt, for a source reachable only on the company network.
     """
 
     @classmethod
@@ -21,6 +23,7 @@ class SourceHostGuard:
         cls,
         url: Annotated[str, "The source's base URL as configured"],
         allowed_hosts: Annotated[frozenset[str], "Lower-case host names the deployment allows although internal"],
+        allow_list_variable: Annotated[str, "The environment variable an operator sets allowed_hosts with"],
     ) -> None:
         parts = urlsplit(url)
         host = (parts.hostname or "").lower()
@@ -29,9 +32,19 @@ class SourceHostGuard:
         internal = cls._why_internal(host, parts.port or _DEFAULT_PORTS.get(parts.scheme, 443))
         if internal:
             raise ValueError(
-                f"The source URL {url} points at {host}, {internal}; only public hosts are synced. An operator can "
-                "allow it with STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS."
+                f"The source URL {url} points at {host}, {internal}; only public hosts are allowed. An operator can "
+                f"allow it with {allow_list_variable}."
             )
+
+    @classmethod
+    async def require_public_async(
+        cls,
+        url: Annotated[str, "The source's base URL as configured"],
+        allowed_hosts: Annotated[frozenset[str], "Lower-case host names the deployment allows although internal"],
+        allow_list_variable: Annotated[str, "The environment variable an operator sets allowed_hosts with"],
+    ) -> None:
+        """The name lookup blocks, so an agent's event loop hands it to a thread."""
+        await asyncio.to_thread(cls.require_public, url, allowed_hosts, allow_list_variable)
 
     @classmethod
     def _why_internal(cls, host: str, port: int) -> str | None:
