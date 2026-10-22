@@ -28,43 +28,39 @@ class LiteLLMService:
         api_key = LiteLLMService.generate_key_for_user(user)
 
         client = litellm_proxy.httpx_aclient
-        live_key_hashes = await LiteLLMService._live_key_hashes(client, user)
-        if live_key_hashes is None:
-            await LiteLLMService._create_user(client, litellm_proxy, user)
-            live_key_hashes = await LiteLLMService._live_key_hashes(client, user) or set()
-
-        if LiteLLMService._litellm_token(api_key) not in live_key_hashes:
+        await LiteLLMService._create_user_if_absent(client, litellm_proxy, user)
+        if not await LiteLLMService._key_exists(client, api_key):
             await LiteLLMService._generate_key(client, user, api_key)
 
         LiteLLMService._user_cache[user.id] = api_key
         return api_key
 
     @staticmethod
-    async def _live_key_hashes(client: httpx.AsyncClient, user: UserIdentity) -> set[str] | None:
+    async def _key_exists(client: httpx.AsyncClient, api_key: str) -> bool:
         """
         The user row and its key are created by separate calls, and either can fail after the other succeeded, so
-        both are read here rather than one inferred from the other: a key without its row carries no budget or rate
-        limits, and a row without its key fails every request. ``None`` means the row is missing.
+        each is checked on its own rather than inferred from the other: a key without its row carries no budget or
+        rate limits, and a row without its key fails every request.
 
-        Keys are matched in this listing rather than looked up with ``/key/info``. The listing holds live keys only,
-        while ``/key/info`` answers 200 for a deleted key from LiteLLM v1.106 on, and it needs no key in the URL,
-        where access logs and our traces would record it.
+        From LiteLLM v1.106 on, a deleted key still answers 200, from an archive, with status "deleted".
         """
+        key_response = await client.get("/key/info", params={"key": api_key})
+        if key_response.status_code == 404:
+            return False
+        key_response.raise_for_status()
+        return key_response.json()["info"].get("status") != "deleted"
+
+    @staticmethod
+    async def _create_user_if_absent(
+        client: httpx.AsyncClient, litellm_proxy: LiteLLMProxySettings, user: UserIdentity
+    ) -> None:
         user_response = await client.get("/user/info", params={"user_id": user.id})
 
         # LiteLLM ≥ 1.83 returns 404 only when the user is absent.
-        if user_response.status_code == 404:
-            return None
-        user_response.raise_for_status()
-        return {key["token"] for key in user_response.json().get("keys") or []}
+        if user_response.status_code != 404:
+            user_response.raise_for_status()
+            return
 
-    @staticmethod
-    def _litellm_token(api_key: str) -> str:
-        """LiteLLM stores a key as the unsalted SHA-256 of its value, its ``token``."""
-        return hashlib.sha256(api_key.encode()).hexdigest()
-
-    @staticmethod
-    async def _create_user(client: httpx.AsyncClient, litellm_proxy: LiteLLMProxySettings, user: UserIdentity) -> None:
         await LiteLLMService._release_email_from_stale_users(client, user)
 
         new_user_response = await client.post(
@@ -86,7 +82,7 @@ class LiteLLMService:
             },
         )
 
-        # A concurrent first-login request can create the user between the lookup and the POST, yielding 409.
+        # A concurrent first-login request can create the user between the GET and the POST, yielding 409.
         if new_user_response.status_code != 409:
             new_user_response.raise_for_status()
 
@@ -128,9 +124,7 @@ class LiteLLMService:
             "/key/generate",
             json={"key_alias": f"{user.name} ({user.id}) - Auto Generated Key", "user_id": user.id, "key": api_key},
         )
-        if key_response.is_error and LiteLLMService._litellm_token(api_key) not in (
-            await LiteLLMService._live_key_hashes(client, user) or set()
-        ):
+        if key_response.is_error and not await LiteLLMService._key_exists(client, api_key):
             key_response.raise_for_status()
 
     @staticmethod
