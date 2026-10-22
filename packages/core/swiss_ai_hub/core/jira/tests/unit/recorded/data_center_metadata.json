@@ -1,0 +1,68 @@
+{
+  "expand": "operations,versionedRepresentations,editmeta,changelog,renderedFields",
+  "id": "10008",
+  "self": "https://jira.acme.ch/jira/rest/api/2/issue/10008",
+  "key": "ENG-9",
+  "fields": {
+    "summary": "Story with every field the frontmatter carries",
+    "issuetype": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/issuetype/10001",
+      "id": "10001",
+      "description": "Created by Jira Software - do not edit or delete. Issue type for a user story.",
+      "iconUrl": "https://jira.acme.ch/jira/images/icons/issuetypes/story.svg",
+      "name": "Story",
+      "subtask": false
+    },
+    "components": [
+      {
+        "self": "https://jira.acme.ch/jira/rest/api/2/component/10000",
+        "id": "10000",
+        "name": "API"
+      },
+      {
+        "self": "https://jira.acme.ch/jira/rest/api/2/component/10001",
+        "id": "10001",
+        "name": "Frontend"
+      }
+    ],
+    "description": "Checks the frontmatter fields.",
+    "fixVersions": [
+      {
+        "self": "https://jira.acme.ch/jira/rest/api/2/version/10000",
+        "id": "10000",
+        "name": "1.0",
+        "archived": false,
+        "released": false
+      }
+    ],
+    "labels": [
+      "aihub-case-metadata",
+      "aihub-seed",
+      "backend",
+      "release-1"
+    ],
+    "status": {
+      "self": "https://jira.acme.ch/jira/rest/api/2/status/3",
+      "description": "This issue is being actively worked on at the moment by the assignee.",
+      "iconUrl": "https://jira.acme.ch/jira/images/icons/statuses/inprogress.png",
+      "name": "In Progress",
+      "id": "3",
+      "statusCategory": {
+        "self": "https://jira.acme.ch/jira/rest/api/2/statuscategory/4",
+        "id": 4,
+        "key": "indeterminate",
+        "colorName": "inprogress",
+        "name": "In Progress"
+      }
+    }
+  },
+  "renderedFields": {
+    "summary": null,
+    "issuetype": null,
+    "components": null,
+    "description": "<p>Checks the frontmatter fields.</p>",
+    "fixVersions": null,
+    "labels": null,
+    "status": null
+  }
+}
