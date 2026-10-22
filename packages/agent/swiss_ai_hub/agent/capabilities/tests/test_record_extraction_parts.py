@@ -409,4 +409,5 @@ class TestUnsureRows:
 
         table, _ = ExtractionTable.assemble(run, [result], 10, T)
 
-        assert "Match" not in table.columns and "yes" not in table.table
+        assert "Match" not in table.columns
+        assert "yes" not in table.table

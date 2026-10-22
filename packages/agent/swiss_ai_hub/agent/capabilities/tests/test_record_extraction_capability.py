@@ -202,7 +202,8 @@ class TestTable:
         table, overflow = ExtractionTable.assemble(run, [_result(run, "a.pdf", rows)], max_rows=2, t=T)
 
         assert (table.row_count, table.total_row_count) == (2, 5)
-        assert len(overflow) == 3 and "item 2" in overflow[0]
+        assert len(overflow) == 3
+        assert "item 2" in overflow[0]
 
     def test_cells_cannot_break_the_table(self):
         run = _run(file_count=1)
@@ -286,7 +287,8 @@ class TestDocumentExtraction:
         run = _run(file_count=1)
         table, _ = ExtractionTable.assemble(run, [result.model_copy(update={"run": run})], 10, T)
 
-        assert result.failure_reason is None and result.partly_read
+        assert result.failure_reason is None
+        assert result.partly_read
         assert extract.await_args.kwargs["max_windows"] == 12
         assert "a.pdf (partly read)" in table.table
         assert "**Partly read (rows may be missing):** invoices/2025/a.pdf" in table.summary
@@ -318,7 +320,8 @@ class TestDocumentExtraction:
             result = await DocumentRecordExtraction.extract(_request(), _config(), _displayer(), T, _redis(), None)
 
         assert result.failure_reason is None
-        assert len(result.rows[0]["item"]) == 1000 and result.rows[0]["item"].endswith("…")
+        assert len(result.rows[0]["item"]) == 1000
+        assert result.rows[0]["item"].endswith("…")
         assert result.rows[1]["item"] == "z" * 1000
         assert result.rows[0]["amount"] == 1.5
 
@@ -424,7 +427,8 @@ class TestAsATool:
             MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=_Thread()
         )
 
-        assert result.is_error and "Invalid arguments" in result.content
+        assert result.is_error
+        assert "Invalid arguments" in result.content
 
     @pytest.mark.asyncio
     async def test_a_continuation_flag_given_as_text_still_continues_and_needs_no_selection(self):
@@ -442,7 +446,8 @@ class TestAsATool:
                 MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=_Thread()
             )
 
-        assert isinstance(request, ExtractRecordsEvent) and request.continue_pending
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.continue_pending
 
     @pytest.mark.asyncio
     async def test_a_new_extraction_without_documents_goes_back_to_the_model(self):
@@ -454,7 +459,8 @@ class TestAsATool:
             MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=_Thread()
         )
 
-        assert result.is_error and "needs any_of and fields" in result.content
+        assert result.is_error
+        assert "needs any_of and fields" in result.content
 
     @pytest.mark.asyncio
     async def test_one_answer_continues_one_part_and_leaves_the_next_to_the_user(self):
@@ -477,9 +483,11 @@ class TestAsATool:
 
         first, redelivered, second = await continue_with("c1"), await continue_with("c1"), await continue_with("c2")
 
-        assert isinstance(first, ExtractRecordsEvent) and first.continue_pending
+        assert isinstance(first, ExtractRecordsEvent)
+        assert first.continue_pending
         assert isinstance(redelivered, ExtractRecordsEvent)
-        assert isinstance(second, ToolResultEvent) and "the rest waits for the user" in second.content
+        assert isinstance(second, ToolResultEvent)
+        assert "the rest waits for the user" in second.content
 
     @pytest.mark.asyncio
     async def test_a_sample_uses_up_the_answer_so_continuing_waits_for_the_user(self):
@@ -504,7 +512,8 @@ class TestAsATool:
                 MagicMock(), call=call, request=RunToolLoopEvent(), tool=_config(), t=T, run_context=run_context
             )
 
-        assert isinstance(refused, ToolResultEvent) and "the rest waits for the user" in refused.content
+        assert isinstance(refused, ToolResultEvent)
+        assert "the rest waits for the user" in refused.content
 
     @pytest.mark.asyncio
     async def test_a_complete_extraction_leaves_continuing_open(self):

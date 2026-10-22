@@ -89,7 +89,8 @@ def test_the_table_and_the_blueprints_answer_stay_below_the_broker_limit():
 
     assert table.failed_count == MAX_FILES // 2
     assert table.row_count < table.total_row_count
-    assert "weitere Dateien" in table.summary and not table.summary.endswith("…")
+    assert "weitere Dateien" in table.summary
+    assert not table.summary.endswith("…")
     assert _size(table) < BROKER_BYTES
 
 

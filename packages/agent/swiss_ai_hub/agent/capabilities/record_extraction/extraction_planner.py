@@ -207,12 +207,11 @@ class ExtractionPlanner:
     @staticmethod
     def _describe(criteria: KnowledgeDocumentCriteria) -> str:
         code = ExtractionPlanner._code
+        searched = "matches" if criteria.content_is_regex else "contains"
         parts = [
             f"path matches {code(criteria.path_glob)}" if criteria.path_glob else "",
             f"path contains {code(criteria.path_regex)}" if criteria.path_regex else "",
-            f"text {'matches' if criteria.content_is_regex else 'contains'} {code(criteria.content_query)}"
-            if criteria.content_query
-            else "",
+            f"text {searched} {code(criteria.content_query)}" if criteria.content_query else "",
             f"{len(criteria.document_ids)} chosen documents" if criteria.document_ids else "",
         ]
         return " and ".join(part for part in parts if part) or "every document"

@@ -190,24 +190,27 @@ async def test_reading_returns_one_part_and_says_where_to_continue():
 async def test_reading_a_document_outside_the_profiles_glob_is_refused():
     load = AsyncMock(return_value=_document("contracts/acme.pdf", 0, 100))
     with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeDocumentReader.load_document", load):
+        tools = _tools()
         with pytest.raises(LookupError, match="No access"):
-            await _tools().read_knowledge_document(document_id="doc-1")
+            await tools.read_knowledge_document(document_id="doc-1")
 
 
 @pytest.mark.asyncio
 async def test_reading_a_document_of_another_collection_is_refused_as_no_access():
     load = AsyncMock(side_effect=KnowledgeDocumentNotFoundError("doc-9", [FINANCE]))
     with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeDocumentReader.load_document", load):
+        tools = _tools()
         with pytest.raises(LookupError, match="No access to a document with id doc-9"):
-            await _tools().read_knowledge_document(document_id="doc-9")
+            await tools.read_knowledge_document(document_id="doc-9")
 
 
 @pytest.mark.asyncio
 async def test_reading_a_pending_document_says_it_is_still_being_ingested():
     load = AsyncMock(side_effect=KnowledgeDocumentPendingError("doc-1", FINANCE))
     with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeDocumentReader.load_document", load):
+        tools = _tools()
         with pytest.raises(LookupError, match="still being ingested"):
-            await _tools().read_knowledge_document(document_id="doc-1")
+            await tools.read_knowledge_document(document_id="doc-1")
 
 
 def _scope_config(narrow: bool) -> DocumentToolsConfig:

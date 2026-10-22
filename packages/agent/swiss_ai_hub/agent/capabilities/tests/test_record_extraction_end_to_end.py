@@ -209,7 +209,8 @@ async def test_two_extractions_started_at_once_stay_apart(monkeypatch):
 
     tables = sorted(_control(runner, RecordsExtractedEvent), key=lambda table: table.file_count)
     assert [(table.file_count, table.row_count) for table in tables] == [(1, 1), (2, 2)]
-    assert "invoices/g.pdf" in tables[0].table and "invoices/a.pdf" not in tables[0].table
+    assert "invoices/g.pdf" in tables[0].table
+    assert "invoices/a.pdf" not in tables[0].table
 
 
 @async_test

@@ -13,6 +13,7 @@ SUMMARY_WORDS = 150
 # Every iteration's event carries the whole loop state, and the broker refuses an event above its payload limit (1 MB in
 # development) without an error the caller sees, so the run would wait forever. Condensing starts well below it.
 STATE_BYTES = 600_000
+_DROPPED_RESULT = "agent.tool_loop.prompt.dropped_result"
 
 
 class ToolLoopCondenser:
@@ -127,7 +128,7 @@ class ToolLoopCondenser:
         for index in self._earlier_results(messages):
             if not self.outgrown(dropped, tools, self._budget, self._llm.token_counter):
                 break
-            text = self._t("agent.tool_loop.prompt.dropped_result")
+            text = self._t(_DROPPED_RESULT)
             dropped[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
         return dropped
 
@@ -138,7 +139,7 @@ class ToolLoopCondenser:
         for index in self._earlier_results(messages):
             if not self.oversized(state.model_copy(update={"messages": messages})):
                 break
-            text = self._t("agent.tool_loop.prompt.dropped_result")
+            text = self._t(_DROPPED_RESULT)
             messages[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
         return messages
 
@@ -184,9 +185,7 @@ class ToolLoopCondenser:
     def _already_condensed(self, result: Message) -> bool:
         """A result an earlier round condensed or dropped: summarising it again costs a model call and loses more."""
         condensed = self._t("agent.tool_loop.prompt.condensed_result", summary="")
-        return result.content.startswith(condensed) or result.content == self._t(
-            "agent.tool_loop.prompt.dropped_result"
-        )
+        return result.content.startswith(condensed) or result.content == self._t(_DROPPED_RESULT)
 
     async def _summarise_result(self, request: str, result: Message) -> str:
         instruction = self._t("agent.tool_loop.prompt.condense_result", words=SUMMARY_WORDS)
