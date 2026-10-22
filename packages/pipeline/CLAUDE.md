@@ -76,6 +76,7 @@ packages/pipeline/                        # SDK framework
 │   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
+│   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
 │   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
@@ -96,6 +97,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
 │   │   ├── structured_sync_outcome.py     # Sync → listing handover: written keys + fingerprint, never secrets
 │   │   ├── structured_listing.py          # Listing → reconcile handover: listed keys + written keys
+│   │   ├── default_partition_repair_report.py # What a `_default` repair moved and deleted
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
 │   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
@@ -155,7 +157,10 @@ Concrete Stage 1 flows:
 **Stage 2 (Data Lake → Vector Store)**: Unified pipeline, source-agnostic. All data lake files flow through the same
 processing chain regardless of origin:
 
-- `observable_data_lake_factory` → monitors S3 for new/changed files
+- `observable_data_lake_factory` → monitors S3 for new/changed files. Before it registers any document partition it runs
+  `DefaultPartitionRepairService`: the database's Milvus collection is created with the embedding model's width if
+  missing, a half-built one gets its missing partitions, and nodes stranded in `_default` move to their namespace
+  partition (#1923). A document partition is what starts an ingestion run, so none meets a half-built collection.
 - `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → `RefDocDocument` → MongoDB, flagged
   `is_ingested=False` (see [Markdown Frontmatter](#markdown-frontmatter))
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
