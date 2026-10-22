@@ -85,7 +85,8 @@ class ConfluenceStorage:
     def _code_block(cls, soup: BeautifulSoup, macro: Tag) -> Tag:
         body = macro.find("ac:plain-text-body", recursive=False)
         pre = soup.new_tag("pre", attrs={"data-language": cls._parameter(macro, "language")})
-        pre.string = body.get_text() if body is not None else ""
+        if body is not None:
+            pre.string = body.get_text()
         return pre
 
     @classmethod
@@ -111,7 +112,9 @@ class ConfluenceStorage:
     @staticmethod
     def _parameter(macro: Tag, name: str) -> str:
         parameter = macro.find("ac:parameter", attrs={"ac:name": name}, recursive=False)
-        return parameter.get_text().strip() if parameter is not None else ""
+        if parameter is not None:
+            return parameter.get_text().strip()
+        return ""
 
     @staticmethod
     def _rewrite_task_lists(soup: BeautifulSoup) -> None:
@@ -150,7 +153,9 @@ class ConfluenceStorage:
         if body is not None:
             return body.get_text()
         target = link.find(["ri:page", "ri:blog-post", "ri:space"])
-        return str(target.get("ri:content-title", "")) if target is not None else ""
+        if target is not None:
+            return str(target.get("ri:content-title", ""))
+        return ""
 
     @staticmethod
     def _take_tables(soup: BeautifulSoup) -> list[str]:
