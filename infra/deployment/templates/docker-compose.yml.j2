@@ -67,7 +67,6 @@
 {%- set MINERU_API_BASE_URL = "http://mineru-api:8000" %}
 {%- set OPEN_TERMINAL_BASE_URL = "http://open-terminal:8000" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
-{%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
 {%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
@@ -1881,24 +1880,6 @@ services:
     networks:
       - pii-detection  # Isolated zone: callers (litellm, agents) join it to reach the analyzer
 
-  {{ service_license('presidio-anonymizer') }}
-  presidio-anonymizer:
-    container_name: presidio-anonymizer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
-    restart: always
-    labels:
-      healthcheck.enabled: "true"
-      healthcheck.protocol: "http"
-      healthcheck.port: "3000"
-      healthcheck.path: "/health"
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
   {{ service_license('litellm') }}
   litellm:
     container_name: litellm
@@ -1932,8 +1913,9 @@ services:
       SWISS_LLM_CLOUD_OCR_API_KEY: ${SWISS_LLM_CLOUD_OCR_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
+      # Read by the pii-anonymisation guardrail (litellm_functions/pii_anonymisation_guardrail.py)
       PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
-      PRESIDIO_ANONYMIZER_API_BASE: {{ PRESIDIO_ANONYMIZER_API_BASE }}
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
@@ -1951,16 +1933,16 @@ services:
       - ./configs/litellm/litellm-config.{{ litellm_variant }}{{ config_variant_suffix }}.yml:/app/config.{{ litellm_variant }}.yml
       {%- endfor %}
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
+      - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
         condition: service_started
       postgres:
         condition: service_healthy
+      # The guardrail blocks calls to external models while the analyzer cannot answer
       presidio-analyzer:
-        condition: service_started
-      presidio-anonymizer:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
       timeout: 10s
