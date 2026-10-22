@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: dbafa77281afa55748e3424d0e0cab5ffaa762f274eaf6d2bbafacbf6e08b523
+source_sha: bf326388f69581cfc0b6ae2f5652157bd085e6783d7c80693589fb8c57e5d689
 ---
 
 # Wissensextraktions-Agent
@@ -47,6 +47,8 @@ flowchart LR
    Person sie prüfen kann, statt dass sie verworfen wird.
 5. **Antworten.** Die Tabelle erscheint im Chat, gefolgt von der Zusammenfassung. Ein Dokument, das nicht gelesen werden
    konnte, wird mit dem Grund unter der Tabelle aufgeführt; die Zeilen der anderen Dokumente sind davon nicht betroffen.
+   Dokumente, die gelesen wurden, aber keine Zeilen ergaben, stehen unter «Keine Zeilen aus», damit ein leeres Ergebnis
+   nie wie eine fehlende Klausel aussieht.
 
 Der Chat zeigt jeden Schritt, während er geschieht: die Werkzeuge, die das Modell bei der Suche nach Dokumenten aufruft,
 eine Zeile dazu, wie viele Dokumente gelesen werden, welche Spalten die Tabelle hat und wie lange es ungefähr dauert,

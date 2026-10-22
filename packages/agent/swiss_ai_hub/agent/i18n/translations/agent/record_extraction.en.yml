@@ -69,6 +69,7 @@ table:
   path: Path
   filename: File
 summary:
+  no_rows: '**No rows from:** %{files}'
   unsure: '**Unsure:** %{count} rows may not meet the condition; they are kept and
     marked in the Match column so you can check them.'
   partly_read: '**Partly read (rows may be missing):** %{files}'

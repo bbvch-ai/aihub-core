@@ -387,6 +387,24 @@ async def _record(planned: list, config: PartsConfig, thread: _Thread) -> Record
     return await ExtractionProgress.record(planned[0].run, table, overflow, config, thread, T)
 
 
+class TestDocumentsWithoutRows:
+    def test_documents_that_gave_no_rows_are_named_apart_from_failed_ones(self):
+        documents = [_document("contracts/a.pdf"), _document("contracts/b.pdf"), _document("contracts/c.pdf")]
+        run = ExtractionPlanner._run(_request(), documents, SCHEMA)
+        results = [
+            DocumentExtractedEvent(
+                run=run, request_event_id="r1", document=documents[0], rows=[{"item": "x", "amount": 1}]
+            ),
+            DocumentExtractedEvent(run=run, request_event_id="r2", document=documents[1], rows=[]),
+            DocumentExtractedEvent(run=run, request_event_id="r3", document=documents[2], failure_reason="unreadable"),
+        ]
+
+        table, _ = ExtractionTable.assemble(run, results, 10, T)
+
+        assert "**No rows from:** contracts/b.pdf" in table.summary
+        assert "contracts/c.pdf" not in table.summary.split("**No rows from:**")[1].split("\n")[0]
+
+
 class TestUnsureRows:
     def test_unsure_rows_are_kept_and_marked_with_a_count(self):
         run = ExtractionPlanner._run(_request(), [_document("invoices/a.pdf")], SCHEMA)

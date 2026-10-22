@@ -45,6 +45,7 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_coll
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_scope import (
     KnowledgeDocumentRunScope,
 )
+from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
 from swiss_ai_hub.agent.capabilities.record_extraction.pending_extraction import PendingExtraction
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
@@ -388,12 +389,11 @@ def test_the_fallback_reads_every_search_with_its_result_once():
     assert len(transcript) < 700
 
 
-@pytest.mark.asyncio
-async def test_a_search_stopped_at_its_limit_is_not_turned_into_a_selection():
+async def _stopped_search(selection: ExtractRecordsArguments | None) -> tuple[Any, AsyncMock]:
     search = ToolCallApprovedEvent(
-        tool_call_id="c1", name="search_knowledge_content", arguments={"query": "Umbrella"}, kind="function"
+        tool_call_id="c1", name="search_knowledge_content", arguments={"query": "liability"}, kind="function"
     )
-    ask = AsyncMock()
+    ask = AsyncMock(return_value=selection)
     with (
         patch(SCOPE_OF, return_value=_scope()),
         patch(
@@ -408,10 +408,30 @@ async def test_a_search_stopped_at_its_limit_is_not_turned_into_a_selection():
             displayer=_displayer(),
             t=T,
             calls=[search],
-            results=[ToolResultEvent(tool_call_id="c1", name="search_knowledge_content", content="none")],
+            results=[ToolResultEvent(tool_call_id="c1", name="search_knowledge_content", content="3 documents")],
         )
+    return answer, ask
 
-    ask.assert_not_awaited()
+
+@pytest.mark.asyncio
+async def test_a_search_stopped_at_its_limit_extracts_what_it_found_and_says_it_may_be_incomplete():
+    found = ExtractRecordsArguments(
+        any_of=[{"path_glob": "contracts/**"}], fields="supplier, liability cap", instructions="cap below EUR 100k"
+    )
+
+    request, ask = await _stopped_search(found)
+
+    ask.assert_awaited_once()
+    assert isinstance(request, ExtractRecordsEvent)
+    assert (request.instructions, request.cut_short) == ("cap below EUR 100k", True)
+    assert any("stopped at its limit" in notice for notice in request.notices)
+
+
+@pytest.mark.asyncio
+async def test_a_stopped_search_that_found_nothing_still_says_so():
+    answer, ask = await _stopped_search(None)
+
+    ask.assert_awaited_once()
     assert "reached its limit" in answer.stop.output_messages[-1].content
 
 

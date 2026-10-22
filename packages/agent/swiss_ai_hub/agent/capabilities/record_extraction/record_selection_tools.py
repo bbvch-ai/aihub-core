@@ -50,7 +50,9 @@ class RecordSelectionTools(BaseToolSpec):
     ) -> str:
         """Settles which knowledge documents a table is extracted from, and which columns and rows it holds, and
         reports how many documents that is with example paths. Call it once you know the documents, and again with
-        narrower or broader conditions when the count or the examples are wrong."""
+        narrower or broader conditions when the count or the examples are wrong. A condition on the rows (an amount,
+        a cap, a percentage) goes into instructions: the extraction applies it to every row, so select every
+        document that may hold such rows instead of checking the condition yourself."""
         config = self.context.agent_config
         if not isinstance(config, RecordExtractionFields):
             raise TypeError(f"{type(config).__name__} lacks RecordExtractionFields")

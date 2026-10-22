@@ -43,7 +43,8 @@ flowchart LR
    is not counted twice. A row that may not meet the condition is kept and marked *unsure* in a **Match** column, so a
    person can check it instead of it being dropped.
 5. **Answer.** The table streams into the chat, followed by the summary. A document that could not be read is listed
-   under the table with the reason; the other documents' rows are unaffected.
+   under the table with the reason; the other documents' rows are unaffected. Documents that were read but gave no rows
+   are named under "No rows from", so an empty result never looks like a missing clause.
 
 The chat shows each step as it happens: the tools the model calls while it looks for documents, a line saying how many
 documents will be read, which columns the table has and about how long it takes, and one line per document as it is

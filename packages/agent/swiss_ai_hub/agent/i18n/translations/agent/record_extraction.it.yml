@@ -74,6 +74,7 @@ table:
   path: Percorso
   filename: File
 summary:
+  no_rows: '**Nessuna riga da:** %{files}'
   unsure: '**Incerto:** %{count} righe potrebbero non soddisfare la condizione; sono
     mantenute e segnate nella colonna Corrispondenza perché possiate verificarle.'
   partly_read: '**Letto in parte (alcune righe possono mancare):** %{files}'

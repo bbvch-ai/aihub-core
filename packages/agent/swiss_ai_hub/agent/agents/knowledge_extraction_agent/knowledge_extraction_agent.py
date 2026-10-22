@@ -137,9 +137,9 @@ class KnowledgeExtractionAgent(Agent):
         access: AccessChecker | None = None,
         user: UserIdentity | None = None,
     ) -> RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
-        """Extract from the documents the model settled on, re-resolved within the profile's limits; a model that
-        ended its search without stating a selection is asked for it once; one stopped at its limit is not, since
-        its searches are unfinished."""
+        """Extract from the documents the model settled on, re-resolved within the profile's limits. A model that
+        ended its search without stating a selection, or was stopped at its limit before it did, is asked once for
+        the selection its searches point to; a stopped search still marks the table as possibly incomplete."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -147,7 +147,7 @@ class KnowledgeExtractionAgent(Agent):
             notices = ExtractionNotices.for_table(scope, finished.stopped_early, t)
             return RecordExtraction.continue_pending(scope.pairs(), notices)
         selection = SelectionCall.last(decided, calls, results)
-        if selection is None and not finished.stopped_early:
+        if selection is None:
             selection = await SelectionFallback.ask(
                 ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t
             )

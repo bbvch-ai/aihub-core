@@ -75,6 +75,7 @@ table:
   path: Pfad
   filename: Datei
 summary:
+  no_rows: '**Keine Zeilen aus:** %{files}'
   unsure: '**Unsicher:** %{count} Zeilen erfüllen die Bedingung vielleicht nicht;
     sie bleiben erhalten und sind in der Spalte Treffer markiert, damit Sie sie prüfen
     können.'

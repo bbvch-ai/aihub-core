@@ -160,6 +160,9 @@ class ExtractionTable:
         ]
         if dropped:
             lines.append(t(f"{key}.document_rows_cut", files=ExtractionTable._listed(dropped, t)))
+        empty = [result.document.path for result in results if not result.rows and result.failure_reason is None]
+        if empty:
+            lines.append(t(f"{key}.no_rows", files=ExtractionTable._listed(empty, t)))
         if unsure:
             lines.append(t(f"{key}.unsure", count=unsure))
         partly_read = [result.document.path for result in results if result.partly_read]

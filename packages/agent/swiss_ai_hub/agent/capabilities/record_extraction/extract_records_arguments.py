@@ -26,7 +26,8 @@ class ExtractRecordsArguments(BaseModel):
         str | None,
         Field(
             description="Which rows to keep, in the user's words, e.g. 'only hardware positions'; never a column. "
-            "Words that describe the rows belong here, not in a content condition."
+            "Words that describe the rows belong here, not in a content condition. Null when every row is wanted; "
+            "never how many rows or how the table is laid out (not 'all rows' or 'one row per contract')."
         ),
     ] = None
     row_terms: Annotated[

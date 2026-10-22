@@ -74,6 +74,7 @@ table:
   path: Chemin
   filename: Fichier
 summary:
+  no_rows: '**Aucune ligne de :** %{files}'
   unsure: '**Incertain :** %{count} lignes ne remplissent peut-être pas la condition
     ; elles sont gardées et marquées dans la colonne Correspondance pour que vous
     les vérifiiez.'
