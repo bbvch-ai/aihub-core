@@ -121,3 +121,26 @@ async def test_wrong_credentials_unknown_project_and_invalid_jql_each_say_what_t
     assert invalid_jql.value.problems == ["Field 'statuz' does not exist or you do not have permission to view it."]
     assert len({str(wrong_credentials.value), str(unknown_project.value), str(invalid_jql.value)}) == 3
     assert connection.api_token not in str(wrong_credentials.value)
+
+
+@pytest.mark.asyncio
+async def test_the_versions_of_both_projects_are_listed(connection: JiraConnectionConfig):
+    versions = await JiraTicketSearch.find_versions(connection, _PROJECTS)
+
+    assert {"ENG", "SD"} == {version.project for version in versions}
+    assert {"1.0", "2.0"} <= {version.name for version in versions if version.project == "ENG"}
+
+
+@pytest.mark.asyncio
+async def test_a_release_found_by_its_version_id_returns_every_ticket(connection: JiraConnectionConfig):
+    """Release 2.0 is seeded with `seed --release 2.0` and spans more than one page of 100."""
+    versions = [
+        version for version in await JiraTicketSearch.find_versions(connection, _PROJECTS) if version.name == "2.0"
+    ]
+
+    tickets = await JiraTicketSearch.find_tickets(
+        connection, _PROJECTS, ['labels = "aihub-case-release"', JiraJql.fix_version_clause(versions)]
+    )
+
+    assert len(tickets) == 120
+    assert {ticket.issue_type for ticket in tickets} >= {"Bug", "Story", "Task"}

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.jira.jira_ticket import JiraTicket
     from swiss_ai_hub.core.jira.jira_ticket_search import JiraTicketSearch
     from swiss_ai_hub.core.jira.jira_too_many_tickets_error import JiraTooManyTicketsError
+    from swiss_ai_hub.core.jira.jira_version import JiraVersion
 
 __all__ = [
     "JiraAuthenticationError",
@@ -30,6 +31,7 @@ __all__ = [
     "JiraTicket",
     "JiraTicketSearch",
     "JiraTooManyTicketsError",
+    "JiraVersion",
 ]
 
 _CONNECTION_CONFIG_MODULE = "swiss_ai_hub.core.jira.jira_connection_config"
@@ -49,6 +51,7 @@ _LAZY_IMPORTS = {
     "JiraTicket": "swiss_ai_hub.core.jira.jira_ticket",
     "JiraTicketSearch": "swiss_ai_hub.core.jira.jira_ticket_search",
     "JiraTooManyTicketsError": "swiss_ai_hub.core.jira.jira_too_many_tickets_error",
+    "JiraVersion": "swiss_ai_hub.core.jira.jira_version",
 }
 
 

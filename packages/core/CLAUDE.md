@@ -646,6 +646,10 @@ agent configuration: the agent embeds the group and passes it in.
   type, status, summary, markdown description, labels, components, fix versions), sorted by project and number. Each
   clause is parenthesised and ANDed after `project in (…)`. A value taken from a chat message goes through
   `JiraJql.string_literal()`, or it can widen the query.
+- **`JiraTicketSearch.find_versions(connection, project_keys)`** lists every `JiraVersion` (id, name, project, released,
+  archived, release date) after the same checks. Versions belong to a project, so one name can be two versions; search a
+  release with `JiraJql.fix_version_clause(versions)`, which matches by id (`fixVersion in (10200, 10305)`), rather than
+  by a quoted name.
 - **Errors are typed and English**, so the agent words them in the user's language. `JiraConfigurationError` (a missing
   value, an internal host, a URL without Jira's REST API behind it), `JiraAuthenticationError`,
   `JiraProjectNotFoundError` (unknown, invisible or renamed), `JiraInvalidQueryError` (Jira's own text, e.g. an unknown

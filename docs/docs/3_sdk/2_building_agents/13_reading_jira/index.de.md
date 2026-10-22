@@ -1,7 +1,7 @@
 ---
 title: Jira aus einem Agent lesen
 description: Lassen Sie einen Agent Tickets aus Jira Cloud oder Jira Data Center per JQL abfragen, mit Beschreibungen als lesbarem Text.
-source_sha: 9ff76ca9c1a88e04e9bfd2b0f29317084e78f937ae2f964ac584fccbdf28996b
+source_sha: fd9877c1267a72221a4092fd330015270a8907fab07fe1ad009c6e19f619ec84
 ---
 
 # Jira aus einem Agent lesen
@@ -46,18 +46,22 @@ class ReleaseNotesAgentConfig(AgentConfig):
 class ReleaseNotesAgent(Agent):
     @step()
     async def collect_tickets(self, event: ReleaseRequestedEvent, jira: JiraConnectionConfig) -> TicketsFoundEvent:
+        projects = ["ENG", "SD"]
+        versions = [v for v in await JiraTicketSearch.find_versions(jira, projects) if v.name == event.version]
         tickets = await JiraTicketSearch.find_tickets(
-            jira,
-            project_keys=["ENG", "SD"],
-            clauses=['issuetype != "Sub-task"', f"fixVersion = {JiraJql.string_literal(event.version)}"],
+            jira, projects, clauses=['issuetype != "Sub-task"', JiraJql.fix_version_clause(versions)]
         )
         return TicketsFoundEvent(keys=[ticket.key for ticket in tickets])
 ```
 
+`find_versions` listet alle Versionen der Projekte auf (Name, veröffentlicht, archiviert, Veröffentlichungsdatum),
+sodass der Agent eine Version, die Jira kennt, vor der Suche von einem Tippfehler unterscheiden kann. Eine Version
+gehört zu einem Projekt: Zwei Projekte können je eine „2.4.0“ haben. `fix_version_clause` findet die Versionen über ihre
+ID, was beide abdeckt und kein Quoting braucht.
+
 Jede Klausel wird in Klammern gesetzt und nach der Projekteinschränkung mit `AND` verbunden, sodass ein `OR` darin keine
-anderen Projekte erreicht. Ein Wert aus einer Chat-Nachricht, wie die Version oben, muss durch
-`JiraJql.string_literal()` gehen. Ungequotet in die Abfrage eingefügt, würde `2.4" OR project = HR` ein anderes Projekt
-lesen.
+anderen Projekte erreicht. Jeder andere Wert aus einer Chat-Nachricht muss durch `JiraJql.string_literal()` gehen.
+Ungequotet in die Abfrage eingefügt, würde `2.4" OR project = HR` ein anderes Projekt lesen.
 
 Ein `JiraTicket` enthält `key`, `url`, `project`, `issue_type`, `status`, `summary`, `description`, `labels`,
 `components` und `fix_versions`. Die Beschreibung ist Markdown, umgewandelt aus dem HTML, das Jira rendert.

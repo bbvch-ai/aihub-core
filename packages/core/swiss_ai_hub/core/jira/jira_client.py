@@ -88,6 +88,10 @@ class JiraClient:
         """Answers 404 for a project that does not exist and for one the account cannot browse alike."""
         return await self._get(f"rest/api/2/project/{quote(key, safe='')}", {})
 
+    async def project_versions(self, key: Annotated[str, "Project key"]) -> list[dict[str, Any]]:
+        """Every version of a project, archived ones included, as Cloud and Data Center both list them."""
+        return await self._get_list(f"rest/api/2/project/{quote(key, safe='')}/versions")
+
     async def jql_problems(self, jql: Annotated[str, "A JQL query without ORDER BY"]) -> list[str]:
         """What is wrong with a query, checked before it is used.
 
@@ -172,9 +176,19 @@ class JiraClient:
             seen.add(issue["id"])
 
     async def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        return await self._send("GET", path, params=params)
+        answer = await self._send("GET", path, params=params)
+        if not isinstance(answer, dict):
+            raise JiraError(f"Jira answered GET /{path} with a {type(answer).__name__} instead of an object.")
+        return answer
 
-    async def _send(self, method: str, path: str, **request: Any) -> dict[str, Any]:
+    async def _get_list(self, path: str) -> list[dict[str, Any]]:
+        """Version lists are JSON arrays, the one kind of answer read here that is not an object."""
+        answer = await self._send("GET", path, params={})
+        if not isinstance(answer, list):
+            raise JiraError(f"Jira answered GET /{path} with a {type(answer).__name__} instead of a list.")
+        return answer
+
+    async def _send(self, method: str, path: str, **request: Any) -> Any:
         """Only GETs and Cloud's read-only parse POST pass through here, so a retried request changes nothing."""
         for attempt in range(1, self.MAX_ATTEMPTS + 1):
             response = await self._attempt(method, path, request, last=attempt == self.MAX_ATTEMPTS)
@@ -232,7 +246,7 @@ class JiraClient:
         return max(0.0, (when - datetime.now(UTC)).total_seconds())
 
     @staticmethod
-    def _json(response: httpx.Response) -> dict[str, Any]:
+    def _json(response: httpx.Response) -> Any:
         """A single sign-on page or a proxy in front of Jira answers 200 with HTML, which is no answer at all."""
         content_type = response.headers.get("Content-Type", "")
         if "json" not in content_type:
