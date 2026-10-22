@@ -38,7 +38,7 @@ class AnonymiserTurn:
         if not text.strip():
             reply = t("agent.anonymiser_agent.messages.empty")
         elif placeholders.issued_in(text):
-            reply = f"{t('agent.anonymiser_agent.messages.restored')}\n\n{cls.code_block(placeholders.restore(text))}"
+            reply = f"{t('agent.anonymiser_agent.messages.restored')}\n\n{placeholders.restore(text)}"
         else:
             reply = await cls._anonymised_reply(text, placeholders, analyzer, displayer, t)
             await thread_context.set(cls.PLACEHOLDER_MAP_KEY, placeholders.model_dump())
@@ -75,8 +75,9 @@ class AnonymiserTurn:
 
     @classmethod
     def code_block(cls, text: str) -> str:
-        """A fenced block the chat shows verbatim with a copy button: placeholders would vanish as HTML tags in
-        rendered markdown. The fence outgrows any backtick run in the text, so a pasted code block cannot close it."""
+        """The anonymised text goes in a fenced block, which the chat shows verbatim with its own copy button, so what
+        the user takes elsewhere is exactly the text with placeholders; a restored answer is read, so it stays
+        markdown. The fence outgrows any backtick run in the text, so a pasted code block cannot close it."""
         longest = max((len(run) for run in cls.BACKTICK_RUN.findall(text)), default=0)
         fence = "`" * max(3, longest + 1)
         return f"{fence}text\n{text}\n{fence}"

@@ -102,7 +102,8 @@ async def test_should_restore_an_answer_with_a_placeholder_repeated_several_time
         analyzer,
     )
 
-    assert code_block_of(reply) == (
+    assert reply == (
+        f"{t('agent.anonymiser_agent.messages.restored')}\n\n"
         "Dear Anna Muster, we wrote to anna.muster@example.ch. Anna Muster lives at Bahnhofstrasse 1, 8001 Zürich. "
         "Thanks, Anna Muster!"
     )
@@ -136,7 +137,7 @@ async def test_should_point_out_placeholders_this_chat_never_issued(displayer, t
 
     reply = await send("<PERSON_1> und <PERSON_9>", chat, displayer, t)
 
-    assert code_block_of(reply) == "Anna Muster und <PERSON_9>"
+    assert reply.split("\n\n")[1] == "Anna Muster und <PERSON_9>"
     assert reply.endswith(t("agent.anonymiser_agent.messages.unknown_placeholders", placeholders="`<PERSON_9>`"))
 
 
