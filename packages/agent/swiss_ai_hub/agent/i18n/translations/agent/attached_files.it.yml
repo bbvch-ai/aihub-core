@@ -15,8 +15,9 @@ prompt:
     \ CSV, quindi non è stato letto come testo: in Markdown perderebbe la sua struttura\
     \ e di un file grande ne entrerebbe solo una parte. Si trova invariato nella cartella\
     \ della conversazione della sandbox del codice (list_files mostra il suo nome\
-    \ esatto). Lavoralo con run_command, ad esempio con pandas; ciò che calcoli lì\
-    \ copre l'intero file."
+    \ esatto). Lavoralo con run_command, ad esempio con pandas, oppure con openpyxl\
+    \ o python-pptx quando il risultato deve conservarne la struttura; ciò che calcoli\
+    \ lì copre l'intero file."
   context: |
     {% chat role="system" %}
     L'utente ha allegato i seguenti file a questa conversazione. Quando la domanda vi si riferisce, rispondi dal loro contenuto e indica il file usato. Ogni file è un blocco `<REFERENCE_DOCUMENT [metadata]>` … `</REFERENCE_DOCUMENT>`, con le sezioni sotto i rispettivi titoli.
