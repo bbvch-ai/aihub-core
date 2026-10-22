@@ -145,6 +145,21 @@ def test_should_end_the_postcode_and_city_at_the_sentence_end(address: str, mask
     assert re.search(r"<[A-Z_]+_\d+>\. Nenne ihre Adresse\.$", seen)
 
 
+def test_should_keep_numbered_line_labels_in_a_long_contract() -> None:
+    filler = ("The contractor shall perform the services with the care of a diligent professional, keep all information "
+              "received confidential, and inform the client without delay of any circumstance that may endanger the "
+              "timely completion of the work. Clause {n} applies in addition to the general terms and conditions.")
+    lines = {1: "Position 1: Rack server Dell PowerEdge R760, 8900.00 CHF.",
+             6: "Position 2: Network switch Cisco C9300, 4200.00 CHF.",
+             11: "Position 3: UPS APC Smart-UPS 3000, 1850.00 CHF."}
+    contract = "\n\n".join(lines.get(n, filler.format(n=n)) for n in range(12))
+
+    chat("echo-external", contract)
+
+    seen = last_prompt_seen()
+    assert [line for line in lines.values() if line not in seen] == []
+
+
 def tools() -> list[dict]:
     return [{"type": "function", "function": {"name": "lookup_patient", "description": "Find a patient",
                                               "parameters": {"type": "object",

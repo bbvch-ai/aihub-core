@@ -13,9 +13,10 @@ user anonymised by hand) are passed through, never re-detected and never reused 
 is PII, so it lives only in this process, keyed by the request's litellm_call_id, and is never written into request
 metadata, which LiteLLM forwards to spend logs and callbacks. A failed or timed-out analysis fails the call.
 
-GLiNER also tags pronouns ("Sie", "vous") as PERSON and field labels ("Adresse", "IBAN") as their own type. Masking
-them garbles the prompt and the answer ("Adresse: Adresse"), so the words in `pii_allow_list` are never masked when a
-detection is exactly that word, in any case.
+GLiNER also tags pronouns ("Sie", "vous") as PERSON and field labels ("Adresse", "IBAN") as their own type, and in
+long documents numbered labels too ("Position 2"). Masking them garbles the prompt and the answer ("Adresse: Adresse")
+and hides line numbers from extraction, so a detection is never masked when it is exactly a word from
+`pii_allow_list`, in any case, optionally followed by a short number.
 
 The module is bind-mounted into the upstream LiteLLM image like custom_callbacks.py, so it may only depend on the
 stdlib, httpx and LiteLLM. The analyzer URL and key come from PRESIDIO_ANALYZER_API_BASE and PRESIDIO_ANALYZER_API_KEY.
@@ -50,6 +51,8 @@ CHAT_CALL_TYPES = {"completion", "acompletion"}
 JSON_RESPONSE_FORMATS = {"json_object", "json_schema"}
 # A 20k-token prompt takes about 50 s on the analyzer's 4 CPU threads; past this the call fails instead of hanging.
 ANALYZER_TIMEOUT_SECONDS = 150
+# A label may carry a short number ("Position 2", "Art. 5", "Nr. 12a"); four digits at most, so no ID or phone fits.
+NUMBERED_LABEL_SUFFIX = r"(?:\s*(?:Nr\.?|No\.?|n°)?\s*\d{1,4}[a-z]?)?"
 # Maps of calls that never reached a response hook (client gone mid-stream) are dropped after this.
 MAP_TTL_SECONDS = 1800
 
@@ -179,7 +182,8 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         """One pattern that must match the whole span. Anchored with string anchors, not ^ and $: the analyzer matches
         with MULTILINE, so ^ and $ would let a span over a line break pass on its first line ("Sie" + "Anna Muster")."""
         words = [word.strip() for word in words if word and word.strip()]
-        return rf"\A(?:{'|'.join(re.escape(word) for word in words)})\Z" if words else None
+        alternation = "|".join(re.escape(word) for word in words)
+        return rf"\A(?:{alternation}){NUMBERED_LABEL_SUFFIX}\Z" if words else None
 
     async def analyze(self, text: str) -> list[dict]:
         request = {"text": text, "language": self.language, "entities": self.entities or None}

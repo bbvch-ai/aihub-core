@@ -44,8 +44,9 @@ The gateway anonymises chat requests through a project-managed Presidio analyzer
   valid), streamed chunk by chunk with only a possible placeholder prefix held back. The placeholder map stays in the
   gateway process, keyed by the request's call id, and never enters request metadata, which LiteLLM forwards to spend
   logs and callbacks. A failed or timed-out analysis fails the call. Pronouns, roles and field labels in the four
-  languages ("Sie", "Benutzer", "Adresse", "IBAN") are an allow-list in the gateway config: GLiNER tags them as names or
-  as the type they name, and masking them garbles the prompt and the answer.
+  languages ("Sie", "Benutzer", "Adresse", "IBAN") are an allow-list in the gateway config, also when followed by a short
+  number ("Position 2"): GLiNER tags them as names or as the type they name, and masking them garbles the prompt and the
+  answer and hides line numbers from document extraction.
 - **Which calls**: every model declares `model_info.aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`).
   The guardrail runs on every call to a model that is not `local`; a model without the field counts as external, and the
   compose generator rejects missing or unknown values. Calls to local models run it when they request
