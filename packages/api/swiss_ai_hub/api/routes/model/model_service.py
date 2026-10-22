@@ -2,6 +2,7 @@ import logging
 
 import httpx
 from fastapi import HTTPException
+from openai import APIStatusError
 from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, LiteLLMService, trace_fn
@@ -50,28 +51,18 @@ class ModelService:
     @staticmethod
     def _raise_for_gateway_error(response: httpx.Response) -> None:
         """
-        A gateway failure is this deployment's fault rather than the caller's, so it is reported as 502 carrying
-        LiteLLM's own message, matching `ModelGatewayErrorHandler` on the routes that go through the OpenAI SDK.
+        The listing is a raw LiteLLM call rather than an OpenAI SDK one, so its failures are raised as the SDK's
+        own status error: `ModelGatewayErrorHandler` then maps, logs and reports them as it does every model call,
+        passing a budget or rate-limit rejection through and turning this deployment's own faults into 502.
         """
         if not response.is_error:
             return
 
-        message = ModelService._gateway_message(response)
-        logger.error(f"Model gateway returned {response.status_code} for the model listing: {message}")
-        raise HTTPException(status_code=502, detail=message)
-
-    @staticmethod
-    def _gateway_message(response: httpx.Response) -> str:
-        """Unwraps LiteLLM's ``error.message``; a proxy in front of it may answer with a non-JSON body instead."""
-        is_json = response.headers.get("content-type", "").startswith("application/json")
-        body = response.json() if is_json else None
-        error = body.get("error") if isinstance(body, dict) else None
-
-        if isinstance(error, dict) and error.get("message"):
-            return str(error["message"])
-        if isinstance(error, str):
-            return error
-        return response.text
+        has_json_body = bool(response.content) and response.headers.get("content-type", "").startswith(
+            "application/json"
+        )
+        body = response.json() if has_json_body else None
+        raise APIStatusError(f"Error code: {response.status_code} - {response.text}", response=response, body=body)
 
     @staticmethod
     @trace_fn
