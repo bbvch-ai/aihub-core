@@ -73,6 +73,19 @@ Pronouns, roles and field labels ("Sie", "vous", "Benutzer", "Adresse", "IBAN") 
 French, Italian or English, also with a short number ("Position 2", "Art. 5"): the detection model tags them as names or as the type they name, and masking them would
 garble the request. The list is `pii_allow_list` in the gateway configuration.
 
+## Checking it in Langfuse
+
+Every call the gateway anonymises leaves a `pii-anonymisation` observation in Langfuse. In an agent run it sits in the
+run's trace, next to the step that made the call: its input is the request exactly as the provider received it, with
+placeholders, its output says how many values of which type were replaced, and its metadata names the model and why
+the call was anonymised (a model outside the deployment, or requested by the call, as with a profile's checkbox). To
+see every anonymised call, open Tracing → Observations and search for `pii-anonymisation`. Calls outside an agent run,
+such as plain chats, are listed with their counts only. A call refused because the analyzer was unavailable shows as an
+error.
+
+The run's other observations are recorded by the agent before the call reaches the gateway, so they show the original
+text; Langfuse runs inside the deployment.
+
 ## Configuration
 
 ::: details Gateway configuration (generated from `litellm-config.yml.j2`):

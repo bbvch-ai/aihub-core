@@ -38,6 +38,7 @@ services:
     volumes:
       - ./out/litellm-config.yml:/app/config.yml:ro
       - ../../../configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
+      - ../../../configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro
     healthcheck:
       test:
         - CMD
