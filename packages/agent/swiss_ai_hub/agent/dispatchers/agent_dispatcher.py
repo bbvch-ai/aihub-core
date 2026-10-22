@@ -23,11 +23,12 @@ from swiss_ai_hub.core.events.agent import (
     ExceptionEvent,
     MemoryStorageRequestedEvent,
     StartEvent,
+    UserMessageEvent,
 )
 from swiss_ai_hub.core.exceptions import ModelGatewayErrorHandler
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
-from swiss_ai_hub.core.generative_ai import AgentMemory
+from swiss_ai_hub.core.generative_ai import AgentMemory, GatewayGuardrails
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.rpc import AgentConfigClient
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
@@ -38,6 +39,7 @@ from swiss_ai_hub.core.topics.agents.agent_class_topic import AgentClassTopic
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.dispatchers.run_anonymisation import RunAnonymisation
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 from swiss_ai_hub.agent.tracing.agent_run_tracer import AgentRunTracer
 
@@ -158,7 +160,7 @@ class AgentDispatcher(BaseDispatcher):
         )
 
         if event.is_start_event:
-            await self._start_run(cast(StartEvent, event), run_context, instance_topic)
+            await self._start_run(cast(StartEvent, event), run_context, instance_topic, run_agent_config)
 
         await self._trigger_ready_steps(event, run_context, thread_context, instance_topic, run_agent_config)
 
@@ -239,6 +241,7 @@ class AgentDispatcher(BaseDispatcher):
         event: Annotated[StartEvent, "The event opening the run."],
         run_context: Annotated[RunContext, "Per-run context to seed with the event payload."],
         topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+        run_agent_config: Annotated[AgentConfig, "The agent configuration for this run."],
     ) -> None:
         logger.debug(f"Handling StartEvent: {event.event_name}")
 
@@ -248,6 +251,13 @@ class AgentDispatcher(BaseDispatcher):
         for key, value in event.to_context_dict().items():
             logger.debug(f"Setting key '{key}' in run_context")
             await run_context.set(key, value)
+
+        inherited = await RunAnonymisation.remember_inherited(event, run_context)
+        # A delegated run shares the delegating run's display, which already said so.
+        if run_agent_config.anonymise is True and not inherited and isinstance(event, UserMessageEvent):
+            locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
+            displayer = EventDisplayer(self.js_publisher, topic_manager=self.get_topic_manager_for_thread(topic))
+            await RunAnonymisation.show_notice(displayer, self.locale_handler.in_locale(locale))
 
     async def _trigger_ready_steps(
         self,
@@ -423,7 +433,19 @@ class AgentDispatcher(BaseDispatcher):
         )
 
         agent_instance = self.agent()
+        guardrails = await RunAnonymisation.requested_guardrails(agent_config, run_context)
 
+        # Every LLM call the step makes, its delegations and memory writes included, reads the guardrails from here.
+        with GatewayGuardrails.requesting(*guardrails):
+            await self._run_step(step_method, agent_instance, events_and_kwargs, topic)
+
+    async def _run_step(
+        self,
+        step_method: Annotated[Callable, "The step method to execute."],
+        agent_instance: Annotated[Agent, "A fresh instance of the agent, as steps are stateless."],
+        events_and_kwargs: Annotated[EventsAndKwargs, "The step's resolved arguments."],
+        topic: Annotated[AgentInstanceTopic, "Topic info for the current run and thread."],
+    ) -> None:
         async with self.agent_run_tracer.trace_step_start(topic, step_method, events_and_kwargs.kwargs) as step_span:
             try:
                 result = await step_method(agent_instance, **events_and_kwargs.kwargs)
@@ -777,7 +799,7 @@ class AgentDispatcher(BaseDispatcher):
 
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
-        await self.js_publisher.publish_event(start_event, subject)
+        await self.js_publisher.publish_event(start_event, subject, RunAnonymisation.delegation_headers())
 
         timeout_task = self._schedule_agent_in_the_loop_timeout(
             aitl_request_event, settle, exception_event_class, target_topic

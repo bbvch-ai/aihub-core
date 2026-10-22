@@ -48,6 +48,14 @@ an Modelle innerhalb des Deployments werden nicht anonymisiert, ausser der Aufru
 
 Nur Chat-Anfragen werden anonymisiert. Embeddings, Reranking, Transkription und Bildgenerierung nicht.
 
+### Ein Agentenprofil anonymisieren
+
+Jedes Agentenprofil hat am Ende seines Konfigurationsformulars die Checkbox **Personendaten anonymisieren**, unabhängig
+vom Blueprint. Ist sie aktiv, verlangt jeder LLM-Aufruf der Läufe des Profils den Guardrail, auch für Modelle innerhalb
+des Deployments: die Antwort, die Meta-Fragen-Prüfung, der Titel, die Follow-ups, die Memory-Extraktion und die Läufe,
+an die das Profil delegiert. Die Antwort beginnt mit einem kurzen Hinweis, dass Personendaten ersetzt wurden, bevor sie
+das Modell erreichten. Gedacht für Profile mit sensiblen Daten, etwa im HR, auch wenn ihre Modelle on-premises laufen.
+
 ## Was erkannt wird
 
 Der Analyzer verwendet Presidio mit dem mehrsprachigen PII-Modell von GLiNER und Mustern für Schweizer und

@@ -45,6 +45,14 @@ inside the deployment are not anonymised, unless the call asks for it:
 
 Only chat requests are anonymised. Embeddings, reranking, transcription and image generation are not.
 
+### Anonymising an agent profile
+
+Every agent profile has an **Anonymise personal data** checkbox at the end of its configuration form, whatever the
+blueprint. When it is on, every LLM call of the profile's runs asks for the guardrail, also for models inside the
+deployment: the answer, the meta-question check, the title, the follow-ups, the memory extraction, and the runs the
+profile delegates to. The answer starts with a short note that personal data was replaced before it reached the
+model. Use it for profiles that handle sensitive data, such as HR, even when their models run on premises.
+
 ## What is detected
 
 The analyzer runs Presidio with GLiNER's multilingual PII model and patterns for Swiss and international formats, in

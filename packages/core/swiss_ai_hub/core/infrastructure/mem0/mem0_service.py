@@ -19,16 +19,19 @@ class Mem0Service:
         config: MemoryConfig,
         t: LocaleHandler,
         max_search_query_tokens: int | None = None,
+        requested_guardrails: tuple[str, ...] = (),
     ):
         self._config = config
         self._max_search_query_tokens = max_search_query_tokens
         self._memory = PatchedAsyncMemory(config=config)
         self._memory.vector_store = PatchedMilvusDB.from_milvus(self._memory.vector_store)
         self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
+        self._memory.llm.requested_guardrails = requested_guardrails
         self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
         # When the graph store is disabled, mem0 sets enable_graph=False and self.graph=None — nothing to wrap.
         if self._memory.enable_graph:
             self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
+            self._memory.graph.llm.requested_guardrails = requested_guardrails
 
     @property
     def config(self):

@@ -4,6 +4,7 @@ from functools import cached_property
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.mem0.mem0_service import Mem0Service
 from swiss_ai_hub.core.infrastructure.mem0.mem0_settings import Mem0Settings
@@ -73,7 +74,18 @@ class AgentMemory:
             enable_graph=False,
             llm_name=self._llm_model_name,
         )
-        return Mem0Service(config, t=self._t, max_search_query_tokens=self._settings.SEARCH_QUERY_EMBEDDING_WINDOW)
+        return Mem0Service(
+            config,
+            t=self._t,
+            max_search_query_tokens=self._settings.SEARCH_QUERY_EMBEDDING_WINDOW,
+            requested_guardrails=self._requested_guardrails,
+        )
+
+    @property
+    def _requested_guardrails(self) -> tuple[str, ...]:
+        """Extraction and reconciliation are LLM calls of the run too, so an anonymised profile anonymises them."""
+        anonymise = self._agent_config.anonymise is True or GatewayGuardrails.anonymising()
+        return (GatewayGuardrails.PII_ANONYMISATION,) if anonymise else ()
 
     @property
     def agent_id(self):

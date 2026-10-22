@@ -1,16 +1,17 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.agents.agent_config import CRON_CONFIG_KEY, AgentConfig, StepConfig
+    from swiss_ai_hub.core.agents.agent_config import ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY, AgentConfig, StepConfig
     from swiss_ai_hub.core.agents.agent_ref import AgentRef
     from swiss_ai_hub.core.agents.visualizers.types.edge_data import EdgeData
     from swiss_ai_hub.core.agents.visualizers.types.node_data import NodeData
     from swiss_ai_hub.core.agents.visualizers.types.workflow_graph import WorkflowGraph
 
-# Three entries resolve to this one module, which is where Sonar starts asking for a constant.
+# These entries resolve to this one module, which is where Sonar starts asking for a constant.
 _AGENT_CONFIG_MODULE = "swiss_ai_hub.core.agents.agent_config"
 
 __all__ = [
+    "ANONYMISE_CONFIG_KEY",
     "CRON_CONFIG_KEY",
     "AgentConfig",
     "AgentRef",
@@ -21,6 +22,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "ANONYMISE_CONFIG_KEY": _AGENT_CONFIG_MODULE,
     "CRON_CONFIG_KEY": _AGENT_CONFIG_MODULE,
     "AgentConfig": _AGENT_CONFIG_MODULE,
     "AgentRef": "swiss_ai_hub.core.agents.agent_ref",
