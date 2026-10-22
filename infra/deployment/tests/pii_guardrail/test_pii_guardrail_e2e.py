@@ -133,6 +133,19 @@ def test_should_keep_pronouns_and_field_labels_when_they_surround_personal_data(
     assert answer == prompt
 
 
+def test_should_keep_the_word_assistant_when_a_prompt_describes_the_assistant() -> None:
+    prompt = ("You classify a user's message to an assistant. Decide what the message is about: the assistant itself, "
+              "or the world. User message: please call Anna Muster.")
+
+    chat("echo-external", prompt)
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}")
+    assert seen.startswith("You classify a user's message to an assistant. Decide what the message is about: the "
+                           "assistant itself, or the world.")
+    assert "Anna Muster" not in seen
+
+
 @pytest.mark.parametrize(("address", "masked"), [("3011 Bern. Nenne", "3011 Bern"),
                                                 ("9000 St. Gallen. Nenne", "9000 St. Gallen"),
                                                 ("2300 La Chaux-de-Fonds. Nenne", "2300 La Chaux-de-Fonds")])
