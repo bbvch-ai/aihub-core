@@ -29,6 +29,8 @@ from swiss_ai_hub.pipeline.source_pipelines.rclone_sync_config import RcloneSync
 from swiss_ai_hub.pipeline.util.run_routing import owned_by_source
 
 _DEFAULT_SOURCE = SourcePipelineType.RCLONE.value
+# A data-lake write fails on transient S3 or NATS outages, and the re-execution is cheap and idempotent.
+_DATA_LAKE_WRITE_RUN_RETRIES = 2
 
 
 def rclone_pipeline_definitions(
@@ -84,7 +86,7 @@ def rclone_pipeline_definitions(
             **default_io_manager_s3_datalake_resources(container_name=source),
         },
         sensors=[
-            default_automation_sensor(assets),
+            default_automation_sensor(assets, max_retries=_DATA_LAKE_WRITE_RUN_RETRIES),
             run_after_success_sensor(monitored_job=observe_job, triggered_job=remove_job, require_bucket_tag=True),
             registration_sensor,
             source_bucket_cleanup_sensor(source=source, partition_registry_name=partitions.name),
