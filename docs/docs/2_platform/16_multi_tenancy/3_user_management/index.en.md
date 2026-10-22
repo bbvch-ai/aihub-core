@@ -157,6 +157,11 @@ Someone might be:
 They switch between tenants using the selector in the top bar. The interface shows only what's available in the selected
 tenant. Their permissions change based on their roles in that tenant.
 
+Admin pages for different tenants can stay open side by side in several tabs. The chat cannot: it works in one tenant at
+a time, the user's active tenant, whichever tab or device set it. A chat page whose tenant is not the active one asks
+the user to either chat in that tenant or go to the active one. Choosing to chat there makes it the active tenant, and
+the chat pages open in other tabs of the same browser show the same question at once.
+
 ## Permissions inheritance
 
 Permissions don't inherit between tenants. Being an admin in one tenant grants no privileges in another tenant.
