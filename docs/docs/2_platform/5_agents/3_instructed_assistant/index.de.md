@@ -145,7 +145,7 @@ Text generiert.
 | **Temperatur**                           | Zahl            | `0.0`        | Steuert die Zufälligkeit. `0.0` liefert fokussierte, wiederholbare Antworten (am besten für Übersetzung, Extraktion, faktische Antworten). Höhere Werte (bis zu `2.0`) liefern vielfältigere, kreativere Ergebnisse. |
 | **Log-Wahrscheinlichkeiten zurückgeben** | Umschalter      | Aus          | Ob das Modell Token-Level-Wahrscheinlichkeiten zurückgibt. Eine erweiterte/diagnostische Option; lassen Sie sie deaktiviert, es sei denn, Sie benötigen explizit Konfidenzwerte.                                     |
 | **Top-Log-Wahrscheinlichkeiten**         | Zahl            | `0`          | Wie viele der wahrscheinlichsten alternativen Tokens pro Position zurückgegeben werden sollen. Gilt nur, wenn Log-Wahrscheinlichkeiten aktiviert sind. Bereich: 0–20.                                                |
-| **Timeout**                              | Zahl (Sekunden) | `600`        | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird. Nur erhöhen, wenn Sie ein langsames Modell mit sehr langen Ausgaben verwenden.                                                                 |
+| **Timeout**                              | Zahl (Sekunden) | `300`        | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird. Nur erhöhen, wenn Sie ein langsames Modell mit sehr langen Ausgaben verwenden.                                                                 |
 
 ::: details Wie die Einstellungen zur Laufzeit kombiniert werden
 Wenn eine Nachricht ankommt, erstellt der Assistent die Konversation als

@@ -79,6 +79,7 @@ class FakeEmbedModel:
         self.peak = 0
         self.texts: list[str] = []
         self.batches_finished = 0
+        self.closed = False
 
     async def _request(self) -> None:
         self.in_flight += 1
@@ -99,6 +100,9 @@ class FakeEmbedModel:
         await self._request()
         self.batches_finished += 1
         return [[0.0, 1.0] if self.outlier in text else [1.0, 0.1] for text in texts]
+
+    async def aclose(self) -> None:
+        self.closed = True
 
 
 def _picker(config: AttachedFilesConfig | None = None) -> AttachedFileSections:
@@ -203,6 +207,27 @@ class TestBoundedEmbedding:
         assert model.in_flight == 0
         assert IDENTIFIER in ranked[0].content
         assert reranked.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_the_embedding_client_is_closed_after_ranking(self):
+        """Left to the garbage collector, its delayed close can hang another call's connect (aihub-core-private#349)."""
+        model = FakeEmbedModel()
+        embed, rerank = _patched(model)
+
+        with embed, rerank:
+            await _picker().rank(_table(), f"status of order {IDENTIFIER}")
+
+        assert model.closed
+
+    @pytest.mark.asyncio
+    async def test_the_embedding_client_is_closed_when_embedding_fails(self):
+        model = FakeEmbedModel(fail_query=True)
+        embed, rerank = _patched(model)
+
+        with embed, rerank:
+            await _picker().rank(_table(), f"status of order {IDENTIFIER}")
+
+        assert model.closed
 
     @pytest.mark.asyncio
     async def test_a_failing_embedding_with_no_shared_word_surfaces_its_error(self):

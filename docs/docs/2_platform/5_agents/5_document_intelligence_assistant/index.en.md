@@ -225,7 +225,7 @@ least one knowledge source** are required; everything else has sensible defaults
 | **Temperature**              | Number           | `0.0`   | Randomness. Keep low (`0.0`–`0.3`) for grounded, factual answers. Range 0.0–2.0.           |
 | **Return Log Probabilities** | Toggle           | Off     | Advanced diagnostic option for token-level confidence. Leave off unless needed.            |
 | **Top Log Probabilities**    | Number           | `0`     | Alternative tokens to report per position; only when log probabilities are on. Range 0–20. |
-| **Timeout**                  | Number (seconds) | `600`   | How long to wait for the model before giving up.                                           |
+| **Timeout**                  | Number (seconds) | `300`   | How long to wait for the model before giving up.                                           |
 
 ### Knowledge sources (retrievers)
 
