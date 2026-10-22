@@ -283,7 +283,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         self._maps.pop(request_data.get("litellm_call_id"), None)
 
     async def async_post_call_streaming_iterator_hook(self, user_api_key_dict: Any, response: Any,
-                                                      request_data: dict) -> AsyncGenerator[Any, None]:
+                                                      request_data: dict) -> AsyncGenerator[Any]:
         entry = self._maps.get(request_data.get("litellm_call_id"))
         if entry is None:
             async for chunk in response:

@@ -19,8 +19,8 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from opentelemetry.trace import StatusCode
 
 sys.path.insert(0, str(Path(__file__).parent))
-from pii_anonymisation_audit import AnonymisationAudit  # noqa: E402
-from test_pii_anonymisation_guardrail import make_guardrail  # noqa: E402
+from pii_anonymisation_audit import AnonymisationAudit
+from test_pii_anonymisation_guardrail import make_guardrail
 
 TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736"
 TRACEPARENT = f"00-{TRACE_ID}-00f067aa0ba902b7-01"
