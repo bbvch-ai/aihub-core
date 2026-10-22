@@ -125,8 +125,9 @@ guardrails:
         CH_ID_DOCUMENT: MASK
         CH_INSURANCE_CARD: MASK
         DATE_OF_BIRTH: MASK
-      # Never masked when a detection is exactly one of these words (any case): pronouns, roles and field labels
-      # that GLiNER tags as PERSON or as the type the label names. Masking them garbles prompts and answers.
+      # Never masked when a detection is exactly one of these words (any case), optionally followed by a short number
+      # ("Position 2"): pronouns, roles and field labels that GLiNER tags as PERSON or as the type the label names.
+      # Masking them garbles prompts and answers and hides line numbers from extraction.
       pii_allow_list:
         - ich
         - du
@@ -256,6 +257,31 @@ guardrails:
         - date of birth
         - identity
         - passport
+        - Position
+        - Pos.
+        - Artikel
+        - Art.
+        - Ziffer
+        - Abschnitt
+        - Kapitel
+        - Seite
+        - Zeile
+        - Klausel
+        - Clause
+        - Article
+        - Section
+        - Chapter
+        - Page
+        - Line
+        - Item
+        - Chapitre
+        - Paragraphe
+        - Ligne
+        - Articolo
+        - Capitolo
+        - Pagina
+        - Riga
+        - Sezione
 # ===================================================================
 # General Settings
 # ===================================================================

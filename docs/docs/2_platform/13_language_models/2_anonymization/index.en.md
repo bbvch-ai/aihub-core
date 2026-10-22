@@ -62,7 +62,7 @@ Other dates, company names and descriptions that identify a person only through 
 company) are not masked.
 
 Pronouns, roles and field labels ("Sie", "vous", "Benutzer", "Adresse", "IBAN") are never masked, in German,
-French, Italian or English: the detection model tags them as names or as the type they name, and masking them would
+French, Italian or English, also with a short number ("Position 2", "Art. 5"): the detection model tags them as names or as the type they name, and masking them would
 garble the request. The list is `pii_allow_list` in the gateway configuration.
 
 ## Configuration

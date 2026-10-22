@@ -65,7 +65,7 @@ Andere Daten, Firmennamen und Beschreibungen, die eine Person nur über den Kont
 zusammen mit einer Firma), werden nicht maskiert.
 
 Pronomen, Rollen und Feldbezeichnungen («Sie», «vous», «Benutzer», «Adresse», «IBAN») werden in Deutsch, Französisch,
-Italienisch und Englisch nie maskiert: Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
+Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer («Position 2», «Art. 5»): Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
 ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
 
 ## Konfiguration

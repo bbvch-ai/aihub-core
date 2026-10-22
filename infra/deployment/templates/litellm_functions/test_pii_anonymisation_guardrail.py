@@ -378,6 +378,21 @@ def test_should_keep_masking_a_span_that_only_contains_an_allowed_word(span: str
     assert not re.compile(pattern, PRESIDIO_REGEX_FLAGS).search(span)
 
 
+@pytest.mark.parametrize("span", ["Position 2", "position 12a", "Art. 5", "Artikel Nr. 3", "Position\n4"])
+def test_should_allow_a_numbered_label(span: str) -> None:
+    pattern = guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(["Position", "Art.", "Artikel"])
+
+    assert re.compile(pattern, PRESIDIO_REGEX_FLAGS).search(span)
+
+
+@pytest.mark.parametrize("span", ["Position 12345", "Position 2 Anna Muster", "Art. 756.1234.5678.97",
+                                  "Position 044 270 41 87"])
+def test_should_keep_masking_a_label_followed_by_more_than_a_short_number(span: str) -> None:
+    pattern = guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(["Position", "Art."])
+
+    assert not re.compile(pattern, PRESIDIO_REGEX_FLAGS).search(span)
+
+
 def test_should_send_no_allow_list_when_it_holds_only_blanks() -> None:
     assert guardrail_module.PiiAnonymisationGuardrail.allow_list_pattern(["", "  "]) is None
 
