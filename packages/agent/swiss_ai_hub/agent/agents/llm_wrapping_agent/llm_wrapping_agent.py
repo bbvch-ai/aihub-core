@@ -93,7 +93,7 @@ class LLMWrappingAgent(Agent):
 
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_ceiling())
+            limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_ceiling)
             return Conversation.contextualize(history=[*system_head, *limited], message=event)
 
         # The system prompt and the last turn are what must be sent; everything between them is negotiable. Note

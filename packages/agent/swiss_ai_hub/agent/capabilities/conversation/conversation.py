@@ -291,7 +291,7 @@ class Conversation(Capability):
         counter = conversation.llm.token_counter
         system_head, turns = _split_system_head(history)
         earlier, question = turns[:-1], turns[-1:]
-        room = conversation.input_budget() - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
+        room = conversation.input_budget - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
         return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])

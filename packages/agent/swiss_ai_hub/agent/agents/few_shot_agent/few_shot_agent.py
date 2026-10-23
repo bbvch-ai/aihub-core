@@ -79,9 +79,7 @@ class FewShotAgent(Agent):
         """
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            limited = limit_chat_history(
-                chat_history=event.messages, number_of_input_tokens=agent_config.input_ceiling()
-            )
+            limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=agent_config.input_ceiling)
             return Conversation.contextualize(history=limited, message=event)
 
         system_messages = [msg for msg in event.messages if msg.role == MessageRole.SYSTEM]

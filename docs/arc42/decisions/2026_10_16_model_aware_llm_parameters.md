@@ -97,8 +97,8 @@ only ever reaches the main answer.
 **An unset input limit fills the window.** `number_of_input_tokens` is `int | None`, with `None` by default, and gets
 the same override checkbox as the temperature.
 
-- **Unset:** `ConversationFields.input_budget()` fills 85% of the narrowest window of the main and the task model, and
-  the form shows that figure while the checkbox is off. With no window known, it falls back to
+- **Unset:** `ConversationFields.input_budget` fills 85% of the narrowest window of the main and the task model, and the
+  form shows that figure while the checkbox is off. With no window known, it falls back to
   `FALLBACK_INPUT_TOKENS = 128000`, the value every profile used to be created with.
 - **Set:** the admin's own limit, a cost ceiling, bounded at 85% of the main model's window on save.
 - **Why not keep a pre-filled number:** any fixed number is either above the window of the smaller models (128,000 is

@@ -69,15 +69,20 @@ class ConversationFields(Form):
         ),
     ] = False
 
+    @property
     def input_budget(self) -> int:
         """The narrowest model window that could receive the prompt, less a margin for the tokenizer difference, and
         held to the admin's own limit when one is set. Only for prompts that are filled to it; refusing an oversized
-        message compares against the exact window (`do_limit_chat_history`), so nothing the model accepts is refused."""
+        message compares against the exact window (`do_limit_chat_history`), so nothing the model accepts is refused.
+
+        A plain property, not a `computed_field`: it must stay out of `model_dump`, which also serializes the form-mode
+        instance, and it looks the model window up in LiteLLM."""
         budget = usable_input_budget([self.llm, self.task_llm])
         if budget is None:
-            return self.input_ceiling()
+            return self.input_ceiling
         return self.held_to_ceiling(int(budget * WINDOW_SAFETY_FACTOR))
 
+    @property
     def input_ceiling(self) -> int:
         """The admin's own limit, or `FALLBACK_INPUT_TOKENS` when none is set, for when no window is known."""
         return FALLBACK_INPUT_TOKENS if self.number_of_input_tokens is None else self.number_of_input_tokens

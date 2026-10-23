@@ -28,17 +28,17 @@ def _config(number_of_input_tokens: int | None) -> LLMWrappingAgentConfig:
 def test_a_window_is_filled_only_up_to_the_safety_margin():
     """Issue #2077: tiktoken undercounts Ministral by 6%, so a prompt fitted exactly to the window overflowed it."""
     with patch(f"{MODULE}.usable_input_budget", return_value=91_824):
-        assert _config(number_of_input_tokens=128_000).input_budget() == int(91_824 * WINDOW_SAFETY_FACTOR)
+        assert _config(number_of_input_tokens=128_000).input_budget == int(91_824 * WINDOW_SAFETY_FACTOR)
 
 
 def test_a_cost_ceiling_below_the_window_is_kept_as_set():
     with patch(f"{MODULE}.usable_input_budget", return_value=91_824):
-        assert _config(number_of_input_tokens=40_000).input_budget() == 40_000
+        assert _config(number_of_input_tokens=40_000).input_budget == 40_000
 
 
 def test_without_a_known_window_the_cost_ceiling_is_the_budget():
     with patch(f"{MODULE}.usable_input_budget", return_value=None):
-        assert _config(number_of_input_tokens=128_000).input_budget() == 128_000
+        assert _config(number_of_input_tokens=128_000).input_budget == 128_000
 
 
 def test_the_budget_field_is_bounded_by_the_main_model_window_instead_of_a_static_range():
@@ -60,12 +60,12 @@ def test_the_budget_field_tells_the_form_how_much_of_the_window_is_filled():
 
 def test_an_unset_limit_fills_the_window_less_the_margin():
     with patch(f"{MODULE}.usable_input_budget", return_value=155_648):
-        assert _config(number_of_input_tokens=None).input_budget() == int(155_648 * WINDOW_SAFETY_FACTOR)
+        assert _config(number_of_input_tokens=None).input_budget == int(155_648 * WINDOW_SAFETY_FACTOR)
 
 
 def test_an_unset_limit_without_a_known_window_falls_back_to_the_previous_default():
     with patch(f"{MODULE}.usable_input_budget", return_value=None):
-        assert _config(number_of_input_tokens=None).input_budget() == FALLBACK_INPUT_TOKENS
+        assert _config(number_of_input_tokens=None).input_budget == FALLBACK_INPUT_TOKENS
 
 
 def test_only_a_limit_of_the_admins_own_holds_back_what_the_window_allows():

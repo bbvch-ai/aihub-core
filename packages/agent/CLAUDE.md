@@ -139,7 +139,7 @@ class EchoAgentConfig(MemoryFields, ConversationFields, AgentConfig): ...
 class EchoAgent(Agent):
     @step()
     async def limit_history_step(self, event: UserMessageEvent, config: ConversationFields) -> Conversation.ContextualizeRequest:
-        return Conversation.contextualize(history=limit_chat_history(event.messages, config.input_budget()), message=event)
+        return Conversation.contextualize(history=limit_chat_history(event.messages, config.input_budget), message=event)
 
     @step()
     async def recall_memory_step(self, ctx: Conversation.Contextualized) -> Memory.RecallRequest:
@@ -185,9 +185,9 @@ to; the composed workflow itself is flat, and the graph, discovery and the event
   that must reason over the context before the prompt is composed (RAG's context-sufficiency guard). Anything the step
   sends next to the result must be passed as `reserve_tokens`: the guard reserves its retrieved documents and its own
   prompt, which otherwise overflowed the model's window by their size (issue #2077). The input budget every filled
-  prompt uses, `ConversationFields.input_budget()`, is `WINDOW_SAFETY_FACTOR` (0.85) of the narrowest model window, held
+  prompt uses, `ConversationFields.input_budget`, is `WINDOW_SAFETY_FACTOR` (0.85) of the narrowest model window, held
   to the admin's own `number_of_input_tokens` when one is set (unset is the default; `FALLBACK_INPUT_TOKENS` stands in
-  when no window is known). Never read `number_of_input_tokens` directly: use `input_budget()`, `input_ceiling()` or
+  when no window is known). Never read `number_of_input_tokens` directly: use `input_budget`, `input_ceiling` or
   `held_to_ceiling()`, which handle the unset limit. Prompts are counted with tiktoken, which undercounts English by up
   to 6% against Ministral and gemma. Refusing an oversized message (`do_limit_chat_history`) compares against the exact
   window instead.
@@ -318,7 +318,7 @@ conversation (remembered per tool); `approve_every_call` never lets one carry ov
 without tools and a fixed notice says it stopped early. The answering turn streams
 (`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed thought.
 Results are capped only by `max_result_tokens`. When the conversation and the tool schemas outgrow
-`ConversationFields.input_budget()`, `start_step`/`join_step` set `ToolLoopState.needs_condensing`, and `condense_step`
+`ConversationFields.input_budget`, `start_step`/`join_step` set `ToolLoopState.needs_condensing`, and `condense_step`
 (precondition `outgrew_the_prompt`; `decide_step` waits on `fits_the_prompt`) runs `ToolLoopCondenser` with the task
 model: earlier results summarised in place (every tool call keeps its answer), then the turns before the request as one
 summary, the oldest results dropped only as a last resort; the request and the latest round are never touched, and

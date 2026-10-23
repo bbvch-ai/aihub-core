@@ -154,7 +154,7 @@ class ToolLoop(Capability):
                 max_iterations=request.max_iterations,
                 cite_sources=request.cite_sources,
                 needs_condensing=ToolLoopCondenser.outgrown(
-                    messages, offered, conversation.input_budget(), conversation.llm.token_counter
+                    messages, offered, conversation.input_budget, conversation.llm.token_counter
                 ),
             )
         )
@@ -235,7 +235,7 @@ class ToolLoop(Capability):
         user: UserIdentity | None = None,
     ) -> ToolLoopIterationEvent:
         """Condense the loop's conversation to fit the prompt again before the model decides on it."""
-        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget(), displayer, t, user)
+        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget, displayer, t, user)
         return ToolLoopIterationEvent(state=await condenser.condense(iteration.state))
 
     @staticmethod
@@ -416,7 +416,7 @@ class ToolLoop(Capability):
                     "tool_calls_made": state.tool_calls_made + len(answered),
                     "gathered": gathered,
                     "needs_condensing": ToolLoopCondenser.outgrown(
-                        messages, state.tools, conversation.input_budget(), counter
+                        messages, state.tools, conversation.input_budget, counter
                     ),
                 }
             )
