@@ -1,7 +1,7 @@
 ---
 title: Verlinkte Webseiten
 description: Agenten lesen die Webseiten, die Sie in einer Nachricht verlinken, antworten daraus, zitieren sie und nennen Ihnen die Seiten, die sie nicht lesen konnten.
-source_sha: 67db9bc16fa78614010444c1d52790d94ec5a36d793373f67b544eef6d7dd0be
+source_sha: 8f127256f557491da077da767f66269425dc3b2c36bb144b3624acb771805e86
 ---
 
 # Verlinkte Webseiten
@@ -19,7 +19,7 @@ suchen und wird bei Agenten nicht angeboten.
 
 Das Lesen von Links ist eine Einstellung pro Agentenprofil und **standardmässig ausgeschaltet**: Ein Admin schaltet im
 Profil **Read Linked Web Pages** ein. Verfügbar ist sie beim Instructed Assistant, beim Document Intelligence Assistant,
-beim Company Knowledge Agent und beim Universal Agent. Der [Webseiten-Assistent](../../5_agents/14_web_page_assistant/)
+beim Company Knowledge Agent und beim Universal Agent. Der [Webseiten-Assistent](../../5_agents/15_web_page_assistant/)
 liest Links immer; dafür ist er da.
 
 ## Seiten verlinken

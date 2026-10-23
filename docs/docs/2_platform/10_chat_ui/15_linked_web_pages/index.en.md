@@ -18,7 +18,7 @@ offered on agents.
 
 Reading links is a setting per agent profile, **off by default**: an admin turns on **Read Linked Web Pages** in the
 profile. It is available on the Instructed Assistant, the Document Intelligence Assistant, the Company Knowledge Agent
-and the Universal Agent. The [Web Page Assistant](../../5_agents/14_web_page_assistant/) always reads links; that is
+and the Universal Agent. The [Web Page Assistant](../../5_agents/15_web_page_assistant/) always reads links; that is
 what it is for.
 
 ## Linking pages
