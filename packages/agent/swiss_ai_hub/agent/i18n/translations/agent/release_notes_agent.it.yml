@@ -1,0 +1,43 @@
+---
+metadata:
+  name: Assistente note di rilascio
+  description: Scrive note di rilascio dai ticket Jira di una versione di correzione,
+    raggruppati per tipo e in ogni lingua configurata.
+changelog:
+  title: Note di rilascio %{version}
+  sections:
+    features: Nuove funzionalità
+    fixes: Correzioni
+    improvements: Miglioramenti
+    other: Altre modifiche
+messages:
+  version_missing: 'Per quale versione devo scrivere le note? Indica una versione
+    di correzione, per esempio: %{recent}.'
+  version_missing_no_versions: Jira non elenca versioni di correzione in %{projects},
+    quindi non c'è ancora una versione per cui scrivere le note.
+  version_several: 'Il tuo messaggio cita più versioni: %{names}. Per quale devo scrivere
+    le note?'
+  version_unknown: 'Non ho trovato la versione di correzione %{requested} in %{projects}.
+    Intendevi: %{suggestions}?'
+  version_unknown_recent: 'Non ho trovato la versione di correzione %{requested} in
+    %{projects}. Le versioni recenti sono: %{recent}.'
+  version_unknown_no_versions: Non ho trovato la versione di correzione %{requested}
+    in %{projects}; Jira non vi elenca ancora versioni di correzione.
+  no_tickets: Non ho trovato ticket per la versione di correzione %{version} in %{projects},
+    quindi non c'è nulla da inserire nelle note di rilascio.
+  release_too_large: Questa versione ha più di %{limit} ticket, più di quanti ne possa
+    trattare in una volta nelle note di rilascio. Un amministratore può restringerla
+    con il filtro JQL di questo assistente.
+  jira_authentication: Jira ha rifiutato le credenziali di questo assistente, quindi
+    non posso leggere i ticket. Chiedi a un amministratore di verificare il token Jira.
+  jira_project_not_found: Il progetto Jira %{project} non esiste, oppure l'account
+    Jira di questo assistente non può vederlo. Chiedi a un amministratore di verificare
+    i progetti configurati.
+  jira_project_renamed: Il progetto Jira %{project} è stato rinominato in %{renamed}.
+    Chiedi a un amministratore di aggiornare i progetti configurati.
+  jira_invalid_query: Jira ha rifiutato il filtro JQL di questo assistente, quindi
+    non posso leggere i ticket. Chiedi a un amministratore di correggerlo.
+  jira_configuration: La connessione Jira di questo assistente non è configurata correttamente.
+    Chiedi a un amministratore di verificarla.
+  jira_unavailable: Al momento non riesco a leggere i ticket da Jira. Riprova più tardi;
+    se il problema persiste, rivolgiti a un amministratore.

@@ -1,0 +1,43 @@
+---
+metadata:
+  name: Release Notes Assistant
+  description: Writes release notes from the Jira tickets of a fix version, grouped
+    by type and in each configured language.
+changelog:
+  title: Release notes %{version}
+  sections:
+    features: New features
+    fixes: Fixes
+    improvements: Improvements
+    other: Other changes
+messages:
+  version_missing: 'Which release should I write notes for? Name a fix version, for
+    example: %{recent}.'
+  version_missing_no_versions: Jira lists no fix versions in %{projects}, so there
+    is no release I can write notes for yet.
+  version_several: 'Your message names several releases: %{names}. Which one should
+    I write notes for?'
+  version_unknown: 'I found no fix version %{requested} in %{projects}. Did you mean:
+    %{suggestions}?'
+  version_unknown_recent: 'I found no fix version %{requested} in %{projects}. Recent
+    versions are: %{recent}.'
+  version_unknown_no_versions: I found no fix version %{requested} in %{projects};
+    Jira lists no fix versions there yet.
+  no_tickets: I found no tickets for fix version %{version} in %{projects}, so there
+    is nothing to write release notes about.
+  release_too_large: This release has more than %{limit} tickets, more than I can
+    write release notes for at once. An administrator can narrow it with this assistant's
+    JQL filter.
+  jira_authentication: Jira rejected this assistant's credentials, so I cannot read
+    the tickets. Please ask an administrator to check the Jira token.
+  jira_project_not_found: Jira project %{project} does not exist, or this assistant's
+    Jira account cannot see it. Please ask an administrator to check the configured
+    projects.
+  jira_project_renamed: Jira project %{project} has been renamed to %{renamed}. Please
+    ask an administrator to update the configured projects.
+  jira_invalid_query: Jira rejected this assistant's JQL filter, so I cannot read
+    the tickets. Please ask an administrator to correct it.
+  jira_configuration: This assistant's Jira connection is not set up correctly. Please
+    ask an administrator to check it.
+  jira_unavailable: I could not read the tickets from Jira just now. Please try again
+    later; if it keeps failing, ask an administrator.
