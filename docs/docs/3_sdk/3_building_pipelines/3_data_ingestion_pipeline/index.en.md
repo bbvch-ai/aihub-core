@@ -70,9 +70,9 @@ serves every database whose source is `rclone`, and nothing about a source lives
   ingestion pipeline.
 - **Key Assets**: `remote_files` (observable), `data_lake_files`, `removed_data_lake_files` in the
   `rclone_source_to_datalake` group.
-- **Backends**: the dialog offers Google Drive and AWS S3 (and S3-compatible), the two verified end to end, plus a local
-  path inside the rclone container where enabled. OneDrive / SharePoint, Azure Blob and SFTP are implemented but hidden
-  (see below).
+- **Backends**: the dialog offers OneDrive / SharePoint, Google Drive and AWS S3 (and S3-compatible), the ones verified
+  end to end, plus a local path inside the rclone container where enabled. Azure Blob and SFTP are implemented but
+  hidden (see below).
 
 ### Two Axes of a Knowledge Database
 
@@ -90,9 +90,11 @@ rotate; a change takes effect on the pipeline's next run.
 
 1. In the create-database dialog, pick a **Source**. The selector offers every source pipeline that is currently
    deployed and has announced its form (`GET /knowledge/source-pipelines`).
-2. Choose the **Storage backend** (`s3` or `drive`) and fill in the backend's options; only the fields of the selected
-   backend are shown. For a Google Drive service account, upload the JSON key file downloaded from the Google Cloud
-   console, and share the Drive folder with the `client_email` the dialog shows for it.
+2. Choose the **Storage backend** (OneDrive / SharePoint, Google Drive or S3) and fill in the backend's options; only
+   the fields of the selected backend are shown. For SharePoint, see
+   [Connecting a SharePoint Document Library](#connecting-a-sharepoint-document-library). For a Google Drive service
+   account, upload the JSON key file downloaded from the Google Cloud console, and share the Drive folder with the
+   `client_email` the dialog shows for it.
 3. Set the **Root folder** inside the source and, optionally, include/exclude patterns in
    [rclone filter syntax](https://rclone.org/filtering/) (for example `*.pdf`, `**/~$*`).
 4. Save. The database is synced daily; the first observation creates a partition per file and the next one downloads
@@ -104,20 +106,45 @@ the sync; the files already in the data lake stay until the database is deleted.
 ### What a Database Stores
 
 `source_configuration` holds the `backend_type`, `root_path`, `include_patterns`, `exclude_patterns`, and one option
-group per backend. The dialog offers only the backends verified end to end (`s3`, `drive`, and `local` where enabled);
-the others remain configured and synced for databases that already use them, and through the API:
+group per backend. The dialog offers only the backends verified end to end (`onedrive`, `drive`, `s3`, and `local` where
+enabled); the others remain configured and synced for databases that already use them, and through the API:
 
-| `backend_type` | Source                                           | Options                                                                                                      |
-| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `onedrive`     | OneDrive, SharePoint (not offered in the dialog) | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
-| `drive`        | Google Drive                                     | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
-| `s3`           | AWS S3, MinIO, S3-compatible                     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
-| `azureblob`    | Azure Blob Storage (not offered in the dialog)   | `account`, `key` or `sas_url`, `endpoint`                                                                    |
-| `sftp`         | SFTP servers (not offered in the dialog)         | `host`, `port`, `user`, `password` or `key_pem`                                                              |
-| `local`        | Path inside the rclone container                 | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
+| `backend_type` | Source                                         | Options                                                                                                      |
+| -------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `onedrive`     | OneDrive, SharePoint                           | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
+| `drive`        | Google Drive                                   | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
+| `s3`           | AWS S3, MinIO, S3-compatible                   | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
+| `azureblob`    | Azure Blob Storage (not offered in the dialog) | `account`, `key` or `sas_url`, `endpoint`                                                                    |
+| `sftp`         | SFTP servers (not offered in the dialog)       | `host`, `port`, `user`, `password` or `key_pem`                                                              |
+| `local`        | Path inside the rclone container               | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
 
 A SharePoint document library is `onedrive` with `drive_type=documentLibrary`. OAuth backends accept a pre-obtained
 rclone `token` JSON instead of client credentials; OneDrive without a token uses client credentials.
+
+#### Connecting a SharePoint Document Library
+
+The pipeline reads SharePoint as an Entra ID application with its own credentials (the client credentials flow), so the
+sync does not depend on any user's sign-in.
+
+1. In the Entra admin center, register an application (single tenant, no redirect URI). Note its **Application (client)
+   ID** and the **Directory (tenant) ID**, and create a **client secret**.
+2. Under **API permissions**, add the Microsoft Graph **application** permission `Sites.Read.All` and have a Global
+   Administrator or Privileged Role Administrator **grant admin consent**. A SharePoint Administrator cannot grant it.
+   Read access is enough; the pipeline never writes to the source.
+3. Find the drive ID of the document library with a token for the application. It starts with `b!`.
+   - `GET https://graph.microsoft.com/v1.0/sites/{tenant}.sharepoint.com:/sites/{site}` returns the site's `id`.
+   - `GET https://graph.microsoft.com/v1.0/sites/{site-id}/drives` lists the site's libraries with their IDs.
+4. In the dialog, choose **OneDrive / SharePoint** and enter the client ID, client secret, tenant ID and drive ID. Set
+   **Drive type** to `documentLibrary` and the **Root folder** to the folder of the library whose sub-folders should
+   become namespaces.
+
+When the remote is created, rclone looks the drive up in Microsoft Graph. A wrong secret, missing consent or a wrong
+drive ID therefore fails the run with Microsoft's message before anything is listed, and no document is removed.
+
+::: tip Prefer client credentials over a pasted token
+A pasted `token` comes from one user's sign-in. rclone refreshes it only in the daemon's memory, never in the database,
+so the stored token stops working once its refresh token expires (90 days by default in Entra ID).
+:::
 
 Replacing a Drive key is safe while the new service account sees the same folder. A valid key whose account sees a
 different or empty tree (for example no `root_folder_id` and only a shared folder) makes the next sync remove every
@@ -205,16 +232,20 @@ token, so the factory rejects a reserved id when the definitions are built. See 
 
 ## 2. The Structured Source Pipeline (records from business applications)
 
-Records that are not files, such as Jira issues, come through the structured source pipeline. Like the rclone one, it is
-configured per knowledge database from the UI: one deployed `structured_pipeline` code location serves every database
-whose source is `structured`. For each database it reads the records through a [dlt](https://dlthub.com/) source and
-writes each one as a markdown file with YAML frontmatter into the database's data lake, one folder (namespace) per
-project or space, so the Stage 2 pipeline parses and embeds it like any other document.
+Records that are not files, such as Jira issues and Confluence pages, come through the structured source pipeline. Like
+the rclone one, it is configured per knowledge database from the UI: one deployed `structured_pipeline` code location
+serves every database whose source is `structured`. For each database it reads the records through a
+[dlt](https://dlthub.com/) source and writes each one as a markdown file with YAML frontmatter into the database's data
+lake, one folder (namespace) per project or space, so the Stage 2 pipeline parses and embeds it like any other document.
 
-- **Source kinds**: one adapter class per system. Jira (Cloud and Data Center) ships today: one document per issue, with
-  its fields, description and comments.
+- **Source kinds**: one adapter class per system. Jira and Confluence, each Cloud and Data Center, ship today: one
+  document per Jira issue, with its fields, description and comments, and one per Confluence page, filed under its page
+  tree.
 - **Incremental**: a sync reads only the records changed since the previous one, and a listing of every record key in
-  scope removes the files of records deleted at the source.
+  scope removes the files of records deleted at the source. Jira finds the changes with a cursor on each issue's last
+  update; Confluence compares every page's version, place in the tree and labels with the previous sync's, because
+  renaming or moving a page moves the pages below it without changing their versions, and a label change gives the page
+  no new version.
 - **Fails before it removes**: an adapter checks its credentials and scope before reading, and a failing listing, or an
   empty one while the database holds files, fails the run, so a wrong token or a typo never empties a database.
 
@@ -229,16 +260,16 @@ The platform ships the pipeline as the `structured_pipeline` compose service (Da
 | `STRUCTURED_PIPELINE_OBSERVE_JOB_HOUR` / `_MINUTE` | Time of the daily per-database sync                   |
 
 The pipeline calls each business application's API itself, so unlike the rclone pipeline it joins the `egress` network
-as well as `backend`, `data` and `storage`. A Jira Data Center inside the company network must be reachable from the
-Docker host.
+as well as `backend`, `data` and `storage`. A Jira or Confluence Data Center inside the company network must be
+reachable from the Docker host.
 
 ### Adding a Source Kind
 
 An `AbstractStructuredSourceAdapter` subclass declares the kind, its options form, its dlt source, how a record becomes
 a file and how to list every record key in scope. One field on `StructuredSyncConfig` and labels in the
 `lib/source_pipelines.*.yml` translations offer it in the dialog; the API and the UI need no change.
-`source_pipelines/jira/` in `packages/pipeline` is the reference implementation, and the package's `CLAUDE.md` lists the
-rules an adapter must keep. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
+`source_pipelines/jira/` and `source_pipelines/confluence/` in `packages/pipeline` are reference implementations, and
+the package's `CLAUDE.md` lists the rules an adapter must keep. See ADR `2026_10_01_structured_sources_synced_with_dlt`.
 
 ## 3. The Data Lake to Vector Store Pipeline
 

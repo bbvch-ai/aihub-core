@@ -355,6 +355,20 @@ event:
       unsupported_content: Pas une page web
       empty_content: Aucun contenu lisible
       url_limit_reached: Au-delà de la limite de liens
+  extraction:
+    fields: Colonnes
+    instructions: Lignes à garder
+    criteria: Documents sélectionnés
+    collections: Collections
+    notices: Remarques
+    documentIds: '{count} documents choisis'
+    files: Fichiers
+    failedFiles: Fichiers en échec
+    rows: Lignes affichées / trouvées
+    truncated: Écourté
+    continuePending: Poursuit une extraction inachevée
+    remainingDocuments: Documents restants
+    remainingRows: Lignes restant à afficher
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode
@@ -977,6 +991,12 @@ form:
     invalid_json: Le fichier n'est pas un JSON valide.
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
+    translate_partial_summary: Certaines langues n'ont pas été traduites
+    translate_partial_detail: Impossible de traduire en {locales}. Les autres langues
+      ont été mises à jour — réessayez pour compléter le reste.
+    translate_failed_summary: La traduction n'a pas fonctionné cette fois
+    translate_failed_detail: Aucune langue n'a pu être traduite. Votre texte est inchangé
+      — veuillez réessayer dans un instant.
   warnings:
     org_memory_performance: Cette fonctionnalité peut ne pas fonctionner comme prévu
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
@@ -1113,7 +1133,8 @@ tenant:
   mismatch_warning: Conflit de locataire
   mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
     session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
-  mismatch_switch_action: Changer de locataire
+  mismatch_switch_action: Aller à {tenant}
+  mismatch_use_this_tenant: Discuter dans {tenant}
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
 support:

@@ -1,0 +1,21 @@
+---
+config:
+  enabled:
+    label: Lavorare su documenti interi
+    help: Il modello può elencare i documenti delle raccolte di conoscenza, cercare
+      termini esatti nel loro testo e leggerli per intero.
+  path_glob:
+    label: Filtro dei percorsi dei documenti
+    help: Solo i documenti il cui percorso nella raccolta corrisponde a questo modello,
+      ad es. invoices/2025/** o **/*.pdf. Vale solo per gli strumenti dei documenti,
+      non per la ricerca nella conoscenza. Lasciare vuoto per tutti i documenti.
+tools:
+  list_knowledge_documents:
+    label: Elenca documenti di conoscenza
+    approval: Elencare i documenti di conoscenza che corrispondono a {path_glob}
+  search_knowledge_content:
+    label: Cerca nei documenti di conoscenza
+    approval: Cercare «{query}» nei documenti di conoscenza
+  read_knowledge_document:
+    label: Leggi documento di conoscenza
+    approval: Leggere il documento di conoscenza {document_id}

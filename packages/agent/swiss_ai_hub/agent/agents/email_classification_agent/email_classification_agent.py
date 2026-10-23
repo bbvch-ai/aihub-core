@@ -237,7 +237,7 @@ class EmailClassificationAgent(Agent):
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.email_classification_agent.steps.request_grounded_drafts.name"),
-        icon="mage:book-open",
+        icon="mage:book",
     )
     async def request_grounded_drafts_step(
         self,

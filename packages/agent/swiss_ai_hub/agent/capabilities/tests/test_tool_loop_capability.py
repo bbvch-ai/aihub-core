@@ -676,6 +676,21 @@ class TestJoin:
         assert [message.content for message in state.gathered] == [block[0].content, "echo: second"]
 
     @pytest.mark.asyncio
+    async def test_an_answering_loop_keeps_no_gathered_context(self):
+        decided = ToolCallsDecidedEvent(state=_state(ToolLoopMode.ANSWER), tool_call_ids=["c1", "c2"])
+
+        event = await ToolLoop.join_step(
+            LoopAgent(),
+            decided=decided,
+            results=[self._result("c1", "first"), self._result("c2", "second")],
+            loop=_config(),
+            conversation=_conversation(ANSWER),
+        )
+
+        assert event.state.gathered == []
+        assert [message.content for message in event.state.messages[-2:]] == ["first", "second"]
+
+    @pytest.mark.asyncio
     async def test_a_result_larger_than_its_room_is_cut(self):
         results = [self._result("c1", "word " * 500), self._result("c2")]
 

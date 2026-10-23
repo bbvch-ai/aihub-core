@@ -368,8 +368,9 @@ picks a **Source** in the create dialog. The backend (SharePoint or OneDrive, Go
 credentials, root folder and include/exclude patterns are stored encrypted on the database itself, and one deployment
 serves all such databases, resolving the target per run. Each top-level folder of the synced root becomes a namespace,
 and every synced or removed file is announced to the ingestion pipeline the way an upload is. Records that are not
-files, such as Jira issues (Jira Cloud and Jira Data Center), come through the `structured_pipeline` code location the
-same way: it writes each record as a markdown document, one namespace per project, and syncs only what changed.
+files, such as Jira issues and Confluence pages (Cloud and Data Center), come through the `structured_pipeline` code
+location the same way: it writes each record as a markdown document, one namespace per project or space, and syncs only
+what changed.
 
 Stage 2 is where a deployment adds its own processing. This ingestor parses, chunks, embeds and indexes documents for
 RAG, with hierarchical summaries and LLM-powered table refinement, for every database that selects it:

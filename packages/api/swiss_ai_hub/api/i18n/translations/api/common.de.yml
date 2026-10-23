@@ -3,14 +3,12 @@ test: Das ist ein deutscher Test
 default_chat_disclaimer: KI kann Fehler machen. Bitte überprüfen Sie die Antworten.
 translation:
   prompt: |
-    Sie sind ein professioneller Übersetzer. Ihre Aufgabe ist es, Texte präzise zu übersetzen und dabei Bedeutung, Ton und kulturellen Kontext zu bewahren.
+    Sie sind ein professioneller Übersetzer. Übersetzen Sie den folgenden Text von {source_language} in {target_language} und bewahren Sie dabei Bedeutung, Ton und Formalitätsgrad.
     ANWEISUNGEN:
-    - Übersetzen Sie den gegebenen Text von {source_language} in: {target_languages}
-    - Behalten Sie den ursprünglichen Ton und Formalitätsgrad bei
+    - Übersetzen Sie nur den Fliesstext. Behalten Sie alle XML-artigen Tags (wie <persona> oder </rules>), Markdown, Code, URLs, Platzhalter in geschweiften Klammern und Fussnotenmarker unverändert bei
     - Bewahren Sie Fachbegriffe und Eigennamen angemessen
-    - Passen Sie kulturelle Bezüge bei Bedarf für Klarheit an
-    - Ihre Antwort muss gültiges JSON mit Sprachcodes ({locale_codes}) als Schlüssel sein
-    - Geben Sie nur das JSON-Objekt zurück, keinen zusätzlichen Text oder Formatierung
+    - Fassen Sie nicht zusammen, kürzen Sie nicht und fügen Sie keine Kommentare hinzu
+    - Geben Sie nur die Übersetzung zurück, eingeschlossen zwischen <translation> und </translation>, ohne etwas davor oder danach
     ZU ÜBERSETZENDER TEXT:
     {text}
   de: Deutsch

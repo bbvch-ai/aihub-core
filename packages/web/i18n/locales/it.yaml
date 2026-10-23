@@ -356,6 +356,20 @@ event:
       unsupported_content: Non è una pagina web
       empty_content: Nessun contenuto leggibile
       url_limit_reached: Oltre il limite di link
+  extraction:
+    fields: Colonne
+    instructions: Righe da tenere
+    criteria: Documenti selezionati
+    collections: Raccolte
+    notices: Avvisi
+    documentIds: '{count} documenti scelti'
+    files: File
+    failedFiles: File non riusciti
+    rows: Righe mostrate / trovate
+    truncated: Abbreviato
+    continuePending: Continua un'estrazione incompiuta
+    remainingDocuments: Documenti rimanenti
+    remainingRows: Righe ancora da mostrare
   toolLoop:
     loop: Insieme di strumenti
     mode: Modalità
@@ -975,6 +989,12 @@ form:
     invalid_json: Il file non è un JSON valido.
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
+    translate_partial_summary: Alcune lingue non sono state tradotte
+    translate_partial_detail: Impossibile tradurre in {locales}. Le altre lingue sono
+      state aggiornate — riprova per completare il resto.
+    translate_failed_summary: La traduzione non è riuscita questa volta
+    translate_failed_detail: Nessuna lingua è stata tradotta. Il tuo testo è invariato
+      — riprova tra un momento.
   warnings:
     org_memory_performance: Questa funzionalità potrebbe non funzionare come previsto
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
@@ -1110,7 +1130,8 @@ tenant:
   mismatch_warning: Conflitto di tenant
   mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
     sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
-  mismatch_switch_action: Cambia tenant
+  mismatch_switch_action: Vai a {tenant}
+  mismatch_use_this_tenant: Chatta in {tenant}
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
 support:

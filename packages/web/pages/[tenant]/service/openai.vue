@@ -3,6 +3,7 @@
     <div class="h-[calc(100vh-50px)] w-full">
       <iframe
         ref="chatIframe"
+        :key="iframeKey"
         :src="`${runtimeConfig.public.webui.url}/oauth/oidc/login`"
         width="100%"
         height="100%"
@@ -22,9 +23,15 @@
       <p>{{ t('tenant.mismatch_description', { tenant: backendTenantName }) }}</p>
       <template #footer>
         <Button
-          :label="t('tenant.mismatch_switch_action')"
-          icon="pi pi-refresh"
+          :label="t('tenant.mismatch_switch_action', { tenant: backendTenantName })"
+          severity="secondary"
           @click="onSwitchToBackendTenant"
+        />
+        <Button
+          v-if="urlTenant"
+          :label="t('tenant.mismatch_use_this_tenant', { tenant: urlTenant.name })"
+          icon="pi pi-refresh"
+          @click="onUseUrlTenant"
         />
       </template>
     </Dialog>
@@ -35,14 +42,19 @@
 import { resolveThreadForDisplay } from '@core/sdk/client'
 import { onBeforeUnmount, onMounted } from 'vue'
 
+import type { TenantMembershipDto } from '@core/sdk/client'
+
 const { t } = useI18n()
 const runtimeConfig = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
 const localePath = useLocalePath()
-const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
-const { setTenant, tenantId } = useTenant()
+const { mismatchDetected, backendTenantId, backendTenantName, refresh: refreshActiveTenant } = useTenantPolling()
+const { setTenant, activateTenant, tenantId } = useTenant()
+const { tenants } = useTenantMemberships()
+// Undefined when the user is not a member of the URL's tenant: the backend refuses to make it active.
+const urlTenant = computed(() => tenants.value?.find((tenant: TenantMembershipDto) => tenant.id === tenantId.value))
 const { setOpenWebUIContext, updateOpenWebUIContext, clearOpenWebUIContext } = useOpenWebUIContext()
 const chatIframe = ref<HTMLIFrameElement | null>(null)
 const { disclaimer } = useChatDisclaimer()
@@ -59,6 +71,18 @@ async function onSwitchToBackendTenant() {
 }
 
 let initialLoadDone = false
+const iframeKey = ref(0)
+
+// The URL already names this tenant, so only the backend switches. OpenWebUI
+// loaded the other tenant's models, so the iframe is recreated, and its first
+// load must not count as a navigation away.
+async function onUseUrlTenant() {
+  if (!tenantId.value) return
+  await activateTenant(tenantId.value)
+  await refreshActiveTenant()
+  initialLoadDone = false
+  iframeKey.value++
+}
 
 const handleIframeLoad = () => {
   sendDisclaimer()

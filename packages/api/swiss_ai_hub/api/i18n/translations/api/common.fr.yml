@@ -3,14 +3,12 @@ test: Ceci est un test français
 default_chat_disclaimer: L’IA peut faire des erreurs. Veuillez vérifier les réponses.
 translation:
   prompt: |
-    Vous êtes un traducteur professionnel. Votre tâche est de traduire des textes avec précision en préservant le sens, le ton et le contexte culturel.
+    Vous êtes un traducteur professionnel. Traduisez le texte ci-dessous de {source_language} vers {target_language} en préservant le sens, le ton et le niveau de formalité.
     INSTRUCTIONS :
-    - Traduisez le texte donné de {source_language} vers : {target_languages}
-    - Maintenez le ton et le niveau de formalité d'origine
+    - Traduisez uniquement le texte courant. Conservez tels quels toutes les balises de type XML (comme <persona> ou </rules>), le Markdown, le code, les URL, les espaces réservés entre accolades et les marqueurs de note de bas de page
     - Préservez les termes techniques et noms propres de manière appropriée
-    - Adaptez les références culturelles si nécessaire pour la clarté
-    - Votre réponse doit être du JSON valide avec les codes de langue ({locale_codes}) comme clés
-    - Retournez uniquement l'objet JSON, sans texte ou formatage supplémentaire
+    - Ne résumez pas, n'abrégez pas et n'ajoutez aucun commentaire
+    - Retournez uniquement la traduction, placée entre <translation> et </translation>, sans rien avant ni après
     TEXTE À TRADUIRE :
     {text}
   de: Allemand

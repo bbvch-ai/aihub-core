@@ -5,12 +5,19 @@ manual_upload:
     synchronises them.
 rclone:
   display_name: Cloud storage sync (rclone)
-  description: Keeps the database in sync with a Google Drive folder or an S3 bucket.
-    Each top-level folder becomes a namespace.
+  description: Keeps the database in sync with a SharePoint document library, a OneDrive,
+    a Google Drive folder or an S3 bucket. Each top-level folder becomes a namespace.
   config:
     backend_type:
       label: Storage backend
       help: Which kind of system the files are pulled from.
+      options:
+        onedrive: OneDrive / SharePoint
+        drive: Google Drive
+        s3: Amazon S3 / S3-compatible
+        azureblob: Azure Blob Storage
+        sftp: SFTP
+        local: Local folder
     root_path:
       label: Root folder
       help: Folder inside the source to sync. Each of its top-level folders becomes
@@ -34,10 +41,12 @@ rclone:
         help: Entra ID tenant (directory) ID.
       drive_id:
         label: Drive ID
-        help: ID of the drive to sync; for SharePoint the document library's drive.
+        help: ID of the drive to sync. For SharePoint, the drive of the document library,
+          an ID starting with b! as Microsoft Graph lists it among the site's drives.
       drive_type:
         label: Drive type
-        help: personal, business or documentLibrary (SharePoint).
+        help: personal, business or documentLibrary (SharePoint). rclone takes the
+          value Microsoft Graph reports for the drive when it connects.
       region:
         label: Region
         help: 'Microsoft cloud: global, us, de or cn.'
@@ -146,3 +155,34 @@ structured:
         label: Additional JQL filter
         help: Optional. Only issues that also match this JQL are synced, e.g. issuetype
           != "Service Request". Without ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: Confluence URL
+        help: The address you open Confluence at, e.g. https://acme.atlassian.net/wiki
+          for Confluence Cloud or https://confluence.acme.ch for Confluence Data Center.
+      deployment:
+        label: Confluence edition
+        help: Confluence Cloud signs in with an account e-mail and an API token, Confluence
+          Data Center with a personal access token.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: Account e-mail
+        help: E-mail of the Confluence Cloud account the API token belongs to.
+      api_token:
+        label: Token
+        help: A Confluence Cloud API token without scopes, or a Confluence Data Center
+          personal access token. Stored encrypted. The database holds every page this
+          account can read in the listed spaces, so use a dedicated read-only account.
+      space_keys:
+        label: Spaces
+        help: Keys of the spaces to sync, e.g. ENG. Each space becomes a namespace,
+          and its page tree becomes folders.
+      labels:
+        label: Labels
+        help: Optional. Only pages carrying at least one of these labels are synced.
+      ancestor_page_ids:
+        label: Parent pages
+        help: Optional. Only these pages and the pages below them are synced. A page's
+          ID is the number in its URL.

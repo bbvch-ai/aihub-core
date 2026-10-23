@@ -37,7 +37,8 @@ Three are granted to a new tenant by default:
 - **Document Intelligence Assistant** — answers from your knowledge bases and cites its sources
 
 The Universal Agent is the one profile an admin configures once for open-ended work: the model decides per message
-whether to search knowledge, read the user's attached files, recall memory or use another enabled tool.
+whether to search knowledge, read the user's attached files, recall memory or use another enabled tool. The Knowledge
+Extraction Agent collects records from many documents into one table, each row naming its file.
 
 The rest are documented here because they are built, supported and ready to run — but a tenant only sees one after a
 sysadmin grants it. That keeps a new tenant's catalog small enough to choose from, without taking anything away from a

@@ -7,6 +7,8 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import MANUAL_PARTITIONS_MARKER
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_state import MilvusPartitionState
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import (
     MilvusIndexType,
     create_milvus_vector_store,
@@ -293,6 +295,14 @@ def then_collection_has_partitions(context, milvus_client, expected_count: int):
     """Verify number of physical partitions."""
     partitions = milvus_client.list_partitions(collection_name=context["collection_name"])
     assert len(partitions) == expected_count, f"Expected {expected_count} partitions, got {len(partitions)}"
+
+
+@then("the vector store should see a complete partition layout")
+def then_vector_store_sees_complete_layout(context, milvus_client):
+    """The marker is what tells a collection still being partitioned apart from a legacy one."""
+    description = milvus_client.describe_collection(collection_name=context["collection_name"])
+    assert description["description"] == MANUAL_PARTITIONS_MARKER
+    assert context["vector_store"].partition_state() is MilvusPartitionState.COMPLETE
 
 
 @then(parsers.parse('querying for namespace "{namespace}" should return {expected_count:d} nodes'))

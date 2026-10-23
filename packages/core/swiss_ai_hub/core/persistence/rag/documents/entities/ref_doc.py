@@ -111,7 +111,7 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def list_ingested_summaries(cls, db_alias: str, namespace: str) -> list["RefDoc"]:
+    def list_ingested_summaries(cls, db_alias: str, namespace: str, max_time_ms: int | None = None) -> list["RefDoc"]:
         """Every fully ingested document of a namespace, ordered by source and loaded with its metadata only.
 
         Queries the alias's database directly instead of through `switch_db`, which rebinds `RefDoc` for the whole
@@ -132,6 +132,8 @@ class RefDoc(Document):
             )
             .sort(_RAW_SOURCE, 1)
         )
+        if max_time_ms is not None:
+            rows = rows.max_time_ms(max_time_ms)
         return [cls._from_son(son) for son in rows]
 
     @classmethod

@@ -11,6 +11,8 @@ from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter i
     KIND_REF,
     AbstractStructuredSourceAdapter,
 )
+from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_adapter import ConfluenceAdapter
+from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_adapter import JiraAdapter
 from swiss_ai_hub.pipeline.source_pipelines.jira.jira_options import JiraOptions
 
@@ -32,11 +34,14 @@ class StructuredSyncConfig(SourcePipelineConfig):
 
     source_kind: Annotated[str | Select, Field(description="Application the records are read from.")]
     jira: Annotated[JiraOptions, Field(description="Jira options.")] = Field(default_factory=JiraOptions)
+    confluence: Annotated[ConfluenceOptions, Field(description="Confluence options.")] = Field(
+        default_factory=ConfluenceOptions
+    )
 
     @classmethod
     def adapters(cls) -> list[type[AbstractStructuredSourceAdapter]]:
-        """The kinds this pipeline offers: Jira; Confluence follows in #1955."""
-        return [JiraAdapter]
+        """The kinds this pipeline offers: Jira and Confluence."""
+        return [JiraAdapter, ConfluenceAdapter]
 
     @classmethod
     def as_form(cls) -> Self:

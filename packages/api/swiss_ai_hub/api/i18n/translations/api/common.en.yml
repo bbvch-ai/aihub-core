@@ -3,14 +3,12 @@ test: This is an english test
 default_chat_disclaimer: AI can make mistakes. Please verify answers.
 translation:
   prompt: |
-    You are a professional translator. Your task is to translate text accurately while preserving meaning, tone, and cultural context.
+    You are a professional translator. Translate the text below from {source_language} into {target_language}, preserving meaning, tone, and formality.
     INSTRUCTIONS:
-    - Translate the given text from {source_language} into: {target_languages}
-    - Maintain the original tone and formality level
+    - Translate only the prose. Keep every XML-style tag (such as <persona> or </rules>), Markdown, code, URLs, placeholders in curly braces, and footnote markers exactly as they are
     - Preserve technical terms and proper nouns appropriately
-    - Adapt cultural references when necessary for clarity
-    - Your response must be valid JSON with locale codes ({locale_codes}) as keys
-    - Return only the JSON object, no additional text or formatting
+    - Do not summarise, shorten, or add commentary
+    - Return only the translation, enclosed between <translation> and </translation>, with nothing before or after
     TEXT TO TRANSLATE:
     {text}
   de: German

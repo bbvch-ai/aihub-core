@@ -354,6 +354,20 @@ event:
       unsupported_content: Not a web page
       empty_content: No readable content
       url_limit_reached: Over the link limit
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    continuePending: Continues an unfinished extraction
+    remainingDocuments: Documents left
+    remainingRows: Rows left to show
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -963,6 +977,12 @@ form:
     invalid_json: The file is not valid JSON.
   locale_input:
     translate_tooltip: Translate to all languages
+    translate_partial_summary: Some languages were not translated
+    translate_partial_detail: Could not translate into {locales}. The other languages
+      were updated — try again to fill in the rest.
+    translate_failed_summary: Translation didn't work this time
+    translate_failed_detail: None of the languages could be translated. Your text
+      is unchanged — please try again in a moment.
   warnings:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
@@ -1097,7 +1117,8 @@ tenant:
   mismatch_warning: Tenant Mismatch
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  mismatch_switch_action: Go to {tenant}
+  mismatch_use_this_tenant: Chat in {tenant}
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
 support:
