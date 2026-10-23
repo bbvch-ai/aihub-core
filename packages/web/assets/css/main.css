@@ -11,18 +11,25 @@ html {
   max-width: min(32rem, calc(100vw - 2rem));
 }
 
-.p-select-option,
-.p-multiselect-option {
+/* Scoped to the overlay so these outrank PrimeVue's own `.p-select-option { white-space: nowrap }`,
+   which is injected after this file with the same specificity. */
+.p-select-overlay .p-select-option,
+.p-multiselect-overlay .p-multiselect-option {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.p-select-overlay .p-select-option-label,
+.p-multiselect-overlay .p-multiselect-option > span {
+  min-width: 0;
 }
 
 .p-menu-overlay {
   max-width: min(32rem, calc(100vw - 2rem));
 }
 
-.p-menu-item-label,
-.p-confirmdialog-message {
+.p-menu-overlay .p-menu-item-label,
+.p-confirmdialog .p-confirmdialog-message {
   overflow-wrap: anywhere;
 }
 

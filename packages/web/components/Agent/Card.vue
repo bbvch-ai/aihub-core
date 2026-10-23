@@ -4,8 +4,8 @@
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
     @click="emit('click', agent)"
   >
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex min-w-0 items-center justify-start gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div class="flex min-w-0 flex-1 basis-48 items-center justify-start gap-2">
         <div class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900">
           <Icon
             :name="agent.agent_config.icon"

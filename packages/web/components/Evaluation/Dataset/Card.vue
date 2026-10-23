@@ -3,8 +3,8 @@
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
   >
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex min-w-0 items-center justify-start gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div class="flex min-w-0 flex-1 basis-48 items-center justify-start gap-2">
         <div
           class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
         >
