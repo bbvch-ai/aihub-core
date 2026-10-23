@@ -39,9 +39,12 @@ flowchart TD
    in several of the projects is one release across all of them.
 2. **Read the tickets.** Every ticket of that fix version in the configured projects is read, minus whatever the
    profile's JQL filter leaves out.
-3. **Write the notes.** The model writes one or two sentences per ticket for the configured readers, from the ticket's
-   summary and description. Tickets are sent a batch at a time, several batches at once, and each batch appears in the
-   chat as soon as it and the ones before it are done, so the answer starts within seconds even for a large release.
+3. **Write the notes.** The model writes one sentence per ticket, two at most, for the configured readers, from the
+   ticket's summary and description. The notes read like a product changelog: impersonal (no "you", no "we"), in the
+   present tense, a feature naming the new capability and a fix saying what no longer goes wrong, e.g. *"Saving a draft
+   no longer discards attached images."* Tickets are sent a batch at a time, several batches at once, and each batch
+   appears in the chat as soon as it and the ones before it are done, so the answer starts within seconds even for a
+   large release.
 4. **Translate.** Each further language follows as its own block, translated from the written notes.
 5. **Follow-ups.** As in every chat assistant, a title is set for the conversation and follow-up questions are
    suggested.

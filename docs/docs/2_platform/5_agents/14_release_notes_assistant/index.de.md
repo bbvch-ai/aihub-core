@@ -1,7 +1,7 @@
 ---
 title: Versionshinweis-Assistent
 description: Ein Chat-Assistent, der die Versionshinweise einer Jira-Lösungsversion schreibt — ein Hinweis pro Ticket, nach Typ gruppiert, in jeder konfigurierten Sprache.
-source_sha: 6173b719ba05f4cb68a8c5bf5e5845280f88963aa9704a9f6ed2c16b32df0381
+source_sha: d4930d42acf4fbe0370df6deeba3b6aa8188c4ffe8a5fe8c2cd85c7a3af7262a
 ---
 
 # Versionshinweis-Assistent
@@ -43,10 +43,12 @@ flowchart TD
    mehreren Projekten vorkommt, ist eine Version über alle hinweg.
 2. **Tickets lesen.** Jedes Ticket dieser Lösungsversion in den konfigurierten Projekten wird gelesen, abzüglich dessen,
    was der JQL-Filter des Profils ausschließt.
-3. **Hinweise schreiben.** Das Modell schreibt pro Ticket ein bis zwei Sätze für die konfigurierte Leserschaft, aus der
-   Zusammenfassung und der Beschreibung des Tickets. Die Tickets werden stapelweise gesendet, mehrere Stapel
-   gleichzeitig, und jeder Stapel erscheint im Chat, sobald er und die vorherigen fertig sind. So beginnt die Antwort
-   auch bei einer großen Version innerhalb von Sekunden.
+3. **Hinweise schreiben.** Das Modell schreibt pro Ticket einen Satz, höchstens zwei, für die konfigurierte Leserschaft,
+   aus der Zusammenfassung und der Beschreibung des Tickets. Die Hinweise lesen sich wie ein Produkt-Changelog:
+   unpersönlich (kein „Sie", kein „wir"), im Präsens, eine neue Funktion nennt die neue Möglichkeit, eine Fehlerbehebung
+   sagt, was nicht mehr schiefgeht, z. B. *„Beim Speichern eines Entwurfs gehen angehängte Bilder nicht mehr verloren."*
+   Die Tickets werden stapelweise gesendet, mehrere Stapel gleichzeitig, und jeder Stapel erscheint im Chat, sobald er
+   und die vorherigen fertig sind. So beginnt die Antwort auch bei einer großen Version innerhalb von Sekunden.
 4. **Übersetzen.** Jede weitere Sprache folgt als eigener Block, übersetzt aus den geschriebenen Hinweisen.
 5. **Folgefragen.** Wie bei jedem Chat-Assistenten erhält die Unterhaltung einen Titel, und es werden Folgefragen
    vorgeschlagen.
