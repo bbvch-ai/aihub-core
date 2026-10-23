@@ -83,6 +83,17 @@ so LiteLLM fails to start loudly instead of silently falling back.
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
+`default_temperature`, `default_top_p` and `max_images` are AI-Hub keys curated by hand per chat model, under the same
+literal-number rule.
+
+- **`default_temperature` and `default_top_p`** are what an agent samples at when its profile leaves the field unset
+  (`LLMConfig.resolved_temperature` / `resolved_top_p`). Take them from the model's `generation_config.json` on Hugging
+  Face, or from its model card when that file sets none. A model without `default_temperature` is sampled at 0.0;
+  without `default_top_p`, the provider decides.
+- **`max_images`** is the most images one request may carry, so `ImageAdmission` refuses or trims before the provider
+  rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
+  `--limit-mm-per-prompt` in the compose template.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's

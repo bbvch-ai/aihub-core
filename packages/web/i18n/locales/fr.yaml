@@ -987,6 +987,17 @@ form:
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  modelBound:
+    providerDefault: valeur par défaut du fournisseur
+    overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
+      la valeur par défaut.
+    defaultPlaceholder: 'Valeur par défaut du modèle : {value}'
+    maximumHint: Au maximum {maximum} pour {model}.
+    maximumHintWithFill: 'Au maximum {maximum} pour {model} : {percent} des {modelMaximum}
+      tokens du modèle, comme marge pour les écarts de comptage des tokens.'
+    aboveMaximum: Au maximum {maximum} sont autorisés pour {model}.
+  modelGated:
+    unavailable: '{model} ne prend pas cela en charge.'
   cron:
     errors:
       required: Chaque position est requise — une position vide ne constitue pas une
@@ -1019,7 +1030,7 @@ lib:
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
   knowledgeDatabases:
-    unavailable: "{name} (supprimée ou non visible pour vous)"
+    unavailable: '{name} (supprimée ou non visible pour vous)'
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher

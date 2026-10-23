@@ -6,7 +6,7 @@ and a waiting step never hangs. Images are left out, since they already reach th
 """
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, PropertyMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -69,7 +69,7 @@ async def _read(
     last_page: int | None = None,
 ) -> list:
     config = _config()
-    with patch.object(ConversationFields, "input_budget", return_value=budget):
+    with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=budget):
         return await AttachedFiles.read_step(
             LLMWrappingAgent(),
             request=AttachedFiles.read(files, HISTORY, query, reserve_tokens, cite_sources, first_page, last_page),

@@ -222,12 +222,12 @@ class TestTranslateFromRequest:
         with (
             patch(f"{_SERVICE_MODULE}.PromptTemplate"),
             patch(f"{_SERVICE_MODULE}.LiteLLMService.api_key_for_user", new_callable=AsyncMock),
-            patch(f"{_SERVICE_MODULE}.LLMConfig", return_value=llm_config) as llm_config_class,
+            patch(f"{_SERVICE_MODULE}.LLMConfig.deterministic", return_value=llm_config) as deterministic_config,
         ):
             response = await TranslationService.translate_from_request(
                 TranslationRequest(text=LocaleString(en="Hello")), _locale_handler(), MagicMock()
             )
 
-        llm_config_class.assert_called_once_with(model_name=TranslationService.DEFAULT_MODEL)
+        deterministic_config.assert_called_once_with(TranslationService.DEFAULT_MODEL)
         assert response.translated.model_dump() == {"en": "Hello", "de": "Hallo", "fr": None, "it": "Ciao"}
         assert response.failed_locales == ["fr"]

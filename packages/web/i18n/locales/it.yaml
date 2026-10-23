@@ -985,6 +985,17 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelBound:
+    providerDefault: predefinito del fornitore
+    overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
+      usare il valore predefinito.
+    defaultPlaceholder: 'Predefinito del modello: {value}'
+    maximumHint: Al massimo {maximum} per {model}.
+    maximumHintWithFill: 'Al massimo {maximum} per {model}: il {percent} dei {modelMaximum}
+      token del modello, come margine per le differenze nel conteggio dei token.'
+    aboveMaximum: Per {model} sono consentiti al massimo {maximum}.
+  modelGated:
+    unavailable: '{model} non lo supporta.'
   cron:
     errors:
       required: Ogni posizione è obbligatoria — una vuota non è una pianificazione
@@ -1017,7 +1028,7 @@ lib:
     empty: L'agente selezionato non è configurato per alcuna raccolta.
     unavailable: Salvata, ma non consultata dall'agente selezionato
   knowledgeDatabases:
-    unavailable: "{name} (eliminato o non visibile a te)"
+    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare

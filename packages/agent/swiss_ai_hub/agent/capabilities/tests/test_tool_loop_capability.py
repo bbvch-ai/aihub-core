@@ -156,7 +156,7 @@ def _conversation(reply: Message) -> MagicMock:
     conversation.llm.cost_reporting_llm = cost_reporting_llm
     conversation.llm.model_name = "text-generation/test"
     conversation.llm.token_counter = lambda text: text.split()
-    conversation.input_budget.return_value = 100_000
+    conversation.input_budget = 100_000
     return conversation
 
 
