@@ -6,8 +6,10 @@ from .dataset_item_create import DatasetItemCreate
 
 
 class DatasetCreate(BaseModel):
-    dataset_name: Annotated[str, Field(description="The name for the new dataset.", min_length=1)]
+    dataset_name: Annotated[str, Field(description="The name for the new dataset.", min_length=1, max_length=120)]
     items: Annotated[
         list[DatasetItemCreate], Field(description="A list of question-answer items to include in the dataset.")
     ]
-    description: Annotated[str | None, Field(description="An optional description for the dataset.")] = None
+    description: Annotated[
+        str | None, Field(description="An optional description for the dataset.", max_length=500)
+    ] = None

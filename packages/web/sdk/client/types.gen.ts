@@ -9701,6 +9701,12 @@ export type InputText = {
    */
   iconSuffix?: string | null;
   /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
+  /**
    * Validation
    */
   readonly validation: string;
@@ -11109,6 +11115,12 @@ export type LocaleInput = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
   /**
    * Validation
    *
@@ -18294,6 +18306,12 @@ export type Textarea = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   /**
    * Validation
    */
@@ -26167,6 +26185,12 @@ export type InputTextWritable = {
    * Icon suffix
    */
   iconSuffix?: string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 
@@ -27333,6 +27357,12 @@ export type LocaleInputWritable = {
    * Placeholder text for each language
    */
   placeholder?: LocaleString | string | null;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters per language
+   */
+  maxLength?: number | null;
   [key: string]: unknown;
 };
 
@@ -31603,6 +31633,12 @@ export type TextareaWritable = {
    * Whether to automatically resize based on content
    */
   autoResize?: boolean;
+  /**
+   * Maxlength
+   *
+   * Maximum number of characters
+   */
+  maxlength?: number | null;
   [key: string]: unknown;
 };
 

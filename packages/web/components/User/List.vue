@@ -23,10 +23,12 @@
     <Column
       field="name"
       :header="t('user.list.name')"
+      body-class="[overflow-wrap:anywhere]"
     />
     <Column
       field="email"
       :header="t('user.list.email')"
+      body-class="[overflow-wrap:anywhere]"
     />
     <Column
       field="is_sys_admin"
@@ -44,6 +46,7 @@
     <Column
       field="roles"
       :header="t('user.list.roles')"
+      body-style="max-width: 24rem"
     >
       <template #body="{ data }">
         <UserRoleChips
