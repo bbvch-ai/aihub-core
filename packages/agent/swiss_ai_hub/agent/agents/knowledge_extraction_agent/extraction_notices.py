@@ -13,8 +13,15 @@ class ExtractionNotices:
     """What the answer says about the discovery itself: why there is no table, or what the table may be missing."""
 
     @staticmethod
-    def for_table(scope: KnowledgeDocumentRunScope, stopped_early: bool, t: LocaleHandler) -> list[str]:
-        notices = [t("agent.knowledge_extraction_agent.messages.stopped_early")] if stopped_early else []
+    def for_table(
+        scope: KnowledgeDocumentRunScope, stopped_early: bool, t: LocaleHandler, by_location: bool = False
+    ) -> list[str]:
+        """`by_location`: the search stopped and the documents were selected by folder, so none are missing."""
+        notices = []
+        if by_location:
+            notices.append(t("agent.knowledge_extraction_agent.messages.selected_by_location"))
+        elif stopped_early:
+            notices.append(t("agent.knowledge_extraction_agent.messages.stopped_early"))
         if scope.ignored:
             ignored = ", ".join(f"{reference.database}/{reference.namespace}" for reference in scope.ignored)
             notices.append(t("agent.knowledge_extraction_agent.messages.ignored_references", collections=ignored))

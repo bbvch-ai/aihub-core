@@ -75,6 +75,7 @@ class ExtractionContinuation:
             notices=notices,
             show_collection=pending.show_collection,
             tool_call_id=request.tool_call_id,
+            collections=pending.collections,
             part=index + 1,
             parts=pending.part_count,
             first_document=pending.part_starts[index] + 1,

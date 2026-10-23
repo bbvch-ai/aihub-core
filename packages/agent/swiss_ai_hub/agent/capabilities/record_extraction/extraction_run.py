@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.generative_ai import BucketNamespacePair
 
 
 class ExtractionRun(BaseModel):
@@ -22,6 +23,10 @@ class ExtractionRun(BaseModel):
         bool, Field(description="Whether the table names each row's collection, as when it spans several.")
     ] = False
     tool_call_id: Annotated[str | None, Field(description="The tool call the extraction answers, if any.")] = None
+    collections: Annotated[
+        list[BucketNamespacePair],
+        Field(description="The collections the run may read, so rows it leaves for later are checked against them."),
+    ] = []
     sample: Annotated[
         bool, Field(description="Whether these documents are a sample of a selection too large for one answer.")
     ] = False

@@ -39,7 +39,10 @@ class SelectionFallback:
         displayer: EventDisplayer,
         user: UserIdentity | None,
         t: LocaleHandler,
+        stopped_early: bool = False,
     ) -> ExtractRecordsArguments | None:
+        """The selection the searches point to. After a search stopped at its limit, only by folder and path: its hits
+        are incomplete, and a condition on the rows is checked in every document by the extraction instead."""
         if not calls:
             return None
         prompt = RichPromptTemplate(t("agent.knowledge_extraction_agent.prompt.select_now"))
@@ -52,13 +55,14 @@ class SelectionFallback:
                     request=query,
                     scope=scope.describe(),
                     transcript=SelectionFallback._transcript(calls, results),
+                    stopped=stopped_early,
                 )
             except ValueError:
                 logger.warning("[knowledge-extraction] the model stated no usable selection")
                 return None
         if answer.nothing_matches:
             return None
-        return ExtractRecordsArguments.model_validate(answer.model_dump(exclude={"nothing_matches"}))
+        return answer.as_arguments(by_location=stopped_early)
 
     @staticmethod
     def _transcript(calls: list[ToolCallApprovedEvent], results: list[ToolResultEvent]) -> str:

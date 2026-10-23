@@ -189,6 +189,7 @@ class ExtractionPlanner:
             cut_short=request.cut_short,
             show_collection=ExtractionPlanner._spans_collections(documents),
             tool_call_id=request.tool_call_id,
+            collections=request.collections,
         )
 
     @staticmethod

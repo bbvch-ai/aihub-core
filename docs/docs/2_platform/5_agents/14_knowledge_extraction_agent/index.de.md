@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: bf326388f69581cfc0b6ae2f5652157bd085e6783d7c80693589fb8c57e5d689
+source_sha: c54681805fefe2d5dd12d7529e434198ab6923e81fbe565545e050d9c26ae8e9
 ---
 
 # Wissensextraktions-Agent
@@ -105,16 +105,16 @@ weil eine Zeile in einem nicht gelesenen Teil nicht gefunden wird. Siehe ADR
 
 Jede Anfrage ist begrenzt, und nichts wird gekürzt, ohne dass die Antwort es sagt:
 
-| Grenze                                      | Was an der Grenze geschieht                                                                                               |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Maximale Entscheidungen**                 | Die Suche nach Dokumenten bricht ab; es können Dokumente fehlen, und die Antwort sagt es.                                 |
-| **Maximale Werkzeugaufrufe**                | Wie oben.                                                                                                                 |
-| **Minuten pro Antwort**                     | Grössere Auswahlen erhalten eine Stichprobe und das Angebot, sie einzugrenzen oder in Teilen fortzufahren.                |
-| **Dateien pro Antwort**                     | Wie oben, für die Anzahl der Dokumente.                                                                                   |
-| **Höchstens passende Dokumente**            | Darüber wird nur das Eingrenzen angeboten.                                                                                |
-| **Zeilen in der Tabelle**                   | Die übrigen Zeilen folgen, wenn Sie mit *weiter* antworten.                                                               |
-| **Längstes vollständig gelesenes Dokument** | Ein längeres Dokument wird in seinen relevanten Teilen gelesen, und seine Zeilen werden als *teilweise gelesen* markiert. |
-| **Gleichzeitige Modellaufrufe**             | Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht; begrenzt die Last.                                   |
+| Grenze                                      | Was an der Grenze geschieht                                                                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Maximale Entscheidungen**                 | Die Suche nach Dokumenten bricht ab. Hatte der Agent noch keine Dokumente gewählt, wählt er sie nach Ordner aus und prüft die Bedingungen der Anfrage in jedem; hatte er schon gewählt, können Dokumente fehlen. Die Antwort sagt, was zutrifft. |
+| **Maximale Werkzeugaufrufe**                | Wie oben.                                                                                                                                                                                                                                        |
+| **Minuten pro Antwort**                     | Grössere Auswahlen erhalten eine Stichprobe und das Angebot, sie einzugrenzen oder in Teilen fortzufahren.                                                                                                                                       |
+| **Dateien pro Antwort**                     | Wie oben, für die Anzahl der Dokumente.                                                                                                                                                                                                          |
+| **Höchstens passende Dokumente**            | Darüber wird nur das Eingrenzen angeboten.                                                                                                                                                                                                       |
+| **Zeilen in der Tabelle**                   | Die übrigen Zeilen folgen, wenn Sie mit *weiter* antworten.                                                                                                                                                                                      |
+| **Längstes vollständig gelesenes Dokument** | Ein längeres Dokument wird in seinen relevanten Teilen gelesen, und seine Zeilen werden als *teilweise gelesen* markiert.                                                                                                                        |
+| **Gleichzeitige Modellaufrufe**             | Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht; begrenzt die Last.                                                                                                                                                          |
 
 Zusätzlich gilt eine feste Grenze: Die Zeilen eines Dokuments werden in einer Nachricht übertragen, daher behält ein
 Dokument mit sehr vielen langen Zeilen (rund 40 Zeilen mit vollständigen Vertragsklauseln) die ersten, und die

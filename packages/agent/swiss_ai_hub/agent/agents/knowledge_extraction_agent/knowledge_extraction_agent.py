@@ -138,8 +138,9 @@ class KnowledgeExtractionAgent(Agent):
         user: UserIdentity | None = None,
     ) -> RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
         """Extract from the documents the model settled on, re-resolved within the profile's limits. A model that
-        ended its search without stating a selection, or was stopped at its limit before it did, is asked once for
-        the selection its searches point to; a stopped search still marks the table as possibly incomplete."""
+        ended its search without stating a selection is asked once for the selection its searches point to; one stopped
+        at its limit before it did is asked for folders and paths only, since its hits are incomplete. A stopped search
+        whose own selection stands still marks the table as possibly incomplete."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -147,9 +148,10 @@ class KnowledgeExtractionAgent(Agent):
             notices = ExtractionNotices.for_table(scope, finished.stopped_early, t)
             return RecordExtraction.continue_pending(scope.pairs(), notices)
         selection = SelectionCall.last(decided, calls, results)
+        by_location = selection is None and finished.stopped_early
         if selection is None:
             selection = await SelectionFallback.ask(
-                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t
+                ctx.query, calls or [], results or [], scope, agent_config.llm, displayer, user, t, by_location
             )
         if selection is None:
             notices = [
@@ -163,8 +165,8 @@ class KnowledgeExtractionAgent(Agent):
             scope.pairs(),
             selection.instructions,
             selection.row_terms,
-            notices=ExtractionNotices.for_table(scope, finished.stopped_early, t),
-            cut_short=finished.stopped_early,
+            notices=ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
+            cut_short=finished.stopped_early and not by_location,
         )
 
     @step(

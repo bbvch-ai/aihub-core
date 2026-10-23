@@ -1,6 +1,7 @@
 """The Knowledge Extraction Agent lets the model find the documents, extracts from the ones it settled on within the
 profile's limits, and answers with the table; whatever goes wrong before a table exists ends in a clear answer."""
 
+import json
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -26,6 +27,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableMarkup,
+    KnowledgeDocumentCriteria,
     KnowledgeDocumentSummary,
     LLMConfig,
 )
@@ -414,7 +416,7 @@ async def _stopped_search(selection: ExtractRecordsArguments | None) -> tuple[An
 
 
 @pytest.mark.asyncio
-async def test_a_search_stopped_at_its_limit_extracts_what_it_found_and_says_it_may_be_incomplete():
+async def test_a_search_stopped_at_its_limit_selects_by_folder_and_is_not_marked_incomplete():
     found = ExtractRecordsArguments(
         any_of=[{"path_glob": "contracts/**"}], fields="supplier, liability cap", instructions="cap below EUR 100k"
     )
@@ -422,9 +424,11 @@ async def test_a_search_stopped_at_its_limit_extracts_what_it_found_and_says_it_
     request, ask = await _stopped_search(found)
 
     ask.assert_awaited_once()
+    assert ask.await_args.args[-1] is True
     assert isinstance(request, ExtractRecordsEvent)
-    assert (request.instructions, request.cut_short) == ("cap below EUR 100k", True)
-    assert any("stopped at its limit" in notice for notice in request.notices)
+    assert (request.instructions, request.cut_short) == ("cap below EUR 100k", False)
+    assert any("selected by folder" in notice for notice in request.notices)
+    assert not any("may be missing" in notice for notice in request.notices)
 
 
 @pytest.mark.asyncio
@@ -435,27 +439,94 @@ async def test_a_stopped_search_that_found_nothing_still_says_so():
     assert "reached its limit" in answer.stop.output_messages[-1].content
 
 
-@pytest.mark.asyncio
-async def test_the_fallback_extracts_nothing_when_the_model_says_nothing_matches():
+async def _ask_fallback(answer: Any, stopped_early: bool = False) -> tuple[ExtractRecordsArguments | None, AsyncMock]:
     from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback import SelectionFallback
-    from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_answer import SelectionFallbackAnswer
 
-    answer = SelectionFallbackAnswer(any_of=[{"content_query": "Umbrella"}], fields="item", nothing_matches=True)
+    predict = AsyncMock(return_value=answer)
     llm = MagicMock()
-    llm.model_copy.return_value.astructured_predict = AsyncMock(return_value=answer)
+    llm.model_copy.return_value.astructured_predict = predict
     llm_config = MagicMock()
     llm_config.cost_reporting_llm.return_value.__aenter__ = AsyncMock(return_value=llm)
     llm_config.cost_reporting_llm.return_value.__aexit__ = AsyncMock(return_value=None)
-
     selection = await SelectionFallback.ask(
-        "hardware from Umbrella",
-        [_select("s1", "invoices/**")],
+        "contracts with a liability cap below EUR 100,000",
+        [_select("s1", "contracts/**")],
         [_result("s1")],
         _scope(),
         llm_config,
         _displayer(),
         None,
         T,
+        stopped_early,
     )
+    return selection, predict
+
+
+@pytest.mark.asyncio
+async def test_the_fallback_extracts_nothing_when_the_model_says_nothing_matches():
+    from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_answer import SelectionFallbackAnswer
+
+    answer = SelectionFallbackAnswer(any_of=[{"content_query": "Umbrella"}], fields="item", nothing_matches=True)
+
+    selection, _ = await _ask_fallback(answer)
 
     assert selection is None
+
+
+def test_the_fallback_cannot_select_documents_by_the_ids_its_searches_showed():
+    from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_answer import SelectionFallbackAnswer
+
+    schema = json.dumps(SelectionFallbackAnswer.model_json_schema())
+
+    assert "document_ids" not in schema
+    assert "content_query" in schema
+
+
+@pytest.mark.parametrize(
+    ("stopped_early", "expected"),
+    [
+        (False, KnowledgeDocumentCriteria(path_glob="contracts/**", content_query="Molina")),
+        (True, KnowledgeDocumentCriteria(path_glob="contracts/**")),
+    ],
+)
+@pytest.mark.asyncio
+async def test_after_a_stopped_search_the_fallback_keeps_only_folders_and_paths(stopped_early: bool, expected: Any):
+    from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_answer import SelectionFallbackAnswer
+
+    answer = SelectionFallbackAnswer(
+        any_of=[{"path_glob": "contracts/**", "content_query": "Molina"}],
+        fields="supplier, liability cap",
+        instructions="cap below EUR 100,000",
+    )
+
+    selection, predict = await _ask_fallback(answer, stopped_early)
+
+    assert selection is not None
+    assert selection.any_of == [expected]
+    assert selection.instructions == "cap below EUR 100,000"
+    assert predict.await_args.kwargs["stopped"] is stopped_early
+
+
+@pytest.mark.asyncio
+async def test_a_stopped_search_without_a_folder_selects_every_document_in_scope():
+    from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback_answer import SelectionFallbackAnswer
+
+    answer = SelectionFallbackAnswer(any_of=[{"content_query": "liability cap"}], fields="supplier, liability cap")
+
+    selection, _ = await _ask_fallback(answer, stopped_early=True)
+
+    assert selection is not None
+    assert selection.any_of == [KnowledgeDocumentCriteria()]
+
+
+def test_the_fallback_prompt_asks_for_folders_only_after_a_stopped_search():
+    from llama_index.core.prompts.rich import RichPromptTemplate
+
+    prompt = RichPromptTemplate(T("agent.knowledge_extraction_agent.prompt.select_now"))
+    rendered = {
+        stopped: prompt.format(request="r", scope="s", transcript="t", stopped=stopped) for stopped in (False, True)
+    }
+
+    assert "Select by folder and path only" in rendered[True]
+    assert "Select by folder and path only" not in rendered[False]
+    assert "document_ids" not in rendered[True]

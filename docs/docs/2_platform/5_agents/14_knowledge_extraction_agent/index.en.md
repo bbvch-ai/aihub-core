@@ -95,16 +95,16 @@ be missing)", because a line in a part that was not read is not found. See the A
 
 Every request is bounded, and nothing is cut without the answer saying so:
 
-| Limit                           | What happens at the limit                                                              |
-| ------------------------------- | -------------------------------------------------------------------------------------- |
-| **Maximum Decisions**           | The search for documents stops; documents may be missing, and the answer says so.      |
-| **Maximum Tool Calls**          | As above.                                                                              |
-| **Minutes per Answer**          | Larger selections get a sample and the offer to narrow or to continue in parts.        |
-| **Files per Answer**            | As above, for the number of documents.                                                 |
-| **Most Matching Documents**     | Above it, only narrowing is offered.                                                   |
-| **Rows in the Table**           | The other rows follow when you reply *continue*.                                       |
-| **Longest Fully Read Document** | A longer document is read in its relevant parts and its rows are marked *partly read*. |
-| **Model Calls at Once**         | How many extraction calls one agent instance makes at the same time; bounds the load.  |
+| Limit                           | What happens at the limit                                                                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Maximum Decisions**           | The search for documents stops. If the agent had not chosen documents yet, it selects them by folder and checks the request's conditions in each; if it had, documents may be missing. The answer says which. |
+| **Maximum Tool Calls**          | As above.                                                                                                                                                                                                     |
+| **Minutes per Answer**          | Larger selections get a sample and the offer to narrow or to continue in parts.                                                                                                                               |
+| **Files per Answer**            | As above, for the number of documents.                                                                                                                                                                        |
+| **Most Matching Documents**     | Above it, only narrowing is offered.                                                                                                                                                                          |
+| **Rows in the Table**           | The other rows follow when you reply *continue*.                                                                                                                                                              |
+| **Longest Fully Read Document** | A longer document is read in its relevant parts and its rows are marked *partly read*.                                                                                                                        |
+| **Model Calls at Once**         | How many extraction calls one agent instance makes at the same time; bounds the load.                                                                                                                         |
 
 One fixed limit applies as well: the rows of one document travel in one message, so a document with very many long rows
 (around 40 rows of full contract clauses) keeps the first ones, and the summary names the document and how many rows

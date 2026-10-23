@@ -300,6 +300,23 @@ class TestContinuing:
         assert await PendingExtraction.load(thread) is None
 
     @pytest.mark.asyncio
+    async def test_rows_left_by_one_answer_are_not_shown_once_their_collection_is_out_of_reach(self):
+        thread = _Thread()
+        config = _config(max_rows=3)
+        planned = await _plan(_request(), config, KnowledgeDocumentSelectionResult(documents=_documents(2)), thread)
+        table, overflow = ExtractionTable.assemble(planned[0].run, [_rows(r, 4) for r in planned], 3, T)
+        await ExtractionProgress.record(planned[0].run, table, overflow, config, thread, T)
+        other = BucketNamespacePair(bucket_name="legal-db", namespace_name="contracts")
+
+        answer = await ExtractionPlanner.plan(
+            RecordExtraction.continue_pending([other]), config, _displayer(), T, thread, None
+        )
+
+        assert "no longer all available" in answer.summary
+        assert (answer.row_count, answer.table) == (0, "")
+        assert await PendingExtraction.load(thread) is None
+
+    @pytest.mark.asyncio
     async def test_documents_outside_the_profiles_current_path_filter_are_left_out(self):
         thread = _Thread()
         await _plan(

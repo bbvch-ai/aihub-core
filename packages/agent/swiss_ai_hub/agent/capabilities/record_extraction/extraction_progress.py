@@ -35,7 +35,10 @@ class ExtractionProgress:
         if pending is None and not overflow:
             return extracted
         pending = pending or PendingExtraction(
-            extraction_id=run.extraction_id, criteria=run.criteria, show_collection=run.show_collection
+            extraction_id=run.extraction_id,
+            criteria=run.criteria,
+            collections=run.collections,
+            show_collection=run.show_collection,
         )
         pending = pending.model_copy(
             update={

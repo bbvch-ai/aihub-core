@@ -105,6 +105,16 @@ The product owner reviewed the first version and decided:
   refused. Moving tables and rows out of events into storage remains the lasting fix (see byte caps below).
 - **Borderline rows are kept and marked.** With row instructions, the extractor marks each record `yes` or `unsure`
   (`record_match`); unsure rows are kept, shown in a Match column and counted in the summary.
+- **A search stopped at its limit selects by folder.** When the blueprint's discovery loop ends without a selection, the
+  same model is asked once for the selection its searches point to (`SelectionFallback`). Its answer offers no document
+  ids, so it cannot narrow the table to the documents its searches happened to show; after a search stopped at its limit
+  it keeps only path conditions, and every other condition (an amount, a supplier) is checked in each document as a row
+  condition. Real contracts showed why (2026-10-23): asked for liability caps below an amount, models searched for the
+  amount until the limit, and a selection of the hits extracted 2 of 7 contracts. Reading every document of the folder
+  costs more; a folder too large for one answer gets the sample and the offer to narrow, as any selection does.
+- **Rows left for later carry their collections**, also when the extraction fitted one answer and only its rows did not,
+  so a *continue* after access was revoked, or in another profile of the same conversation, ends the extraction instead
+  of showing them.
 - **Long documents are read in part**, see ADR `2026_10_21_partial_reads_of_long_documents_in_record_extraction`.
 - **Templates that offer extraction set its approval to never** (Knowledge Assistant, Data Analyst): clients that cannot
   answer a confirmation stopped at it, and the size check now asks before a large extraction. Workplace Assistant keeps
