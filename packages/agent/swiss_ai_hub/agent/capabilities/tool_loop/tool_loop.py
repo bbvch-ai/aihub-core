@@ -331,7 +331,7 @@ class ToolLoop(Capability):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=runs_in_the_loop,
     )
     async def run_function_step(
