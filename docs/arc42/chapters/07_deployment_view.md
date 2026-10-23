@@ -10,7 +10,7 @@ development and production deployments.
 
 ### Network topology
 
-The following diagram shows the production deployment topology with all seven network zones and the services assigned to
+The following diagram shows the production deployment topology with all eight network zones and the services assigned to
 each. Services that span multiple zones appear at the boundary. The API is the most connected service, attaching to four
 networks.
 
@@ -34,7 +34,6 @@ graph TB
             vLLMRerank["vLLM BGE-Reranker :8184 (GPU only)"]
             Speech["Speaches :8185 (GPU only)"]
             MinerU2["MinerU :8002 (GPU only)"]
-            Pres["Presidio analyzer :3000"]
             OTELc["OTEL Collector"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
@@ -69,6 +68,10 @@ graph TB
 
         subgraph codesandbox["code-sandbox  · sandbox + callers only"]
             OpenTerm["Open Terminal :8200 (dev)"]
+        end
+
+        subgraph piidetection["pii-detection  · analyzer + callers only"]
+            Pres["Presidio analyzer :3000"]
         end
     end
 
@@ -120,10 +123,11 @@ graph TB
     style egress fill:#fee2e2,stroke:#dc2626
     style codesandbox fill:#ffe4e6,stroke:#e11d48
     style browser fill:#ffedd5,stroke:#ea580c
+    style piidetection fill:#fce7f3,stroke:#db2777
     style host fill:#f8fafc,stroke:#64748b
 ```
 
-Seven Docker networks isolate services by role. Each service connects only to the networks it requires.
+Eight Docker networks isolate services by role. Each service connects only to the networks it requires.
 
 The **proxy** network carries external ingress traffic. In non-dev stages, Traefik listens on ports 80 and 443 and
 routes requests to backend services. Services that need to be directly reachable from outside (API, OpenWebUI, Langfuse
@@ -161,6 +165,10 @@ networks. The agents check each URL before the browser loads it, but the browser
 re-pointed to an internal address in between (DNS rebinding) would pass the check. Off `backend`, such a page load has
 no path to LiteLLM, Langfuse, MinerU or the Docker socket proxy. See ADR
 `docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`.
+
+The **pii-detection** network holds the Presidio analyzer, which receives the personal data the platform anonymises,
+plus only its callers (LiteLLM and the Universal Agent). Its models are baked into the image, so `internal: true` in
+non-dev stages denies it outbound internet without breaking it.
 
 The API service is the most connected, attaching to four networks (proxy, backend, data, storage) because it must accept
 external requests, communicate with application services, query databases, and access file storage. A database like
