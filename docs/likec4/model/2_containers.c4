@@ -12,9 +12,10 @@
 // - FerretDB: includes its own backing PostgreSQL instance
 // The raw container topology surfaces in the deployment view (Phase E).
 //
-// Agent Runtime is one logical container at L2; prod deploys 7 per-class instances
+// Agent Runtime is one logical container at L2; prod deploys one instance per class
 // (llm-wrapping-agent, rag-agent, expert-rag-agent, expert-asking-agent,
-// retrieval-agent, few-shot-agent, namespace-selection-agent) — see deployment view.
+// retrieval-agent, few-shot-agent, namespace-selection-agent, universal-agent,
+// knowledge-extraction-agent, …) — see deployment view.
 //
 // Process Engine lives as a component inside the API container, not a separate box.
 

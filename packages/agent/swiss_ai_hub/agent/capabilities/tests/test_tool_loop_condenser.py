@@ -11,14 +11,16 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     Message,
     TextContent,
+    ToolCallsDecidedEvent,
     ToolDefinition,
     ToolLoopCondensedEvent,
     ToolLoopIterationEvent,
     ToolLoopMode,
     ToolLoopState,
+    ToolResultEvent,
 )
 
-from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import fits_the_prompt, outgrew_the_prompt
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop, fits_the_prompt, outgrew_the_prompt
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_condenser import ToolLoopCondenser
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -242,3 +244,44 @@ async def test_a_prompt_too_large_even_alone_lets_the_model_answer_without_tools
 
     assert condensed.tools == []
     assert not condensed.needs_condensing
+
+
+_CONTRACT = "Die Kündigungsfrist beträgt drei Monate zum Monatsende; die Haftung für Schäden ist begrenzt. "
+
+
+@pytest.mark.asyncio
+async def test_thirty_long_reads_never_carry_an_event_past_the_brokers_limit():
+    """The worst the extraction agent's discovery reaches: `max_tool_calls` reads of a long German contract, each
+    about 12,000 characters, with every event serialized as it goes on the wire."""
+    displayer = MagicMock(spec=EventDisplayer, display_event=AsyncMock())
+    condenser = ToolLoopCondenser(_llm(), 10_000_000, displayer, T, user=None)
+    read = (_CONTRACT * (12_000 // len(_CONTRACT) + 1))[:12_000]
+    state = ToolLoopState(
+        messages=[Message.from_string(role="user", content="Kündigungsfristen aller Verträge")],
+        mode=ToolLoopMode.GATHER,
+        hands_back_results=False,
+    )
+    largest = 0
+    for call in range(30):
+        decided = ToolCallsDecidedEvent(
+            state=state.model_copy(update={"messages": [*state.messages, _calling(f"c{call}")]}),
+            tool_call_ids=[f"c{call}"],
+        )
+        result = Message(role="tool", tool_call_id=f"c{call}", name="read", contents=[TextContent(text=read)])
+        state = decided.state.model_copy(update={"messages": [*decided.state.messages, result]})
+        state = state.model_copy(update={"needs_condensing": ToolLoopCondenser.oversized(state)})
+        joined = ToolLoopIterationEvent(state=state)
+        largest = max(largest, len(decided.model_dump_json()), len(joined.model_dump_json()))
+        if state.needs_condensing:
+            state = await condenser.condense(state)
+
+    assert largest < 1_000_000
+    assert displayer.display_event.await_count > 0
+
+
+def test_a_gathering_loop_that_hands_nothing_back_keeps_no_results():
+    state = ToolLoopState(messages=[], mode=ToolLoopMode.GATHER, hands_back_results=False)
+    result = ToolResultEvent(tool_call_id="c1", name="read", content="text")
+
+    assert ToolLoop._gathered(state, [result]) == []
+    assert ToolLoop._gathered(state.model_copy(update={"hands_back_results": True}), [result]) != []

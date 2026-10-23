@@ -5,9 +5,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from swiss_ai_hub.core.events.agent import UserUploadedFile
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
+from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import UniversalAgentConfig
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -23,9 +27,21 @@ MOST_FILES_A_MESSAGE_CARRIES = [
 ]
 
 
+def _config() -> UniversalAgentConfig:
+    """A real config with every optional tool on, so the descriptions of the tools a profile can switch on are checked
+    too; a stand-in config would make those specs offer nothing."""
+    return UniversalAgentConfig(
+        agent_id="descriptions",
+        name=LocaleString(en="Descriptions"),
+        description=LocaleString(en="Descriptions fixture"),
+        llm=LLMConfig(model_name="text-generation/dummy"),
+        knowledge_documents=KnowledgeDocumentConfig(enabled=True),
+    )
+
+
 def _context(locale: str) -> ToolContext:
     return ToolContext.model_construct(
-        agent_config=MagicMock(),
+        agent_config=_config(),
         displayer=MagicMock(),
         t=AgentLocaleHandler(locale),
         files=MOST_FILES_A_MESSAGE_CARRIES,
@@ -52,3 +68,8 @@ def test_the_attached_files_description_fits_with_the_most_files_a_message_carri
     definition = AttachedFiles.tool_definition(_context(locale))
 
     assert len(definition.description) <= LIMIT, len(definition.description)
+
+
+@pytest.mark.parametrize("locale", LOCALES)
+def test_the_extraction_tool_description_fits(locale: str) -> None:
+    assert len(AgentLocaleHandler(locale)("agent.record_extraction.tools.extract.description")) <= LIMIT

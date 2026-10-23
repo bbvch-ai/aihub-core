@@ -1,0 +1,137 @@
+---
+steps:
+  plan:
+    name: Tabelle planen
+    description: Ermittelt die ausgewählten Dokumente und entwirft die Spalten der
+      Tabelle
+  extract:
+    name: Aus einem Dokument extrahieren
+    description: Liest ein Dokument und extrahiert seine Zeilen
+  assemble:
+    name: Tabelle zusammenstellen
+    description: Fügt die Zeilen aller Dokumente zu einer Tabelle zusammen
+  extract_as_tool:
+    name: Tabelle als Werkzeug extrahieren
+    description: Führt die vom Modell gewählte Tabellenextraktion aus
+  answer_tool_call:
+    name: Tabelle an das Modell zurückgeben
+    description: Gibt die Zusammenfassung der Tabelle an die Werkzeugschleife des
+      Modells zurück
+config:
+  extraction_model_name:
+    label: Extraktionsmodell
+    help: Das Modell, das jedes Dokument liest und seine Zeilen extrahiert. Leer verwendet
+      das Hauptmodell.
+  max_files:
+    label: Dateien pro Antwort
+    help: Die meisten Dokumente, aus denen eine Antwort extrahiert. Passen mehr, sieht
+      der Benutzer eine Stichprobe und wird gebeten, die Anfrage einzugrenzen oder
+      Teil für Teil fortzufahren.
+  minutes_per_turn:
+    label: Minuten pro Antwort
+    help: Wie lange eine Antwort ungefähr extrahieren darf, bevor der Rest als weitere
+      Teile angeboten wird. Die Zeit wird aus der Grösse der Dokumente geschätzt und
+      ist daher ungefähr.
+  max_documents_total:
+    label: Höchstens passende Dokumente
+    help: Passen mehr Dokumente, wird der Benutzer nur gebeten, die Anfrage einzugrenzen;
+      Teil für Teil zu extrahieren wird nicht angeboten.
+  max_rows:
+    label: Zeilen in der Tabelle
+    help: Die meisten Zeilen, die eine Antwort zeigt. Weitere Zeilen erscheinen, wenn
+      der Benutzer fortfährt; nichts geht verloren.
+  max_document_chars:
+    label: Längstes vollständig gelesenes Dokument (Zeichen)
+    help: Längere Dokumente werden nur in ihren relevanten Teilen gelesen, und ihre
+      Zeilen werden als teilweise gelesen markiert.
+  max_parallel_extractions:
+    label: Gleichzeitige Modellaufrufe
+    help: Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht. Verringern,
+      wenn das Modell-Gateway ausgelastet ist.
+tools:
+  extract:
+    label: Tabelle extrahieren
+    approval: 'Eine Tabelle mit diesen Spalten aus Wissensdokumenten extrahieren:
+      {fields}'
+    description: Extrahiert eine Tabelle aus vielen Wissensdokumenten, eine Zeile
+      pro gefundenem Datensatz, jede Zeile mit ihrer Datei. Verwende es, wenn der
+      Benutzer Datensätze über Dokumente hinweg sammeln möchte, etwa jede Hardware-Position
+      auf den Rechnungen 2025 eines Lieferanten; nicht für eine Frage, die ein Dokument
+      oder die Wissenssuche beantwortet. Finde zuerst die Dokumente mit den Werkzeugen
+      zum Auflisten und Durchsuchen und prüfe sie mit select_knowledge_documents;
+      rufe dies dann mit denselben Bedingungen auf. Der Benutzer sieht die Tabelle
+      direkt; du erhältst ihre Zusammenfassung. Passen mehr Dokumente, als eine Antwort
+      extrahiert, erhält der Benutzer eine Stichprobe und entscheidet; fahre nur fort,
+      wenn er zustimmt, mit continue_pending auf true.
+  select:
+    label: Dokumente auswählen
+    approval: 'Wissensdokumente für eine Tabelle mit diesen Spalten auswählen: {fields}'
+table:
+  match: Treffer
+  match_yes: ja
+  match_unsure: unsicher, bitte prüfen
+  partly_read: (teilweise gelesen)
+  collection: Sammlung
+  path: Pfad
+  filename: Datei
+summary:
+  no_rows: '**Keine Zeilen aus:** %{files}'
+  unsure: '**Unsicher:** %{count} Zeilen erfüllen die Bedingung vielleicht nicht;
+    sie bleiben erhalten und sind in der Spalte Treffer markiert, damit Sie sie prüfen
+    können.'
+  partly_read: '**Teilweise gelesen (Zeilen können fehlen):** %{files}'
+  counts: '**Dateien:** %{files} · **Gefundene Zeilen:** %{rows} · **Fehlgeschlagene
+    Dateien:** %{failed}'
+  sample_counts: '**Stichprobe:** %{files} von %{total} passenden Dokumenten · **Gefundene
+    Zeilen:** %{rows}'
+  sample_counts_ceiling: '**Stichprobe:** %{files} von mehr als %{total} passenden
+    Dokumenten · **Gefundene Zeilen:** %{rows}'
+  criteria: '**Ausgewählt:** %{criteria}'
+  document_rows_cut: '**Ausgelassene Zeilen (zu viele in einem Dokument für eine Antwort):**
+    %{files}'
+  document_rows_entry: '%{file} (%{count} Zeilen)'
+  listed_more: und %{count} weitere
+  failed_files: '**Dateien, die nicht extrahiert werden konnten:**'
+  failed_more: …und %{count} weitere Dateien, die nicht extrahiert werden konnten.
+  no_documents: Kein Dokument entspricht der Auswahl, daher wurde nichts extrahiert.
+  not_started: 'Die Tabelle konnte nicht extrahiert werden: %{reason}'
+  too_broad: '**%{total} Dokumente passen**, mehr als eine Antwort extrahiert (insgesamt
+    etwa %{minutes} Minuten).'
+  too_broad_ceiling: '**Mehr als %{total} Dokumente passen.**'
+  options_parts: Grenzen Sie die Anfrage ein, zum Beispiel auf einen der Ordner oder
+    eines der Jahre oben, oder antworten Sie *weiter*, um alle %{total} Dokumente
+    in %{parts} Teilen von je etwa %{minutes} Minuten zu extrahieren.
+  options_narrow: 'Bitte grenzen Sie die Anfrage ein, zum Beispiel auf einen der Ordner
+    oder eines der Jahre oben: So viele Dokumente werden nicht Teil für Teil extrahiert.'
+  part: '**Teil %{part} von %{parts}:** Dokumente %{first}–%{last} von %{total}.'
+  continue_parts: Antworten Sie *weiter* für die nächsten %{files} Dokumente (etwa
+    %{minutes} Minuten).
+  rows_follow: '%{count} weitere Zeilen folgen; antworten Sie *weiter*, um sie zu
+    sehen.'
+  more_rows: '**Weitere Zeilen** der vorherigen Antwort.'
+  done: '**Alle %{total} Dokumente sind extrahiert** in %{parts} Teilen: %{rows} Zeilen
+    gefunden, %{files} Dateien fehlgeschlagen.'
+  done_short: '**%{extracted} von %{total} Dokumenten sind extrahiert** in %{parts}
+    Teilen: %{rows} Zeilen gefunden, %{files} Dateien fehlgeschlagen; die übrigen
+    sind in diesem Gespräch nicht mehr verfügbar.'
+  nothing_pending: In diesem Gespräch gibt es keine Tabellenextraktion zum Fortsetzen.
+  gone: '%{count} Dokumente sind in diesem Gespräch nicht mehr verfügbar und wurden
+    ausgelassen.'
+  scope_changed: Die Sammlungen, aus denen diese Tabelle extrahiert wurde, sind in
+    diesem Gespräch nicht mehr alle verfügbar, daher wurde die Extraktion beendet.
+    Fragen Sie erneut, um aus dem jetzt Verfügbaren zu extrahieren.
+facets:
+  folders: '**Nach Ordner:** %{entries}'
+  years: '**Nach Jahr im Pfad:** %{entries}'
+  collections: '**Nach Sammlung:** %{entries}'
+  first: Das sind die Ordner und Jahre der ersten %{total} Dokumente nach Pfad; es
+    gibt weitere.
+progress:
+  partial: '%{path} ist lang: es werden nur die relevanten Teile gelesen.'
+  plan: Extrahiere %{fields} aus %{files} Dokumenten, etwa %{minutes} Minuten (%{criteria}).
+  sample: '%{total} Dokumente passen; extrahiere eine Stichprobe aus %{files} davon
+    (%{fields}).'
+  part: 'Extrahiere Teil %{part} von %{parts}: %{files} Dokumente, etwa %{minutes}
+    Minuten (%{fields}).'
+  extracted: '%{done} von %{files} · %{path}: %{rows} Zeilen'
+  failed: '%{done} von %{files} · %{path}: fehlgeschlagen, %{reason}'

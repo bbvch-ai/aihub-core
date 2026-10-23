@@ -14,6 +14,7 @@ export const OPENWEBUI_EMAIL = process.env.E2E_OPENWEBUI_EMAIL ?? 'e2e-test@swis
 export const OPENWEBUI_PASSWORD = process.env.E2E_OPENWEBUI_PASSWORD ?? 'e2e-test-password'
 
 export const UNIVERSAL_AGENT_CLASS = 'UniversalAgent'
+export const KNOWLEDGE_EXTRACTION_AGENT_CLASS = 'KnowledgeExtractionAgent'
 export const AGENT_MODEL_PREFIX = 'aihub-pipeline.'
 export const TEMPLATE_PROFILE = process.env.E2E_UNIVERSAL_AGENT_TEMPLATE ?? 'workplace-assistant'
 export const MAIN_LLM = process.env.E2E_MAIN_LLM ?? 'text-generation/Kimi-K2.6'
@@ -22,6 +23,17 @@ export const TASK_LLM = process.env.E2E_TASK_LLM ?? 'text-generation/gemma-4-31B
 export const KNOWLEDGE_COLLECTION = process.env.E2E_KNOWLEDGE_COLLECTION ?? ''
 export const KNOWLEDGE_QUESTION = process.env.E2E_KNOWLEDGE_QUESTION ?? ''
 export const KNOWLEDGE_ANSWER = process.env.E2E_KNOWLEDGE_ANSWER ?? ''
+
+/** A knowledge database seeded with the table extraction corpus, see e2e/fixtures/knowledge-extraction/README.md. */
+export const DOCUMENT_DATABASE = process.env.E2E_DOCUMENT_DATABASE ?? ''
+export const DOCUMENT_COLLECTION = process.env.E2E_DOCUMENT_COLLECTION ?? ''
+export const DOCUMENT_GLOB = process.env.E2E_DOCUMENT_GLOB ?? 'invoices/**'
+export const DOCUMENT_SUPPLIER = process.env.E2E_DOCUMENT_SUPPLIER ?? 'ACME AG'
+export const DOCUMENT_EXPECTED_ITEM = process.env.E2E_DOCUMENT_EXPECTED_ITEM ?? 'PSU-750'
+/** A supplier with more invoices in the corpus than one answer extracts. */
+export const DOCUMENT_BULK_SUPPLIER = process.env.E2E_DOCUMENT_BULK_SUPPLIER ?? 'Hooli AG'
+/** The collection of the same database holding the supplier contracts and SLAs. */
+export const DOCUMENT_LEGAL_COLLECTION = process.env.E2E_DOCUMENT_LEGAL_COLLECTION ?? 'legal'
 
 export const LLM_TURN_TIMEOUT = 5 * 60_000
 export const LLM_TEST_TIMEOUT = 15 * 60_000

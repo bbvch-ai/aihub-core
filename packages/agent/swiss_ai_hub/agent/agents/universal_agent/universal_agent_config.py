@@ -10,6 +10,7 @@ from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import Con
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
 from swiss_ai_hub.agent.capabilities.memory.memory_fields import MemoryFields
+from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_fields import ToolLoopFields
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -17,6 +18,7 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 class UniversalAgentConfig(
     MemoryFields,
     AttachedFilesFields,
+    RecordExtractionFields,
     KnowledgeToolFields,
     KnowledgeFields,
     ToolLoopFields,
@@ -25,7 +27,8 @@ class UniversalAgentConfig(
 ):
     """
     Configuration for UniversalAgent: the capabilities it may use as tools, the loop's limits (published by the runner
-    with the blueprint's tools as options), and instructions added to its own.
+    with the blueprint's tools as options), and instructions added to its own. The document tools and table
+    extraction stay off until a profile switches them on, so a profile saved before they existed keeps its tools.
     """
 
     instructions: Annotated[
@@ -52,4 +55,6 @@ class UniversalAgentConfig(
             **cls.attached_files_form_elements(),
             **cls.knowledge_form_elements(),
             **cls.knowledge_tool_form_elements(),
+            **cls.knowledge_document_form_elements(),
+            **cls.record_extraction_form_elements(),
         )

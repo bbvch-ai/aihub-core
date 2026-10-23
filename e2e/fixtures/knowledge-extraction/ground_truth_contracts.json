@@ -1,0 +1,32 @@
+{
+  "legal/contracts/supply-acme-sup-2024-01.md": {
+    "supplier": "ACME AG",
+    "notice_period": "3 months",
+    "liability_cap": "CHF 500,000",
+    "governing_law": "Swiss law, courts of Zurich"
+  },
+  "legal/contracts/supply-globex-sup-2024-02.md": {
+    "supplier": "Globex GmbH",
+    "notice_period": "6 months",
+    "liability_cap": "twice the annual fees",
+    "governing_law": "German law, courts of Munich"
+  },
+  "legal/contracts/supply-initech-sup-2025-03.md": {
+    "supplier": "Initech SA",
+    "notice_period": "90 days",
+    "liability_cap": "CHF 1,000,000",
+    "governing_law": "Swiss law, courts of Geneva"
+  },
+  "legal/contracts/supply-hooli-sup-2025-04.md": {
+    "supplier": "Hooli AG",
+    "notice_period": "1 month",
+    "liability_cap": "the fees of the last 12 months",
+    "governing_law": "Swiss law, courts of Bern"
+  },
+  "legal/contracts/outsourcing-vandelay-sup-2023-09.md": {
+    "supplier": "Vandelay Industries",
+    "notice_period": "12 months",
+    "liability_cap": "",
+    "governing_law": "Swiss law, courts of Lucerne"
+  }
+}

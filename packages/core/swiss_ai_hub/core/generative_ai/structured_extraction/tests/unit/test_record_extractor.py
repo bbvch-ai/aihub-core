@@ -1,3 +1,4 @@
+import asyncio
 import re
 from datetime import UTC, datetime
 from types import SimpleNamespace
@@ -248,6 +249,87 @@ async def test_prompt_names_every_field_and_carries_the_instructions() -> None:
     )
 
     window_args = llm.astructured_predict.await_args.kwargs
-    assert window_args["field_names"] == "position, amount"
+    assert window_args["field_names"] == "position, amount, record_match"
     assert window_args["instructions"] == "only hardware"
     assert (window_args["position"], window_args["total"]) == (1, 1)
+
+
+@pytest.mark.asyncio
+async def test_windows_running_side_by_side_yield_the_records_of_one_by_one() -> None:
+    document = _document(_invoice(400))
+    config = _llm_config(max_output_tokens=600)
+
+    sequential = await RecordExtractor.extract(_SCHEMA, document, _reading_llm(), config, LocaleHandler("en"))
+    parallel = await RecordExtractor.extract(
+        _SCHEMA, document, _reading_llm(), config, LocaleHandler("en"), limiter=asyncio.Semaphore(4)
+    )
+
+    assert sequential.window_count > 1
+    assert [record.values for record in parallel.records] == [record.values for record in sequential.records]
+
+
+@pytest.mark.asyncio
+async def test_the_limiter_bounds_the_model_calls_running_at_once() -> None:
+    running, most = 0, 0
+    reading = _reading_llm()
+    answer = reading.astructured_predict.side_effect
+
+    async def slow(records_model: type[BaseModel], prompt: Any, **window_args: Any) -> BaseModel:
+        nonlocal running, most
+        running += 1
+        most = max(most, running)
+        await asyncio.sleep(0.01)
+        running -= 1
+        return answer(records_model, prompt, **window_args)
+
+    reading.astructured_predict = AsyncMock(side_effect=slow)
+
+    await RecordExtractor.extract(
+        _SCHEMA,
+        _document(_invoice(400)),
+        reading,
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        limiter=asyncio.Semaphore(2),
+    )
+
+    assert most == 2
+
+
+@pytest.mark.asyncio
+async def test_a_long_document_is_read_in_part_and_says_so() -> None:
+    text = _invoice(400) + "\n\nPosition 999: special item costs 5 CHF."
+
+    result = await RecordExtractor.extract(
+        _SCHEMA,
+        _document(text),
+        _reading_llm(),
+        _llm_config(max_output_tokens=600),
+        LocaleHandler("en"),
+        max_windows=2,
+        row_terms="special",
+    )
+
+    assert result.partial
+    assert result.window_count > 2
+    positions = [record.values["position"] for record in result.records]
+    assert 1 in positions
+    assert 999 in positions
+
+
+@pytest.mark.asyncio
+async def test_a_record_carrying_only_its_match_mark_is_dropped() -> None:
+    llm = Mock()
+
+    def answer(records_model: type[BaseModel], _prompt: Any, **_window_args: Any) -> BaseModel:
+        empty = {"position": None, "amount": None, "record_match": "yes"}
+        kept = {"position": 1, "amount": 5.0, "record_match": "unsure"}
+        return records_model(records=[empty, kept])
+
+    llm.astructured_predict = AsyncMock(side_effect=answer)
+
+    result = await RecordExtractor.extract(
+        _SCHEMA, _document(_invoice(1)), llm, _llm_config(), LocaleHandler("en"), instructions="only hardware"
+    )
+
+    assert [record.values for record in result.records] == [{"position": 1, "amount": 5.0, "record_match": "unsure"}]

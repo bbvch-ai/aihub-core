@@ -339,6 +339,20 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    continuePending: Continues an unfinished extraction
+    remainingDocuments: Documents left
+    remainingRows: Rows left to show
   toolLoop:
     loop: Tool set
     mode: Mode

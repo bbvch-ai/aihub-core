@@ -7,7 +7,7 @@ from typing import Annotated, Any
 import mongoengine.errors
 from bson import ObjectId
 from fastapi import HTTPException
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, TextBlock
 from nats.aio.client import Client as NATS
 
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -41,6 +41,7 @@ from swiss_ai_hub.core.events.agent.user.chat_feature import ChatFeature
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
+from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_markup import ExtractedTableMarkup
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
@@ -143,6 +144,7 @@ class ChatService:
         """
         Common initialization steps for both streaming and JSON interactions.
         """
+        messages = ChatService._without_earlier_tables(messages)
         thread = None
         if thread_id:
             try:
@@ -270,6 +272,8 @@ class ChatService:
             if event.is_chunk_event:
                 logger.debug(f"Received chunk event: {event.event_name}")
                 await chunk_queue.put(event)
+            elif table_chunk := ChatService.extracted_table_chunk(event, topic):
+                await chunk_queue.put(table_chunk)
             elif event.is_hitl_request_event:
                 logger.debug(f"Received HITL event: {event.event_name}")
                 resources.stop_event = event
@@ -379,6 +383,8 @@ class ChatService:
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:
                 resources.chunk_events.append(event)
+            elif table_chunk := ChatService.extracted_table_chunk(event, topic):
+                resources.chunk_events.append(table_chunk)
             elif event.is_hitl_request_event:
                 resources.stop_event = event
                 await subscriber.stop()
@@ -419,6 +425,44 @@ class ChatService:
         return resources
 
     @staticmethod
+    def extracted_table_text(event_data: Annotated[dict[str, Any], "A records-extracted event, dumped"]) -> str:
+        """The answer text a table extracted for a tool call contributes: the model only read its summary, so a client
+        that shows only answer text would otherwise never see the table."""
+        if event_data.get("_event_name") != "RecordsExtractedEvent" or not event_data.get("tool_call_id"):
+            return ""
+        table = event_data.get("table") or ""
+        return f"\n\n{table}\n\n{event_data.get('summary') or ''}\n\n" if table else ""
+
+    @staticmethod
+    def extracted_table_chunk(
+        event: DisplayEvent, topic: Annotated[AgentInstanceTopic, "The agent run the event belongs to"]
+    ) -> ChunkEvent | None:
+        text = ChatService.extracted_table_text(
+            event.model_dump(include={"table", "summary", "tool_call_id"}) | {"_event_name": event.event_name}
+        )
+        if not text:
+            return None
+        return ChunkEvent(content=text, model_name=f"{topic.agent_class}/{topic.agent_id}", created_at=event.created_at)
+
+    @staticmethod
+    def _without_earlier_tables(messages: list[ChatMessage]) -> list[ChatMessage]:
+        """Earlier answers come back with every message; a table among them would ride on every event of the run."""
+        return [ChatService._condensed(message) if message.role == "assistant" else message for message in messages]
+
+    @staticmethod
+    def _condensed(message: ChatMessage) -> ChatMessage:
+        """The message with its tables condensed in its text blocks; images and other blocks are kept as they are."""
+        blocks = [
+            block.model_copy(update={"text": ExtractedTableMarkup.condensed(block.text)})
+            if isinstance(block, TextBlock)
+            else block
+            for block in message.blocks
+        ]
+        if all(new == old for new, old in zip(blocks, message.blocks, strict=True)):
+            return message
+        return ChatMessage(role=message.role, blocks=blocks, additional_kwargs=message.additional_kwargs)
+
+    @staticmethod
     def terminal_output_text(output_messages: list[Any] | None) -> str:
         """Return terminal answer text from live LlamaIndex/core messages or raw persisted payloads."""
         if not output_messages:
@@ -429,6 +473,12 @@ class ChatService:
         if isinstance(last_message, Message):
             return last_message.content
         return Message.model_validate(last_message).content
+
+    @staticmethod
+    def answer_text(parts: Annotated[list[str], "Streamed chunks, in order"]) -> str:
+        """The streamed answer without the tables inserted from tool calls: the final answer never holds them, so
+        they would keep it from extending what was streamed."""
+        return "".join(part for part in parts if ExtractedTableMarkup.condensed(part) == part)
 
     @staticmethod
     def missing_suffix(streamed: str, full_answer: str) -> str:
@@ -451,7 +501,9 @@ class ChatService:
             chat_content.content += stop_event.question
             return chat_content
         full_answer = ChatService.terminal_output_text(getattr(stop_event, "output_messages", None))
-        suffix = ChatService.missing_suffix(streamed, full_answer)
+        suffix = ChatService.missing_suffix(
+            ChatService.answer_text([chunk.content for chunk in sorted_chunks]), full_answer
+        )
         if suffix:
             chat_content.content = streamed + suffix
         return chat_content

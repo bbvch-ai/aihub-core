@@ -10,6 +10,10 @@ from swiss_ai_hub.core.generative_ai import LLMConfig, estimate_prompt_tokens
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 SUMMARY_WORDS = 150
+# Every iteration's event carries the whole loop state, and the broker refuses an event above its payload limit (1 MB in
+# development) without an error the caller sees, so the run would wait forever. Condensing starts well below it.
+STATE_BYTES = 600_000
+_DROPPED_RESULT = "agent.tool_loop.prompt.dropped_result"
 
 
 class ToolLoopCondenser:
@@ -17,8 +21,9 @@ class ToolLoopCondenser:
 
     Earlier tool results are condensed to what matters for the request, each keeping its place, so every tool call
     still has its answer. If that is not enough, the conversation before the request becomes one summary; only then
-    are the oldest results dropped. The request is never touched, and the latest round of results is cut only when it
-    alone outgrows the prompt, since the model call would otherwise fail.
+    are the oldest results dropped. It also runs when the loop's state outgrows what one event can carry, which long
+    reads reach before the prompt is full. The request is never touched, and the latest round of results is cut only
+    when it alone outgrows the prompt, since the model call would otherwise fail.
     """
 
     def __init__(
@@ -41,6 +46,11 @@ class ToolLoopCondenser:
     ) -> bool:
         """The conversation and the offered tools' schemas no longer fit the prompt."""
         return ToolLoopCondenser.size(messages, tools, counter) > budget
+
+    @staticmethod
+    def oversized(state: ToolLoopState) -> bool:
+        """The state no longer fits an event comfortably, measured as events serialize it (non-ASCII escaped)."""
+        return len(json.dumps(state.model_dump(mode="json"))) > STATE_BYTES
 
     @staticmethod
     def size(messages: list[Message], tools: list[ToolDefinition], counter: Callable[[str], list[int]]) -> int:
@@ -67,6 +77,7 @@ class ToolLoopCondenser:
             messages = self._cut_latest_results(messages, tools)
         if self.outgrown(messages, tools, self._budget, counter):
             tools = []
+        messages = self._dropped_until_small(state.model_copy(update={"messages": messages, "tools": tools}))
         after = self.size(messages, tools, counter)
         if after < before:
             await self._displayer.display_event(
@@ -117,9 +128,20 @@ class ToolLoopCondenser:
         for index in self._earlier_results(messages):
             if not self.outgrown(dropped, tools, self._budget, self._llm.token_counter):
                 break
-            text = self._t("agent.tool_loop.prompt.dropped_result")
+            text = self._t(_DROPPED_RESULT)
             dropped[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
         return dropped
+
+    def _dropped_until_small(self, state: ToolLoopState) -> list[Message]:
+        """A state the prompt holds can still outgrow an event: earlier results give way, oldest first, until it
+        fits."""
+        messages = list(state.messages)
+        for index in self._earlier_results(messages):
+            if not self.oversized(state.model_copy(update={"messages": messages})):
+                break
+            text = self._t(_DROPPED_RESULT)
+            messages[index] = messages[index].model_copy(update={"contents": [TextContent(text=text)]})
+        return messages
 
     def _tools_leaving_room(self, messages: list[Message], tools: list[ToolDefinition]) -> list[ToolDefinition]:
         """The tools stay unless their schemas leave the latest results no room at all; a result cut to nothing to
@@ -163,9 +185,7 @@ class ToolLoopCondenser:
     def _already_condensed(self, result: Message) -> bool:
         """A result an earlier round condensed or dropped: summarising it again costs a model call and loses more."""
         condensed = self._t("agent.tool_loop.prompt.condensed_result", summary="")
-        return result.content.startswith(condensed) or result.content == self._t(
-            "agent.tool_loop.prompt.dropped_result"
-        )
+        return result.content.startswith(condensed) or result.content == self._t(_DROPPED_RESULT)
 
     async def _summarise_result(self, request: str, result: Message) -> str:
         instruction = self._t("agent.tool_loop.prompt.condense_result", words=SUMMARY_WORDS)

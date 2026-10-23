@@ -318,3 +318,9 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Not a Meta Question
   description: Answering the request
+extract_records_event:
+  name: Extract Records
+  description: Extracting a table from the selected documents
+records_extracted_event:
+  name: Records Extracted
+  description: The table extracted from the selected documents
