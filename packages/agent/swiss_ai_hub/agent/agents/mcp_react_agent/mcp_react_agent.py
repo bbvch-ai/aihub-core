@@ -215,7 +215,7 @@ class McpReactAgent(Agent):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.description"),
-        icon="mage:stop-sign",
+        icon="mage:stop-circle",
         precondition=exceeded_max_iterations,
     )
     async def max_iterations_reached_step(
@@ -230,7 +230,7 @@ class McpReactAgent(Agent):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.name"),
         description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=all_tool_calls_emitted,
     )
     async def tool_execution_step(

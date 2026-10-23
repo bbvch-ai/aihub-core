@@ -45,7 +45,7 @@ def build() -> RAGAgentConfig:
                 "sufficiente e cita i documenti utilizzati."
             ),
         ),
-        icon="mage:book-open",
+        icon="mage:book",
         llm=LLMConfig(
             model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
