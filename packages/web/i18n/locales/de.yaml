@@ -342,6 +342,20 @@ event:
     error: Fehler
     stop: Endet mit
     targetAgent: Gedächtnisschreiber
+  extraction:
+    fields: Spalten
+    instructions: Zu behaltende Zeilen
+    criteria: Ausgewählte Dokumente
+    collections: Sammlungen
+    notices: Hinweise
+    documentIds: '{count} gewählte Dokumente'
+    files: Dateien
+    failedFiles: Fehlgeschlagene Dateien
+    rows: Gezeigte / gefundene Zeilen
+    truncated: Gekürzt
+    continuePending: Setzt eine unvollständige Extraktion fort
+    remainingDocuments: Verbleibende Dokumente
+    remainingRows: Noch zu zeigende Zeilen
   toolLoop:
     loop: Werkzeugsatz
     mode: Modus

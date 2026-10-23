@@ -106,6 +106,7 @@ class BlockType(StrEnum):
     TEXT = "text"
     THINKING = "thinking"
     TOOL = "tool"
+    TABLE = "table"
 
 
 class ContentBlock(BaseModel, ABC):
@@ -226,6 +227,23 @@ class ToolBlock(ContentBlock):
 
     def is_complete(self) -> Annotated[bool, "Always true for tool blocks"]:
         """Tool blocks are always complete once created"""
+        return True
+
+
+class TableBlock(ContentBlock):
+    """A table an agent extracted while the model works on in its tool loop.
+
+    It stays where it arrived, between the tool calls and the answer, and is never folded into a thought: the model
+    only reads the table's summary and refers to it, so the table itself must reach the user as delivered.
+    """
+
+    type: Annotated[BlockType, "Block type"] = Field(default=BlockType.TABLE, frozen=True)
+    content: Annotated[str, "The table and its summary, as markdown"]
+
+    def to_html(self) -> Annotated[str, "The table as markdown"]:
+        return f"\n\n{self.content.strip()}\n\n"
+
+    def is_complete(self) -> Annotated[bool, "Always true for table blocks"]:
         return True
 
 
@@ -354,6 +372,13 @@ class MessageConverter:
         r"\n*^Download: [^\n]*\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)[^\n]*$", re.MULTILINE
     )
     _FILE_LINK = re.compile(r"!?\[([^\]\n]*)\]\([^)\s]*/api/v1/files/[^)\s/]+/content\)")
+    # An extracted table an agent answered with, marked by core's ``ExtractedTableMarkup``. Every later message would
+    # carry it back to the agent, hundreds of rows on every event of the conversation, so it goes down to one line;
+    # the summary after it stays.
+    _EXTRACTED_TABLE = re.compile(
+        r'^\[aihub-extracted-table\]: # "rows=(\d+)"[ \t]*\r?$.*?^\[/aihub-extracted-table\]: #[ \t]*(?=\r?$)',
+        re.DOTALL | re.MULTILINE,
+    )
     # A removed block leaves the newlines that surrounded it; collapse the run so the text either side
     # does not end up glued into one line (nor separated by a growing gap).
     _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
@@ -369,7 +394,8 @@ class MessageConverter:
         markup into its prose, an agent writes a tool block as text instead of calling the tool, making up
         the result, and it links a new file to an earlier file's download.
         """
-        stripped = cls._DETAILS_BLOCK.sub("\n", text)
+        stripped = cls._EXTRACTED_TABLE.sub(r"[A table of \1 extracted rows was shown here.]", text)
+        stripped = cls._DETAILS_BLOCK.sub("\n", stripped)
         stripped = cls._ORPHAN_MARKUP.sub("", stripped)
         stripped = cls._DOWNLOAD_LINE.sub("", stripped)
         stripped = cls._FILE_LINK.sub(r"\1", stripped)
@@ -655,6 +681,12 @@ class StreamingStateManager:
             if isinstance(block, ToolBlock) and block.tool_id == tool_id:
                 self._content_blocks[index] = block.model_copy(update={"result": result, "closed": True})
 
+    def add_table_block(self, content: Annotated[str, "The table and its summary, as markdown"]) -> None:
+        """Pin an extracted table where the run has got to, behind the blocks so far"""
+        self._close_open_blocks()
+        self._finalize_current_block()
+        self._content_blocks.append(TableBlock(content=content))
+
     def append_to_current_block(self, content: Annotated[str, "Content to append"]) -> None:
         """Append content to current block if it supports it"""
         if self._current_block:
@@ -736,9 +768,10 @@ class StreamingStateManager:
         # answer above them keeps growing, and flushing later lands them in this same position.
         if self._deferred_thinking:
             blocks.append(self._deferred_thinking)
+        # A table's cells are document text, never citations or file links, so they are shown as extracted.
         return "".join(
             block.to_html()
-            if isinstance(block, ToolBlock)
+            if isinstance(block, (ToolBlock, TableBlock))
             else self.files.resolve(self.citations.resolve(block.to_html()))
             for block in blocks
         )
@@ -1277,6 +1310,55 @@ class AttachedFileEventHandler(EventHandler):
         return True
 
 
+class RecordsExtractedEventHandler(EventHandler):
+    """Shows a table a model extracted in a tool loop, since the model itself only reads its summary.
+
+    A blueprint that extracts on its own streams the table as its answer, so only a result answering a tool call is
+    shown here. Open WebUI re-renders the whole message on every event, so the table shown inline is capped; its
+    summary always follows it.
+    """
+
+    INLINE_ROWS = 100
+    INLINE_CHARACTERS = 64_000
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True for a table extracted for a tool call"]:
+        return (
+            event.get("_event_name") == "RecordsExtractedEvent"
+            and bool(event.get("tool_call_id"))
+            and bool(event.get("table"))
+        )
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Records extracted event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        context.state_manager.add_table_block(f"{self._inline(event)}\n\n{event.get('summary', '')}")
+        await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
+        return True
+
+    def _inline(self, event: Annotated[dict[str, Any], "Records extracted event"]) -> Annotated[str, "Table"]:
+        table = event["table"]
+        lines = table.split("\n")
+        rows = [line for line in lines if line.startswith("|")]
+        header, body = rows[:2], rows[2:]
+        kept: list[str] = []
+        size = sum(len(line) for line in header)
+        for row in body[: self.INLINE_ROWS]:
+            size += len(row) + 1
+            if size > self.INLINE_CHARACTERS:
+                break
+            kept.append(row)
+        if len(kept) == len(body):
+            return table
+        cut = "\n".join([*header, *kept])
+        note = f"_Showing the first {len(kept)} of {len(body)} rows here._"
+        # The marker keeps the table's real row count: the condensed line later says how many rows were found.
+        return f"{lines[0]}\n\n{cut}\n\n{note}\n\n[/aihub-extracted-table]: #"
+
+
 class SandboxFileDisplayedEventHandler(EventHandler):
     """Attaches a file the agent showed from the user's code sandbox to the answer, as an Open WebUI file."""
 
@@ -1565,6 +1647,7 @@ class EventProcessorFactory:
             GroundingNodesEventHandler(),
             AttachedFileEventHandler(),
             SandboxFileDisplayedEventHandler(),
+            RecordsExtractedEventHandler(),
             RetrieveUserMemoryEventHandler(),
             RetrieveOrganizationMemoryEventHandler(),
             ConversationTitleEventHandler(),

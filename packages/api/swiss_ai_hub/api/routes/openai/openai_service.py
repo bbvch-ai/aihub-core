@@ -509,7 +509,9 @@ class OpenaiService:
             yield OpenaiService._build_chunk_sse(content=chunk_event.content, model=chunk_event.model_name)
 
         yield OpenaiService._build_chunk_sse(
-            content=OpenaiService._resolve_final_content(resources.stop_event, streamed="".join(streamed_parts)),
+            content=OpenaiService._resolve_final_content(
+                resources.stop_event, streamed=ChatService.answer_text(streamed_parts)
+            ),
             model="",
             finish_reason="stop",
         )

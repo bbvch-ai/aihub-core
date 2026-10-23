@@ -332,3 +332,9 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Pas une méta-question
   description: Réponse à la demande
+extract_records_event:
+  name: Extraire des enregistrements
+  description: Extraction d'un tableau à partir des documents sélectionnés
+records_extracted_event:
+  name: Enregistrements extraits
+  description: Le tableau extrait des documents sélectionnés

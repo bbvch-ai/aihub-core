@@ -340,6 +340,20 @@ event:
     error: Erreur
     stop: Se termine par
     targetAgent: Rédacteur de mémoire
+  extraction:
+    fields: Colonnes
+    instructions: Lignes à garder
+    criteria: Documents sélectionnés
+    collections: Collections
+    notices: Remarques
+    documentIds: '{count} documents choisis'
+    files: Fichiers
+    failedFiles: Fichiers en échec
+    rows: Lignes affichées / trouvées
+    truncated: Écourté
+    continuePending: Poursuit une extraction inachevée
+    remainingDocuments: Documents restants
+    remainingRows: Lignes restant à afficher
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode

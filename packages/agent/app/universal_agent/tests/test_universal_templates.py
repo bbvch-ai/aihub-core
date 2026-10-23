@@ -11,6 +11,8 @@ from swiss_ai_hub.core.i18n import LocaleString
 from app.universal_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.universal_agent import UniversalAgent, UniversalAgentConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import SEARCH_KNOWLEDGE_TOOL
+from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import EXTRACT_RECORDS_TOOL
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 
 _LOCALES = ("de", "en", "fr", "it")
@@ -99,3 +101,22 @@ def test_organization_memory_is_left_for_the_admin_to_enable(template: Universal
     template_data = template.to_template_data(_PUBLISHED_CONFIG).model_dump()
 
     assert template_data["org_memory"] is None
+
+
+@pytest.mark.parametrize("template", get_all_templates(), ids=lambda template: template.agent_id)
+def test_a_template_offering_extraction_never_asks_for_a_confirmation(template: UniversalAgentConfig):
+    """API and bot clients cannot answer a confirmation, so the run would stop there; a broad extraction asks the user
+    in the conversation instead."""
+    if not template.knowledge_documents.enabled:
+        pytest.skip("this template does not offer the document tools")
+    rules = {rule.tool: rule.policy for rule in template.tool_loop.approvals}
+
+    assert rules[EXTRACT_RECORDS_TOOL] == ToolApprovalPolicy.NEVER
+
+
+def test_the_workplace_assistant_keeps_the_document_tools_off():
+    """The everyday assistant: its users rarely need tables across documents, and fewer tools keep its choice
+    reliable."""
+    workplace = next(template for template in get_all_templates() if template.agent_id == "workplace-assistant")
+
+    assert workplace.knowledge_documents.enabled is False
