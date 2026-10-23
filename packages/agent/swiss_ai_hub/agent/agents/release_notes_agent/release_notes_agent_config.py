@@ -2,7 +2,7 @@ from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputNumber, MultiSelect, Select, Textarea
+from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputNumber, InputText, MultiSelect, Select, Textarea
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.jira import JiraConnectionConfig
 
@@ -37,10 +37,10 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
         Field(description="Further languages each changelog is translated into."),
     ] = None
     audience: Annotated[
-        str | Textarea, Field(description="Who reads the release notes; the notes are written for them.")
+        str | InputText, Field(description="Who reads the release notes; each note is worded for them.")
     ] = "the customers who use the product"
-    show_ticket_keys: Annotated[
-        bool | Checkbox, Field(description="End each bullet with the keys of its tickets, linked to them.")
+    link_tickets: Annotated[
+        bool | Checkbox, Field(description="End each bullet with links to its tickets in Jira.")
     ] = True
     merge_related_tickets: Annotated[
         bool | Checkbox,
@@ -91,6 +91,10 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
         """`AgentConfig` keeps an enum field's value, not the member."""
         return ReleaseLanguage(self.language)
 
+    def languages(self) -> list[ReleaseLanguage]:
+        """The writing language first, then each language the changelog is translated into."""
+        return [self.writing_language(), *self.translation_targets()]
+
     def translation_targets(self) -> list[ReleaseLanguage]:
         """The writing language picked again among the targets would only be written twice."""
         targets = self.translate_into if isinstance(self.translate_into, list) else []
@@ -123,10 +127,18 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
                 **cls._labels("language"), options=languages, option_label="label", option_value="value", required=True
             ),
             "translate_into": MultiSelect(
-                **cls._labels("translate_into"), options=languages, option_label="label", option_value="value"
+                **cls._labels("translate_into"),
+                options=languages,
+                option_label="label",
+                option_value="value",
+                toggle_label=AgentLocaleString.from_i18n_path(f"{_I18N}.translate_into.toggle_label"),
+                toggle_help=AgentLocaleString.from_i18n_path(f"{_I18N}.translate_into.toggle_help"),
             ),
-            "audience": Textarea(**cls._labels("audience")),
-            "show_ticket_keys": Checkbox(**cls._labels("show_ticket_keys")),
+            "audience": InputText(
+                **cls._labels("audience"),
+                placeholder=AgentLocaleString.from_i18n_path(f"{_I18N}.audience.placeholder"),
+            ),
+            "link_tickets": Checkbox(**cls._labels("link_tickets")),
             "merge_related_tickets": Checkbox(**cls._labels("merge_related_tickets")),
         }
 

@@ -1,7 +1,7 @@
 ---
 title: Versionshinweis-Assistent
 description: Ein Chat-Assistent, der die Versionshinweise einer Jira-Lösungsversion schreibt — ein Hinweis pro Ticket, nach Typ gruppiert, in jeder konfigurierten Sprache.
-source_sha: 03a0f3a2517e3ef4aa317428a0a1572310870835df5a6b4b9d89a2022033a724
+source_sha: ddeda827e909517933f564a354058062252392dcfc2878e351a18b9d6765b511
 ---
 
 # Versionshinweis-Assistent
@@ -19,6 +19,9 @@ geschrieben.
 Der Assistent sucht in Ihrer Nachricht nach einem der Lösungsversionsnamen der Projekte. *„Versionshinweise für 2.4.0"*,
 *„Was ist neu in 2.4.0?"* oder *„v2.4.0 bitte"* funktionieren alle. Nennt die Nachricht keine Version, mehrere oder
 eine, die Jira nicht kennt, antwortet er mit den Versionen, die er kennt, statt zu raten.
+
+Auch eine Sprache lässt sich nennen: *„Versionshinweise für 2.4.0 auf Französisch"* (oder *„in French"*, *„en
+français"*, *„in francese"*) liefert diese Antwort auf Französisch statt in den Sprachen des Profils.
 :::
 
 ## Was er tut
@@ -44,7 +47,7 @@ flowchart TD
    mehreren Projekten vorkommt, ist eine Version über alle hinweg.
 2. **Tickets lesen.** Jedes Ticket dieser Lösungsversion in den konfigurierten Projekten wird gelesen, abzüglich dessen,
    was der JQL-Filter des Profils ausschließt.
-3. **Hinweise schreiben.** Das Modell schreibt pro Ticket einen Satz, höchstens zwei, für die konfigurierte Leserschaft,
+3. **Hinweise schreiben.** Das Modell schreibt pro Ticket einen Satz, höchstens zwei, für die konfigurierte Zielgruppe,
    aus der Zusammenfassung und der Beschreibung des Tickets. Die Hinweise lesen sich wie ein Produkt-Changelog:
    unpersönlich (kein „Sie", kein „wir"), im Präsens, eine neue Funktion nennt die neue Möglichkeit, eine Fehlerbehebung
    sagt, was nicht mehr schiefgeht, z. B. *„Beim Speichern eines Entwurfs gehen angehängte Bilder nicht mehr verloren."*
@@ -132,9 +135,9 @@ schreiben. *„Was ist neu in 2.0?"* oder *„Versionshinweise für 2.0"* sind n
      Berechtigungen.
 4. **Projekte aufführen.** Geben Sie die Projektschlüssel ein, z. B. `ENG`. Fügen Sie einen **JQL-Filter** für Tickets
    hinzu, die nie erscheinen sollen, z. B. `issuetype not in subTaskIssueTypes()` oder `labels != internal`.
-5. **Sprachen und Leserschaft wählen.** Wählen Sie die Sprache, in der die Hinweise geschrieben werden, optional weitere
-   Sprachen, und beschreiben Sie, wer sie liest — *„Kundinnen und Kunden der Web-App"* ergibt andere Hinweise als *„das
-   Support-Team"*.
+5. **Sprachen und Zielgruppe wählen.** Wählen Sie die Sprache, in der die Hinweise geschrieben werden, und schalten Sie
+   **In weitere Sprachen übersetzen** für weitere ein. Beschreiben Sie die **Zielgruppe** in wenigen Worten: *„Kundinnen
+   und Kunden der Web-App"* ergibt andere Hinweise als *„das interne Support-Team"*.
 6. **Modell wählen** und speichern. Fragen Sie das Profil nach einer Version, die Sie kennen, um die Verbindung zu
    prüfen: Jedes Verbindungsproblem wird im Chat beantwortet.
 
@@ -147,20 +150,20 @@ zuzulassen, trägt der Betrieb dessen Hostnamen in **`JIRA_ALLOWED_PRIVATE_HOSTS
 
 ## Konfigurationsreferenz
 
-| Feld                                 | Standard                            | Beschreibung                                                                                                               |
-| ------------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Jira-URL**                         | —                                   | Die Basis-URL von Jira. Weiterleitungen werden nicht verfolgt; geben Sie die Adresse ein, unter der Jira antwortet.        |
-| **Jira-Edition**                     | Jira Cloud                          | Jira Cloud oder Jira Data Center.                                                                                          |
-| **E-Mail-Adresse des Kontos**        | —                                   | Nur Jira Cloud: die E-Mail-Adresse des Kontos, zu dem das API-Token gehört.                                                |
-| **Token**                            | —                                   | API-Token ohne Scopes (Cloud) oder Personal Access Token (Data Center).                                                    |
-| **Jira-Projekte**                    | —                                   | Schlüssel der Projekte, deren Lösungsversionen die Versionshinweise abdecken.                                              |
-| **JQL-Filter**                       | *(leer)*                            | JQL, die jedes Ticket zusätzlich erfüllen muss.                                                                            |
-| **Sprache**                          | English                             | Die Sprache, in der die Hinweise geschrieben werden.                                                                       |
-| **Zusätzlich übersetzen in**         | Aus                                 | Weitere Sprachen; zum Auswählen einschalten. Jede erhält einen eigenen Block, übersetzt aus den geschriebenen Hinweisen.   |
-| **Leserschaft**                      | *the customers who use the product* | Für wen die Hinweise geschrieben werden.                                                                                   |
-| **Ticketschlüssel anzeigen**         | Ein                                 | Jeden Punkt mit den Schlüsseln seiner Tickets beenden, verlinkt auf die Tickets. Für Lesende ohne Jira-Zugang ausschalten. |
-| **Verwandte Tickets zusammenfassen** | Ein                                 | Hinweise zu verwandten Tickets eines Abschnitts in einem Punkt zusammenfassen. Aus: ein Punkt pro Ticket.                  |
-| **Maximale Eingabe-Tokens**          | `16384`                             | Der für jede Runde behaltene Gesprächsverlauf. Frühere Changelogs sind lang, und nur die Fragen zählen.                    |
+| Feld                                 | Standard                            | Beschreibung                                                                                                                |
+| ------------------------------------ | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Jira-URL**                         | —                                   | Die Basis-URL von Jira. Weiterleitungen werden nicht verfolgt; geben Sie die Adresse ein, unter der Jira antwortet.         |
+| **Jira-Edition**                     | Jira Cloud                          | Jira Cloud oder Jira Data Center.                                                                                           |
+| **E-Mail-Adresse des Kontos**        | —                                   | Nur Jira Cloud: die E-Mail-Adresse des Kontos, zu dem das API-Token gehört.                                                 |
+| **Token**                            | —                                   | API-Token ohne Scopes (Cloud) oder Personal Access Token (Data Center).                                                     |
+| **Jira-Projekte**                    | —                                   | Schlüssel der Projekte, deren Lösungsversionen die Versionshinweise abdecken.                                               |
+| **JQL-Filter**                       | *(leer)*                            | JQL, die jedes Ticket zusätzlich erfüllen muss.                                                                             |
+| **Sprache**                          | English                             | Die Sprache, in der die Hinweise geschrieben werden, sofern die Nachricht keine andere verlangt.                            |
+| **In weitere Sprachen übersetzen**   | Aus                                 | Einschalten, um weitere **Sprachen** zu wählen; jede erhält einen eigenen Block, übersetzt aus den geschriebenen Hinweisen. |
+| **Zielgruppe**                       | *the customers who use the product* | Wer die Versionshinweise liest, in wenigen Worten; jeder Hinweis wird dafür formuliert.                                     |
+| **Mit Jira-Tickets verlinken**       | Ein                                 | Jeden Punkt mit Links auf seine Tickets beenden, z. B. (ENG-12). Für Lesende ohne Jira-Zugang ausschalten.                  |
+| **Verwandte Tickets zusammenfassen** | Ein                                 | Hinweise zu verwandten Tickets eines Abschnitts in einem Punkt zusammenfassen. Aus: ein Punkt pro Ticket.                   |
+| **Maximale Eingabe-Tokens**          | `16384`                             | Der für jede Runde behaltene Gesprächsverlauf. Frühere Changelogs sind lang, und nur die Fragen zählen.                     |
 
 Die Modelleinstellungen und das **Task LLM** (Titel, Folgefragen, die Prüfung auf Fragen über den Assistenten) sind
 dieselben wie bei den anderen Chat-Assistenten.

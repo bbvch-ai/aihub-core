@@ -54,18 +54,25 @@ config:
       not in subTaskIssueTypes() pour exclure les sous-tâches, ou labels != internal.
   language:
     label: Langue
-    help: La langue dans laquelle les notes de version sont rédigées.
+    help: La langue dans laquelle les notes de version sont rédigées. Un utilisateur
+      peut tout de même en demander une autre dans son message.
   translate_into:
-    label: Traduire aussi en
-    help: "Langues supplémentaires : le journal des modifications suit dans chacune\
-      \ d'elles, traduit depuis la version rédigée."
+    label: Langues
+    help: Chaque langue reçoit son propre bloc après la première, traduit à partir
+      de celle-ci.
+    toggle_label: Traduire dans d'autres langues
+    toggle_help: Désactivé, les notes de version sont fournies uniquement dans la
+      langue ci-dessus. Un utilisateur peut tout de même demander une autre langue
+      dans son message, p. ex. « notes de version pour 2.0 en allemand ».
   audience:
-    label: Lecteurs
-    help: Qui lit les notes de version, p. ex. les clients de l'application web. Les
-      notes sont rédigées pour eux.
-  show_ticket_keys:
-    label: Afficher les clés de ticket
-    help: Terminer chaque point par les clés de ses tickets, avec un lien vers ceux-ci.
+    label: Public cible
+    help: En quelques mots, qui lit ces notes de version. Chaque note est formulée
+      pour ce public, p. ex. « les clients de l'application web » ou « l'équipe de
+      support interne ».
+    placeholder: les clients de l'application web
+  link_tickets:
+    label: Lier aux tickets Jira
+    help: Terminer chaque point par des liens vers ses tickets dans Jira, p. ex. (ENG-12).
       À désactiver pour des lecteurs sans accès à Jira.
   merge_related_tickets:
     label: Regrouper les tickets liés
@@ -97,3 +104,5 @@ thoughts:
   notes_untranslated: "%{language} : %{count} notes n'ont pas pu être traduites et\
     \ restent dans la langue de rédaction."
   notes_merged: '%{notes} notes ont été regroupées en %{entries} points.'
+  languages_asked: Rédaction en %{languages}, comme le demande le message.
+  notes_merged_into_one: '%{notes} notes ont été regroupées en un seul point.'

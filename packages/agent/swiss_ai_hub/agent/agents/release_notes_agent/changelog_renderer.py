@@ -34,12 +34,12 @@ class ChangelogRenderer:
     @staticmethod
     def bullet(
         entry: Annotated[ChangelogEntry, "The entry to show"],
-        show_ticket_keys: Annotated[bool, "End the bullet with the keys of its tickets, linked to them"],
+        link_tickets: Annotated[bool, "End the bullet with the keys of its tickets, linked to them"],
     ) -> str:
         """An entry is kept on its bullet's line, whatever line breaks the model wrote into it. The keys go last, as
         changelogs reference their issues, because a merged entry can name many."""
         text = _SPACES.sub(" ", entry.text).strip()
-        if not show_ticket_keys:
+        if not link_tickets:
             return f"- {text}\n"
         keys = ", ".join(f"[{note.key}]({note.url})" for note in entry.notes)
         return f"- {text} ({keys})\n"

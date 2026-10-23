@@ -54,19 +54,24 @@ config:
       not in subTaskIssueTypes() per escludere i sotto-task, oppure labels != internal.
   language:
     label: Lingua
-    help: La lingua in cui sono scritte le note di rilascio.
+    help: La lingua in cui sono scritte le note di rilascio. Un utente può comunque
+      chiederne un'altra nel messaggio.
   translate_into:
-    label: Traduci anche in
-    help: 'Lingue aggiuntive: il changelog segue in ciascuna di esse, tradotto dalla
-      versione scritta.'
+    label: Lingue
+    help: Ogni lingua riceve un proprio blocco dopo la prima, tradotto da essa.
+    toggle_label: Traduci in altre lingue
+    toggle_help: Disattivato, le note di rilascio sono solo nella lingua sopra. Un
+      utente può comunque chiedere un'altra lingua nel messaggio, ad es. «note di
+      rilascio per 2.0 in tedesco».
   audience:
-    label: Lettori
-    help: Chi legge le note di rilascio, ad es. i clienti dell'app web. Le note sono
-      scritte per loro.
-  show_ticket_keys:
-    label: Mostra le chiavi dei ticket
-    help: Termina ogni punto con le chiavi dei suoi ticket, con un link ai ticket.
-      Disattivalo per lettori senza accesso a Jira.
+    label: Destinatari
+    help: In poche parole, chi legge queste note di rilascio. Ogni nota è formulata
+      per loro, ad es. «i clienti dell'app web» o «il team di supporto interno».
+    placeholder: i clienti dell'app web
+  link_tickets:
+    label: Collega ai ticket Jira
+    help: Termina ogni punto con i link ai suoi ticket in Jira, ad es. (ENG-12). Disattivalo
+      per lettori senza accesso a Jira.
   merge_related_tickets:
     label: Unisci i ticket correlati
     help: Unisci le note dei ticket correlati di una stessa sezione in un unico punto
@@ -97,3 +102,5 @@ thoughts:
   notes_untranslated: '%{language}: %{count} note non sono state tradotte e restano
     nella lingua di scrittura.'
   notes_merged: '%{notes} note sono state unite in %{entries} punti.'
+  languages_asked: Scrivo in %{languages}, come chiede il messaggio.
+  notes_merged_into_one: '%{notes} note sono state unite in un unico punto.'

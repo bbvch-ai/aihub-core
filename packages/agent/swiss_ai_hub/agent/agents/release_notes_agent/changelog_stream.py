@@ -22,13 +22,13 @@ class ChangelogStream:
         self,
         displayer: Annotated[EventDisplayer, "Where the chunks go"],
         t: Annotated[LocaleHandler, "Translations"],
-        show_ticket_keys: Annotated[bool, "End each bullet with its tickets' keys, linked to them"],
+        link_tickets: Annotated[bool, "End each bullet with its tickets' keys, linked to them"],
         model_name: Annotated[str, "Model the chunks are attributed to"],
         shown: Annotated[str, "What an earlier step of the run already showed, which this stream continues"] = "",
     ):
         self._displayer = displayer
         self._t = t
-        self._show_ticket_keys = show_ticket_keys
+        self._link_tickets = link_tickets
         self._model_name = model_name
         self._shown: list[str] = [shown] if shown else []
         self._language = ReleaseLanguage.EN
@@ -54,7 +54,7 @@ class ChangelogStream:
             if entry.section != self._section:
                 self._section = entry.section
                 pieces.append(ChangelogRenderer.heading(entry.section, self._language, self._t))
-            pieces.append(ChangelogRenderer.bullet(entry, self._show_ticket_keys))
+            pieces.append(ChangelogRenderer.bullet(entry, self._link_tickets))
         await self._show("".join(pieces))
 
     async def _show(self, text: str) -> None:

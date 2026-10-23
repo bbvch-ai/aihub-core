@@ -12,6 +12,7 @@ from swiss_ai_hub.agent.agents.release_notes_agent.changelog_stream import Chang
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_writer import ChangelogWriter
 from swiss_ai_hub.agent.agents.release_notes_agent.events.release_notes_written_event import ReleaseNotesWrittenEvent
 from swiss_ai_hub.agent.agents.release_notes_agent.events.version_resolved_event import VersionResolvedEvent
+from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note_translator import ReleaseNoteTranslator
 from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_agent_config import ReleaseNotesAgentConfig
 from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_reply import ReleaseNotesReply
@@ -62,7 +63,7 @@ class ReleaseNotesAgent(Agent):
         t: LocaleHandler,
     ) -> VersionResolvedEvent | Conversation.CompleteRequest:
         """The release is one of the projects' own version names, so a name Jira does not have is answered with the
-        ones it does, before any ticket is read."""
+        ones it does, before any ticket is read. Languages the message names replace the profile's for this answer."""
         speaker = ReleaseNotesAgent.__name__
         try:
             versions = await JiraTicketSearch.find_versions(config.jira, config.projects())
@@ -74,7 +75,11 @@ class ReleaseNotesAgent(Agent):
             return await ReleaseNotesReply.say(reply, ctx.query, displayer, speaker)
         projects = ", ".join(version.project for version in match.versions)
         await displayer.display_thought(t(f"{_KEY}.thoughts.version_found", version=match.name, projects=projects))
-        return VersionResolvedEvent(versions=match.versions)
+        asked = ReleaseLanguage.named_in(ctx.query)
+        if asked:
+            names = ", ".join(language.endonym for language in asked)
+            await displayer.display_thought(t(f"{_KEY}.thoughts.languages_asked", languages=names))
+        return VersionResolvedEvent(versions=match.versions, languages=asked or config.languages())
 
     @step(
         name=AgentLocaleString.from_i18n_path(f"{_KEY}.steps.write_release_notes.name"),
@@ -102,16 +107,18 @@ class ReleaseNotesAgent(Agent):
             reply = t(f"{_KEY}.messages.no_tickets", version=resolved.name, projects=", ".join(config.projects()))
             return await ReleaseNotesReply.say(reply, ctx.query, displayer, speaker)
         await displayer.display_thought(t(f"{_KEY}.thoughts.tickets_found", count=len(tickets), version=resolved.name))
-        stream = ChangelogStream(displayer, t, config.show_ticket_keys, config.llm.model_name)
-        await stream.begin(config.writing_language(), resolved.name)
+        language = resolved.writing_language
+        stream = ChangelogStream(displayer, t, config.link_tickets, config.llm.model_name)
+        await stream.begin(language, resolved.name)
         async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            entries = await ChangelogWriter.from_config(llm, config).write(tickets, stream.add)
+            entries = await ChangelogWriter.from_config(llm, config, language).write(tickets, stream.add)
         notes = [note for entry in entries for note in entry.notes]
         summarized = sum(note.fallback for note in notes)
         if summarized:
             await displayer.display_thought(t(f"{_KEY}.thoughts.notes_summarized", count=summarized, total=len(notes)))
         if len(entries) < len(notes):
-            await displayer.display_thought(t(f"{_KEY}.thoughts.notes_merged", notes=len(notes), entries=len(entries)))
+            merged = "notes_merged_into_one" if len(entries) == 1 else "notes_merged"
+            await displayer.display_thought(t(f"{_KEY}.thoughts.{merged}", notes=len(notes), entries=len(entries)))
         return ReleaseNotesWrittenEvent(version=resolved.name, entries=entries, shown=stream.text)
 
     @step(
@@ -122,6 +129,7 @@ class ReleaseNotesAgent(Agent):
     async def translate_release_notes_step(
         self,
         written: ReleaseNotesWrittenEvent,
+        resolved: VersionResolvedEvent,
         ctx: Conversation.Contextualized,
         config: ReleaseNotesAgentConfig,
         displayer: EventDisplayer,
@@ -130,13 +138,13 @@ class ReleaseNotesAgent(Agent):
     ) -> Conversation.CompleteRequest:
         """Each further language follows as a block of its own; with none configured the run ends on the changelog
         as written."""
-        stream = ChangelogStream(displayer, t, config.show_ticket_keys, config.llm.model_name, shown=written.shown)
-        targets = config.translation_targets()
+        stream = ChangelogStream(displayer, t, config.link_tickets, config.llm.model_name, shown=written.shown)
+        targets = resolved.translation_targets
         if targets:
             async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
                 translator = ReleaseNoteTranslator(
                     llm,
-                    config.writing_language(),
+                    resolved.writing_language,
                     config.audience,
                     config.tickets_per_batch,
                     config.max_concurrent_calls,

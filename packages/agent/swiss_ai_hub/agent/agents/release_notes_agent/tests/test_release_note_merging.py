@@ -211,7 +211,7 @@ async def test_with_merging_on_each_window_is_merged_and_shown_in_changelog_orde
     windows = _Windows()
     config = _config(tickets_per_batch=2, max_concurrent_calls=4, max_notes_per_merge=6)
 
-    entries = await ChangelogWriter.from_config(llm, config).write(list(reversed(tickets)), windows)
+    entries = await ChangelogWriter.from_config(llm, config, ReleaseLanguage.EN).write(list(reversed(tickets)), windows)
 
     covered = _covered(entries)
     assert sorted(covered) == sorted(ticket.key for ticket in tickets)
@@ -232,7 +232,7 @@ async def test_with_merging_off_every_ticket_keeps_its_own_entry():
     windows = _Windows()
     config = _config(merge_related_tickets=False, tickets_per_batch=3, max_concurrent_calls=2)
 
-    entries = await ChangelogWriter.from_config(llm, config).write(tickets, windows)
+    entries = await ChangelogWriter.from_config(llm, config, ReleaseLanguage.EN).write(tickets, windows)
 
     assert [entry.text for entry in entries] == [f"Note for ENG-{number}." for number in range(1, 11)]
     assert [len(window) for window in windows.received] == [3, 3, 3, 1]

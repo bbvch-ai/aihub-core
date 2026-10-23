@@ -52,19 +52,24 @@ config:
       to leave out sub-tasks, or labels != internal.
   language:
     label: Language
-    help: The language the release notes are written in.
+    help: The language the release notes are written in. A user can still ask for
+      another one in the message.
   translate_into:
-    label: Also translate into
-    help: 'Further languages: the changelog follows in each of them, translated from
-      the written one.'
+    label: Languages
+    help: Each language gets its own block after the first, translated from it.
+    toggle_label: Translate into other languages
+    toggle_help: Off, the release notes come in the language above only. A user can
+      still ask for another language in the message, e.g. "release notes for 2.0 in
+      French".
   audience:
-    label: Readers
-    help: Who reads the release notes, e.g. customers using the web app. The notes
-      are written for them.
-  show_ticket_keys:
-    label: Show ticket keys
-    help: End each bullet with the keys of its tickets, linked to them. Turn it off
-      for readers who cannot open Jira.
+    label: Audience
+    help: In a few words, who reads these release notes. Each note is worded for them,
+      e.g. "customers using the web app" or "the internal support team".
+    placeholder: customers using the web app
+  link_tickets:
+    label: Link to Jira tickets
+    help: End each bullet with links to its tickets in Jira, e.g. (ENG-12). Turn it
+      off for readers who cannot open Jira.
   merge_related_tickets:
     label: Merge related tickets
     help: Merge notes on related tickets of one section into one bullet that names
@@ -95,3 +100,5 @@ thoughts:
   notes_untranslated: '%{language}: %{count} notes could not be translated and stay
     in the writing language.'
   notes_merged: '%{notes} notes were merged into %{entries} bullets.'
+  languages_asked: Writing in %{languages}, as the message asks.
+  notes_merged_into_one: '%{notes} notes were merged into one bullet.'

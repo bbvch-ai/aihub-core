@@ -229,7 +229,7 @@ async def test_without_merging_every_ticket_keeps_a_bullet_of_its_own(platform: 
 
 @async_test
 async def test_each_further_language_follows_as_a_block_of_its_own(platform: _Platform):
-    config = _config(translate_into=[ReleaseLanguage.DE, ReleaseLanguage.EN], show_ticket_keys=False)
+    config = _config(translate_into=[ReleaseLanguage.DE, ReleaseLanguage.EN], link_tickets=False)
 
     runner = await _run("release notes for 2.0", config)
 
@@ -241,6 +241,19 @@ async def test_each_further_language_follows_as_a_block_of_its_own(platform: _Pl
     written = runner.get_events_of_class(ReleaseNotesWrittenEvent)[0]
     assert written.shown == english
     assert platform.follow_up_answers[0][-1].content == english, "follow-ups are grounded on the written language"
+
+
+@async_test
+async def test_a_language_the_message_asks_for_replaces_the_profiles(platform: _Platform):
+    config = _config(translate_into=[ReleaseLanguage.DE])
+
+    runner = await _run("Release notes for 2.0 in French", config)
+
+    answer = _answer(runner)
+    assert answer.startswith("## Notes de version 2.0\n")
+    assert "Versionshinweise" not in answer and "Release notes 2.0" not in answer
+    assert "Writing in Français, as the message asks." in _thoughts(runner)
+    assert runner.get_events_of_class(VersionResolvedEvent)[0].languages == [ReleaseLanguage.FR]
 
 
 @pytest.mark.parametrize(

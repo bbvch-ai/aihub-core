@@ -7,10 +7,10 @@ from swiss_ai_hub.agent.agents.release_notes_agent.release_language import Relea
 
 
 def build() -> ReleaseNotesAgentConfig:
-    """Release notes for customers, in English and German, without ticket keys.
+    """Release notes for customers, in English and German, without links to the tickets.
 
-    Customers cannot open the team's Jira, so the keys are off, and sub-tasks are left out because they repeat their
-    parent's change in pieces. The Jira connection and the projects are left empty on purpose — see
+    Customers cannot open the team's Jira, so the ticket links are off, and sub-tasks are left out because they repeat
+    their parent's change in pieces. The Jira connection and the projects are left empty on purpose — see
     `templates/__init__.py`.
     """
     return ReleaseNotesAgentConfig(
@@ -38,5 +38,5 @@ def build() -> ReleaseNotesAgentConfig:
         language=ReleaseLanguage.EN,
         translate_into=[ReleaseLanguage.DE],
         audience="customers who use the product and do not know how it is built",
-        show_ticket_keys=False,
+        link_tickets=False,
     )

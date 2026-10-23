@@ -8,6 +8,7 @@ from swiss_ai_hub.core.jira import JiraTicket
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
 from swiss_ai_hub.agent.agents.release_notes_agent.ordered_batches import OrderedBatches
+from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note_merger import ReleaseNoteMerger
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note_writer import ReleaseNoteWriter
 from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_agent_config import ReleaseNotesAgentConfig
@@ -40,8 +41,8 @@ class ChangelogWriter:
         cls,
         llm: Annotated[LLM, "The model writing and merging the notes"],
         config: Annotated[ReleaseNotesAgentConfig, "The profile"],
+        language: Annotated[ReleaseLanguage, "The language this answer is written in"],
     ) -> Self:
-        language = config.writing_language()
         if not config.merge_related_tickets:
             writer = ReleaseNoteWriter(
                 llm, language, config.audience, config.tickets_per_batch, 1, config.max_description_chars

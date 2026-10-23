@@ -44,7 +44,7 @@ def test_the_admin_configures_the_connection_projects_and_languages_but_not_the_
         "language",
         "translate_into",
         "audience",
-        "show_ticket_keys",
+        "link_tickets",
         "merge_related_tickets",
     } <= (configurable)
     assert not {
@@ -100,3 +100,12 @@ def test_related_tickets_are_merged_unless_the_profile_turns_it_off():
     assert _stored().merge_related_tickets is True
     assert _stored(merge_related_tickets=False).merge_related_tickets is False
     assert _stored().max_notes_per_merge == 40
+
+
+def test_the_translation_switch_and_the_renamed_fields_read_plainly():
+    elements = {element.name: element for element in _FORM.to_formkit_form()}
+
+    assert elements["translate_into"].toggle_label is not None
+    assert elements["audience"].placeholder is not None
+    assert "link_tickets" in elements and "show_ticket_keys" not in elements
+    assert _stored(language="de", translate_into=["fr"]).languages() == [ReleaseLanguage.DE, ReleaseLanguage.FR]

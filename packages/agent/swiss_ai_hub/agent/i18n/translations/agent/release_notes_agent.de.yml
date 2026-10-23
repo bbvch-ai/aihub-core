@@ -57,19 +57,25 @@ config:
       not in subTaskIssueTypes(), um Unteraufgaben auszulassen, oder labels != internal.
   language:
     label: Sprache
-    help: Die Sprache, in der die Versionshinweise geschrieben werden.
+    help: Die Sprache, in der die Versionshinweise geschrieben werden. Benutzer können
+      in der Nachricht trotzdem eine andere verlangen.
   translate_into:
-    label: Zusätzlich übersetzen in
-    help: 'Weitere Sprachen: Der Changelog folgt in jeder davon, übersetzt aus der
-      geschriebenen Fassung.'
+    label: Sprachen
+    help: Jede Sprache erhält nach der ersten einen eigenen Block, aus dieser übersetzt.
+    toggle_label: In weitere Sprachen übersetzen
+    toggle_help: 'Aus: Die Versionshinweise erscheinen nur in der Sprache oben. Benutzer
+      können in der Nachricht trotzdem eine andere Sprache verlangen, z. B. „Versionshinweise
+      für 2.0 auf Französisch".'
   audience:
-    label: Leserschaft
-    help: Wer die Versionshinweise liest, z. B. Kundinnen und Kunden der Web-App.
-      Die Hinweise werden für sie geschrieben.
-  show_ticket_keys:
-    label: Ticketschlüssel anzeigen
-    help: Jeden Punkt mit den Schlüsseln seiner Tickets beenden, verlinkt auf die
-      Tickets. Für Lesende ohne Zugang zu Jira ausschalten.
+    label: Zielgruppe
+    help: In wenigen Worten, wer diese Versionshinweise liest. Jeder Hinweis wird
+      für sie formuliert, z. B. „Kundinnen und Kunden der Web-App" oder „das interne
+      Support-Team".
+    placeholder: Kundinnen und Kunden der Web-App
+  link_tickets:
+    label: Mit Jira-Tickets verlinken
+    help: Jeden Punkt mit Links auf seine Tickets in Jira beenden, z. B. (ENG-12).
+      Für Lesende ohne Zugang zu Jira ausschalten.
   merge_related_tickets:
     label: Verwandte Tickets zusammenfassen
     help: Hinweise zu verwandten Tickets eines Abschnitts in einem Punkt zusammenfassen,
@@ -100,3 +106,5 @@ thoughts:
   notes_untranslated: '%{language}: %{count} Hinweise konnten nicht übersetzt werden
     und bleiben in der Schreibsprache.'
   notes_merged: '%{notes} Hinweise wurden zu %{entries} Punkten zusammengefasst.'
+  languages_asked: Schreibe auf %{languages}, wie in der Nachricht verlangt.
+  notes_merged_into_one: '%{notes} Hinweise wurden zu einem Punkt zusammengefasst.'

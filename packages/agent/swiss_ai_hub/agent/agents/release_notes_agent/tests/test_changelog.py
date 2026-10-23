@@ -87,27 +87,27 @@ def test_every_section_has_a_heading_in_every_language():
 def test_a_bullet_ends_with_the_linked_key_only_when_asked_to():
     entry = _entry("ENG-12", ChangelogSection.FIXES, "Sign-in works\nagain  after a  timeout.")
 
-    assert ChangelogRenderer.bullet(entry, show_ticket_keys=True) == (
+    assert ChangelogRenderer.bullet(entry, link_tickets=True) == (
         "- Sign-in works again after a timeout. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"
     )
-    assert ChangelogRenderer.bullet(entry, show_ticket_keys=False) == "- Sign-in works again after a timeout.\n"
+    assert ChangelogRenderer.bullet(entry, link_tickets=False) == "- Sign-in works again after a timeout.\n"
 
 
 def test_a_merged_bullet_names_every_ticket_it_covers():
     notes = [_note(key, ChangelogSection.FEATURES, f"Export of {key}.") for key in ("ENG-1", "SD-4")]
     entry = ChangelogEntry(section=ChangelogSection.FEATURES, text="CSV export for invoices and search.", notes=notes)
 
-    assert ChangelogRenderer.bullet(entry, show_ticket_keys=True) == (
+    assert ChangelogRenderer.bullet(entry, link_tickets=True) == (
         "- CSV export for invoices and search. "
         "([ENG-1](https://jira.example.com/browse/ENG-1), [SD-4](https://jira.example.com/browse/SD-4))\n"
     )
-    assert ChangelogRenderer.bullet(entry, show_ticket_keys=False) == "- CSV export for invoices and search.\n"
+    assert ChangelogRenderer.bullet(entry, link_tickets=False) == "- CSV export for invoices and search.\n"
 
 
 @pytest.mark.asyncio
 async def test_the_stream_keeps_exactly_the_text_it_shows():
     displayer = AsyncMock()
-    stream = ChangelogStream(displayer, _T, show_ticket_keys=False, model_name="gemma")
+    stream = ChangelogStream(displayer, _T, link_tickets=False, model_name="gemma")
 
     await stream.begin(ReleaseLanguage.EN, "2.0")
     await stream.add([_entry("ENG-1", ChangelogSection.FEATURES, "Export to CSV.")])
@@ -132,7 +132,7 @@ async def test_the_stream_keeps_exactly_the_text_it_shows():
 @pytest.mark.asyncio
 async def test_the_stream_shows_nothing_for_an_empty_batch():
     displayer = AsyncMock()
-    stream = ChangelogStream(displayer, _T, show_ticket_keys=True, model_name="gemma")
+    stream = ChangelogStream(displayer, _T, link_tickets=True, model_name="gemma")
 
     await stream.add([])
 
