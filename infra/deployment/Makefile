@@ -1,4 +1,4 @@
-.PHONY: mirror-image build-and-push-postgres-image build-and-push-playwright-image build-and-push-open-terminal-image build-and-push-openwebui-image
+.PHONY: mirror-image build-and-push-postgres-image build-and-push-presidio-analyzer-image build-and-push-playwright-image build-and-push-open-terminal-image build-and-push-openwebui-image
 
 # Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
 #
@@ -38,6 +38,18 @@ build-and-push-open-terminal-image:
 		docker/open-terminal
 	@docker push ghcr.io/bbvch-ai/aihub-core/open-terminal-office:0.11.34-1
 	@echo "Successfully published open-terminal-office:0.11.34-1"
+
+# Build the project-managed Presidio analyzer image (Presidio 2.2.364 + GLiNER + spaCy German model, API-key check)
+# and push to ghcr. The tag is the one pinned in compose-config.yml (image_tags.presidio_analyzer); bump it with every
+# change to `docker/presidio-analyzer/`. The "Build Presidio analyzer image" workflow does the same from CI. The
+# recognizer config is mounted, not baked in, so pattern changes need no rebuild.
+PRESIDIO_ANALYZER_IMAGE = ghcr.io/bbvch-ai/aihub-core/$(shell awk '/^  presidio_analyzer:/{print $$2}' compose-config.yml)
+build-and-push-presidio-analyzer-image:
+	@echo "Building $(PRESIDIO_ANALYZER_IMAGE)..."
+	@docker login ghcr.io
+	@docker build -t $(PRESIDIO_ANALYZER_IMAGE) -f docker/presidio-analyzer/Dockerfile docker/presidio-analyzer
+	@docker push $(PRESIDIO_ANALYZER_IMAGE)
+	@echo "Successfully published $(PRESIDIO_ANALYZER_IMAGE)"
 
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.

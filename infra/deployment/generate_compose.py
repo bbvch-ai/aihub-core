@@ -135,6 +135,7 @@ STATIC_COPY_DIRS = [
 # (source relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR, output_name)
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
+    ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
