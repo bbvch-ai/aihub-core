@@ -6505,6 +6505,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEvent",
         },
         {
+          $ref: "#/components/schemas/ExtractRecordsEvent",
+        },
+        {
           $ref: "#/components/schemas/ReadAttachedFilesEvent",
         },
         {
@@ -6548,6 +6551,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/RecordsExtractedEvent",
         },
         {
           $ref: "#/components/schemas/ToolResultEvent",
@@ -9402,6 +9408,155 @@ export const ExceptionEventSchema = {
   title: "ExceptionEvent",
   description:
     "An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.",
+} as const;
+
+export const ExtractRecordsEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    selection: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/KnowledgeDocumentSelection",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The documents to extract from; none when the request continues a pending extraction.",
+    },
+    continue_pending: {
+      type: "boolean",
+      title: "Continue Pending",
+      description:
+        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+      default: false,
+    },
+    fields: {
+      type: "string",
+      title: "Fields",
+      description:
+        "What each row holds, in the user's words, e.g. 'date, item, amount'.",
+    },
+    instructions: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Instructions",
+      description:
+        "Which records to keep, e.g. 'only hardware'; never turned into a column.",
+    },
+    row_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Row Terms",
+      description:
+        "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    collections: {
+      items: {
+        $ref: "#/components/schemas/BucketNamespacePair",
+      },
+      type: "array",
+      title: "Collections",
+      description: "The collections the documents are selected from.",
+    },
+    notices: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Notices",
+      description:
+        "What the caller wants said with the table's summary, e.g. ignored references.",
+      default: [],
+    },
+    cut_short: {
+      type: "boolean",
+      title: "Cut Short",
+      description:
+        "Whether the caller stopped looking for documents at a limit before it was done.",
+      default: false,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when a model chose the extraction in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["fields", "collections", "_event_name", "_parent_event_names"],
+  title: "ExtractRecordsEvent",
+  description:
+    "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -15357,6 +15512,89 @@ export const KnowledgeDatabaseSelectorSchema = {
   title: "KnowledgeDatabaseSelector",
   description:
     'A FormKit element for selecting multiple knowledge databases.\n\nRenders as a multi-select dropdown that loads database names from:\n/api/v1/knowledge/databases\n\nThe output is a list of database names: list[str]\n\n### Form Duality\n\n```python\nclass MyConfig(Form):\n    knowledge_databases: Annotated[\n        list[str] | KnowledgeDatabaseSelector,\n        Field(description="Knowledge databases to query"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            knowledge_databases=KnowledgeDatabaseSelector(\n                label=LocaleString(en="Knowledge Databases"),\n            ),\n        )\n\n# Data mode - from submission:\nconfig = MyConfig(knowledge_databases=["database1", "database2"])\n```',
+} as const;
+
+export const KnowledgeDocumentCriteriaSchema = {
+  properties: {
+    path_glob: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path Glob",
+      description:
+        "Glob on the path relative to the collection, e.g. 'invoices/2025/**'.",
+    },
+    path_regex: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Path Regex",
+      description: "Regular expression searched anywhere in the path.",
+    },
+    content_query: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Content Query",
+      description:
+        "Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.",
+    },
+    content_is_regex: {
+      type: "boolean",
+      title: "Content Is Regex",
+      description: "Whether `content_query` is a regular expression.",
+      default: false,
+    },
+    document_ids: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Document Ids",
+      description:
+        "Only these documents, by the ids a listing or a search returned.",
+      default: [],
+    },
+  },
+  type: "object",
+  title: "KnowledgeDocumentCriteria",
+  description:
+    "One way to pick documents: every condition given must hold, conditions left out do not narrow.",
+} as const;
+
+export const KnowledgeDocumentSelectionSchema = {
+  properties: {
+    any_of: {
+      items: {
+        $ref: "#/components/schemas/KnowledgeDocumentCriteria",
+      },
+      type: "array",
+      minItems: 1,
+      title: "Any Of",
+      description:
+        "A document is selected when it meets every condition of at least one entry.",
+    },
+  },
+  type: "object",
+  required: ["any_of"],
+  title: "KnowledgeDocumentSelection",
+  description:
+    "The documents a request is about, described rather than listed: a document is selected when it meets any of the\ncriteria.\n\nDescribing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob\nand limits when it resolves the set, so a model can only narrow what it was given.",
 } as const;
 
 export const KnowledgeReferenceSchema = {
@@ -23365,6 +23603,155 @@ export const RecallMemoryEventSchema = {
     "Asks the memory capability for what the profile remembers about the user and the organization, for a query.\n\nBuilt with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the\nprofile or the run has no identity to read for.",
 } as const;
 
+export const RecordsExtractedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    extraction_id: {
+      type: "string",
+      title: "Extraction Id",
+      description: "The `ExtractRecordsEvent` this answers.",
+    },
+    columns: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Columns",
+      description: "The table's columns, the source columns first.",
+      default: [],
+    },
+    table: {
+      type: "string",
+      title: "Table",
+      description: "The rows as a markdown table, empty when there are none.",
+      default: "",
+    },
+    summary: {
+      type: "string",
+      title: "Summary",
+      description:
+        "Files matched, rows found, files that failed and why, and what was cut short.",
+    },
+    file_count: {
+      type: "integer",
+      minimum: 0,
+      title: "File Count",
+      description: "Documents extracted from.",
+      default: 0,
+    },
+    failed_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Failed Count",
+      description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Row Count",
+      description: "Rows in the table.",
+      default: 0,
+    },
+    total_row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Total Row Count",
+      description: "Rows found, more than the table holds when cut.",
+      default: 0,
+    },
+    truncated: {
+      type: "boolean",
+      title: "Truncated",
+      description: "Whether the result was cut short at a limit.",
+      default: false,
+    },
+    remaining_documents: {
+      type: "integer",
+      minimum: 0,
+      title: "Remaining Documents",
+      description:
+        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
+      default: 0,
+    },
+    remaining_rows: {
+      type: "integer",
+      minimum: 0,
+      title: "Remaining Rows",
+      description:
+        "Rows found but not shown yet, shown first when the user continues.",
+      default: 0,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when a model chose the extraction in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["extraction_id", "summary", "_event_name", "_parent_event_names"],
+  title: "RecordsExtractedEvent",
+  description:
+    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+} as const;
+
 export const RefusalReasonSchema = {
   type: "string",
   enum: [
@@ -24808,6 +25195,13 @@ export const RunToolLoopEventSchema = {
       title: "Cite Sources",
       description:
         "Whether tools tell the model to cite what they return, off where it cannot resolve.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.",
       default: true,
     },
     files: {
@@ -29749,6 +30143,13 @@ export const ToolLoopStateSchema = {
       type: "boolean",
       title: "Cite Sources",
       description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop collects its tool results in `gathered`.",
       default: true,
     },
     gathered: {
@@ -35035,6 +35436,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEventWritable",
         },
         {
+          $ref: "#/components/schemas/ExtractRecordsEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ReadAttachedFilesEventWritable",
         },
         {
@@ -35078,6 +35482,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/RecordsExtractedEventWritable",
         },
         {
           $ref: "#/components/schemas/ToolResultEventWritable",
@@ -36214,6 +36621,138 @@ export const ExceptionEventWritableSchema = {
   title: "ExceptionEvent",
   description:
     "An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.",
+} as const;
+
+export const ExtractRecordsEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    selection: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/KnowledgeDocumentSelection",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The documents to extract from; none when the request continues a pending extraction.",
+    },
+    continue_pending: {
+      type: "boolean",
+      title: "Continue Pending",
+      description:
+        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+      default: false,
+    },
+    fields: {
+      type: "string",
+      title: "Fields",
+      description:
+        "What each row holds, in the user's words, e.g. 'date, item, amount'.",
+    },
+    instructions: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Instructions",
+      description:
+        "Which records to keep, e.g. 'only hardware'; never turned into a column.",
+    },
+    row_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Row Terms",
+      description:
+        "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    collections: {
+      items: {
+        $ref: "#/components/schemas/BucketNamespacePair",
+      },
+      type: "array",
+      title: "Collections",
+      description: "The collections the documents are selected from.",
+    },
+    notices: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Notices",
+      description:
+        "What the caller wants said with the table's summary, e.g. ignored references.",
+      default: [],
+    },
+    cut_short: {
+      type: "boolean",
+      title: "Cut Short",
+      description:
+        "Whether the caller stopped looking for documents at a limit before it was done.",
+      default: false,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when a model chose the extraction in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["fields", "collections"],
+  title: "ExtractRecordsEvent",
+  description:
+    "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -45536,6 +46075,138 @@ export const RecallMemoryEventWritableSchema = {
     "Asks the memory capability for what the profile remembers about the user and the organization, for a query.\n\nBuilt with `Memory.recall(...)`; answered with `MemoryRecalledEvent`, empty when memory is off for the\nprofile or the run has no identity to read for.",
 } as const;
 
+export const RecordsExtractedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    extraction_id: {
+      type: "string",
+      title: "Extraction Id",
+      description: "The `ExtractRecordsEvent` this answers.",
+    },
+    columns: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Columns",
+      description: "The table's columns, the source columns first.",
+      default: [],
+    },
+    table: {
+      type: "string",
+      title: "Table",
+      description: "The rows as a markdown table, empty when there are none.",
+      default: "",
+    },
+    summary: {
+      type: "string",
+      title: "Summary",
+      description:
+        "Files matched, rows found, files that failed and why, and what was cut short.",
+    },
+    file_count: {
+      type: "integer",
+      minimum: 0,
+      title: "File Count",
+      description: "Documents extracted from.",
+      default: 0,
+    },
+    failed_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Failed Count",
+      description: "Documents that could not be extracted.",
+      default: 0,
+    },
+    row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Row Count",
+      description: "Rows in the table.",
+      default: 0,
+    },
+    total_row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Total Row Count",
+      description: "Rows found, more than the table holds when cut.",
+      default: 0,
+    },
+    truncated: {
+      type: "boolean",
+      title: "Truncated",
+      description: "Whether the result was cut short at a limit.",
+      default: false,
+    },
+    remaining_documents: {
+      type: "integer",
+      minimum: 0,
+      title: "Remaining Documents",
+      description:
+        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
+      default: 0,
+    },
+    remaining_rows: {
+      type: "integer",
+      minimum: 0,
+      title: "Remaining Rows",
+      description:
+        "Rows found but not shown yet, shown first when the user continues.",
+      default: 0,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when a model chose the extraction in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["extraction_id", "summary"],
+  title: "RecordsExtractedEvent",
+  description:
+    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+} as const;
+
 export const RefusalStopEventWritableSchema = {
   properties: {
     event_id: {
@@ -46697,6 +47368,13 @@ export const RunToolLoopEventWritableSchema = {
       title: "Cite Sources",
       description:
         "Whether tools tell the model to cite what they return, off where it cannot resolve.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.",
       default: true,
     },
     files: {
@@ -50635,6 +51313,13 @@ export const ToolLoopStateWritableSchema = {
       type: "boolean",
       title: "Cite Sources",
       description: "Whether tools tell the model to cite what they return.",
+      default: true,
+    },
+    hands_back_results: {
+      type: "boolean",
+      title: "Hands Back Results",
+      description:
+        "Whether a gathering loop collects its tool results in `gathered`.",
       default: true,
     },
     gathered: {

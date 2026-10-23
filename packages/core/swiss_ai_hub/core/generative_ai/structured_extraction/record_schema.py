@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, ClassVar, Self
 
 from pydantic import BaseModel, Field, create_model
 from swiss_ai_hub.jambo import SchemaConverter
@@ -19,6 +19,20 @@ class RecordSchema(BaseModel):
 
     fields: Annotated[list[RecordField], Field(description="Fields every extracted record has, in display order")]
 
+    MATCH_FIELD: ClassVar[str] = "record_match"
+    MATCH_UNSURE: ClassVar[str] = "unsure"
+
+    def with_match(self) -> Self:
+        """The schema plus the field the model marks each record with when instructions decide which records to keep:
+        "yes" when the record clearly meets them, "unsure" when it may. Keeping the unsure ones and marking them lets a
+        person decide, where dropping them would lose records silently."""
+        match = RecordField(
+            name=self.MATCH_FIELD,
+            type="string",
+            description='"yes" when the record clearly meets the instructions, "unsure" when it may; no other value.',
+        )
+        return self.model_copy(update={"fields": [*self.fields, match]})
+
     def validated(self, max_fields: int = DEFAULT_MAX_FIELDS) -> Self:
         """Check the rules strict structured output and jambo impose, reporting every problem at once.
 
@@ -34,6 +48,8 @@ class RecordSchema(BaseModel):
             problems.append("a field name has no letters or digits")
         if any(not field.description.strip() for field in self.fields):
             problems.append("a field has no description")
+        if any(field.name == self.MATCH_FIELD for field in self.fields):
+            problems.append(f"'{self.MATCH_FIELD}' is reserved for marking records that may not match")
         duplicates = sorted(name for name, count in Counter(f.name for f in self.fields).items() if name and count > 1)
         if duplicates:
             problems.append(f"field names repeat: {', '.join(duplicates)}")

@@ -78,3 +78,51 @@ def test_referenced_collections_are_offered_on_top_once():
 
 def test_a_referenced_collection_the_user_may_not_read_is_not_offered():
     assert _scope(_listing(), [REPORTS], _access({("hr", "policies")})) == []
+
+
+def _narrowed(config: KnowledgeToolConfig, references: list[KnowledgeReference], access: MagicMock | None):
+    return KnowledgeToolScope.narrowed_collections(
+        config, references, access, namespaces_of=_namespaces_of, databases=lambda: list(LIVE)
+    )
+
+
+def test_without_references_the_narrowed_scope_is_the_profiles():
+    config = _listing(MilvusVectorStoreConfig(collection_name="hr", all_namespaces=True))
+
+    scope = _narrowed(config, [], _access({("hr", "policies")}))
+
+    assert scope.collections == [POLICIES]
+    assert scope.ignored == []
+
+
+def test_references_pick_among_the_profiles_collections():
+    config = _listing(MilvusVectorStoreConfig(collection_name="hr", all_namespaces=True))
+
+    assert _narrowed(config, [REPORTS], None).collections == [REPORTS]
+
+
+def test_a_reference_outside_the_profile_never_widens_the_scope():
+    config = _listing(MilvusVectorStoreConfig(collection_name="hr", index_namespaces=["policies"]))
+
+    scope = _narrowed(config, [POLICIES, CONTRACTS], None)
+
+    assert scope.collections == [POLICIES]
+    assert scope.ignored == [CONTRACTS]
+
+
+def test_references_that_pick_nothing_leave_the_profiles_scope():
+    config = _listing(MilvusVectorStoreConfig(collection_name="hr", all_namespaces=True))
+
+    scope = _narrowed(config, [CONTRACTS], None)
+
+    assert scope.collections == [POLICIES, REPORTS]
+    assert scope.ignored == [CONTRACTS]
+
+
+def test_a_referenced_collection_the_user_may_not_read_is_ignored():
+    config = _listing(MilvusVectorStoreConfig(collection_name="hr", all_namespaces=True))
+
+    scope = _narrowed(config, [REPORTS], _access({("hr", "policies")}))
+
+    assert scope.collections == [POLICIES]
+    assert scope.ignored == [REPORTS]

@@ -340,6 +340,20 @@ event:
     error: Erreur
     stop: Se termine par
     targetAgent: Rédacteur de mémoire
+  extraction:
+    fields: Colonnes
+    instructions: Lignes à garder
+    criteria: Documents sélectionnés
+    collections: Collections
+    notices: Remarques
+    documentIds: '{count} documents choisis'
+    files: Fichiers
+    failedFiles: Fichiers en échec
+    rows: Lignes affichées / trouvées
+    truncated: Écourté
+    continuePending: Poursuit une extraction inachevée
+    remainingDocuments: Documents restants
+    remainingRows: Lignes restant à afficher
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode
@@ -1015,6 +1029,8 @@ lib:
       ne peut donc être proposée.
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
+  knowledgeDatabases:
+    unavailable: "{name} (supprimée ou non visible pour vous)"
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
@@ -1115,7 +1131,8 @@ tenant:
   mismatch_warning: Conflit de locataire
   mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
     session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
-  mismatch_switch_action: Changer de locataire
+  mismatch_switch_action: Aller à {tenant}
+  mismatch_use_this_tenant: Discuter dans {tenant}
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
 support:

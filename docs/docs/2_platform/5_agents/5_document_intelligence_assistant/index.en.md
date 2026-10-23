@@ -76,6 +76,9 @@ its remit. These are all optional and covered in the configuration reference bel
   references to the exact section.
 - **Project knowledge assistant.** Searches a project's documents so team members can ask about decisions, specs, and
   status without digging through folders.
+- **Jira story assistant.** Drafts Jira stories for product owners and reviews existing ones against specifications,
+  handbooks and other stories. A ready-made template sets it up, see
+  [Drafting and reviewing Jira stories](#drafting-and-reviewing-jira-stories).
 
 ## Before you start: prerequisites
 
@@ -106,7 +109,8 @@ else.
 The agent is delivered as a **blueprint** from which you create configured **profiles** — see
 [Blueprints & Profiles](../2_blueprints_and_profiles/). With the prerequisites in place:
 
-1. **Open the blueprint** under **Admin > Agents > Blueprints** and select **Document Intelligence Assistant**.
+1. **Open the blueprint** under **Admin > Agents > Blueprints** and select **Document Intelligence Assistant**, or start
+   from one of its ready-made profiles under **Templates**.
 2. **Create a profile** with an **Agent ID**, **Name**, **Description**, and **Icon**.
 3. **Add at least one knowledge source.** Pick the vector store (knowledge base) to search and the matching embedding
    model. This is mandatory — the agent needs somewhere to retrieve from. You can add several sources to search them
@@ -117,6 +121,88 @@ The agent is delivered as a **blueprint** from which you create configured **pro
    sufficiency guard and allow multi-hop, and the system prompt.
 6. **Enable memory and guards** if you want them (all optional — see below).
 7. **Save and test** with real questions, checking that the cited sources are the ones you expect.
+
+## Drafting and reviewing Jira stories
+
+The **Jira Story Assistant** template turns this agent into an assistant for product owners. From a short description
+it drafts a story that follows the project's story template. Given an existing story, it checks every section of the
+template, lists contradictions and overlaps with your specifications, handbooks and other stories, and suggests a
+rewrite. It only writes into the chat: nothing changes in Jira until a product owner copies a suggestion over.
+
+### What the template sets
+
+| Setting                           | Value                                    | Why                                                                                                          |
+| --------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Knowledge sources**             | One placeholder on the shared collection | A template cannot know your databases. Replace it, see below.                                                |
+| **Query mode**                    | `hybrid`                                 | Keyword matching finds overlapping stories and working agreements that a draft request misses on similarity. |
+| **Condense the question**         | On                                       | A follow-up such as "make criterion 2 stricter" keeps searching the story's topic.                           |
+| **Check context sufficiency**     | Off                                      | A new story has no document that already answers it, so the guard would refuse to draft.                     |
+| **Restrict to the user's access** | On                                       | Product owners only get content from the databases they may read.                                            |
+| **User and organization memory**  | Off                                      | Facts remembered from one draft would leak into unrelated stories.                                           |
+| **System prompt**                 | Story templates and answer rules         | Written in English. The agent answers in the language of the user's message.                                 |
+| **Context prompt**                | The template's own                       | The default one ends with an instruction in the interface language, which pulls answers into that language.  |
+
+### Setting it up
+
+1. **Prepare the knowledge databases.**
+   - **Jira**: a database whose source is [Jira issues](../../8_knowledges/#jira-issues), with the projects whose stories
+     the product owners write. Leave service-desk projects and request types out with the source's JQL filter: the
+     agent can only cite what the database holds.
+   - **Confluence**: the pages holding your specifications, glossary and working agreements.
+   - **Handbooks**: for example handbook folders synced from SharePoint with
+     [cloud storage sync](../../8_knowledges/#files-from-cloud-storage).
+2. **Create the profile** under **Admin > Agents > Templates > Jira Story Assistant**. If its Agent ID is already taken in
+   this deployment, choose another one.
+3. **Point it at your databases.** Change the database of the existing knowledge source instead of deleting it, so it
+   keeps `hybrid`, and switch on **Search all namespaces** or pick the project and space keys. For every further
+   database, **Add Item** and fill in what a new source starts without:
+   - the **Embedding Model**, which is empty: pick the one the database was indexed with;
+   - the **Query mode**, which starts at `default`: set it to `hybrid`;
+   - the namespaces: switch on **Search all namespaces** or pick the keys, otherwise the profile cannot be saved.
+4. **Add your story templates** to the system prompt, see below.
+5. **Give the product owners access** to the profile and read access to every database it searches. A database a
+   product owner cannot read is left out of their answers without notice.
+
+### Adapting the prompt
+
+- **Story templates.** The prompt holds a `<story_templates>` block with a `default` template. Add one block per
+  project next to it, for example `<template project="ABC"> … </template>`, with that project's sections. The agent
+  uses the template of the project the user names, or the default, and says which one it used. It never takes a
+  template from a retrieved document, so copy a template kept in Confluence into the prompt.
+- **Markup.** The `<output_markup>` block asks for Markdown. If your product owners paste into the text editor of Jira
+  Data Center, which expects wiki markup, change it to `Write the story text in Jira wiki markup.`
+- **Languages.** The prompt exists in English only, and every interface language falls back to it. If you fill in
+  another language tab, users with that interface language get that version instead, so keep the copies in step. The
+  agent answers in the language of the message. Set each product owner's chat interface to the language they write in,
+  see the limits below.
+
+### Using it
+
+- **Draft**: "Draft a story for the ABC project: claimants can download a single expense report as PDF." The story comes
+  in a code block with a copy button and without citation markers. The sources follow under **Context used** and
+  **Related issues**, and requirements a document adds beyond the description are listed as open questions.
+- **Change a draft**: "Make criterion 1 stricter: only approved reports can be downloaded." The agent answers with the
+  complete updated story.
+- **Review**: paste the story's summary, description and acceptance criteria. Given only an issue key, the agent asks
+  for the text, because the knowledge search may return only parts of an issue. An attached export works too; name its
+  topic in the message ("Review the attached story about the submission deadline"), because the search does not read
+  attachments.
+- **Ask for sources** with a question about the content, such as "Which documents state the 90-day limit?". A question
+  about the assistant itself ("Where did you get that from?") is answered from its own description, which does not
+  include the documents it cited.
+
+### Limits
+
+- The review is a conversation, not an exhaustive checklist: it compares the story with the few documents the search
+  returns for it, not with every story in the project.
+- Looking up a story by its issue key is not supported. Paste the story instead.
+- The Jira source syncs the description and comments, not custom fields. Acceptance criteria kept in a custom field are
+  not seen.
+- Citations of Jira issues and Confluence pages open the issue or page. Documents from cloud storage sync have no web
+  link, so their citations are not clickable.
+- When the chat interface language differs from the language of the message, the answer can come back in the interface
+  language or mix both: the platform tells the model how to cite in the interface language. A German interface with
+  German messages, or an English one with English messages, gives consistent answers.
 
 ## Configuration reference
 

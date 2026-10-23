@@ -50,6 +50,9 @@ run-namespace-selection-agent:
 run-universal-agent:
 	uv run python app/universal_agent/main.py
 
+run-knowledge-extraction-agent:
+	uv run python app/knowledge_extraction_agent/main.py
+
 run-retrieval-agent:
 	uv run python app/retrieval_agent/main.py
 

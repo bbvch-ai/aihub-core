@@ -43,13 +43,15 @@ three lookups gets three.
 
 ### The tools
 
-| Tool                     | What it does                                                                                                                                                                                                                                                             | Offered when                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| **Search our knowledge** | Searches the knowledge collections the profile allows, reranks the results and returns the best sections with ids to cite. The user's own `#` references are offered too. Only collections the asking user may read are ever searched.                                   | The profile lists collections, or allows every collection the user can read. |
-| **Read attached files**  | Reads the files attached to the conversation. The model sees which files are attached and reads the ones it needs; a file too long to read whole returns the sections most relevant to what the model is looking for.                                                    | The user attached a document (images reach the model directly).              |
-| **Recall memory**        | Searches what is remembered about the user and the organisation: preferences, facts and decisions from earlier conversations.                                                                                                                                            | User or organisation memory is enabled on the profile.                       |
-| **Code sandbox**         | Runs commands and reads and writes files in the user's own code sandbox, in a folder per conversation that holds the conversation's attached files. A file the agent shows the user, such as a chart or a spreadsheet, is attached to the answer and stays downloadable. | The user switched on **Code Interpreter** in the chat.                       |
-| **My files**             | Lists and reads the user's own files in [My Files](../../10_chat_ui/14_my_files/): their uploads, chat attachments and files agents made for them. Read-only.                                                                                                            | The user switched on **My Files** in the chat.                               |
+| Tool                     | What it does                                                                                                                                                                                                                                                                                                                                                        | Offered when                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Search our knowledge** | Searches the knowledge collections the profile allows, reranks the results and returns the best sections with ids to cite. The user's own `#` references are offered too. Only collections the asking user may read are ever searched.                                                                                                                              | The profile lists collections, or allows every collection the user can read. |
+| **Read attached files**  | Reads the files attached to the conversation. The model sees which files are attached and reads the ones it needs; a file too long to read whole returns the sections most relevant to what the model is looking for.                                                                                                                                               | The user attached a document (images reach the model directly).              |
+| **Recall memory**        | Searches what is remembered about the user and the organisation: preferences, facts and decisions from earlier conversations.                                                                                                                                                                                                                                       | User or organisation memory is enabled on the profile.                       |
+| **Code sandbox**         | Runs commands and reads and writes files in the user's own code sandbox, in a folder per conversation that holds the conversation's attached files. A file the agent shows the user, such as a chart or a spreadsheet, is attached to the answer and stays downloadable.                                                                                            | The user switched on **Code Interpreter** in the chat.                       |
+| **My files**             | Lists and reads the user's own files in [My Files](../../10_chat_ui/14_my_files/): their uploads, chat attachments and files agents made for them. Read-only.                                                                                                                                                                                                       | The user switched on **My Files** in the chat.                               |
+| **Knowledge documents**  | Lists the documents of the knowledge collections by path, finds every document whose text contains an exact term or pattern, and reads a whole document a part at a time. Unlike the knowledge search, it finds every match, not the most similar passages. It never leaves the profile's collections or its document path filter.                                  | **Work on Whole Documents** is on in the profile.                            |
+| **Extract a table**      | Collects records from many documents into one table, each row naming its file, as the [Knowledge Extraction Agent](../14_knowledge_extraction_agent/) does. The model first checks which documents a selection covers; the user sees the table directly, with its summary, and the model describes it. Asks the user's approval before every extraction by default. | **Work on Whole Documents** is on in the profile.                            |
 
 More tools follow as the platform adds them: web search, web page fetch, image generation and the user's own file space
 each add their tool to this agent.
@@ -128,5 +130,36 @@ finds.
 | **Disable Tools**      | Off     | Turn on to withhold some tools; the Disabled Tools picker appears only while it is on.                |
 | **Disabled Tools**     | —       | Tools this profile never offers, while Disable Tools is on.                                           |
 | **Approvals**          | —       | Tools whose calls the user must approve first: every call, once per answer, or once per conversation. |
+
+### Knowledge Documents
+
+| Field                       | Default   | Description                                                                                                       |
+| --------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Work on Whole Documents** | Off       | Offer the document tools and table extraction. Profiles saved before these tools existed keep them off.           |
+| **Document Path Filter**    | *(empty)* | Only documents whose path matches this pattern, e.g. `invoices/**`. It limits the document tools, not the search. |
+
+### Table Extraction
+
+| Field                           | Default    | Description                                                                        |
+| ------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| **Extraction Model**            | main model | The model that reads each document and extracts its rows.                          |
+| **Files per Answer**            | `100`      | The most documents one extraction answer reads.                                    |
+| **Minutes per Answer**          | `5`        | About how long one answer may extract before the rest is offered in parts.         |
+| **Most Matching Documents**     | `1000`     | Above it, the user is only asked to narrow the request.                            |
+| **Rows in the Table**           | `500`      | The most rows one answer shows; in a chat, at most 100, the rest on *continue*.    |
+| **Longest Fully Read Document** | `500000`   | Longer documents (in characters) are read in their relevant parts, marked as such. |
+| **Model Calls at Once**         | `4`        | Extraction calls one agent instance makes at the same time.                        |
+
+Extraction behaves as in the [Knowledge Extraction Agent](../14_knowledge_extraction_agent/): a selection too large for
+one answer gets a sample and the offer to narrow it or to continue in parts, and the model asks the user before it
+continues. One answer continues at most one part, even when the user agreed to all of them, and an answer that showed a
+sample continues none, so every answer stays within **Minutes per Answer** and the user confirms after seeing the
+sample.
+
+By default an extraction needs the user's approval in the chat. A client that cannot answer an approval, such as the
+OpenAI-compatible API or a bot, stops there, so the shipped templates that offer extraction (**Knowledge Assistant** and
+**Data Analyst**) set the **Extract a table** approval to *never*; the size check above still asks the user before a
+large extraction. The **Workplace Assistant** template keeps the document tools off: it is the general everyday
+assistant, its users rarely need a table across many documents, and fewer tools keep its choice of tool reliable.
 
 Memory and attached-file settings are the same as on the other chat agents; see [Memory](../../15_memory/).

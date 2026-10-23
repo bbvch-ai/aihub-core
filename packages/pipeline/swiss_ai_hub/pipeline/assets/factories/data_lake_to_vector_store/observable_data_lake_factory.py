@@ -10,6 +10,7 @@ from swiss_ai_hub.pipeline.ops.data_lake.data_version_by_partition_for_data_lake
     data_version_by_partition_for_data_lake_no_op,
 )
 from swiss_ai_hub.pipeline.ops.data_lake.fetch_all_files_in_data_lake import fetch_all_files_in_data_lake_no_op
+from swiss_ai_hub.pipeline.services.default_partition_repair_service import DefaultPartitionRepairService
 from swiss_ai_hub.pipeline.types.data_lake_listing import DataLakeListing
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 from swiss_ai_hub.pipeline.util.run_routing import bucket_from_run_tag
@@ -29,7 +30,9 @@ def observable_data_lake_factory(
     database's observation never touches another's partitions.
 
     The client is built here rather than injected: it is provisioned with ``ensure_bucket=True`` because
-    this is the first thing to touch a freshly created database's bucket.
+    this is the first thing to touch a freshly created database's bucket. The vector collection is provisioned and
+    repaired here too, before any document partition is registered, so no ingestion run can meet a missing or
+    half-built collection (#1923).
     """
 
     @observable_source_asset(
@@ -41,6 +44,12 @@ def observable_data_lake_factory(
     )
     def observable_data_lake(context: OpExecutionContext) -> DataVersionsByPartition:
         bucket = bucket_from_run_tag(context)
+        repair = DefaultPartitionRepairService.repair(bucket)
+        if repair.changed_anything:
+            context.log.warning(
+                f"Repaired nodes stranded in the default partition of '{bucket}': moved {repair.moved_nodes}, "
+                f"deleted {repair.superseded_nodes} superseded, across {len(repair.document_ids)} documents"
+            )
         data_lake_client = build_s3_data_lake_client(bucket, ensure_bucket=True)
         listing: DataLakeListing = fetch_all_files_in_data_lake_no_op(data_lake_client=data_lake_client)
         return data_version_by_partition_for_data_lake_no_op(

@@ -13,14 +13,15 @@ Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 Die Plattform verwendet sechs isolierte Docker-Netzwerke:
 
-| Netzwerk       | Zweck                                | Externer Zugriff | ICC aktiviert |
-| -------------- | ------------------------------------ | ---------------- | ------------- |
-| `proxy`        | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
-| `backend`      | Interne Anwendungs-Services          | Nein             | Ja            |
-| `data`         | Datenbanken und Message Broker       | Nein             | Ja            |
-| `storage`      | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
-| `egress`       | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
-| `code-sandbox` | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| Netzwerk        | Zweck                                | Externer Zugriff | ICC aktiviert |
+| --------------- | ------------------------------------ | ---------------- | ------------- |
+| `proxy`         | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
+| `backend`       | Interne Anwendungs-Services          | Nein             | Ja            |
+| `data`          | Datenbanken und Message Broker       | Nein             | Ja            |
+| `storage`       | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
+| `egress`        | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
+| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| `pii-detection` | PII-Erkennung + ihre Caller          | Nein             | Ja            |
 
 Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
 Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
@@ -30,10 +31,15 @@ nur für den ausgehenden Internetzugriff nutzen.
 Das `code-sandbox`-Netzwerk ist eine Single-Tenant-Zone für die `open-terminal` Code-Execution-Sandbox, die beliebigen,
 von Benutzern übermittelten Code ausführt. Ihre Mitglieder sind die Sandbox plus **genau ihre Caller** (`open-webui`,
 `universal-agent`, der einzige AI-Hub Agent, der Code ausführt, und `api`, das die eigenen Dateien jedes Benutzers
-ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der
-Ausschluss der Sandbox aus `backend`, dass ein Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`,
-`speaches` oder `otel-collector` erreichen kann. ICC bleibt aktiviert (die Caller müssen `open-terminal:8000`
-erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
+ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der Ausschluss der Sandbox aus `backend`, dass ein
+Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`, `speaches` oder `otel-collector` erreichen kann. ICC
+bleibt aktiviert (die Caller müssen `open-terminal:8000` erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt
+der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
+
+Das `pii-detection`-Netzwerk enthält den `presidio-analyzer`, der die Personendaten erhält, die die Plattform
+anonymisiert, plus **genau seine Caller** (`litellm` und `universal-agent`). Seine Modelle sind im Image enthalten und
+der Hugging-Face-Hub ist zur Laufzeit offline, daher verwehrt `internal: true` in Nicht-Dev-Stages den ausgehenden
+Internetzugriff, ohne ihn zu beeinträchtigen. Jede Anfrage ausser dem Health-Check benötigt den API-Key des Analyzers.
 
 ## Service-Netzwerkzuweisungen
 
@@ -57,7 +63,7 @@ Interne Anwendungs- und Verarbeitungs-Services:
 
 - **litellm**: LLM-Gateway und Request-Routing
 - **mineru-api**: Dokumenten-Parsing und -Extraktion
-- **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
+- **presidio-anonymizer**: PII-Anonymisierung
 - **vLLM**: Lokale LLM-Inferenz (Chat, Embedding, Reranking) – nur GPU Deployments
 - **speaches**: Spracherkennung und Text-zu-Sprache
 - **playwright**: Web-Scraping und Automatisierung (auch im `egress` für Internetzugriff)
@@ -109,10 +115,10 @@ Die Single-Tenant-Zone für die Code-Execution-Sandbox:
   `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
 
 Die Sandbox ist der **einzige** Bewohner; ihre Caller treten diesem Netzwerk zusätzlich zu ihren eigenen bei.
-`open-webui` ist an `code-sandbox` angebunden (neben `proxy`/`backend`/`data`/`storage`), damit es
-`open-terminal:8000` erreichen kann, und `universal-agent` tritt ihm bei (neben `backend`/`data`/`storage`), um Code im
-Sandbox-Home des anfragenden Benutzers auszuführen, und `api` tritt ihm bei, um die eigenen Dateien jedes Benutzers von
-dort auszuliefern. Der `sandbox-mirror`-Sidecar, der die Homes nach S3 kopiert, liest das Homes-Volume und befindet sich
+`open-webui` ist an `code-sandbox` angebunden (neben `proxy`/`backend`/`data`/`storage`), damit es `open-terminal:8000`
+erreichen kann, und `universal-agent` tritt ihm bei (neben `backend`/`data`/`storage`), um Code im Sandbox-Home des
+anfragenden Benutzers auszuführen, und `api` tritt ihm bei, um die eigenen Dateien jedes Benutzers von dort
+auszuliefern. Der `sandbox-mirror`-Sidecar, der die Homes nach S3 kopiert, liest das Homes-Volume und befindet sich
 ausschließlich in `backend`, nie in `code-sandbox`. Da die Sandbox ein Netzwerk nur mit ihren Callern teilt, hat ein
 Breakout keinen Netzwerkpfad zu den `backend`- oder `data`-Tiers. Im Dev-Stage verwendet `open-webui`
 `network_mode: host` und die Agents laufen lokal außerhalb von Docker, sodass beide die Sandbox stattdessen über den
@@ -139,7 +145,7 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
         playwright[playwright]
@@ -151,6 +157,12 @@ flowchart TB
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
         playwright_egress[playwright]
+    end
+
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
     end
 
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]
@@ -237,8 +249,8 @@ flowchart TB
 
 \*ICC im Egress-Netzwerk deaktiviert – Container können über dieses Netzwerk nicht miteinander kommunizieren.
 
-\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`, `api`) befinden sich in `code-sandbox`, sodass die
-Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
+\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`, `api`) befinden sich in `code-sandbox`,
+sodass die Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
 
 \*\*\*`internal: true` in Nicht-Dev-Stages blockiert ausgehenden Internetzugriff aus der Sandbox; im `dev`-Stage ist das
 Netzwerk nicht-internal (localhost-Zugriff), sodass diese Garantie nur für `local`/`build`/`nightly`/`latest` gilt.

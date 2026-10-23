@@ -4406,6 +4406,7 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
     | RunToolLoopEvent
@@ -4421,6 +4422,7 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
@@ -6442,6 +6444,102 @@ export type ExceptionEvent = {
    * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
    */
   http_status_code?: number;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request continues a pending extraction.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Continue Pending
+   *
+   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   */
+  continue_pending?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   /**
    * Event Name
    *
@@ -10131,6 +10229,62 @@ export type KnowledgeDatabaseSelector = {
    */
   readonly validation: string;
   [key: string]: unknown;
+};
+
+/**
+ * KnowledgeDocumentCriteria
+ *
+ * One way to pick documents: every condition given must hold, conditions left out do not narrow.
+ */
+export type KnowledgeDocumentCriteria = {
+  /**
+   * Path Glob
+   *
+   * Glob on the path relative to the collection, e.g. 'invoices/2025**'.
+   */
+  path_glob?: string | null;
+  /**
+   * Path Regex
+   *
+   * Regular expression searched anywhere in the path.
+   */
+  path_regex?: string | null;
+  /**
+   * Content Query
+   *
+   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
+   */
+  content_query?: string | null;
+  /**
+   * Content Is Regex
+   *
+   * Whether `content_query` is a regular expression.
+   */
+  content_is_regex?: boolean;
+  /**
+   * Document Ids
+   *
+   * Only these documents, by the ids a listing or a search returned.
+   */
+  document_ids?: Array<string>;
+};
+
+/**
+ * KnowledgeDocumentSelection
+ *
+ * The documents a request is about, described rather than listed: a document is selected when it meets any of the
+ * criteria.
+ *
+ * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
+ * and limits when it resolves the set, so a model can only narrow what it was given.
+ */
+export type KnowledgeDocumentSelection = {
+  /**
+   * Any Of
+   *
+   * A document is selected when it meets every condition of at least one entry.
+   */
+  any_of: Array<KnowledgeDocumentCriteria>;
 };
 
 /**
@@ -15510,6 +15664,122 @@ export type RecallMemoryEvent = {
 };
 
 /**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ *
+ * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
+ * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
+ * a block of the answer, the OpenAI-compatible API as answer text.
+ */
+export type RecordsExtractedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The rows as a markdown table, empty when there are none.
+   */
+  table?: string;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the table.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found, more than the table holds when cut.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the result was cut short at a limit.
+   */
+  truncated?: boolean;
+  /**
+   * Remaining Documents
+   *
+   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   */
+  remaining_documents?: number;
+  /**
+   * Remaining Rows
+   *
+   * Rows found but not shown yet, shown first when the user continues.
+   */
+  remaining_rows?: number;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalReason
  *
  * Why a conversational turn was refused before any answer was attempted.
@@ -16463,6 +16733,12 @@ export type RunToolLoopEvent = {
    * Whether tools tell the model to cite what they return, off where it cannot resolve.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
   /**
    * Files
    *
@@ -19762,6 +20038,12 @@ export type ToolLoopState = {
    * Whether tools tell the model to cite what they return.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
   /**
    * Gathered
    *
@@ -23363,6 +23645,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
     | RunToolLoopEventWritable
@@ -23378,6 +23661,7 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
@@ -24109,6 +24393,89 @@ export type ExceptionEventWritable = {
    * HTTP status code associated with the exception. Defaults to 500 (Internal Server Error).
    */
   http_status_code?: number;
+  [key: string]: unknown;
+};
+
+/**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request continues a pending extraction.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Continue Pending
+   *
+   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   */
+  continue_pending?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
   [key: string]: unknown;
 };
 
@@ -29782,6 +30149,109 @@ export type RecallMemoryEventWritable = {
 };
 
 /**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ *
+ * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
+ * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
+ * a block of the answer, the OpenAI-compatible API as answer text.
+ */
+export type RecordsExtractedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The rows as a markdown table, empty when there are none.
+   */
+  table?: string;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the table.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found, more than the table holds when cut.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the result was cut short at a limit.
+   */
+  truncated?: boolean;
+  /**
+   * Remaining Documents
+   *
+   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   */
+  remaining_documents?: number;
+  /**
+   * Remaining Rows
+   *
+   * Rows found but not shown yet, shown first when the user continues.
+   */
+  remaining_rows?: number;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalStopEvent
  *
  * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
@@ -30493,6 +30963,12 @@ export type RunToolLoopEventWritable = {
    * Whether tools tell the model to cite what they return, off where it cannot resolve.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
   /**
    * Files
    *
@@ -32990,6 +33466,12 @@ export type ToolLoopStateWritable = {
    * Whether tools tell the model to cite what they return.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
   /**
    * Gathered
    *

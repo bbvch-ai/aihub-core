@@ -339,6 +339,20 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    continuePending: Continues an unfinished extraction
+    remainingDocuments: Documents left
+    remainingRows: Rows left to show
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -998,6 +1012,8 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: "{name} (deleted or not visible to you)"
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -1098,7 +1114,8 @@ tenant:
   mismatch_warning: Tenant Mismatch
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  mismatch_switch_action: Go to {tenant}
+  mismatch_use_this_tenant: Chat in {tenant}
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
 support:

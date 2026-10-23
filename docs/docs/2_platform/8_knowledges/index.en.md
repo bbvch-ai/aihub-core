@@ -65,9 +65,9 @@ as a safety net, catching anything a missed notification would otherwise have le
 
 Instead of uploading, a database can be given a **Source** when it is created, or later through **Edit source** on the
 database. Two kinds of source are offered: **Cloud storage sync (rclone)** keeps files in sync, and **Business
-application sync** keeps records such as Jira issues in sync, each record as one document. Credentials are stored
-encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the stored ones, so a rotation
-is a matter of editing the source. Either way, the system then:
+application sync** keeps records such as Jira issues and Confluence pages in sync, each record as one document.
+Credentials are stored encrypted and shown masked afterwards; re-saving the dialog without retyping them keeps the
+stored ones, so a rotation is a matter of editing the source. Either way, the system then:
 
 - Syncs from the source on a daily schedule; until the first sync has filled it, the database shows **Nothing synced
   yet**
@@ -130,6 +130,57 @@ issue, so the next sync removes the comment as well.
 A sync whose token Jira rejects, whose project does not exist or is not visible to the account, or whose filter is not
 valid JQL fails before it changes anything. The reason is shown on the failed run in the Dagster UI, and in the failure
 notification when notifications are configured.
+
+#### Confluence pages
+
+Pick **Confluence** as the source system and enter:
+
+- **Confluence URL**: the address you open Confluence at, such as `https://acme.atlassian.net/wiki` for Confluence Cloud
+  (including `/wiki`) or `https://confluence.acme.ch` for Confluence Data Center. As for Jira, it must be a public
+  address, without `?` or `#`, and a redirect is not followed. An operator can allow a Confluence reachable only on the
+  company network with `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`.
+- **Confluence edition**: Confluence Cloud signs in with the account's e-mail and an
+  [API token without scopes](https://id.atlassian.com/manage-profile/security/api-tokens); Confluence Data Center with a
+  personal access token (profile → *Settings* → *Personal Access Tokens*)
+- **Spaces**: the keys of the spaces to sync, such as `ENG`
+- **Labels** (optional): only pages carrying at least one of these labels are synced
+- **Parent pages** (optional): the IDs of pages whose subtrees are synced, each page included. A page's ID is the number
+  in its address, such as `123456` in `…/pages/123456/Runbook`
+
+Each space becomes a collection and each page one document, filed under the titles of the pages above it, so the page
+tree becomes folders: `Deploy` below `Runbooks` below the space's home page `Engineering` is
+`Engineering/Runbooks/Deploy` in the `ENG` collection. The document is titled with the page title, links back to the
+page, and holds its text: headings, lists, tables and code blocks keep their formatting, and panels and expandable
+sections keep their content under their title. Images, attachments, blog posts and comments are not synced. A link to
+another Confluence page keeps its text, and macros that only show content kept elsewhere, such as a table of contents,
+child pages, Jira issues or an included page, are left out.
+
+The page's fields reach the document as [frontmatter](#markdown-files-with-frontmatter): a citation shows the page title
+and opens the page in Confluence, and the fields `space`, `labels`, `ancestors`, `author`, `page_id`, `page_version` and
+`updated` are metadata a retriever can filter on once they are among its allowed filter fields, for example to search a
+single space or the pages with a given label.
+
+::: warning Use a dedicated account
+The database holds every page the token's account can read in the listed spaces, and everyone with access to the
+database can find them, whatever page restrictions apply in Confluence. Sync with a dedicated read-only account that
+sees only what the database's readers may see.
+:::
+
+The first sync reads every page in scope. Later syncs list every page with its version, its place in the tree and its
+labels, and read the text only of pages that are new, edited, renamed, moved or relabelled. Renaming or moving a page
+moves the documents of the pages below it in the same sync. Pages deleted or archived in Confluence, moved out of the
+listed spaces or parent pages, or no longer carrying a listed label are removed. Changing the spaces, labels or parent
+pages reads everything again.
+
+Two pages whose titles end up as the same file name keep one document between them, such as `Q1/Q2` and `Q1_Q2` below
+the same parent, or titles that only differ after their 120th character. The run's log names both pages; renaming one of
+them in Confluence brings the other back.
+
+A sync fails before it changes anything when Confluence rejects the token, when a space or parent page does not exist or
+is not visible to the account, when a parent page lies outside the listed spaces, or when the Confluence URL points to
+an internal address, such as a Docker service, `localhost` or a private network address, that no operator has allowed.
+The reason is shown on the failed run in the Dagster UI, and in the failure notification when notifications are
+configured.
 
 The external system becomes the source of truth. Your team continues working there, and the next sync brings changes,
 including deletions, into the Swiss AI Hub. Handing a database that already holds documents to a different source,

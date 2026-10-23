@@ -161,3 +161,37 @@ structured:
         label: Zusätzlicher JQL-Filter
         help: Optional. Synchronisiert werden nur Vorgänge, die auch diese JQL erfüllen,
           z. B. issuetype != "Service Request". Ohne ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: Confluence-URL
+        help: Die Adresse, unter der Sie Confluence öffnen, z. B. https://acme.atlassian.net/wiki
+          für Confluence Cloud oder https://confluence.acme.ch für Confluence Data
+          Center.
+      deployment:
+        label: Confluence-Edition
+        help: Confluence Cloud meldet sich mit der E-Mail-Adresse eines Kontos und
+          einem API-Token an, Confluence Data Center mit einem persönlichen Zugriffstoken.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: E-Mail-Adresse des Kontos
+        help: E-Mail-Adresse des Confluence-Cloud-Kontos, zu dem das API-Token gehört.
+      api_token:
+        label: Token
+        help: Ein Confluence-Cloud-API-Token ohne Bereiche oder ein persönliches Zugriffstoken
+          von Confluence Data Center. Wird verschlüsselt gespeichert. Die Datenbank
+          enthält alle Seiten, die dieses Konto in den angegebenen Bereichen lesen
+          darf. Verwenden Sie deshalb ein eigenes Konto mit Lesezugriff.
+      space_keys:
+        label: Bereiche
+        help: Schlüssel der zu synchronisierenden Bereiche, z. B. ENG. Jeder Bereich
+          wird zu einem Namespace, sein Seitenbaum zu Ordnern.
+      labels:
+        label: Stichwörter
+        help: Optional. Synchronisiert werden nur Seiten mit mindestens einem dieser
+          Stichwörter.
+      ancestor_page_ids:
+        label: Übergeordnete Seiten
+        help: Optional. Synchronisiert werden nur diese Seiten und die Seiten darunter.
+          Die ID einer Seite ist die Zahl in ihrer URL.

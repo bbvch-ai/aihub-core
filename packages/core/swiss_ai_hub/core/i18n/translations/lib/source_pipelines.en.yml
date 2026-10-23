@@ -155,3 +155,34 @@ structured:
         label: Additional JQL filter
         help: Optional. Only issues that also match this JQL are synced, e.g. issuetype
           != "Service Request". Without ORDER BY.
+    confluence:
+      display_name: Confluence
+      base_url:
+        label: Confluence URL
+        help: The address you open Confluence at, e.g. https://acme.atlassian.net/wiki
+          for Confluence Cloud or https://confluence.acme.ch for Confluence Data Center.
+      deployment:
+        label: Confluence edition
+        help: Confluence Cloud signs in with an account e-mail and an API token, Confluence
+          Data Center with a personal access token.
+        cloud: Confluence Cloud
+        data_center: Confluence Data Center
+      email:
+        label: Account e-mail
+        help: E-mail of the Confluence Cloud account the API token belongs to.
+      api_token:
+        label: Token
+        help: A Confluence Cloud API token without scopes, or a Confluence Data Center
+          personal access token. Stored encrypted. The database holds every page this
+          account can read in the listed spaces, so use a dedicated read-only account.
+      space_keys:
+        label: Spaces
+        help: Keys of the spaces to sync, e.g. ENG. Each space becomes a namespace,
+          and its page tree becomes folders.
+      labels:
+        label: Labels
+        help: Optional. Only pages carrying at least one of these labels are synced.
+      ancestor_page_ids:
+        label: Parent pages
+        help: Optional. Only these pages and the pages below them are synced. A page's
+          ID is the number in its URL.

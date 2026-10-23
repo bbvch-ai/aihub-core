@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterator
 from typing import Any
 
 from llama_index.core.schema import BaseNode, NodeRelationship
@@ -13,10 +14,15 @@ from pymilvus import MilvusClient
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
     DEFAULT_PARTITION_NAME,
+    MANUAL_PARTITION_PREFIX,
+    MANUAL_PARTITIONS_MARKER,
     MAX_PARTITIONS,
+    create_manual_partitions,
     get_partition_name_for_namespace,
     get_partition_names_for_namespaces,
 )
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_state import MilvusPartitionState
+from swiss_ai_hub.core.persistence.rag.vectors.stores.stored_node_key import StoredNodeKey
 
 try:
     from pymilvus import AnnSearchRequest, RRFRanker, WeightedRanker
@@ -46,8 +52,10 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     - add(): Just set partition_name= per batch
     - query(): Just set partition_names= in kwargs
 
-    Backward compatibility: Falls back to base class for collections that do not have exactly 1023 manual partitions
-    (e.g., collections created before this PR or with a different partition count).
+    The layout is read per collection (see ``partition_state``). A legacy collection, created before manual partitions
+    and without the creation marker, keeps everything in ``_default`` and goes through the base class. A half-built
+    one — partitions still being created, or a creator that died mid-way (#1923) — is completed before any write, so
+    a partitioned collection never receives new nodes in ``_default``.
     """
 
     def __init__(
@@ -71,8 +79,8 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         # Override the parent's internally-created client with our pre-configured one
         self._milvusclient = client
 
-        self._has_manual_partitions: bool | None = None
-        self._declared_fields: set[str] | None = None
+        self._settled_partition_state: MilvusPartitionState | None = None
+        self._collection_description: dict[str, Any] | None = None
 
     def _ensure_collection_loaded(self, partition_names: list[str] | None = None) -> None:
         """Lazily load partitions (or whole collection if none specified). Idempotent — blocks until ready.
@@ -89,18 +97,45 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         else:
             self.client.load_collection(collection_name=self.collection_name)
 
-    def _check_has_manual_partitions(self) -> bool:
-        """Check if collection has 1023 manual partitions (partition_0...partition_1022)."""
-        if self._has_manual_partitions is None:
-            partitions = self.client.list_partitions(collection_name=self.collection_name)
-            manual_partitions = [p for p in partitions if p.startswith("partition_")]
-            self._has_manual_partitions = len(manual_partitions) == MAX_PARTITIONS
+    def partition_state(self) -> MilvusPartitionState:
+        """How this collection lays out its nodes.
 
-        return self._has_manual_partitions
+        Only a settled state is cached. Pipeline stores live for the whole process, and caching a half-built
+        collection as unpartitioned is what sent every later write of that process into ``_default`` (#1923).
+        """
+        if self._settled_partition_state is not None:
+            return self._settled_partition_state
+
+        state = self._partition_state_of(self._manual_partition_names())
+        if state is not MilvusPartitionState.PARTIAL:
+            self._settled_partition_state = state
+        return state
+
+    def _partition_state_of(self, manual_partition_names: set[str]) -> MilvusPartitionState:
+        if len(manual_partition_names) == MAX_PARTITIONS:
+            return MilvusPartitionState.COMPLETE
+        if not manual_partition_names and self._described_collection().get("description") != MANUAL_PARTITIONS_MARKER:
+            return MilvusPartitionState.LEGACY
+        return MilvusPartitionState.PARTIAL
+
+    def _manual_partition_names(self) -> set[str]:
+        partitions = self.client.list_partitions(collection_name=self.collection_name)
+        return {name for name in partitions if name.startswith(MANUAL_PARTITION_PREFIX)}
+
+    def ensure_partitions(self) -> MilvusPartitionState:
+        """Complete a half-built collection; returns the resulting state.
+
+        A legacy collection is left as it is: it has no partitions to complete, and converting it is a migration of
+        every node it holds, not a repair.
+        """
+        if self.partition_state() is MilvusPartitionState.PARTIAL:
+            create_manual_partitions(client=self.client, collection_name=self.collection_name)
+        return self.partition_state()
 
     def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
         """
-        Insert nodes into their hashed partitions (or fallback to base class if no manual partitions).
+        Insert nodes into their hashed partitions, completing a half-built collection first; a legacy collection
+        falls back to the base class, which writes to ``_default``.
 
         Sanitize and verify every node before writing any of them: a batch spans namespaces and is inserted
         one partition at a time, so validating at the insert site would leave earlier partitions written
@@ -114,9 +149,12 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         for node in nodes:
             self._verify_entry_fits(node_to_metadata_dict(node, remove_text=True, text_field=self.text_key), node)
 
-        if not self._check_has_manual_partitions():
+        state = self.ensure_partitions()
+        if state is MilvusPartitionState.LEGACY:
             self._ensure_collection_loaded()
             return super().add(nodes, **add_kwargs)
+        if state is MilvusPartitionState.PARTIAL:
+            raise RuntimeError(f"Collection {self.collection_name} is still missing manual partitions after completion")
 
         by_namespace = self._group_nodes_by_namespace(nodes)
         partition_names = [get_partition_name_for_namespace(ns) for ns in by_namespace]
@@ -153,17 +191,20 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         }
         return node.model_copy(update={"relationships": relationships})
 
+    def _described_collection(self) -> dict[str, Any]:
+        """The schema never changes after creation, so one describe_collection serves the store's lifetime."""
+        if self._collection_description is None:
+            self._collection_description = self.client.describe_collection(collection_name=self.collection_name)
+
+        return self._collection_description
+
     def _declared_field_names(self) -> set[str]:
         """
         Resolve declared columns from the live collection rather than restating the schema, which lives in
         milvus_vector_store_factory and would drift. The store attributes alone are not enough either —
         namespace is a declared column with no corresponding attribute.
         """
-        if self._declared_fields is None:
-            description = self.client.describe_collection(collection_name=self.collection_name)
-            self._declared_fields = {field["name"] for field in description["fields"]}
-
-        return self._declared_fields
+        return {field["name"] for field in self._described_collection()["fields"]}
 
     def _verify_entry_fits(self, entry: dict[str, Any], node: BaseNode) -> None:
         """Split declared columns from the dynamic remainder exactly as pymilvus does before packing it."""
@@ -249,15 +290,14 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         - add(): Just set partition_name= per batch
         - query(): Just set partition_names= in kwargs
         """
-        # Backward compatibility: fallback to base class if no manual partitions
-        if not self._check_has_manual_partitions():
+        if self.partition_state() is MilvusPartitionState.LEGACY:
             self._ensure_collection_loaded()
             return super().query(query, **kwargs)
 
         namespaces = self._extract_namespaces_from_query(query)
         partition_names: list[str] | None = None
         if namespaces:
-            partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
+            partition_names = self.document_partition_names(namespaces)
             kwargs["milvus_partition_names"] = partition_names
 
         self._ensure_collection_loaded(partition_names=partition_names)
@@ -378,51 +418,37 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     ) -> list[BaseNode]:
         partition_names: list[str] | None = kwargs.get("milvus_partition_names")
         if partition_names is None and namespaces:
-            partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
-            kwargs.setdefault("milvus_partition_names", partition_names)
+            partition_names = self.document_partition_names(namespaces)
+            kwargs["milvus_partition_names"] = partition_names
         self._ensure_collection_loaded(partition_names)
         return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """LlamaIndex's delete, across the whole collection.
+
+        It does not know the document's namespace, so it loads every partition. Callers that know the namespace use
+        ``delete_documents``, which loads only the partitions involved.
         """
-        Delete nodes associated with a ref_doc_id, scoped to a specific partition.
-        """
-        # Backward compatibility: fallback to base class if no manual partitions
-        if not self._check_has_manual_partitions():
-            self._ensure_collection_loaded()
-            return super().delete(ref_doc_id)
-
-        partition_name: str | None = delete_kwargs.get("partition_name")
-        self._ensure_collection_loaded([partition_name] if partition_name else None)
-        doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
-        doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
-
-        entries = self.client.query(
-            collection_name=self.collection_name,
-            filter=f"{self.doc_id_field} in [{','.join(doc_ids_expr)}]",
-            partition_names=[partition_name] if partition_name else None,
-            output_fields=["id"],
-        )
-
-        if len(entries) > 0:
-            ids_to_delete = [entry["id"] for entry in entries]
-
-            self.client.delete(
-                collection_name=self.collection_name,
-                pks=ids_to_delete,
-                partition_name=partition_name,
-            )
+        self._ensure_collection_loaded()
+        super().delete(ref_doc_id)
 
     def document_partition_names(self, namespaces: list[str]) -> list[str]:
         """Every partition the nodes of documents in these namespaces can live in.
 
-        ``_default`` is always included: nodes written while a collection was not yet fully partitioned land
-        there (#1923), and a delete that skips it strands them. A legacy collection has no manual partitions,
-        so ``_default`` is all it has.
+        ``_default`` is always included: nodes written while a collection was not yet fully partitioned landed
+        there (#1923) and stay until repaired, and a read or delete that skips it misses them. A half-built
+        collection may lack a hashed partition, which Milvus rejects by name, and nothing can be stored in a
+        partition that does not exist. A legacy collection has no manual partitions, so ``_default`` is all it has.
         """
-        if not self._check_has_manual_partitions():
+        state = self.partition_state()
+        if state is MilvusPartitionState.LEGACY:
             return [DEFAULT_PARTITION_NAME]
-        return [*dict.fromkeys(get_partition_names_for_namespaces(namespaces=namespaces)), DEFAULT_PARTITION_NAME]
+
+        partition_names = list(dict.fromkeys(get_partition_names_for_namespaces(namespaces=namespaces)))
+        if state is MilvusPartitionState.PARTIAL:
+            existing = self._manual_partition_names()
+            partition_names = [name for name in partition_names if name in existing]
+        return [*partition_names, DEFAULT_PARTITION_NAME]
 
     def delete_documents(self, ref_doc_ids: list[str], namespaces: list[str]) -> int:
         """Delete every node of these documents with a filtered delete; returns the number of deleted nodes.
@@ -454,22 +480,81 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         Milvus has no DISTINCT, so the grouping happens here while paging through the partition.
         """
         self._ensure_collection_loaded([partition_name])
+        node_ids: dict[str, list[str]] = {}
+        for page in self._partition_pages(partition_name, ["id", self.doc_id_field], f'{self.doc_id_field} != ""'):
+            for row in page:
+                node_ids.setdefault(row[self.doc_id_field], []).append(row["id"])
+        return node_ids
+
+    def _partition_pages(
+        self, partition_name: str, output_fields: list[str], filter_expression: str
+    ) -> Iterator[list[dict[str, Any]]]:
+        """Page through one partition; a plain query is capped at Milvus' result window, an iterator is not."""
         iterator = self.client.query_iterator(
             collection_name=self.collection_name,
             batch_size=NODES_PER_SCAN_PAGE,
-            filter=f'{self.doc_id_field} != ""',
-            output_fields=["id", self.doc_id_field],
+            filter=filter_expression,
+            output_fields=output_fields,
             partition_names=[partition_name],
         )
-
-        node_ids: dict[str, list[str]] = {}
         try:
             while page := iterator.next():
-                for row in page:
-                    node_ids.setdefault(row[self.doc_id_field], []).append(row["id"])
+                yield page
         finally:
             iterator.close()
-        return node_ids
+
+    def stranded_nodes(self) -> list[StoredNodeKey]:
+        """Nodes in ``_default`` of a partitioned collection, written while it was half-built (#1923).
+
+        A legacy collection has none: ``_default`` is where all of its nodes belong.
+        """
+        if self.partition_state() is MilvusPartitionState.LEGACY:
+            return []
+        return self._node_keys(DEFAULT_PARTITION_NAME, f'{self.doc_id_field} != ""')
+
+    def node_keys_of_document(self, document_id: str, namespace: str) -> list[StoredNodeKey]:
+        """The document's nodes in its namespace's partition, where readers look for them."""
+        return self._node_keys(get_partition_name_for_namespace(namespace), f'{self.doc_id_field} == "{document_id}"')
+
+    def _node_keys(self, partition_name: str, filter_expression: str) -> list[StoredNodeKey]:
+        self._ensure_collection_loaded([partition_name])
+        return [
+            StoredNodeKey.from_row(row)
+            for page in self._partition_pages(partition_name, StoredNodeKey.output_fields(), filter_expression)
+            for row in page
+        ]
+
+    def restore_stranded_nodes(self, node_ids_by_namespace: dict[str, list[str]]) -> int:
+        """Copy nodes from ``_default`` into their namespaces' partitions as stored; returns the number copied.
+
+        Nothing is parsed or embedded again. ``*`` leaves out the BM25 output, which Milvus refuses to return and
+        recomputes from ``text`` on insert. The flush makes the copies durable before the caller deletes the
+        originals. It runs once for every namespace: Milvus allows a collection one flush every 10 s
+        (``quotaAndLimits.flushRate``), so a flush per document would stretch a large repair into hours.
+        """
+        copied = sum(
+            self._copy_from_default(node_ids, get_partition_name_for_namespace(namespace))
+            for namespace, node_ids in node_ids_by_namespace.items()
+            if node_ids
+        )
+        if copied:
+            self.client.flush(self.collection_name)
+        return copied
+
+    def _copy_from_default(self, node_ids: list[str], partition_name: str) -> int:
+        self._ensure_collection_loaded([DEFAULT_PARTITION_NAME, partition_name])
+        copied = 0
+        for batch in iter_batch(node_ids, NODE_IDS_PER_DELETE):
+            ids_expr = ",".join(f'"{node_id}"' for node_id in batch)
+            for page in self._partition_pages(DEFAULT_PARTITION_NAME, ["*"], f"id in [{ids_expr}]"):
+                for rows in iter_batch(page, self.batch_size):
+                    self.client.upsert(collection_name=self.collection_name, data=rows, partition_name=partition_name)
+                copied += len(page)
+        return copied
+
+    def delete_stranded_nodes(self, node_ids: list[str]) -> int:
+        """Delete nodes from ``_default`` by primary key; returns the number of deleted nodes."""
+        return self.delete_nodes_in_partition(node_ids, DEFAULT_PARTITION_NAME)
 
     def delete_nodes_in_partition(self, node_ids: list[str], partition_name: str) -> int:
         """Delete nodes by primary key; returns the number of deleted nodes."""
@@ -495,7 +580,11 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         covered too (see ``document_partition_names``), because all-namespaces retrieval still finds nodes
         stranded there.
         """
-        partition_names = self.document_partition_names([namespace]) if self._check_has_manual_partitions() else [None]
+        partition_names = (
+            [None]
+            if self.partition_state() is MilvusPartitionState.LEGACY
+            else self.document_partition_names([namespace])
+        )
         self._ensure_collection_loaded([name for name in partition_names if name])
         for partition_name in partition_names:
             self.client.delete(
