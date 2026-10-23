@@ -69,6 +69,12 @@ AGENT_FILTER_IDS = ("aihub-feature-filter", "aihub-title-filter")
 # full-context mode, which never reads the embeddings, and agents read attached files themselves.
 RETRIEVAL_SETTINGS: dict[str, Any] = {"BYPASS_EMBEDDING_AND_RETRIEVAL": True}
 
+# Default user permissions enforced on every provisioning run, for the same reason as RETRIEVAL_SETTINGS. Attach
+# Webpage is off because OpenWebUI sends the page as a text item the agent pipe cannot read, so agents dropped it
+# silently. The same flag blocks `#https://` references, which arrive the same way; OpenWebUI admins bypass it.
+# Turning it back on takes True here: removing the entry leaves the stored False in place.
+USER_PERMISSION_OVERRIDES: dict[str, dict[str, bool]] = {"chat": {"web_upload": False}}
+
 # LiteLLM model_info key through which a model opts out of _DEFAULT_FUNCTION_CALLING (e.g. Kimi-K2.6
 # declares "native"). LiteLLM passes custom model_info keys through /v1/model/info unchanged.
 FUNCTION_CALLING_MODEL_INFO_KEY = "aihub_openwebui_function_calling"
@@ -142,6 +148,7 @@ class OpenWebuiProvisioner:
 
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._openwebui.update_retrieval_config(http, RETRIEVAL_SETTINGS)
+                await self._openwebui.update_default_user_permissions(http, USER_PERMISSION_OVERRIDES)
                 await self._sync_groups()
                 await self._sync_workspace_models(http, self._get_known_online_agents())
                 await self._sync_llm_workspace_models(http, await self._get_available_llm_models())

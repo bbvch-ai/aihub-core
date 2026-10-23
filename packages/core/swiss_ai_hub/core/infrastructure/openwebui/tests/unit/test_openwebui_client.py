@@ -76,6 +76,41 @@ class TestUpdateModel:
             await owui_client.update_model(mock_client, {"id": "m1", "name": "New Name"})
 
 
+class TestUpdateDefaultUserPermissions:
+    @pytest.mark.asyncio
+    async def test_changes_only_the_overridden_fields(self, owui_client: OpenWebuiClient) -> None:
+        """OpenWebUI resets every field the form leaves out, so the stored permissions go back with the change."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _response(
+            json_data={
+                "workspace": {"models": False},
+                "chat": {"file_upload": True, "web_upload": True, "share": False},
+                "features": {"web_search": True},
+            }
+        )
+        mock_client.post.return_value = _response(json_data={})
+
+        await owui_client.update_default_user_permissions(mock_client, {"chat": {"web_upload": False}})
+
+        call_args = mock_client.post.call_args
+        assert call_args.args[0] == f"{BASE_URL}/api/v1/users/default/permissions"
+        assert call_args.kwargs["json"] == {
+            "workspace": {"models": False},
+            "chat": {"file_upload": True, "web_upload": False, "share": False},
+            "features": {"web_search": True},
+        }
+
+    @pytest.mark.asyncio
+    async def test_does_not_write_when_the_read_fails(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _response(status_code=500)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await owui_client.update_default_user_permissions(mock_client, {"chat": {"web_upload": False}})
+
+        mock_client.post.assert_not_called()
+
+
 def _model_pages(pages: list[list[dict]], *, total: int | None = -1) -> list[httpx.Response]:
     """One paginated ``/models/list`` response per page; ``total`` defaults to the overall count,
     pass ``None`` to simulate a server that omits it."""
