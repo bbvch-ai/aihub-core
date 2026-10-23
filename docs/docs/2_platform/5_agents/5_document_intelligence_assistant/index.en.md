@@ -123,8 +123,8 @@ The agent is delivered as a **blueprint** from which you create configured **pro
 
 ## Drafting and reviewing Jira stories
 
-The **Jira Story Assistant** template turns this agent into an assistant for product owners. From a short description
-it drafts a story that follows the project's story template. Given an existing story, it checks every section of the
+The **Jira Story Assistant** template turns this agent into an assistant for product owners. From a short description it
+drafts a story that follows the project's story template. Given an existing story, it checks every section of the
 template, lists contradictions and overlaps with your specifications, handbooks and other stories, and suggests a
 rewrite. It only writes into the chat: nothing changes in Jira until a product owner copies a suggestion over.
 
@@ -144,14 +144,14 @@ rewrite. It only writes into the chat: nothing changes in Jira until a product o
 ### Setting it up
 
 1. **Prepare the knowledge databases.**
-   - **Jira**: a database whose source is [Jira issues](../../8_knowledges/#jira-issues), with the projects whose stories
-     the product owners write. Leave service-desk projects and request types out with the source's JQL filter: the
-     agent can only cite what the database holds.
+   - **Jira**: a database whose source is [Jira issues](../../8_knowledges/#jira-issues), with the projects whose
+     stories the product owners write. Leave service-desk projects and request types out with the source's JQL filter:
+     the agent can only cite what the database holds.
    - **Confluence**: the pages holding your specifications, glossary and working agreements.
    - **Handbooks**: for example handbook folders synced from SharePoint with
      [cloud storage sync](../../8_knowledges/#files-from-cloud-storage).
-2. **Create the profile** under **Admin > Agents > Templates > Jira Story Assistant**. If its Agent ID is already taken in
-   this deployment, choose another one.
+2. **Create the profile** under **Admin > Agents > Templates > Jira Story Assistant**. If its Agent ID is already taken
+   in this deployment, choose another one.
 3. **Point it at your databases.** Change the database of the existing knowledge source instead of deleting it, so it
    keeps `hybrid`, and switch on **Search all namespaces** or pick the project and space keys. For every further
    database, **Add Item** and fill in what a new source starts without:
@@ -159,15 +159,15 @@ rewrite. It only writes into the chat: nothing changes in Jira until a product o
    - the **Query mode**, which starts at `default`: set it to `hybrid`;
    - the namespaces: switch on **Search all namespaces** or pick the keys, otherwise the profile cannot be saved.
 4. **Add your story templates** to the system prompt, see below.
-5. **Give the product owners access** to the profile and read access to every database it searches. A database a
-   product owner cannot read is left out of their answers without notice.
+5. **Give the product owners access** to the profile and read access to every database it searches. A database a product
+   owner cannot read is left out of their answers without notice.
 
 ### Adapting the prompt
 
-- **Story templates.** The prompt holds a `<story_templates>` block with a `default` template. Add one block per
-  project next to it, for example `<template project="ABC"> … </template>`, with that project's sections. The agent
-  uses the template of the project the user names, or the default, and says which one it used. It never takes a
-  template from a retrieved document, so copy a template kept in Confluence into the prompt.
+- **Story templates.** The prompt holds a `<story_templates>` block with a `default` template. Add one block per project
+  next to it, for example `<template project="ABC"> … </template>`, with that project's sections. The agent uses the
+  template of the project the user names, or the default, and says which one it used. It never takes a template from a
+  retrieved document, so copy a template kept in Confluence into the prompt.
 - **Markup.** The `<output_markup>` block asks for Markdown. If your product owners paste into the text editor of Jira
   Data Center, which expects wiki markup, change it to `Write the story text in Jira wiki markup.`
 - **Languages.** The prompt exists in English only, and every interface language falls back to it. If you fill in

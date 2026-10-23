@@ -73,6 +73,8 @@ config:
   draft_prompt:
     label: Prompt di redazione
     help: Istruzioni che guidano il modo in cui l'LLM redige il corpo della risposta.
+      La risposta può usare il Markdown (grassetto, elenchi); un testo racchiuso tra
+      ==doppi segni di uguale== viene evidenziato in giallo nella bozza.
   category_name:
     label: Categoria
     help: Nome della categoria, ad es. support_request. Deve essere univoco.
@@ -150,3 +152,20 @@ config:
     help: Quanto può durare una ricerca di conoscenze prima che il messaggio venga
       redatto con il testo di errore. Senza un limite, un agente di conoscenza offline
       lascia l'esecuzione in attesa all'infinito.
+  quote_original:
+    label: Cita il messaggio originale
+    help: Se attivo, il messaggio originale viene citato sotto la risposta, con mittente,
+      data, destinatari e oggetto, come una risposta in Outlook. Viene aggiunto dopo
+      la redazione e non viene mai mostrato al modello.
+  quote_locale:
+    label: Lingua della citazione
+    help: Lingua delle etichette Da/Inviato/A/Oggetto e della data sopra il messaggio
+      citato. Outlook usa la lingua di chi risponde. Scegliete quella del titolare
+      della casella.
+quote:
+  from: Da
+  sent: Inviato
+  to: A
+  cc: Cc
+  subject: Oggetto
+  date_format: '%d/%m/%Y %H:%M'

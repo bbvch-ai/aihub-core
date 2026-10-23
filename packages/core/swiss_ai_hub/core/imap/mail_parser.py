@@ -78,6 +78,8 @@ class MailParser:
             rfc_message_id=message.get("Message-ID"),
             references=message.get("References"),
             reply_to=message.get("Reply-To"),
+            to=message.get("To"),
+            cc=message.get("Cc"),
             body_text=body_text,
             body_html=body_html,
             attachments=attachments,
