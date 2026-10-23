@@ -35,9 +35,12 @@
             :key="index"
             class="flex items-center justify-between rounded bg-surface-100 p-2 dark:bg-surface-700"
           >
-            <div class="flex items-center gap-2">
-              <i class="pi pi-file text-surface-400" />
-              <span class="text-sm">{{ file.name }}</span>
+            <div class="flex min-w-0 items-center gap-2">
+              <i class="pi pi-file shrink-0 text-surface-400" />
+              <span
+                v-tooltip.top="file.name"
+                class="truncate text-sm"
+              >{{ file.name }}</span>
             </div>
             <Button
               icon="pi pi-times"

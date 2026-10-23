@@ -10,7 +10,7 @@
             @click="($event) => newWidget.toggle($event)"
           />
           <Popover ref="newWidget">
-            <div class="flex flex-col gap-2">
+            <div class="flex w-80 max-w-full flex-col gap-2">
               <p class="font-bold">
                 {{ t("dashboard.create_widget") }}
               </p>
@@ -33,6 +33,7 @@
                 option-label="label"
                 append-to="self"
                 :placeholder="t('dashboard.select_data_type')"
+                class="w-full"
                 :aria-label="t('dashboard.select_data_type')"
               />
               <Select
@@ -41,6 +42,7 @@
                 option-label="agent_config.name"
                 append-to="self"
                 :placeholder="t('dashboard.select_agent')"
+                class="w-full"
                 :aria-label="t('dashboard.select_agent')"
                 :loading="agentInstancesAreLoading"
                 show-clear

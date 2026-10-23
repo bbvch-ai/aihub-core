@@ -9,8 +9,8 @@ from swiss_ai_hub.api.routes.role.dto.usage_limit_dto import UsageLimitDTO
 class CreateRoleRequest(BaseModel):
     """Request model for creating a new role."""
 
-    name: Annotated[str, Field(description="The unique name of the role.")]
-    description: Annotated[str, Field(description="A short description of the role's purpose.")]
+    name: Annotated[str, Field(description="The unique name of the role.", max_length=120)]
+    description: Annotated[str, Field(description="A short description of the role's purpose.", max_length=500)]
     access_rules: Annotated[list[str], Field(description="A list of access rules granted by this role.")] = []
     usage_limits: Annotated[list[UsageLimitDTO], Field(description="Pattern-based usage limit rules.")] = []
 

@@ -2,3 +2,30 @@ html {
   font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
 }
+
+/* Option labels are user-provided names (agents, roles, users) with no length the overlay can
+   assume. PrimeVue sizes the overlay to its widest option, so one long name pushed it past the
+   viewport; cap it and let options wrap instead. */
+.p-select-overlay,
+.p-multiselect-overlay {
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+.p-select-option,
+.p-multiselect-option {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.p-menu-overlay {
+  max-width: min(32rem, calc(100vw - 2rem));
+}
+
+.p-menu-item-label,
+.p-confirmdialog-message {
+  overflow-wrap: anywhere;
+}
+
+.p-dialog {
+  max-width: calc(100vw - 2rem);
+}

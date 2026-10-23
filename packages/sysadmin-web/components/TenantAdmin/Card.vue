@@ -9,15 +9,18 @@
     ]"
   >
     <div class="flex items-start gap-3">
-      <div class="flex flex-1 flex-col gap-3">
+      <div class="flex min-w-0 flex-1 flex-col gap-3">
         <div class="flex flex-wrap items-center gap-2">
-          <div class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900">
+          <div class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900">
             <Icon
               name="mage:building-b"
               size="1.5em"
             />
           </div>
-          <h3 class="font-semibold opacity-80">
+          <h3
+            v-tooltip.top="tenant.name"
+            class="min-w-0 truncate font-semibold opacity-80"
+          >
             {{ tenant.name }}
           </h3>
           <Tag
@@ -33,7 +36,7 @@
         </span>
         <span
           v-if="tenant.description"
-          class="text-xs"
+          class="line-clamp-3 text-xs [overflow-wrap:anywhere]"
         >
           {{ tenant.description }}
         </span>

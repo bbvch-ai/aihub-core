@@ -40,6 +40,7 @@
         v-if="inputType === 'text'"
         v-model="currentValue"
         :placeholder="localizedPlaceholder"
+        :maxlength="maxLength"
         class="w-full"
       />
 
@@ -50,6 +51,7 @@
         :aria-label="localizedPlaceholder"
         :placeholder="localizedPlaceholder"
         :rows="rows"
+        :maxlength="maxLength"
         class="w-full"
       />
 
@@ -79,6 +81,7 @@ interface LocaleInputProps {
     rows?: number
     placeholder?: LocaleString
     allowTranslation?: boolean
+    maxLength?: number
   }
 }
 
@@ -92,6 +95,7 @@ const { tenantId } = useTenant()
 const inputType = computed(() => props.context.inputType ?? 'text')
 const rows = computed(() => props.context.rows ?? 3)
 const placeholder = computed(() => props.context.placeholder)
+const maxLength = computed(() => props.context.maxLength)
 
 const locales = ['de', 'en', 'fr', 'it'] as const
 type Locale = (typeof locales)[number]

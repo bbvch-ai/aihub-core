@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Annotated, ClassVar, Self
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -72,6 +72,10 @@ class AgentConfig(Form):
     ```
     """
 
+    ID_MAX_LENGTH: ClassVar[int] = 100
+    NAME_MAX_LENGTH: ClassVar[int] = 120
+    DESCRIPTION_MAX_LENGTH: ClassVar[int] = 500
+
     agent_id: Annotated[
         str | InputText,
         Field(description="Uniquely identifies the agent instance."),
@@ -124,6 +128,7 @@ class AgentConfig(Form):
             agent_id=InputText(
                 label=LocaleString.from_i18n_path("lib.agents.config.agent_id.label"),
                 help=LocaleString.from_i18n_path("lib.agents.config.agent_id.help"),
+                max_length=cls.ID_MAX_LENGTH,
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.agent_id.placeholder"),
                 required=True,
             ),
@@ -131,11 +136,13 @@ class AgentConfig(Form):
                 label=LocaleString.from_i18n_path("lib.agents.config.name.label"),
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.name"),
                 input_type="text",
+                max_length=cls.NAME_MAX_LENGTH,
             ),
             description=LocaleInput(
                 label=LocaleString.from_i18n_path("lib.agents.config.description.label"),
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.description"),
                 input_type="textarea",
+                max_length=cls.DESCRIPTION_MAX_LENGTH,
             ),
             icon=IconSelector(
                 label=LocaleString.from_i18n_path("lib.agents.config.icon.label"),

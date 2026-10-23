@@ -1,6 +1,7 @@
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.processes import ProcessConfig
 
 
 class CreateProcessInstanceRequest(BaseModel):
@@ -15,7 +16,7 @@ class CreateProcessInstanceRequest(BaseModel):
             description="Unique identifier for the process instance. Must be URL-safe.",
             pattern=r"^[a-z0-9_-]+$",
             min_length=1,
-            max_length=100,
+            max_length=ProcessConfig.ID_MAX_LENGTH,
         ),
     ]
     configuration: Annotated[

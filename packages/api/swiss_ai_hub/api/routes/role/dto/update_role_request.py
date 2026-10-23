@@ -9,8 +9,8 @@ from swiss_ai_hub.api.routes.role.dto.usage_limit_dto import UsageLimitDTO
 class UpdateRoleRequest(BaseModel):
     """Request model for updating an existing role. All fields are optional."""
 
-    name: Annotated[str | None, Field(description="The new unique name of the role.")] = None
-    description: Annotated[str | None, Field(description="The new description for the role.")] = None
+    name: Annotated[str | None, Field(description="The new unique name of the role.", max_length=120)] = None
+    description: Annotated[str | None, Field(description="The new description for the role.", max_length=500)] = None
     access_rules: Annotated[list[str] | None, Field(description="The new list of access rules.")] = None
     usage_limits: Annotated[list[UsageLimitDTO] | None, Field(description="Pattern-based usage limit rules.")] = None
 
