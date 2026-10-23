@@ -17,10 +17,10 @@ messages:
     ; il n'y a donc pas encore de version pour laquelle rédiger des notes.
   version_several: 'Votre message cite plusieurs versions : %{names}. Pour laquelle
     dois-je rédiger les notes ?'
-  version_unknown: 'Je n''ai trouvé aucune version corrigée %{requested} dans %{projects}.
-    Vouliez-vous dire : %{suggestions} ?'
-  version_unknown_recent: 'Je n''ai trouvé aucune version corrigée %{requested}
-    dans %{projects}. Les versions récentes sont : %{recent}.'
+  version_unknown: "Je n'ai trouvé aucune version corrigée %{requested} dans %{projects}.\
+    \ Vouliez-vous dire : %{suggestions} ?"
+  version_unknown_recent: "Je n'ai trouvé aucune version corrigée %{requested} dans\
+    \ %{projects}. Les versions récentes sont : %{recent}."
   version_unknown_no_versions: Je n'ai trouvé aucune version corrigée %{requested}
     dans %{projects} ; Jira n'y liste encore aucune version corrigée.
   no_tickets: Je n'ai trouvé aucun ticket pour la version corrigée %{version} dans
@@ -45,41 +45,41 @@ messages:
 config:
   project_keys:
     label: Projets Jira
-    help: Clés des projets dont les versions corrigées sont couvertes par les notes de version,
-      p. ex. ENG. Un nom de version présent dans plusieurs d'entre eux est une seule version
-      pour tous.
+    help: Clés des projets dont les versions corrigées sont couvertes par les notes
+      de version, p. ex. ENG. Un nom de version présent dans plusieurs d'entre eux
+      est une seule version pour tous.
   extra_jql:
     label: Filtre JQL
-    help: JQL facultative que chaque ticket doit aussi respecter, p. ex. issuetype not in
-      subTaskIssueTypes() pour exclure les sous-tâches, ou labels != internal.
+    help: JQL facultative que chaque ticket doit aussi respecter, p. ex. issuetype
+      not in subTaskIssueTypes() pour exclure les sous-tâches, ou labels != internal.
   language:
     label: Langue
     help: La langue dans laquelle les notes de version sont rédigées.
   translate_into:
     label: Traduire aussi en
-    help: 'Langues supplémentaires : le journal des modifications suit dans chacune d''elles,
-      traduit depuis la version rédigée.'
+    help: "Langues supplémentaires : le journal des modifications suit dans chacune\
+      \ d'elles, traduit depuis la version rédigée."
   audience:
     label: Lecteurs
-    help: Qui lit les notes de version, p. ex. les clients de l'application web. Les notes
-      sont rédigées pour eux.
+    help: Qui lit les notes de version, p. ex. les clients de l'application web. Les
+      notes sont rédigées pour eux.
   show_ticket_keys:
     label: Afficher les clés de ticket
-    help: Commencer chaque point par la clé de son ticket, avec un lien vers celui-ci. À désactiver
-      pour des lecteurs sans accès à Jira.
+    help: Commencer chaque point par la clé de son ticket, avec un lien vers celui-ci.
+      À désactiver pour des lecteurs sans accès à Jira.
 steps:
   contextualize:
     name: Lire la demande
-    description: Limite l'historique du chat et transmet le message à la conversation, qui
-      répond aux questions sur l'assistant lui-même.
+    description: Limite l'historique du chat et transmet le message à la conversation,
+      qui répond aux questions sur l'assistant lui-même.
   resolve_version:
     name: Trouver la version
-    description: Trouve la version corrigée citée dans le message parmi les versions des projets
-      Jira configurés.
+    description: Trouve la version corrigée citée dans le message parmi les versions
+      des projets Jira configurés.
   write_release_notes:
     name: Rédiger les notes de version
-    description: Lit tous les tickets de la version dans Jira et rédige une note par ticket,
-      regroupées par type.
+    description: Lit tous les tickets de la version dans Jira et rédige une note par
+      ticket, regroupées par type.
   translate_release_notes:
     name: Traduire les notes de version
     description: Traduit les notes dans chaque langue supplémentaire configurée.
@@ -87,7 +87,7 @@ thoughts:
   jira_detail: 'Jira a signalé : %{detail}'
   version_found: Version corrigée %{version} trouvée dans %{projects}.
   tickets_found: '%{count} tickets de la version corrigée %{version} lus dans Jira.'
-  notes_summarized: '%{count} notes sur %{total} n''ont pas pu être rédigées et affichent
-    le résumé du ticket à la place.'
-  notes_untranslated: '%{language} : %{count} notes n''ont pas pu être traduites et restent
-    dans la langue de rédaction.'
+  notes_summarized: "%{count} notes sur %{total} n'ont pas pu être rédigées et affichent\
+    \ le résumé du ticket à la place."
+  notes_untranslated: "%{language} : %{count} notes n'ont pas pu être traduites et\
+    \ restent dans la langue de rédaction."

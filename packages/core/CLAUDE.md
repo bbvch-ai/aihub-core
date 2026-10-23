@@ -671,8 +671,8 @@ Rules, each guarding a failure that would otherwise be silent:
 - **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
   (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
 - **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
-  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`). It is not wired into compose yet: the
-  first agent that reads Jira (#1889) adds it with its container.
+  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
+  receives (`.env.dev`: `localhost`, `.env.prod`: empty).
 - **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
   `api.atlassian.com/ex/jira/{cloudId}`, which the ticket links would then point at too.
 

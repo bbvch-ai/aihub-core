@@ -29,7 +29,8 @@ messages:
     trattare in una volta nelle note di rilascio. Un amministratore può restringerla
     con il filtro JQL di questo assistente.
   jira_authentication: Jira ha rifiutato le credenziali di questo assistente, quindi
-    non posso leggere i ticket. Chiedi a un amministratore di verificare il token Jira.
+    non posso leggere i ticket. Chiedi a un amministratore di verificare il token
+    Jira.
   jira_project_not_found: Il progetto Jira %{project} non esiste, oppure l'account
     Jira di questo assistente non può vederlo. Chiedi a un amministratore di verificare
     i progetti configurati.
@@ -39,28 +40,29 @@ messages:
     non posso leggere i ticket. Chiedi a un amministratore di correggerlo.
   jira_configuration: La connessione Jira di questo assistente non è configurata correttamente.
     Chiedi a un amministratore di verificarla.
-  jira_unavailable: Al momento non riesco a leggere i ticket da Jira. Riprova più tardi;
-    se il problema persiste, rivolgiti a un amministratore.
+  jira_unavailable: Al momento non riesco a leggere i ticket da Jira. Riprova più
+    tardi; se il problema persiste, rivolgiti a un amministratore.
 config:
   project_keys:
     label: Progetti Jira
-    help: Chiavi dei progetti le cui versioni di correzione sono coperte dalle note di rilascio,
-      ad es. ENG. Un nome di versione presente in più progetti è un'unica versione per tutti.
+    help: Chiavi dei progetti le cui versioni di correzione sono coperte dalle note
+      di rilascio, ad es. ENG. Un nome di versione presente in più progetti è un'unica
+      versione per tutti.
   extra_jql:
     label: Filtro JQL
-    help: JQL facoltativa che ogni ticket deve anche soddisfare, ad es. issuetype not in subTaskIssueTypes()
-      per escludere i sotto-task, oppure labels != internal.
+    help: JQL facoltativa che ogni ticket deve anche soddisfare, ad es. issuetype
+      not in subTaskIssueTypes() per escludere i sotto-task, oppure labels != internal.
   language:
     label: Lingua
     help: La lingua in cui sono scritte le note di rilascio.
   translate_into:
     label: Traduci anche in
-    help: 'Lingue aggiuntive: il changelog segue in ciascuna di esse, tradotto dalla versione
-      scritta.'
+    help: 'Lingue aggiuntive: il changelog segue in ciascuna di esse, tradotto dalla
+      versione scritta.'
   audience:
     label: Lettori
-    help: Chi legge le note di rilascio, ad es. i clienti dell'app web. Le note sono scritte
-      per loro.
+    help: Chi legge le note di rilascio, ad es. i clienti dell'app web. Le note sono
+      scritte per loro.
   show_ticket_keys:
     label: Mostra le chiavi dei ticket
     help: Inizia ogni punto con la chiave del suo ticket, con un link al ticket. Disattivalo
@@ -72,12 +74,12 @@ steps:
       che risponde alle domande sull'assistente stesso.
   resolve_version:
     name: Trova la versione
-    description: Trova la versione di correzione indicata nel messaggio tra le versioni dei
-      progetti Jira configurati.
+    description: Trova la versione di correzione indicata nel messaggio tra le versioni
+      dei progetti Jira configurati.
   write_release_notes:
     name: Scrivi le note di rilascio
-    description: Legge da Jira tutti i ticket della versione e scrive una nota per ticket,
-      raggruppate per tipo.
+    description: Legge da Jira tutti i ticket della versione e scrive una nota per
+      ticket, raggruppate per tipo.
   translate_release_notes:
     name: Traduci le note di rilascio
     description: Traduce le note in ogni lingua aggiuntiva configurata.
@@ -85,7 +87,7 @@ thoughts:
   jira_detail: 'Jira ha segnalato: %{detail}'
   version_found: Versione di correzione %{version} trovata in %{projects}.
   tickets_found: Letti da Jira %{count} ticket della versione di correzione %{version}.
-  notes_summarized: '%{count} note su %{total} non sono state scritte e mostrano invece il
-    riepilogo del ticket.'
-  notes_untranslated: '%{language}: %{count} note non sono state tradotte e restano nella
-    lingua di scrittura.'
+  notes_summarized: '%{count} note su %{total} non sono state scritte e mostrano invece
+    il riepilogo del ticket.'
+  notes_untranslated: '%{language}: %{count} note non sono state tradotte e restano
+    nella lingua di scrittura.'
