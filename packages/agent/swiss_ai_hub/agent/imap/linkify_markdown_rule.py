@@ -11,7 +11,8 @@ class LinkifyMarkdownRule:
     """Bare URLs as links: a reply quoting `https://…` or `www.…` from its prompt would otherwise show plain text.
 
     Only addresses with a scheme, a `www.` prefix or an `@` count. linkify-it's fuzzy matching is off because it also
-    takes any word ending in a country code for a domain, so a file named `bericht.py` would link to `http://bericht.py`.
+    takes any word ending in a country code for a domain, so a file named `bericht.py` would become a link.
+    A `www.` address is given `https://`, as a browser does with a typed one.
     """
 
     @staticmethod
@@ -31,4 +32,4 @@ class LinkifyMarkdownRule:
 
     @staticmethod
     def _with_scheme(_linkify: LinkifyIt, match: Match) -> None:
-        match.url = f"http://{match.url}"
+        match.url = f"https://{match.url}"

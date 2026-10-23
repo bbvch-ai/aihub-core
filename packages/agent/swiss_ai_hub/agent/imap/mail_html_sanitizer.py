@@ -135,11 +135,11 @@ class MailHtmlSanitizer:
     @staticmethod
     def _link_as_text(match: re.Match[str]) -> str:
         """`text <target>`, or the bare target when the text already is it (an autolinked URL, a `www.` address
-        given its `http://`, or an e-mail address).
+        given its `https://`, or an e-mail address).
 
         The brackets go in escaped, so the final tag strip keeps them as text."""
         target = html.unescape(match.group("href")).removeprefix("mailto:")
         label = match.group("label")
-        if html.unescape(nh3.clean(label, tags=set())).strip() in (target, target.removeprefix("http://")):
+        if html.unescape(nh3.clean(label, tags=set())).strip() in (target, target.removeprefix("https://")):
             return label
         return f"{label} &lt;{html.escape(target)}&gt;"

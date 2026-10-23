@@ -168,7 +168,7 @@ def test_bare_urls_become_links_without_repeating_the_address_in_plain_text():
 
     html = _html(composed)
     assert '<a href="https://sgum-ssum.ch/veranstaltungen/kursauswahl/"' in html
-    assert '<a href="http://www.sgum.ch"' in html
+    assert '<a href="https://www.sgum.ch"' in html
     assert _plain(composed).strip() == body
 
 
