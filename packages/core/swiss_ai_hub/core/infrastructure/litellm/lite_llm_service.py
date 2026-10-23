@@ -28,23 +28,38 @@ class LiteLLMService:
         api_key = LiteLLMService.generate_key_for_user(user)
 
         client = litellm_proxy.httpx_aclient
-        if await LiteLLMService._create_user_if_absent(client, litellm_proxy, user):
+        await LiteLLMService._create_user_if_absent(client, litellm_proxy, user)
+        if not await LiteLLMService._key_exists(client, api_key):
             await LiteLLMService._generate_key(client, user, api_key)
 
         LiteLLMService._user_cache[user.id] = api_key
         return api_key
 
     @staticmethod
+    async def _key_exists(client: httpx.AsyncClient, api_key: str) -> bool:
+        """
+        The user row and its key are created by separate calls, and either can fail after the other succeeded, so
+        each is checked on its own rather than inferred from the other: a key without its row carries no budget or
+        rate limits, and a row without its key fails every request.
+
+        From LiteLLM v1.106 on, a deleted key still answers 200, from an archive, with status "deleted".
+        """
+        key_response = await client.get("/key/info", params={"key": api_key})
+        if key_response.status_code == 404:
+            return False
+        key_response.raise_for_status()
+        return key_response.json()["info"].get("status") != "deleted"
+
+    @staticmethod
     async def _create_user_if_absent(
         client: httpx.AsyncClient, litellm_proxy: LiteLLMProxySettings, user: UserIdentity
-    ) -> bool:
-        """Create the LiteLLM user when missing; return True only when a fresh key must still be generated."""
+    ) -> None:
         user_response = await client.get("/user/info", params={"user_id": user.id})
 
-        # LiteLLM ≥ 1.83 returns 404 only when the user is absent; any 2xx means the user (and its key) exist.
+        # LiteLLM ≥ 1.83 returns 404 only when the user is absent.
         if user_response.status_code != 404:
             user_response.raise_for_status()
-            return False
+            return
 
         await LiteLLMService._release_email_from_stale_users(client, user)
 
@@ -68,10 +83,8 @@ class LiteLLMService:
         )
 
         # A concurrent first-login request can create the user between the GET and the POST, yielding 409.
-        # The concurrent request may not have generated the key yet, so still attempt key generation below.
         if new_user_response.status_code != 409:
             new_user_response.raise_for_status()
-        return True
 
     @staticmethod
     async def _release_email_from_stale_users(client: httpx.AsyncClient, user: UserIdentity) -> None:
@@ -102,13 +115,16 @@ class LiteLLMService:
 
     @staticmethod
     async def _generate_key(client: httpx.AsyncClient, user: UserIdentity, api_key: str) -> None:
+        """
+        A concurrent first-login request may create the same deterministic key first. LiteLLM reports that as a
+        duplicate alias (400) rather than a conflict, so a failure is accepted whenever the key exists afterwards.
+        """
         # LiteLLM requires unique aliases across all keys, and display names are not unique.
         key_response = await client.post(
             "/key/generate",
             json={"key_alias": f"{user.name} ({user.id}) - Auto Generated Key", "user_id": user.id, "key": api_key},
         )
-        # A concurrent provisioner may have already created this deterministic key; 409 means it exists already.
-        if key_response.status_code != 409:
+        if key_response.is_error and not await LiteLLMService._key_exists(client, api_key):
             key_response.raise_for_status()
 
     @staticmethod
