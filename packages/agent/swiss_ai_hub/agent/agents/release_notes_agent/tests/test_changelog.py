@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_renderer import ChangelogRenderer
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_stream import ChangelogStream
@@ -23,6 +24,10 @@ def _note(key: str, section: ChangelogSection, note: str) -> ReleaseNote:
         summary=f"Summary of {key}",
         note=note,
     )
+
+
+def _entry(key: str, section: ChangelogSection, text: str) -> ChangelogEntry:
+    return ChangelogEntry.of_note(_note(key, section, text))
 
 
 @pytest.mark.parametrize(
@@ -79,13 +84,24 @@ def test_every_section_has_a_heading_in_every_language():
         assert not any("release_notes_agent" in heading for heading in headings)
 
 
-def test_a_bullet_leads_with_the_linked_key_only_when_asked_to():
-    note = _note("ENG-12", ChangelogSection.FIXES, "Sign-in works\nagain  after a  timeout.")
+def test_a_bullet_ends_with_the_linked_key_only_when_asked_to():
+    entry = _entry("ENG-12", ChangelogSection.FIXES, "Sign-in works\nagain  after a  timeout.")
 
-    assert ChangelogRenderer.bullet(note, show_ticket_keys=True) == (
-        "- [ENG-12](https://jira.example.com/browse/ENG-12): Sign-in works again after a timeout.\n"
+    assert ChangelogRenderer.bullet(entry, show_ticket_keys=True) == (
+        "- Sign-in works again after a timeout. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"
     )
-    assert ChangelogRenderer.bullet(note, show_ticket_keys=False) == "- Sign-in works again after a timeout.\n"
+    assert ChangelogRenderer.bullet(entry, show_ticket_keys=False) == "- Sign-in works again after a timeout.\n"
+
+
+def test_a_merged_bullet_names_every_ticket_it_covers():
+    notes = [_note(key, ChangelogSection.FEATURES, f"Export of {key}.") for key in ("ENG-1", "SD-4")]
+    entry = ChangelogEntry(section=ChangelogSection.FEATURES, text="CSV export for invoices and search.", notes=notes)
+
+    assert ChangelogRenderer.bullet(entry, show_ticket_keys=True) == (
+        "- CSV export for invoices and search. "
+        "([ENG-1](https://jira.example.com/browse/ENG-1), [SD-4](https://jira.example.com/browse/SD-4))\n"
+    )
+    assert ChangelogRenderer.bullet(entry, show_ticket_keys=False) == "- CSV export for invoices and search.\n"
 
 
 @pytest.mark.asyncio
@@ -94,12 +110,12 @@ async def test_the_stream_keeps_exactly_the_text_it_shows():
     stream = ChangelogStream(displayer, _T, show_ticket_keys=False, model_name="gemma")
 
     await stream.begin(ReleaseLanguage.EN, "2.0")
-    await stream.add([_note("ENG-1", ChangelogSection.FEATURES, "Export to CSV.")])
+    await stream.add([_entry("ENG-1", ChangelogSection.FEATURES, "Export to CSV.")])
     await stream.add(
-        [_note("ENG-2", ChangelogSection.FEATURES, "Dark mode."), _note("ENG-3", ChangelogSection.FIXES, "No crash.")]
+        [_entry("ENG-2", ChangelogSection.FEATURES, "Dark mode."), _entry("ENG-3", ChangelogSection.FIXES, "No crash.")]
     )
     await stream.begin(ReleaseLanguage.DE, "2.0")
-    await stream.add([_note("ENG-1", ChangelogSection.FEATURES, "Export nach CSV.")])
+    await stream.add([_entry("ENG-1", ChangelogSection.FEATURES, "Export nach CSV.")])
 
     shown = [call.args[0] for call in displayer.display_chunk.await_args_list]
     assert stream.text == "".join(shown)

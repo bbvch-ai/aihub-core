@@ -40,7 +40,11 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
         str | Textarea, Field(description="Who reads the release notes; the notes are written for them.")
     ] = "the customers who use the product"
     show_ticket_keys: Annotated[
-        bool | Checkbox, Field(description="Lead each bullet with its ticket key, linked to the ticket.")
+        bool | Checkbox, Field(description="End each bullet with the keys of its tickets, linked to them.")
+    ] = True
+    merge_related_tickets: Annotated[
+        bool | Checkbox,
+        Field(description="Merge notes on related tickets of one section into one bullet that names them all."),
     ] = True
     max_release_tickets: Annotated[
         int,
@@ -55,6 +59,16 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
     max_description_chars: Annotated[
         int, Field(ge=200, le=20_000, description="Deployment-fixed: characters of a description the model reads.")
     ] = 4000
+    max_notes_per_merge: Annotated[
+        int,
+        Field(
+            ge=2,
+            le=200,
+            description="Deployment-fixed: notes one merge call sees. Larger merges more, but a window is shown only "
+            "once its notes are written and merged: 40 took about 12 s with gemma, and the bots give up after 30 s "
+            "without text.",
+        ),
+    ] = 40
     number_of_input_tokens: Annotated[
         int | InputNumber,
         Field(
@@ -113,6 +127,7 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
             ),
             "audience": Textarea(**cls._labels("audience")),
             "show_ticket_keys": Checkbox(**cls._labels("show_ticket_keys")),
+            "merge_related_tickets": Checkbox(**cls._labels("merge_related_tickets")),
         }
 
     @staticmethod

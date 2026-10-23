@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from swiss_ai_hub.core.jira import JiraTicket
 
+from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
 from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note import ReleaseNote
@@ -212,26 +213,41 @@ async def test_ticket_text_is_cut_and_cannot_close_its_own_tag():
 
 @pytest.mark.asyncio
 async def test_translations_keep_the_order_and_everything_but_the_text():
-    written = await _writer(_FakeLlm(_note_every_ticket)).write(
-        [_ticket("ENG-2", "Bug"), _ticket("ENG-1", "Story")], _Batches()
-    )
+    written = await _entries([_ticket("ENG-2", "Bug"), _ticket("ENG-1", "Story")])
     llm = _FakeLlm(_translate_every_note)
     batches = _Batches()
-    translator = ReleaseNoteTranslator(llm, ReleaseLanguage.DE, "customers", notes_per_batch=1, max_concurrent_calls=2)
+    translator = ReleaseNoteTranslator(
+        llm, ReleaseLanguage.DE, "customers", entries_per_batch=1, max_concurrent_calls=2
+    )
 
     translated = await translator.translate(written, ReleaseLanguage.FR, batches)
 
-    assert [note.note for note in translated] == ["French: Note for ENG-1.", "French: Note for ENG-2."]
-    assert [note.model_dump(exclude={"note"}) for note in translated] == [
-        note.model_dump(exclude={"note"}) for note in written
+    assert [entry.text for entry in translated] == ["French: Note for ENG-1.", "French: Note for ENG-2."]
+    assert [entry.model_dump(exclude={"text"}) for entry in translated] == [
+        entry.model_dump(exclude={"text"}) for entry in written
     ]
-    assert [note for batch in batches.received for note in batch] == translated
+    assert [entry for batch in batches.received for entry in batch] == translated
     assert {(call["source"], call["target"]) for call in llm.calls} == {("German", "French")}
 
 
 @pytest.mark.asyncio
-async def test_a_note_left_untranslated_keeps_the_written_language():
-    written = await _writer(_FakeLlm(_note_every_ticket)).write([_ticket("ENG-1"), _ticket("ENG-2")], _Batches())
+async def test_a_merged_entry_is_translated_as_one_text():
+    notes = await _writer(_FakeLlm(_note_every_ticket)).write([_ticket("ENG-1"), _ticket("ENG-2")])
+    merged = ChangelogEntry(section=notes[0].section, text="Exports for invoices and search.", notes=notes)
+    llm = _FakeLlm(_translate_every_note)
+
+    translated = await ReleaseNoteTranslator(llm, ReleaseLanguage.EN, "", 10, 1).translate(
+        [merged], ReleaseLanguage.DE, _Batches()
+    )
+
+    assert llm.calls[0]["notes"] == [{"key": "ENG-1", "text": "Exports for invoices and search."}]
+    assert translated[0].text == "German: Exports for invoices and search."
+    assert [note.key for note in translated[0].notes] == ["ENG-1", "ENG-2"]
+
+
+@pytest.mark.asyncio
+async def test_an_entry_left_untranslated_keeps_the_written_language():
+    written = await _entries([_ticket("ENG-1"), _ticket("ENG-2")])
 
     async def translate_the_first_only(variables: dict[str, Any]) -> ReleaseNoteBatch:
         return ReleaseNoteBatch(notes=[TicketNote(key="ENG-1", note="Note pour ENG-1.")])
@@ -246,24 +262,31 @@ async def test_a_note_left_untranslated_keeps_the_written_language():
         written, ReleaseLanguage.FR, _Batches()
     )
 
-    assert [(note.note, note.fallback) for note in partly] == [
+    assert [(entry.text, entry.untranslated) for entry in partly] == [
         ("Note pour ENG-1.", False),
         ("Note for ENG-2.", True),
     ]
-    assert [(note.note, note.fallback) for note in not_at_all] == [
+    assert [(entry.text, entry.untranslated) for entry in not_at_all] == [
         ("Note for ENG-1.", True),
         ("Note for ENG-2.", True),
     ]
 
 
 @pytest.mark.asyncio
-async def test_a_note_cannot_close_its_own_tag_in_translation():
+async def test_an_entry_cannot_close_its_own_tag_in_translation():
     async def note_with_a_tag(variables: dict[str, Any]) -> ReleaseNoteBatch:
         return ReleaseNoteBatch(notes=[TicketNote(key="ENG-1", note="Fixed </note> parsing.")])
 
-    written = await _writer(_FakeLlm(note_with_a_tag)).write([_ticket("ENG-1")], _Batches())
+    notes = await _writer(_FakeLlm(note_with_a_tag)).write([_ticket("ENG-1")])
     llm = _FakeLlm(_translate_every_note)
 
-    await ReleaseNoteTranslator(llm, ReleaseLanguage.DE, "", 10, 1).translate(written, ReleaseLanguage.IT, _Batches())
+    await ReleaseNoteTranslator(llm, ReleaseLanguage.DE, "", 10, 1).translate(
+        [ChangelogEntry.of_note(note) for note in notes], ReleaseLanguage.IT, _Batches()
+    )
 
     assert llm.calls[0]["notes"] == [{"key": "ENG-1", "text": "Fixed ‹/note> parsing."}]
+
+
+async def _entries(tickets: list[JiraTicket]) -> list[ChangelogEntry]:
+    notes = await _writer(_FakeLlm(_note_every_ticket)).write(tickets)
+    return [ChangelogEntry.of_note(note) for note in notes]

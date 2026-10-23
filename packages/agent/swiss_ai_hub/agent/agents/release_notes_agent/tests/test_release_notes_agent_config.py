@@ -37,12 +37,23 @@ def test_the_blueprint_passes_its_own_workflow_validation():
 def test_the_admin_configures_the_connection_projects_and_languages_but_not_the_limits():
     configurable = set(ConfigSpecs.from_form(_FORM, ReleaseNotesAgentConfig.__name__).config_schema["properties"])
 
-    assert {"jira", "project_keys", "extra_jql", "language", "translate_into", "audience", "show_ticket_keys"} <= (
-        configurable
-    )
-    assert not {"max_release_tickets", "tickets_per_batch", "max_concurrent_calls", "max_description_chars"} & (
-        configurable
-    )
+    assert {
+        "jira",
+        "project_keys",
+        "extra_jql",
+        "language",
+        "translate_into",
+        "audience",
+        "show_ticket_keys",
+        "merge_related_tickets",
+    } <= (configurable)
+    assert not {
+        "max_release_tickets",
+        "tickets_per_batch",
+        "max_concurrent_calls",
+        "max_description_chars",
+        "max_notes_per_merge",
+    } & (configurable)
 
 
 def test_language_options_are_named_in_their_own_language():
@@ -83,3 +94,9 @@ def test_a_profile_without_translations_can_be_saved():
     assert not elements["translate_into"].required
     assert elements["translate_into"].nullable
     assert _stored(translate_into=None).translation_targets() == []
+
+
+def test_related_tickets_are_merged_unless_the_profile_turns_it_off():
+    assert _stored().merge_related_tickets is True
+    assert _stored(merge_related_tickets=False).merge_related_tickets is False
+    assert _stored().max_notes_per_merge == 40

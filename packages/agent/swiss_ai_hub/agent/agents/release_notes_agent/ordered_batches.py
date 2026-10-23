@@ -15,7 +15,9 @@ class OrderedBatches:
     async def run[TBatch, TResult](
         batches: Annotated[Sequence[TBatch], "The batches, in the order their results are handed on"],
         call: Annotated[Callable[[TBatch], Awaitable[TResult]], "The work for one batch"],
-        on_result: Annotated[Callable[[TResult], Awaitable[None]], "Receives each result, in the batches' order"],
+        on_result: Annotated[
+            Callable[[TResult], Awaitable[None]] | None, "Receives each result, in the batches' order"
+        ],
         concurrency: Annotated[int, "How many calls run at once"],
     ) -> list[TResult]:
         slots = asyncio.Semaphore(concurrency)
@@ -30,7 +32,8 @@ class OrderedBatches:
                 tasks = [group.create_task(in_a_slot(batch)) for batch in batches]
                 for task in tasks:
                     results.append(await task)
-                    await on_result(results[-1])
+                    if on_result is not None:
+                        await on_result(results[-1])
         except ExceptionGroup as failure:
             raise failure.exceptions[0] from failure
         return results

@@ -1,7 +1,7 @@
 ---
 title: Versionshinweis-Assistent
 description: Ein Chat-Assistent, der die Versionshinweise einer Jira-Lösungsversion schreibt — ein Hinweis pro Ticket, nach Typ gruppiert, in jeder konfigurierten Sprache.
-source_sha: d4930d42acf4fbe0370df6deeba3b6aa8188c4ffe8a5fe8c2cd85c7a3af7262a
+source_sha: 03a0f3a2517e3ef4aa317428a0a1572310870835df5a6b4b9d89a2022033a724
 ---
 
 # Versionshinweis-Assistent
@@ -31,8 +31,9 @@ flowchart TD
     C -- Ja --> E[Jedes Ticket dieser Version<br/>in den Projekten lesen]
     E --> F{Tickets vorhanden?}
     F -- Nein --> G[Mitteilen, dass es<br/>nichts zu schreiben gibt]
-    F -- Ja --> H[Pro Ticket einen Hinweis schreiben,<br/>jeden Stapel sofort anzeigen]
-    H --> I[Hinweise in jede weitere<br/>Sprache übersetzen]
+    F -- Ja --> H[Pro Ticket einen Hinweis schreiben]
+    H --> M[Verwandte Hinweise zusammenfassen,<br/>jeden Teil sofort anzeigen]
+    M --> I[Punkte in jede weitere<br/>Sprache übersetzen]
     I --> J[Folgefragen vorschlagen]
 ```
 
@@ -47,14 +48,23 @@ flowchart TD
    aus der Zusammenfassung und der Beschreibung des Tickets. Die Hinweise lesen sich wie ein Produkt-Changelog:
    unpersönlich (kein „Sie", kein „wir"), im Präsens, eine neue Funktion nennt die neue Möglichkeit, eine Fehlerbehebung
    sagt, was nicht mehr schiefgeht, z. B. *„Beim Speichern eines Entwurfs gehen angehängte Bilder nicht mehr verloren."*
-   Die Tickets werden stapelweise gesendet, mehrere Stapel gleichzeitig, und jeder Stapel erscheint im Chat, sobald er
-   und die vorherigen fertig sind. So beginnt die Antwort auch bei einer großen Version innerhalb von Sekunden.
-4. **Übersetzen.** Jede weitere Sprache folgt als eigener Block, übersetzt aus den geschriebenen Hinweisen.
-5. **Folgefragen.** Wie bei jedem Chat-Assistenten erhält die Unterhaltung einen Titel, und es werden Folgefragen
+   Die Tickets werden zu zehnt gesendet, mehrere Stapel gleichzeitig.
+4. **Verwandte Tickets zusammenfassen.** Innerhalb jedes Abschnitts fasst das Modell Hinweise zur gleichen Art von
+   Änderung in einem Punkt zusammen, der sie alle nennt, wie in einem von Hand geschriebenen Changelog: Sechs Tickets,
+   die sechs Seiten einen CSV-Export hinzufügen, werden zu *„Rechnungen, Suchergebnisse, Benutzereinstellungen,
+   Benachrichtigungs-E-Mails, das Dashboard und die Login-Seite können als CSV exportiert werden."* Jedes Ticket landet
+   weiterhin in genau einem Punkt: Die Plattform prüft das, und ein Ticket, das das Modell auslässt, behält einen
+   eigenen Punkt. Hinweise werden zu je 40 zusammengefasst, und jeder Teil erscheint im Chat, sobald er fertig ist,
+   sodass die Antwort auch bei einer großen Version laufend weiterkommt; ein Thema, das mehr Tickets eines Abschnitts
+   umfasst, kann deshalb als zwei Punkte erscheinen. Schalten Sie **Verwandte Tickets zusammenfassen** aus, um einen
+   Punkt pro Ticket zu erhalten.
+5. **Übersetzen.** Jede weitere Sprache folgt als eigener Block, übersetzt aus den geschriebenen Punkten.
+6. **Folgefragen.** Wie bei jedem Chat-Assistenten erhält die Unterhaltung einen Titel, und es werden Folgefragen
    vorgeschlagen.
 
-Den Changelog selbst setzt die Plattform zusammen, nicht das Modell: Das Modell schreibt nur die Hinweise. Deshalb passt
-auch eine Version mit Hunderten von Tickets zu Modellen, die höchstens einige tausend Wörter auf einmal antworten.
+Den Changelog selbst setzt die Plattform zusammen, nicht das Modell: Das Modell schreibt die Hinweise und schlägt vor,
+welche zusammengefasst werden. Deshalb passt auch eine Version mit Hunderten von Tickets zu Modellen, die höchstens
+einige tausend Wörter auf einmal antworten.
 
 ### Abschnitte
 
@@ -67,13 +77,15 @@ Jedes Ticket kommt nach seinem Jira-Vorgangstyp in einen Abschnitt:
 | **Verbesserungen**     | Improvement, Enhancement sowie ihre deutschen, französischen und italienischen Namen                |
 | **Weitere Änderungen** | Alles andere: Task, Sub-task, Epic, Serviceanfragen, Ihre eigenen Typen                             |
 
-Innerhalb eines Abschnitts sind die Tickets nach Projekt und Nummer geordnet. Ist **Ticketschlüssel anzeigen** aktiv,
-beginnt jeder Punkt mit dem Ticketschlüssel, verlinkt auf das Ticket in Jira.
+Innerhalb eines Abschnitts sind die Punkte nach Projekt und Nummer ihres ersten Tickets geordnet. Ist **Ticketschlüssel
+anzeigen** aktiv, endet jeder Punkt mit den Schlüsseln seiner Tickets, verlinkt auf die Tickets in Jira.
 
 ### Wenn etwas schiefgeht
 
 - **Ein Hinweis, den das Modell nicht schreiben konnte,** zeigt stattdessen die Zusammenfassung des Tickets, und ein
   Gedanke im Lauf nennt, wie viele es waren.
+- **Eine fehlerhafte Zusammenfassung des Modells** kann kein Ticket verlieren oder doppeln: Ausgelassene Tickets
+  behalten eigene Punkte.
 - **Ein Hinweis, der nicht übersetzt werden konnte,** bleibt in der Schreibsprache, ebenfalls mit einem Gedanken, der
   nennt, wie viele es waren.
 - **Ein Jira-Problem** — abgelehnte Zugangsdaten, ein Projekt, das nicht existiert oder das das Konto nicht sehen kann,
@@ -135,22 +147,24 @@ zuzulassen, trägt der Betrieb dessen Hostnamen in **`JIRA_ALLOWED_PRIVATE_HOSTS
 
 ## Konfigurationsreferenz
 
-| Feld                          | Standard                            | Beschreibung                                                                                                             |
-| ----------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Jira-URL**                  | —                                   | Die Basis-URL von Jira. Weiterleitungen werden nicht verfolgt; geben Sie die Adresse ein, unter der Jira antwortet.      |
-| **Jira-Edition**              | Jira Cloud                          | Jira Cloud oder Jira Data Center.                                                                                        |
-| **E-Mail-Adresse des Kontos** | —                                   | Nur Jira Cloud: die E-Mail-Adresse des Kontos, zu dem das API-Token gehört.                                              |
-| **Token**                     | —                                   | API-Token ohne Scopes (Cloud) oder Personal Access Token (Data Center).                                                  |
-| **Jira-Projekte**             | —                                   | Schlüssel der Projekte, deren Lösungsversionen die Versionshinweise abdecken.                                            |
-| **JQL-Filter**                | *(leer)*                            | JQL, die jedes Ticket zusätzlich erfüllen muss.                                                                          |
-| **Sprache**                   | English                             | Die Sprache, in der die Hinweise geschrieben werden.                                                                     |
-| **Zusätzlich übersetzen in**  | Aus                                 | Weitere Sprachen; zum Auswählen einschalten. Jede erhält einen eigenen Block, übersetzt aus den geschriebenen Hinweisen. |
-| **Leserschaft**               | *the customers who use the product* | Für wen die Hinweise geschrieben werden.                                                                                 |
-| **Ticketschlüssel anzeigen**  | Ein                                 | Jeden Punkt mit seinem Ticketschlüssel beginnen, verlinkt auf das Ticket. Für Lesende ohne Jira-Zugang ausschalten.      |
-| **Maximale Eingabe-Tokens**   | `16384`                             | Der für jede Runde behaltene Gesprächsverlauf. Frühere Changelogs sind lang, und nur die Fragen zählen.                  |
+| Feld                                 | Standard                            | Beschreibung                                                                                                               |
+| ------------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Jira-URL**                         | —                                   | Die Basis-URL von Jira. Weiterleitungen werden nicht verfolgt; geben Sie die Adresse ein, unter der Jira antwortet.        |
+| **Jira-Edition**                     | Jira Cloud                          | Jira Cloud oder Jira Data Center.                                                                                          |
+| **E-Mail-Adresse des Kontos**        | —                                   | Nur Jira Cloud: die E-Mail-Adresse des Kontos, zu dem das API-Token gehört.                                                |
+| **Token**                            | —                                   | API-Token ohne Scopes (Cloud) oder Personal Access Token (Data Center).                                                    |
+| **Jira-Projekte**                    | —                                   | Schlüssel der Projekte, deren Lösungsversionen die Versionshinweise abdecken.                                              |
+| **JQL-Filter**                       | *(leer)*                            | JQL, die jedes Ticket zusätzlich erfüllen muss.                                                                            |
+| **Sprache**                          | English                             | Die Sprache, in der die Hinweise geschrieben werden.                                                                       |
+| **Zusätzlich übersetzen in**         | Aus                                 | Weitere Sprachen; zum Auswählen einschalten. Jede erhält einen eigenen Block, übersetzt aus den geschriebenen Hinweisen.   |
+| **Leserschaft**                      | *the customers who use the product* | Für wen die Hinweise geschrieben werden.                                                                                   |
+| **Ticketschlüssel anzeigen**         | Ein                                 | Jeden Punkt mit den Schlüsseln seiner Tickets beenden, verlinkt auf die Tickets. Für Lesende ohne Jira-Zugang ausschalten. |
+| **Verwandte Tickets zusammenfassen** | Ein                                 | Hinweise zu verwandten Tickets eines Abschnitts in einem Punkt zusammenfassen. Aus: ein Punkt pro Ticket.                  |
+| **Maximale Eingabe-Tokens**          | `16384`                             | Der für jede Runde behaltene Gesprächsverlauf. Frühere Changelogs sind lang, und nur die Fragen zählen.                    |
 
 Die Modelleinstellungen und das **Task LLM** (Titel, Folgefragen, die Prüfung auf Fragen über den Assistenten) sind
 dieselben wie bei den anderen Chat-Assistenten.
 
 Vom Deployment festgelegt, nicht vom Profil: höchstens **300 Tickets** pro Version, **10 Tickets** pro Modellaufruf,
-**4** Modellaufrufe gleichzeitig und die ersten **4000 Zeichen** jeder Beschreibung.
+**4** Modellaufrufe gleichzeitig, die ersten **4000 Zeichen** jeder Beschreibung und **40 Hinweise** pro
+Zusammenfassung.

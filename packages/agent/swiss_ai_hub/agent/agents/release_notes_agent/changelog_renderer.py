@@ -3,9 +3,9 @@ from typing import Annotated
 
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
 from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
-from swiss_ai_hub.agent.agents.release_notes_agent.release_note import ReleaseNote
 
 _SPACES = re.compile(r"\s+")
 _KEY = "agent.release_notes_agent.changelog"
@@ -33,11 +33,13 @@ class ChangelogRenderer:
 
     @staticmethod
     def bullet(
-        note: Annotated[ReleaseNote, "The note to show"],
-        show_ticket_keys: Annotated[bool, "Lead the bullet with the ticket key, linked to the ticket"],
+        entry: Annotated[ChangelogEntry, "The entry to show"],
+        show_ticket_keys: Annotated[bool, "End the bullet with the keys of its tickets, linked to them"],
     ) -> str:
-        """A note is kept on its bullet's line, whatever line breaks the model wrote into it."""
-        text = _SPACES.sub(" ", note.note).strip()
-        if show_ticket_keys:
-            return f"- [{note.key}]({note.url}): {text}\n"
-        return f"- {text}\n"
+        """An entry is kept on its bullet's line, whatever line breaks the model wrote into it. The keys go last, as
+        changelogs reference their issues, because a merged entry can name many."""
+        text = _SPACES.sub(" ", entry.text).strip()
+        if not show_ticket_keys:
+            return f"- {text}\n"
+        keys = ", ".join(f"[{note.key}]({note.url})" for note in entry.notes)
+        return f"- {text} ({keys})\n"

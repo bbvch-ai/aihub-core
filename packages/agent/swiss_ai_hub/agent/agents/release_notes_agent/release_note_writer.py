@@ -81,7 +81,9 @@ class ReleaseNoteWriter:
     async def write(
         self,
         tickets: Annotated[Sequence[JiraTicket], "Every ticket of the release"],
-        on_batch: Annotated[Callable[[list[ReleaseNote]], Awaitable[None]], "Receives each batch, in order"],
+        on_batch: Annotated[
+            Callable[[list[ReleaseNote]], Awaitable[None]] | None, "Receives each batch, in order"
+        ] = None,
     ) -> list[ReleaseNote]:
         """Every ticket's note, ordered by section, project and number."""
         ordered = sorted(tickets, key=self.changelog_order)

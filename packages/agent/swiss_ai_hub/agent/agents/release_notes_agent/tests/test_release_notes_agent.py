@@ -38,6 +38,8 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.agent.agents.release_notes_agent import ReleaseNotesAgent, ReleaseNotesAgentConfig
 from swiss_ai_hub.agent.agents.release_notes_agent.events.release_notes_written_event import ReleaseNotesWrittenEvent
 from swiss_ai_hub.agent.agents.release_notes_agent.events.version_resolved_event import VersionResolvedEvent
+from swiss_ai_hub.agent.agents.release_notes_agent.merged_note import MergedNote
+from swiss_ai_hub.agent.agents.release_notes_agent.merged_notes import MergedNotes
 from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note_batch import ReleaseNoteBatch
 from swiss_ai_hub.agent.agents.release_notes_agent.ticket_note import TicketNote
@@ -91,12 +93,17 @@ class _FakeJira:
 
 
 class _FakeNotesLlm:
-    """Writes "Note for KEY." per ticket, and prefixes the target language when translating."""
+    """Writes "Note for KEY." per ticket, merges every two neighbouring notes of a section, and prefixes the target
+    language when translating."""
 
     def model_copy(self, update: dict[str, Any]) -> "_FakeNotesLlm":
         return self
 
-    async def astructured_predict(self, model: type, prompt: Any, **variables: Any) -> ReleaseNoteBatch:
+    async def astructured_predict(self, model: type, prompt: Any, **variables: Any) -> ReleaseNoteBatch | MergedNotes:
+        if model is MergedNotes:
+            keys = [note["key"] for note in variables["notes"]]
+            pairs = [keys[index : index + 2] for index in range(0, len(keys), 2)]
+            return MergedNotes(entries=[MergedNote(keys=pair, text=f"Merged {' + '.join(pair)}.") for pair in pairs])
         if "tickets" in variables:
             notes = [
                 TicketNote(key=ticket["key"], note=f"Note for {ticket['key']}.") for ticket in variables["tickets"]
@@ -193,7 +200,10 @@ async def test_every_ticket_of_the_release_gets_a_bullet_in_its_section(platform
     answer = _answer(runner)
     assert answer.startswith("## Release notes 2.0\n")
     for ticket in _TICKETS:
-        assert f"- [{ticket.key}]({ticket.url}): Note for {ticket.key}.\n" in answer
+        assert answer.count(f"[{ticket.key}]({ticket.url})") == 1, f"{ticket.key} must be in exactly one bullet"
+    assert "- Merged ENG-1 + ENG-5. ([ENG-1](https://jira.example.com/browse/ENG-1), " in answer
+    assert "- Note for ENG-12. ([ENG-12](https://jira.example.com/browse/ENG-12))\n" in answer
+    assert answer.count("\n- ") == 8
     sections = [answer.index(f"### {heading}") for heading in ("New features", "Fixes", "Improvements", "Other")]
     assert sections == sorted(sections)
     connection, projects, clauses = platform.jira.searches[0]
@@ -202,7 +212,19 @@ async def test_every_ticket_of_the_release_gets_a_bullet_in_its_section(platform
     assert clauses == ["", "fixVersion in (10001, 10002)"]
     assert runner.has_event_of_class(VersionResolvedEvent)
     assert "Read 15 tickets of fix version 2.0 from Jira." in _thoughts(runner)
+    assert "15 notes were merged into 8 bullets." in _thoughts(runner)
     assert platform.follow_up_answers[0][-1].content == answer
+
+
+@async_test
+async def test_without_merging_every_ticket_keeps_a_bullet_of_its_own(platform: _Platform):
+    runner = await _run("Release notes for 2.0", _config(merge_related_tickets=False))
+
+    answer = _answer(runner)
+    for ticket in _TICKETS:
+        assert f"- Note for {ticket.key}. ([{ticket.key}]({ticket.url}))\n" in answer
+    assert "Merged" not in answer
+    assert "were merged" not in _thoughts(runner)
 
 
 @async_test
@@ -213,8 +235,8 @@ async def test_each_further_language_follows_as_a_block_of_its_own(platform: _Pl
 
     answer = _answer(runner)
     english, german = answer.split("\n## Versionshinweise 2.0\n")
-    assert english.count("\n- ") == german.count("\n- ") == len(_TICKETS)
-    assert "\n### Neue Funktionen\n\n- German: Note for ENG-1.\n" in german
+    assert english.count("\n- ") == german.count("\n- ") == 8
+    assert "\n### Neue Funktionen\n\n- German: Merged ENG-1 + ENG-5.\n" in german
     assert "[ENG-1]" not in answer
     written = runner.get_events_of_class(ReleaseNotesWrittenEvent)[0]
     assert written.shown == english

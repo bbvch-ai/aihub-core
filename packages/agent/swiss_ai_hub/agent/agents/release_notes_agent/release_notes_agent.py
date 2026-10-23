@@ -9,10 +9,10 @@ from swiss_ai_hub.core.jira import JiraError, JiraJql, JiraTicketSearch
 
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_stream import ChangelogStream
+from swiss_ai_hub.agent.agents.release_notes_agent.changelog_writer import ChangelogWriter
 from swiss_ai_hub.agent.agents.release_notes_agent.events.release_notes_written_event import ReleaseNotesWrittenEvent
 from swiss_ai_hub.agent.agents.release_notes_agent.events.version_resolved_event import VersionResolvedEvent
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note_translator import ReleaseNoteTranslator
-from swiss_ai_hub.agent.agents.release_notes_agent.release_note_writer import ReleaseNoteWriter
 from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_agent_config import ReleaseNotesAgentConfig
 from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_reply import ReleaseNotesReply
 from swiss_ai_hub.agent.agents.release_notes_agent.release_version_matcher import ReleaseVersionMatcher
@@ -90,8 +90,8 @@ class ReleaseNotesAgent(Agent):
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> ReleaseNotesWrittenEvent | Conversation.CompleteRequest:
-        """The title is shown as soon as the tickets are read, and each batch of notes as soon as it is written, so the
-        chat never waits for the whole release."""
+        """The title is shown as soon as the tickets are read, and each window of entries as soon as it is written and
+        merged, so the chat never waits for the whole release."""
         speaker = ReleaseNotesAgent.__name__
         clauses = [config.extra_jql, JiraJql.fix_version_clause(resolved.versions)]
         try:
@@ -105,19 +105,14 @@ class ReleaseNotesAgent(Agent):
         stream = ChangelogStream(displayer, t, config.show_ticket_keys, config.llm.model_name)
         await stream.begin(config.writing_language(), resolved.name)
         async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
-            writer = ReleaseNoteWriter(
-                llm,
-                config.writing_language(),
-                config.audience,
-                config.tickets_per_batch,
-                config.max_concurrent_calls,
-                config.max_description_chars,
-            )
-            notes = await writer.write(tickets, stream.add)
+            entries = await ChangelogWriter.from_config(llm, config).write(tickets, stream.add)
+        notes = [note for entry in entries for note in entry.notes]
         summarized = sum(note.fallback for note in notes)
         if summarized:
             await displayer.display_thought(t(f"{_KEY}.thoughts.notes_summarized", count=summarized, total=len(notes)))
-        return ReleaseNotesWrittenEvent(version=resolved.name, notes=notes, shown=stream.text)
+        if len(entries) < len(notes):
+            await displayer.display_thought(t(f"{_KEY}.thoughts.notes_merged", notes=len(notes), entries=len(entries)))
+        return ReleaseNotesWrittenEvent(version=resolved.name, entries=entries, shown=stream.text)
 
     @step(
         name=AgentLocaleString.from_i18n_path(f"{_KEY}.steps.translate_release_notes.name"),
@@ -148,11 +143,8 @@ class ReleaseNotesAgent(Agent):
                 )
                 for language in targets:
                     await stream.begin(language, written.version)
-                    translated = await translator.translate(written.notes, language, stream.add)
-                    kept = sum(
-                        after.fallback and not before.fallback
-                        for after, before in zip(translated, written.notes, strict=True)
-                    )
+                    translated = await translator.translate(written.entries, language, stream.add)
+                    kept = sum(entry.untranslated for entry in translated)
                     if kept:
                         thought = t(f"{_KEY}.thoughts.notes_untranslated", count=kept, language=language.endonym)
                         await displayer.display_thought(thought)

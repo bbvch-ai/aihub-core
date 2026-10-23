@@ -4,10 +4,10 @@ from typing import Annotated
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.i18n import LocaleHandler
 
+from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_renderer import ChangelogRenderer
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
 from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
-from swiss_ai_hub.agent.agents.release_notes_agent.release_note import ReleaseNote
 
 
 class ChangelogStream:
@@ -22,7 +22,7 @@ class ChangelogStream:
         self,
         displayer: Annotated[EventDisplayer, "Where the chunks go"],
         t: Annotated[LocaleHandler, "Translations"],
-        show_ticket_keys: Annotated[bool, "Lead each bullet with its ticket key, linked to the ticket"],
+        show_ticket_keys: Annotated[bool, "End each bullet with its tickets' keys, linked to them"],
         model_name: Annotated[str, "Model the chunks are attributed to"],
         shown: Annotated[str, "What an earlier step of the run already showed, which this stream continues"] = "",
     ):
@@ -48,13 +48,13 @@ class ChangelogStream:
         separator = "\n" if self._shown else ""
         await self._show(separator + ChangelogRenderer.title(version, language, self._t))
 
-    async def add(self, notes: Annotated[Sequence[ReleaseNote], "The next notes, in changelog order"]) -> None:
+    async def add(self, entries: Annotated[Sequence[ChangelogEntry], "The next entries, in changelog order"]) -> None:
         pieces: list[str] = []
-        for note in notes:
-            if note.section != self._section:
-                self._section = note.section
-                pieces.append(ChangelogRenderer.heading(note.section, self._language, self._t))
-            pieces.append(ChangelogRenderer.bullet(note, self._show_ticket_keys))
+        for entry in entries:
+            if entry.section != self._section:
+                self._section = entry.section
+                pieces.append(ChangelogRenderer.heading(entry.section, self._language, self._t))
+            pieces.append(ChangelogRenderer.bullet(entry, self._show_ticket_keys))
         await self._show("".join(pieces))
 
     async def _show(self, text: str) -> None:

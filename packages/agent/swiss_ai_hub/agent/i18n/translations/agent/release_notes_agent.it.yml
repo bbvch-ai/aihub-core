@@ -65,8 +65,13 @@ config:
       scritte per loro.
   show_ticket_keys:
     label: Mostra le chiavi dei ticket
-    help: Inizia ogni punto con la chiave del suo ticket, con un link al ticket. Disattivalo
-      per lettori senza accesso a Jira.
+    help: Termina ogni punto con le chiavi dei suoi ticket, con un link ai ticket.
+      Disattivalo per lettori senza accesso a Jira.
+  merge_related_tickets:
+    label: Unisci i ticket correlati
+    help: Unisci le note dei ticket correlati di una stessa sezione in un unico punto
+      che li nomina tutti, come in un changelog scritto a mano. Ogni ticket compare
+      comunque in esattamente un punto.
 steps:
   contextualize:
     name: Leggi la richiesta
@@ -91,3 +96,4 @@ thoughts:
     il riepilogo del ticket.'
   notes_untranslated: '%{language}: %{count} note non sono state tradotte e restano
     nella lingua di scrittura.'
+  notes_merged: '%{notes} note sono state unite in %{entries} punti.'

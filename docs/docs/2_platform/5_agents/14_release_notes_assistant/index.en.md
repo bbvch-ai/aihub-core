@@ -28,8 +28,9 @@ flowchart TD
     C -- Yes --> E[Read every ticket of that<br/>version in the projects]
     E --> F{Any tickets?}
     F -- No --> G[Say there is<br/>nothing to write about]
-    F -- Yes --> H[Write a note per ticket,<br/>showing each batch as it is done]
-    H --> I[Translate the notes into<br/>each further language]
+    F -- Yes --> H[Write a note per ticket]
+    H --> M[Merge related notes,<br/>showing each part as it is done]
+    M --> I[Translate the bullets into<br/>each further language]
     I --> J[Suggest follow-up questions]
 ```
 
@@ -42,15 +43,20 @@ flowchart TD
 3. **Write the notes.** The model writes one sentence per ticket, two at most, for the configured readers, from the
    ticket's summary and description. The notes read like a product changelog: impersonal (no "you", no "we"), in the
    present tense, a feature naming the new capability and a fix saying what no longer goes wrong, e.g. *"Saving a draft
-   no longer discards attached images."* Tickets are sent a batch at a time, several batches at once, and each batch
-   appears in the chat as soon as it and the ones before it are done, so the answer starts within seconds even for a
-   large release.
-4. **Translate.** Each further language follows as its own block, translated from the written notes.
-5. **Follow-ups.** As in every chat assistant, a title is set for the conversation and follow-up questions are
+   no longer discards attached images."* Tickets are sent ten at a time, several batches at once.
+4. **Merge related tickets.** Within each section, the model merges notes about the same kind of change into one bullet
+   that names all of them, the way a hand-written changelog does: six tickets adding a CSV export to six pages become
+   *"Invoices, search results, user settings, notification emails, the dashboard and the login page can be exported as
+   CSV."* Every ticket still ends up in exactly one bullet: the platform checks it, and a ticket the model leaves out
+   keeps a bullet of its own. Notes are merged 40 at a time and each part appears in the chat as soon as it is done, so
+   the answer keeps coming even for a large release; a theme spanning more tickets of one section can therefore appear
+   as two bullets. Turn **Merge related tickets** off to get one bullet per ticket.
+5. **Translate.** Each further language follows as its own block, translated from the written bullets.
+6. **Follow-ups.** As in every chat assistant, a title is set for the conversation and follow-up questions are
    suggested.
 
-The changelog itself is put together by the platform, not by the model: the model only writes the notes. That is what
-lets a release of hundreds of tickets fit models that answer at most a few thousand words at a time.
+The changelog itself is put together by the platform, not by the model: the model writes the notes and proposes which to
+merge. That is what lets a release of hundreds of tickets fit models that answer at most a few thousand words at a time.
 
 ### Sections
 
@@ -63,12 +69,13 @@ Each ticket goes into a section by its Jira issue type:
 | **Improvements** | Improvement, Enhancement, and their German, French and Italian names                |
 | **Other**        | Everything else: Task, Sub-task, Epic, service requests, your own types             |
 
-Within a section, tickets are ordered by project and number. With **Show ticket keys** on, each bullet starts with the
-ticket key, linked to the ticket in Jira.
+Within a section, bullets are ordered by the project and number of their first ticket. With **Show ticket keys** on,
+each bullet ends with the keys of its tickets, linked to them in Jira.
 
 ### When something goes wrong
 
 - **A note the model could not write** shows the ticket's summary instead, and a thought in the run says how many did.
+- **A merge the model gets wrong** cannot drop or repeat a ticket: tickets it leaves out keep bullets of their own.
 - **A note that could not be translated** stays in the writing language, again with a thought saying how many.
 - **A Jira problem** — rejected credentials, a project that does not exist or that the account cannot see, an invalid
   JQL filter, an unreachable Jira — is answered with one sentence in the user's language that says who can fix it.
@@ -123,22 +130,23 @@ the agent container needs outbound network access to it.
 
 ## Configuration reference
 
-| Field                   | Default                             | Description                                                                                               |
-| ----------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Jira URL**            | —                                   | Jira's base URL. Redirects are not followed, so enter the address Jira answers at.                        |
-| **Jira edition**        | Jira Cloud                          | Jira Cloud or Jira Data Center.                                                                           |
-| **Account e-mail**      | —                                   | Jira Cloud only: the e-mail of the account the API token belongs to.                                      |
-| **Token**               | —                                   | API token without scopes (Cloud) or personal access token (Data Center).                                  |
-| **Jira projects**       | —                                   | Keys of the projects whose fix versions the release notes cover.                                          |
-| **JQL filter**          | *(empty)*                           | JQL every ticket must also match.                                                                         |
-| **Language**            | English                             | The language the notes are written in.                                                                    |
-| **Also translate into** | Off                                 | Further languages; turn it on to pick them. Each gets its own block, translated from the written notes.   |
-| **Readers**             | *the customers who use the product* | Who the notes are written for.                                                                            |
-| **Show ticket keys**    | On                                  | Lead each bullet with its ticket key, linked to the ticket. Turn it off for readers who cannot open Jira. |
-| **Max input tokens**    | `16384`                             | The conversation history kept for each turn. Earlier changelogs are long and only the questions matter.   |
+| Field                     | Default                             | Description                                                                                                  |
+| ------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Jira URL**              | —                                   | Jira's base URL. Redirects are not followed, so enter the address Jira answers at.                           |
+| **Jira edition**          | Jira Cloud                          | Jira Cloud or Jira Data Center.                                                                              |
+| **Account e-mail**        | —                                   | Jira Cloud only: the e-mail of the account the API token belongs to.                                         |
+| **Token**                 | —                                   | API token without scopes (Cloud) or personal access token (Data Center).                                     |
+| **Jira projects**         | —                                   | Keys of the projects whose fix versions the release notes cover.                                             |
+| **JQL filter**            | *(empty)*                           | JQL every ticket must also match.                                                                            |
+| **Language**              | English                             | The language the notes are written in.                                                                       |
+| **Also translate into**   | Off                                 | Further languages; turn it on to pick them. Each gets its own block, translated from the written notes.      |
+| **Readers**               | *the customers who use the product* | Who the notes are written for.                                                                               |
+| **Show ticket keys**      | On                                  | End each bullet with the keys of its tickets, linked to them. Turn it off for readers who cannot open Jira.  |
+| **Merge related tickets** | On                                  | Merge notes on related tickets of a section into one bullet that names them all. Off: one bullet per ticket. |
+| **Max input tokens**      | `16384`                             | The conversation history kept for each turn. Earlier changelogs are long and only the questions matter.      |
 
 The model settings and the **Task LLM** (titles, follow-up questions, the check for questions about the assistant) are
 the same as on the other chat assistants.
 
 Fixed by the deployment, not by the profile: at most **300 tickets** per release, **10 tickets** per model call, **4**
-model calls at once, and the first **4,000 characters** of each description.
+model calls at once, the first **4,000 characters** of each description, and **40 notes** per merge.
