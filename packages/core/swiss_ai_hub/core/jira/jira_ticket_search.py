@@ -1,5 +1,6 @@
 import re
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure.jira.jira_settings import JiraSettings
@@ -12,6 +13,7 @@ from swiss_ai_hub.core.jira.jira_jql import JiraJql
 from swiss_ai_hub.core.jira.jira_project_not_found_error import JiraProjectNotFoundError
 from swiss_ai_hub.core.jira.jira_request_error import JiraRequestError
 from swiss_ai_hub.core.jira.jira_ticket import JiraTicket
+from swiss_ai_hub.core.jira.jira_version import JiraVersion
 from swiss_ai_hub.core.network.source_host_guard import SourceHostGuard
 
 _PROJECT_KEY = re.compile(r"^[A-Z][A-Z0-9_]*$")
@@ -35,18 +37,12 @@ class JiraTicketSearch:
             Sequence[str], "JQL every ticket must also match, e.g. an admin's filter and a version"
         ] = (),
     ) -> list[JiraTicket]:
-        """Ordered by project and number. Checks, in this order: the configuration, the host, the credentials, each
-        project, the query; so a mistake is reported as what it is, not as the next check failing."""
-        projects = sorted({key.strip().upper() for key in project_keys if key.strip()})
-        problems = connection.problems() + cls._key_problems(projects)
-        if problems:
-            raise JiraConfigurationError(problems)
-        await cls._require_public_host(connection.base_url)
+        """Ordered by project and number. Checks, in this order: the configuration, the query's form, the host, the
+        credentials, each project, the query itself; so a mistake is reported as what it is, not as the next check
+        failing."""
+        projects = cls._configured_projects(connection, project_keys)
         jql = JiraJql.compose(projects, clauses)
-        async with JiraClient.connect(connection) as client:
-            account = await cls._signed_in_account(client, connection.base_url)
-            for project in projects:
-                await cls._require_visible(client, project, account)
+        async with cls._checked_client(connection, projects) as client:
             await cls._require_valid(client, jql)
             tickets = [
                 cls._own_ticket(hit, projects)
@@ -54,6 +50,46 @@ class JiraTicketSearch:
                 for hit in page
             ]
         return sorted(tickets, key=lambda ticket: (ticket.project, ticket.number))
+
+    @classmethod
+    async def find_versions(
+        cls,
+        connection: Annotated[JiraConnectionConfig, "Where Jira is and how to sign in"],
+        project_keys: Annotated[list[str], "Keys of the projects whose versions to list; case and order do not matter"],
+    ) -> list[JiraVersion]:
+        """Every version of the given projects, archived ones included, project by project in Jira's own order.
+
+        The same checks as a ticket search run first, so a version list that comes back empty means the projects have
+        no versions, not that the account cannot see them.
+        """
+        projects = cls._configured_projects(connection, project_keys)
+        async with cls._checked_client(connection, projects) as client:
+            return [
+                JiraVersion.from_answer(answer, project)
+                for project in projects
+                for answer in await client.project_versions(project)
+            ]
+
+    @classmethod
+    def _configured_projects(cls, connection: JiraConnectionConfig, project_keys: list[str]) -> list[str]:
+        """The keys normalised, so a lowercase key is not taken for a renamed project; everything missing is named at
+        once, before any request."""
+        projects = sorted({key.strip().upper() for key in project_keys if key.strip()})
+        problems = connection.problems() + cls._key_problems(projects)
+        if problems:
+            raise JiraConfigurationError(problems)
+        return projects
+
+    @classmethod
+    @asynccontextmanager
+    async def _checked_client(cls, connection: JiraConnectionConfig, projects: list[str]) -> AsyncIterator[JiraClient]:
+        """A client whose host, credentials and projects have been checked."""
+        await cls._require_public_host(connection.base_url)
+        async with JiraClient.connect(connection) as client:
+            account = await cls._signed_in_account(client, connection.base_url)
+            for project in projects:
+                await cls._require_visible(client, project, account)
+            yield client
 
     @staticmethod
     def _key_problems(projects: list[str]) -> list[str]:

@@ -1,0 +1,93 @@
+---
+metadata:
+  name: Assistente note di rilascio
+  description: Scrive note di rilascio dai ticket Jira di una versione di correzione,
+    raggruppati per tipo e in ogni lingua configurata.
+changelog:
+  title: Note di rilascio %{version}
+  sections:
+    features: Nuove funzionalità
+    fixes: Correzioni
+    improvements: Miglioramenti
+    other: Altre modifiche
+messages:
+  version_missing: 'Per quale versione devo scrivere le note? Indica una versione
+    di correzione, per esempio: %{recent}.'
+  version_missing_no_versions: Jira non elenca versioni di correzione in %{projects},
+    quindi non c'è ancora una versione per cui scrivere le note.
+  version_several: 'Il tuo messaggio cita più versioni: %{names}. Per quale devo scrivere
+    le note?'
+  version_unknown: 'Non ho trovato la versione di correzione %{requested} in %{projects}.
+    Intendevi: %{suggestions}?'
+  version_unknown_recent: 'Non ho trovato la versione di correzione %{requested} in
+    %{projects}. Le versioni recenti sono: %{recent}.'
+  version_unknown_no_versions: Non ho trovato la versione di correzione %{requested}
+    in %{projects}; Jira non vi elenca ancora versioni di correzione.
+  no_tickets: Non ho trovato ticket per la versione di correzione %{version} in %{projects},
+    quindi non c'è nulla da inserire nelle note di rilascio.
+  release_too_large: Questa versione ha più di %{limit} ticket, più di quanti ne possa
+    trattare in una volta nelle note di rilascio. Un amministratore può restringerla
+    con il filtro JQL di questo assistente.
+  jira_authentication: Jira ha rifiutato le credenziali di questo assistente, quindi
+    non posso leggere i ticket. Chiedi a un amministratore di verificare il token
+    Jira.
+  jira_project_not_found: Il progetto Jira %{project} non esiste, oppure l'account
+    Jira di questo assistente non può vederlo. Chiedi a un amministratore di verificare
+    i progetti configurati.
+  jira_project_renamed: Il progetto Jira %{project} è stato rinominato in %{renamed}.
+    Chiedi a un amministratore di aggiornare i progetti configurati.
+  jira_invalid_query: Jira ha rifiutato il filtro JQL di questo assistente, quindi
+    non posso leggere i ticket. Chiedi a un amministratore di correggerlo.
+  jira_configuration: La connessione Jira di questo assistente non è configurata correttamente.
+    Chiedi a un amministratore di verificarla.
+  jira_unavailable: Al momento non riesco a leggere i ticket da Jira. Riprova più
+    tardi; se il problema persiste, rivolgiti a un amministratore.
+config:
+  project_keys:
+    label: Progetti Jira
+    help: Chiavi dei progetti le cui versioni di correzione sono coperte dalle note
+      di rilascio, ad es. ENG. Un nome di versione presente in più progetti è un'unica
+      versione per tutti.
+  extra_jql:
+    label: Filtro JQL
+    help: JQL facoltativa che ogni ticket deve anche soddisfare, ad es. issuetype
+      not in subTaskIssueTypes() per escludere i sotto-task, oppure labels != internal.
+  language:
+    label: Lingua
+    help: La lingua in cui sono scritte le note di rilascio.
+  translate_into:
+    label: Traduci anche in
+    help: 'Lingue aggiuntive: il changelog segue in ciascuna di esse, tradotto dalla
+      versione scritta.'
+  audience:
+    label: Lettori
+    help: Chi legge le note di rilascio, ad es. i clienti dell'app web. Le note sono
+      scritte per loro.
+  show_ticket_keys:
+    label: Mostra le chiavi dei ticket
+    help: Inizia ogni punto con la chiave del suo ticket, con un link al ticket. Disattivalo
+      per lettori senza accesso a Jira.
+steps:
+  contextualize:
+    name: Leggi la richiesta
+    description: Limita la cronologia della chat e passa il messaggio alla conversazione,
+      che risponde alle domande sull'assistente stesso.
+  resolve_version:
+    name: Trova la versione
+    description: Trova la versione di correzione indicata nel messaggio tra le versioni
+      dei progetti Jira configurati.
+  write_release_notes:
+    name: Scrivi le note di rilascio
+    description: Legge da Jira tutti i ticket della versione e scrive una nota per
+      ticket, raggruppate per tipo.
+  translate_release_notes:
+    name: Traduci le note di rilascio
+    description: Traduce le note in ogni lingua aggiuntiva configurata.
+thoughts:
+  jira_detail: 'Jira ha segnalato: %{detail}'
+  version_found: Versione di correzione %{version} trovata in %{projects}.
+  tickets_found: Letti da Jira %{count} ticket della versione di correzione %{version}.
+  notes_summarized: '%{count} note su %{total} non sono state scritte e mostrano invece
+    il riepilogo del ticket.'
+  notes_untranslated: '%{language}: %{count} note non sono state tradotte e restano
+    nella lingua di scrittura.'

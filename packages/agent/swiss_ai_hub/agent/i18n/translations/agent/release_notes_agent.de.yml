@@ -1,0 +1,96 @@
+---
+metadata:
+  name: Versionshinweis-Assistent
+  description: Schreibt Versionshinweise aus den Jira-Tickets einer Lösungsversion,
+    nach Typ gruppiert und in jeder konfigurierten Sprache.
+changelog:
+  title: Versionshinweise %{version}
+  sections:
+    features: Neue Funktionen
+    fixes: Fehlerbehebungen
+    improvements: Verbesserungen
+    other: Weitere Änderungen
+messages:
+  version_missing: 'Für welche Version soll ich die Hinweise schreiben? Nennen Sie
+    eine Lösungsversion, zum Beispiel: %{recent}.'
+  version_missing_no_versions: Jira führt in %{projects} keine Lösungsversionen, daher
+    gibt es noch keine Version, für die ich Hinweise schreiben kann.
+  version_several: 'Ihre Nachricht nennt mehrere Versionen: %{names}. Für welche soll
+    ich die Hinweise schreiben?'
+  version_unknown: 'Ich habe in %{projects} keine Lösungsversion %{requested} gefunden.
+    Meinten Sie: %{suggestions}?'
+  version_unknown_recent: 'Ich habe in %{projects} keine Lösungsversion %{requested}
+    gefunden. Aktuelle Versionen sind: %{recent}.'
+  version_unknown_no_versions: Ich habe in %{projects} keine Lösungsversion %{requested}
+    gefunden; Jira führt dort noch keine Lösungsversionen.
+  no_tickets: Ich habe für die Lösungsversion %{version} in %{projects} keine Tickets
+    gefunden, daher gibt es nichts für Versionshinweise.
+  release_too_large: Diese Version hat mehr als %{limit} Tickets, mehr als ich auf
+    einmal in Versionshinweise fassen kann. Eine Administratorin oder ein Administrator
+    kann sie mit dem JQL-Filter dieses Assistenten eingrenzen.
+  jira_authentication: Jira hat die Zugangsdaten dieses Assistenten abgelehnt, daher
+    kann ich die Tickets nicht lesen. Bitte lassen Sie das Jira-Token von einer Administratorin
+    oder einem Administrator prüfen.
+  jira_project_not_found: Das Jira-Projekt %{project} existiert nicht, oder das Jira-Konto
+    dieses Assistenten kann es nicht sehen. Bitte lassen Sie die konfigurierten Projekte
+    von einer Administratorin oder einem Administrator prüfen.
+  jira_project_renamed: Das Jira-Projekt %{project} wurde in %{renamed} umbenannt.
+    Bitte lassen Sie die konfigurierten Projekte von einer Administratorin oder einem
+    Administrator anpassen.
+  jira_invalid_query: Jira hat den JQL-Filter dieses Assistenten abgelehnt, daher
+    kann ich die Tickets nicht lesen. Bitte lassen Sie ihn von einer Administratorin
+    oder einem Administrator korrigieren.
+  jira_configuration: Die Jira-Verbindung dieses Assistenten ist nicht richtig eingerichtet.
+    Bitte lassen Sie sie von einer Administratorin oder einem Administrator prüfen.
+  jira_unavailable: Ich konnte die Tickets gerade nicht aus Jira lesen. Bitte versuchen
+    Sie es später noch einmal; wenn es weiterhin fehlschlägt, wenden Sie sich an eine
+    Administratorin oder einen Administrator.
+config:
+  project_keys:
+    label: Jira-Projekte
+    help: Schlüssel der Projekte, deren Lösungsversionen die Versionshinweise abdecken,
+      z. B. ENG. Ein Versionsname, der in mehreren davon vorkommt, ist eine Version
+      über alle hinweg.
+  extra_jql:
+    label: JQL-Filter
+    help: Optionale JQL, die jedes Ticket zusätzlich erfüllen muss, z. B. issuetype
+      not in subTaskIssueTypes(), um Unteraufgaben auszulassen, oder labels != internal.
+  language:
+    label: Sprache
+    help: Die Sprache, in der die Versionshinweise geschrieben werden.
+  translate_into:
+    label: Zusätzlich übersetzen in
+    help: 'Weitere Sprachen: Der Changelog folgt in jeder davon, übersetzt aus der
+      geschriebenen Fassung.'
+  audience:
+    label: Leserschaft
+    help: Wer die Versionshinweise liest, z. B. Kundinnen und Kunden der Web-App.
+      Die Hinweise werden für sie geschrieben.
+  show_ticket_keys:
+    label: Ticketschlüssel anzeigen
+    help: Jeden Punkt mit seinem Ticketschlüssel beginnen, verlinkt auf das Ticket.
+      Für Lesende ohne Zugang zu Jira ausschalten.
+steps:
+  contextualize:
+    name: Anfrage lesen
+    description: Begrenzt den Chatverlauf und übergibt die Nachricht an die Konversation,
+      die Fragen zum Assistenten selbst beantwortet.
+  resolve_version:
+    name: Version finden
+    description: Findet die Lösungsversion, die die Nachricht nennt, unter den Versionen
+      der konfigurierten Jira-Projekte.
+  write_release_notes:
+    name: Versionshinweise schreiben
+    description: Liest alle Tickets der Version aus Jira und schreibt zu jedem Ticket
+      einen Hinweis, nach Typ gruppiert.
+  translate_release_notes:
+    name: Versionshinweise übersetzen
+    description: Übersetzt die Hinweise in jede weitere konfigurierte Sprache.
+thoughts:
+  jira_detail: 'Jira meldete: %{detail}'
+  version_found: Lösungsversion %{version} in %{projects} gefunden.
+  tickets_found: '%{count} Tickets der Lösungsversion %{version} aus Jira gelesen.'
+  notes_summarized: '%{count} von %{total} Hinweisen konnten nicht geschrieben werden
+    und zeigen stattdessen die Ticketzusammenfassung.'
+  notes_untranslated: '%{language}: %{count} Hinweise konnten nicht übersetzt werden
+    und bleiben in der Schreibsprache.'

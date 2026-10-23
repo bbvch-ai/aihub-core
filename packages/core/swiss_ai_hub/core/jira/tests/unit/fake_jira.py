@@ -18,6 +18,8 @@ PUBLIC_ADDRESS = "93.184.216.34"
 _PROJECTS = re.compile(r'project (?:in \(([^)]*)\)|= "([A-Z][A-Z0-9_]*)")')
 _FIX_VERSION = re.compile(r'fixVersion = "((?:[^"\\]|\\.)*)"')
 _PROJECT_PATH = re.compile(r"/rest/api/2/project/([^/]+)$")
+_VERSIONS_PATH = re.compile(r"/rest/api/2/project/([^/]+)/versions$")
+_FIX_VERSION_IDS = re.compile(r"fixVersion in \(([\d,\s]+)\)")
 
 Queued = tuple[int, dict[str, Any] | bytes, dict[str, str]] | type[httpx.TransportError]
 
@@ -35,6 +37,7 @@ class FakeJira:
         self.waits: list[float] = []
         self.queued: list[Queued] = []
         self.projects: set[str] = set()
+        self.versions: dict[str, list[dict[str, Any]]] = {}
         self.renamed_projects: dict[str, str] = {}
         self.unknown_jql_fields: set[str] = set()
         self.stuck_page_tokens = False
@@ -42,6 +45,7 @@ class FakeJira:
         self.leaked_issue: dict[str, Any] | None = None
         self.account: dict[str, Any] = {"accountId": "bot-1", "name": "bot", "displayName": "Release Bot"}
         self._ids = itertools.count(10001)
+        self._version_ids = itertools.count(20001)
 
     def install(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Also answers DNS for the host check with a public address, so no test resolves a real name."""
@@ -85,6 +89,23 @@ class FakeJira:
         self.issues.append(hit)
         return hit
 
+    def add_version(
+        self, project: str, name: str, released: bool = False, archived: bool = False, release_date: str | None = None
+    ) -> dict[str, Any]:
+        """A version of a project; pass the returned entry in an issue's ``fixVersions`` to put the issue in it."""
+        version = {
+            "id": str(next(self._version_ids)),
+            "name": name,
+            "released": released,
+            "archived": archived,
+            "self": f"{self.site}/rest/api/2/version/{name}",
+        }
+        if release_date:
+            version["releaseDate"] = release_date
+        self.projects.add(project)
+        self.versions.setdefault(project, []).append(version)
+        return version
+
     def fail_next(
         self,
         status: int,
@@ -114,6 +135,8 @@ class FakeJira:
         params = dict(request.url.params)
         if path.endswith("/rest/api/2/myself"):
             return self._response(200, self.account)
+        if versions := _VERSIONS_PATH.search(path):
+            return self._versions(versions.group(1))
         if project := _PROJECT_PATH.search(path):
             return self._project(project.group(1))
         if path.endswith("/rest/api/3/jql/parse") and self.deployment == "cloud":
@@ -130,6 +153,11 @@ class FakeJira:
         """Jira answers the same 404 for a missing project and for one the account may not browse."""
         if key in self.projects:
             return self._response(200, {"key": self.renamed_projects.get(key, key), "name": f"Project {key}"})
+        return self._response(404, {"errorMessages": [f"No project could be found with key '{key}'."], "errors": {}})
+
+    def _versions(self, key: str) -> httpx.Response:
+        if key in self.projects:
+            return self._response(200, self.versions.get(key, []))
         return self._response(404, {"errorMessages": [f"No project could be found with key '{key}'."], "errors": {}})
 
     def _problems(self, jql: str) -> list[str]:
@@ -184,11 +212,13 @@ class FakeJira:
         listed = match.group(1) or f'"{match.group(2)}"'
         projects = {key.strip().strip('"') for key in listed.split(",")}
         versions = {self._unescaped(raw) for raw in _FIX_VERSION.findall(jql)}
+        version_ids = {part.strip() for found in _FIX_VERSION_IDS.findall(jql) for part in found.split(",")}
         hits = [
             hit
             for hit in self.issues
             if hit["key"].rsplit("-", 1)[0] in projects
             and (not versions or versions & {version["name"] for version in hit["fields"]["fixVersions"]})
+            and (not version_ids or version_ids & {version.get("id") for version in hit["fields"]["fixVersions"]})
         ]
         if self.leaked_issue:
             hits.append(self.leaked_issue)
@@ -214,6 +244,8 @@ class FakeJira:
         return re.sub(r"\\(.)", r"\1", literal)
 
     @staticmethod
-    def _response(status: int, body: dict[str, Any] | bytes, headers: dict[str, str] | None = None) -> httpx.Response:
+    def _response(
+        status: int, body: dict[str, Any] | list[Any] | bytes, headers: dict[str, str] | None = None
+    ) -> httpx.Response:
         content = body if isinstance(body, bytes) else json.dumps(body).encode()
         return httpx.Response(status, content=content, headers={"Content-Type": "application/json", **(headers or {})})

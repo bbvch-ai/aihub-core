@@ -1450,8 +1450,8 @@ services:
     # This collector is dual-homed, so its container name is registered in Docker DNS on
     # both networks — and the egress address is NOT reachable container-to-container,
     # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
-    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
-    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # rather than getting a refusal). Three OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent, release_notes_agent), so for them the bare name is ambiguous by construction.
     # The alias below is registered on backend only and can therefore resolve to nothing
     # but the reachable address; every OTLP client targets it instead of the name.
     networks:

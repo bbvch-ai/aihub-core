@@ -362,3 +362,30 @@ class TestJqlProblems:
 
         with pytest.raises(JiraRequestError, match="401"):
             await _jql_problems("data_center", _SCOPE)
+
+
+class TestProjectVersions:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("deployment", ["cloud", "data_center"])
+    async def test_every_version_of_a_project_is_listed(self, monkeypatch: pytest.MonkeyPatch, deployment: str):
+        jira = _jira(monkeypatch, deployment, issues=1)
+        jira.add_version("AAA", "1.0", released=True)
+        jira.add_version("AAA", "1.1")
+
+        async with JiraClient.connect(_connection(deployment)) as client:
+            versions = await client.project_versions("AAA")
+
+        assert [(version["name"], version["released"]) for version in versions] == [("1.0", True), ("1.1", False)]
+
+    @pytest.mark.asyncio
+    async def test_an_object_where_a_list_belongs_fails(self, monkeypatch: pytest.MonkeyPatch):
+        jira = _jira(monkeypatch, "cloud", issues=1)
+        jira.fail_next(200, {"values": []})
+
+        with pytest.raises(JiraError, match="with a dict instead of a list"):
+            await _versions("AAA")
+
+
+async def _versions(project: str) -> list[dict]:
+    async with JiraClient.connect(_connection("cloud")) as client:
+        return await client.project_versions(project)
