@@ -341,6 +341,21 @@ event:
     error: Errore
     stop: Termina con
     targetAgent: Scrittore di memoria
+    links: Link
+    webReferences: Pagine web indicate
+    pagesRead: Pagine lette
+    notRead: Non lette
+    webFetchFailure:
+      malformed_url: Link non valido
+      unsupported_url: Link non supportato
+      blocked_host: Indirizzo bloccato
+      not_found: Non trovata
+      access_denied: Accesso negato
+      http_error: Errore del server
+      timeout: Tempo scaduto
+      unsupported_content: Non è una pagina web
+      empty_content: Nessun contenuto leggibile
+      url_limit_reached: Oltre il limite di link
   extraction:
     fields: Colonne
     instructions: Righe da tenere

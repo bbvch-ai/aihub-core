@@ -20,15 +20,16 @@ from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools im
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class UniversalAgent(Agent):
     """One agent an admin configures once: the model decides for itself whether to search our knowledge, read the
-    attached files, recall memory, work on whole knowledge documents and extract tables from them (when the profile
-    switches the document tools on) or, with Code Interpreter on, work in the user's code sandbox, and keeps going
-    until it can answer.
+    attached files, recall memory, read the web pages the user links, work on whole knowledge documents and extract
+    tables from them (when the profile switches the document tools on) or, with Code Interpreter on, work in the
+    user's code sandbox, and keeps going until it can answer.
 
     Three steps of its own: hand the instructed history to the conversation, let the model work through its tools,
     and complete with the reply. Nothing is loaded into the prompt up front; every tool call shows in the chat as the
@@ -44,6 +45,7 @@ class UniversalAgent(Agent):
         Knowledge,
         AttachedFiles,
         Memory,
+        WebFetch,
         SandboxTools,
         UserFilesTools,
         KnowledgeDocumentTools,
@@ -59,10 +61,13 @@ class UniversalAgent(Agent):
     async def contextualize_step(
         self, event: UserMessageEvent, agent_config: UniversalAgentConfig, t: LocaleHandler
     ) -> Conversation.ContextualizeRequest:
-        """The agent's instructions and the profile's lead a single system message, ahead of the client's own."""
+        """The agent's instructions and the profile's lead a single system message, ahead of the client's own,
+        followed by what it should know about the pages the message links."""
+        links_note = WebFetch.links_note(event, agent_config, t)
         instructions = [
             t("agent.universal_agent.prompt.instructions"),
             *([agent_config.instructions.in_locale(event.locale)] if agent_config.instructions else []),
+            *([links_note] if links_note else []),
         ]
         history = merge_consecutive_messages(
             [
@@ -85,7 +90,12 @@ class UniversalAgent(Agent):
         icon="mdi:toolbox-outline",
     )
     async def loop_step(self, ctx: Conversation.Contextualized, event: UserMessageEvent) -> ToolLoop.RunRequest:
-        return UniversalAgent.tools.run(ctx.history, files=event.files, knowledge_references=event.knowledge_references)
+        return UniversalAgent.tools.run(
+            ctx.history,
+            files=event.files,
+            knowledge_references=event.knowledge_references,
+            web_references=WebFetch.links_of(event),
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.universal_agent.steps.complete.name"),

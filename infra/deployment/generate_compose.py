@@ -171,6 +171,7 @@ OWN_IMAGE_LICENSES = {
     "email_classification_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "universal_agent": "Apache-2.0",
+    "web_fetch_agent": "Apache-2.0",
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
