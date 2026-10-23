@@ -89,8 +89,11 @@ class ReleaseVersionMatcher:
 
     @staticmethod
     def _recent(versions: Sequence[JiraVersion]) -> list[str]:
-        """Latest release date first; versions without one are usually the upcoming ones, so they lead, newest in
-        Jira's own order first."""
-        live = [version for version in reversed(versions) if not version.archived]
-        live.sort(key=lambda version: version.release_date or date.max, reverse=True)
+        """Latest release date first; versions without one are usually the upcoming ones, so they lead. Ties go to
+        the newest id: Jira numbers versions site-wide as they are created, where its own order is per project."""
+        live = [version for version in versions if not version.archived]
+        live.sort(
+            key=lambda version: (version.release_date or date.max, int(version.id) if version.id.isdigit() else 0),
+            reverse=True,
+        )
         return list(dict.fromkeys(version.name for version in live))[:_RECENT]

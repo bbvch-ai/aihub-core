@@ -127,3 +127,16 @@ def test_projects_without_versions_leave_nothing_to_offer():
 
     assert match.outcome is VersionMatchOutcome.MISSING
     assert match.recent == []
+
+
+def test_versions_of_several_projects_are_offered_newest_first():
+    """As listed on the Cloud test site: no release dates, ENG's versions before SD's."""
+    versions = [
+        JiraVersion(id="10000", name="1.0", project="ENG", released=True),
+        JiraVersion(id="10001", name="1.1", project="ENG"),
+        JiraVersion(id="10004", name="2.0", project="ENG"),
+        JiraVersion(id="10002", name="2026-Q3", project="SD", released=True),
+        JiraVersion(id="10003", name="1.0", project="SD"),
+    ]
+
+    assert ReleaseVersionMatcher.match("release notes please", versions).recent == ["2.0", "1.0", "2026-Q3", "1.1"]

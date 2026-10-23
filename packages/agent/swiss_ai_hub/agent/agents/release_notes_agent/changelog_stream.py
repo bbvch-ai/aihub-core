@@ -24,12 +24,13 @@ class ChangelogStream:
         t: Annotated[LocaleHandler, "Translations"],
         show_ticket_keys: Annotated[bool, "Lead each bullet with its ticket key, linked to the ticket"],
         model_name: Annotated[str, "Model the chunks are attributed to"],
+        shown: Annotated[str, "What an earlier step of the run already showed, which this stream continues"] = "",
     ):
         self._displayer = displayer
         self._t = t
         self._show_ticket_keys = show_ticket_keys
         self._model_name = model_name
-        self._shown: list[str] = []
+        self._shown: list[str] = [shown] if shown else []
         self._language = ReleaseLanguage.EN
         self._section: ChangelogSection | None = None
 

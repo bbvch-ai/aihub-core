@@ -2,7 +2,10 @@ from typing import Annotated
 
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import LLMEvent, LLMStopEvent, Message
+from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.jira import JiraError
 
+from swiss_ai_hub.agent.agents.release_notes_agent.jira_error_reply import JiraErrorReply
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 
 
@@ -45,3 +48,18 @@ class ReleaseNotesReply:
         """A bare stop event reaches chat clients as an empty message, so the sentence is streamed first."""
         await displayer.display_chunk(text, model_name=model_name)
         return cls.complete(question, text, model_name)
+
+    @classmethod
+    async def jira_failure(
+        cls,
+        error: Annotated[JiraError, "What kept the Jira read from completing"],
+        question: Annotated[str, "What the user asked"],
+        displayer: Annotated[EventDisplayer, "Where the reply is shown"],
+        t: Annotated[LocaleHandler, "Translations in the run's language"],
+        model_name: Annotated[str, "Model the answer is attributed to"],
+    ) -> Conversation.CompleteRequest:
+        """Jira's own words go into a thought, for the administrator who opens the run; the user reads who can fix
+        it."""
+        reply = JiraErrorReply.from_error(error, t)
+        await displayer.display_thought(t("agent.release_notes_agent.thoughts.jira_detail", detail=reply.detail))
+        return await cls.say(reply.message, question, displayer, model_name)
