@@ -1,4 +1,4 @@
-"""`ModelBoundInputNumber.maximum_for`: the bound a model's limit puts on the field, which the API and the form share."""
+"""`ModelBoundInputNumber.maximum_for`: the bound a model's limit puts on the field, shared by the API and the form."""
 
 from swiss_ai_hub.core.form.elements.model_bound_input_number import ModelBoundInputNumber
 from swiss_ai_hub.core.i18n.locale_string import LocaleString

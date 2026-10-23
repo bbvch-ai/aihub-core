@@ -354,7 +354,8 @@ def carry_over_pre_pair_knowledge_collections() -> None:
 
 # Transitional: the input-token limit was pre-filled with 128,000 for every model, and saves are now rejected above 85%
 # of the model's window, so such a profile on a smaller model could not be saved at all. Unset, the limit fills that
-# share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded past it.
+# share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded
+# past it.
 def unset_oversized_input_limits() -> None:
     """Unsets every agent profile's input-token limit that lies above what its model allows."""
     migrated = OversizedInputLimitMigration.run()

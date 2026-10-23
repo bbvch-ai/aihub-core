@@ -1028,7 +1028,7 @@ lib:
     empty: L'agente selezionato non è configurato per alcuna raccolta.
     unavailable: Salvata, ma non consultata dall'agente selezionato
   knowledgeDatabases:
-    unavailable: "{name} (eliminato o non visibile a te)"
+    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
