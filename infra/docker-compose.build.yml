@@ -1431,22 +1431,44 @@ services:
   # ===================================================================
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
+  # Project-managed image: Presidio 2.2.364 with GLiNER and spaCy's German model baked in, plus an API-key check
+  # (infra/deployment/docker/presidio-analyzer). The recognizers come from the mounted config, so pattern changes
+  # need no rebuild. It sees the personal data the platform protects, so it lives alone in `pii-detection` with only
+  # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-2
     restart: always
-    labels:
-      healthcheck.enabled: 'true'
-      healthcheck.protocol: http
-      healthcheck.port: '3000'
-      healthcheck.path: /health
+    ports: [5002:3000]
+    environment:
+      ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+      # Without these torch oversubscribes the CPU and a short request takes seconds instead of ~250 ms
+      OMP_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+    volumes: [./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:3000/health',
+          timeout=5)
+      interval: 15s
+      timeout: 6s
+      start_period: 180s  # Loading GLiNER and spaCy takes 1-2 minutes on CPU
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G  # Measured: 2.6-2.9 GiB after a run over 50K-character inputs
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
+      - pii-detection  # Isolated zone: callers (litellm, agents) join it to reach the analyzer
 
   # License: MIT — third-party (see LICENSE_REPORT.md)
   presidio-anonymizer:
@@ -1550,6 +1572,7 @@ services:
     networks:
       - backend
       - data  # For PostgreSQL access
+      - pii-detection  # Caller of the Presidio analyzer
       - proxy  # For external API access via Traefik
 
   # ===================================================================
@@ -3080,6 +3103,7 @@ services:
       - storage
       - code-sandbox
       - browser  # Caller of the Playwright browser zone (web fetch)
+      - pii-detection  # Caller of the Presidio analyzer
   # License: Apache-2.0 — own image (see LICENSES.md)
   knowledge_extraction_agent:
     container_name: knowledge-extraction-agent
@@ -4137,6 +4161,9 @@ services:
 # - data:    Databases, caches, and message broker
 # - storage: SeaweedFS distributed object storage
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
+# - code-sandbox:  The open-terminal sandbox plus only its callers
+# - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4173,6 +4200,11 @@ networks:
   # guarantee (DNS rebinding). Outbound internet comes from egress.
   browser:
     name: browser
+    driver: bridge
+    internal: true
+  # The Presidio analyzer receives the personal data the platform protects: alone with its callers, no egress
+  pii-detection:
+    name: pii-detection
     driver: bridge
     internal: true
 # ===================================================================

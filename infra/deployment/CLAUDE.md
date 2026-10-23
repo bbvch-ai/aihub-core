@@ -217,6 +217,28 @@ After publishing, all stages pull the new image automatically via `docker compos
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
 
+### Publishing the Presidio analyzer image
+
+The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
+(`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
+and Presidio's stock REST server with two changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
+
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
+`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
+`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
+any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
+`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+
+Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
+character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
@@ -237,15 +259,24 @@ routes through Traefik.
 
 ## Network Isolation (7 Zones)
 
-| Network        | Purpose                           | Internal | ICC | Key Services                                                  |
-| -------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
-| `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`       | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
-| `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
-| `browser`      | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
+| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
+| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)     |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -265,6 +296,11 @@ connection (DNS rebinding), so the browser must not share `backend`. It sits on 
 callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
 Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
 reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
+
+**`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
+in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
+outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
+the host.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

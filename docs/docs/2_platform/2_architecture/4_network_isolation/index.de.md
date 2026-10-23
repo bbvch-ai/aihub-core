@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 39a4d8782761edc04f45efee9864edd8b3ce6e1ea068dbefaa5b816e55dcfd9b
+source_sha: 7dce5b3e84336c4ff6c9107bcc25b7825ddc27049919938c08b46188cb21ed87
 ---
 
 # Docker-Netzwerkisolation
@@ -13,15 +13,16 @@ Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 Die Plattform verwendet sieben isolierte Docker-Netzwerke:
 
-| Netzwerk       | Zweck                                | Externer Zugriff | ICC aktiviert |
-| -------------- | ------------------------------------ | ---------------- | ------------- |
-| `proxy`        | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
-| `backend`      | Interne Anwendungs-Services          | Nein             | Ja            |
-| `data`         | Datenbanken und Message Broker       | Nein             | Ja            |
-| `storage`      | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
-| `egress`       | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
-| `code-sandbox` | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
-| `browser`      | Playwright-Browser + seine Caller    | Nein             | Ja            |
+| Netzwerk        | Zweck                                | Externer Zugriff | ICC aktiviert |
+| --------------- | ------------------------------------ | ---------------- | ------------- |
+| `proxy`         | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
+| `backend`       | Interne Anwendungs-Services          | Nein             | Ja            |
+| `data`          | Datenbanken und Message Broker       | Nein             | Ja            |
+| `storage`       | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
+| `egress`        | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
+| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| `browser`       | Playwright-Browser + seine Caller    | Nein             | Ja            |
+| `pii-detection` | PII-Erkennung + ihre Caller          | Nein             | Ja            |
 
 Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
 Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
@@ -43,6 +44,11 @@ Die Agents prüfen jede URL, bevor der Browser sie lädt, aber der Browser löst
 zuerst mit einer öffentlichen und dann mit einer internen Adresse antwortet (DNS-Rebinding), durchrutschen würde. Durch
 den Ausschluss des Browsers aus `backend` hat das Laden einer solchen Seite keinen Netzwerkpfad zu `litellm`,
 `langfuse`, `mineru` oder dem Docker-Socket-Proxy. Der Browser erreicht das Internet über `egress`.
+
+Das `pii-detection`-Netzwerk enthält den `presidio-analyzer`, der die Personendaten erhält, die die Plattform
+anonymisiert, plus **genau seine Caller** (`litellm` und `universal-agent`). Seine Modelle sind im Image enthalten und
+der Hugging-Face-Hub ist zur Laufzeit offline, daher verwehrt `internal: true` in Nicht-Dev-Stages den ausgehenden
+Internetzugriff, ohne ihn zu beeinträchtigen. Jede Anfrage ausser dem Health-Check benötigt den API-Key des Analyzers.
 
 ## Service-Netzwerkzuweisungen
 
@@ -66,7 +72,7 @@ Interne Anwendungs- und Verarbeitungs-Services:
 
 - **litellm**: LLM-Gateway und Request-Routing
 - **mineru-api**: Dokumenten-Parsing und -Extraktion
-- **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
+- **presidio-anonymizer**: PII-Anonymisierung
 - **vLLM**: Lokale LLM-Inferenz (Chat, Embedding, Reranking) – nur GPU Deployments
 - **speaches**: Spracherkennung und Text-zu-Sprache
 - **agents**: Alle Agent Workers (RAG, Expert, Wrapping)
@@ -166,7 +172,7 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
         dagster[dagster-*]
@@ -177,6 +183,12 @@ flowchart TB
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
         playwright_egress[playwright]
+    end
+
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
     end
 
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]

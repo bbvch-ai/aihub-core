@@ -1031,6 +1031,8 @@ lib:
       angeboten werden.
     empty: Der gewählte Agent ist für keine Sammlung konfiguriert.
     unavailable: Gespeichert, wird aber vom gewählten Agenten nicht abgerufen
+  knowledgeDatabases:
+    unavailable: "{name} (gelöscht oder für Sie nicht sichtbar)"
   vectorStore:
     label: Vektorspeicher
     help: Wissensdatenbank und Namensräume für die Suche auswählen

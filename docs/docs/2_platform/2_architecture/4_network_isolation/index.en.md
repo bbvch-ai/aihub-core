@@ -12,15 +12,16 @@ privilege at the network layer.
 
 The platform uses seven isolated Docker networks:
 
-| Network        | Purpose                              | External Access  | ICC Enabled |
-| -------------- | ------------------------------------ | ---------------- | ----------- |
-| `proxy`        | External traffic via Traefik         | Ingress + Egress | Yes         |
-| `backend`      | Internal application services        | No               | Yes         |
-| `data`         | Databases and message broker         | No               | Yes         |
-| `storage`      | SeaweedFS object storage             | No               | Yes         |
-| `egress`       | Outbound internet access only        | Egress only      | No          |
-| `code-sandbox` | Code-execution sandbox + its callers | No               | Yes         |
-| `browser`      | Playwright browser + its callers     | No               | Yes         |
+| Network         | Purpose                              | External Access  | ICC Enabled |
+| --------------- | ------------------------------------ | ---------------- | ----------- |
+| `proxy`         | External traffic via Traefik         | Ingress + Egress | Yes         |
+| `backend`       | Internal application services        | No               | Yes         |
+| `data`          | Databases and message broker         | No               | Yes         |
+| `storage`       | SeaweedFS object storage             | No               | Yes         |
+| `egress`        | Outbound internet access only        | Egress only      | No          |
+| `code-sandbox`  | Code-execution sandbox + its callers | No               | Yes         |
+| `browser`       | Playwright browser + its callers     | No               | Yes         |
+| `pii-detection` | PII detection + its callers          | No               | Yes         |
 
 The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable
 from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers
@@ -40,6 +41,11 @@ browser loads it, but the browser resolves the name again, so a name that answer
 internal one second (DNS rebinding) would slip through. Keeping the browser off `backend` means such a page load has no
 network path to `litellm`, `langfuse`, `mineru` or the Docker socket proxy. The browser reaches the internet through
 `egress`.
+
+The `pii-detection` network holds the `presidio-analyzer`, which receives the personal data the platform anonymises,
+plus **exactly its callers** (`litellm` and `universal-agent`). Its models are baked into the image and the Hugging Face
+hub is offline at run time, so `internal: true` in non-dev stages denies it outbound internet without breaking it, and
+every request except the health probe needs the analyzer's API key.
 
 ## Service Network Assignments
 
@@ -63,7 +69,7 @@ Internal application and processing services:
 
 - **litellm**: LLM gateway and request routing
 - **mineru-api**: Document parsing and extraction
-- **presidio-analyzer/anonymizer**: PII detection and anonymization
+- **presidio-anonymizer**: PII anonymization
 - **vLLM**: Local LLM inference (chat, embedding, reranking) — GPU deployments only
 - **speaches**: Speech-to-text and text-to-speech
 - **agents**: All agent workers (rag, expert, wrapping)
@@ -160,7 +166,7 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
         dagster[dagster-*]
@@ -182,6 +188,12 @@ flowchart TB
         playwright[playwright]
         openwebui_br[open-webui]
         agents_br[web-fetching agents]
+    end
+
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
     end
 
     subgraph data[DATA NETWORK]

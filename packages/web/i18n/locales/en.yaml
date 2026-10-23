@@ -1017,6 +1017,8 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: "{name} (deleted or not visible to you)"
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
