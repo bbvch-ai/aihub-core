@@ -213,6 +213,7 @@ das Modell nicht sagen konnte, worum es in einer Nachricht geht, kann es sie auc
 | **LLM-Modell**                 | Das Modell, das die Antwort schreibt. Leer lassen, um das Hauptmodell des Agents zu verwenden.                                                |
 | **Entwurfs-Prompt**            | Anweisungen zu Ton und Stil. Der mitgelieferte Standard ist knapp, höflich und verbietet erfundene Fakten.                                    |
 | **Originalnachricht zitieren** | Wenn aktiv, wird die ursprüngliche E-Mail unter der Antwort zitiert, wie in Outlook. Standardmässig aus.                                      |
+| **Sprache des Zitats**         | Sprache der Bezeichnungen Von / Gesendet / An / Betreff und des Datums im Zitat. Wählen Sie die Sprache des Postfachs. Standardmässig Deutsch. |
 | **Eingabe-Token Entwurf**      | Wie viel der Nachricht dem Modell gezeigt werden darf. Siehe *Lange E-Mails* unten.                                                           |
 
 Jeder Entwurf wird mit der Nachricht verkettet, die er beantwortet — `Re:`-Betreff, korrekte `In-Reply-To`- und
@@ -220,7 +221,7 @@ Jeder Entwurf wird mit der Nachricht verkettet, die er beantwortet — `Re:`-Bet
 verirrte neue Nachricht.
 
 **Formatierung und Zitat.** Entwürfe sind HTML mit einer Nur-Text-Alternative. Das Modell schreibt Markdown, sodass
-Fettdruck und Listen erhalten bleiben, und Text in `==doppelten Gleichheitszeichen==` wird gelb hervorgehoben —
+Fettdruck, Listen und Links erhalten bleiben (eine nackte `https://…`- oder `www.…`-Adresse wird anklickbar), und Text in `==doppelten Gleichheitszeichen==` wird gelb hervorgehoben —
 verlangen Sie das im **Entwurfs-Prompt** (z. B. *«markiere das Lieferdatum mit ==…==»*). HTML, das das Modell schreibt,
 erscheint als Text und wird nie dargestellt: Ein Platzhalter wie `<Ihr Name>` bleibt im Entwurf, und Skripte, Bilder und
 unsichere Links erreichen das Postfach nie. Ist **Originalnachricht zitieren** aktiv, folgt die ursprüngliche E-Mail

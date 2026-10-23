@@ -157,6 +157,11 @@ config:
     help: Wenn aktiviert, wird die Originalnachricht mit Absender, Datum, Empfängern
       und Betreff unter der Antwort zitiert, wie bei einer Antwort in Outlook. Sie
       wird erst nach dem Verfassen angefügt und dem Modell nie gezeigt.
+  quote_locale:
+    label: Sprache des Zitats
+    help: Sprache der Bezeichnungen Von/Gesendet/An/Betreff und des Datums über der
+      zitierten Nachricht. Outlook verwendet die Sprache der antwortenden Person,
+      wählen Sie also die Sprache der Postfachinhaberin oder des Postfachinhabers.
 quote:
   from: Von
   sent: Gesendet

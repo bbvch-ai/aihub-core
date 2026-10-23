@@ -14,18 +14,19 @@ class QuotedOriginal(BaseModel):
     """The original message as Outlook quotes it below a reply: a separator, a From/Sent/To/Cc/Subject block, the body.
 
     Built after the reply is generated and only ever appended to the draft, so quoting changes neither what the model
-    is shown nor what it writes. The labels follow the run's locale, the way Outlook's follow the replier's language.
+    is shown nor what it writes. The labels follow the profile's quote language, the way Outlook's follow the replier's
+    language; the run's locale would not do, since a scheduled run carries the platform default, whoever owns the box.
     """
 
     text: str
     html: str
 
     @classmethod
-    def for_draft(cls, parsed: ParsedMessage, draft: DraftEmailSettings, t: LocaleHandler) -> Self | None:
+    def for_draft(cls, parsed: ParsedMessage, draft: DraftEmailSettings) -> Self | None:
         """The quote for this draft, or None when the admin has quoting switched off."""
         if not draft.quote_original:
             return None
-        return cls.from_parsed(parsed, t)
+        return cls.from_parsed(parsed, LocaleHandler(draft.quote_locale))
 
     @classmethod
     def from_parsed(cls, parsed: ParsedMessage, t: LocaleHandler) -> Self:

@@ -157,6 +157,11 @@ config:
     help: Se attivo, il messaggio originale viene citato sotto la risposta, con mittente,
       data, destinatari e oggetto, come una risposta in Outlook. Viene aggiunto dopo
       la redazione e non viene mai mostrato al modello.
+  quote_locale:
+    label: Lingua della citazione
+    help: Lingua delle etichette Da/Inviato/A/Oggetto e della data sopra il messaggio
+      citato. Outlook usa la lingua di chi risponde. Scegliete quella del titolare
+      della casella.
 quote:
   from: Da
   sent: Inviato

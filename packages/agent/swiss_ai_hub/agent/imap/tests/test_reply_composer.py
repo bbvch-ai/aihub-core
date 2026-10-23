@@ -142,6 +142,46 @@ def test_plain_text_keeps_list_markers_and_numbers():
     assert plain.strip() == "- one\n- two\n   - nested\n- three\n\n1. first\n2. second"
 
 
+def test_a_numbered_list_keeps_its_start_number_in_both_parts():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="Steps:\n\n3. connect\n4. sign in"
+    )
+
+    assert '<ol start="3">' in _html(composed)
+    assert _plain(composed).strip() == "Steps:\n\n3. connect\n4. sign in"
+
+
+def test_a_paragraph_opening_with_a_date_keeps_its_number():
+    plain = _plain(
+        ReplyComposer.compose_from_parsed(
+            _parsed(), from_address="me@example.com", body="Guten Tag\n\n31. Oktober ist der Stichtag."
+        )
+    )
+
+    assert plain.strip() == "Guten Tag\n\n31. Oktober ist der Stichtag."
+
+
+def test_bare_urls_become_links_without_repeating_the_address_in_plain_text():
+    body = "See https://sgum-ssum.ch/veranstaltungen/kursauswahl/ and www.sgum.ch."
+
+    composed = ReplyComposer.compose_from_parsed(_parsed(), from_address="me@example.com", body=body)
+
+    html = _html(composed)
+    assert '<a href="https://sgum-ssum.ch/veranstaltungen/kursauswahl/"' in html
+    assert '<a href="http://www.sgum.ch"' in html
+    assert _plain(composed).strip() == body
+
+
+def test_a_file_name_ending_in_a_country_code_is_not_a_link():
+    html = _html(
+        ReplyComposer.compose_from_parsed(
+            _parsed(), from_address="me@example.com", body="Attach bericht.py, as on sgum.ch."
+        )
+    )
+
+    assert "<a " not in html
+
+
 def test_double_equals_inside_words_is_not_a_highlight():
     composed = ReplyComposer.compose_from_parsed(
         _parsed(), from_address="me@example.com", body="Set status==active and mode==test."
@@ -176,10 +216,15 @@ def test_without_a_quote_the_draft_contains_only_the_reply():
 
 
 def test_quote_is_built_only_when_the_toggle_is_on():
-    t = LocaleHandler("en")
+    assert QuotedOriginal.for_draft(_parsed(), DraftEmailSettings()) is None
+    assert QuotedOriginal.for_draft(_parsed(), DraftEmailSettings(quote_original=True)) is not None
 
-    assert QuotedOriginal.for_draft(_parsed(), DraftEmailSettings(), t) is None
-    assert QuotedOriginal.for_draft(_parsed(), DraftEmailSettings(quote_original=True), t) is not None
+
+def test_quote_labels_follow_the_profile_quote_language():
+    quoted = QuotedOriginal.for_draft(_parsed(), DraftEmailSettings(quote_original=True, quote_locale="fr"))
+
+    assert quoted is not None
+    assert "De: Alice <alice@example.com>" in quoted.text
 
 
 def test_quoted_original_follows_the_reply_with_its_header_block():

@@ -149,6 +149,11 @@ config:
     help: When on, the original message is quoted below the reply, with its sender,
       date, recipients and subject, as a reply in Outlook does. It is added after
       the reply is written and is never shown to the model.
+  quote_locale:
+    label: Quote Language
+    help: Language of the From/Sent/To/Subject labels and the date above the quoted
+      message. Outlook uses the language of whoever replies, so pick the mailbox owner's
+      language.
 quote:
   from: From
   sent: Sent

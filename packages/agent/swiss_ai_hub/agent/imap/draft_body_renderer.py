@@ -1,6 +1,7 @@
 from markdown_it import MarkdownIt
 
 from swiss_ai_hub.agent.imap.highlight_markdown_rule import HighlightMarkdownRule
+from swiss_ai_hub.agent.imap.linkify_markdown_rule import LinkifyMarkdownRule
 from swiss_ai_hub.agent.imap.mail_html_sanitizer import MailHtmlSanitizer
 
 
@@ -10,10 +11,13 @@ class DraftBodyRenderer:
     Markdown rather than HTML is what the model is asked for: models already write it unprompted (the knowledge agent's
     answers are Markdown). Raw HTML in the output is escaped, not rendered: replies routinely contain angle brackets
     that are not markup — a `<Ihr Name>` sign-off placeholder, `a<b` in a comparison — and parsing those as tags made
-    them vanish or left the rest of the reply bold. `==text==` is the one highlight syntax, handled by the parser.
+    them vanish or left the rest of the reply bold. `==text==` is the one highlight syntax, handled by the parser, and
+    bare URLs become links.
     """
 
-    _markdown = HighlightMarkdownRule.install(MarkdownIt("commonmark", {"html": False, "breaks": True}).enable("table"))
+    _markdown = LinkifyMarkdownRule.install(
+        HighlightMarkdownRule.install(MarkdownIt("commonmark", {"html": False, "breaks": True}).enable("table"))
+    )
 
     @staticmethod
     def html(body: str) -> str:

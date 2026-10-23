@@ -12,7 +12,9 @@ _REPLY_TAGS = {
     "p", "br", "strong", "b", "em", "i", "u", "s", "ul", "ol", "li", "blockquote", "h1", "h2", "h3", "h4",
     "a", "span", "mark", "code", "pre", "hr", "table", "thead", "tbody", "tr", "th", "td",
 }  # fmt: skip
-_REPLY_ATTRIBUTES = {"a": {"href"}, "span": {"style"}, "th": {"align"}, "td": {"align"}}
+# `start` carries a list's first number: without it `3. … 4. …` renumbers from 1, and a paragraph opening with `31.`
+# (a date, a year) reads as item 1.
+_REPLY_ATTRIBUTES = {"a": {"href"}, "ol": {"start"}, "span": {"style"}, "th": {"align"}, "td": {"align"}}
 _REPLY_STYLE_PROPERTIES = {"background-color", "color", "font-weight", "font-style", "text-decoration"}
 
 # The quoted original keeps its layout (tables, fonts, inline styles) but never an image: a remote one is a tracking
@@ -22,6 +24,7 @@ _ORIGINAL_TAGS = _REPLY_TAGS | {"div", "font", "center", "small", "sup", "sub", 
 _ORIGINAL_ATTRIBUTES = {
     "*": {"style", "align", "dir"},
     "a": {"href"},
+    "ol": {"start"},
     "font": {"color", "face", "size"},
     "table": {"width", "border", "cellpadding", "cellspacing", "bgcolor"},
     "td": {"width", "valign", "colspan", "rowspan", "bgcolor"},
@@ -43,7 +46,8 @@ _PARAGRAPH_END = re.compile(r"(?i)</(?:p|h[1-6]|table|blockquote|pre)\s*>\n?")
 _EXCESS_BLANK_LINES = re.compile(r"\n{3,}")
 # Matched only on nh3 output, which always writes `<a href="...">` with nothing else on the tag.
 _LINK = re.compile(r'<a href="(?P<href>[^"]*)">(?P<label>.*?)</a>', re.DOTALL)
-_LIST_TAG = re.compile(r"(?i)<(?P<closing>/?)(?P<tag>ol|ul|li)>\n?")
+_LIST_TAG = re.compile(r'(?i)<(?P<closing>/?)(?P<tag>ol|ul|li)(?: start="(?P<start>[^"]*)")?>\n?')
+_LIST_START = re.compile(r"-?\d+")
 
 
 class MailHtmlSanitizer:
@@ -84,7 +88,8 @@ class MailHtmlSanitizer:
         """Readable plain text of an HTML fragment: line breaks at block boundaries, a dash per list item, and each
         link's target kept next to its text, since stripping the tag would otherwise drop the address with it."""
         normalised = nh3.clean(any_html, tags=_ORIGINAL_TAGS, clean_content_tags=_CONTENT_DROPPING_TAGS,
-                               attributes={"a": {"href"}}, url_schemes=_URL_SCHEMES, link_rel=None)  # fmt: skip
+                               attributes={"a": {"href"}, "ol": {"start"}}, url_schemes=_URL_SCHEMES,
+                               link_rel=None)  # fmt: skip
         with_links = _LINK.sub(MailHtmlSanitizer._link_as_text, normalised)
         with_markers = MailHtmlSanitizer._with_list_markers(with_links)
         with_breaks = _PARAGRAPH_END.sub("\n\n", _LINE_END.sub("\n", with_markers))
@@ -110,8 +115,13 @@ class MailHtmlSanitizer:
             if open_lists:
                 open_lists.pop()
             return "" if open_lists else "\n\n"
-        open_lists.append([0] if tag == "ol" else [])
+        open_lists.append([MailHtmlSanitizer._list_start(match.group("start")) - 1] if tag == "ol" else [])
         return ""
+
+    @staticmethod
+    def _list_start(start: str | None) -> int:
+        """The first item's number. A missing or non-numeric `start` counts from 1, as a browser does."""
+        return int(start) if start and _LIST_START.fullmatch(start) else 1
 
     @staticmethod
     def _item_prefix(open_lists: list[list[int]]) -> str:
@@ -124,11 +134,12 @@ class MailHtmlSanitizer:
 
     @staticmethod
     def _link_as_text(match: re.Match[str]) -> str:
-        """`text <target>`, or the bare target when the text already is it (an autolinked URL or address).
+        """`text <target>`, or the bare target when the text already is it (an autolinked URL, a `www.` address
+        given its `http://`, or an e-mail address).
 
         The brackets go in escaped, so the final tag strip keeps them as text."""
         target = html.unescape(match.group("href")).removeprefix("mailto:")
         label = match.group("label")
-        if html.unescape(nh3.clean(label, tags=set())).strip() == target:
+        if html.unescape(nh3.clean(label, tags=set())).strip() in (target, target.removeprefix("http://")):
             return label
         return f"{label} &lt;{html.escape(target)}&gt;"

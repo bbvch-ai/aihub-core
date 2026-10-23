@@ -201,13 +201,14 @@ what a message was about, it is in no position to answer it.
 | **LLM Model**              | The model that writes the reply. Leave empty to use the agent's main model.                                                         |
 | **Draft Prompt**           | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                               |
 | **Quote Original Message** | When on, the original email is quoted below the reply, as Outlook does. Off by default.                                             |
+| **Quote Language**         | Language of the quote's From / Sent / To / Subject labels and its date. Pick the mailbox owner's language. German by default.        |
 | **Draft Input Tokens**     | How much of the message the model may be shown. See *Long mail* below.                                                              |
 
 Each draft is threaded to the message it answers — `Re:` subject, correct `In-Reply-To` and `References` headers — so it
 appears inside the original conversation in your mail client rather than as a stray new message.
 
-**Formatting and quoting.** Drafts are HTML with a plain-text alternative. The model writes Markdown, so bold text and
-lists come through, and text it wraps in `==double equals==` is highlighted in yellow — ask for it in the **Draft
+**Formatting and quoting.** Drafts are HTML with a plain-text alternative. The model writes Markdown, so bold text,
+lists and links come through (a bare `https://…` or `www.…` address becomes clickable), and text it wraps in `==double equals==` is highlighted in yellow — ask for it in the **Draft
 Prompt** (e.g. *"highlight the delivery date with ==…=="*). HTML the model writes is shown as text, never rendered, so a
 placeholder such as `<Your name>` stays in the draft and scripts, images and unsafe links never reach the mailbox. With
 **Quote Original Message** on, the original email follows the reply under an Outlook-style From / Sent / To / Cc /
