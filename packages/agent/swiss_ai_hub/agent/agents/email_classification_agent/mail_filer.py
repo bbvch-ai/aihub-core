@@ -39,8 +39,8 @@ class MailFiler:
     ) -> list[CategoryVerdict]:
         """Classify every message with no IMAP connection held.
 
-        Inbound mail is untrusted and enters the prompt; the platform's Presidio guard anonymizes PII at the LLM
-        gateway, so this step adds no sanitisation of its own.
+        Inbound mail is untrusted and enters the prompt as written: this step adds no sanitisation, and the gateway's
+        Presidio guardrails are off unless a deployment switches them on.
 
         Holding the mailbox is the caller's heartbeat, not this loop's business: renewing per message here would
         leave the fetch and the filing either side of it unrenewed, which is how a lease sized for classification

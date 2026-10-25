@@ -420,6 +420,42 @@ class TestUpdateSource:
         assert "sftp.password" in exc_info.value.detail
 
 
+class TestSubmittedCiphertext:
+    """A client is only ever shown masks; ciphertext it submits was copied from another field or database."""
+
+    @pytest.mark.asyncio
+    async def test_ciphertext_copied_from_another_database_is_refused_on_create(self, locale_handler, encryption):
+        request = CreateDatabaseRequest(
+            ingestor=INGESTOR.id,
+            configuration={"name": {"en": "HR Docs"}, "description": {"en": "Policies"}},
+            source=RCLONE.id,
+            source_configuration=_sftp_configuration(encryption.encrypt("someone-elses-pw")),
+        )
+        s3_service = MagicMock()
+        s3_service.container_exists.return_value = False
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_bucket_name.side_effect = DoesNotExist
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.create_database(DATABASE, request, locale_handler, s3_service, _user())
+
+        assert exc_info.value.status_code == 400
+        assert "'sftp.password' was submitted as ciphertext" in exc_info.value.detail
+        bucket_cls.create_bucket.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_the_stored_ciphertext_itself_is_refused_on_update(self, locale_handler, encryption):
+        """Even this database's own ciphertext: the mask is the one way to keep a stored secret."""
+        stored = _sftp_configuration(encryption.encrypt("old-pw"))
+        request = UpdateDatabaseSourceRequest(source=RCLONE.id, source_configuration=stored)
+        with patch(f"{_SERVICE_MODULE}.BucketEntity") as bucket_cls:
+            bucket_cls.get_bucket_by_db_name.return_value = _bucket(source="rclone", source_configuration=stored)
+            with pytest.raises(HTTPException) as exc_info:
+                await KnowledgeService.update_database_source(DATABASE, request, locale_handler, _user())
+
+        assert exc_info.value.status_code == 400
+        bucket_cls.update_source.assert_not_called()
+
+
 class TestSourcedDatabasesRefuseManualContentChanges:
     @pytest.mark.asyncio
     async def test_manual_namespace_creation_is_refused(self, locale_handler):

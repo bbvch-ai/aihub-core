@@ -85,7 +85,7 @@ packages/core/swiss_ai_hub/core/
 │   └── source_pipeline_config.py     # SourcePipelineConfig: no identity fields; secret_field_paths() from secret elements
 ├── infrastructure/encryption/       # ConfigEncryptionSettings: AIHUB_CONFIG_ENCRYPTION_KEY (Fernet), shared by API + runtimes
 ├── secrets/                         # Secret configuration fields: encrypted at rest, masked in responses
-│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, fail-closed
+│   ├── secret_encryption_service.py  # SecretEncryptionService: enc:v1: ciphertext, masks carrying an identity handle, submitted ciphertext refused, fail-closed
 │   └── secret_path_transformer.py    # SecretPathTransformer: apply a transform at dotted paths, fans out over repeaters
 ├── i18n/                            # Internationalization
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
