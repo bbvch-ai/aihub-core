@@ -30,7 +30,8 @@ WORKDIR /app/packages/web
 RUN pnpm exec nuxi prepare && pnpm exec nuxt prepare .app
 
 WORKDIR /app/packages/sysadmin-web
-RUN pnpm run build
+RUN pnpm run build \
+ && node /app/packages/web/docker/csp-script-hashes.mjs .app/.output/public > /app/csp-script-hashes
 
 # Runtime stage: unprivileged nginx image (UID 101, listens on 8080) — no root,
 # no privileged port.
@@ -40,12 +41,15 @@ USER root
 RUN apk add --no-cache gettext
 
 COPY --from=builder /app/packages/sysadmin-web/.app/.output/public /usr/share/nginx/html
-COPY packages/sysadmin-web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY packages/sysadmin-web/nginx.conf.template /etc/nginx/aihub/default.conf.template
+COPY --from=builder /app/csp-script-hashes /etc/nginx/aihub/csp-script-hashes
+COPY --chmod=755 packages/web/docker/start.sh /usr/local/bin/aihub-start
 COPY packages/sysadmin-web/config.template.js /usr/share/nginx/html/config.template.js
 
-# nginx user (UID 101) needs write access to /usr/share/nginx/html so the
-# CMD's envsubst can land /config.js there at container start.
-RUN chown -R nginx:nginx /usr/share/nginx/html
+# nginx user (UID 101) needs write access to /usr/share/nginx/html and
+# /etc/nginx/conf.d so the start script can render /config.js and the server
+# block at container start.
+RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d
 
 USER nginx
 EXPOSE 8080
@@ -53,4 +57,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --spider -q http://127.0.0.1:8080/ || exit 1
 
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.js > /usr/share/nginx/html/config.js && nginx -g 'daemon off;'"]
+# Render /config.js and the server block (its CSP names the deployment's
+# origins), then start Nginx.
+CMD ["/usr/local/bin/aihub-start"]

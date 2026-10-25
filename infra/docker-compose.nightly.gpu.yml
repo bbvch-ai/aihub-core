@@ -977,7 +977,6 @@ services:
       - traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000
       - traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true
       - traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true
       - traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin
     networks:
       - data  # PostgreSQL access for Keycloak database

@@ -457,6 +457,10 @@ location = /config.js {
 location / { try_files $uri /index.html; }
 ```
 
+If you send a `Content-Security-Policy` with `script-src 'self'`, add the hashes of the inline scripts Nuxt writes into
+the generated HTML. `docker/csp-script-hashes.mjs <public dir>` prints them; the Swiss AI Hub images run it after the
+build and render the policy in `docker/start.sh`.
+
 ______________________________________________________________________
 
 ## Runtime configuration
