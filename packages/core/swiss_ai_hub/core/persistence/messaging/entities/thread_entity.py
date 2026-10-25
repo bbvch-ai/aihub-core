@@ -157,12 +157,13 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def count_threads_by_agent(cls, agent_class: str, agent_id: str, user_id: str | None = None) -> int:
-        """Count the threads that include the specified agent, only those of `user_id` when one is given."""
-        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
-        if user_id:
-            query = query.filter(users__user_id=user_id)
-        return query.count()
+    def count_threads_by_agent(cls, agent_class: str, agent_id: str, user_id: str) -> int:
+        """Count the user's threads that include the specified agent."""
+        return (
+            cls.objects()
+            .filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
+            .count()
+        )
 
     @classmethod
     @trace_fn
@@ -196,15 +197,10 @@ class ThreadEntity(Document):
     @classmethod
     @trace_fn
     def get_paginated_threads_by_agent(
-        cls, agent_class: str, agent_id: str, user_id: str | None = None, skip: int = 0, limit: int = 20
+        cls, agent_class: str, agent_id: str, user_id: str, skip: int = 0, limit: int = 20
     ) -> list["ThreadEntity"]:
-        """
-        Get a paginated list of threads that include the specified agent.
-        If a user_id is provided, it also filters for threads containing that user.
-        """
-        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
-        if user_id:
-            query = query.filter(users__user_id=user_id)
+        """Get a page of the user's threads that include the specified agent."""
+        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
         return query.order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod
