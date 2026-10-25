@@ -59,7 +59,8 @@ _ENV_KEY_RE = re.compile(r"^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*=")
 # Captures: var name + the operator (`-`, `:-`, `+`, `:+`, `?`, `:?`) if any.
 # `${VAR}`            -> compose interpolation without fallback (must be in .env)
 # `${VAR:-default}`   -> compose interpolation with default (optional in .env)
-_COMPOSE_REF_RE = re.compile(r"\$\{([A-Z_][A-Z0-9_]*)(:?[-+?])?[^}]*\}")
+# `$${VAR}`          -> escaped by compose, a literal the container shell expands (not interpolation)
+_COMPOSE_REF_RE = re.compile(r"(?<!\$)\$\{([A-Z_][A-Z0-9_]*)(:?[-+?])?[^}]*\}")
 # LiteLLM config syntax: `os.environ/VAR_NAME` instructs LiteLLM to resolve the
 # value from the process environment at runtime.
 _OS_ENVIRON_RE = re.compile(r"os\.environ/([A-Z_][A-Z0-9_]*)")
