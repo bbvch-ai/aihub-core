@@ -235,10 +235,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -248,8 +247,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -330,7 +329,9 @@ Rules when editing:
   managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
   reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
 - The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
-  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
+  Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
+  an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
