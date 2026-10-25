@@ -72,7 +72,7 @@ serves every database whose source is `rclone`, and nothing about a source lives
   `rclone_source_to_datalake` group.
 - **Backends**: the dialog offers OneDrive / SharePoint, Google Drive and AWS S3 (and S3-compatible), the ones verified
   end to end, plus a local path inside the rclone container where enabled. Azure Blob and SFTP are implemented but
-  hidden (see below).
+  neither offered nor synced (see below).
 
 ### Two Axes of a Knowledge Database
 
@@ -107,16 +107,20 @@ the sync; the files already in the data lake stay until the database is deleted.
 
 `source_configuration` holds the `backend_type`, `root_path`, `include_patterns`, `exclude_patterns`, and one option
 group per backend. The dialog offers only the backends verified end to end (`onedrive`, `drive`, `s3`, and `local` where
-enabled); the others remain configured and synced for databases that already use them, and through the API:
+enabled), and a run refuses any other backend a stored configuration names:
 
-| `backend_type` | Source                                         | Options                                                                                                      |
-| -------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `onedrive`     | OneDrive, SharePoint                           | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
-| `drive`        | Google Drive                                   | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
-| `s3`           | AWS S3, MinIO, S3-compatible                   | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
-| `azureblob`    | Azure Blob Storage (not offered in the dialog) | `account`, `key` or `sas_url`, `endpoint`                                                                    |
-| `sftp`         | SFTP servers (not offered in the dialog)       | `host`, `port`, `user`, `password` or `key_pem`                                                              |
-| `local`        | Path inside the rclone container               | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
+| `backend_type` | Source                           | Options                                                                                                      |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `onedrive`     | OneDrive, SharePoint             | `client_id`, `client_secret`, `tenant`, `drive_id`, `drive_type`, `region`, or a `token`                     |
+| `drive`        | Google Drive                     | `client_id`, `client_secret`, `token` or `service_account_credentials` (uploaded key file), `root_folder_id` |
+| `s3`           | AWS S3, MinIO, S3-compatible     | `provider`, `access_key_id`, `secret_access_key`, `region`, `endpoint`                                       |
+| `azureblob`    | Azure Blob Storage (not offered) | `account`, `key` or `sas_url`, `endpoint`                                                                    |
+| `sftp`         | SFTP servers (not offered)       | `host`, `port`, `user`, `password` or `key_pem`                                                              |
+| `local`        | Path inside the rclone container | none; offered only where `RCLONE_LOCAL_SOURCE_ROOT` is set, and confined to that directory                   |
+
+An S3 `endpoint` (and an Azure `endpoint` or SFTP `host`) must name a public host: the rclone daemon runs next to the
+platform's own services, so a Docker service name, `localhost`, a private address or a name resolving to one fails the
+run before the remote is created. An operator allows an internal host with `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS`.
 
 A SharePoint document library is `onedrive` with `drive_type=documentLibrary`. OAuth backends accept a pre-obtained
 rclone `token` JSON instead of client credentials; OneDrive without a token uses client credentials.

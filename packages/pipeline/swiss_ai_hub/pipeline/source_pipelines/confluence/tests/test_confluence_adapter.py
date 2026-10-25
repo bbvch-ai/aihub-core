@@ -4,9 +4,9 @@ import pytest
 from dlt.common.configuration.container import Container
 from dlt.common.pipeline import PipelineContext
 from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS  # noqa: F401 — rebuilds Group/Repeater
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.resources.confluence.tests.fake_confluence import SITES, FakeConfluence
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.abstract_structured_source_adapter import AbstractStructuredSourceAdapter
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_adapter import ConfluenceAdapter
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
@@ -21,7 +21,7 @@ def no_active_dlt_pipeline() -> None:
 @pytest.fixture(autouse=True)
 def external_site(monkeypatch: pytest.MonkeyPatch) -> None:
     """The fake site's name must never reach a real resolver; the guard has tests of its own."""
-    monkeypatch.setattr(SourceHostGuard, "require_public", lambda url, allowed_hosts: None)
+    monkeypatch.setattr(PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_setting: None)
 
 
 @pytest.fixture

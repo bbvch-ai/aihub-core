@@ -351,14 +351,17 @@ SharePoint is `onedrive` with `drive_type=documentLibrary`. Credentials are `str
 `SourcePipelineConfig.secret_field_paths()` derives their dotted paths from the form, the API encrypts them with
 `SecretEncryptionService` (`AIHUB_CONFIG_ENCRYPTION_KEY`, shared with the pipeline) and returns a mask; a resubmitted
 mask keeps the stored value. The dialog offers only `RcloneSyncConfig.offered_backends()` (`_TESTED_BACKENDS` = `s3`,
-`drive`, `onedrive`, plus `local` when `RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; the other
-backends stay in the form and runtime so existing databases keep syncing. rclone's setup still asks questions in
-non-interactive mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered
-with the stored `drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph
-while creating the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a
-`SecretFileInput` (core form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form`
-subclass + one field on `RcloneSyncConfig` + labels in
-`packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing in the API or UI changes.
+`drive`, `onedrive`, plus `local` when `RCLONE_LOCAL_SOURCE_ROOT` is set), each under a translated label; a
+`model_validator` refuses any other backend when a stored configuration is read, because the API validates against the
+announced schema only. `outbound_urls()` names the hosts a backend connects to (S3/Azure `endpoint`, SFTP `host`), and
+`rclone_remote_for_bucket` passes each through `PublicHostGuard` before the remote is created
+(`RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts). rclone's setup still asks questions in non-interactive
+mode: `RcloneClient` answers the fixed ones (`_ANSWERED_QUESTIONS`), OneDrive's drive lookup is answered with the stored
+`drive_id` through ephemeral `config_*` parameters (rclone then checks the drive against Microsoft Graph while creating
+the remote), and a step rclone fails raises its `Error` text. The Drive service-account key is a `SecretFileInput` (core
+form element, treated as a secret by `SecretFieldWalker`). Adding a backend = one `Form` subclass + one field on
+`RcloneSyncConfig` + labels in `packages/core/swiss_ai_hub/core/i18n/translations/lib/source_pipelines.*.yml`. Nothing
+in the API or UI changes.
 
 **Per-run resolution** (`util/source_builders.py`, the Stage-1 sibling of `model_builders` / `store_builders`):
 
@@ -529,7 +532,7 @@ be silent:
   requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
 - **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
   own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
-  `SourceHostGuard` (`resources/structured/`) refuses, first thing in the preflight, a host without a dot (Docker
+  `PublicHostGuard` (`swiss_ai_hub.core.network`) refuses, first thing in the preflight, a host without a dot (Docker
   service names, `localhost`) and one resolving to any non-global address. `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`
   exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the check and the request is not covered.
 - **Preflight before the sync and before the listing** (`JiraPreflight`: `/myself`, each project, the JQL clause). Jira
@@ -570,7 +573,7 @@ Cloud and Confluence Data Center over REST v1 (`content/search` with CQL); v2 ha
 Data Center. It keeps the Jira adapter's rules on credentials (`auth=` only), the error hook (`ConfluenceRequestError`,
 an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `problems()`. In addition:
 
-- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `SourceHostGuard` runs first in
+- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `PublicHostGuard` runs first in
   the preflight with the same `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exemptions. A Confluence next to a developer's
   pipeline is reached through the dev default `localhost`; an on-premise Data Center on a private address needs an
   operator to allow its host.

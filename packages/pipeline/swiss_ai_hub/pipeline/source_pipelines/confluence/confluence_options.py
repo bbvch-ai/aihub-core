@@ -8,7 +8,7 @@ from swiss_ai_hub.pipeline.resources.confluence.confluence_client import Conflue
 
 # An http(s) URL with no credentials, query or fragment: a "?" or "#" would turn the API path appended to it into a
 # query, so the URL could name any path on any host. Empty is allowed, because a hidden option group validates as its
-# defaults. Which hosts it may name is checked on every run, against the deployment (SourceHostGuard).
+# defaults. Which hosts it may name is checked on every run, against the deployment (PublicHostGuard).
 _BASE_URL_PATTERN = r"^(https?://[^\s/@?#]+(/[^\s?#]*)?)?$"
 _PAGE_ID = re.compile(r"^[0-9]+$")
 

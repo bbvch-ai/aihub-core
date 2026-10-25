@@ -151,10 +151,12 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
+| `PRESIDIO_ANALYZER_API_KEY` |  | `presidio-analyzer` |  |
 | `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
 | `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |
 | `RAG_IMAGE_INLINE_MAX_BYTES` |  | `litellm` |  |
+| `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` | `RclonePipelineSettings.ALLOWED_PRIVATE_HOSTS` | `rclone_pipeline` | Comma-separated host names an S3 endpoint, Azure endpoint or SFTP host may name although they are internal, such as an object store reachable only on the company network. Every other internal host is refused, because a knowledge administrator sets it and the rclone daemon can reach the platform's own services. |
 | `RCLONE_PIPELINE_OBSERVE_JOB_HOUR` | `RclonePipelineSettings.OBSERVE_JOB_HOUR` | `rclone_pipeline` | Hour of the daily per-database sync. Before the ingestion pipeline's midnight observation, so a day's sync is vectorised by the same night's backstop run. |
 | `RCLONE_PIPELINE_OBSERVE_JOB_MINUTE` | `RclonePipelineSettings.OBSERVE_JOB_MINUTE` | `rclone_pipeline` | Minute of the daily per-database sync. |
 | `RCLONE_RC_PASS` | `RcloneSettings.RC_PASS` | `rclone`, `rclone_pipeline` | RC API password for authentication. |
@@ -285,6 +287,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `LITE_LLM_PROXY_USER_RPM_LIMIT` | `LiteLLMProxySettings.USER_RPM_LIMIT` | `None` |  | Specify rpm limit for a given user (Requests per minute) |
 | `LITE_LLM_PROXY_USER_SOFT_BUDGET` | `LiteLLMProxySettings.USER_SOFT_BUDGET` | `None` |  | Get alerts when user crosses given budget, doesn't block requests. |
 | `LITE_LLM_PROXY_USER_TPM_LIMIT` | `LiteLLMProxySettings.USER_TPM_LIMIT` | `None` |  | Specify tpm limit for a given user (Tokens per minute) |
+| `MCP_ALLOWED_PRIVATE_HOSTS` | `McpSettings.ALLOWED_PRIVATE_HOSTS` | `''` |  | Comma-separated host names an MCP server URL may name although they are internal, such as the platform's own API (`api`) or an MCP server reachable only on the company network. Every other internal host is refused, because an agent profile editor sets the URL and agents can reach the platform's own services. |
 | `MEM0_SEARCH_QUERY_EMBEDDING_WINDOW` | `Mem0Settings.SEARCH_QUERY_EMBEDDING_WINDOW` | `None` |  | Override for the embedding model's input window, in the model's own tokens. Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at first use. Queries are truncated to half this value: they can only be counted with tiktoken, which undercounts the embedder's tokenizer by up to 2x. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |

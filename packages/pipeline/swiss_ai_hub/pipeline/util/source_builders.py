@@ -10,6 +10,8 @@ fall back to: a database without a valid source configuration must not sync from
 from functools import cache
 from typing import Annotated
 
+from swiss_ai_hub.core.infrastructure.rclone import RclonePipelineSettings
+from swiss_ai_hub.core.network import PublicHostGuard
 from swiss_ai_hub.core.persistence import BucketEntity
 from swiss_ai_hub.core.secrets import SecretEncryptionService
 from swiss_ai_hub.core.source_pipelines import SourcePipelineConfig
@@ -47,11 +49,16 @@ def remote_name_for_bucket(bucket: str, source: str) -> str:
 def rclone_remote_for_bucket(bucket: str, source: str) -> RcloneRemote:
     """Rebuilds the database's remote in the rclone daemon from the stored configuration and returns how to address it.
 
-    Rebuilding it in every process is what makes a credential edit apply on the next run and a restarted daemon
-    (which keeps no config file) need no operator action. Cached per process because every op of a partition run
-    loads its input through the IO manager and would otherwise re-upsert the same remote three times per file.
+    A host the configuration names must be public (or allowed by the deployment), because the daemon sits on the
+    platform's own networks. Rebuilding it in every process is what makes a credential edit apply on the next run
+    and a restarted daemon (which keeps no config file) need no operator action. Cached per process because every
+    op of a partition run loads its input through the IO manager and would otherwise re-upsert the same remote three
+    times per file.
     """
     config = source_config_for_bucket(bucket, source, RcloneSyncConfig)
+    allowed_hosts = RclonePipelineSettings().private_host_allow_list()
+    for url in config.outbound_urls():
+        PublicHostGuard.require_public(url, allowed_hosts, "RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS")
     name = remote_name_for_bucket(bucket, source)
     fs = config.remote_fs(name)
     build_rclone_client().upsert_remote(config.to_rclone_source_config(name))

@@ -67,7 +67,10 @@ class RcloneSyncConfig(SourcePipelineConfig):
   defaults; the group's `condition_if` is derived from its children (`$get(rclone_backend_type).value === 'sftp'`).
 - `offered_backends()` returns `_TESTED_BACKENDS` (s3, drive, onedrive) plus `local` when enabled, as `{label, value}`
   options labelled from `lib.source_pipelines.rclone.config.backend_type.options.*`. The other groups stay in the form
-  (hidden by `condition_if`) so databases already on them keep syncing and editing.
+  (hidden by `condition_if`), but a `model_validator` refuses a stored configuration naming them, so they never run.
+- `outbound_urls()` lists the hosts the selected backend connects to (S3/Azure `endpoint`, SFTP `host`);
+  `rclone_remote_for_bucket` refuses an internal one with `PublicHostGuard` (core `network/`) unless
+  `RCLONE_PIPELINE_ALLOWED_PRIVATE_HOSTS` names it.
 - Credentials are `str | Password`, or `str | SecretFileInput` for the Drive service-account key file (the browser reads
   the file and submits its text; same encryption and masking). `RcloneSyncConfig.secret_field_paths()` derives their
   dotted paths from the form; the API encrypts them (`SecretEncryptionService`) and returns a mask, the pipeline

@@ -30,6 +30,7 @@ dependencies = [
     "stringcase>=1.2.0",
     "imapclient>=3.0.1",
     "azure-identity>=1.19.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

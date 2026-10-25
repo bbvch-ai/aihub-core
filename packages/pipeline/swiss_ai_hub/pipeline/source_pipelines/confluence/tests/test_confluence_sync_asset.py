@@ -5,13 +5,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster import AssetKey
+from swiss_ai_hub.core.network import PublicHostGuard
 
 from swiss_ai_hub.pipeline.assets.factories.structured_to_data_lake.structured_sync_factory import (
     structured_sync_factory,
 )
 from swiss_ai_hub.pipeline.ops.structured.tests.test_structured_sync_asset import World
 from swiss_ai_hub.pipeline.resources.confluence.tests.fake_confluence import SITES, FakeConfluence
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.structured_sync_config import StructuredSyncConfig
 
 _ASSET = structured_sync_factory(
@@ -30,7 +30,7 @@ _ID_LIST = re.compile(r"^id in \((.*)\)$")
 @pytest.fixture(autouse=True)
 def external_site(monkeypatch: pytest.MonkeyPatch) -> None:
     """The fake site's name must never reach a real resolver; the guard has tests of its own."""
-    monkeypatch.setattr(SourceHostGuard, "require_public", lambda url, allowed_hosts: None)
+    monkeypatch.setattr(PublicHostGuard, "require_public", lambda url, allowed_hosts, allow_list_setting: None)
 
 
 @pytest.fixture

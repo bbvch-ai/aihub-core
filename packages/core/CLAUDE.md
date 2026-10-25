@@ -92,7 +92,8 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
-├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
+├── mcp/                             # MCP client configuration (McpClientConfig StepConfig, McpSettings allow-list)
+├── network/                         # PublicHostGuard: refuses admin-set URLs pointing at internal hosts
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
