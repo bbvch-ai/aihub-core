@@ -38,6 +38,7 @@ packages/backup/swiss_ai_hub/backup/
 ├── services/                 # Backup handlers (one per stateful service)
 │   ├── base.py               # BackupHandler ABC (backup + restore methods)
 │   ├── postgres.py           # pg_dumpall/pg_dump + DocumentDB catalog COPY workaround
+│   ├── psql_script.py        # PsqlScript: restricted, stop-on-error psql input for SQL read from backups
 │   ├── milvus.py             # milvus-backup CLI (subprocess)
 │   ├── neo4j.py              # neo4j-admin via temp sibling container
 │   ├── clickhouse.py         # BACKUP/RESTORE TO Disk('backup_s3', ...) SQL
@@ -73,6 +74,11 @@ packages/backup/swiss_ai_hub/backup/
   `pg_restore` / `psql` invocation. Sized for >100GB dagster DBs; lower for small deployments. Wired through
   `infra/deployment/templates/docker-compose.yml.j2` and `.env.{dev,prod}` so operators can override it without
   rebuilding the container
+- **SQL from a backup goes through `PsqlScript`**: the globals file and the DocumentDB catalog file are piped into psql
+  with `ON_ERROR_STOP=1` behind a `\restrict` key generated per run, so meta-commands (`\!`, `\copy`, ...) in an
+  artifact are refused and the first failing statement fails the restore. Globals have their bare `CREATE ROLE` lines
+  wrapped to ignore only `duplicate_object` (roles survive the database drop). Needs psql ≥ 17.6 in the image (PGDG
+  `postgresql-client-17`). Never pipe backup content into psql without it
 - **NATS readiness**: `NatsHandler._wait_for_ready` probes `stream list` (not `rtt`) so it actually checks JetStream,
   and `_run_nats_subprocess` retries up to 3× on transient connect errors ("no servers available", "connection
   refused/reset") with a re-probe between attempts. Non-transient errors (e.g. stream-not-found) surface immediately
@@ -132,8 +138,8 @@ failing. Operators can install `pg_repack` later and the next monthly run picks 
 
 **lz4 rewrite (`FerretdbLz4RewriteHandler`)**: unlike the others it targets `postgres-ferretdb` (with the
 `MONGO_USERNAME` superuser), not the dagster DB, and it is a one-off, so it is never scheduled. It refuses to run unless
-`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in
-`documentdb_data`, 50 rows at a time by primary key:
+`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in `documentdb_data`, 50
+rows at a time by primary key:
 `SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. That builds a
 new value with the same bytes, which PostgreSQL compresses with the new default (`SET document = document` would copy
 the compressed bytes unchanged). It writes DocumentDB's tables directly, not through FerretDB, so readers never see a

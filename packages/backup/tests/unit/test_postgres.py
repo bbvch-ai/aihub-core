@@ -416,3 +416,97 @@ def test_subprocess_timeout_propagates_from_settings(mock_run: MagicMock, settin
     timeouts = [call.kwargs.get("timeout") for call in mock_run.call_args_list]
     assert timeouts, "expected at least one subprocess.run call"
     assert all(t == custom_timeout for t in timeouts), f"timeouts seen: {set(timeouts)}"
+
+
+def _script_psql_calls(mock_run: MagicMock) -> list[tuple[list[str], str]]:
+    return [(list(call[0][0]), call.kwargs["input"]) for call in mock_run.call_args_list if call.kwargs.get("input")]
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_restore_runs_backup_sql_restricted_and_stopping_on_error(
+    mock_run: MagicMock, postgres_handler: PostgresHandler
+) -> None:
+    mock_run.side_effect = _make_run_for_restore()
+    _setup_s3_for_restore(postgres_handler)
+
+    postgres_handler.restore("2026-02-19_02-00-00")
+
+    script_calls = _script_psql_calls(mock_run)
+    assert len(script_calls) == 3
+    for cmd, script in script_calls:
+        assert cmd[0] == "psql"
+        assert "ON_ERROR_STOP=1" in cmd
+        assert script.startswith("\\restrict ")
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_restore_raises_when_globals_fail(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    restore_run = _make_run_for_restore()
+
+    def fail_globals(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "globals SQL" in str(kwargs.get("input", "")):
+            return subprocess.CompletedProcess(args[0], 3, stdout="", stderr="ERROR:  syntax error")
+        return restore_run(*args, **kwargs)  # type: ignore[operator]
+
+    mock_run.side_effect = fail_globals
+    _setup_s3_for_restore(postgres_handler)
+
+    with pytest.raises(RuntimeError, match="Loading globals on postgres-main failed: ERROR:  syntax error"):
+        postgres_handler.restore("2026-02-19_02-00-00")
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_restore_raises_when_documentdb_catalog_fails(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    restore_run = _make_run_for_restore()
+
+    def fail_catalog(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "TRUNCATE" in str(kwargs.get("input", "")):
+            return subprocess.CompletedProcess(args[0], 3, stdout="", stderr="ERROR:  relation does not exist")
+        return restore_run(*args, **kwargs)  # type: ignore[operator]
+
+    mock_run.side_effect = fail_catalog
+    _setup_s3_for_restore(postgres_handler)
+
+    with pytest.raises(RuntimeError, match="DocumentDB catalog restore failed"):
+        postgres_handler.restore("2026-02-19_02-00-00")
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_restore_accepts_catalog_artifacts_with_unaligned_booleans(
+    mock_run: MagicMock, postgres_handler: PostgresHandler
+) -> None:
+    mock_run.side_effect = _make_run_for_restore()
+    _setup_s3_for_restore(postgres_handler)
+
+    def download_with_legacy_setval(s3_key: str, local_path: Path) -> None:
+        _fake_download(s3_key, local_path)
+        if s3_key.endswith("ext-catalog.sql.gz"):
+            with gzip.open(local_path, "wt") as f:
+                f.write("TRUNCATE documentdb_api_catalog.collections CASCADE;\n")
+                f.write("SELECT setval('documentdb_api_catalog.collections_collection_id_seq', 7, t);\n")
+
+    postgres_handler._s3.download_file.side_effect = download_with_legacy_setval
+
+    postgres_handler.restore("2026-02-19_02-00-00")
+
+    catalog_script = next(script for _, script in _script_psql_calls(mock_run) if "TRUNCATE" in script)
+    assert "SELECT setval('documentdb_api_catalog.collections_collection_id_seq', 7, true);" in catalog_script
+
+
+@patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
+def test_backup_writes_sequence_flags_as_sql_booleans(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    mock_run.side_effect = _make_run_for_backup(["mydb"])
+    written: dict[str, str] = {}
+
+    def capture_upload(local_path: Path, s3_key: str) -> None:
+        if s3_key.endswith("ext-catalog.sql.gz"):
+            with gzip.open(local_path, "rt") as f:
+                written["catalog"] = f.read()
+
+    postgres_handler._s3.upload_file.side_effect = capture_upload
+
+    postgres_handler.backup("2026-02-19_02-00-00", "2026-02-19_02-00-00")
+
+    seq_cmds = [" ".join(call[0][0]) for call in mock_run.call_args_list if "last_value" in " ".join(call[0][0])]
+    assert all("is_called::text" in cmd for cmd in seq_cmds)
+    assert "SELECT setval('documentdb_api_catalog.collections_collection_id_seq', 1, true);" in written["catalog"]
