@@ -201,6 +201,10 @@ and related context.
 ::: details Multi-tenancy and isolation
 Organization memories are strictly isolated by tenant. If your platform hosts multiple organizations, each tenant's
 memories are completely separate.
+
+The Memory page always shows, edits and deletes the memories of the tenant you are currently working in. An agent
+profile reads and writes the organization memory of the tenant selected in its configuration, which can only be a tenant
+the administrator saving the profile belongs to. Profiles that set no tenant use the startup tenant.
 :::
 
 ::: details Performance considerations

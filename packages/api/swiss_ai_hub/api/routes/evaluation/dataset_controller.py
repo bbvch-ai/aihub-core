@@ -48,11 +48,11 @@ class DatasetController(TenantScopedController):
         )
         async def create_dataset(
             create_dto: Annotated[DatasetCreate, Body()],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             client: Annotated[Langfuse, Depends(get_langfuse_client)],
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> Dataset:
-            service = DatasetService(client, settings)
+            service = DatasetService(client, settings, user.acting_within_tenant.id)
             return await service.create_dataset(create_dto)
 
         return self
@@ -65,11 +65,11 @@ class DatasetController(TenantScopedController):
             description="Retrieves a list of all evaluation datasets.",
         )
         async def get_datasets(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             client: Annotated[Langfuse, Depends(get_langfuse_client)],
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> list[MinimalDataset]:
-            service = DatasetService(client, settings)
+            service = DatasetService(client, settings, user.acting_within_tenant.id)
             return await service.get_datasets()
 
         return self
@@ -83,11 +83,11 @@ class DatasetController(TenantScopedController):
         )
         async def get_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to retrieve.")],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             client: Annotated[Langfuse, Depends(get_langfuse_client)],
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> Dataset:
-            service = DatasetService(client, settings)
+            service = DatasetService(client, settings, user.acting_within_tenant.id)
             return await service.get_dataset(dataset_id)
 
         return self
@@ -102,11 +102,11 @@ class DatasetController(TenantScopedController):
         async def update_dataset(
             dataset_id: Annotated[str, Path(description="The unique identifier of the dataset to update.")],
             update_dto: Annotated[DatasetUpdate, Body()],
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
             client: Annotated[Langfuse, Depends(get_langfuse_client)],
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> Dataset:
-            service = DatasetService(client, settings)
+            service = DatasetService(client, settings, user.acting_within_tenant.id)
             return await service.update_dataset(dataset_id, update_dto)
 
         return self

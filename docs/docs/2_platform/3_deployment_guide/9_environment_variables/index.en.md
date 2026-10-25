@@ -151,6 +151,7 @@ These variables are referenced as `${VAR}` (without a `${VAR:-default}` fallback
 | `POSTGRES_PASSWORD` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
 | `POSTGRES_PORT` | `openwebui-init-openwebui.sh` | `backup-code`, `openwebui-init` |  |
 | `POSTGRES_USER` | `openwebui-init-openwebui.sh` | `backup-code`, `dagster-daemon`, `dagster-webserver`, `default_rag_pipeline`, `document_ingestion_pipeline`, `keycloak`, `langfuse-web`, `langfuse-worker`, `litellm`, `open-webui`, `openwebui-init`, `pgbouncer`, `postgres`, `postgres-ferretdb`, `rclone_pipeline`, `shared_rag_pipeline`, `structured_pipeline` |  |
+| `PRESIDIO_ANALYZER_API_KEY` |  | `presidio-analyzer` |  |
 | `RAG_FILE_MAX_COUNT` |  | `open-webui` |  |
 | `RAG_FILE_MAX_SIZE` |  | `open-webui` |  |
 | `RAG_IMAGE_INLINE_ENABLED` | `RagImageInlineSettings.ENABLED` | `expert_rag_agent`, `litellm`, `rag_agent`, `retrieval_agent` | Whether RAG figures are inlined as base64 at the LiteLLM gateway. |
@@ -288,7 +289,6 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `MEM0_SEARCH_QUERY_EMBEDDING_WINDOW` | `Mem0Settings.SEARCH_QUERY_EMBEDDING_WINDOW` | `None` |  | Override for the embedding model's input window, in the model's own tokens. Set it only when LiteLLM reports no or an incorrect max_input_tokens; None resolves it at first use. Queries are truncated to half this value: they can only be counted with tiktoken, which undercounts the embedder's tokenizer by up to 2x. |
 | `MEM0_SUPPORT_VISION` | `Mem0Settings.SUPPORT_VISION` | `True` |  | Whether to support vision |
 | `MEM0_VISION_DETAIL` | `Mem0Settings.VISION_DETAIL` | `'auto'` |  | Vision details |
-| `MEMORY_DEFAULT_TENANT_ID` | `MemorySettings.DEFAULT_TENANT_ID` | `'AIHub'` |  | Default tenant ID for memory scoping |
 | `MEMORY_DEFAULT_TENANT_NAMESPACE` | `MemorySettings.DEFAULT_TENANT_NAMESPACE` | `None` |  | Default tenant namespace for department-level scoping |
 | `MILVUS_URL` | `MilvusSettings.URL` | _(supplied by compose)_ | `api`, `attu`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_asking_agent`, `expert_rag_agent`, `few_shot_agent`, `imap_agent`, `knowledge_extraction_agent`, `llm_wrapping_agent`, `memory_writer_agent`, `namespace_selection_agent`, `rag_agent`, `retrieval_agent`, `shared_rag_pipeline`, `universal_agent` | Connection URL for Milvus DB Server |
 | `MINERU_API_BASE_URL` | `MineruSettings.API_BASE_URL` | `'http://mineru-api:8000'` | `api`, `default_rag_pipeline`, `document_ingestion_pipeline`, `email_classification_agent`, `expert_rag_agent`, `few_shot_agent`, `llm_wrapping_agent`, `rag_agent`, `shared_rag_pipeline`, `universal_agent` | MinerU API endpoint URL |
