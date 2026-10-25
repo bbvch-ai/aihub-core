@@ -207,6 +207,15 @@ Dockerfile and published manually via `make -C infra/deployment build-and-push-p
 After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
 continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
+### env-guard: placeholder secrets refuse to start
+
+`generate_compose.py` collects every `.env.prod` variable whose value is a placeholder `setup-env.sh` generates (or
+`REPLACE_WITH_YOUR_DOMAIN`, see `ENV_GUARD_PLACEHOLDERS`) and renders them into the one-shot `env-guard` service. It
+exits 1 and names the variables if any still holds `REPLACE_WITH_`, and `traefik` and `keycloak` depend on it completing
+successfully, so `docker compose up` fails instead of serving with default secrets. Optional integrations (Teams,
+SharePoint, Azure, provider keys) keep their placeholders and are not checked. A new generated secret in `.env.prod` is
+picked up on the next `make generate-compose`.
+
 ### Publishing the open-terminal image
 
 The open-terminal image is project-managed. It extends `ghcr.io/open-webui/open-terminal:0.11.34` with additional Python
@@ -235,10 +244,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -248,8 +256,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -262,7 +270,8 @@ The template conditionally includes services based on stage and GPU mode:
 - **AI inference** (speaches, vLLM) — vLLM only when `gpu_enabled`, speaches in all stages
 - **1st-party services** (api, web, agents, bot, dagster, pipelines) — only when `image_tags.{service}[stage]` exists
 - **Traefik + docker-socket-proxy** — all stages except `dev`
-- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS admin UIs) — all stages except `dev`
+- **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS, Backup and LiteLLM) — all stages except `dev`
+- **env-guard** — all stages except `dev`; Traefik and Keycloak wait for it to exit 0
 - **PgBouncer** — all stages except `dev` (dev connects directly to PostgreSQL)
 - **vLLM** — only when `gpu_enabled`
 
@@ -405,7 +414,14 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - Docker provider via `docker-socket-proxy` (never direct Docker socket access)
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
-- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth
+- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. LiteLLM is one of them:
+  `litellm` has no Traefik labels of its own and stays on `proxy` only for outbound internet
+- The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
+  `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
+  via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the
+  new tag and re-apply the `is-custom` button class
+- `auth.${DOMAIN}/admin` and `/realms/master` go through the `keycloak-admin` router, which allows only
+  `KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES`
 
 ## Adding a New Service
 
