@@ -50,7 +50,11 @@ HTML sanitiser at all: `ParsedMessage.body_html` was documented as "must be sani
 - **Quoting is a toggle** (`DraftEmailSettings.quote_original`, off by default). `QuotedOriginal` builds the separator,
   a From/Sent/To/Cc/Subject block in the profile's `quote_locale` (labels and date format in `lib.imap.quote.*`) and the
   sanitised original, or its text body escaped when it has no HTML. It is built after the reply is generated and only
-  appended. `ParsedMessage` gained `to` and `cc` for the header block.
+  appended. `ParsedMessage` gained `to` and `cc` for the header block; a sender-written encoded line break makes the
+  address parser raise, so an unreadable To or Cc is left out rather than failing a batch that would fail on every run.
+  The Sent date is converted to the profile's `quote_timezone` (default `Europe/Zurich`), as Outlook shows it in the
+  replier's zone, and both the header block and the quoted body name Outlook's default font: the sanitiser drops the
+  original's `<style>` sheet, and Word falls back to Times New Roman for text that no longer names one.
 
 ## Considered Alternatives
 
