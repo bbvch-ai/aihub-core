@@ -116,7 +116,9 @@ async def test_non_model_families_stay_reachable(monkeypatch: pytest.MonkeyPatch
     # and only as far as the blueprint. Its existing profiles are deliberately not reachable; see
     # test_a_standard_blueprint_does_not_carry_its_existing_profiles.
     assert checker.has_access_to_agent_class(_STANDARD_CLASS)
-    assert checker.has_access_to_process("SomeProcess", "some-id")
+    # The process root: creating an instance is guarded on it, and it keeps the process list reachable.
+    assert checker.has_access(AccessChecker.process_root_admin_rule())
+    assert checker.has_access("aihub.user.process.?>")
     assert checker.has_access_to_service("model")
     # The knowledge root: creating a database is guarded on the bare rule, and it is also what keeps the
     # knowledge page reachable while the tenant has no database of its own yet.
@@ -197,15 +199,16 @@ async def test_the_derived_ceiling_permits_every_route_guard(monkeypatch: pytest
         for route in controller.router.routes
         if isinstance(route, APIRoute) and (template := AccessCapabilityService._route_template(route)) is not None
     }
-    # Per-profile agent guards and per-database knowledge guards are the depths the ceiling deliberately does
-    # not reach. Neither collection has a tenant column, so naming the whole subtree would hand the tenant
-    # every profile or database in the deployment. ``AgentService._grant_instance_access`` and
-    # ``KnowledgeService._grant_knowledge_access`` grant each resource to the tenant that creates it, which
-    # is what covers these depths afterwards.
+    # Per-profile agent guards, per-database knowledge guards and per-instance process guards are the depths
+    # the ceiling deliberately does not reach. None of these collections has a tenant column, so naming the
+    # whole subtree would hand the tenant every profile, database or process instance in the deployment.
+    # ``AgentService._grant_instance_access``, ``KnowledgeService._grant_knowledge_access`` and
+    # ``ProcessInstanceAccessGrant.grant`` grant each resource to the tenant that creates it, which is what
+    # covers these depths afterwards.
     guards = {
         template.format_map(_DummyPathParams())
         for template in templates
-        if "{agent_id}" not in template and "{database}" not in template
+        if not any(depth in template for depth in ("{agent_id}", "{database}", "{process_id}"))
     }
 
     assert guards, "no route guards discovered — the closure walk broke, not the ceiling"
@@ -298,6 +301,35 @@ async def test_a_database_the_tenant_creates_becomes_reachable(monkeypatch: pyte
     assert checker.has_access_to_knowledge_namespace("our-own-db", "synced-folder")
     assert checker.has_access_to_all_knowledge_namespaces("our-own-db")
     assert not checker.has_access_to_knowledge_namespace("other-tenants-db", "policies")
+
+
+@pytest.mark.asyncio
+async def test_a_new_tenant_carries_no_existing_process_instance(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Process instances live in one global collection with no tenant column, so ``aihub.admin.process.>``
+    would hand every new tenant every instance in the deployment — to list, start, edit and delete."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    checker = _checker(rules)
+
+    assert "aihub.admin.process.>" not in rules
+    assert not checker.has_access_to_process("OtherTenantsProcess", "their-instance")
+    assert not checker.has_access(AccessChecker.process_admin_rule("OtherTenantsProcess", "their-instance"))
+    assert checker.has_access(AccessChecker.process_root_admin_rule())
+
+
+@pytest.mark.asyncio
+async def test_a_process_instance_the_tenant_creates_becomes_reachable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``ProcessInstanceAccessGrant.grant`` adds the new instance's admin rule to the creating tenant."""
+    _stub_roster(monkeypatch, _CPU_ROSTER)
+
+    rules = await DefaultTenantAccessRulesService.derive()
+    rules.append(AccessChecker.process_admin_rule("Onboarding", "our-own-instance"))
+    checker = _checker(rules)
+
+    assert checker.has_access_to_process("Onboarding", "our-own-instance")
+    assert checker.has_access(AccessChecker.process_admin_rule("Onboarding", "our-own-instance"))
+    assert not checker.has_access_to_process("Onboarding", "someone-elses-instance")
 
 
 @pytest.mark.asyncio

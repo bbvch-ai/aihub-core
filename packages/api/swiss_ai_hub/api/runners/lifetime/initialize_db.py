@@ -28,6 +28,7 @@ from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import Ov
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
 )
+from swiss_ai_hub.api.runners.lifetime.process_root_rule_migration import ProcessRootRuleMigration
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
     _DefaultRoleDefinition(
         name="AIHubProcessAdmin",
         description="Grants admin access to all processes but to nothing else",
-        access_rules=["aihub.admin.process.>"],
+        access_rules=["aihub.admin.process", "aihub.admin.process.>"],
     ),
 ]
 
@@ -361,6 +362,16 @@ def unset_oversized_input_limits() -> None:
     migrated = OversizedInputLimitMigration.run()
     if migrated:
         logger.info(f"Unset an input-token limit above what the model allows in: {', '.join(migrated)}")
+
+
+# Transitional: creating a process instance is now guarded on the bare `aihub.admin.process` root, which the
+# `aihub.admin.process.>` wildcard that tenants and roles used to receive does not match. Delete it and
+# `ProcessRootRuleMigration` once deployments have upgraded past it.
+def add_process_root_rule() -> None:
+    """Adds the process root rule to every tenant ceiling and role that holds only the process wildcard."""
+    migrated = ProcessRootRuleMigration.run()
+    if migrated:
+        logger.info(f"Added the process root rule next to the process wildcard in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

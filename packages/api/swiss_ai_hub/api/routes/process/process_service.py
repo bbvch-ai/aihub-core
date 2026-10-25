@@ -26,6 +26,7 @@ from swiss_ai_hub.api.routes.process.dto.in_specs.human_in_dto import HumanInDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
 from swiss_ai_hub.api.routes.process.dto.process_walkthrough_dto import ProcessWalkthroughDTO
 from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedFormDTO
+from swiss_ai_hub.api.routes.process.process_instance_access_grant import ProcessInstanceAccessGrant
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
@@ -379,6 +380,9 @@ class ProcessService:
         )
         config_entity.save()
 
+        if user.acting_within_tenant is not None:
+            ProcessInstanceAccessGrant.grant(process_class, request.process_id, user, config_entity.delete)
+
         return FullProcessInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 
     @staticmethod
@@ -421,12 +425,13 @@ class ProcessService:
     @staticmethod
     @trace_fn
     async def delete_process_instance(process_class: str, process_id: str) -> None:
-        """Deletes a process instance by removing its configuration from the database."""
+        """Deletes a process instance and the per-instance access it was granted on creation."""
         config = ProcessConfigEntityDocument.find_for_class_and_id(process_class, process_id)
         if not config:
             raise HTTPException(status_code=404, detail=f"Process instance '{process_class}/{process_id}' not found.")
 
         ProcessConfigEntityDocument.delete_if_exists_for_class_and_id(process_class, process_id)
+        ProcessInstanceAccessGrant.revoke(process_class, process_id)
 
     @staticmethod
     @trace_fn

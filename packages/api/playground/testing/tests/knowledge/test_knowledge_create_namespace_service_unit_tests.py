@@ -100,3 +100,26 @@ async def test_a_free_name_and_folder_are_created(namespaces: MagicMock) -> None
     await _create("reports", "reports")
 
     assert namespaces.create_namespace.call_args.kwargs["folder_name"] == "reports"
+
+
+@pytest.mark.asyncio
+async def test_the_creator_is_granted_the_stored_name_not_the_raw_path_value(namespaces: MagicMock) -> None:
+    """A raw name holding ``.`` or ``>`` would make the granted rule a wildcard over the database's other folders."""
+    namespaces.create_namespace.side_effect = lambda **kwargs: MagicMock(
+        id="ns1",
+        bucket_id=BUCKET_ID,
+        folder_name=kwargs["folder_name"],
+        namespace_name=NamespaceEntity.sanitize_namespace_name(kwargs["namespace_name"]),
+    )
+
+    with patch.object(KnowledgeService, "_grant_knowledge_access") as grant:
+        await KnowledgeService.create_namespace(
+            DATABASE,
+            "hr.>",
+            CreateNamespaceRequest(folder_name="hr"),
+            MagicMock(),
+            MagicMock(),
+        )
+
+    assert grant.call_args.kwargs["admin_rules"] == [f"aihub.admin.knowledge.{DATABASE}.hr__"]
+    assert grant.call_args.kwargs["role_name"] == KnowledgeService._knowledge_admin_role_name(DATABASE, "hr__")

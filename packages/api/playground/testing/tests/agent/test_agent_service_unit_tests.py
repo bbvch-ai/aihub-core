@@ -459,6 +459,25 @@ class TestGrantInstanceAccess:
         mock_delete_role.assert_called_once_with(_ROLE_NAME)
         config_entity.delete.assert_called_once()
 
+    @pytest.mark.parametrize(
+        ("agent_class", "agent_id"), [("TestAgent", "x.>"), ("TestAgent", "*"), ("Test.Agent", "a")]
+    )
+    def test_refuses_a_name_that_would_widen_the_granted_rule(self, creator_user, agent_class: str, agent_id: str):
+        config_entity = Mock()
+        with (
+            patch.object(TenantMetadataEntity, "grant_access_rule") as mock_grant,
+            patch.object(AgentService, "_ensure_instance_admin_role") as mock_ensure,
+            patch.object(UserTenantRoleEntity, "add_roles") as mock_add_roles,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                AgentService._grant_instance_access(agent_class, agent_id, creator_user, config_entity)
+
+        assert exc_info.value.status_code == 500
+        mock_grant.assert_not_called()
+        mock_ensure.assert_not_called()
+        mock_add_roles.assert_not_called()
+        config_entity.delete.assert_called_once()
+
 
 _MODULE = "swiss_ai_hub.api.routes.agent.agent_service"
 

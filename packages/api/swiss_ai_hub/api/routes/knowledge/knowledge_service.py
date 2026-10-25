@@ -701,6 +701,9 @@ class KnowledgeService:
     ) -> NamespaceResponse:
         """
         Creates a new namespace (folder) in the specified database.
+
+        The creator is granted the namespace under the name it is stored by, which the entity sanitises; the raw
+        path value could hold ``.``, ``*`` or ``>`` and would make the granted rule a wildcard.
         """
         bucket = BucketEntity.get_bucket_by_db_name(database)
         KnowledgeService._reject_if_sourced(bucket)
@@ -728,9 +731,9 @@ class KnowledgeService:
 
         if user.acting_within_tenant is not None:
             KnowledgeService._grant_knowledge_access(
-                admin_rules=[AccessChecker.knowledge_namespace_admin_rule(database, namespace)],
-                role_name=KnowledgeService._knowledge_admin_role_name(database, namespace),
-                role_description=f"Admin access to knowledge folder {database}/{namespace}",
+                admin_rules=[AccessChecker.knowledge_namespace_admin_rule(database, namespace_entity.namespace_name)],
+                role_name=KnowledgeService._knowledge_admin_role_name(database, namespace_entity.namespace_name),
+                role_description=f"Admin access to knowledge folder {database}/{namespace_entity.namespace_name}",
                 user=user,
                 rollback=lambda: NamespaceEntity.delete_namespace(str(namespace_entity.id)),
                 resource_label=f"Knowledge folder '{database}/{namespace}'",

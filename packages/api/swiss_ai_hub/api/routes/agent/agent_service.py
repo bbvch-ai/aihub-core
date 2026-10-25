@@ -555,6 +555,7 @@ class AgentService:
         granted_tenant_rule = False
         created_role = False
         try:
+            AccessChecker.require_literal_segments(agent_class, agent_id)
             if not AccessChecker.rules_grant_admin_to_agent_instance(tenant.access_rules, agent_class, agent_id):
                 TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True

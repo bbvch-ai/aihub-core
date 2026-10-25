@@ -185,6 +185,17 @@ class AccessChecker:
         return template_remainder in ([], ["?>"])
 
     @staticmethod
+    def require_literal_segments(*segments: str) -> None:
+        """Raises unless every value is a single literal rule segment.
+
+        Called before a resource name is written into a granted rule: a name holding ``.``, ``*`` or ``>`` would
+        turn the rule into a wildcard over other resources.
+        """
+        for segment in segments:
+            if not re.fullmatch(r"[a-zA-Z0-9_-]+", segment):
+                raise ValueError(f"'{segment}' cannot be named in an access rule.")
+
+    @staticmethod
     def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:
         """Canonical admin permission for a specific agent instance (not the agent class/blueprint)."""
         return f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
@@ -364,6 +375,12 @@ class AccessChecker:
     def has_access(self, permission_template: str) -> bool:
         """Convenience method to check if a user has access to a specific resource."""
         return self.access_level(permission_template) != AccessLevel.ACCESS_DENIED
+
+    @staticmethod
+    def process_root_admin_rule() -> str:
+        """The bare process root that creating a process instance is guarded on. ``aihub.admin.process.>`` does
+        not match it, since ``>`` needs at least one more token."""
+        return f"{_ADMIN_PREFIX}process"
 
     @staticmethod
     def process_user_rule(process_class: str, process_id: str) -> str:
