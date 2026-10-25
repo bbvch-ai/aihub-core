@@ -1,7 +1,8 @@
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.generative_ai.memory.user_memory import UserMemory
+from fastapi import HTTPException
+from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.generative_ai import UserMemory
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.infrastructure import MemoryNotFoundError, trace_fn
 
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
@@ -75,7 +76,10 @@ class UserMemoryService:
     @trace_fn
     async def delete_memory(user: UserIdentity, memory_id: str, t: LocaleHandler) -> DeleteMemoryResponse:
         user_memory = UserMemory(user=user, t=t)
-        await user_memory.delete_memory(memory_id=memory_id)
+        try:
+            await user_memory.delete_memory(memory_id=memory_id)
+        except MemoryNotFoundError as memory_not_found_error:
+            raise HTTPException(status_code=404, detail=str(memory_not_found_error)) from memory_not_found_error
         return DeleteMemoryResponse(status="deleted", memory_id=memory_id)
 
     @staticmethod
@@ -92,5 +96,8 @@ class UserMemoryService:
     @trace_fn
     async def update_memory(user: UserIdentity, memory_id: str, data: str, t: LocaleHandler) -> UpdateMemoryResponse:
         user_memory = UserMemory(user=user, t=t)
-        await user_memory.update_memory(memory_id=memory_id, data=data)
+        try:
+            await user_memory.update_memory(memory_id=memory_id, data=data)
+        except MemoryNotFoundError as memory_not_found_error:
+            raise HTTPException(status_code=404, detail=str(memory_not_found_error)) from memory_not_found_error
         return UpdateMemoryResponse(status="updated", memory_id=memory_id)

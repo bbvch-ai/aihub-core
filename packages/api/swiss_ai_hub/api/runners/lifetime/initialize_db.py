@@ -22,8 +22,12 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, IngestorType, NamespaceEntity
 
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
+from swiss_ai_hub.api.runners.lifetime.legacy_organization_memory_tenant_migration import (
+    LegacyOrganizationMemoryTenantMigration,
+)
 from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import OversizedInputLimitMigration
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
@@ -350,6 +354,23 @@ def carry_over_pre_pair_knowledge_collections() -> None:
     migrated = PrePairKnowledgeCollectionMigration.run()
     if migrated:
         logger.info(f"Carried pre-pair knowledge collections over to pairs in: {', '.join(migrated)}")
+
+
+# Transitional: organization memory was read and edited through one owner shared by every tenant. Delete these two
+# functions and `LegacyOrganizationMemoryTenantMigration` once deployments have upgraded past it.
+def retarget_legacy_organization_memory_profiles() -> None:
+    """Points every profile still scoped to the shared organization-memory owner at the startup tenant."""
+    migrated = LegacyOrganizationMemoryTenantMigration(StartupTenantSettings().ID).retarget_profiles()
+    if migrated:
+        logger.info(f"Moved the organization-memory scope to the startup tenant in: {', '.join(migrated)}")
+
+
+async def adopt_legacy_organization_memories() -> None:
+    """Hands every organization memory stored under the shared owner to the startup tenant."""
+    migration = LegacyOrganizationMemoryTenantMigration(StartupTenantSettings().ID)
+    adopted = await migration.adopt_memories(ApiLocaleHandler())
+    if adopted:
+        logger.info(f"Moved {adopted} shared organization memories to the startup tenant")
 
 
 # Transitional: the input-token limit was pre-filled with 128,000 for every model, and saves are now rejected above 85%
