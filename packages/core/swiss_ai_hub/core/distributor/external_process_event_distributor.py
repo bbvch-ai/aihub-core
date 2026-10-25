@@ -21,9 +21,9 @@ class ExternalProcessEventDistributor:
 
     Users or external programs might send work events or request forms that define the user interface
     to submit such work events.
-    The server must:
-    - Validate that the user is authorized to submit work events for the given process walkthrough.
-    - Publish the work event as a JetStream event, ensuring downstream agents or services can react.
+    The caller authorizes the submission before handing it over: ``ProcessService`` only forwards a human
+    work event that answers an open work request assigned to the submitting user. This class then publishes
+    the work event as a JetStream event, ensuring downstream agents or services can react.
     """
 
     def __init__(self, nc: NATS, js: JetStreamContext):
@@ -40,7 +40,6 @@ class ExternalProcessEventDistributor:
             external_event.process_walkthrough_id = process_walkthrough_id
 
         if external_event.event.is_human_work_event or external_event.event.is_program_work_event:
-            # TODO: For human inputs, validate that the user is allowed to submit the given work
             await self._handle_work_event(external_event, user)
         else:
             raise ValueError(f"Received event of unhandled type: {external_event.event.event_name}")

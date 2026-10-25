@@ -254,13 +254,15 @@ class ProcessController(TenantScopedController):
             process_class: str,
             process_id: str,
             process_walkthrough_id: str,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[HumanInDTO]:
-            """Returns a list of formkit forms that the user can submit to continue the given process walkthrough"""
-            return await ProcessService.get_process_open_forms(process_class, process_id, process_walkthrough_id, t)
+            """Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them."""
+            return await ProcessService.get_process_open_forms(
+                process_class, process_id, process_walkthrough_id, user, t
+            )
 
         return self
 

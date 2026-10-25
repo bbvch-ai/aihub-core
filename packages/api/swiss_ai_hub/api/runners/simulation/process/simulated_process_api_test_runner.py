@@ -22,6 +22,7 @@ from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
 from swiss_ai_hub.core.subscribers import JSSubscriber, NCSubscriber, ProcessJSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID
 from swiss_ai_hub.core.topic_managers import (
     ProcessInstanceTopicManager,
     ProcessTopicManager,
@@ -270,7 +271,8 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             (
                 HumanStartEvent,
                 HumanBWorkRequest(
-                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))]
+                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))],
+                    user_ids=[TEST_USER_OID],
                 ),
             ),
             (HumanBWork, CustomProcessStopEvent(payload="Done")),
