@@ -316,6 +316,9 @@ the model:
   before anything reaches the model, so a model can only narrow it. Results are compact pages with the position first,
   so a cut result never loses where to continue, and errors raise so the loop marks the call failed. A disabled profile
   gets no functions at all (`spec_functions = []` in `__init__`), which is what keeps existing profiles unchanged.
+  `knowledge_documents.semantic_search` (off by default; spike for #2200) adds `rank_knowledge_documents` over core's
+  `KnowledgeSemanticSearch`, within the same scope and glob, and switches the Knowledge Extraction Agent to the
+  `prompt.instructions_semantic` discovery prompt: rank first, judge each document's kind, never its rows.
 - **`RecordExtraction`** (`capabilities/record_extraction/`, needs `RecordExtractionFields`: the extraction model,
   `max_files`, `minutes_per_turn`, `max_documents_total`, `max_rows`, `max_document_chars`, `max_parallel_extractions`)
   answers `extract(selection, fields, collections, instructions, row_terms, ...)` with `RecordsExtractedEvent`: one

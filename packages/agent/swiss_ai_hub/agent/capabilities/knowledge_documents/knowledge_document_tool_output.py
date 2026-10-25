@@ -16,6 +16,13 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
 _PASSAGES_SHOWN = 2
 _PASSAGE_CHARS = 200
 _NOISE = re.compile(r"(?:\s|\||-{3,}|█)+")
+# Repeated in the result because models given a row condition kept reading documents to check it although the system
+# prompt said not to; the latest tool result is what they act on.
+_RANKING_NEXT = (
+    "Next: keep the documents that are the kind of document the user asks about and leave out the others; do not read "
+    "them to check a condition on their rows (an amount, a cap, a date), since the extraction checks it in every "
+    "selected document."
+)
 
 
 class KnowledgeDocumentToolOutput:
@@ -69,6 +76,7 @@ class KnowledgeDocumentToolOutput:
         )
         lines = [header, "id | collection | path | pages | similarity"]
         lines.extend(KnowledgeDocumentToolOutput._ranked(scope, match) for match in result.matches)
+        lines.append(_RANKING_NEXT)
         return "\n".join(lines)
 
     @staticmethod
