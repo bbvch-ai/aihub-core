@@ -19,9 +19,18 @@ class SourcePipelineConfig(Form):
     Credentials are declared as ``str | Password`` (or ``str | SecretFileInput`` for a key file);
     ``secret_field_paths`` derives their paths from the announced form so the API can encrypt them and the pipeline
     can decrypt them without either side naming a field.
+
+    Validation errors never quote their input: the pipeline validates the configuration after decrypting its
+    credentials, and the error reaches the run's log and its failure notification.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+        use_enum_values=True,
+        extra="allow",
+        hide_input_in_errors=True,
+    )
 
     @classmethod
     def as_form(cls) -> Self:

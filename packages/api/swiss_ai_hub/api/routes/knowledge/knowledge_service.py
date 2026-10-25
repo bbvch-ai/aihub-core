@@ -610,9 +610,9 @@ class KnowledgeService:
     ) -> dict[str, Any]:
         """The same chain the ingestor form goes through, plus the secret handling the source form needs.
 
-        Masked secrets are restored from the stored row before validation so the schema sees real values, and
-        every secret path is encrypted before the result is persisted. Which paths are secrets is read off the
-        announced form, so the API never learns a pipeline's field names.
+        Submitted ciphertext is refused, masked secrets are restored from the stored row before validation so the
+        schema sees real values, and every secret path is encrypted before the result is persisted. Which paths are
+        secrets is read off the announced form, so the API never learns a pipeline's field names.
         """
         source_pipeline = SourcePipelineEntity.find(source_id)
         if source_pipeline is None or source_pipeline.config_specs is None:
@@ -628,11 +628,12 @@ class KnowledgeService:
         encryption = SecretEncryptionService.from_settings()
         # An empty submission normalises to None; validating {} instead names the missing fields.
         config = InstanceConfigHelper.normalize_form_configuration(submitted) or {}
-        if stored is not None:
-            try:
+        try:
+            encryption.reject_submitted_ciphertext(config, secret_paths)
+            if stored is not None:
                 config = encryption.restore_masked_paths(config, stored, secret_paths)
-            except ValueError as no_stored_secret:
-                raise HTTPException(status_code=400, detail=str(no_stored_secret)) from None
+        except ValueError as unusable_secret:
+            raise HTTPException(status_code=400, detail=str(unusable_secret)) from None
         InstanceConfigHelper.reject_undeclared_fields(form_elements, config)
         config_model = ModelCreationService.create_config_model(source_pipeline.config_specs.to_specs())
         InstanceConfigHelper.validate_config_for_create(config, config_model)
