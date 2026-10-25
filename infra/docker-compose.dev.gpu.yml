@@ -31,7 +31,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.50
     restart: always
     expose:
       - '9333'   # Master HTTP port
@@ -69,7 +69,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.50
     restart: always
     expose: ['8080', '18080']
     command: >
@@ -101,12 +101,13 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.50
     restart: always
     ports: [8889:8888, '18888']
     command: >
       filer
       -master="seaweedfs-master:9333"
+      -ip=seaweedfs-filer
       -ip.bind=0.0.0.0
     environment:
       # Internal JWT Authentication
@@ -153,7 +154,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.50
     restart: always
     ports: [9000:9000]
     volumes:
