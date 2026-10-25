@@ -69,9 +69,13 @@ In production deployments, TLS certificates are managed through:
 Traefik applies security-hardened HTTP headers to all responses:
 
 - **Strict-Transport-Security (HSTS)**: Enforces HTTPS for one year, including all subdomains
-- **Content-Security-Policy**: Restricts frame embedding to same-origin
 - **X-Content-Type-Options**: Prevents MIME type sniffing
 - **Referrer-Policy**: Limits referrer information leakage
+
+The Admin UI and the Sysadmin UI additionally send their own **Content-Security-Policy** from nginx. Scripts load only
+from the app itself, plugins and `<base>` rewrites are blocked, and frames, form targets and outgoing connections are
+limited to the app, Keycloak and OpenWebUI. The container fills in these origins from `OAUTH_AUTHORITY_URL`, `WEBUI_URL`
+and `WS_ENDPOINT` at start.
 
 ## External Service Connections
 
