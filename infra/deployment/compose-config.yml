@@ -33,7 +33,7 @@ image_tags:
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   neo4j: neo4j:5.26.16-community
-  litellm: litellm:v1.83.10-stable
+  litellm: litellm:v1.106.4
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
   open_terminal: open-terminal-office:0.11.34-1

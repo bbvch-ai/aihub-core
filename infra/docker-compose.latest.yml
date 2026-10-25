@@ -1459,7 +1459,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.106.4
     restart: always
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm
