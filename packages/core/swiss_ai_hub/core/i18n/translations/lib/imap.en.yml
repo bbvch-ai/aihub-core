@@ -154,6 +154,10 @@ config:
     help: Language of the From/Sent/To/Subject labels and the date above the quoted
       message. Outlook uses the language of whoever replies, so pick the mailbox owner's
       language.
+  quote_timezone:
+    label: Quote Time Zone
+    help: Time zone of the Sent date above the quoted message. Outlook shows it in
+      the time zone of whoever replies, so pick the mailbox owner's.
 quote:
   from: From
   sent: Sent

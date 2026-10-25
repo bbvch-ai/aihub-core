@@ -266,7 +266,8 @@ Alles in diesem Abschnitt bleibt verborgen, bis **Antwort entwerfen** eingeschal
 | **LLM-Modell**                 | Modell-Auswahl | *(leer)*                     | Das Chat-Modell, das den Antworttext schreibt. Die Optionen stammen aus Ihrer LiteLLM-Konfiguration.                                                                                                 |
 | **Entwurfs-Prompt**            | Langtext       | *(sinnvolle Voreinstellung)* | Anweisungen zu Ton, Sprache und Form der Antwort. Die Voreinstellung verlangt eine knappe, höfliche Antwort in der Sprache des Absenders, ohne erfundene Fakten und ohne Betreffzeile oder Signatur. |
 | **Originalnachricht zitieren** | Schalter       | Aus                          | Wenn aktiv, wird die ursprüngliche E-Mail mit einem Kopfblock wie in Outlook unter der Antwort zitiert. Markdown in der Antwort wird dargestellt, `==Text==` gelb hervorgehoben.                     |
-| **Sprache des Zitats** | Auswahl | Deutsch | Sprache der Bezeichnungen Von / Gesendet / An / Betreff und des Datums im Zitat. Wählen Sie die Sprache des Postfachs. |
+| **Sprache des Zitats**         | Auswahl        | Deutsch                      | Sprache der Bezeichnungen Von / Gesendet / An / Betreff und des Datums im Zitat. Wählen Sie die Sprache des Postfachs.                                                                               |
+| **Zeitzone des Zitats**        | Auswahl        | Europe/Zurich                | Zeitzone, in der das Gesendet-Datum im Zitat erscheint, unabhängig von der Zeitzone des Absenders. Wählen Sie die des Postfachs.                                                                     |
 
 ::: details Deployment-fixe Limits, die Sie im Formular nicht sehen
 Drei Grössenlimits werden vom Betreiber der Plattform festgelegt und sind nicht als Formularfelder verfügbar, weil sie

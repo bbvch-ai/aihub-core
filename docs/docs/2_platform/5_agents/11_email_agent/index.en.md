@@ -252,7 +252,8 @@ Everything in this section is hidden until **Draft Reply** is switched on.
 | **LLM Model**              | Model picker | *(empty)*              | The chat model that writes the reply body. Options come from your LiteLLM configuration.                                                                                                       |
 | **Draft Prompt**           | Long text    | *(a sensible default)* | Instructions steering tone, language, and format of the reply. The default asks for a concise, polite reply in the sender's language, with no invented facts and no subject line or signature. |
 | **Quote Original Message** | Toggle       | Off                    | When on, the original email is quoted below the reply under an Outlook-style header block. Markdown in the reply is rendered, and `==text==` is highlighted in yellow.                         |
-| **Quote Language** | Select | German | Language of the quote's From / Sent / To / Subject labels and its date. Pick the mailbox owner's language. |
+| **Quote Language**         | Select       | German                 | Language of the quote's From / Sent / To / Subject labels and its date. Pick the mailbox owner's language.                                                                                     |
+| **Quote Time Zone**        | Select       | Europe/Zurich          | Time zone the quote's Sent date is shown in, whatever zone the sender wrote from. Pick the mailbox owner's.                                                                                    |
 
 ::: details Deployment-fixed limits you will not see in the form
 Three size caps are fixed by whoever operates the platform and are not exposed as form fields, because they protect the

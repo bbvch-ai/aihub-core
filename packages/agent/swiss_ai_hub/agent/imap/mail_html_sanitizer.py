@@ -5,6 +5,8 @@ import nh3
 
 # Outlook renders HTML with Word's engine, which ignores `<mark>`; an inline background is what it shows as highlight.
 HIGHLIGHT_STYLE = "background-color:#ffff00"
+# Outlook's own default reply font, so neither the reply nor the quote below it changes typeface in an Outlook thread.
+OUTLOOK_FONT_STYLE = "font-family:Aptos,Calibri,Arial,Helvetica,sans-serif;font-size:11pt"
 
 _CONTENT_DROPPING_TAGS = {"script", "style", "title", "head"}
 

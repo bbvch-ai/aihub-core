@@ -162,6 +162,11 @@ config:
     help: Sprache der Bezeichnungen Von/Gesendet/An/Betreff und des Datums über der
       zitierten Nachricht. Outlook verwendet die Sprache der antwortenden Person,
       wählen Sie also die Sprache der Postfachinhaberin oder des Postfachinhabers.
+  quote_timezone:
+    label: Zeitzone des Zitats
+    help: Zeitzone des Gesendet-Datums über der zitierten Nachricht. Outlook zeigt
+      es in der Zeitzone der antwortenden Person, wählen Sie also die der Postfachinhaberin
+      oder des Postfachinhabers.
 quote:
   from: Von
   sent: Gesendet

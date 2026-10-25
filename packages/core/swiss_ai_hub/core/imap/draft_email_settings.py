@@ -1,6 +1,7 @@
 from typing import Annotated, Literal, Self
+from zoneinfo import available_timezones
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from swiss_ai_hub.core.agents.agent_config import StepConfig
 from swiss_ai_hub.core.form.constraints import Gt, MinLen
@@ -46,6 +47,8 @@ _QUOTE_LOCALE_OPTIONS = [
     {"label": "Français", "value": "fr"},
     {"label": "Italiano", "value": "it"},
 ]
+_DEFAULT_QUOTE_TIMEZONE = "Europe/Zurich"
+_QUOTE_TIMEZONE_OPTIONS = sorted(available_timezones())
 
 # Attachment parsing has its own switch nested under the section's: the caps below are meaningless unless
 # attachments are being read at all, and showing five fields to an admin who left the toggle off is noise.
@@ -123,6 +126,14 @@ class DraftEmailSettings(StepConfig):
             default=LocaleHandler.DEFAULT_LOCALE,
             description="Language of the quoted header block's labels and date. Outlook writes them in the replier's "
             "language, which is the mailbox's, not the language a scheduled run happens to carry.",
+        ),
+    ]
+    quote_timezone: Annotated[
+        str | Select,
+        Field(
+            default=_DEFAULT_QUOTE_TIMEZONE,
+            description="IANA timezone the quoted Sent date is shown in. Outlook shows it in the replier's zone, so a "
+            "message sent at 15:05 +0700 reads 10:05 to a mailbox in Zurich, not the sender's wall-clock time.",
         ),
     ]
     number_of_input_tokens: Annotated[
@@ -204,6 +215,13 @@ class DraftEmailSettings(StepConfig):
         """The drafting LLM built from the selected model with default chat parameters (not form-configurable)."""
         return LLMConfig(model_name=self.model_name)
 
+    @model_validator(mode="after")
+    def _validate_quote_timezone(self) -> Self:
+        """Reject an unknown zone when the profile is saved, not when a draft is first quoted with it."""
+        if isinstance(self.quote_timezone, str) and self.quote_timezone not in available_timezones():
+            raise ValueError(f"Unknown quote timezone: {self.quote_timezone!r}")
+        return self
+
     @classmethod
     def as_form(cls) -> Self:
         return cls(
@@ -254,6 +272,13 @@ class DraftEmailSettings(StepConfig):
                 options=_QUOTE_LOCALE_OPTIONS,
                 option_label="label",
                 option_value="value",
+                condition_if=_VISIBLE_WHEN_QUOTING,
+            ),
+            quote_timezone=Select(
+                label=LocaleString.from_i18n_path("lib.imap.config.quote_timezone.label"),
+                help=LocaleString.from_i18n_path("lib.imap.config.quote_timezone.help"),
+                options=_QUOTE_TIMEZONE_OPTIONS,
+                filter=True,
                 condition_if=_VISIBLE_WHEN_QUOTING,
             ),
             number_of_input_tokens=InputNumber(

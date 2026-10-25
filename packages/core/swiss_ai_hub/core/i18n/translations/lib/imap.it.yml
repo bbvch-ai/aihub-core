@@ -162,6 +162,10 @@ config:
     help: Lingua delle etichette Da/Inviato/A/Oggetto e della data sopra il messaggio
       citato. Outlook usa la lingua di chi risponde. Scegliete quella del titolare
       della casella.
+  quote_timezone:
+    label: Fuso orario della citazione
+    help: Fuso orario della data di invio sopra il messaggio citato. Outlook la mostra
+      nel fuso di chi risponde. Scegliete quello del titolare della casella.
 quote:
   from: Da
   sent: Inviato

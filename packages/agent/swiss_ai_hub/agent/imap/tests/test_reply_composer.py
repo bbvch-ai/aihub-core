@@ -1,12 +1,18 @@
 import email
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from email.policy import default as default_policy
+from zoneinfo import ZoneInfo
 
+import pytest
+from pydantic import ValidationError
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.imap import DraftEmailSettings, ParsedMessage
 
+from swiss_ai_hub.agent.imap.mail_html_sanitizer import OUTLOOK_FONT_STYLE
 from swiss_ai_hub.agent.imap.quoted_original import QuotedOriginal
 from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
+
+_UTC = ZoneInfo("UTC")
 
 
 def _parsed(**overrides) -> ParsedMessage:
@@ -229,7 +235,7 @@ def test_quote_labels_follow_the_profile_quote_language():
 
 def test_quoted_original_follows_the_reply_with_its_header_block():
     parsed = _parsed(to="support@example.com", date=datetime(2026, 10, 22, 9, 5, tzinfo=UTC))
-    quoted = QuotedOriginal.from_parsed(parsed, LocaleHandler("de"))
+    quoted = QuotedOriginal.from_parsed(parsed, LocaleHandler("de"), _UTC)
 
     composed = ReplyComposer.compose_from_parsed(parsed, from_address="me@example.com", body="Danke.", quoted=quoted)
 
@@ -248,7 +254,7 @@ def test_quoted_html_original_is_sanitised_and_drops_images():
         '<p style="color:#333;position:fixed">Hello</p><img src="cid:logo"><img src="https://tracker.example/p.gif">'
         "<script>alert(1)</script><table><tr><td>cell</td></tr></table></body></html>"
     )
-    quoted = QuotedOriginal.from_parsed(_parsed(body_html=original_html), LocaleHandler("en"))
+    quoted = QuotedOriginal.from_parsed(_parsed(body_html=original_html), LocaleHandler("en"), _UTC)
 
     assert '<p style="color:#333">Hello</p>' in quoted.html
     assert "<td>cell</td>" in quoted.html
@@ -258,13 +264,50 @@ def test_quoted_html_original_is_sanitised_and_drops_images():
 
 def test_quoted_original_falls_back_to_text_derived_from_html_when_there_is_no_text_body():
     quoted = QuotedOriginal.from_parsed(
-        _parsed(body_text=None, body_html="<p>First &amp; foremost</p><p>Second</p>"), LocaleHandler("en")
+        _parsed(body_text=None, body_html="<p>First &amp; foremost</p><p>Second</p>"), LocaleHandler("en"), _UTC
     )
 
     assert quoted.text.endswith("First & foremost\n\nSecond")
 
 
 def test_plain_text_original_is_escaped_in_the_html_quote():
-    quoted = QuotedOriginal.from_parsed(_parsed(body_text="a <b>not bold</b>\nline"), LocaleHandler("en"))
+    quoted = QuotedOriginal.from_parsed(_parsed(body_text="a <b>not bold</b>\nline"), LocaleHandler("en"), _UTC)
 
     assert "a &lt;b&gt;not bold&lt;/b&gt;<br>" in quoted.html
+
+
+def test_sent_date_is_shown_in_the_quote_timezone_not_the_senders():
+    sent_from_bangkok = datetime(2026, 10, 22, 15, 5, tzinfo=timezone(timedelta(hours=7)))
+
+    quoted = QuotedOriginal.for_draft(_parsed(date=sent_from_bangkok), DraftEmailSettings(quote_original=True))
+
+    assert quoted is not None
+    assert "Gesendet: 22.10.2026 10:05" in quoted.text
+
+
+def test_a_date_header_without_a_zone_is_read_as_utc():
+    quoted = QuotedOriginal.from_parsed(
+        _parsed(date=datetime(2026, 10, 22, 8, 5)), LocaleHandler("de"), ZoneInfo("Europe/Zurich")
+    )
+
+    assert "Gesendet: 22.10.2026 10:05" in quoted.text
+
+
+def test_an_unknown_quote_timezone_is_rejected_when_the_profile_is_saved():
+    with pytest.raises(ValidationError, match="Unknown quote timezone"):
+        DraftEmailSettings(quote_timezone="Mars/Olympus")
+
+
+def test_table_cells_get_the_outlook_font_from_a_style_rule():
+    composed = ReplyComposer.compose_from_parsed(
+        _parsed(), from_address="me@example.com", body="| Kurs | Datum |\n|---|---|\n| A | 1.11. |"
+    )
+
+    assert f"<style>td,th{{{OUTLOOK_FONT_STYLE}}}</style>" in _html(composed)
+
+
+def test_header_block_and_quoted_body_name_the_outlook_font():
+    quoted = QuotedOriginal.from_parsed(_parsed(body_html="<p>Hello</p>"), LocaleHandler("en"), _UTC)
+
+    assert f'<div id="divRplyFwdMsg" dir="ltr" style="{OUTLOOK_FONT_STYLE}">' in quoted.html
+    assert f'<div style="{OUTLOOK_FONT_STYLE}"><p>Hello</p></div>' in quoted.html

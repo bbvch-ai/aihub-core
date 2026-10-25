@@ -164,6 +164,11 @@ config:
     help: Langue des libellés De/Envoyé/À/Objet et de la date au-dessus du message
       cité. Outlook utilise la langue de la personne qui répond. Choisissez celle
       du titulaire de la boîte.
+  quote_timezone:
+    label: Fuseau horaire de la citation
+    help: Fuseau horaire de la date d'envoi au-dessus du message cité. Outlook l'affiche
+      dans le fuseau de la personne qui répond. Choisissez celui du titulaire de la
+      boîte.
 quote:
   from: De
   sent: Envoyé
