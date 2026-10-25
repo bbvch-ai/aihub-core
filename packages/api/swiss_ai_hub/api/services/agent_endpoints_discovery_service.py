@@ -9,13 +9,12 @@ from typing import Annotated, override
 
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
-from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -37,8 +36,6 @@ from swiss_ai_hub.core.persistence import (
     AgentClassEntity,
     AgentConfigEntityDocument,
     AgentInstanceRef,
-    ThreadEntity,
-    User,
 )
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.routes import ChatService
@@ -430,23 +427,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             response_event = await AgentService.send_agent_input_event(
                 nc=nc,
@@ -515,23 +498,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             )
 
             if thread_id is not None:
-                try:
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-                except DoesNotExist:
-                    ThreadEntity.create_thread(
-                        "chat",
-                        users=[User(user_id=user.id)],
-                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
-                        thread_id=ObjectId(thread_id),
-                    )
-                    thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
+                await ThreadService.get_or_create_thread_to_post_in(
+                    thread_id, user, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id), t=t
                 )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise agent_controller.not_authorized_to_view_exception
 
             resources = await AgentService.send_agent_input_event_stream(
                 nc=nc,

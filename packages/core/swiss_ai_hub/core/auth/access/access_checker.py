@@ -6,6 +6,7 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 _ADMIN_PREFIX = "aihub.admin."
 _USER_PREFIX = "aihub.user."
+_IDENTIFIER_SEGMENT = re.compile(r"[a-zA-Z0-9\-\_]+")
 
 
 class AccessChecker:
@@ -185,14 +186,32 @@ class AccessChecker:
         return template_remainder in ([], ["?>"])
 
     @staticmethod
+    def _identifier_segment(value: str | None) -> str:
+        """A concrete resource identifier as one rule token.
+
+        A missing id must never become a token: ``None`` would render as the literal ``None`` and be matched
+        by every broad rule such as ``aihub.user.>``, and a wildcard would turn a concrete check into an
+        implicit one.
+        """
+        if value is None or not _IDENTIFIER_SEGMENT.fullmatch(value):
+            raise ValueError(f"Not a concrete resource identifier: {value!r}")
+        return value
+
+    @staticmethod
+    def _instance_rule(prefix: str, resource: str, resource_class: str | None, resource_id: str | None) -> str:
+        class_segment = AccessChecker._identifier_segment(resource_class)
+        id_segment = AccessChecker._identifier_segment(resource_id)
+        return f"{prefix}{resource}.{class_segment}.{id_segment}"
+
+    @staticmethod
     def agent_instance_admin_rule(agent_class: str, agent_id: str) -> str:
         """Canonical admin permission for a specific agent instance (not the agent class/blueprint)."""
-        return f"{_ADMIN_PREFIX}agent.{agent_class}.{agent_id}"
+        return AccessChecker._instance_rule(_ADMIN_PREFIX, "agent", agent_class, agent_id)
 
     @staticmethod
     def agent_instance_user_rule(agent_class: str, agent_id: str) -> str:
         """Canonical user permission for a specific agent instance (not the agent class/blueprint)."""
-        return f"{_USER_PREFIX}agent.{agent_class}.{agent_id}"
+        return AccessChecker._instance_rule(_USER_PREFIX, "agent", agent_class, agent_id)
 
     @staticmethod
     def knowledge_database_admin_rule(database: str) -> str:
@@ -368,12 +387,12 @@ class AccessChecker:
     @staticmethod
     def process_user_rule(process_class: str, process_id: str) -> str:
         """Canonical user-level permission rule for a specific process instance."""
-        return f"{_USER_PREFIX}process.{process_class}.{process_id}"
+        return AccessChecker._instance_rule(_USER_PREFIX, "process", process_class, process_id)
 
     @staticmethod
     def process_admin_rule(process_class: str, process_id: str) -> str:
         """Canonical admin-level permission rule for a specific process instance."""
-        return f"{_ADMIN_PREFIX}process.{process_class}.{process_id}"
+        return AccessChecker._instance_rule(_ADMIN_PREFIX, "process", process_class, process_id)
 
     @staticmethod
     def service_user_rule(service_name: str) -> str:

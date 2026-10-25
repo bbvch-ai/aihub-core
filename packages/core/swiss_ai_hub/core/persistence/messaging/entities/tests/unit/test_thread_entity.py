@@ -1,6 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
 
 
 class TestGetOrderBy:
@@ -51,3 +53,52 @@ class TestScheduledThreadId:
         second = AgentInstanceRef(agent_class="ReportAgent", agent_id="daily")
 
         assert ThreadEntity.scheduled_thread_id(first) != ThreadEntity.scheduled_thread_id(second)
+
+
+class TestScheduledThreadReclaim:
+    """The scheduled-run thread id is derivable from the profile, so a client may have created a chat thread
+    under it first. Runs must never fire into such a thread."""
+
+    AGENT = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+    MODULE = "swiss_ai_hub.core.persistence.messaging.entities.thread_entity"
+
+    def _existing(self, **fields) -> ThreadEntity:
+        defaults = {"name": "Scheduled runs", "users": [], "agents": [self.AGENT]}
+        return ThreadEntity(id=ThreadEntity.scheduled_thread_id(self.AGENT), **(defaults | fields))
+
+    def _resolve(self, existing: ThreadEntity) -> tuple[ThreadEntity | dict, MagicMock, MagicMock]:
+        objects = MagicMock()
+        objects.return_value.first.return_value = existing
+        with (
+            patch.object(ThreadEntity, "objects", objects),
+            patch.object(ThreadEntity, "delete") as delete,
+            patch.object(ThreadEntity, "create_thread", side_effect=lambda *args, **kwargs: kwargs),
+            patch(f"{self.MODULE}.PersistedAgentEventEntity.delete_events_for_thread") as delete_events,
+        ):
+            thread = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", self.AGENT)
+        return thread, delete, delete_events
+
+    def test_keeps_the_genuine_scheduled_thread(self):
+        existing = self._existing()
+
+        thread, delete, delete_events = self._resolve(existing)
+
+        assert thread is existing
+        delete.assert_not_called()
+        delete_events.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "fields",
+        [
+            {"users": [User(user_id="someone")]},
+            {"agents": [AgentInstanceRef(agent_class="RAGAgent", agent_id="other")]},
+            {"process_class": "SomeProcess"},
+        ],
+    )
+    def test_discards_a_thread_a_client_created_under_the_id(self, fields):
+        thread, delete, delete_events = self._resolve(self._existing(**fields))
+
+        delete.assert_called_once()
+        delete_events.assert_called_once_with(str(ThreadEntity.scheduled_thread_id(self.AGENT)))
+        assert thread["users"] == []
+        assert thread["thread_id"] == ThreadEntity.scheduled_thread_id(self.AGENT)

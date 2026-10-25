@@ -473,6 +473,9 @@ and the `AIHubSysAdmin` realm role. Selected methods:
 - `.has_access_to_service(service_name)` → bool
 - `.access_level(permission_template)` → AccessLevel
 
+The agent and process instance rule builders raise `ValueError` for an id that is not one plain token (`None`, empty,
+a wildcard, a dot). A `None` id would otherwise render as `process.None.None`, which `aihub.user.>` matches.
+
 **Sysadmin short-circuit**: When `UserIdentity.is_sys_admin=True`, `access_level()` returns `ACCESS_ADMIN`
 unconditionally, bypassing both the tenant-ceiling and user-rule stages. Sysadmins may have `acting_within_tenant=None`.
 The auth pipeline (`AuthHandler._resolve_tenant_by_id` / `_resolve_active_tenant`) also skips the `UserTenantRoleEntity`
