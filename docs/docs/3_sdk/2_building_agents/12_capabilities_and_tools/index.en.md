@@ -106,11 +106,16 @@ tool needs.
 
 The runner publishes the loop's form with the blueprint's tools as options, so profiles get limits (decisions and tool
 calls), a list of disabled tools, and per-tool approvals (never, every call, once per answer, once per conversation).
-Approval is asked as a yes/no confirmation in the chat; a declined tool is withdrawn for the rest of the answer. Only
-tools actually offered can run: a call to a disabled tool, a tool whose toggle is off, or a name the model made up goes
-back to it as an unknown tool. At a limit the model answers without tools and a notice says it stopped early. When the
-conversation and the tool schemas outgrow the input budget, earlier results and turns are condensed in place and the
-chat shows a status.
+Approval is asked as a yes/no confirmation in the chat; a declined tool is withdrawn for the rest of the answer. The run
+keeps each pending request itself and answers it once, as it asked it: the copy a chat client sends back only names the
+request, an answer to a request the run is not waiting on runs nothing, and only the user who started the run can answer
+it. The approved call records who approved it (`ToolCallApprovedEvent.approved_by`). A tool without a rule on the
+profile follows its own default, which the approval picker shows next to its name: the sandbox's `run_command` and
+`write_file` ask on every call until an admin relaxes them. Only tools actually offered can run: a call to a disabled
+tool, a tool whose toggle is off, or a name the model made up goes back to it as an unknown tool, and the same check
+runs again when an approval arrives. A tool the profile disables is not even built. At a limit the model answers without
+tools and a notice says it stopped early. When the conversation and the tool schemas outgrow the input budget, earlier
+results and turns are condensed in place and the chat shows a status.
 
 ### Events
 

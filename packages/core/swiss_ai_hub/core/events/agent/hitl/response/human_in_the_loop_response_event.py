@@ -34,6 +34,13 @@ class HumanInTheLoopResponseEvent[THitlRequestEvent: HumanInTheLoopRequestEvent]
             "for where and why the workflow paused.",
         ),
     ]
+    responded_by: Annotated[
+        str | None,
+        Field(
+            description="The id of the user who answered. Set by the server from the authenticated sender, never "
+            "taken from the client; none when no user answered.",
+        ),
+    ] = None
 
     @classmethod
     def from_raw_data(

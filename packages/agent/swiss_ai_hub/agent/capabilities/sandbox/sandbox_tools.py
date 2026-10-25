@@ -7,16 +7,18 @@ from swiss_ai_hub.core.events.agent import ChatFeature
 
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
 from swiss_ai_hub.agent.capabilities.structured_file import StructuredFile
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
-def _options(tool: str) -> dict[str, Any]:
+def _options(tool: str, default_approval: ToolApprovalPolicy = ToolApprovalPolicy.NEVER) -> dict[str, Any]:
     return {
         "label": AgentLocaleString.from_i18n_path(f"agent.sandbox.tools.{tool}.label"),
         "approval_summary": AgentLocaleString.from_i18n_path(f"agent.sandbox.tools.{tool}.approval"),
         "chat_feature": ChatFeature.CODE_INTERPRETER,
+        "default_approval": default_approval,
     }
 
 
@@ -24,7 +26,8 @@ class SandboxTools(BaseToolSpec):
     """The user's code sandbox as tools: the operations OpenWebUI's own terminal integration offers, run by the agent.
 
     Each runs in the asking user's sandbox home, in this conversation's folder, which holds the conversation's
-    attached files. Offered only while the user has Code Interpreter switched on.
+    attached files. Offered only while the user has Code Interpreter switched on. Running a command and writing a
+    file ask the user on every call unless the profile relaxes it, since a document the model read can ask for them.
     """
 
     spec_functions = [
@@ -45,7 +48,7 @@ class SandboxTools(BaseToolSpec):
     def __init__(self, context: ToolContext) -> None:
         self.context = context
 
-    @ToolOptions.of(**_options("run_command"))
+    @ToolOptions.of(**_options("run_command", default_approval=ToolApprovalPolicy.EVERY_CALL))
     async def run_command(
         self,
         command: Annotated[
@@ -136,7 +139,7 @@ class SandboxTools(BaseToolSpec):
         workspace = await self._workspace()
         return self._json(await workspace.client.read_file(workspace.path(path), start_line, end_line))
 
-    @ToolOptions.of(**_options("write_file"))
+    @ToolOptions.of(**_options("write_file", default_approval=ToolApprovalPolicy.EVERY_CALL))
     async def write_file(
         self,
         path: Annotated[str, "The file, relative to this conversation's folder or starting with ~/."],

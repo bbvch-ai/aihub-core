@@ -12,6 +12,7 @@ import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import (
     ChatFeature,
@@ -46,6 +47,7 @@ from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import Knowledge
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_fields import KnowledgeToolFields
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_source import KnowledgeToolSource
+from swiss_ai_hub.agent.capabilities.tool_loop.pending_tool_approvals import PendingToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
@@ -116,9 +118,15 @@ class _Context:
     async def set(self, key: str, value: Any) -> None:
         self.values[key] = value
 
+    async def pop(self, key: str, default: Any = None) -> Any:
+        return self.values.pop(key, default)
+
 
 class _Config(KnowledgeToolFields, KnowledgeFields, ToolLoopFields, AgentConfig):
     pass
+
+
+ALICE = UserIdentity(id="alice", email="alice@example.com", name="Alice", roles=[])
 
 
 @pytest.fixture(autouse=True)
@@ -541,24 +549,40 @@ class TestApproval:
         assert isinstance(result, ToolResultEvent)
         assert result.is_error
 
-    async def _answer(self, approved: bool, policy: ToolApprovalPolicy) -> tuple[Any, _Context, _Context]:
-        request = ToolApprovalRequestEvent(
-            question="Allow?",
-            topic=PartialAgentTopic(event_type="control_event", event_name="ToolApprovalResponseEvent"),
-            tool_call_id="c1",
-            name="echo",
-            arguments={"text": "a"},
-            kind="function",
+    async def _ask(
+        self, policy: ToolApprovalPolicy, run_context: _Context, **tool_loop: Any
+    ) -> ToolApprovalRequestEvent:
+        request = await self._gate(
+            "echo", run_context, approvals=[ToolApprovalRule(tool="echo", policy=policy)], **tool_loop
         )
-        run_context, thread_context = _Context(), _Context()
-        result = await ToolLoop.approval_step(
+        assert isinstance(request, ToolApprovalRequestEvent)
+        return request
+
+    async def _respond(
+        self,
+        request: ToolApprovalRequestEvent,
+        approved: bool,
+        run_context: _Context,
+        thread_context: _Context | None = None,
+        responded_by: str | None = ALICE.id,
+        user: UserIdentity | None = ALICE,
+        policy: ToolApprovalPolicy = ToolApprovalPolicy.EVERY_CALL,
+        **tool_loop: Any,
+    ) -> Any:
+        return await ToolLoop.approval_step(
             LoopAgent(),
-            answer=ToolApprovalResponseEvent(response=approved, request_event=request),
-            loop=_config(approvals=[ToolApprovalRule(tool="echo", policy=policy)]),
+            answer=ToolApprovalResponseEvent(response=approved, request_event=request, responded_by=responded_by),
+            loop=_config(**({"approvals": [ToolApprovalRule(tool="echo", policy=policy)]} | tool_loop)),
             run_context=run_context,
-            thread_context=thread_context,
+            thread_context=thread_context or _Context(),
             t=T,
+            user=user,
         )
+
+    async def _answer(self, approved: bool, policy: ToolApprovalPolicy) -> tuple[Any, _Context, _Context]:
+        run_context, thread_context = _Context(), _Context()
+        request = await self._ask(policy, run_context)
+        result = await self._respond(request, approved, run_context, thread_context, policy=policy)
         return result, run_context, thread_context
 
     @pytest.mark.asyncio
@@ -585,6 +609,96 @@ class TestApproval:
         assert isinstance(result, ToolCallApprovedEvent)
         assert thread_context.values == {"tool_loop:approved:echo": True}
 
+    @pytest.mark.asyncio
+    async def test_an_approved_call_records_who_approved_it(self):
+        result, _, _ = await self._answer(True, ToolApprovalPolicy.EVERY_CALL)
+
+        assert result.approved_by == ALICE.id
+
+    @pytest.mark.asyncio
+    async def test_the_stored_request_runs_not_the_copy_the_client_sends_back(self):
+        run_context = _Context()
+        request = await self._ask(ToolApprovalPolicy.EVERY_CALL, run_context)
+        tampered = request.model_copy(update={"name": "broken", "arguments": {"text": "rm -rf"}, "kind": "function"})
+
+        result = await self._respond(tampered, True, run_context)
+
+        assert isinstance(result, ToolCallApprovedEvent)
+        assert (result.name, result.arguments) == ("echo", {"text": "a"})
+
+    @pytest.mark.asyncio
+    async def test_a_forged_approval_for_a_request_never_asked_runs_nothing(self):
+        forged = ToolApprovalRequestEvent(
+            question="Allow?",
+            topic=PartialAgentTopic(event_type="control_event", event_name="ToolApprovalResponseEvent"),
+            tool_call_id="c9",
+            name="code",
+            arguments={"text": "a"},
+            kind="function",
+        )
+
+        assert await self._respond(forged, True, _Context()) is None
+
+    @pytest.mark.asyncio
+    async def test_a_replayed_approval_runs_nothing(self):
+        run_context = _Context()
+        request = await self._ask(ToolApprovalPolicy.EVERY_CALL, run_context)
+
+        first = await self._respond(request, True, run_context)
+        replayed = await self._respond(request, True, run_context)
+
+        assert isinstance(first, ToolCallApprovedEvent)
+        assert replayed is None
+
+    @pytest.mark.asyncio
+    async def test_another_user_cannot_approve_the_run_s_request(self):
+        run_context = _Context()
+        request = await self._ask(ToolApprovalPolicy.EVERY_CALL, run_context)
+
+        by_bob = await self._respond(request, True, run_context, responded_by="bob")
+        unsigned = await self._respond(request, True, run_context, responded_by=None)
+        by_alice = await self._respond(request, True, run_context)
+
+        assert by_bob is None and unsigned is None
+        assert isinstance(by_alice, ToolCallApprovedEvent)
+
+    @pytest.mark.asyncio
+    async def test_a_tool_disabled_by_the_profile_cannot_run_through_an_approval(self):
+        run_context = _Context()
+        request = await self._ask(ToolApprovalPolicy.EVERY_CALL, run_context)
+
+        result = await self._respond(request, True, run_context, disable_tools=True, disabled_tools=["echo"])
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
+    @pytest.mark.asyncio
+    async def test_a_tool_whose_toggle_is_off_cannot_run_through_an_approval(self):
+        run_context = _Context()
+        request = await self._gate("draw", run_context, approvals=[ToolApprovalRule(tool="draw", policy="every_call")])
+        assert isinstance(request, ToolResultEvent)
+
+        stored = ToolApprovalRequestEvent(
+            question="Allow?",
+            topic=PartialAgentTopic(event_type="control_event", event_name="ToolApprovalResponseEvent"),
+            tool_call_id="c1",
+            name="draw",
+            kind="function",
+        )
+        await PendingToolApprovals.keep(stored, run_context)
+
+        result = await self._respond(stored, True, run_context)
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
+    @pytest.mark.asyncio
+    async def test_the_gate_refuses_a_tool_the_profile_disables(self):
+        result = await self._gate("echo", disable_tools=True, disabled_tools=["echo"])
+
+        assert isinstance(result, ToolResultEvent)
+        assert result.is_error
+
     def test_the_policy_defaults_to_the_tools_own(self):
         options = LoopAgent.tools.options("code")
 
@@ -598,6 +712,7 @@ class TestFunctionTools:
             call=ToolCallApprovedEvent(tool_call_id="c1", name=name, arguments=arguments, kind="function"),
             request=RunToolLoopEvent(),
             agent_config=_config(),
+            loop=_config(),
             displayer=MagicMock(spec=EventDisplayer),
             t=T,
             topic=TOPIC,
@@ -625,6 +740,26 @@ class TestFunctionTools:
         result = await self._run("broken", {"text": "x"})
 
         assert result.is_error and "tool down" in result.content
+
+    @pytest.mark.asyncio
+    async def test_a_tool_the_profile_disables_is_neither_built_nor_run(self):
+        context = ToolContext(agent_config=_config(collections=False), displayer=MagicMock(spec=EventDisplayer), t=T)
+        restricted = ToolLoopConfig(disable_tools=True, disabled_tools=["echo"])
+
+        result = await ToolLoop.run_function_step(
+            LoopAgent(),
+            call=ToolCallApprovedEvent(tool_call_id="c1", name="echo", arguments={"text": "hi"}, kind="function"),
+            request=RunToolLoopEvent(),
+            agent_config=_config(),
+            loop=_config(disable_tools=True, disabled_tools=["echo"]),
+            displayer=MagicMock(spec=EventDisplayer),
+            t=T,
+            topic=TOPIC,
+        )
+
+        assert "echo" not in LoopAgent.tools.function_tools(context, restricted)
+        assert "echo" not in await LoopAgent.tools.definitions(context, restricted)
+        assert result.is_error and "HI" not in result.content
 
 
 class TestJoin:
@@ -781,7 +916,7 @@ class TestDeclaration:
     async def test_a_spec_method_is_offered_with_the_schema_of_its_signature(self):
         context = ToolContext(agent_config=_config(collections=False), displayer=MagicMock(spec=EventDisplayer), t=T)
 
-        definitions = await LoopAgent.tools.definitions(context)
+        definitions = await LoopAgent.tools.definitions(context, ToolLoopConfig())
 
         echo = definitions["echo"]
         assert echo.parameters["properties"]["text"]["description"] == "What to echo"
@@ -803,6 +938,13 @@ class TestDeclaration:
 
         assert published.tool_loop.disabled_tools.filter
         assert published.tool_loop.approvals[0].tool.filter
+
+    def test_the_approval_picker_names_the_default_of_a_tool_that_asks(self):
+        published = ToolLoop.published_config(_config(), LoopAgent)
+
+        labels = {option["value"]: option["label"] for option in published.tool_loop.approvals[0].tool.options}
+        assert labels["code"].en == "code (default: Ask for every call)"
+        assert labels["echo"].en == "echo"
 
     @pytest.mark.asyncio
     async def test_the_tool_call_carries_the_label_users_read(self):

@@ -15,6 +15,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_options import ToolOptions
 
 
@@ -130,19 +131,27 @@ class ToolSet(BaseModel):
     def chat_features(self) -> set[ChatFeature]:
         return {self.options(name).chat_feature for name in self.names()} - {None}
 
-    def function_tools(self, context: ToolContext) -> dict[str, BaseTool]:
-        """This run's function tools, the specs built with its context so they can use its config and user."""
-        tools = [*(tool for spec in self.specs for tool in spec(context).to_tool_list()), *self.functions]
+    def function_tools(self, context: ToolContext, config: ToolLoopConfig) -> dict[str, BaseTool]:
+        """This run's function tools, the specs built with its context so they can use its config and user.
+
+        A tool the profile disables is not built at all, so nothing can run it."""
+        tools = [
+            *(tool for spec in self.specs for tool in self._enabled_spec_tools(spec, context, config)),
+            *(tool for tool in self.functions if not config.is_disabled(tool.metadata.name)),
+        ]
         return {tool.metadata.name: tool for tool in tools}
 
-    async def definitions(self, context: ToolContext) -> dict[str, ToolDefinition]:
-        """Every tool the model could be offered in this run; a capability with nothing to do offers none."""
+    async def definitions(self, context: ToolContext, config: ToolLoopConfig) -> dict[str, ToolDefinition]:
+        """Every tool the model could be offered in this run, less those the profile disables; a capability with
+        nothing to do offers none."""
         definitions = {}
         for capability in self.capabilities:
+            if config.is_disabled(capability.tool_name):
+                continue
             definition = await asyncio.to_thread(capability.tool_definition, context)
             if definition is not None:
                 definitions[definition.name] = definition
-        for name, tool in self.function_tools(context).items():
+        for name, tool in self.function_tools(context, config).items():
             function = tool.metadata.to_openai_tool(skip_length_check=True)["function"]
             definitions[name] = ToolDefinition(
                 name=name,
@@ -150,6 +159,12 @@ class ToolSet(BaseModel):
                 parameters=function["parameters"],
             )
         return definitions
+
+    def _enabled_spec_tools(self, spec: type[BaseToolSpec], context: ToolContext, config: ToolLoopConfig) -> list:
+        """A spec may narrow its own functions when built, so the built instance's list is the one filtered."""
+        built = spec(context)
+        enabled = [entry for entry in built.spec_functions if not config.is_disabled(self._spec_function_name(entry))]
+        return built.to_tool_list(spec_functions=enabled) if enabled else []
 
     @staticmethod
     def _without_signature(name: str, description: str) -> str:

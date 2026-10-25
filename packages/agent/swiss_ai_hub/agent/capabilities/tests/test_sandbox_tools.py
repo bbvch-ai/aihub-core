@@ -20,7 +20,11 @@ from swiss_ai_hub.agent.capabilities.sandbox import sandbox_workspace
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_workspace import SandboxWorkspace
 from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_set import ToolSet
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -279,6 +283,27 @@ class TestOffer:
 
     def test_the_universal_agent_offers_the_code_interpreter_toggle(self) -> None:
         assert ChatFeature.CODE_INTERPRETER in UniversalAgent.supported_features()
+
+    def test_running_a_command_and_writing_a_file_ask_on_every_call_by_default(self) -> None:
+        tool_set = ToolSet.of((SandboxTools,))
+
+        asking = {
+            name
+            for name in tool_set.names()
+            if ToolApprovals.policy(name, tool_set.options(name), ToolLoopConfig()) != ToolApprovalPolicy.NEVER
+        }
+
+        assert asking == {"run_command", "write_file"}
+
+    def test_a_profile_can_relax_the_default(self) -> None:
+        tool_set = ToolSet.of((SandboxTools,))
+        relaxed = ToolLoopConfig(
+            approvals=[ToolApprovalRule(tool="run_command", policy=ToolApprovalPolicy.ONCE_PER_RUN)]
+        )
+
+        policy = ToolApprovals.policy("run_command", tool_set.options("run_command"), relaxed)
+
+        assert policy == ToolApprovalPolicy.ONCE_PER_RUN
 
 
 class TestUserFiles:

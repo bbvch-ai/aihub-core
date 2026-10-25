@@ -72,6 +72,11 @@ class BaseContext:
             logger.exception(f"Error getting key '{redis_key}': {e}")
             return default
 
+    async def pop(self, key: str, default: Any | None = None) -> Any | None:
+        """Read and remove the value in one step, so two concurrent readers never both receive it."""
+        value = await self.redis.getdel(self._build_key(key))
+        return default if value is None else json.loads(value.decode())
+
     async def delete(self, key: str):
         """Remove a specific key from the store, ignoring errors if the key doesn't exist."""
         redis_key = self._build_key(key)
