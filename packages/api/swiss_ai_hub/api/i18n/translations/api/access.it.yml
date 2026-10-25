@@ -17,6 +17,10 @@ presets:
   user_all_processes:
     name: Usa tutti i processi
     description: Avvia e partecipa a ogni processo.
+  admin_process_create:
+    name: Crea processi
+    description: Crea nuove istanze di processo. Ognuna è concessa a chi la crea; da
+      combinare con «Gestisci tutti i processi» per amministrare anche quelle esistenti.
   admin_all_processes:
     name: Gestisci tutti i processi
     description: Crea, configura ed elimina ogni processo.

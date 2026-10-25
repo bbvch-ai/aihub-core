@@ -71,7 +71,7 @@ class ProcessController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_process_class(
             process_class: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ProcessClassDTO:
             """Retrieve details for a specific process class."""
@@ -84,10 +84,10 @@ class ProcessController(TenantScopedController):
         @self.router.get(route, tags=self.tags)
         async def get_process_class_instances(
             process_class: str,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.{process_class}.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.process.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[FullProcessInstanceDTO]:
-            """Retrieve all instances of a specific process class."""
+            """Retrieve the instances of a process class the user can reach."""
             instances = await ProcessService.get_process_class_instances(process_class, t)
             return [
                 instance
@@ -105,12 +105,14 @@ class ProcessController(TenantScopedController):
         async def create_process_instance(
             process_class: str,
             request: CreateProcessInstanceRequest,
-            user: Annotated[
-                UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))
-            ],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullProcessInstanceDTO:
-            """Create a new process instance from an existing process class."""
+            """Create a new process instance from an existing process class.
+
+            Guarded on the bare process root: an instance that does not exist yet cannot be named by a rule.
+            The new instance is granted to the creating tenant and user only.
+            """
             return await ProcessService.create_process_instance(process_class, request, t, user=user)
 
         return self

@@ -366,6 +366,12 @@ class AccessChecker:
         return self.access_level(permission_template) != AccessLevel.ACCESS_DENIED
 
     @staticmethod
+    def process_root_admin_rule() -> str:
+        """The bare process root that creating a process instance is guarded on. ``aihub.admin.process.>`` does
+        not match it, since ``>`` needs at least one more token."""
+        return f"{_ADMIN_PREFIX}process"
+
+    @staticmethod
     def process_user_rule(process_class: str, process_id: str) -> str:
         """Canonical user-level permission rule for a specific process instance."""
         return f"{_USER_PREFIX}process.{process_class}.{process_id}"

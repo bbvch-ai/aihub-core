@@ -83,6 +83,13 @@ when they appear. It is also the pair the knowledge "Manage" row writes, so the 
 database revokes both forms. The seeded `AIHubKnowledgeAdmin` role keeps both forms: inside a role, capped by the
 ceiling, `knowledge.>` means "every database this tenant holds".
 
+*Amended for processes:* the same holds for process instances, which also live in one collection with no tenant column.
+The ceiling carries the bare `aihub.admin.process` root instead of `aihub.admin.process.>`, creating an instance is
+guarded on that root, and `ProcessInstanceAccessGrant` grants `aihub.admin.process.<Class>.<id>` to the creating tenant
+and a `<Id>ProcessAdmin` role to the creator; deleting the instance revokes both. Instances need no subtree form, since
+nothing sits below one. `AIHubProcessAdmin` carries both the root and the wildcard, and a startup migration adds the root
+next to every existing `aihub.admin.process.>` so creating keeps working on upgrade.
+
 Getting this right per family by hand is what the family-coverage guard failed to catch, because the gap was one of
 *depth*, not of family. `test_the_derived_ceiling_permits_every_route_guard` therefore reads the guards off the real
 mounted routes via `AccessCapabilityService._route_template` and asserts the derived ceiling permits each one — the same
@@ -132,7 +139,8 @@ for anything the ceiling cannot grant, "hidden, never merely disabled".
   someone migrates them. Out of scope here, and the reason nothing breaks. The same holds for knowledge: a tenant
   configured while the ceiling still carried `aihub.admin.knowledge.>` keeps seeing every database, and a database it
   creates is covered by that wildcard, so no per-database grant is added. Unticking the databases in the tenant editor
-  is the cleanup.
+  is the cleanup. Processes likewise: a tenant holding `aihub.admin.process.>` keeps reaching every instance until
+  its wildcard is replaced with the instances it owns.
 
 - *A database created without a tenant context reaches no tenant.* A sysadmin acting outside any tenant gets no
   per-database grant, so the database appears nowhere until the sysadmin ticks it in a tenant's editor. The same applies

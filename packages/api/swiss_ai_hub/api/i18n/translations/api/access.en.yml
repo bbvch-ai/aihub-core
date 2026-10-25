@@ -17,6 +17,10 @@ presets:
   user_all_processes:
     name: Use all processes
     description: Start and participate in every process.
+  admin_process_create:
+    name: Create processes
+    description: Create new process instances. Each one is granted to its creator; pair
+      with "Manage all processes" to also administer the existing ones.
   admin_all_processes:
     name: Manage all processes
     description: Create, configure and delete every process.
