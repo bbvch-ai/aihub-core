@@ -14,4 +14,4 @@ for (const file of readdirSync(publicDir, { recursive: true })) {
     if (body) hashes.add(`'sha256-${createHash('sha256').update(body).digest('base64')}'`)
   }
 }
-process.stdout.write([...hashes].sort().join(' '))
+process.stdout.write([...hashes].sort((a, b) => a.localeCompare(b)).join(' '))
