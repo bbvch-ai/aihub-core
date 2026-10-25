@@ -897,7 +897,7 @@ services:
       - --rc-no-auth  # Only in dev!
       - --log-level=INFO
       - --config=/dev/null  # No config file: the rclone pipeline re-creates every remote from the database per run
-    ports: [5572:5572]
+    ports: [127.0.0.1:5572:5572]
     networks:
       - backend  # reached by the rclone pipeline
       - egress  # reaches the cloud providers it syncs from
@@ -957,7 +957,49 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - backup-docker
 
   # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
@@ -983,6 +1025,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -990,12 +1034,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1031,7 +1076,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.dev.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD
@@ -1039,7 +1083,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - backup-grpc
         - --port
         - '4266'
       interval: 30s
@@ -1052,8 +1096,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
@@ -1093,8 +1141,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
@@ -1126,7 +1174,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -1796,6 +1844,10 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -1827,6 +1879,20 @@ networks:
   pii-detection:
     name: pii-detection
     driver: bridge
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
+    driver: bridge
+    internal: true
 # ===================================================================
 # Named Volumes
 # ===================================================================

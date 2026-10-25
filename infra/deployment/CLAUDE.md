@@ -235,10 +235,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -248,8 +247,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -297,6 +296,15 @@ internet.
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
 outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
 the host.
+
+**Control-plane networks**: `docker-api` (traefik + docker-socket-proxy), `dagster-ui` / `backup-ui` (each Dagster
+webserver + its oauth2-proxy), `dagster` (pipeline webserver, daemon, pgbouncer, pipeline code servers), `backup`
+(backup webserver, daemon, backup-code), `backup-docker` (backup-code + `backup-docker-proxy`). The gRPC code servers
+also need `backend`/`data`/`storage`, so they bind gRPC to an alias that only exists on their control-plane network
+(`<container>-grpc`, `backup-grpc`) — the workspace files and healthchecks use that alias, never `localhost`. A new
+pipeline code server needs the same `entrypoint` override, alias and workspace entry. `backup-code` reaches Docker only
+through `backup-docker-proxy` (containers API + POST, no exec/images/volumes); a new Docker call outside
+`/containers/...` must be enabled there. Neither socket proxy runs `privileged`.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

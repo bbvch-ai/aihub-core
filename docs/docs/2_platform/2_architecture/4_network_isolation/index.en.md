@@ -10,7 +10,7 @@ privilege at the network layer.
 
 ## Network Zones
 
-The platform uses six isolated Docker networks:
+The platform uses seven isolated Docker networks for its tiers, plus the control-plane networks described below:
 
 | Network         | Purpose                              | External Access  | ICC Enabled |
 | --------------- | ------------------------------------ | ---------------- | ----------- |
@@ -37,6 +37,32 @@ The `pii-detection` network holds the `presidio-analyzer`, which receives the pe
 plus **exactly its callers** (`litellm` and `universal-agent`). Its models are baked into the image and the Hugging Face
 hub is offline at run time, so `internal: true` in non-dev stages denies it outbound internet without breaking it, and
 every request except the health probe needs the analyzer's API key.
+
+### Control-Plane Networks
+
+The operator control planes get networks of their own, so no application container shares a network with them:
+
+| Network         | Members                                                                  | Internal           |
+| --------------- | ------------------------------------------------------------------------ | ------------------ |
+| `docker-api`    | `traefik`, `docker-socket-proxy`                                         | Yes                |
+| `dagster-ui`    | `dagster-webserver`, `oauth2proxy-dagster`                               | `nightly`/`latest` |
+| `dagster`       | `dagster-webserver`, `dagster-daemon`, `pgbouncer`, the pipeline servers | Yes                |
+| `backup-ui`     | `backup-webserver`, `oauth2proxy-backup`                                 | `nightly`/`latest` |
+| `backup`        | `backup-webserver`, `backup-daemon`, `backup-code`                       | Yes                |
+| `backup-docker` | `backup-code`, `backup-docker-proxy`                                     | Yes                |
+
+- The Dagster webservers sit only on their UI network and their gRPC network, so the oauth2-proxy in front of each is
+  the only way in. The backup webserver and daemon keep their state in SQLite and need no database network at all; the
+  pipeline webserver and daemon reach their PostgreSQL storage through `pgbouncer`, which joins `dagster` for them.
+- The gRPC code servers (pipelines and `backup-code`) also sit on `backend`/`data`/`storage` for their own work, so they
+  bind their gRPC port to a network alias that exists only on `dagster` or `backup` (`<container>-grpc`, `backup-grpc`).
+  The port is not open on any other network.
+- Traefik reads container labels through `docker-socket-proxy` (read-only, containers and networks), which shares
+  `docker-api` with Traefik alone. The backup code server stops, starts and creates sibling containers through its own
+  `backup-docker-proxy`, which exposes the containers API and nothing else (no exec, images, volumes, networks or system
+  endpoints). Neither proxy runs privileged.
+- The UI networks are not internal in `dev`/`local`/`build`, where the webservers also publish a `127.0.0.1` port; their
+  only members are still the webserver and its oauth2-proxy.
 
 ## Service Network Assignments
 
@@ -65,8 +91,7 @@ Internal application and processing services:
 - **speaches**: Speech-to-text and text-to-speech
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
 - **agents**: All agent workers (rag, expert, wrapping)
-- **pipelines**: Data processing pipelines
-- **dagster-**\*: Pipeline orchestration
+- **pipelines**: Data processing pipelines (their gRPC port only on `dagster`, see above)
 - **langfuse**: AI observability
 - **otel-collector**: Telemetry aggregation
 

@@ -583,6 +583,7 @@ services:
         max-file: 2
     networks:
       - data
+      - dagster  # Dagster webserver + daemon reach their storage only through this zone
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -1185,7 +1186,49 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes: [/var/run/docker.sock:/var/run/docker.sock:ro]
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels: [traefik.enable=false]
+    networks:
+      - backup-docker
 
   # License: AGPL-3.0-or-later — own image (see LICENSES.md)
   backup-code:
@@ -1209,6 +1252,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -1216,12 +1261,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1257,7 +1303,6 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.latest.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD
@@ -1265,7 +1310,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - backup-grpc
         - --port
         - '4266'
       interval: 30s
@@ -1278,8 +1323,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
@@ -1323,6 +1372,7 @@ services:
     networks:
       - proxy
       - backend
+      - backup-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-webserver:
@@ -1359,8 +1409,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   backup-daemon:
@@ -1390,7 +1440,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -2139,6 +2189,7 @@ services:
     networks:
       - proxy
       - backend
+      - dagster-ui
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-webserver:
@@ -2178,8 +2229,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster-ui
+      - dagster
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   dagster-daemon:
@@ -2212,8 +2263,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster
 
   # ===================================================================
   # Docker Socket Proxy (Security Layer)
@@ -2228,8 +2278,6 @@ services:
     container_name: docker-socket-proxy
     image: ghcr.io/bbvch-ai/aihub-core/tecnativa/docker-socket-proxy:0.3
     restart: always
-    # Required for Docker socket access in SELinux/AppArmor environments
-    privileged: true
     healthcheck:
       test: [CMD, wget, --spider, -q, http://localhost:2375/_ping]
       interval: 10s
@@ -2262,7 +2310,7 @@ services:
         max-file: 2
     labels: [traefik.enable=false]
     networks:
-      - backend  # Only Traefik needs to access this service
+      - docker-api  # shared with Traefik only
 
   # ===================================================================
   # Traefik (Reverse Proxy)
@@ -2310,6 +2358,7 @@ services:
     networks:
       - proxy
       - backend  # Traefik routes to backend services
+      - docker-api  # reaches the Docker socket proxy for service discovery
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -3651,6 +3700,10 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h default-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -3718,7 +3771,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - default-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -3726,13 +3779,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - default-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h shared-rag-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:v0.320.1
     environment:
       PYTHONUNBUFFERED: 1
@@ -3811,7 +3871,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - shared-rag-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -3819,13 +3879,20 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - shared-rag-pipeline-grpc
   # License: Apache-2.0 — own image (see LICENSES.md)
   document_ingestion_pipeline:
     container_name: document-ingestion-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h document-ingestion-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/document_ingestion_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -3899,7 +3966,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - document-ingestion-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -3907,9 +3974,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - document-ingestion-pipeline-grpc
   # ===================================================================
   # Rclone Source Pipeline (Stage 1: cloud sources -> data lake, configured per knowledge database)
   # ===================================================================
@@ -3918,6 +3988,10 @@ services:
   rclone_pipeline:
     container_name: rclone-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h rclone-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/rclone_pipeline:latest
     depends_on:
       rclone:
@@ -3975,7 +4049,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - rclone-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -3983,9 +4057,12 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - rclone-pipeline-grpc
   # ===================================================================
   # Structured Source Pipeline (Stage 1: API records such as Jira issues -> markdown in the data lake, via dlt,
   # configured per knowledge database)
@@ -3995,6 +4072,10 @@ services:
   structured_pipeline:
     container_name: structured-pipeline
     restart: always
+    entrypoint:
+      - sh
+      - -c
+      - exec dagster api grpc -h structured-pipeline-grpc -p 4000 -m "app.$${PIPELINE_NAME}"
     image: ghcr.io/bbvch-ai/aihub-core/structured_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
@@ -4046,7 +4127,7 @@ services:
         - api
         - grpc-health-check
         - --host
-        - localhost
+        - structured-pipeline-grpc
         - --port
         - '4000'
       interval: 30s
@@ -4054,10 +4135,13 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
-      - egress  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      backend:
+      data:
+      storage:
+      egress:  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      dagster:
+        aliases:
+          - structured-pipeline-grpc
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================
@@ -4144,6 +4228,10 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4178,6 +4266,36 @@ networks:
   # The Presidio analyzer receives the personal data the platform protects: alone with its callers, no egress
   pii-detection:
     name: pii-detection
+    driver: bridge
+    internal: true
+  # Traefik and the Docker socket proxy only: no other container can query the Docker API
+  docker-api:
+    name: docker-api
+    driver: bridge
+    internal: true
+  # The Dagster webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  dagster-ui:
+    name: dagster-ui
+    driver: bridge
+    internal: true
+  # Dagster webserver, daemon, their storage (pgbouncer) and the pipeline code servers, whose gRPC binds only here
+  dagster:
+    name: dagster
+    driver: bridge
+    internal: true
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+    internal: true
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
     driver: bridge
     internal: true
 configs:

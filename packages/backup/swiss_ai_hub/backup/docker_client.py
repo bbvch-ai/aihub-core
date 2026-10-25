@@ -98,10 +98,12 @@ class DockerManager:
             return False
 
     def get_container_image(self, name: str) -> str | None:
+        """Return the image ID from the container's own inspect data, so the Docker proxy needs no images API."""
         container = self._get_container(name)
-        if container is None or container.image is None:
+        if container is None:
             return None
-        return str(container.image.tags[0]) if container.image.tags else str(container.image.id)
+        image_id: str | None = container.attrs.get("Image")
+        return image_id
 
     def get_volume_mount(self, name: str, destination: str) -> str | None:
         container = self._get_container(name)
@@ -111,19 +113,6 @@ class DockerManager:
             if mount.get("Destination") == destination:
                 return mount.get("Source")  # type: ignore[no-any-return]
         return None
-
-    def exec_in_container(
-        self,
-        name: str,
-        command: str | list[str],
-        environment: dict[str, str] | None = None,
-    ) -> tuple[int, str]:
-        container = self._get_container(name)
-        if container is None:
-            raise RuntimeError(f"Container {name} not found")
-        result = container.exec_run(command, environment=environment)
-        output = result.output.decode() if result.output else ""
-        return result.exit_code, output
 
     def copy_from_container(self, name: str, src_path: str, dst_path: Path) -> None:
         container = self._get_container(name)

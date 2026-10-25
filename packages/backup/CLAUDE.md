@@ -65,6 +65,10 @@ packages/backup/swiss_ai_hub/backup/
   `seaweedfs-`, `etcd`, `traefik`, `oauth2proxy` (Traefik + all oauth2proxy sidecars stay up so the backup Dagster UI
   remains reachable through OAuth during a backup run; note Keycloak still goes down with `postgres`, so existing
   sessions work but token refresh will fail mid-run)
+- **Docker access**: `DOCKER_HOST` points at `backup-docker-proxy`, which allows the `/containers/...` API (incl.
+  create, archive, wait, logs, delete) and nothing else. `DockerManager` must stay within that: no exec, no images API
+  (`get_container_image` reads the image ID from the container's inspect data). The proxy's `backup-` prefix keeps it
+  out of the stop/start set
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
 - **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
@@ -132,8 +136,8 @@ failing. Operators can install `pg_repack` later and the next monthly run picks 
 
 **lz4 rewrite (`FerretdbLz4RewriteHandler`)**: unlike the others it targets `postgres-ferretdb` (with the
 `MONGO_USERNAME` superuser), not the dagster DB, and it is a one-off, so it is never scheduled. It refuses to run unless
-`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in
-`documentdb_data`, 50 rows at a time by primary key:
+`default_toast_compression` is `lz4`, then rewrites the pglz rows of every collection table in `documentdb_data`, 50
+rows at a time by primary key:
 `SET document = bson_from_bytea(bson_to_bytea(document)) WHERE pg_column_compression(document) = 'pglz'`. That builds a
 new value with the same bytes, which PostgreSQL compresses with the new default (`SET document = document` would copy
 the compressed bytes unchanged). It writes DocumentDB's tables directly, not through FerretDB, so readers never see a

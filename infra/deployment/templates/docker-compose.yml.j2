@@ -717,6 +717,9 @@ services:
         max-file: 2
     networks:
       - data
+      {%- if image_tags.dagster[stage] %}
+      - dagster  # Dagster webserver + daemon reach their storage only through this zone
+      {%- endif %}
   {% endif %}
 
   # ===================================================================
@@ -1336,7 +1339,7 @@ services:
       - "--config=/dev/null"  # No config file: the rclone pipeline re-creates every remote from the database per run
     {%- if stage == 'dev' %}
     ports:
-      - "5572:5572"
+      - "127.0.0.1:5572:5572"
     {%- endif %}
     networks:
       - backend  # reached by the rclone pipeline
@@ -1404,7 +1407,51 @@ services:
   # ===================================================================
   # Independent 3-container Dagster deployment: gRPC code server, daemon,
   # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # The gRPC code server binds only to its `backup` network alias, so the
+  # webserver and daemon are its only callers; the webserver shares
+  # `backup-ui` with nothing but its oauth2-proxy. Docker access goes through
+  # a dedicated socket proxy limited to the container API.
   # ===================================================================
+
+  {{ service_license('backup-docker-proxy') }}
+  backup-docker-proxy:
+    container_name: backup-docker-proxy
+    image: "{{ global.registry_prefix }}{{ image_tags.docker_socket_proxy }}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      EVENTS: 0
+      EXEC: 0
+      IMAGES: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - backup-docker
 
   {{ service_license('backup-code') }}
   backup-code:
@@ -1434,6 +1481,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      backup-docker-proxy:
+        condition: service_healthy
     entrypoint:
       - dagster
       - api
@@ -1441,12 +1490,13 @@ services:
       - -m
       - swiss_ai_hub.backup.dagster
       - -h
-      - 0.0.0.0
+      - backup-grpc
       - -p
       - '4266'
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      DOCKER_HOST: tcp://backup-docker-proxy:2375
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
       BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
       BACKUP_POSTGRES_HOST: postgres
@@ -1482,9 +1532,8 @@ services:
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "backup-grpc", "--port", "4266"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1495,8 +1544,12 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
-      - storage
+      data:
+      storage:
+      backup-docker:
+      backup:
+        aliases:
+          - backup-grpc
 
   {%- if stage != 'dev' %}
   {{ service_license('oauth2proxy-backup') }}
@@ -1546,6 +1599,7 @@ services:
     networks:
       - proxy
       - backend
+      - backup-ui
   {%- endif %}
 
   {{ service_license('backup-webserver') }}
@@ -1593,8 +1647,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - proxy
-      - data
+      - backup-ui
+      - backup
 
   {{ service_license('backup-daemon') }}
   backup-daemon:
@@ -1634,7 +1688,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - data
+      - backup
   {%- endif %}
 
   {%- if gpu_enabled %}
@@ -2694,6 +2748,7 @@ services:
     networks:
       - proxy
       - backend
+      - dagster-ui
 
   {{ service_license('dagster-webserver') }}
   dagster-webserver:
@@ -2743,8 +2798,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster-ui
+      - dagster
 
   {{ service_license('dagster-daemon') }}
   dagster-daemon:
@@ -2785,8 +2840,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
-      - data
+      - dagster
   {%- endif %}
 
   {% if stage != 'dev' %}
@@ -2803,8 +2857,6 @@ services:
     container_name: docker-socket-proxy
     image: "{{ global.registry_prefix }}{{ image_tags.docker_socket_proxy }}"
     restart: always
-    # Required for Docker socket access in SELinux/AppArmor environments
-    privileged: true
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
       interval: 10s
@@ -2839,7 +2891,7 @@ services:
     labels:
       - "traefik.enable=false"
     networks:
-      - backend  # Only Traefik needs to access this service
+      - docker-api  # shared with Traefik only
 
   # ===================================================================
   # Traefik (Reverse Proxy)
@@ -2903,6 +2955,7 @@ services:
     networks:
       - proxy
       - backend  # Traefik routes to backend services
+      - docker-api  # reaches the Docker socket proxy for service discovery
   {%- endif %}
 
   {%- if image_tags.api[stage] %}
@@ -4422,6 +4475,7 @@ services:
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
+    entrypoint: ["sh", "-c", "exec dagster api grpc -h default-rag-pipeline-grpc -p 4000 -m \"app.$${PIPELINE_NAME}\""]
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
     environment:
       PYTHONUNBUFFERED: 1
@@ -4483,15 +4537,18 @@ services:
       NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
       NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "default-rag-pipeline-grpc", "--port", "4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - default-rag-pipeline-grpc
   {%- endif %}
 
   {%- if image_tags.shared_rag_pipeline[stage] %}
@@ -4499,6 +4556,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
+    entrypoint: ["sh", "-c", "exec dagster api grpc -h shared-rag-pipeline-grpc -p 4000 -m \"app.$${PIPELINE_NAME}\""]
     image: {{ global.registry_prefix }}{{ image_tags.shared_rag_pipeline[stage] }}
     environment:
       PYTHONUNBUFFERED: 1
@@ -4571,15 +4629,18 @@ services:
       NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
       NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "shared-rag-pipeline-grpc", "--port", "4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - shared-rag-pipeline-grpc
   {%- endif %}
 
   {%- if image_tags.document_ingestion_pipeline[stage] %}
@@ -4587,6 +4648,7 @@ services:
   document_ingestion_pipeline:
     container_name: document-ingestion-pipeline
     restart: always
+    entrypoint: ["sh", "-c", "exec dagster api grpc -h document-ingestion-pipeline-grpc -p 4000 -m \"app.$${PIPELINE_NAME}\""]
     {%- if image_tags.document_ingestion_pipeline[stage] == 'localbuild' %}
     build:
       context: ..
@@ -4660,15 +4722,18 @@ services:
       NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
       NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "document-ingestion-pipeline-grpc", "--port", "4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - document-ingestion-pipeline-grpc
   {%- endif %}
 
   {%- if image_tags.rclone_pipeline[stage] %}
@@ -4680,6 +4745,7 @@ services:
   rclone_pipeline:
     container_name: rclone-pipeline
     restart: always
+    entrypoint: ["sh", "-c", "exec dagster api grpc -h rclone-pipeline-grpc -p 4000 -m \"app.$${PIPELINE_NAME}\""]
     {%- if image_tags.rclone_pipeline[stage] == 'localbuild' %}
     build:
       context: ..
@@ -4739,15 +4805,18 @@ services:
       NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
       NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "rclone-pipeline-grpc", "--port", "4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
+      backend:
+      data:
+      storage:
+      dagster:
+        aliases:
+          - rclone-pipeline-grpc
   {%- endif %}
 
   {%- if image_tags.structured_pipeline[stage] %}
@@ -4760,6 +4829,7 @@ services:
   structured_pipeline:
     container_name: structured-pipeline
     restart: always
+    entrypoint: ["sh", "-c", "exec dagster api grpc -h structured-pipeline-grpc -p 4000 -m \"app.$${PIPELINE_NAME}\""]
     {%- if image_tags.structured_pipeline[stage] == 'localbuild' %}
     build:
       context: ..
@@ -4811,16 +4881,19 @@ services:
       NOTIFICATION_TITLE_PREFIX: "{{ notifications.title_prefix }}"
       NOTIFICATION_MIN_INTERVAL_SECONDS: {{ notifications.min_interval_seconds }}
     healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "structured-pipeline-grpc", "--port", "4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     networks:
-      - backend
-      - data
-      - storage
-      - egress  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      backend:
+      data:
+      storage:
+      egress:  # reaches the business applications it syncs from (Jira Cloud or an on-premise Data Center)
+      dagster:
+        aliases:
+          - structured-pipeline-grpc
   {%- endif %}
 
   {%- if image_tags.bot[stage] %}
@@ -4924,6 +4997,10 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - docker-api:    Traefik and the Docker socket proxy
+# - dagster-ui / backup-ui: each Dagster webserver plus only its oauth2-proxy
+# - dagster / backup:       each Dagster webserver + daemon plus the gRPC code servers they load
+# - backup-docker: The backup code server and its own Docker socket proxy
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4970,6 +5047,46 @@ networks:
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
+  {%- if stage != 'dev' %}
+  # Traefik and the Docker socket proxy only: no other container can query the Docker API
+  docker-api:
+    name: docker-api
+    driver: bridge
+    internal: true
+  {%- endif %}
+  {%- if image_tags.dagster[stage] %}
+  # The Dagster webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  dagster-ui:
+    name: dagster-ui
+    driver: bridge
+    {%- if stage not in ['dev', 'local', 'build'] %}
+    internal: true
+    {%- endif %}
+  # Dagster webserver, daemon, their storage (pgbouncer) and the pipeline code servers, whose gRPC binds only here
+  dagster:
+    name: dagster
+    driver: bridge
+    internal: true
+  {%- endif %}
+  {%- if image_tags.backup[stage] %}
+  # The backup webserver and its oauth2-proxy only. Not internal where the webserver publishes a localhost port.
+  backup-ui:
+    name: backup-ui
+    driver: bridge
+    {%- if stage not in ['dev', 'local', 'build'] %}
+    internal: true
+    {%- endif %}
+  # Backup webserver, daemon and the backup code server, whose gRPC binds only here
+  backup:
+    name: backup
+    driver: bridge
+    internal: true
+  # The backup code server and its Docker socket proxy only
+  backup-docker:
+    name: backup-docker
+    driver: bridge
+    internal: true
+  {%- endif %}
 
 {%- if stage in ['dev', 'build'] %}
 # ===================================================================
