@@ -414,8 +414,11 @@ logs here**: the playbook already tails them (via `/var/log/docker-logs/*` symli
 - Docker provider via `docker-socket-proxy` (never direct Docker socket access)
 - `local`/`build`: mkcert self-signed certs — generate with `make local-cert`
 - `nightly`/`latest`: Let's Encrypt ACME auto-renewal
-- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. LiteLLM is one of them:
-  `litellm` has no Traefik labels of its own and stays on `proxy` only for outbound internet
+- Admin tools use `oauth2proxy-{service}` sidecar between Traefik and the service for OIDC auth. LiteLLM splits its
+  host: the `litellm-api` router (priority 6000, on `litellm` itself) takes only the OpenAI-compatible inference paths
+  and the liveness probes, which LiteLLM guards with its own API keys; the `litellm-admin` catch-all (priority 1000, on
+  `oauth2proxy-litellm`) takes the UI and every management route. A new public LiteLLM endpoint goes into the
+  `litellm-api` rule, never a management route
 - The oauth2-proxy image is upstream `quay.io/oauth2-proxy/oauth2-proxy`, mirrored under the pinned tag in
   `compose-config.yml`. Our only change, the sign-in button colour, is `templates/oauth2-proxy/sign_in.html`, mounted
   via `OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR`: on a version bump, copy upstream's `pkg/app/pagewriter/sign_in.html` of the

@@ -182,9 +182,20 @@ Internal admin services (Dagster, Attu, SeaweedFS, Backup, LiteLLM) are protecte
 full OIDC login flow against Keycloak before forwarding authenticated requests to the upstream service. Only users with
 the `AIHubSysAdmin` role can access these services, and the session cookie is `Secure`.
 
-`litellm.<domain>` reaches LiteLLM only through `oauth2proxy-litellm`, so its UI and its admin API need an SSO session
-first. Applications outside the platform call models through the API's OpenAI-compatible endpoint
-(`https://<domain>/api/v1/active/openai`), never through LiteLLM directly.
+`litellm.<domain>` is split by path. The OpenAI-compatible inference routes go straight to LiteLLM, which checks the
+caller's LiteLLM API key itself: everything under `/v1/`, plus the unprefixed `/chat/completions`, `/completions`,
+`/embeddings`, `/models`, `/model/info`, `/audio/*`, `/images/*`, `/rerank`, `/v2/rerank`, `/moderations`,
+`/responses[/*]` and the liveness probes `/health/liveliness` and `/health/liveness`. Every other path on the host,
+including `/ui`, `/key/*`, `/user/*`, `/team/*`, `/model/new`, `/config/*`, `/spend/*`, `/global/*`, `/sso/*` and `/`,
+goes through `oauth2proxy-litellm` and needs an SSO session with `AIHubSysAdmin` before LiteLLM's own login.
+
+| Request                                                        | Result                                       |
+| -------------------------------------------------------------- | -------------------------------------------- |
+| `POST /v1/chat/completions` with `Authorization: Bearer <key>` | LiteLLM answers, no SSO                      |
+| `POST /chat/completions` without a key                         | `401` from LiteLLM, no SSO                   |
+| `GET /health/liveliness`                                       | `200` from LiteLLM                           |
+| `GET /ui/`                                                     | `302` to the Keycloak login                  |
+| `POST /key/generate` (even with the master key)                | `302`/`401` from OAuth2 Proxy, never LiteLLM |
 
 The image is the upstream OAuth2 Proxy release pinned in `compose-config.yml` and mirrored to the platform registry. The
 sign-in button colour comes from `infra/deployment/templates/oauth2-proxy/sign_in.html`, mounted as a custom template;

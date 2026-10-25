@@ -1764,11 +1764,27 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    # OpenAI-compatible inference paths stay public behind LiteLLM's own key auth; the UI and every admin route on
+    # the same host go through oauth2proxy-litellm (router litellm-admin, lower priority).
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (PathPrefix(`/v1/`)
+        || Path(`/chat/completions`) || Path(`/completions`) || Path(`/embeddings`)
+        || Path(`/models`) || Path(`/model/info`) || PathPrefix(`/audio/`) || PathPrefix(`/images/`)
+        || Path(`/rerank`) || Path(`/v2/rerank`) || Path(`/moderations`) || Path(`/responses`)
+        || PathPrefix(`/responses/`) || Path(`/health/liveliness`) || Path(`/health/liveness`))
+      - traefik.http.routers.litellm-api.priority=6000
+      - traefik.http.routers.litellm-api.entrypoints=websecure
+      - traefik.http.routers.litellm-api.middlewares=security-headers@file
+      - traefik.http.routers.litellm-api.service=litellm-api
+      - traefik.http.services.litellm-api.loadbalancer.server.port=4000
+      - traefik.http.routers.litellm-api.tls=true
     networks:
       - backend
       - data  # For PostgreSQL access
       - pii-detection  # Caller of the Presidio analyzer
-      - proxy  # Outbound internet to the model providers; served externally only through oauth2proxy-litellm
+      - proxy  # Traefik ingress for the inference paths, and outbound internet to the model providers
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-litellm:
     container_name: oauth2proxy-litellm
@@ -1807,11 +1823,13 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)
-      - traefik.http.routers.litellm.entrypoints=websecure
-      - traefik.http.routers.litellm.middlewares=security-headers@file
-      - traefik.http.services.litellm.loadbalancer.server.port=4183
-      - traefik.http.routers.litellm.tls=true
+      - traefik.http.routers.litellm-admin.rule=Host(`litellm.${DOMAIN}`)
+      - traefik.http.routers.litellm-admin.priority=1000
+      - traefik.http.routers.litellm-admin.entrypoints=websecure
+      - traefik.http.routers.litellm-admin.middlewares=security-headers@file
+      - traefik.http.routers.litellm-admin.service=litellm-admin
+      - traefik.http.services.litellm-admin.loadbalancer.server.port=4183
+      - traefik.http.routers.litellm-admin.tls=true
     networks:
       - proxy
       - backend
