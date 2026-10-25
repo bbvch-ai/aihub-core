@@ -2098,7 +2098,7 @@ export const getProcessStartForms = <
 /**
  * Get Process Open Forms
  *
- * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
+ * Returns the forms the user can submit to continue the walkthrough: only tasks assigned to them.
  */
 export const getProcessOpenForms = <
   TComposable extends Composable = "$fetch",
