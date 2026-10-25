@@ -2,7 +2,7 @@
 # Build context is the monorepo root (set in docker-compose template and CI),
 # so the workspace lockfile resolves deterministically and the @swiss-ai-hub/web
 # layer is reachable at ./packages/web for `extends`.
-FROM node:25-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 
 RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
  && npm install -g --ignore-scripts corepack@0.34.7
