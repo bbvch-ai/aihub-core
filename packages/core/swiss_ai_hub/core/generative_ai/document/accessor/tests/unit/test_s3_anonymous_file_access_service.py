@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from botocore.exceptions import ClientError
+from pydantic import SecretStr
 
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -260,3 +261,24 @@ def test_delete_prefix_rejects_empty_params(container: str, prefix: str):
 
     with pytest.raises(ValueError):
         service.delete_prefix(container, prefix)
+
+
+def _service_with_secrets(url_signing_secret: str, secret_key: str) -> S3AnonymousFileAccessService:
+    settings = MagicMock()
+    settings.URL_SIGNING_SECRET = SecretStr(url_signing_secret)
+    settings.SECRET_KEY = SecretStr(secret_key)
+    return S3AnonymousFileAccessService(s3_client=MagicMock(), s3_public_client=MagicMock(), s3_settings=settings)
+
+
+def test_url_signing_secret_is_returned_when_dedicated():
+    assert _service_with_secrets("link-key", "s3-key").get_url_signing_secret() == "link-key"
+
+
+@pytest.mark.parametrize(
+    ("url_signing_secret", "secret_key"),
+    [("", "s3-key"), ("s3-key", "s3-key")],
+    ids=["empty", "same-as-s3-secret"],
+)
+def test_url_signing_secret_must_be_set_and_dedicated(url_signing_secret: str, secret_key: str):
+    with pytest.raises(ValueError, match="S3_STORAGE_URL_SIGNING_SECRET"):
+        _service_with_secrets(url_signing_secret, secret_key).get_url_signing_secret()

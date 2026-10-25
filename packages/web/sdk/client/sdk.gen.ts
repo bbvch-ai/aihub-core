@@ -3539,7 +3539,10 @@ export const getDocumentUrl = <
 /**
  * Get signed file URL
  *
- * Generates a short-lived secure link to the blob resource, and returns the URL.
+ * Generates a short-lived link to a knowledge document or figure, or to a file attached to an agent.
+ *
+ * The caller needs read access to the knowledge namespace or the agent owning the object; objects of any
+ * other bucket are never signed.
  */
 export const getFileUrl = <
   TComposable extends Composable = "$fetch",
