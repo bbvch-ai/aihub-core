@@ -33,7 +33,9 @@ from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
 from swiss_ai_hub.agent.capabilities.requested_features import RequestedFeatures
 from swiss_ai_hub.agent.capabilities.tool_loop.earlier_tool_turns import EarlierToolTurns
+from swiss_ai_hub.agent.capabilities.tool_loop.pending_tool_approvals import PendingToolApprovals
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_approvals import ToolApprovals
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_availability import ToolAvailability
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_condenser import ToolLoopCondenser
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
@@ -112,7 +114,11 @@ class ToolLoop(Capability):
         if not isinstance(config, ToolLoopFields):
             return config
         names = list(dict.fromkeys(name for tool_set in blueprint.tool_sets() for name in tool_set.names()))
-        return config.model_copy(update={"tool_loop": ToolLoopConfig.as_form(names)})
+        defaults = {
+            name: ToolApprovals.policy(name, blueprint.tool_set_offering(name).options(name), ToolLoopConfig())
+            for name in names
+        }
+        return config.model_copy(update={"tool_loop": ToolLoopConfig.as_form(names, defaults)})
 
     @staticmethod
     @step(
@@ -253,22 +259,21 @@ class ToolLoop(Capability):
         thread_context: ThreadContext,
         t: LocaleHandler,
     ) -> ToolCallApprovedEvent | ToolApprovalRequestEvent | ToolResultEvent:
-        """Let the call through, or ask the user first when the tool's approval policy says so."""
+        """Let the call through, or ask the user first when the tool's approval policy says so.
+
+        The request is kept in the run's context, since the answer only names it."""
         tool_set = type(agent).tool_set_offering(call.name)
         # Only an offered tool carries its schema; a disabled, toggled-off or other set's tool must not run.
-        if tool_set is None or call.json_schema is None:
-            return ToolResultEvent(
-                tool_call_id=call.tool_call_id,
-                name=call.name or "",
-                content=t("agent.tool_loop.prompt.unknown_tool", tool=call.name),
-                is_error=True,
-            )
+        if call.json_schema is None or not await ToolAvailability.allows(
+            call.name or "", tool_set, loop.tool_loop, run_context, type(agent)
+        ):
+            return ToolLoop._unavailable(call.tool_call_id, call.name or "", t)
         options = tool_set.options(call.name)
         cite_sources = await run_context.get(CITE_SOURCES_KEY, True)
         arguments = call.parameters or {}
         if await ToolApprovals.needs_approval(call.name, options, loop.tool_loop, run_context, thread_context):
             summary = options.summary_in(arguments, t.locale)
-            return ToolApprovalRequestEvent(
+            request = ToolApprovalRequestEvent(
                 question=t(
                     "agent.tool_loop.approval.question" if summary else "agent.tool_loop.approval.question_plain",
                     tool=options.label_in(call.name, t.locale),
@@ -284,6 +289,8 @@ class ToolLoop(Capability):
                 kind=tool_set.kind(call.name),
                 cite_sources=cite_sources,
             )
+            await PendingToolApprovals.keep(request, run_context)
+            return request
         return ToolCallApprovedEvent(
             tool_call_id=call.tool_call_id,
             name=call.name,
@@ -305,9 +312,20 @@ class ToolLoop(Capability):
         run_context: RunContext,
         thread_context: ThreadContext,
         t: LocaleHandler,
-    ) -> ToolCallApprovedEvent | ToolResultEvent:
-        """Run an approved call, remembering the approval as the policy allows; tell the model about a declined one."""
-        request = answer.request_event
+        user: UserIdentity | None = None,
+    ) -> ToolCallApprovedEvent | ToolResultEvent | None:
+        """Run an approved call, remembering the approval as the policy allows; tell the model about a declined one.
+
+        Only a request this run is still waiting on is answered, as it was stored, and only by the run's user. The
+        copy the client sends back merely names it. The tool is checked again, since the profile governs what runs,
+        not the answer. Anything else is dropped without an event."""
+        if user is not None and answer.responded_by != user.id:
+            logger.warning("[tool-loop] Dropped an approval not given by the run's user")
+            return None
+        request = await PendingToolApprovals.take(answer.request_event.event_id, run_context)
+        if request is None:
+            logger.warning("[tool-loop] Dropped an approval for a request the run is not waiting on")
+            return None
         if not answer.response:
             await run_context.set(DECLINED_KEY.format(tool=request.name), True)
             return ToolResultEvent(
@@ -317,6 +335,8 @@ class ToolLoop(Capability):
                 is_error=True,
             )
         tool_set = type(agent).tool_set_offering(request.name)
+        if not await ToolAvailability.allows(request.name, tool_set, loop.tool_loop, run_context, type(agent)):
+            return ToolLoop._unavailable(request.tool_call_id, request.name, t)
         await ToolApprovals.remember(
             request.name, tool_set.options(request.name), loop.tool_loop, run_context, thread_context
         )
@@ -326,6 +346,7 @@ class ToolLoop(Capability):
             arguments=request.arguments,
             kind=tool_set.kind(request.name),
             cite_sources=request.cite_sources,
+            approved_by=answer.responded_by,
         )
 
     @staticmethod
@@ -340,6 +361,7 @@ class ToolLoop(Capability):
         call: ToolCallApprovedEvent,
         request: RunToolLoopEvent,
         agent_config: AgentConfig,
+        loop: ToolLoopFields,
         displayer: EventDisplayer,
         t: LocaleHandler,
         topic: AgentInstanceTopic,
@@ -348,7 +370,10 @@ class ToolLoop(Capability):
     ) -> ToolResultEvent:
         """Run a LlamaIndex tool; a failure goes back to the model as an error result rather than ending the run."""
         context = ToolLoop._context(request, agent_config, displayer, t, user, access, topic)
-        tool = type(agent).tool_set_offering(call.name).function_tools(context)[call.name]
+        tool_set = type(agent).tool_set_offering(call.name)
+        tool = tool_set.function_tools(context, loop.tool_loop).get(call.name) if tool_set else None
+        if tool is None:
+            return ToolLoop._unavailable(call.tool_call_id, call.name, t)
         try:
             output = await tool.acall(**call.arguments)
         except TypeError as error:
@@ -439,16 +464,16 @@ class ToolLoop(Capability):
         own narrowing is the blueprint's choice and stays unmentioned."""
         blueprint = type(agent)
         tool_set = blueprint.tool_set(request.loop)
-        definitions = await tool_set.definitions(context)
-        offered = []
+        requested = [name for name in tool_set.names() if request.tools is None or name in request.tools]
         withheld = WithheldTools()
-        for name, definition in definitions.items():
-            if request.tools is not None and name not in request.tools:
+        for name in requested:
+            if loop.tool_loop.is_disabled(name):
+                withheld.add_by_profile(tool_set.options(name).label_in(name, context.t.locale))
+        offered = []
+        for name, definition in (await tool_set.definitions(context, loop.tool_loop)).items():
+            if name not in requested:
                 continue
             options = tool_set.options(name)
-            if loop.tool_loop.is_disabled(name):
-                withheld.add_by_profile(options.label_in(name, context.t.locale))
-                continue
             if options.chat_feature and not await RequestedFeatures.contains(
                 options.chat_feature, run_context, blueprint
             ):
@@ -456,6 +481,15 @@ class ToolLoop(Capability):
                 continue
             offered.append(definition)
         return offered, withheld
+
+    @staticmethod
+    def _unavailable(tool_call_id: str, name: str, t: LocaleHandler) -> ToolResultEvent:
+        return ToolResultEvent(
+            tool_call_id=tool_call_id,
+            name=name,
+            content=t("agent.tool_loop.prompt.unknown_tool", tool=name),
+            is_error=True,
+        )
 
     @staticmethod
     def _context(

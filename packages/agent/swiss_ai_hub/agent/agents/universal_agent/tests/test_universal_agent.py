@@ -21,6 +21,7 @@ from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent import UniversalAgent
 from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import UniversalAgentConfig
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 T = AgentLocaleHandler("en")
@@ -148,7 +149,7 @@ def test_a_profile_saved_before_the_document_tools_is_offered_none_of_them():
 
     context = _tool_context(_config())
 
-    assert not DOCUMENT_TOOLS & set(UniversalAgent.tools.function_tools(context))
+    assert not DOCUMENT_TOOLS & set(UniversalAgent.tools.function_tools(context, ToolLoopConfig()))
     assert RecordExtraction.tool_definition(context) is None
 
 
@@ -157,7 +158,7 @@ def test_a_profile_with_the_document_tools_on_offers_them():
 
     context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
 
-    assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context))
+    assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context, ToolLoopConfig()))
 
 
 @pytest.mark.asyncio

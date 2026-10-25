@@ -361,8 +361,13 @@ only, so the calls and results behind each answer are kept per thread (`EarlierT
 the question and how often it was asked, the last five; an answer without tools drops its entry) and put back in front
 of that answer when the loop starts on a later turn; without them a model asked again about an attached file answers
 from its earlier wording instead of reading it. Approval policies: never, every call, once per run, once per
-conversation (remembered per tool); `approve_every_call` never lets one carry over. At the limits the model answers
-without tools and a fixed notice says it stopped early. The answering turn streams
+conversation (remembered per tool); `approve_every_call` never lets one carry over. `gate_step` keeps each request in
+the run context (`PendingToolApprovals`, by request id) and `approval_step` takes it back out, so only the stored
+request runs, once, never the copy the client returns; it also requires `responded_by` (stamped by the distributor) to
+be the run's user, and re-checks `ToolAvailability` (declared, not disabled, toggle on), as `gate_step` does. A tool the
+profile disables is never built (`ToolSet.function_tools(context, config)`). `run_command` and `write_file` default to
+`EVERY_CALL`; the approval picker labels tools by their non-`never` default. At the limits the model answers without
+tools and a fixed notice says it stopped early. The answering turn streams
 (`EventDisplayer.display_llm_stream(..., tools=...)`); text streamed before a tool call moves into a collapsed thought.
 Results are capped only by `max_result_tokens`. When the conversation and the tool schemas outgrow
 `ConversationFields.input_budget`, `start_step`/`join_step` set `ToolLoopState.needs_condensing`, and `condense_step`

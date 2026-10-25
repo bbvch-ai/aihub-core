@@ -80,6 +80,9 @@ config:
     help: Strumenti che questo agente non offre mai.
   approval_tool:
     label: Strumento
+    help: Uno strumento senza regola qui segue la propria impostazione predefinita,
+      indicata accanto al nome quando chiede conferma.
+    with_default: '%{tool} (predefinito: %{policy})'
   approval_policy:
     label: Approvazione
   policies:

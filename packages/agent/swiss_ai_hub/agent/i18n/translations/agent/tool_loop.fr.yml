@@ -81,6 +81,9 @@ config:
     help: Outils que cet agent ne propose jamais.
   approval_tool:
     label: Outil
+    help: Un outil sans règle ici suit son propre réglage par défaut, indiqué à côté
+      de son nom lorsqu'il demande une confirmation.
+    with_default: '%{tool} (par défaut : %{policy})'
   approval_policy:
     label: Autorisation
   policies:

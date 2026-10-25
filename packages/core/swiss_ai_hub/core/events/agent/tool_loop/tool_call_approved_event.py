@@ -25,3 +25,6 @@ class ToolCallApprovedEvent(ControlAndDisplayEvent):
         Literal["function", "capability"], Field(description="Whether the loop runs it or a capability does.")
     ]
     cite_sources: Annotated[bool, Field(description="Whether the tool tells the model to cite what it returns.")] = True
+    approved_by: Annotated[
+        str | None, Field(description="The id of the user who approved the call; none when it needed no approval.")
+    ] = None
