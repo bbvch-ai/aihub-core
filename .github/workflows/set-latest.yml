@@ -47,6 +47,8 @@ on:
       source_tag:
         description: Source tag to copy
         required: true
+permissions:
+  contents: read
 jobs:
   # ---------------------------------------------------------------------------
   # Discover which images to retag by parsing compose-config.yml
