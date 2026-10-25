@@ -79,6 +79,7 @@ def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop
         "list_knowledge_documents",
         "search_knowledge_content",
         "read_knowledge_document",
+        "rank_knowledge_documents",
         "select_knowledge_documents",
     ]
 

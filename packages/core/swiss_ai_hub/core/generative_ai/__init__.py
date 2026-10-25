@@ -106,6 +106,14 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import (
         KnowledgeDocumentSummary,
     )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_match import KnowledgeSemanticMatch
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_passage import (
+        KnowledgeSemanticPassage,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search import KnowledgeSemanticSearch
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_result import (
+        KnowledgeSemanticSearchResult,
+    )
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
     from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
@@ -194,6 +202,10 @@ __all__ = [
     "KnowledgeContentSearchLimits",
     "KnowledgeContentSearchResult",
     "KnowledgeContentSearchTimeoutError",
+    "KnowledgeSemanticMatch",
+    "KnowledgeSemanticPassage",
+    "KnowledgeSemanticSearch",
+    "KnowledgeSemanticSearchResult",
     "DocumentExtractionResult",
     "ExtractedRecord",
     "InvalidRecordSchemaError",
@@ -321,6 +333,10 @@ _LAZY_IMPORTS = {
     "KnowledgeContentSearchLimits": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits",
     "KnowledgeContentSearchResult": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result",
     "KnowledgeContentSearchTimeoutError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error",
+    "KnowledgeSemanticMatch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_match",
+    "KnowledgeSemanticPassage": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_passage",
+    "KnowledgeSemanticSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search",
+    "KnowledgeSemanticSearchResult": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_result",
     "DocumentExtractionResult": "swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result",
     "ExtractedRecord": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "InvalidRecordSchemaError": "swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error",

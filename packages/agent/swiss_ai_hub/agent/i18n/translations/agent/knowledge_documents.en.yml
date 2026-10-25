@@ -9,7 +9,14 @@ config:
     help: Only documents whose path in their collection matches this pattern, e.g.
       invoices/2025/** or **/*.pdf. Applies to the document tools only, not to the
       knowledge search. Leave empty for every document.
+  semantic_search:
+    label: Rank Documents by Meaning
+    help: Also let the model rank the documents within the path filter by meaning,
+      so it finds documents written in other words or another language than the request.
 tools:
+  rank_knowledge_documents:
+    label: Rank Knowledge Documents
+    approval: Rank the knowledge documents by how closely they match "{query}"
   list_knowledge_documents:
     label: List Knowledge Documents
     approval: List the knowledge documents matching {path_glob}

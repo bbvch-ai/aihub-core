@@ -26,6 +26,13 @@ class KnowledgeDocumentConfig(Form):
         bool,
         Field(description="Whether `#` references only pick among the configured collections instead of adding some."),
     ] = False
+    semantic_search: Annotated[
+        bool | Checkbox,
+        Field(
+            description="Also let the model rank the documents within the path filter by meaning (vector search "
+            "grouped by document), which finds documents that do not use the request's words."
+        ),
+    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
@@ -35,6 +42,14 @@ class KnowledgeDocumentConfig(Form):
                 help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.help"),
             ),
             path_glob=cls.path_glob_input(),
+            semantic_search=cls.semantic_search_input(),
+        )
+
+    @staticmethod
+    def semantic_search_input() -> Checkbox:
+        return Checkbox(
+            label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.semantic_search.label"),
+            help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.semantic_search.help"),
         )
 
     @staticmethod

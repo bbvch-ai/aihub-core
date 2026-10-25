@@ -77,7 +77,13 @@ class KnowledgeExtractionAgent(Agent):
         instructions = agent_config.instructions.in_locale(event.locale) if agent_config.instructions else None
         pending = await PendingExtraction.load(thread)
         history = DiscoveryPrompt.history(
-            event.messages, scope, instructions, agent_config.number_of_input_tokens, t, pending
+            event.messages,
+            scope,
+            instructions,
+            agent_config.number_of_input_tokens,
+            t,
+            pending,
+            semantic=agent_config.knowledge_documents.semantic_search is True,
         )
         return Conversation.contextualize(history=history, message=event)
 

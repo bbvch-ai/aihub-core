@@ -9,7 +9,15 @@ config:
     help: Nur Dokumente, deren Pfad in ihrer Sammlung diesem Muster entspricht, z.
       B. invoices/2025/** oder **/*.pdf. Gilt nur für die Dokumentwerkzeuge, nicht
       für die Wissenssuche. Leer lassen für alle Dokumente.
+  semantic_search:
+    label: Dokumente nach Bedeutung ordnen
+    help: Das Modell darf die Dokumente innerhalb des Pfadfilters zusätzlich nach
+      Bedeutung ordnen und findet so Dokumente, die andere Wörter oder eine andere
+      Sprache als die Anfrage verwenden.
 tools:
+  rank_knowledge_documents:
+    label: Wissensdokumente ordnen
+    approval: Die Wissensdokumente danach ordnen, wie gut sie zu «{query}» passen
   list_knowledge_documents:
     label: Wissensdokumente auflisten
     approval: Die Wissensdokumente auflisten, die {path_glob} entsprechen

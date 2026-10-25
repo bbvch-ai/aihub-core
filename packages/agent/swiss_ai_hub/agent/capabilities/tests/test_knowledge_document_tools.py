@@ -17,6 +17,9 @@ from swiss_ai_hub.core.generative_ai import (
     KnowledgeDocumentNotFoundError,
     KnowledgeDocumentPendingError,
     KnowledgeDocumentSummary,
+    KnowledgeSemanticMatch,
+    KnowledgeSemanticPassage,
+    KnowledgeSemanticSearchResult,
 )
 from swiss_ai_hub.core.i18n import LocaleString
 
@@ -30,6 +33,7 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
 )
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import (
     LISTING_PAGE_SIZE,
+    RANK_KNOWLEDGE_DOCUMENTS_TOOL,
     READ_CHARACTERS,
     KnowledgeDocumentTools,
 )
@@ -167,6 +171,57 @@ async def test_a_search_without_matches_suggests_other_queries():
         text = await _tools().search_knowledge_content(query="Umbrella Corp")
 
     assert text.startswith("No document contains this.")
+
+
+def _semantic_config() -> DocumentToolsConfig:
+    return DocumentToolsConfig(
+        agent_id="documents",
+        name=LocaleString(en="Documents"),
+        description=LocaleString(en="Documents fixture"),
+        knowledge_documents=KnowledgeDocumentConfig(enabled=True, semantic_search=True),
+    )
+
+
+def test_ranking_by_meaning_is_offered_only_when_the_profile_enables_it():
+    names = {tool.metadata.name for tool in _tools(_semantic_config()).to_tool_list()}
+
+    assert RANK_KNOWLEDGE_DOCUMENTS_TOOL in names
+    assert RANK_KNOWLEDGE_DOCUMENTS_TOOL not in {tool.metadata.name for tool in _tools().to_tool_list()}
+
+
+def _ranked(path: str, score: float, *passages: str) -> KnowledgeSemanticMatch:
+    return KnowledgeSemanticMatch(
+        summary=_summary(path),
+        score=score,
+        passages=[KnowledgeSemanticPassage(text=text, score=score) for text in passages],
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_ranking_applies_the_profiles_glob_next_to_the_models_and_shows_passages_on_one_line():
+    result = KnowledgeSemanticSearchResult(
+        matches=[_ranked("invoices/2025/acme.pdf", 0.61, "| Haftung |\n| --- |\nbeschränkt auf  CHF 50'000", "x", "y")],
+        documents_in_scope=40,
+        next_offset=15,
+    )
+    search = AsyncMock(return_value=result)
+    with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeSemanticSearch.search", search):
+        text = await _tools(_semantic_config()).rank_knowledge_documents(query="liability cap", path_glob="**/2025/**")
+
+    assert search.await_args.kwargs["path_globs"] == ["invoices/**", "**/2025/**"]
+    assert text.startswith("Documents 1-1 of 40 in scope, most similar first; more with offset=15.")
+    assert "invoices-2025-acme.pdf | finance/invoices | invoices/2025/acme.pdf | - | 0.61" in text
+    assert "  > Haftung beschränkt auf CHF 50'000" in text
+    assert "  > y" not in text
+
+
+@pytest.mark.asyncio
+async def test_a_ranking_past_its_end_says_so():
+    search = AsyncMock(return_value=KnowledgeSemanticSearchResult(matches=[], documents_in_scope=7, next_offset=None))
+    with patch(SCOPE, AsyncMock(return_value=_scope())), patch(f"{TOOLS}.KnowledgeSemanticSearch.search", search):
+        text = await _tools(_semantic_config()).rank_knowledge_documents(query="contract", offset=15)
+
+    assert text.startswith("No ranked documents at offset 15")
 
 
 def _document(path: str, start: int, text_length: int) -> KnowledgeDocument:

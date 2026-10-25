@@ -45,7 +45,10 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 every_readable_collection=False, sources=[KnowledgeToolSource.as_form()]
             ),
             knowledge_documents=KnowledgeDocumentConfig(
-                enabled=True, narrow_references=True, path_glob=KnowledgeDocumentConfig.path_glob_input()
+                enabled=True,
+                narrow_references=True,
+                path_glob=KnowledgeDocumentConfig.path_glob_input(),
+                semantic_search=KnowledgeDocumentConfig.semantic_search_input(),
             ),
             **cls.conversation_form_elements(),
             **cls.record_extraction_form_elements(),

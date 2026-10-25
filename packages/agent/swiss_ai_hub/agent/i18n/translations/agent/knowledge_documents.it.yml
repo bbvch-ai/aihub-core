@@ -9,7 +9,15 @@ config:
     help: Solo i documenti il cui percorso nella raccolta corrisponde a questo modello,
       ad es. invoices/2025/** o **/*.pdf. Vale solo per gli strumenti dei documenti,
       non per la ricerca nella conoscenza. Lasciare vuoto per tutti i documenti.
+  semantic_search:
+    label: Ordina i documenti per significato
+    help: Il modello può anche ordinare per significato i documenti del filtro dei
+      percorsi, e trova così documenti scritti con altre parole o in un'altra lingua
+      rispetto alla richiesta.
 tools:
+  rank_knowledge_documents:
+    label: Ordina documenti di conoscenza
+    approval: Ordinare i documenti di conoscenza secondo quanto corrispondono a «{query}»
   list_knowledge_documents:
     label: Elenca documenti di conoscenza
     approval: Elencare i documenti di conoscenza che corrispondono a {path_glob}

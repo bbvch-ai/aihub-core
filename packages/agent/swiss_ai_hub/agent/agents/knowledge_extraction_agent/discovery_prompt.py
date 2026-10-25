@@ -14,7 +14,9 @@ class DiscoveryPrompt:
     run's scope, ahead of the client's own, and earlier tables replaced by a line.
 
     The scope is spelled out because tool descriptions cannot change per run; a model that does not know the glob
-    guesses paths outside it and reads the empty results as "no such document".
+    guesses paths outside it and reads the empty results as "no such document". With semantic search the model is told
+    to rank first and judge documents, not rows: lexical searches cannot settle a condition on the rows, and models
+    that tried spent the whole loop on it.
     """
 
     @staticmethod
@@ -25,9 +27,11 @@ class DiscoveryPrompt:
         number_of_input_tokens: int,
         t: LocaleHandler,
         pending: PendingExtraction | None = None,
+        semantic: bool = False,
     ) -> list[ChatMessage]:
+        key = "instructions_semantic" if semantic else "instructions"
         instructions = [
-            t("agent.knowledge_extraction_agent.prompt.instructions", scope=scope.describe()),
+            t(f"agent.knowledge_extraction_agent.prompt.{key}", scope=scope.describe()),
             *([DiscoveryPrompt._pending(pending, t)] if pending else []),
             *([profile_instructions] if profile_instructions else []),
         ]

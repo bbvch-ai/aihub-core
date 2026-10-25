@@ -151,6 +151,7 @@ def test_the_blueprint_validates_and_offers_the_document_tools_and_the_selection
         "list_knowledge_documents",
         "search_knowledge_content",
         "read_knowledge_document",
+        "rank_knowledge_documents",
         SELECT,
         CONTINUE_EXTRACTION_TOOL,
     ]
@@ -183,6 +184,25 @@ async def test_the_instructions_name_the_scope_ahead_of_the_clients_prompt_and_e
     assert "finance/invoices (Finance); only paths matching 'invoices/**'" in head
     assert head.index("select_knowledge_documents") < head.index("Client prompt.")
     assert request.history[2].content == "[A table of 7 extracted rows was shown here.]\n\nSummary"
+
+
+@pytest.mark.asyncio
+async def test_with_semantic_search_the_model_is_told_to_rank_first_and_judge_documents_not_rows():
+    from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
+
+    config = _config(knowledge_documents=KnowledgeDocumentConfig(enabled=True, semantic_search=True))
+    with patch(SCOPE_OF, return_value=_scope()):
+        request = await KnowledgeExtractionAgent().contextualize_step(
+            _event(ChatMessage(role=MessageRole.USER, content="Liability caps")),
+            agent_config=config,
+            t=T,
+            thread=_Thread(),
+        )
+
+    head = request.history[0].content
+    assert head.index("rank_knowledge_documents") < head.index("select_knowledge_documents")
+    assert "Relevance is about the document, never about its rows" in head
+    assert "only paths matching 'invoices/**'" in head
 
 
 @pytest.mark.asyncio
