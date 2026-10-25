@@ -208,6 +208,7 @@ DOCKER_LICENSE_ALIASES = {
     "oauth2proxy-dagster": "oauth2-proxy",
     "backup-webserver": "dagster",
     "backup-daemon": "dagster",
+    "backup-docker-proxy": "docker-socket-proxy",
     "otel-collector": "opentelemetry-collector-contrib",
     "openwebui-init": "postgres",
     "keycloak-config": "keycloak-config-cli",
