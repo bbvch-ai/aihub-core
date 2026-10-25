@@ -9,11 +9,8 @@ enable_logging()
 
 runner = BotRunner()
 
-# Bot endpoints are not directly reachable by end users — they process Bot Framework activities
-# whose authenticity is verified by `RoutesService.get_adapter()` against per-endpoint credentials
-# stored in MongoDB. The `auth` handler on each controller is therefore only a safety net for any
-# accidental external exposure; `KeycloakAuthHandler` is the right fail-closed choice there (it
-# rejects any request without a valid platform JWT).
+# Activity routes verify the Azure Bot Service token themselves (`RoutesService.process_activity`); no route depends
+# on `auth`, which only satisfies the `Controller` constructor.
 auth = KeycloakAuthHandler()
 
 runner.mount(

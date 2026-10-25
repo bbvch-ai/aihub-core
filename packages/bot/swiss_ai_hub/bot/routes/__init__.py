@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
+    from swiss_ai_hub.bot.routes.bot_activity_authenticator import BotActivityAuthenticator
     from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_controller import BotInTheLoopController
     from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController
     from swiss_ai_hub.bot.routes.routes_service import RoutesService
 
 __all__ = [
     "AgentChatController",
+    "BotActivityAuthenticator",
     "BotInTheLoopController",
     "OpenaiChatController",
     "RoutesService",
@@ -17,6 +19,7 @@ __all__ = [
 
 _LAZY_IMPORTS: dict[str, str] = {
     "AgentChatController": "swiss_ai_hub.bot.routes.agent.agent_chat_controller",
+    "BotActivityAuthenticator": "swiss_ai_hub.bot.routes.bot_activity_authenticator",
     "BotInTheLoopController": "swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_controller",
     "OpenaiChatController": "swiss_ai_hub.bot.routes.openai.openai_chat_controller",
     "RoutesService": "swiss_ai_hub.bot.routes.routes_service",

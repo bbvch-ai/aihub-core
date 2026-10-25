@@ -5,10 +5,12 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from microsoft_agents.hosting.core import TurnContext
 from nats.aio.client import Client as NATS
+from swiss_ai_hub.core.auth import AccessChecker
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent import ExceptionEvent
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
+from swiss_ai_hub.bot.bots.chat.bot_access_denied_error import BotAccessDeniedError
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, Message
 
@@ -136,7 +138,9 @@ class AgentCompletionHandler(CompletionHandler):
         chat_messages: list[ChatMessage] = [
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
-        user = await CompletionHandler.resolve_user_identity(turn_context)
+        user = await CompletionHandler.resolve_user_identity(turn_context, path)
+        if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+            raise BotAccessDeniedError(user.id, f"agent {agent_class}/{agent_id}")
         if stream:
             return await ChatService.start_stream_chat_interaction(
                 user=user,
