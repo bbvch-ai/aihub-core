@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.form import ConfigSpecs
@@ -20,7 +21,7 @@ from swiss_ai_hub.api.runners.lifetime.process_root_rule_migration import Proces
 _MODULE = "swiss_ai_hub.api.routes.process.process_service"
 _ADMIN_RULE = "aihub.admin.process.Onboarding.q3-onboarding"
 _USER_RULE = "aihub.user.process.Onboarding.q3-onboarding"
-_ROLE_NAME = "Q3OnboardingProcessAdmin"
+_ROLE_NAME = "ProcessAdmin.Onboarding.q3-onboarding"
 
 
 @pytest.fixture
@@ -35,12 +36,88 @@ def creator_user() -> Mock:
 
 
 class TestRoleName:
+    def test_names_class_and_id_verbatim(self):
+        assert ProcessInstanceAccessGrant.role_name("Onboarding", "q3-onboarding") == _ROLE_NAME
+
     @pytest.mark.parametrize(
-        ("process_id", "expected"),
-        [("q3-onboarding", _ROLE_NAME), ("cv_review", "CvReviewProcessAdmin")],
+        ("first", "second"),
+        [
+            (("Onboarding", "q3-onboarding"), ("Offboarding", "q3-onboarding")),
+            (("Onboarding", "cv-review"), ("Onboarding", "cv_review")),
+            (("Onboarding", "cvreview"), ("Onboarding", "cv-review")),
+        ],
     )
-    def test_is_derived_from_the_process_id(self, process_id: str, expected: str):
-        assert ProcessInstanceAccessGrant.role_name(process_id) == expected
+    def test_different_instances_never_share_a_role(self, first: tuple[str, str], second: tuple[str, str]):
+        assert ProcessInstanceAccessGrant.role_name(*first) != ProcessInstanceAccessGrant.role_name(*second)
+
+
+class TestNamesAreLiteralRuleSegments:
+    @pytest.mark.parametrize("process_id", ["a.b", ">", "*", "x.>", "a?", "{id}", "Upper", ""])
+    def test_the_request_rejects_an_id_that_is_not_a_plain_slug(self, process_id: str):
+        with pytest.raises(ValidationError):
+            CreateProcessInstanceRequest(process_id=process_id, configuration={})
+
+    @pytest.mark.parametrize(
+        ("process_class", "process_id"),
+        [("Onboarding", "x.>"), ("Onboarding", ">"), ("Onboarding", "a*"), ("On.boarding", "id"), ("*", "id")],
+    )
+    def test_the_grant_refuses_a_name_that_would_widen_the_rule(
+        self, creator_user: Mock, process_class: str, process_id: str
+    ):
+        rollback = Mock()
+        with (
+            patch.object(TenantMetadataEntity, "grant_access_rule") as grant_rule,
+            patch.object(RoleEntity, "create_tenant_role") as create_role,
+            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            pytest.raises(HTTPException) as raised,
+        ):
+            ProcessInstanceAccessGrant.grant(process_class, process_id, creator_user, rollback)
+
+        assert raised.value.status_code == 500
+        grant_rule.assert_not_called()
+        create_role.assert_not_called()
+        add_roles.assert_not_called()
+        rollback.assert_called_once()
+
+
+class TestExistingRole:
+    @staticmethod
+    def _existing_role(*rules: str) -> Mock:
+        role = Mock()
+        role.access_rules = list(rules)
+        query = Mock()
+        query.first.return_value = role
+        return query
+
+    def test_a_role_granting_exactly_the_instance_is_reused(self):
+        with (
+            patch.object(RoleEntity, "objects", return_value=self._existing_role(_ADMIN_RULE)),
+            patch.object(RoleEntity, "create_tenant_role") as create_role,
+        ):
+            created = ProcessInstanceAccessGrant._ensure_admin_role(
+                _ROLE_NAME, _ADMIN_RULE, "tenant_1", "Onboarding", "q3-onboarding"
+            )
+
+        assert not created
+        create_role.assert_not_called()
+
+    @pytest.mark.parametrize("rules", [("aihub.admin.process.>",), (_ADMIN_RULE, "aihub.admin.agent.>"), ()])
+    def test_a_role_with_any_other_scope_fails_the_grant(self, creator_user: Mock, rules: tuple[str, ...]):
+        rollback = Mock()
+        with (
+            patch.object(TenantMetadataEntity, "grant_access_rule"),
+            patch.object(TenantMetadataEntity, "revoke_access_rule_from_all_tenants"),
+            patch.object(RoleEntity, "objects", return_value=self._existing_role(*rules)),
+            patch.object(RoleEntity, "delete_role_from_all_tenants") as delete_role,
+            patch.object(UserTenantRoleEntity, "add_roles") as add_roles,
+            pytest.raises(HTTPException) as raised,
+        ):
+            ProcessInstanceAccessGrant.grant("Onboarding", "q3-onboarding", creator_user, rollback)
+
+        assert raised.value.status_code == 500
+        add_roles.assert_not_called()
+        delete_role.assert_not_called()
+        rollback.assert_called_once()
 
 
 class TestGrant:

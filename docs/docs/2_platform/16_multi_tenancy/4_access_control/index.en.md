@@ -198,9 +198,9 @@ editor.
 
 **Processes** follow the same reasoning. The tenant gets `aihub.admin.process`, which is what creating a process
 instance is guarded on, and no existing instance. Instances are stored deployment-wide too, so `aihub.admin.process.>`
-would let the tenant list, start, edit and delete every other tenant's processes. Each instance a tenant creates is added
-to its own ceiling as `aihub.admin.process.<Class>.<id>`, and the creator gets a `<Id>ProcessAdmin` role holding that
-rule. Deleting the instance removes both.
+would let the tenant list, start, edit and delete every other tenant's processes. Each instance a tenant creates is
+added to its own ceiling as `aihub.admin.process.<Class>.<id>`, and the creator gets a `ProcessAdmin.<Class>.<id>` role
+holding that rule. Deleting the instance removes both.
 
 Tenants configured before this change still carry `aihub.admin.process.>` and therefore still reach every instance; the
 platform cannot tell which tenant built which, so it does not narrow them on its own. At startup it only adds the bare
@@ -251,10 +251,10 @@ requires at least one further segment. Some permissions are guarded on a bare ro
 not exist yet: creating a knowledge database is checked against `aihub.admin.knowledge`, since a database that has not
 been created cannot be named by a rule. A rule set that should cover both has to carry both forms, which is why
 `AIHubKnowledgeAdmin` is seeded with `aihub.admin.knowledge` *and* `aihub.admin.knowledge.>`, and `AIHubProcessAdmin`
-with `aihub.admin.process` *and* `aihub.admin.process.>`. This applies to tenant
-ceilings as much as to roles: a ceiling holding only the `.>` form caps the root permission away from every role in the
-tenant. The reverse holds one level down: `aihub.admin.knowledge.hr-docs` alone does not reach the folder
-`aihub.admin.knowledge.hr-docs.policies`, which is why a newly created database is granted with its `.>` form too.
+with `aihub.admin.process` *and* `aihub.admin.process.>`. This applies to tenant ceilings as much as to roles: a ceiling
+holding only the `.>` form caps the root permission away from every role in the tenant. The reverse holds one level
+down: `aihub.admin.knowledge.hr-docs` alone does not reach the folder `aihub.admin.knowledge.hr-docs.policies`, which is
+why a newly created database is granted with its `.>` form too.
 
 **Prohibited**:
 

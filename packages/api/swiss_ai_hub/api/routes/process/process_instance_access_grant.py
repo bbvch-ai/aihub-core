@@ -1,5 +1,4 @@
 import logging
-import re
 from collections.abc import Callable
 from typing import Annotated, Any
 
@@ -23,11 +22,10 @@ class ProcessInstanceAccessGrant:
     """
 
     @staticmethod
-    def role_name(process_id: str) -> str:
-        """The process id PascalCased with a ``ProcessAdmin`` suffix, so it cannot collide with the
-        ``<AgentId>Admin`` role of an agent profile sharing the id."""
-        pascal_case = "".join(word[:1].upper() + word[1:] for word in re.split(r"[^0-9A-Za-z]+", process_id) if word)
-        return f"{pascal_case}ProcessAdmin"
+    def role_name(process_class: str, process_id: str) -> str:
+        """``ProcessAdmin.<Class>.<id>``: both parts verbatim, so two instances never share a role name. A rule
+        segment cannot hold a dot, which keeps the split unambiguous."""
+        return f"ProcessAdmin.{process_class}.{process_id}"
 
     @staticmethod
     def grant(
@@ -41,10 +39,11 @@ class ProcessInstanceAccessGrant:
         creation itself."""
         tenant = user.acting_within_tenant
         admin_rule = AccessChecker.process_admin_rule(process_class, process_id)
-        role_name = ProcessInstanceAccessGrant.role_name(process_id)
+        role_name = ProcessInstanceAccessGrant.role_name(process_class, process_id)
         granted_tenant_rule = False
         created_role = False
         try:
+            AccessChecker.require_literal_segments(process_class, process_id)
             if not AccessChecker.rules_grant_admin(tenant.access_rules, admin_rule):
                 TenantMetadataEntity.grant_access_rule(tenant.id, admin_rule)
                 granted_tenant_rule = True
@@ -80,7 +79,7 @@ class ProcessInstanceAccessGrant:
             AccessChecker.process_user_rule(process_class, process_id),
             AccessChecker.process_admin_rule(process_class, process_id),
         ]
-        role_name = ProcessInstanceAccessGrant.role_name(process_id)
+        role_name = ProcessInstanceAccessGrant.role_name(process_class, process_id)
         ProcessInstanceAccessGrant._best_effort(
             lambda: TenantMetadataEntity.revoke_access_rule_from_all_tenants(rules), f"revoke {rules}"
         )
@@ -92,8 +91,15 @@ class ProcessInstanceAccessGrant:
     def _ensure_admin_role(
         role_name: str, admin_rule: str, tenant_id: str, process_class: str, process_id: str
     ) -> bool:
-        """Creates the per-instance admin role if absent. Returns whether it was created."""
-        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+        """Creates the per-instance admin role if absent. Returns whether it was created.
+
+        An existing role is reused only when it still grants exactly this instance, so binding the creator to it
+        can never hand them more.
+        """
+        existing = RoleEntity.objects(name=role_name, tenant_id=tenant_id).first()
+        if existing:
+            if list(existing.access_rules) != [admin_rule]:
+                raise ValueError(f"Role '{role_name}' exists with other access rules than {admin_rule}.")
             return False
         RoleEntity.create_tenant_role(
             name=role_name,

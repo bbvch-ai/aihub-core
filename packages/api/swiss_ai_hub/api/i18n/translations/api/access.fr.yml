@@ -19,8 +19,8 @@ presets:
     description: Démarrer et participer à chaque processus.
   admin_process_create:
     name: Créer des processus
-    description: Créer de nouvelles instances de processus. Chacune est accordée à son
-      créateur ; à combiner avec « Gérer tous les processus » pour aussi administrer
+    description: Créer de nouvelles instances de processus. Chacune est accordée à
+      son créateur ; à combiner avec « Gérer tous les processus » pour aussi administrer
       celles qui existent.
   admin_all_processes:
     name: Gérer tous les processus
