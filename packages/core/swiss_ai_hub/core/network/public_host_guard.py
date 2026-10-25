@@ -4,23 +4,24 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated
 from urllib.parse import urlsplit
 
-_DEFAULT_PORTS = {"http": 80, "https": 443}
+_DEFAULT_PORTS = {"http": 80, "https": 443, "sftp": 22}
 
 
-class SourceHostGuard:
-    """Keeps a source's URL from pointing inside the platform.
+class PublicHostGuard:
+    """Keeps a URL an administrator configured from pointing inside the platform.
 
-    A knowledge administrator sets the URL, while the pipeline sits on the networks of the platform's own services:
-    a Docker service name such as ``seaweedfs-filer``, ``localhost`` or a private address would let that
-    administrator send requests to them. Checked before every run's first request, against what the host resolves
-    to then. Hosts the deployment allows are exempt, for a source reachable only on the company network.
+    Source pipelines and agents sit on the networks of the platform's own services: a Docker service name such as
+    ``seaweedfs-filer``, ``localhost`` or a private address would let whoever sets the URL send requests to them.
+    Checked right before the connection is opened, against what the host resolves to then. Hosts the deployment
+    allows are exempt, for a system reachable only on the company network.
     """
 
     @classmethod
     def require_public(
         cls,
-        url: Annotated[str, "The source's base URL as configured"],
+        url: Annotated[str, "The URL as configured, with a scheme"],
         allowed_hosts: Annotated[frozenset[str], "Lower-case host names the deployment allows although internal"],
+        allow_list_setting: Annotated[str, "Environment variable an operator extends the allowed hosts with"],
     ) -> None:
         parts = urlsplit(url)
         host = (parts.hostname or "").lower()
@@ -29,8 +30,8 @@ class SourceHostGuard:
         internal = cls._why_internal(host, parts.port or _DEFAULT_PORTS.get(parts.scheme, 443))
         if internal:
             raise ValueError(
-                f"The source URL {url} points at {host}, {internal}; only public hosts are synced. An operator can "
-                "allow it with STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS."
+                f"The URL {url} points at {host or 'no host'}, {internal}; only public hosts are allowed. An operator "
+                f"can allow it with {allow_list_setting}."
             )
 
     @classmethod
@@ -52,7 +53,7 @@ class SourceHostGuard:
         try:
             answers = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
         except socket.gaierror as unresolved:
-            raise ValueError(f"The source host {host} cannot be resolved.") from unresolved
+            raise ValueError(f"The host {host} cannot be resolved.") from unresolved
         return [cls._unwrapped(ipaddress.ip_address(answer[4][0].split("%")[0])) for answer in answers]
 
     @staticmethod

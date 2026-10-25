@@ -2,7 +2,7 @@ import socket
 
 import pytest
 
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
+from swiss_ai_hub.core.network.public_host_guard import PublicHostGuard
 
 _PUBLIC = "93.184.216.34"
 
@@ -20,19 +20,19 @@ def dns(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
             for ip in answers[host]
         ]
 
-    monkeypatch.setattr("swiss_ai_hub.pipeline.resources.structured.source_host_guard.socket.getaddrinfo", getaddrinfo)
+    monkeypatch.setattr("swiss_ai_hub.core.network.public_host_guard.socket.getaddrinfo", getaddrinfo)
     return answers
 
 
 def _require(url: str, allowed: frozenset[str] = frozenset()) -> None:
-    SourceHostGuard.require_public(url, allowed)
+    PublicHostGuard.require_public(url, allowed, "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS")
 
 
 class TestRefused:
     @pytest.mark.parametrize("url", ["http://seaweedfs-filer:8888", "http://api:8000/jira", "http://localhost:8094"])
     def test_a_name_without_a_domain_is_an_internal_service(self, url: str, dns: dict[str, list[str]]):
         """Docker answers its service and container names; no public host is called that."""
-        with pytest.raises(ValueError, match="a name only an internal network resolves; only public hosts are synced"):
+        with pytest.raises(ValueError, match="a name only an internal network resolves; only public hosts are allowed"):
             _require(url)
 
     @pytest.mark.parametrize(
@@ -50,7 +50,7 @@ class TestRefused:
         ],
     )
     def test_an_internal_address_is_refused(self, url: str, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="an internal address; only public hosts are synced"):
+        with pytest.raises(ValueError, match="an internal address; only public hosts are allowed"):
             _require(url)
 
     def test_a_public_name_that_resolves_inside_is_refused(self, dns: dict[str, list[str]]):
@@ -67,7 +67,7 @@ class TestRefused:
             _require("https://jira.acme.ch")
 
     def test_a_host_that_does_not_resolve_says_so(self, dns: dict[str, list[str]]):
-        with pytest.raises(ValueError, match="The source host jira.acme.invalid cannot be resolved"):
+        with pytest.raises(ValueError, match="The host jira.acme.invalid cannot be resolved"):
             _require("https://jira.acme.invalid")
 
     def test_the_message_names_the_setting_that_allows_it(self, dns: dict[str, list[str]]):
@@ -89,3 +89,20 @@ class TestAllowed:
         dns["jira.intra.acme.ch"] = ["10.1.2.3"]
 
         _require(url, frozenset({"localhost", "jira.intra.acme.ch", "10.0.0.5"}))
+
+
+class TestUrlShapes:
+    @pytest.mark.parametrize("url", ["server.py", "file:///etc/passwd", ""])
+    def test_a_url_without_a_host_is_refused(self, url: str, dns: dict[str, list[str]]):
+        with pytest.raises(ValueError, match="points at no host"):
+            _require(url)
+
+    def test_an_sftp_host_is_resolved_on_its_port(self, dns: dict[str, list[str]]):
+        dns["files.acme.ch"] = ["192.168.4.4"]
+
+        with pytest.raises(ValueError, match="192.168.4.4"):
+            _require("sftp://files.acme.ch:2222")
+
+    def test_the_message_names_the_setting_the_caller_passed(self, dns: dict[str, list[str]]):
+        with pytest.raises(ValueError, match="MCP_ALLOWED_PRIVATE_HOSTS"):
+            PublicHostGuard.require_public("http://api:8000/mcp", frozenset(), "MCP_ALLOWED_PRIVATE_HOSTS")

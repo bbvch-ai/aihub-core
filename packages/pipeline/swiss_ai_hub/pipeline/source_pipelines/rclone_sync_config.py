@@ -3,7 +3,7 @@ import posixpath
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from swiss_ai_hub.core.form import ChipsInput, InputNumber, InputText, Password, SecretFileInput, Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.i18n import LocaleString
@@ -14,6 +14,7 @@ _I18N = "lib.source_pipelines.rclone.config"
 _BACKEND_REF = "rclone_backend_type"
 _TESTED_BACKENDS = (RcloneBackendType.S3, RcloneBackendType.DRIVE, RcloneBackendType.ONEDRIVE)
 _KEY_FILE_MAX_BYTES = 65536
+_LOCAL_DISABLED = "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
 
 
 def _when(backend: RcloneBackendType) -> str:
@@ -251,7 +252,7 @@ class RcloneSyncConfig(SourcePipelineConfig):
     @classmethod
     def offered_backends(cls) -> list[RcloneBackendType]:
         """Only the backends verified end to end, plus ``local`` where the deployment names a directory the daemon
-        may serve from. The other backends stay configurable so databases already set up with them keep syncing."""
+        may serve from. Nothing else is synced either, whatever a stored configuration names."""
         allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
         return [
             backend
@@ -299,6 +300,16 @@ class RcloneSyncConfig(SourcePipelineConfig):
             local=LocalOptions.as_form(),
         )
 
+    @model_validator(mode="after")
+    def _only_offered_backends(self) -> Self:
+        """The dialog's choice is not enforced by the API, which validates against the announced schema only."""
+        if not isinstance(self.backend_type, str) or self.backend in self.offered_backends():
+            return self
+        if self.backend is RcloneBackendType.LOCAL:
+            raise ValueError(_LOCAL_DISABLED)
+        offered = ", ".join(backend.value for backend in self.offered_backends())
+        raise ValueError(f"rclone backend '{self.backend_type}' is not offered on this deployment ({offered}).")
+
     @field_validator("include_patterns", "exclude_patterns", mode="before")
     @classmethod
     def _blank_patterns_mean_none(cls, value: object) -> object:
@@ -326,6 +337,20 @@ class RcloneSyncConfig(SourcePipelineConfig):
             options.setdefault("scope", "drive.readonly")
         return RcloneSourceConfig(name=remote_name, backend_type=self.backend, options=options)
 
+    def outbound_urls(self) -> list[str]:
+        """Every host the selected backend was told to connect to, as a URL. OneDrive and Drive name none: rclone
+        reaches Microsoft Graph and Google on its own."""
+        match self.backend:
+            case RcloneBackendType.S3:
+                endpoints = [self.s3.endpoint]
+            case RcloneBackendType.AZUREBLOB:
+                endpoints = [self.azureblob.endpoint]
+            case RcloneBackendType.SFTP:
+                endpoints = [f"sftp://{self.sftp.host}:{self.sftp.port}"]
+            case _:
+                endpoints = []
+        return [endpoint if "://" in endpoint else f"https://{endpoint}" for endpoint in endpoints if endpoint]
+
     def remote_fs(self, remote_name: str) -> str:
         if self.backend is RcloneBackendType.LOCAL:
             return f"{remote_name}:{self._local_root_within_allowed_directory()}"
@@ -337,9 +362,7 @@ class RcloneSyncConfig(SourcePipelineConfig):
         setting is absent."""
         allowed_root = RcloneSettings().LOCAL_SOURCE_ROOT
         if not allowed_root:
-            raise ValueError(
-                "rclone backend 'local' is disabled on this deployment: RCLONE_LOCAL_SOURCE_ROOT is unset."
-            )
+            raise ValueError(_LOCAL_DISABLED)
         allowed = PurePosixPath(posixpath.normpath(allowed_root))
         requested = PurePosixPath(posixpath.normpath(self.root_path)) if self.root_path.strip() else allowed
         if requested != allowed and allowed not in requested.parents:
