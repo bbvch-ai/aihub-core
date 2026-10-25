@@ -28,7 +28,7 @@
 FROM ghcr.io/open-webui/open-terminal:0.11.34
 
 USER root
-RUN pip install --no-cache-dir reportlab fpdf2
+RUN pip install --no-cache-dir reportlab==5.0.1 fpdf2==2.8.9
 COPY confine_file_api_to_home.py /tmp/confine_file_api_to_home.py
 RUN python3 /tmp/confine_file_api_to_home.py && rm /tmp/confine_file_api_to_home.py
 USER user
