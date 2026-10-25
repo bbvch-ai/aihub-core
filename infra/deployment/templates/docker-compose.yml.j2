@@ -386,11 +386,14 @@ services:
   {{ service_license('oauth2proxy-seaweed') }}
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ SEAWEEDFS_FILER_URL }}
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
@@ -593,11 +596,14 @@ services:
   {{ service_license('oauth2proxy-attu') }}
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
@@ -1129,6 +1135,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
@@ -1148,6 +1155,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      {%- if stage != 'dev' %}
+      env-guard:
+        condition: service_completed_successfully
+      {%- endif %}
     logging:
       driver: json-file
       options:
@@ -1166,6 +1177,18 @@ services:
       - "traefik.http.routers.keycloak.priority=7000"
       - "traefik.http.routers.keycloak.middlewares=keycloak-security-headers"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      # The admin console and the master realm answer only to KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES (403 otherwise).
+      # The API, keycloak-config and the oauth2-proxies use the Admin API through http://keycloak:8080, not this route.
+      - "traefik.http.routers.keycloak-admin.rule=Host(`auth.${DOMAIN}`) && (PathPrefix(`/admin`) || PathPrefix(`/realms/master`))"
+      - "traefik.http.routers.keycloak-admin.entrypoints=websecure"
+      - "traefik.http.routers.keycloak-admin.tls=true"
+      {%- if stage in ['nightly', 'latest'] %}
+      - "traefik.http.routers.keycloak-admin.tls.certresolver=letsencrypt"
+      {%- endif %}
+      - "traefik.http.routers.keycloak-admin.priority=7500"
+      - "traefik.http.routers.keycloak-admin.service=keycloak"
+      - "traefik.http.routers.keycloak-admin.middlewares=keycloak-admin-allowlist,keycloak-security-headers"
+      - "traefik.http.middlewares.keycloak-admin-allowlist.ipallowlist.sourcerange=${KEYCLOAK_ADMIN_ALLOWED_SOURCE_RANGES}"
       # Keycloak manages its own X-Frame-Options per realm (master: SAMEORIGIN
       # for admin console session iframes, aihub: empty for parent app embedding).
       # We only add non-frame security headers here to avoid overriding Keycloak's
@@ -1221,6 +1244,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
       KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
       # Azure Entra ID vars are NOT needed here — identity providers are
@@ -1502,11 +1526,14 @@ services:
   {{ service_license('oauth2proxy-backup') }}
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ BACKUP_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
@@ -1973,17 +2000,21 @@ services:
         max-size: 10m
         max-file: 2
     {%- if stage != 'dev' %}
+    # OpenAI-compatible inference paths stay public behind LiteLLM's own key auth; the UI and every admin route on
+    # the same host go through oauth2proxy-litellm (router litellm-admin, lower priority).
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.middlewares=security-headers@file"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      - "traefik.http.routers.litellm-api.rule=Host(`litellm.${DOMAIN}`) && (PathPrefix(`/v1/`) || Path(`/chat/completions`) || Path(`/completions`) || Path(`/embeddings`) || Path(`/models`) || Path(`/model/info`) || PathPrefix(`/audio/`) || PathPrefix(`/images/`) || Path(`/rerank`) || Path(`/v2/rerank`) || Path(`/moderations`) || Path(`/responses`) || PathPrefix(`/responses/`) || Path(`/health/liveliness`) || Path(`/health/liveness`))"
+      - "traefik.http.routers.litellm-api.priority=6000"
+      - "traefik.http.routers.litellm-api.entrypoints=websecure"
+      - "traefik.http.routers.litellm-api.middlewares=security-headers@file"
+      - "traefik.http.routers.litellm-api.service=litellm-api"
+      - "traefik.http.services.litellm-api.loadbalancer.server.port=4000"
       {%- if stage not in ['local', 'build'] %}
-      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.litellm-api.tls.certresolver=letsencrypt"
       {%- else %}
-      - "traefik.http.routers.litellm.tls=true"
+      - "traefik.http.routers.litellm-api.tls=true"
       {%- endif %}
     {%- endif %}
     networks:
@@ -1991,8 +2022,65 @@ services:
       - data  # For PostgreSQL access
       - pii-detection  # Caller of the Presidio analyzer
       {%- if stage != 'dev' %}
-      - proxy  # For external API access via Traefik
+      - proxy  # Traefik ingress for the inference paths, and outbound internet to the model providers
       {%- endif %}
+
+  {%- if stage != 'dev' %}
+  {{ service_license('oauth2proxy-litellm') }}
+  oauth2proxy-litellm:
+    container_name: oauth2proxy-litellm
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
+    restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4183
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: {{ LITE_LLM_PROXY_BASE_URL }}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_LITELLM}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-litellm
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_LITELLM}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_LITELLM_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://litellm.${DOMAIN}
+    depends_on:
+      - litellm
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.litellm-admin.rule=Host(`litellm.${DOMAIN}`)"
+      - "traefik.http.routers.litellm-admin.priority=1000"
+      - "traefik.http.routers.litellm-admin.entrypoints=websecure"
+      - "traefik.http.routers.litellm-admin.middlewares=security-headers@file"
+      - "traefik.http.routers.litellm-admin.service=litellm-admin"
+      - "traefik.http.services.litellm-admin.loadbalancer.server.port=4183"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.litellm-admin.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.litellm-admin.tls=true"
+      {%- endif %}
+    networks:
+      - proxy
+      - backend
+  {%- endif %}
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -2117,12 +2205,7 @@ services:
       - "8002:8000"
     {%- endif %}
     environment:
-      # VLM routing through LiteLLM (OpenAI-compatible)
-      # Various API keys for OpenAI client compatibility
-      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
-      OPENAI_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}/v1
-      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
-      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      # VLM routing through LiteLLM: mineru_vl_utils' HTTP client reads only these MINERU_VL_* variables
       MINERU_VL_SERVER: {{ LITE_LLM_PROXY_BASE_URL }}/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
@@ -2650,11 +2733,14 @@ services:
   {{ service_license('oauth2proxy-dagster') }}
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ DAGSTER_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
@@ -2798,6 +2884,30 @@ services:
   # compromised, as the proxy only exposes the minimal Docker API
   # endpoints required for service discovery.
   # ===================================================================
+  # One-shot check: refuses to let Traefik and Keycloak start while a value
+  # that setup-env.sh generates (or DOMAIN) still holds its REPLACE_WITH_*
+  # placeholder. The variable list comes from .env.prod at generation time.
+  {{ service_license('env-guard') }}
+  env-guard:
+    container_name: env-guard
+    image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'unset=$$(env | grep -E "^[A-Z0-9_]+=.*REPLACE_WITH_" | cut -d= -f1); if [ -n "$$unset" ]; then echo "Still a placeholder, run setup-env.sh or set it in .env:" $$unset >&2; exit 1; fi'
+    environment:
+      {%- for name in env_guard_vars %}
+      {{ name }}: ${{ '{' }}{{ name }}{{ '}' }}
+      {%- endfor %}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=false"
+    network_mode: none
+
   {{ service_license('docker-socket-proxy') }}
   docker-socket-proxy:
     container_name: docker-socket-proxy
@@ -2855,6 +2965,8 @@ services:
     depends_on:
       docker-socket-proxy:
         condition: service_healthy
+      env-guard:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "NONE" ]
     ports:
