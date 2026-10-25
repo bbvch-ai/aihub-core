@@ -112,6 +112,10 @@ When a user attaches a file in an agent chat, the agent reads it; Open WebUI onl
   model received. A file that cannot be read is reported instead of silently skipped.
 - **Temporary chats**: Open WebUI stores nothing and sends the text it extracted in the browser; the agent reads that
   text like any other attachment.
+- **Webpages**: Attach Webpage is turned off in every chat, plain LLM chats included, because agents cannot read the
+  page Open WebUI attaches. The same permission blocks `#https://…` references. AI-Hub sets it on every API start, so
+  turning it back on in the admin panel lasts only until the next restart. Open WebUI admins are exempt and still see
+  the option, but an agent ignores the page they attach.
 
 ## Inline citations
 
