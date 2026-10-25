@@ -1648,7 +1648,7 @@ export const updateAgentInstance = <
 /**
  * Get Agent Instance Threads
  *
- * Retrieve all threads that a specific agent instance is part of.
+ * Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
  */
 export const getAgentInstanceThreads = <
   TComposable extends Composable = "$fetch",
