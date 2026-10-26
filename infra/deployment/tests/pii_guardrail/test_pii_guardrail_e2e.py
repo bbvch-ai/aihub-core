@@ -269,7 +269,9 @@ def test_should_anonymise_a_local_model_call_from_an_anonymising_profile() -> No
     from swiss_ai_hub.core.generative_ai import GatewayGuardrails
     from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 
-    llm = ResilientOpenAILike(model="echo-local", api_base=f"{PROXY}/v1", api_key=MASTER_KEY, is_chat_model=True)
+    llm = ResilientOpenAILike(
+        model="echo-local", api_base=f"{PROXY}/v1", api_key=MASTER_KEY, is_chat_model=True, connect_timeout=5.0
+    )
     with GatewayGuardrails.requesting(GatewayGuardrails.PII_ANONYMISATION):
         answer = llm.chat([ChatMessage(role=MessageRole.USER, content=PROMPT)]).message.content
 
