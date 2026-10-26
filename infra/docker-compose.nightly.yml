@@ -3609,6 +3609,66 @@ services:
       - backend
       - data
   # License: Apache-2.0 — own image (see LICENSES.md)
+  # Users anonymise text by hand here and restore the answer. It calls no model, so it gets no LiteLLM access at all:
+  # the chat content reaches only the analyzer, in `pii-detection`.
+  anonymiser_agent:
+    container_name: anonymiser-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/anonymiser_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
+      presidio-analyzer:
+        condition: service_healthy
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # Presidio analyzer
+      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+
+      # Milvus (the runner's readiness report only)
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: anonymiser-agent
+      OTEL_RESOURCE_SERVICE_VERSION: nightly
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - pii-detection  # Caller of the Presidio analyzer
+  # License: Apache-2.0 — own image (see LICENSES.md)
   imap_agent:
     container_name: imap-agent
     restart: always

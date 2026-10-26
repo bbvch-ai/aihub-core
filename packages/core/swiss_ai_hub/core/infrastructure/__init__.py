@@ -49,6 +49,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
     from swiss_ai_hub.core.infrastructure.playwright.playwright_settings import PlaywrightSettings
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.analyzer_span import AnalyzerSpan
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_client import PresidioAnalyzerClient
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_settings import PresidioAnalyzerSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings import RclonePipelineSettings
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
@@ -90,6 +93,9 @@ __all__ = [
     "OpenTerminalClient",
     "OpenTerminalError",
     "OpenTerminalSettings",
+    "AnalyzerSpan",
+    "PresidioAnalyzerClient",
+    "PresidioAnalyzerSettings",
     "SandboxHomePath",
     "PlaywrightSettings",
     "MongoConnectionRegistry",
@@ -148,6 +154,9 @@ _LAZY_IMPORTS = {
     "OpenTerminalClient": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client",
     "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
     "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",
+    "AnalyzerSpan": "swiss_ai_hub.core.infrastructure.presidio_analyzer.analyzer_span",
+    "PresidioAnalyzerClient": "swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_client",
+    "PresidioAnalyzerSettings": "swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_settings",
     "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
     "PlaywrightSettings": "swiss_ai_hub.core.infrastructure.playwright.playwright_settings",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",

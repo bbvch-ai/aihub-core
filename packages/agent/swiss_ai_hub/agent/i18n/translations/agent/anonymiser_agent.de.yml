@@ -1,0 +1,25 @@
+---
+metadata:
+  name: Anonymisierer
+  description: Ersetzt Personendaten in Ihrem Text durch Platzhalter und setzt die
+    Originalwerte wieder in eine Antwort ein, die Sie zurück einfügen. Kein KI-Modell
+    sieht Ihren Text.
+title: Anonymisierter Text
+steps:
+  respond:
+    name: Anonymisieren oder wiederherstellen
+    description: Anonymisiert die Nachricht mit dem PII-Analyzer der Installation
+      oder setzt die Platzhalter dieses Chats zurück.
+thoughts:
+  anonymising: Suche mit dem Analyzer der Installation nach Personendaten.
+messages:
+  anonymised: 'Hier ist Ihr Text mit ersetzten Personendaten. Verwenden Sie ihn in
+    einem beliebigen Werkzeug und fügen Sie die Antwort danach in diesen Chat ein,
+    um die Originalwerte zurückzuerhalten:'
+  restored: 'Hier ist der Text mit den Originalwerten:'
+  nothing_found: Ich habe in diesem Text keine Personendaten gefunden, es gibt also
+    nichts zu ersetzen.
+  unknown_placeholders: 'Diese Platzhalter wurden nicht in diesem Chat vergeben und
+    bleiben unverändert: %{placeholders}'
+  empty: Senden Sie mir einen Text zum Anonymisieren, oder fügen Sie eine Antwort
+    mit den Platzhaltern dieses Chats ein, um sie wiederherzustellen.

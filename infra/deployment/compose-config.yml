@@ -135,6 +135,11 @@ image_tags:
     local: memory_writer_agent:latest
     nightly: memory_writer_agent:nightly
     latest: memory_writer_agent:latest
+  anonymiser_agent:
+    build: localbuild
+    local: anonymiser_agent:latest
+    nightly: anonymiser_agent:nightly
+    latest: anonymiser_agent:latest
   imap_agent:
     build: localbuild
     local: imap_agent:latest

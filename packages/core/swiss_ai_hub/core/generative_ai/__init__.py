@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.generative_ai.anonymisation.anonymisation_vocabulary import AnonymisationVocabulary
+    from swiss_ai_hub.core.generative_ai.anonymisation.placeholder_map import PlaceholderMap
     from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
         extend_chat_history_with_organization_memory,
     )
@@ -187,6 +189,8 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AnonymisationVocabulary",
+    "PlaceholderMap",
     "AgentMemory",
     "BucketMetadataFilters",
     "BucketNamespacePair",
@@ -307,6 +311,8 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "AnonymisationVocabulary": "swiss_ai_hub.core.generative_ai.anonymisation.anonymisation_vocabulary",
+    "PlaceholderMap": "swiss_ai_hub.core.generative_ai.anonymisation.placeholder_map",
     "AgentMemory": "swiss_ai_hub.core.generative_ai.memory.agent_memory",
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",

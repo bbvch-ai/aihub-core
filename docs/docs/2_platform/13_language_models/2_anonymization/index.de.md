@@ -56,6 +56,13 @@ des Deployments: die Antwort, die Meta-Fragen-Prüfung, der Titel, die Follow-up
 an die das Profil delegiert. Die Antwort beginnt mit einem kurzen Hinweis, dass Personendaten ersetzt wurden, bevor sie
 das Modell erreichten. Gedacht für Profile mit sensiblen Daten, etwa im HR, auch wenn ihre Modelle on-premises laufen.
 
+### Text von Hand anonymisieren
+
+Benutzer können einen Text auch selbst mit dem Agenten [Anonymisierer](../../5_agents/16_anonymiser/) anonymisieren und
+ihn dann in jedem Werkzeug verwenden, innerhalb oder ausserhalb des Hubs. Die Antwort fügen sie in denselben Chat ein
+und erhalten sie mit den Originalwerten zurück. Der Anonymisierer verwendet denselben Analyzer und dieselbe Liste
+dessen, was als Personendaten gilt, und ruft kein Modell auf.
+
 ## Was erkannt wird
 
 Der Analyzer verwendet Presidio mit dem mehrsprachigen PII-Modell von GLiNER und Mustern für Schweizer und
@@ -73,8 +80,9 @@ Andere Daten, Firmennamen und Beschreibungen, die eine Person nur über den Kont
 zusammen mit einer Firma), werden nicht maskiert.
 
 Pronomen, Rollen und Feldbezeichnungen («Sie», «vous», «Benutzer», «Adresse», «IBAN») werden in Deutsch, Französisch,
-Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer («Position 2», «Art. 5»): Das Erkennungsmodell hält sie für Namen oder für den Typ, den sie benennen, und
-ihre Maskierung würde die Anfrage verfälschen. Die Liste ist `pii_allow_list` in der Gateway-Konfiguration.
+Italienisch und Englisch nie maskiert, auch mit einer kurzen Nummer («Position 2», «Art. 5»): Das Erkennungsmodell hält
+sie für Namen oder für den Typ, den sie benennen, und ihre Maskierung würde die Anfrage verfälschen. Die Liste ist
+`pii_allow_list` in der Gateway-Konfiguration.
 
 ## Prüfen in Langfuse
 
@@ -82,8 +90,8 @@ Jeder Aufruf, den das Gateway anonymisiert, hinterlässt in Langfuse eine Observ
 Agentenlauf steht sie im Trace des Laufs, neben dem Schritt, der den Aufruf gemacht hat: Ihr Input ist die Anfrage genau
 so, wie der Anbieter sie erhalten hat, mit Platzhaltern, ihr Output nennt, wie viele Werte welchen Typs ersetzt wurden,
 und ihre Metadaten nennen das Modell und den Grund der Anonymisierung (ein Modell ausserhalb des Deployments oder vom
-Aufruf verlangt, etwa durch die Checkbox eines Profils). Alle anonymisierten Aufrufe zeigt Tracing → Observations mit der
-Suche nach `pii-anonymisation`. Aufrufe ausserhalb eines Agentenlaufs, etwa einfache Chats, erscheinen nur mit ihren
+Aufruf verlangt, etwa durch die Checkbox eines Profils). Alle anonymisierten Aufrufe zeigt Tracing → Observations mit
+der Suche nach `pii-anonymisation`. Aufrufe ausserhalb eines Agentenlaufs, etwa einfache Chats, erscheinen nur mit ihren
 Zählungen. Ein abgelehnter Aufruf, weil der Analyzer nicht erreichbar war, erscheint als Fehler.
 
 Die übrigen Observations eines Laufs zeichnet der Agent auf, bevor der Aufruf das Gateway erreicht; sie zeigen deshalb

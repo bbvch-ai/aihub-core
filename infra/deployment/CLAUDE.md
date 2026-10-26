@@ -99,8 +99,8 @@ literal-number rule.
 `custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
 restores the answer, streamed or not; a local model runs it only when the call sends
 `"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
-rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call
-also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call also
+leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
 `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
 `uv run --with "litellm==1.83.10" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
@@ -283,24 +283,16 @@ routes through Traefik.
 
 ## Network Isolation (7 Zones)
 
-| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
-| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
-| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
-| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
-| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
-| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
-| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
-| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
-| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
-| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)     |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                     |
+| --------------- | --------------------------------- | -------- | --- | ---------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                      |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel               |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click           |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                               |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents    |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)    |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)            |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent) |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
