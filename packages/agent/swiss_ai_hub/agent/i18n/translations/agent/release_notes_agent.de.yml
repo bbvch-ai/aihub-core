@@ -74,9 +74,9 @@ config:
     placeholder: Kundinnen und Kunden der Web-App
   link_tickets:
     label: Mit Jira-Tickets verlinken
-    help: "Die Tickets jedes Punkts als Links auf Jira zeigen: [ENG-12] vorne, wenn
+    help: 'Die Tickets jedes Punkts als Links auf Jira zeigen: [ENG-12] vorne, wenn
       jedes Ticket einen eigenen Punkt hat, (ENG-12, ENG-15) am Ende, wenn verwandte
-      Tickets zusammengefasst sind. Für Lesende ohne Zugang zu Jira ausschalten."
+      Tickets zusammengefasst sind. Für Lesende ohne Zugang zu Jira ausschalten.'
   merge_related_tickets:
     label: Verwandte Tickets zusammenfassen
     help: Hinweise zu verwandten Tickets eines Abschnitts in einem Punkt zusammenfassen,

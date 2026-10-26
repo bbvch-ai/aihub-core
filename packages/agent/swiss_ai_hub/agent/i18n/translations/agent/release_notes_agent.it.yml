@@ -70,9 +70,9 @@ config:
     placeholder: i clienti dell'app web
   link_tickets:
     label: Collega ai ticket Jira
-    help: "Mostra i ticket di ogni punto come link a Jira: [ENG-12] all'inizio quando
-      ogni ticket ha un proprio punto, (ENG-12, ENG-15) alla fine quando i ticket correlati
-      sono uniti. Disattivalo per lettori senza accesso a Jira."
+    help: "Mostra i ticket di ogni punto come link a Jira: [ENG-12] all'inizio quando\
+      \ ogni ticket ha un proprio punto, (ENG-12, ENG-15) alla fine quando i ticket\
+      \ correlati sono uniti. Disattivalo per lettori senza accesso a Jira."
   merge_related_tickets:
     label: Unisci i ticket correlati
     help: Unisci le note dei ticket correlati di una stessa sezione in un unico punto

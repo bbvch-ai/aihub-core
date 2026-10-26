@@ -185,15 +185,24 @@ async def test_a_database_match_without_a_python_match_is_dropped_from_page_and_
 
 @pytest.mark.asyncio
 async def test_a_path_glob_narrows_the_search(knowledge_databases: dict[str, str]) -> None:
-    result = await KnowledgeContentSearch.search([_FINANCE, _HR], "Zeta Dynamics AG", path_glob="invoices/2025/**")
+    result = await KnowledgeContentSearch.search([_FINANCE, _HR], "Zeta Dynamics AG", path_globs=["invoices/2025/**"])
 
     assert _ids(result) == {knowledge_databases["acme"], knowledge_databases["hr"]}
 
 
 @pytest.mark.asyncio
+async def test_a_document_must_match_every_path_glob(knowledge_databases: dict[str, str]) -> None:
+    result = await KnowledgeContentSearch.search(
+        [_FINANCE, _HR, _LEGAL], "Zeta Dynamics AG", path_globs=["**/*.md", "contracts/**"]
+    )
+
+    assert _ids(result) == {knowledge_databases["msa"]}
+
+
+@pytest.mark.asyncio
 async def test_an_invalid_glob_fails_before_searching() -> None:
     with pytest.raises(InvalidPathPatternError, match="empty"):
-        await KnowledgeContentSearch.search([_FINANCE], "Zeta", path_glob="/")
+        await KnowledgeContentSearch.search([_FINANCE], "Zeta", path_globs=["invoices/**", "/"])
 
 
 @pytest.mark.asyncio

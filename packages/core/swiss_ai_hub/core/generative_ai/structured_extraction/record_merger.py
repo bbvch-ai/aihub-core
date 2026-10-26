@@ -1,4 +1,5 @@
 from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import RecordValue
+from swiss_ai_hub.core.generative_ai.structured_extraction.record_schema import RecordSchema
 
 Record = dict[str, RecordValue]
 
@@ -14,11 +15,15 @@ class RecordMerger:
     """
 
     @staticmethod
-    def merge(windows: list[list[Record]]) -> list[Record]:
+    def merge(windows: list[list[Record]], positions: list[int] | None = None) -> list[Record]:
+        """`positions` are the windows' places in the document when only some were read: windows that are not
+        neighbours there share no text, so their records are never taken for copies of each other."""
+        positions = positions if positions is not None else list(range(len(windows)))
         merged: list[Record] = []
         previous_window: list[int] = []
-        for window in windows:
-            unclaimed = list(previous_window)
+        for index, window in enumerate(windows):
+            adjacent = index > 0 and positions[index] == positions[index - 1] + 1
+            unclaimed = list(previous_window) if adjacent else []
             current_window = []
             for record in window:
                 match = RecordMerger._first_compatible(record, unclaimed, merged)
@@ -38,7 +43,12 @@ class RecordMerger:
 
     @staticmethod
     def _compatible(first: Record, second: Record) -> bool:
-        shared = [name for name in first if first[name] is not None and second.get(name) is not None]
+        """The match mark is the model's judgement, not the record's content, so copies differing in it are copies."""
+        shared = [
+            name
+            for name in first
+            if name != RecordSchema.MATCH_FIELD and first[name] is not None and second.get(name) is not None
+        ]
         return bool(shared) and all(RecordMerger._same(first[name], second[name]) for name in shared)
 
     @staticmethod
@@ -52,3 +62,5 @@ class RecordMerger:
         for name, value in duplicate.items():
             if kept.get(name) is None:
                 kept[name] = value
+        if kept.get(RecordSchema.MATCH_FIELD) == RecordSchema.MATCH_UNSURE and duplicate.get(RecordSchema.MATCH_FIELD):
+            kept[RecordSchema.MATCH_FIELD] = duplicate[RecordSchema.MATCH_FIELD]

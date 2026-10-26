@@ -47,7 +47,7 @@ class ReleaseNotesAgent(Agent):
         self, event: UserMessageEvent, config: ReleaseNotesAgentConfig
     ) -> Conversation.ContextualizeRequest:
         """Earlier changelogs fill the history fast, and only the questions in it matter for this turn."""
-        history = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.input_budget())
+        history = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.input_budget)
         return Conversation.contextualize(history=history, message=event)
 
     @step(

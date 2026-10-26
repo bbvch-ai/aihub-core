@@ -339,6 +339,20 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    continuePending: Continues an unfinished extraction
+    remainingDocuments: Documents left
+    remainingRows: Rows left to show
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -958,6 +972,16 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelBound:
+    providerDefault: provider default
+    overrideRequired: Enter a value, or untick the override to use the default.
+    defaultPlaceholder: 'Model default: {value}'
+    maximumHint: At most {maximum} for {model}.
+    maximumHintWithFill: "At most {maximum} for {model}: {percent} of the model's\
+      \ {modelMaximum} tokens, as a margin for token-count differences."
+    aboveMaximum: At most {maximum} is allowed for {model}.
+  modelGated:
+    unavailable: '{model} does not support this.'
   cron:
     errors:
       required: Every position is required — a blank one is not a valid schedule.
@@ -988,6 +1012,8 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search

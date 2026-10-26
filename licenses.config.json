@@ -273,7 +273,7 @@
       "service": "presidio-analyzer",
       "license": "MIT",
       "status": "✅",
-      "notes": "Permissive license"
+      "notes": "Permissive license. Our image (infra/deployment/docker/presidio-analyzer) bakes in urchade/gliner_multi_pii-v1 (Apache-2.0) with its microsoft/mdeberta-v3-base tokenizer (MIT) and spaCy de_core_news_lg (MIT)."
     },
     {
       "service": "presidio-anonymizer",

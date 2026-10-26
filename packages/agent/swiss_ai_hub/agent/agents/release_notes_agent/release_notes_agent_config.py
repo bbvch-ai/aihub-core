@@ -2,7 +2,15 @@ from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import Checkbox, ChipsInput, InputNumber, InputText, MultiSelect, Select, Textarea
+from swiss_ai_hub.core.form import (
+    Checkbox,
+    ChipsInput,
+    InputText,
+    ModelBoundInputNumber,
+    MultiSelect,
+    Select,
+    Textarea,
+)
 from swiss_ai_hub.core.form.constraints import Gt
 from swiss_ai_hub.core.jira import JiraConnectionConfig
 
@@ -70,10 +78,10 @@ class ReleaseNotesAgentConfig(ConversationFields, AgentConfig):
         ),
     ] = 40
     number_of_input_tokens: Annotated[
-        int | InputNumber,
+        int | None | ModelBoundInputNumber,
         Field(
-            description="Maximum input tokens; low, since earlier changelogs in the chat are long and only the "
-            "questions in it matter."
+            description="The admin's own limit on the input tokens; set low by default, since earlier changelogs in "
+            "the chat are long and only the questions in it matter. None fills the models' input window."
         ),
         Gt(0),
     ] = 16384

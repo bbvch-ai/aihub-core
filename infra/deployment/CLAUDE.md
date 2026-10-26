@@ -83,6 +83,17 @@ so LiteLLM fails to start loudly instead of silently falling back.
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
+`default_temperature`, `default_top_p` and `max_images` are AI-Hub keys curated by hand per chat model, under the same
+literal-number rule.
+
+- **`default_temperature` and `default_top_p`** are what an agent samples at when its profile leaves the field unset
+  (`LLMConfig.resolved_temperature` / `resolved_top_p`). Take them from the model's `generation_config.json` on Hugging
+  Face, or from its model card when that file sets none. A model without `default_temperature` is sampled at 0.0;
+  without `default_top_p`, the provider decides.
+- **`max_images`** is the most images one request may carry, so `ImageAdmission` refuses or trims before the provider
+  rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
+  `--limit-mm-per-prompt` in the compose template.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
@@ -217,6 +228,29 @@ After publishing, all stages pull the new image automatically via `docker compos
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
 
+### Publishing the Presidio analyzer image
+
+The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's multilingual PII model
+(`urchade/gliner_multi_pii-v1`, pinned revision) and spaCy's `de_core_news_lg` baked in, the hub offline at run time,
+and Presidio's stock REST server with two changes: every route but `/health` needs
+`Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
+(`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
+recognizer config (`templates/configs/presidio-analyzer.yaml`,
+copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
+`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
+header.
+
+Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
+`make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
+`image_tags.presidio_analyzer`, so bump that tag with every change to `docker/presidio-analyzer/` and publish **before
+any stage pulls it**: CI's backend tests start `litellm`, which depends on the analyzer. Live acceptance tests:
+`docker/presidio-analyzer/test_presidio_analyzer.py` (manual, see its docstring).
+
+Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
+character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
+allow for.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
@@ -235,16 +269,17 @@ The template conditionally includes services based on stage and GPU mode:
 Port exposure: direct localhost ports (`8080:8080`) only in `dev`, `local`, `build`. In `nightly`/`latest`, all traffic
 routes through Traefik.
 
-## Network Isolation (6 Zones)
+## Network Isolation (7 Zones)
 
-| Network        | Purpose                           | Internal | ICC | Key Services                                                                       |
-| -------------- | --------------------------------- | -------- | --- | ---------------------------------------------------------------------------------- |
-| `proxy`        | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                        |
-| `backend`      | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                 |
-| `data`         | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                             |
-| `storage`      | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                 |
-| `egress`       | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents, release notes agent |
-| `code-sandbox` | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                      |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                                       |
+| --------------- | --------------------------------- | -------- | --- | ---------------------------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                        |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                 |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                             |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                 |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents, release notes agent |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                      |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)                          |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -257,6 +292,11 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
+in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
+outbound internet, which `internal: true` denies in non-dev stages. In dev it publishes port 5002 for agents running on
+the host.
 
 **Special**: `open-webui` uses `network_mode: "host"` in dev (to reach services running locally outside Docker).
 

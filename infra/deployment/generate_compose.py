@@ -135,6 +135,7 @@ STATIC_COPY_DIRS = [
 # (source relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR, output_name)
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
+    ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
@@ -171,6 +172,7 @@ OWN_IMAGE_LICENSES = {
     "release_notes_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "universal_agent": "Apache-2.0",
+    "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
     "expert_rag_agent": "Apache-2.0",
