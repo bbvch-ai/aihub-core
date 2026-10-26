@@ -227,22 +227,33 @@ async def do_rerank_nodes(
     t: LocaleHandler,
     user: UserIdentity | None,
 ) -> RerankerEvent:
-    """Rerank nodes and build RerankerEvent."""
+    """Rerank nodes and build RerankerEvent; ordered by retrieval score when the reranker is unavailable.
+
+    The fallback keeps the turn answering from what was retrieved rather than failing on the ranking, as `Knowledge`
+    does; `reranked` on the event tells a reader which order the answer was built from.
+    """
     await displayer.display_thought(t("agent.thought.reranking_results"))
-    reranked_nodes = await rerank_nodes(
-        nodes=nodes,
-        query=query,
-        reranking_model=reranking_config.reranking_model,
-        user=user,
-    )
+    top_n = reranking_config.reranking_model.top_n
+    try:
+        output_nodes = await rerank_nodes(
+            nodes=nodes,
+            query=query,
+            reranking_model=reranking_config.reranking_model,
+            user=user,
+        )
+        reranked = True
+    except Exception:
+        logger.exception("[rag] Could not rerank the retrieved nodes, keeping retrieval order")
+        output_nodes = sorted(nodes, key=lambda node: node.score or 0.0, reverse=True)[:top_n]
+        reranked = False
 
     return RerankerEvent(
         query=query,
         rerank_model_name=reranking_config.reranking_model.model_name,
-        top_n=reranking_config.reranking_model.top_n,
+        top_n=top_n,
         input_nodes=nodes,
-        output_nodes=reranked_nodes,
-        reranked=reranking_config.reranking_model is not None,
+        output_nodes=output_nodes,
+        reranked=reranked,
     )
 
 
