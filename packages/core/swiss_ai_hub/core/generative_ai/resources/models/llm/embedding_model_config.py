@@ -1,7 +1,6 @@
 from typing import Annotated, Literal, Self
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
-from llama_index.embeddings.openai_like import OpenAILikeEmbedding
 from opentelemetry.propagate import inject
 from pydantic import Field
 
@@ -12,6 +11,9 @@ from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import LiteLLMBase
+from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like_embedding import (
+    ResilientOpenAILikeEmbedding,
+)
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
 
@@ -80,7 +82,7 @@ class EmbeddingLLMParameter(Form):
         )
 
 
-class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
+class EmbeddingModelConfig(LiteLLMBase[ResilientOpenAILikeEmbedding]):
     """
     Configuration for an embedding model.
 
@@ -114,7 +116,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
 
     def to_llama_index(
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
-    ) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
+    ) -> tuple[ResilientOpenAILikeEmbedding, LLMCostTracker]:
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
@@ -129,13 +131,14 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
         if extra_headers:
             default_headers.update(extra_headers)
 
-        open_ai_like_embedding = OpenAILikeEmbedding(
+        open_ai_like_embedding = ResilientOpenAILikeEmbedding(
             model_name=self.model_name,
             api_base=config.BASE_URL,
             api_key=api_key or config.API_KEY.get_secret_value(),
             max_retries=self.default_parameter.max_retries,
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
+            connect_timeout=config.CONNECT_TIMEOUT_SECONDS,
             default_headers=default_headers,
         )
 

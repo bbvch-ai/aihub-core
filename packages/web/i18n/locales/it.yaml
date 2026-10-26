@@ -341,6 +341,20 @@ event:
     error: Errore
     stop: Termina con
     targetAgent: Scrittore di memoria
+  extraction:
+    fields: Colonne
+    instructions: Righe da tenere
+    criteria: Documenti selezionati
+    collections: Raccolte
+    notices: Avvisi
+    documentIds: '{count} documenti scelti'
+    files: File
+    failedFiles: File non riusciti
+    rows: Righe mostrate / trovate
+    truncated: Abbreviato
+    continuePending: Continua un'estrazione incompiuta
+    remainingDocuments: Documenti rimanenti
+    remainingRows: Righe ancora da mostrare
   toolLoop:
     loop: Insieme di strumenti
     mode: Modalità
@@ -971,6 +985,17 @@ form:
       in alcuni casi. Per evitare comportamenti inattesi, disattivala temporaneamente
       fino al rilascio di una correzione.
 lib:
+  modelBound:
+    providerDefault: predefinito del fornitore
+    overrideRequired: Inserisci un valore, oppure deseleziona la sostituzione per
+      usare il valore predefinito.
+    defaultPlaceholder: 'Predefinito del modello: {value}'
+    maximumHint: Al massimo {maximum} per {model}.
+    maximumHintWithFill: 'Al massimo {maximum} per {model}: il {percent} dei {modelMaximum}
+      token del modello, come margine per le differenze nel conteggio dei token.'
+    aboveMaximum: Per {model} sono consentiti al massimo {maximum}.
+  modelGated:
+    unavailable: '{model} non lo supporta.'
   cron:
     errors:
       required: Ogni posizione è obbligatoria — una vuota non è una pianificazione
@@ -1002,6 +1027,8 @@ lib:
       è possibile offrire raccolte.
     empty: L'agente selezionato non è configurato per alcuna raccolta.
     unavailable: Salvata, ma non consultata dall'agente selezionato
+  knowledgeDatabases:
+    unavailable: '{name} (eliminato o non visibile a te)'
   vectorStore:
     label: Archivio vettoriale
     help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
@@ -1101,7 +1128,8 @@ tenant:
   mismatch_warning: Conflitto di tenant
   mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
     sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
-  mismatch_switch_action: Cambia tenant
+  mismatch_switch_action: Vai a {tenant}
+  mismatch_use_this_tenant: Chatta in {tenant}
   administration_title: Amministrazione tenant
   administration_description: Gestisci i tenant nell'intera piattaforma
 support:

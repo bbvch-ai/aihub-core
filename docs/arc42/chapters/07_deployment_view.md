@@ -136,8 +136,8 @@ uploads). etcd attaches to storage because SeaweedFS filer uses it for directory
 The **egress** network provides outbound internet access with inter-container communication disabled
 (`com.docker.network.bridge.enable_icc: "false"`). Only services that call the internet themselves attach to it:
 Playwright and SearXNG (web pages and search engines), the rclone daemon (cloud storage), the structured source pipeline
-(business application APIs such as Jira), the IMAP and e-mail classification agents (mail servers), and the OTEL
-Collector (external telemetry backends). A compromised container can reach the internet through it but no other
+(business application APIs such as Jira and Confluence), the IMAP and e-mail classification agents (mail servers), and
+the OTEL Collector (external telemetry backends). A compromised container can reach the internet through it but no other
 container; each reaches its peers only over its other networks.
 
 The **code-sandbox** network is a single-tenant zone for Open Terminal, the code-execution sandbox for OpenWebUI, which

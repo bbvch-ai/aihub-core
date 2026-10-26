@@ -73,6 +73,8 @@ config:
   draft_prompt:
     label: Invite de rédaction
     help: Instructions guidant la manière dont le LLM rédige le corps de la réponse.
+      La réponse peut utiliser le Markdown (gras, listes) ; un texte entouré de ==doubles
+      signes égal== est surligné en jaune dans le brouillon.
   category_name:
     label: Catégorie
     help: Nom de la catégorie, par ex. support_request. Doit être unique.
@@ -152,3 +154,25 @@ config:
     help: Durée maximale d'une recherche de connaissances avant que le message soit
       rédigé avec le texte d'échec. Sans délai, un agent de connaissances hors ligne
       laisse l'exécution attendre indéfiniment.
+  quote_original:
+    label: Citer le message d'origine
+    help: Si activé, le message d'origine est cité sous la réponse, avec son expéditeur,
+      sa date, ses destinataires et son objet, comme une réponse dans Outlook. Il
+      est ajouté après la rédaction et n'est jamais montré au modèle.
+  quote_locale:
+    label: Langue de la citation
+    help: Langue des libellés De/Envoyé/À/Objet et de la date au-dessus du message
+      cité. Outlook utilise la langue de la personne qui répond. Choisissez celle
+      du titulaire de la boîte.
+  quote_timezone:
+    label: Fuseau horaire de la citation
+    help: Fuseau horaire de la date d'envoi au-dessus du message cité. Outlook l'affiche
+      dans le fuseau de la personne qui répond. Choisissez celui du titulaire de la
+      boîte.
+quote:
+  from: De
+  sent: Envoyé
+  to: À
+  cc: Cc
+  subject: Objet
+  date_format: '%d/%m/%Y %H:%M'

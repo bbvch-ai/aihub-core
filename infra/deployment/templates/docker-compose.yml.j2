@@ -3610,6 +3610,71 @@ services:
       - pii-detection  # Caller of the Presidio analyzer
   {%- endif %}
 
+  {%- if image_tags.knowledge_extraction_agent[stage] %}
+  {{ service_license('knowledge_extraction_agent') }}
+  knowledge_extraction_agent:
+    container_name: knowledge-extraction-agent
+    restart: always
+    {%- if image_tags.knowledge_extraction_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/knowledge_extraction_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.knowledge_extraction_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB (agent configs and the knowledge documents it reads)
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus (the runner's readiness check)
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: knowledge-extraction-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('knowledge_extraction_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+  {%- endif %}
+
   {%- if image_tags.rag_agent[stage] %}
   {{ service_license('rag_agent') }}
   rag_agent:

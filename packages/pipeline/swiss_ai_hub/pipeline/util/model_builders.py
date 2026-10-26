@@ -97,7 +97,7 @@ def vision_model_name_for_bucket(bucket: str) -> str:
 
 
 def llm_config_for_bucket(bucket: str) -> LLMConfig:
-    return LLMConfig(model_name=llm_model_name_for_bucket(bucket))
+    return LLMConfig.deterministic(llm_model_name_for_bucket(bucket))
 
 
 def embedding_config_for_bucket(bucket: str) -> EmbeddingModelConfig:
@@ -139,7 +139,7 @@ def build_language_model(bucket: str):
 @cache
 def build_vision_model(bucket: str):
     """Figure-description model instance for a database, cached per bucket."""
-    model, _ = LLMConfig(model_name=vision_model_name_for_bucket(bucket)).to_llama_index(
+    model, _ = LLMConfig.deterministic(vision_model_name_for_bucket(bucket)).to_llama_index(
         extra_headers=PIPELINE_REDACTION_HEADERS
     )
     return model

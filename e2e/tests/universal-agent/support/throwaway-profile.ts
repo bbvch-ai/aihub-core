@@ -1,14 +1,18 @@
-import { AgentProfiles, type ThrowawayProfile, type ToolLoopOverrides } from './agent-profiles'
+import { AgentProfiles, type ProfileOptions, type ThrowawayProfile, type ToolLoopOverrides } from './agent-profiles'
 import { API_TOKEN, LLM_TEST_TIMEOUT } from './env'
 import { expect, test } from './openwebui-test'
 import { Preflight } from './preflight'
 
 /**
- * Gives an `@llm` describe block its own Universal Agent profile: created and checked before its first test, deleted
+ * Gives an `@llm` describe block its own agent profile (a Universal Agent one unless `options` names another class): created and checked before its first test, deleted
  * after its last. The tests of the block run in order in one worker, so they share the profile.
  */
 export class ThrowawayProfileFixture {
-  static register(label: string, toolLoop: ToolLoopOverrides = {}): () => ThrowawayProfile {
+  static register(
+    label: string,
+    toolLoop: ToolLoopOverrides = {},
+    options: ProfileOptions = {},
+  ): () => ThrowawayProfile {
     let profiles: AgentProfiles | undefined
     let profile: ThrowawayProfile | undefined
 
@@ -17,7 +21,7 @@ export class ThrowawayProfileFixture {
 
     test.beforeAll(async ({ owui }) => {
       profiles = await AgentProfiles.connect()
-      profile = await profiles.create(label, toolLoop)
+      profile = await profiles.create(label, toolLoop, options)
       await AgentProfiles.waitUntilListed(owui, profile)
       await Preflight.check(owui, profile.modelId)
     })

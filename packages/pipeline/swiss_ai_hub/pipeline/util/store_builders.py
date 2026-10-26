@@ -63,8 +63,9 @@ def build_vector_store(store_name: str, dimension: int | None = None) -> MilvusV
 
     ``dimension`` is what the collection is created with, so it must come from the embedding model that
     produces the vectors — Milvus does not reject a mismatched width, it silently truncates or pads.
-    Paths that only operate on a collection that already exists (teardown, deletes) may omit it and take
-    the deployment default: nothing is created there, so the value is never written into a schema.
+    Omitting it takes the deployment default, and a missing collection is still created with it. That is safe
+    only because a database's observation provisions its collection with the model's width before any
+    ingestion or removal run of that database can start (``DefaultPartitionRepairService``).
 
     Mirrors ``MilvusVectorStoreResource``: pymilvus 2.6+ builds an ``AsyncMilvusClient`` during
     ``MilvusVectorStore`` init which calls ``asyncio.get_running_loop()``, so a running loop must exist.

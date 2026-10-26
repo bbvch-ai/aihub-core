@@ -3,7 +3,12 @@ from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.universal_agent import UniversalAgentConfig
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.memory.user_memory_config import UserMemoryConfig
+from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import EXTRACT_RECORDS_TOOL
+from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_config import RecordExtractionConfig
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_policy import ToolApprovalPolicy
+from swiss_ai_hub.agent.capabilities.tool_loop.tool_approval_rule import ToolApprovalRule
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 
 
@@ -71,7 +76,14 @@ def build() -> UniversalAgentConfig:
         ),
         task_llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
         knowledge_tool=KnowledgeToolConfig(every_readable_collection=True),
+        knowledge_documents=KnowledgeDocumentConfig(enabled=True),
+        record_extraction=RecordExtractionConfig(extraction_model_name="text-generation/gemma-4-31B-it"),
         user_memory=UserMemoryConfig(memory_llm="text-generation/gemma-4-31B-it"),
         org_memory=None,
-        tool_loop=ToolLoopConfig(max_iterations=20, max_tool_calls=40),
+        tool_loop=ToolLoopConfig(
+            max_iterations=20,
+            max_tool_calls=40,
+            # API and bot clients cannot answer a confirmation; a broad extraction asks the user anyway.
+            approvals=[ToolApprovalRule(tool=EXTRACT_RECORDS_TOOL, policy=ToolApprovalPolicy.NEVER)],
+        ),
     )
