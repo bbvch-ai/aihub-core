@@ -6,6 +6,7 @@ from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_filters import ThreadFilters
 from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import SortOrder
 
@@ -63,12 +64,26 @@ class ThreadEntity(Document):
 
         The id is derived from the profile rather than looked up by field, so two replicas racing a
         handover converge on the same document instead of creating a second thread.
+
+        Because the id is derivable, a client can create a chat thread under it before the first scheduled
+        run. Such a thread is discarded together with its events, so runs never fire into a thread that
+        has members or carries their messages as history.
         """
         thread_id = cls.scheduled_thread_id(agent)
         existing = cls.objects(id=thread_id).first()
-        if existing:
+        if existing and existing._is_scheduled_thread_of(agent):
             return existing
+        if existing:
+            PersistedAgentEventEntity.delete_events_for_thread(str(thread_id))
+            existing.delete()
         return cls.create_thread(name, users=[], agents=[agent], thread_id=thread_id)
+
+    def _is_scheduled_thread_of(self, agent: AgentInstanceRef) -> bool:
+        return (
+            not self.users
+            and self.process_class is None
+            and [(ref.agent_class, ref.agent_id) for ref in self.agents] == [(agent.agent_class, agent.agent_id)]
+        )
 
     @staticmethod
     def scheduled_thread_id(agent: AgentInstanceRef) -> ObjectId:
@@ -142,9 +157,13 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def count_threads_by_agent(cls, agent_class: str, agent_id: str) -> int:
-        """Count the total number of threads that include the specified agent."""
-        return cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class).count()
+    def count_threads_by_agent(cls, agent_class: str, agent_id: str, user_id: str) -> int:
+        """Count the user's threads that include the specified agent."""
+        return (
+            cls.objects()
+            .filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
+            .count()
+        )
 
     @classmethod
     @trace_fn
@@ -178,15 +197,10 @@ class ThreadEntity(Document):
     @classmethod
     @trace_fn
     def get_paginated_threads_by_agent(
-        cls, agent_class: str, agent_id: str, user_id: str | None = None, skip: int = 0, limit: int = 20
+        cls, agent_class: str, agent_id: str, user_id: str, skip: int = 0, limit: int = 20
     ) -> list["ThreadEntity"]:
-        """
-        Get a paginated list of threads that include the specified agent.
-        If a user_id is provided, it also filters for threads containing that user.
-        """
-        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class)
-        if user_id:
-            query = query.filter(users__user_id=user_id)
+        """Get a page of the user's threads that include the specified agent."""
+        query = cls.objects().filter(agents__agent_id=agent_id, agents__agent_class=agent_class, users__user_id=user_id)
         return query.order_by("-created_at").skip(skip).limit(limit)
 
     @classmethod

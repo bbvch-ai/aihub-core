@@ -22,14 +22,13 @@ from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale, use_locale
 from swiss_ai_hub.api.routes.event.dto.event_timeseries import EventTimeseries
 from swiss_ai_hub.api.routes.event.dto.thread_reference import ThreadReference
 from swiss_ai_hub.api.routes.event.event_service import EventService
+from swiss_ai_hub.api.routes.thread.thread_access import ThreadAccess
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.sockets.events.server_to_user.contextualized_agent_event import ContextualizedAgentEvent
 from swiss_ai_hub.api.sockets.manager.dependencies.use_ws_manager import use_ws_manager_ws
 from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
-
-NO_THREAD_ACCESS_DETAIL = "You do not have access to this thread. Please contact the process owner."
 
 
 def _acting_tenant_id(user: UserIdentity) -> str | None:
@@ -71,15 +70,7 @@ class EventController(TenantScopedController):
                 )
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-            user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                thread.process_class, thread.process_id
-            )
-            if not (user_in_thread or thread_belongs_to_users_process):
-                raise HTTPException(
-                    status_code=403,
-                    detail=NO_THREAD_ACCESS_DETAIL,
-                )
+            ThreadAccess.ensure_can_view(thread, user)
 
             # Offloaded: reads and deserialises every display event in the thread, so its cost grows
             # with conversation length. On the event loop that stalls every concurrent request.
@@ -111,15 +102,7 @@ class EventController(TenantScopedController):
                 return ThreadReference(thread_id="")
 
             thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-            user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                thread.process_class, thread.process_id
-            )
-            if not (user_in_thread or thread_belongs_to_users_process):
-                raise HTTPException(
-                    status_code=403,
-                    detail=NO_THREAD_ACCESS_DETAIL,
-                )
+            ThreadAccess.ensure_can_view(thread, user)
 
             return ThreadReference(thread_id=thread_id)
 
@@ -173,15 +156,7 @@ class EventController(TenantScopedController):
 
             if thread_id:
                 thread = await ThreadService.get_thread_by_id(thread_id=thread_id, t=t)
-                user_in_thread = user.id in [u.id for u in thread.users]
-                thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                    thread.process_class, thread.process_id
-                )
-                if not (user_in_thread or thread_belongs_to_users_process):
-                    raise HTTPException(
-                        status_code=403,
-                        detail=NO_THREAD_ACCESS_DETAIL,
-                    )
+                ThreadAccess.ensure_can_view(thread, user)
 
             # Offloaded: an unfiltered range aggregates the whole agent_events collection, which took
             # minutes in production and, on the event loop, pushed concurrent token validation past

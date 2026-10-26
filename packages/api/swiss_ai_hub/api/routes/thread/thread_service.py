@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events.agent import (
@@ -39,6 +40,7 @@ from swiss_ai_hub.api.routes.thread.dto.statistics.processed_run_results import 
 from swiss_ai_hub.api.routes.thread.dto.statistics.run_statistics import RunStatistics
 from swiss_ai_hub.api.routes.thread.dto.thread_agent_dto import ThreadAgentDTO
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
+from swiss_ai_hub.api.routes.thread.thread_access import ThreadAccess
 from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 from swiss_ai_hub.api.routes.user.user_service import UserService
 
@@ -104,6 +106,32 @@ class ThreadService:
 
     @staticmethod
     @trace_fn
+    async def get_or_create_thread_to_post_in(
+        thread_id: str,
+        user: UserIdentity,
+        agent: AgentInstanceRef,
+        t: LocaleHandler,
+    ) -> ThreadDTO:
+        """The thread an event is posted into, started for the caller when the id is new.
+
+        Clients name a new conversation's thread themselves (the OpenWebUI pipe derives it from the chat id),
+        so an unknown id is created rather than refused. The one id derivable by anyone, a profile's
+        scheduled-run thread, is never handed to a client.
+        """
+        try:
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        except DoesNotExist:
+            if ObjectId(thread_id) == ThreadEntity.scheduled_thread_id(agent):
+                raise HTTPException(status_code=409, detail="This thread id is reserved for scheduled runs")
+            ThreadEntity.create_thread(
+                "chat", users=[User(user_id=user.id)], agents=[agent], thread_id=ObjectId(thread_id)
+            )
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+        ThreadAccess.ensure_can_post(thread, user)
+        return thread
+
+    @staticmethod
+    @trace_fn
     async def get_paginated_threads_for_user(
         user_id: str,
         t: LocaleHandler,
@@ -150,18 +178,16 @@ class ThreadService:
     async def get_paginated_threads_for_agent(
         agent_class: str,
         agent_id: str,
+        user_id: str,
         t: LocaleHandler,
         page: int = 1,
         page_size: int = 20,
-        user_id: str | None = None,
     ) -> tuple[int, list[ThreadDTO]]:
-        """
-        Returns a paginated list of threads that a specific agent is part of.
-        """
+        """Returns a page of the user's threads that a specific agent is part of."""
         skip = (page - 1) * page_size
-        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id)
+        total = ThreadEntity.count_threads_by_agent(agent_class, agent_id, user_id)
         threads = ThreadEntity.get_paginated_threads_by_agent(
-            agent_class, agent_id, skip=skip, limit=page_size, user_id=user_id
+            agent_class, agent_id, user_id, skip=skip, limit=page_size
         )
         thread_dtos = await asyncio.gather(
             *(ThreadService.thread_response_from_entity(thread, t) for thread in threads)

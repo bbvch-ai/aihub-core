@@ -171,6 +171,19 @@ class TestGetOrCreateScheduledThread:
 
         assert ThreadEntity.objects.count() == 2
 
+    def test_replaces_a_chat_thread_a_client_created_under_the_id(self):
+        agent = AgentInstanceRef(agent_class="ImapAgent", agent_id="inbox-1")
+        ThreadEntity.create_thread(
+            "chat", users=[User(user_id="u1")], agents=[agent], thread_id=ThreadEntity.scheduled_thread_id(agent)
+        )
+
+        thread = ThreadEntity.get_or_create_scheduled_thread("Scheduled runs", agent)
+
+        stored = ThreadEntity.get_thread_by_id(str(thread.id))
+        assert stored.name == "Scheduled runs"
+        assert stored.users == []
+        assert ThreadEntity.objects.count() == 1
+
 
 class TestUpdateThreadName:
     def test_update_thread_name_overrides_the_default_name(self):

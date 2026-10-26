@@ -129,6 +129,11 @@ class PersistedAgentEventEntity(Document):
 
     @classmethod
     @trace_fn
+    def delete_events_for_thread(cls, thread_id: str) -> int:
+        return cls.objects(thread_id=thread_id).delete()
+
+    @classmethod
+    @trace_fn
     def delete_events_older_than(
         cls,
         thread_ids: list[str],

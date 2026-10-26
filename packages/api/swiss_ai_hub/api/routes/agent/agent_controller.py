@@ -4,7 +4,6 @@ from typing import Annotated, Self
 
 from fastapi import BackgroundTasks, Depends, HTTPException, Query, Security
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
-from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -215,16 +214,15 @@ class AgentController(TenantScopedController):
             page_size: PageSize = 20,
         ) -> PaginatedThreadsResponse:
             """
-            Retrieve all threads that a specific agent instance is part of.
+            Retrieve the caller's threads with a specific agent instance; agent admins see only their own too.
             """
-            access_level = AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)
             total, threads = await AgentService.get_agent_instance_threads(
                 agent_class=agent_class,
                 agent_id=agent_id,
                 t=t,
                 page=page,
                 page_size=page_size,
-                user_id=None if access_level == AccessLevel.ACCESS_ADMIN else user.id,
+                user_id=user.id,
             )
 
             total_pages = (total + page_size - 1) // page_size
