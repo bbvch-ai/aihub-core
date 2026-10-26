@@ -91,8 +91,9 @@ class MailboxRunLease:
         the batch has been filed.
 
         The rule exists because losing the lease mid-classification means a second run is working the same unread
-        mail. After filing, that situation cannot arise: every message of the batch has left the inbox, so a
-        concurrent run's `list_unread` finds nothing of this batch to classify, fetch or file. What remains is
+        mail. After filing, that situation cannot arise: every message of the batch has left the inbox, or stays there
+        below an inbox watermark already advanced past it, so a concurrent run's listing finds nothing of this batch to
+        classify, fetch or file. What remains is
         drafting, and the delegation window it spans is unbounded — a run waits on N RAG agents with no step body to
         heartbeat from, so a lapsed lease there is the expected case, not evidence of a competitor. Treating it as
         fatal would throw away a batch's drafts every time the delegates were slow, and the mail is already filed, so

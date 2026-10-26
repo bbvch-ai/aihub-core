@@ -60,10 +60,11 @@ reproducible with the consistency report in the module's integration tests.
 
 **6. Long documents are split into overlapping windows.** A window is bounded by the input window minus the prompt, and
 by half the output limit, because records come back as JSON that can reach twice the size of a dense table. Windows
-overlap by ten percent and break at line ends, so a markdown table row is never cut: the sentence fallback would cut
-it at the decimal point of an amount, and the model would read the cut row as a different record. `RecordMerger` drops a record only when a *compatible* record came from the *adjacent* window:
-non-null values agree, and the kept record takes the other's non-null values. Identical records within one window, or in
-windows that share no text, are kept, because an invoice can legitimately repeat a line.
+overlap by ten percent and break at line ends, so a markdown table row is never cut: the sentence fallback would cut it
+at the decimal point of an amount, and the model would read the cut row as a different record. `RecordMerger` drops a
+record only when a *compatible* record came from the *adjacent* window: non-null values agree, and the kept record takes
+the other's non-null values. Identical records within one window, or in windows that share no text, are kept, because an
+invoice can legitimately repeat a line.
 
 Every window after the first is also shown the document's opening, up to 512 tokens and at most half a window, as
 context for values that apply to every record. An invoice states its number and supplier once, at the top. Without the
@@ -100,8 +101,8 @@ records of the windows that worked, because a partial list would read as complet
 - **Windows sized by output are small.** On an 8192-token output limit a window holds about 4000 tokens, so a long
   document costs many calls.
 - **A shared value must sit in the opening.** A value stated once in the middle of a long document, such as a section
-  heading, still reaches only the records of its own window. A document that bundles several invoices may lend the
-  first one's header to later records whose excerpt does not restate theirs.
+  heading, still reaches only the records of its own window. A document that bundles several invoices may lend the first
+  one's header to later records whose excerpt does not restate theirs.
 - **Compatible-record matching can merge two distinct lines** that sit in adjacent windows and share every known value.
 - **Page provenance is not available yet.** Parsed text carries no page boundaries, so `RecordProvenance.page` stays
   `None` until ingestion records them.

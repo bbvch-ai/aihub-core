@@ -42,6 +42,7 @@ This guide is structured to build your knowledge progressively:
 12. [**Using MCP Tools**](./11_using_mcp_tools/) - Connecting agents to external MCP servers to call their tools.
 13. [**Capabilities and Tools**](./12_capabilities_and_tools/) - Reusing the steps every chat agent needs and letting
     the model choose tools with the tool loop.
+14. [**Reading Jira from an Agent**](./13_reading_jira/) - Querying Jira Cloud or Data Center for tickets with JQL.
 
 ## Key Principles of the SDK
 

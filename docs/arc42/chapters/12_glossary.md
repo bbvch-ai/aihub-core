@@ -218,6 +218,7 @@ meaning, the definition here reflects the platform-specific usage.
 | Data network     | The Docker network connecting databases, caches, and the message broker (PostgreSQL, FerretDB, Milvus, Neo4j, NATS, Valkey, ClickHouse, etcd).                                                                                           |
 | Storage network  | The Docker network connecting the SeaweedFS cluster and services that access object storage.                                                                                                                                             |
 | Egress network   | The Docker network providing outbound internet access with inter-container communication disabled. Only services that call the internet themselves attach to it, such as Playwright, SearXNG and the source pipelines.                   |
+| Browser network  | The Docker network holding the Playwright browser and only the services that call it (Open WebUI and the agents that read linked web pages). Internal in non-dev stages; the browser reaches the internet through the egress network.    |
 | Init container   | A container that runs once at startup (`restart: no`) to perform idempotent initialization (creating database schemas, S3 buckets, default roles). Downstream services use `service_completed_successfully` to wait for init containers. |
 
 ## Security terms

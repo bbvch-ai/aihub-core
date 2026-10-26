@@ -55,7 +55,7 @@ Use it for profiles that handle sensitive data, such as HR, even when their mode
 
 ### Anonymising text by hand
 
-Users can also anonymise a text themselves with the [Anonymiser](../../5_agents/14_anonymiser/) agent, then use it in
+Users can also anonymise a text themselves with the [Anonymiser](../../5_agents/16_anonymiser/) agent, then use it in
 any tool, inside the Hub or outside it. They paste the answer back into the same chat to get the original values
 restored. The Anonymiser uses the same analyzer and the same list of what counts as personal data, and calls no model.
 

@@ -1,0 +1,128 @@
+---
+steps:
+  plan:
+    name: Plan the Table
+    description: Resolves the selected documents and designs the table's columns
+  extract:
+    name: Extract from a Document
+    description: Reads one document and extracts its rows
+  assemble:
+    name: Assemble the Table
+    description: Joins the rows of every document into one table
+  extract_as_tool:
+    name: Extract a Table as a Tool
+    description: Runs the table extraction the model chose
+  answer_tool_call:
+    name: Return the Table to the Model
+    description: Hands the table's summary back to the model's tool loop
+config:
+  extraction_model_name:
+    label: Extraction Model
+    help: The model that reads each document and extracts its rows. Empty uses the
+      main model.
+  max_files:
+    label: Files per Answer
+    help: The most documents one answer extracts from. When more match, the user is
+      shown a sample and asked to narrow the request or to continue part by part.
+  minutes_per_turn:
+    label: Minutes per Answer
+    help: About how long one answer may extract before the rest is offered as further
+      parts. The time is estimated from the documents' size, so it is approximate.
+  max_documents_total:
+    label: Most Matching Documents
+    help: Above this many matching documents the user is only asked to narrow the
+      request; extracting part by part is not offered.
+  max_rows:
+    label: Rows in the Table
+    help: The most rows one answer shows. More rows are shown when the user continues;
+      nothing is dropped.
+  max_document_chars:
+    label: Longest Fully Read Document (Characters)
+    help: Longer documents are read only in their relevant parts, and their rows are
+      marked as partly read.
+  max_parallel_extractions:
+    label: Model Calls at Once
+    help: How many extraction calls one agent instance makes at the same time. Lower
+      it when the model gateway is busy.
+tools:
+  extract:
+    label: Extract a Table
+    approval: 'Extract a table with these columns from knowledge documents: {fields}'
+    description: Extracts one table from many knowledge documents, one row per record
+      found, each row naming its file. Use it when the user wants records collected
+      across documents, such as every hardware position on the 2025 invoices of a
+      supplier; not for a question one document or the knowledge search answers. First
+      find the documents with the listing and search tools and check them with select_knowledge_documents;
+      then call this with the same conditions. The user sees the table directly; you
+      get its summary. When more documents match than one answer extracts, the user
+      gets a sample and decides; continue only when they agree, with continue_pending
+      set to true.
+  select:
+    label: Select Documents
+    approval: 'Select knowledge documents for a table with these columns: {fields}'
+table:
+  match: Match
+  match_yes: 'yes'
+  match_unsure: unsure, please check
+  partly_read: (partly read)
+  collection: Collection
+  path: Path
+  filename: File
+summary:
+  no_rows: '**No rows from:** %{files}'
+  unsure: '**Unsure:** %{count} rows may not meet the condition; they are kept and
+    marked in the Match column so you can check them.'
+  partly_read: '**Partly read (rows may be missing):** %{files}'
+  counts: '**Files:** %{files} · **Rows found:** %{rows} · **Files that failed:**
+    %{failed}'
+  sample_counts: '**Sample:** %{files} of %{total} matching documents · **Rows found:**
+    %{rows}'
+  sample_counts_ceiling: '**Sample:** %{files} of more than %{total} matching documents
+    · **Rows found:** %{rows}'
+  criteria: '**Selected:** %{criteria}'
+  document_rows_cut: '**Rows left out (too many in one document for one answer):**
+    %{files}'
+  document_rows_entry: '%{file} (%{count} rows)'
+  listed_more: and %{count} more
+  failed_files: '**Files that could not be extracted:**'
+  failed_more: …and %{count} more files that could not be extracted.
+  no_documents: No document matches the selection, so nothing was extracted.
+  not_started: 'The table could not be extracted: %{reason}'
+  too_broad: '**%{total} documents match**, more than one answer extracts (about %{minutes}
+    minutes in all).'
+  too_broad_ceiling: '**More than %{total} documents match.**'
+  options_parts: Narrow the request, for example to one of the folders or years above,
+    or reply *continue* to extract all %{total} documents in %{parts} parts of about
+    %{minutes} minutes each.
+  options_narrow: 'Please narrow the request, for example to one of the folders or
+    years above: this many documents are not extracted part by part.'
+  part: '**Part %{part} of %{parts}:** documents %{first}–%{last} of %{total}.'
+  continue_parts: Reply *continue* for the next %{files} documents (about %{minutes}
+    minutes).
+  rows_follow: '%{count} more rows follow; reply *continue* to see them.'
+  more_rows: '**More rows** of the previous answer.'
+  done: '**All %{total} documents are extracted** in %{parts} parts: %{rows} rows
+    found, %{files} files failed.'
+  done_short: '**%{extracted} of %{total} documents are extracted** in %{parts} parts:
+    %{rows} rows found, %{files} files failed; the others are no longer available
+    to this conversation.'
+  nothing_pending: There is no table extraction to continue in this conversation.
+  gone: '%{count} documents are no longer available to this conversation and were
+    left out.'
+  scope_changed: The collections this table was extracted from are no longer all available
+    to this conversation, so the extraction stopped. Ask again to extract from what
+    is available now.
+facets:
+  folders: '**By folder:** %{entries}'
+  years: '**By year in the path:** %{entries}'
+  collections: '**By collection:** %{entries}'
+  first: These are the folders and years of the first %{total} documents by path;
+    there are more.
+progress:
+  partial: '%{path} is long: reading only its relevant parts.'
+  plan: Extracting %{fields} from %{files} documents, about %{minutes} minutes (%{criteria}).
+  sample: '%{total} documents match; extracting a sample from %{files} of them (%{fields}).'
+  part: 'Extracting part %{part} of %{parts}: %{files} documents, about %{minutes}
+    minutes (%{fields}).'
+  extracted: '%{done} of %{files} · %{path}: %{rows} rows'
+  failed: '%{done} of %{files} · %{path}: failed, %{reason}'

@@ -14,7 +14,10 @@ from pymilvus import (
 )
 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
-from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import create_manual_partitions
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
+    MANUAL_PARTITIONS_MARKER,
+    create_manual_partitions,
+)
 from swiss_ai_hub.core.persistence.rag.vectors.stores.partition_aware_milvus_vector_store import (
     PartitionAwareMilvusVectorStore,
 )
@@ -52,6 +55,11 @@ def create_milvus_vector_store(
     - HNSW (default): Best for RAG quality, enable mmap if memory constrained
     - DISKANN: Use when vectors exceed available RAM (requires NVMe SSD)
     - IVF_FLAT: Middle ground if HNSW too memory-intensive and DISKANN unavailable
+
+    Creating the 1023 partitions takes 15-25 s, and the collection is visible to other processes throughout. The schema
+    therefore carries ``MANUAL_PARTITIONS_MARKER`` so they see a half-built collection rather than a legacy one; the
+    store completes it before writing, and the pipeline does so when it observes the database. Two creators racing is
+    harmless: Milvus accepts creating an identical collection or an existing partition.
     """
     if not client.has_collection(collection_name):
         fields = [
@@ -62,7 +70,7 @@ def create_milvus_vector_store(
             FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535, enable_analyzer=True),
         ]
-        schema = CollectionSchema(fields=fields, enable_dynamic_field=True)
+        schema = CollectionSchema(fields=fields, enable_dynamic_field=True, description=MANUAL_PARTITIONS_MARKER)
 
         bm25_function = Function(
             name="bm25_fn",

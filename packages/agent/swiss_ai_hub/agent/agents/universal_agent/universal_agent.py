@@ -12,18 +12,24 @@ from swiss_ai_hub.agent.agents.universal_agent.universal_agent_config import Uni
 from swiss_ai_hub.agent.capabilities.attached_files.attached_files import AttachedFiles
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
+from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import KnowledgeDocumentTools
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_history import ExtractionHistory
+from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
+from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
 from swiss_ai_hub.agent.capabilities.sandbox.sandbox_tools import SandboxTools
 from swiss_ai_hub.agent.capabilities.sandbox.user_files_tools import UserFilesTools
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class UniversalAgent(Agent):
     """One agent an admin configures once: the model decides for itself whether to search our knowledge, read the
-    attached files, recall memory or, with Code Interpreter on, work in the user's code sandbox, and keeps going
-    until it can answer.
+    attached files, recall memory, read the web pages the user links, work on whole knowledge documents and extract
+    tables from them (when the profile switches the document tools on) or, with Code Interpreter on, work in the
+    user's code sandbox, and keeps going until it can answer.
 
     Three steps of its own: hand the instructed history to the conversation, let the model work through its tools,
     and complete with the reply. Nothing is loaded into the prompt up front; every tool call shows in the chat as the
@@ -35,7 +41,17 @@ class UniversalAgent(Agent):
         "agent.universal_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:stars-c"
-    tools = ToolLoop.over(Knowledge, AttachedFiles, Memory, SandboxTools, UserFilesTools)
+    tools = ToolLoop.over(
+        Knowledge,
+        AttachedFiles,
+        Memory,
+        WebFetch,
+        SandboxTools,
+        UserFilesTools,
+        KnowledgeDocumentTools,
+        RecordSelectionTools,
+        RecordExtraction,
+    )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.universal_agent.steps.contextualize.name"),
@@ -45,22 +61,25 @@ class UniversalAgent(Agent):
     async def contextualize_step(
         self, event: UserMessageEvent, agent_config: UniversalAgentConfig, t: LocaleHandler
     ) -> Conversation.ContextualizeRequest:
-        """The agent's instructions and the profile's lead a single system message, ahead of the client's own."""
+        """The agent's instructions and the profile's lead a single system message, ahead of the client's own,
+        followed by what it should know about the pages the message links."""
+        links_note = WebFetch.links_note(event, agent_config, t)
         instructions = [
             t("agent.universal_agent.prompt.instructions"),
             *([agent_config.instructions.in_locale(event.locale)] if agent_config.instructions else []),
+            *([links_note] if links_note else []),
         ]
         history = merge_consecutive_messages(
             [
                 ChatMessage(role=MessageRole.SYSTEM, content="\n\n".join(instructions)),
                 *(message for message in event.messages if message.role == MessageRole.SYSTEM),
-                *(message for message in event.messages if message.role != MessageRole.SYSTEM),
+                *ExtractionHistory.condensed(
+                    [message for message in event.messages if message.role != MessageRole.SYSTEM]
+                ),
             ]
         )
         head, conversation = history[:1], history[1:]
-        limited = limit_chat_history(
-            chat_history=conversation, number_of_input_tokens=agent_config.number_of_input_tokens
-        )
+        limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_budget)
         return Conversation.contextualize(history=[*head, *limited], message=event)
 
     @step(
@@ -69,7 +88,12 @@ class UniversalAgent(Agent):
         icon="mdi:toolbox-outline",
     )
     async def loop_step(self, ctx: Conversation.Contextualized, event: UserMessageEvent) -> ToolLoop.RunRequest:
-        return UniversalAgent.tools.run(ctx.history, files=event.files, knowledge_references=event.knowledge_references)
+        return UniversalAgent.tools.run(
+            ctx.history,
+            files=event.files,
+            knowledge_references=event.knowledge_references,
+            web_references=WebFetch.links_of(event),
+        )
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.universal_agent.steps.complete.name"),

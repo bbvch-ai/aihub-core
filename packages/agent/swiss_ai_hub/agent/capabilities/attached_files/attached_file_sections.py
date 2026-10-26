@@ -255,6 +255,8 @@ class AttachedFileSections:
                 ]
         except ExceptionGroup as failure:
             raise failure.exceptions[0] from failure
+        finally:
+            await embed_model.aclose()
         embedded = {
             self._key(section): array("f", vector)
             for batch, task in zip(batches, batch_tasks, strict=True)

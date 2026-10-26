@@ -2,6 +2,8 @@ import asyncio
 import unicodedata
 from typing import Annotated
 
+from pymongo.errors import ExecutionTimeout
+
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_collection_resolver import (
     KnowledgeCollectionResolver,
 )
@@ -14,6 +16,7 @@ from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_pend
     KnowledgeDocumentPendingError,
 )
 from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import KnowledgeDocumentSummary
+from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_search_budget import KnowledgeSearchBudget
 from swiss_ai_hub.core.generative_ai.knowledge_documents.resolved_knowledge_collection import (
     ResolvedKnowledgeCollection,
 )
@@ -41,13 +44,22 @@ class KnowledgeDocumentReader:
     @trace_fn
     async def list_documents(
         collections: Annotated[list[BucketNamespacePair], _COLLECTIONS_DESCRIPTION],
+        budget: Annotated[
+            KnowledgeSearchBudget | None, "Deadline shared with the caller's searches; no limit when None"
+        ] = None,
     ) -> KnowledgeDocumentListing:
         """List every fully ingested document of the collections; documents still being ingested are left out."""
         summaries: list[KnowledgeDocumentSummary] = []
         for resolved in await KnowledgeCollectionResolver.resolve_all(collections):
-            ref_docs = await asyncio.to_thread(
-                RefDoc.list_ingested_summaries, resolved.db_name, resolved.collection.namespace_name
-            )
+            try:
+                ref_docs = await asyncio.to_thread(
+                    RefDoc.list_ingested_summaries,
+                    resolved.db_name,
+                    resolved.collection.namespace_name,
+                    budget.remaining_ms() if budget else None,
+                )
+            except ExecutionTimeout as execution_timeout:
+                raise (budget.exhausted() if budget else execution_timeout) from execution_timeout
             summaries.extend(KnowledgeDocumentSummary.from_ref_doc(ref_doc, resolved) for ref_doc in ref_docs)
         return KnowledgeDocumentListing.from_summaries(summaries)
 

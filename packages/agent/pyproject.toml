@@ -30,6 +30,11 @@ dependencies = [
     "stringcase>=1.2.0",
     "imapclient>=3.0.1",
     "azure-identity>=1.19.0",
+    "playwright==1.63.*",
+    "trafilatura>=2.2.0",
+    "nh3>=0.3.7",
+    "markdown-it-py>=4.2.0",
+    "linkify-it-py>=2.0.3",
 ]
 
 [dependency-groups]

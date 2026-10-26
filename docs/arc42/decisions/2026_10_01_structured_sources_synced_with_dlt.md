@@ -208,7 +208,11 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   there is no verified Confluence source. The Jira adapter (#1954) uses dlt's `RESTClient`, which brings authentication
   and retries, in a hand-written resource rather than the declarative REST API source: it pages each project with its
   own query, writes the incremental lower bound into JQL in the account's time zone, and merges an issue's comments into
-  its record, none of which the declarative source expresses.
+  its record, none of which the declarative source expresses. The Confluence adapter (#1955) uses it the same way, and
+  finds changes without a cursor: it compares every page's version, path and labels with the previous sync's, kept in
+  the resource state, because renaming or moving a page moves the files of the pages below it while their versions stay
+  the same, and a label change gives the page no new version. Its state grows with the number of pages, some tens of
+  bytes each, instead of staying at about 1 KB.
 - **A sync is daily.** This is inherited from the source-pipelines ADR. Creating a database or changing its source
   triggers nothing, so a new database stays empty until the next scheduled run. A first-sync or on-demand trigger is a
   follow-up; the guard against two concurrent runs of the same database (rule 7) is already in place for it.
@@ -225,7 +229,9 @@ later as missing documents, a database emptied by mistake, or a full re-read nob
   networks of the platform's own services. Before a run's first request, a host without a domain (a Docker service,
   `localhost`) or one resolving to a non-global address is refused unless the deployment allows it
   (`STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`), and redirects are never followed. A host that resolves differently
-  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it.
+  between that check and the request (DNS rebinding) is not covered; an egress proxy would close it. The check
+  (`SourceHostGuard`) has since moved to core's `network/` module (#1951), because agents that read Jira face the same
+  risk; each caller names its own allow-list variable (`JIRA_ALLOWED_PRIVATE_HOSTS` for agents).
 - **A failing write is retried inside the run.** dlt retries a failed load job up to five times and re-delivers its
   batch each time, before the run fails. The ETag check makes the re-delivery harmless. A permanent error raises
   `DestinationTerminalException` so it fails at once.

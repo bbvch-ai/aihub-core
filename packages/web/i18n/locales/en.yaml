@@ -339,6 +339,35 @@ event:
     error: Error
     stop: Ends with
     targetAgent: Memory writer
+    links: Links
+    webReferences: Referenced web pages
+    pagesRead: Pages read
+    notRead: Not read
+    webFetchFailure:
+      malformed_url: Malformed link
+      unsupported_url: Unsupported link
+      blocked_host: Blocked address
+      not_found: Not found
+      access_denied: Access denied
+      http_error: Server error
+      timeout: Timed out
+      unsupported_content: Not a web page
+      empty_content: No readable content
+      url_limit_reached: Over the link limit
+  extraction:
+    fields: Columns
+    instructions: Rows to keep
+    criteria: Selected documents
+    collections: Collections
+    notices: Notices
+    documentIds: '{count} chosen documents'
+    files: Files
+    failedFiles: Files that failed
+    rows: Rows shown / found
+    truncated: Cut short
+    continuePending: Continues an unfinished extraction
+    remainingDocuments: Documents left
+    remainingRows: Rows left to show
   toolLoop:
     loop: Tool set
     mode: Mode
@@ -958,6 +987,16 @@ form:
     org_memory_performance: This feature may not work as expected in some cases. To
       avoid unexpected behavior, please temporarily disable it until a fix is released.
 lib:
+  modelBound:
+    providerDefault: provider default
+    overrideRequired: Enter a value, or untick the override to use the default.
+    defaultPlaceholder: 'Model default: {value}'
+    maximumHint: At most {maximum} for {model}.
+    maximumHintWithFill: "At most {maximum} for {model}: {percent} of the model's\
+      \ {modelMaximum} tokens, as a margin for token-count differences."
+    aboveMaximum: At most {maximum} is allowed for {model}.
+  modelGated:
+    unavailable: '{model} does not support this.'
   cron:
     errors:
       required: Every position is required — a blank one is not a valid schedule.
@@ -988,6 +1027,8 @@ lib:
       offered.
     empty: The selected agent is not configured to retrieve from any collection.
     unavailable: Saved, but not retrieved by the selected agent
+  knowledgeDatabases:
+    unavailable: '{name} (deleted or not visible to you)'
   vectorStore:
     label: Vector Store
     help: Select the knowledge database and namespaces to search
@@ -1088,7 +1129,8 @@ tenant:
   mismatch_warning: Tenant Mismatch
   mismatch_description: Your active tenant was changed to {tenant} in another session.
     The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  mismatch_switch_action: Go to {tenant}
+  mismatch_use_this_tenant: Chat in {tenant}
   administration_title: Tenant Administration
   administration_description: Manage tenants across the platform
 support:

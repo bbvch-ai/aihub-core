@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 32 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
 │   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 30 concrete form elements
+│   └── elements/                    # 32 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -92,7 +92,9 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
+├── jira/                            # Read-only Jira for agents: JiraConnectionConfig, JiraTicketSearch, JiraHtml (shared with the pipeline)
 ├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
+├── network/                         # SourceHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
@@ -220,8 +222,8 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   └── ExceptionEvent
 │   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
 │   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
-│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
-│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
+│       SearchKnowledge, ReadAttachedFiles, ExtractRecords and their results, RunToolLoop, ToolCallsDecided,
+│       ToolCallApproved, ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -285,12 +287,31 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 32 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text),
+ModelBoundInputNumber and ModelGatedCheckbox.
+
+**Model-bound elements**:
+
+- **What they do**: `ModelBoundInputNumber` takes its maximum (`max_from`) and its default hint (`default_from`) from
+  the LiteLLM `model_info` of the model picked elsewhere on the form. `ModelGatedCheckbox` can only be switched on while
+  that model does not set `requires` to false.
+- **How the model is referenced**: `model_ref` is written relative to the declaring form, with `../` for a parent.
+  `FormkitElement.anchored_at`, called from `_prepare_formkit_element`, rewrites it to the path from the form root.
+- **Where they are enforced**: the frontend applies them, and `ModelLimitValidator` in `packages/api` enforces them at
+  save time, since the JSON schema cannot carry a bound that depends on another field.
+- **Where they are used**: `LLMParameter` (temperature, top_p, accept_images) and
+  `ConversationFields.number_of_input_tokens`.
+- **Own override instead of the generic toggle**: a nullable `ModelBoundInputNumber` with an `override_label` reports
+  `renders_own_unset_state()`, so `_prepare_formkit_element` does not mark it `nullable` and the frontend renders no
+  "Enable X" toggle. The component shows its own checkbox with the model's default (or `fallback_default`, or "provider
+  default") in the label, keeps the input visible but disabled while unset, and pre-fills the default when ticked. A
+  budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
+  that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
 ### Nested Forms
 
@@ -501,6 +522,16 @@ inverse; read it that way rather than expecting `child_nodes`, which comes back 
 field fits before writing any node, so a new metadata key that reintroduces the overflow fails with the offending
 document and node named instead of Milvus' `code=1100`.
 
+**Vector store — partition layout**: a knowledge collection has 1023 manual partitions plus `_default`, and a
+namespace's nodes live in the partition its name hashes to. Creating the partitions takes 15–25 s while the collection
+is already visible, so `PartitionAwareMilvusVectorStore.partition_state()` tells three layouts apart: `COMPLETE` (all
+1023), `LEGACY` (none, and no `MANUAL_PARTITIONS_MARKER` in the schema description, which the factory writes at
+creation) and `PARTIAL` (anything else). Only the first two are cached; `PARTIAL` is read again every time, because
+caching it is what sent a whole process's writes into `_default` (#1923). `add` completes a `PARTIAL` collection before
+writing; reads and deletes go through `document_partition_names`, which adds `_default` and skips hashed partitions that
+do not exist yet. `stranded_nodes` / `restore_stranded_nodes` / `delete_stranded_nodes` are the primitives the
+pipeline's `DefaultPartitionRepairService` moves stranded nodes with.
+
 ## Infrastructure Settings
 
 ~20 Pydantic `BaseSettings` classes for external service connections. Environment variables are NOT auto-loaded — they
@@ -519,6 +550,7 @@ must be loaded explicitly when constructing settings instances.
 | `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`  |
 | `MineruSettings`       | Document parsing       | `MINERU_`   |
 | `RcloneSettings`       | Cloud sync             | `RCLONE_`   |
+| `JiraSettings`         | Jira read by agents    | `JIRA_`     |
 
 OpenTelemetry: `SmartTracer` for span creation, `@trace_fn` decorator for automatic function tracing.
 
@@ -566,14 +598,17 @@ collection is reported as not found. Pending documents raise `KnowledgeDocumentP
 exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
 range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
 passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
-against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
+against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list, as
+`KnowledgeReference`s naming each database by its vector collection name; `KnowledgeCollectionResolver.pair_of()` turns
+one into the `BucketNamespacePair` the readers take, since that name can differ from the bucket name.
 
-`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_glob=, offset=, limits=)` finds
-every fully ingested document whose parsed text contains an exact term or matches a regex. Unlike vector or BM25
-retrieval it is exhaustive: pages of `max_documents` (default 20) are walked with `next_offset` until it is None. Each
-`KnowledgeContentMatch` carries the summary, the first `max_lines_per_document` (5) matching lines, located by
-`start`/`end` offsets that `load_document` takes, and the total `matching_line_count`. It has the same trust rule and
-collection errors as the reader. How it works:
+`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_globs=, offset=, limits=)` finds
+every fully ingested document whose parsed text contains an exact term or matches a regex. A document must match every
+glob in `path_globs`, so a caller that restricts a model to part of a collection passes its own glob next to the model's
+and the model can only narrow. Unlike vector or BM25 retrieval it is exhaustive: pages of `max_documents` (default 20)
+are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` carries the summary, the first
+`max_lines_per_document` (5) matching lines, located by `start`/`end` offsets that `load_document` takes, and the total
+`matching_line_count`. It has the same trust rule and collection errors as the reader. How it works:
 
 - **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
   passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
@@ -584,6 +619,14 @@ collection errors as the reader. How it works:
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
+- **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
+  `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
+  within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
+  `KnowledgeSearchBudget` covers the listing (`list_documents(..., budget)`) and every content query, and a content
+  query is one id-only scan per collection (`KnowledgeContentSearch.matching_ids`, no text loaded, no per-line check, so
+  it may count a document the line check would drop), with the restricting glob next to the criterion's own, so a
+  model's selection can only narrow the caller's. The record-extraction capability resolves the selection a model wrote
+  this way rather than trusting a list of ids, with its ceiling as `limit`.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
@@ -596,9 +639,15 @@ read no agent configuration:
 - **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
   most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
   `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
-- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None)`** returns a
-  `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only hardware");
-  filters never become fields. The document must be loaded whole.
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None)`**
+  returns a `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only
+  hardware"); filters never become fields. The document must be loaded whole. Windows run side by side under the
+  caller's `limiter` (one by one without). With `max_windows` a longer document is read in part: `WindowSelection` keeps
+  the opening and the windows richest in `row_terms` (a pattern from a model, matched with a timeout), spreads the rest,
+  and the result is marked `partial`; `RecordMerger` merges only records of adjacent windows. With `instructions`, the
+  schema gains the reserved field `RecordSchema.MATCH_FIELD` (`record_match`, "yes" or "unsure"), named in the prompt's
+  rules, so borderline records are kept and marked rather than dropped; it is ignored by the empty-record check and the
+  merger's comparison.
 - **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
   half the output limit, because the records come back as JSON. Windows break at line ends, so a table row is never cut.
   `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
@@ -606,6 +655,10 @@ read no agent configuration:
   far below the header.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
+
+`ExtractedTableMarkup.wrap(table, rows)` marks a table an agent answered with, and `condensed(text)` replaces every
+marked table with one line. Chat clients send earlier answers back with each message, so the API (`ChatService`), the
+OpenWebUI pipe and the agents condense them before a table of hundreds of rows rides on every later event.
 
 Keep the schema model and the extraction model separate parameters. Each model is consistent with itself across runs,
 but models disagree with each other on names and types, so the schema model decides what a table looks like. `page`
@@ -618,6 +671,50 @@ on the config: an unconfigured profile reports `None` and `Mem0Settings.get_conf
 a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
 model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
 events report `None` for organization memory, which stores its text verbatim.
+
+## Jira (`jira/`)
+
+Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike. Like `imap/` and `mcp/`, it reads no
+agent configuration: the agent embeds the group and passes it in.
+
+- **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
+  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
+  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
+  rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
+- **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
+  type, status, summary, markdown description, labels, components, fix versions), sorted by project and number. Each
+  clause is parenthesised and ANDed after `project in (…)`. A value taken from a chat message goes through
+  `JiraJql.string_literal()`, or it can widen the query.
+- **Errors are typed and English**, so the agent words them in the user's language. `JiraConfigurationError` (a missing
+  value, an internal host, a URL without Jira's REST API behind it), `JiraAuthenticationError`,
+  `JiraProjectNotFoundError` (unknown, invisible or renamed), `JiraInvalidQueryError` (Jira's own text, e.g. an unknown
+  fix version), `JiraTooManyTicketsError` and `JiraRequestError` all derive from `JiraError`. None of their messages
+  carries the token or the query string. The checks run in that order (configuration, host, `/myself`, each project, the
+  query), so each mistake surfaces as itself.
+
+Rules, each guarding a failure that would otherwise be silent:
+
+- **REST v2 only**, with `expand=renderedFields`; descriptions are converted by `JiraHtml`, which the pipeline shares.
+  v3 returns rich text as JSON (ADF).
+- **Cloud answers an invalid query with zero tickets**, so it is checked first with
+  `POST /rest/api/3/jql/parse?validation=strict`; Data Center's search answers 400 itself.
+- **Data Center pages by offset, not by `id > N`.** Its `ORDER BY id` sorts by key, so a keyset skips the tickets of
+  every project but the first (found live on 11.3: 149 counted, 134 returned). Offsets past 10,000 fail with OpenSearch,
+  and `max_tickets` (≤ 10,000) keeps a read below that. Cloud pages by `nextPageToken`. Both stop only on an empty page
+  or Jira's end marker, never on a short page. A repeated issue, or Data Center returning fewer than it counted, fails
+  the search.
+- **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
+  (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
+- **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
+  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`). It is not wired into compose yet: the
+  first agent that reads Jira (#1889) adds it with its container.
+- **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
+  `api.atlassian.com/ex/jira/{cloudId}`, which the ticket links would then point at too.
+
+Tests: `tests/unit/fake_jira.py` serves both editions through `httpx.MockTransport`; `tests/unit/recorded/` holds real
+search hits from Cloud and Data Center 11.3 (site names replaced). `tests/integration/test_jira_live.py` checks the
+acceptance criteria against sites seeded with `packages/pipeline/playground/jira_seed` (`JIRA_LIVE_ENV_FILES`).
 
 ## FastAPI Controllers
 
