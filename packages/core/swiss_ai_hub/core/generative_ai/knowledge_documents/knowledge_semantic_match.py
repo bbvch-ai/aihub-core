@@ -10,5 +10,10 @@ class KnowledgeSemanticMatch(BaseModel):
     """A document a semantic search ranked, with the passages that ranked it."""
 
     summary: Annotated[KnowledgeDocumentSummary, Field(description="The document's listing entry")]
-    score: Annotated[float, Field(description="The best passage's similarity, which ranks the document")]
+    score: Annotated[
+        float,
+        Field(
+            description="The best passage's similarity under its database's embedding model; comparable only within it"
+        ),
+    ]
     passages: Annotated[list[KnowledgeSemanticPassage], Field(description="Its closest passages, best first")]

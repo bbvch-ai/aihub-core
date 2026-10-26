@@ -351,9 +351,11 @@ event:
     failedFiles: Fichiers en échec
     rows: Lignes affichées / trouvées
     truncated: Écourté
-    continuePending: Poursuit une extraction inachevée
-    remainingDocuments: Documents restants
-    remainingRows: Lignes restant à afficher
+    confirmed: Extrait tous les documents confirmés par l'utilisateur
+    awaitingConfirmation: Échantillon en attente de l'accord de l'utilisateur
+    previewRows: '{shown} lignes affichées sur {total}'
+    download: Télécharger le tableau entier (CSV)
+    downloadFailed: Le tableau n'a pas pu être téléchargé
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode

@@ -13,10 +13,6 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.agent import Agent
-from swiss_ai_hub.agent.agents.knowledge_extraction_agent.continuation_tools import (
-    CONTINUE_EXTRACTION_TOOL,
-    ContinuationTools,
-)
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.discovery_prompt import DiscoveryPrompt
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_answer import ExtractionAnswer
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_notices import ExtractionNotices
@@ -25,12 +21,13 @@ from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_a
 )
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import SelectionCall
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_fallback import SelectionFallback
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request import WholeScopeRequest
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_scope import KnowledgeDocumentScope
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_tools import KnowledgeDocumentTools
-from swiss_ai_hub.agent.capabilities.record_extraction.pending_extraction import PendingExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_selection_tools import RecordSelectionTools
+from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop import ToolLoop
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -40,9 +37,12 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 class KnowledgeExtractionAgent(Agent):
     """Turns one chat message into one table across many knowledge documents, every row naming its file.
 
-    The model finds the documents in a bounded loop over the document tools and settles them with
-    `select_knowledge_documents`; the selection is then re-resolved within the profile's glob and file limit, and
-    `RecordExtraction` extracts every document in parallel. The table is the answer, streamed as assembled.
+    By default every document in the profile's collections and glob is read, narrowed only by the folders, files or
+    years the user names, so the table cannot miss a document for its wording; one structured call reads the columns
+    and the row condition from the message. With `discovery`, the model instead finds the documents in a bounded loop
+    over the document tools and settles them with `select_knowledge_documents`. Either way the selection is resolved
+    within the profile's glob and ceiling, `RecordExtraction` extracts every document in parallel (a large selection
+    after the user confirmed its sample), and the table's preview is the answer, its whole as a file.
     """
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
@@ -52,7 +52,7 @@ class KnowledgeExtractionAgent(Agent):
         "agent.knowledge_extraction_agent.metadata.description"
     )
     icon: ClassVar[str] = "mdi:table-search"
-    tools = ToolLoop.over(KnowledgeDocumentTools, RecordSelectionTools, ContinuationTools)
+    tools = ToolLoop.over(KnowledgeDocumentTools, RecordSelectionTools)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.steps.contextualize.name"),
@@ -66,23 +66,19 @@ class KnowledgeExtractionAgent(Agent):
         event: UserMessageEvent,
         agent_config: KnowledgeExtractionAgentConfig,
         t: LocaleHandler,
-        thread: ThreadContext,
         access: AccessChecker | None = None,
     ) -> Conversation.ContextualizeRequest:
-        """The instructions, naming the run's collections and glob and any extraction an earlier answer left
-        unfinished, lead the conversation the loop works on."""
+        """The instructions, naming the run's collections and glob, lead the conversation the loop works on."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
         instructions = agent_config.instructions.in_locale(event.locale) if agent_config.instructions else None
-        pending = await PendingExtraction.load(thread)
         history = DiscoveryPrompt.history(
             event.messages,
             scope,
             instructions,
-            agent_config.number_of_input_tokens,
+            agent_config.input_budget,
             t,
-            pending,
             semantic=agent_config.knowledge_documents.semantic_search is True,
         )
         return Conversation.contextualize(history=history, message=event)
@@ -101,10 +97,11 @@ class KnowledgeExtractionAgent(Agent):
         t: LocaleHandler,
         thread: ThreadContext,
         access: AccessChecker | None = None,
-    ) -> ToolLoop.RunRequest | Conversation.CompleteRequest:
-        """Let the model find the documents; with no collection the user may read, say so instead of looping over
-        nothing, since the document tools cannot withhold themselves. Continuing is offered only while an earlier
-        answer left an extraction unfinished."""
+        user: UserIdentity | None = None,
+    ) -> ToolLoop.RunRequest | RecordExtraction.ExtractRequest | Conversation.CompleteRequest:
+        """Read the request and extract from the whole scope, or, with discovery, let the model find the documents.
+        With no collection the user may read, say so instead of looping over nothing. While a sample awaits the
+        user's decision, the message is read first in either mode, since only that tells a "yes" from a new request."""
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
@@ -114,12 +111,17 @@ class KnowledgeExtractionAgent(Agent):
                 *ExtractionNotices.for_table(scope, False, t),
             ]
             return await ExtractionAnswer.notice("\n\n".join(notices), ctx.query, displayer)
-        pending = await PendingExtraction.load(thread)
-        offered = None
-        if pending is None or not (pending.overflow_rows or pending.remaining_documents):
-            offered = [name for name in KnowledgeExtractionAgent.tools.names() if name != CONTINUE_EXTRACTION_TOOL]
+        awaiting = await SampleAwaitingConfirmation.load(thread, agent_config.agent_id)
+        if not agent_config.discovery or awaiting is not None:
+            extraction = await WholeScopeRequest.extraction(
+                ctx.history, scope, agent_config, awaiting, displayer, user, t, event.locale
+            )
+            if isinstance(extraction, str):
+                return await ExtractionAnswer.notice(extraction, ctx.query, displayer)
+            if extraction is not None:
+                return extraction
         loop = KnowledgeExtractionAgent.tools.run(
-            ctx.history, mode=ToolLoopMode.GATHER, tools=offered, knowledge_references=event.knowledge_references
+            ctx.history, mode=ToolLoopMode.GATHER, knowledge_references=event.knowledge_references
         )
         return loop.model_copy(update={"hands_back_results": False})
 
@@ -150,9 +152,6 @@ class KnowledgeExtractionAgent(Agent):
         scope = await asyncio.to_thread(
             KnowledgeDocumentScope.of, agent_config, event.knowledge_references, access, t.locale
         )
-        if SelectionCall.continued(decided, calls, results):
-            notices = ExtractionNotices.for_table(scope, finished.stopped_early, t)
-            return RecordExtraction.continue_pending(scope.pairs(), notices)
         selection = SelectionCall.last(decided, calls, results)
         by_location = selection is None and finished.stopped_early
         if selection is None:
@@ -173,6 +172,7 @@ class KnowledgeExtractionAgent(Agent):
             selection.row_terms,
             notices=ExtractionNotices.for_table(scope, finished.stopped_early, t, by_location),
             cut_short=finished.stopped_early and not by_location,
+            document_terms=selection.document_terms,
         )
 
     @step(

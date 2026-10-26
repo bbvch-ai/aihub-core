@@ -14,6 +14,7 @@ from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.pagination.type.page_number import PageNumber
 from swiss_ai_hub.api.pagination.type.page_size import PageSize
+from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
 from swiss_ai_hub.api.routes.thread.dto.add_agent_request import AddAgentRequest
 from swiss_ai_hub.api.routes.thread.dto.add_user_request import AddUserRequest
@@ -307,5 +308,33 @@ class ThreadController(TenantScopedController):
             thread = await ThreadController._get_thread_or_404(thread_id, t)
             ThreadController._check_view_access(thread, user)
             return ThreadService.get_open_chat_hitl(thread_id)
+
+        return self
+
+    def get_extracted_table_download_url(
+        self, route: str = "/{thread_id}/extracted-tables/{extraction_id}/download-url"
+    ) -> Self:
+        @self.router.get(
+            route,
+            tags=self.tags,
+            responses={
+                404: {"description": "The thread holds no extracted table with this id"},
+                410: {"description": "The table was stored, but its retention has passed and it is deleted"},
+            },
+        )
+        async def get_extracted_table_download_url(
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
+            extraction_id: Annotated[str, Path(title="Extraction ID")],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> SignedUrlDto:
+            """
+            Returns a link that downloads the whole table of an extraction in the thread as CSV, valid for 24 hours.
+
+            Events carry only a preview of the table; the link is signed for thread members only.
+            """
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
+            ThreadController._check_view_access(thread, user)
+            return await ThreadService.extracted_table_download_url(thread_id, extraction_id)
 
         return self

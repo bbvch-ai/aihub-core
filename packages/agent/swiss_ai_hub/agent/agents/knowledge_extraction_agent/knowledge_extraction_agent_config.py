@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.form import LocaleInput
+from swiss_ai_hub.core.form import Checkbox, LocaleInput
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
@@ -16,16 +16,25 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, AgentConfig):
     """
     Configuration for KnowledgeExtractionAgent: the collections and path glob it works on, the extraction model and
-    limits, and the discovery loop's limits (published by the runner with the blueprint's tools as options).
+    limits, whether a model searches for the documents first, and that search loop's limits (published by the runner
+    with the blueprint's tools as options).
 
     The profile is the hard boundary of what a request may touch, so the document tools are always on, `#` references
-    only pick among the configured collections, and "every readable collection" is not offered.
+    only pick among the configured collections, and "every readable collection" is not offered. Without `discovery`,
+    the default, every document in that boundary is read, so the table cannot miss one for its wording.
     """
 
     instructions: Annotated[
         LocaleString | LocaleInput | None,
         Field(description="Instructions for this profile, added after the agent's own on how to find documents."),
     ] = None
+    discovery: Annotated[
+        bool | Checkbox,
+        Field(
+            description="Let the model search for the documents first and read only those it selects, instead of "
+            "every document in the collections and path filter."
+        ),
+    ] = False
 
     @classmethod
     def as_form(cls) -> Self:
@@ -40,6 +49,10 @@ class KnowledgeExtractionAgentConfig(RecordExtractionFields, ToolLoopFields, Age
                 help=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.config.instructions.help"),
                 input_type="textarea",
                 rows=4,
+            ),
+            discovery=Checkbox(
+                label=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.config.discovery.label"),
+                help=AgentLocaleString.from_i18n_path("agent.knowledge_extraction_agent.config.discovery.help"),
             ),
             knowledge_tool=KnowledgeToolConfig(
                 every_readable_collection=False, sources=[KnowledgeToolSource.as_form()]

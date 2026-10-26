@@ -350,9 +350,11 @@ event:
     failedFiles: Files that failed
     rows: Rows shown / found
     truncated: Cut short
-    continuePending: Continues an unfinished extraction
-    remainingDocuments: Documents left
-    remainingRows: Rows left to show
+    confirmed: Extracts every document the user confirmed
+    awaitingConfirmation: Sample awaiting the user's go-ahead
+    previewRows: Showing {shown} of {total} rows
+    download: Download the whole table (CSV)
+    downloadFailed: The table could not be downloaded
   toolLoop:
     loop: Tool set
     mode: Mode

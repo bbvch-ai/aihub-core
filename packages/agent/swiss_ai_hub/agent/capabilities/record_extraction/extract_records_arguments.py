@@ -39,6 +39,14 @@ class ExtractRecordsArguments(BaseModel):
             "narrows which documents are selected."
         ),
     ] = None
+    document_terms: Annotated[
+        str | None,
+        Field(
+            description="Words or a regular expression the documents holding wanted rows likely contain, such as a "
+            "supplier's name, e.g. 'Hooli'. Used only to choose which documents are sampled and read first; it never "
+            "narrows which documents are selected."
+        ),
+    ] = None
 
     @property
     def selection(self) -> KnowledgeDocumentSelection:

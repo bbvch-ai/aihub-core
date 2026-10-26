@@ -785,12 +785,31 @@ def test_passages_grouped_by_document_search_only_the_namespaces_partitions_grou
         "IP",
     )
 
-    hits = store.passages_grouped_by_document([0.1], ["alpha"], 'document_id in ["doc1"]', 10, 5)
+    hits = store.passages_grouped_by_document([0.1], ["alpha"], 'document_id in ["doc1"]', 10, 5, timeout=3.0)
 
     partitions = [get_partition_name_for_namespace("alpha"), DEFAULT_PARTITION_NAME]
     client.load_partitions.assert_called_once_with(collection_name="tenant_db", partition_names=partitions)
     search = client.search.call_args.kwargs
     assert (search["group_by_field"], search["group_size"], search["limit"]) == (DOCUMENT_ID, 5, 10)
     assert search["partition_names"] == partitions
+    assert search["timeout"] == 3.0
     assert search["filter"] == 'document_id in ["doc1"]'
     assert [(hit.document_id, hit.score) for hit in hits] == [("doc1", 0.8), ("doc2", 0.5)]
+
+
+def test_documents_with_passages_asks_for_one_hit_per_document_and_no_text() -> None:
+    client = MagicMock()
+    client.search.return_value = [[{"distance": 0.8, "entity": {DOCUMENT_ID: "doc1"}}]]
+    store = _store_with_client(client)
+    store.embedding_field, store.doc_id_field, store.text_key, store.similarity_metric = (
+        "embedding",
+        DOCUMENT_ID,
+        "text",
+        "IP",
+    )
+
+    found = store.documents_with_passages([0.1], ["alpha"], 'document_id in ["doc1", "doc2"]', 2)
+
+    search = client.search.call_args.kwargs
+    assert (search["group_size"], search["limit"], search["output_fields"]) == (1, 2, [DOCUMENT_ID])
+    assert found == {"doc1"}

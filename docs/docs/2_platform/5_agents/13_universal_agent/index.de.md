@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: a2139b0064afca7f83d0f8cb288c9e103ebb1077deaaa503fac297646a6c6380
+source_sha: ce8da5120e1122e5f57e7e93674ddf882bf21d24b31005cc412944a5ee9958b1
 ---
 
 # Universal Agent
@@ -152,18 +152,15 @@ ordnet.
 | Feld                                        | Standard    | Beschreibung                                                                                      |
 | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
 | **Extraktionsmodell**                       | Hauptmodell | Das Modell, das jedes Dokument liest und seine Zeilen extrahiert.                                 |
-| **Dateien pro Antwort**                     | `100`       | Die meisten Dokumente, die eine Extraktionsantwort liest.                                         |
-| **Minuten pro Antwort**                     | `5`         | Wie lange eine Antwort ungefähr extrahieren darf, bevor der Rest in Teilen angeboten wird.        |
-| **Höchstens passende Dokumente**            | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                                  |
-| **Zeilen in der Tabelle**                   | `500`       | Die meisten Zeilen, die eine Antwort zeigt; im Chat höchstens 100, der Rest mit *weiter*.         |
+| **Höchstens Dokumente pro Tabelle**         | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                                  |
 | **Längstes vollständig gelesenes Dokument** | `500000`    | Längere Dokumente (in Zeichen) werden in ihren relevanten Teilen gelesen und als solche markiert. |
 | **Gleichzeitige Modellaufrufe**             | `4`         | Extraktionsaufrufe, die eine Agenteninstanz gleichzeitig macht.                                   |
 
-Die Extraktion verhält sich wie beim [Wissensextraktions-Agenten](../14_knowledge_extraction_agent/): Eine Auswahl, die
-für eine Antwort zu gross ist, erhält eine Stichprobe und das Angebot, sie einzugrenzen oder in Teilen fortzufahren, und
-das Modell fragt den Benutzer, bevor es fortfährt. Eine Antwort setzt höchstens einen Teil fort, auch wenn der Benutzer
-allen zugestimmt hat, und eine Antwort mit Stichprobe setzt keinen fort, damit jede Antwort innerhalb von **Minuten pro
-Antwort** bleibt und der Benutzer nach der Stichprobe bestätigt.
+Die Extraktion verhält sich wie beim [Wissensextraktions-Agenten](../14_knowledge_extraction_agent/): Eine Antwort
+extrahiert jedes ausgewählte Dokument, der Chat zeigt die ersten 100 Zeilen, und die ganze Tabelle ist eine CSV-Datei,
+die an die Antwort angehängt ist (über die API ein Download-Link). Eine Auswahl von mehr als 100 Dokumenten erhält
+zuerst eine Stichprobe, und das Modell fragt den Benutzer, bevor es alle extrahiert; eine Antwort mit Stichprobe
+extrahiert nichts weiter, sodass der Benutzer immer erst bestätigt, nachdem er sie gesehen hat.
 
 Standardmässig braucht eine Extraktion die Freigabe des Benutzers im Chat. Ein Client, der eine Freigabe nicht
 beantworten kann, etwa die OpenAI-kompatible API oder ein Bot, bleibt dort stehen, deshalb setzen die mitgelieferten

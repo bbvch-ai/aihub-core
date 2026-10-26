@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import Annotated
 
 from bson import ObjectId
 from cachetools import TTLCache, cached
@@ -10,7 +11,12 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    RecordsExtractedEvent,
+)
+from swiss_ai_hub.core.generative_ai import ExtractedTableFile, ExtractionFileStore
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -22,6 +28,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.types.thread_sort import S
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.openai.dto.history_response import HistoryResponse
 from swiss_ai_hub.api.routes.thread.conversation_history_projector import ConversationHistoryProjector
 from swiss_ai_hub.api.routes.thread.dto.open_chat_hitl_response import OpenChatHitlResponse
@@ -212,6 +219,43 @@ class ThreadService:
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
+
+    @staticmethod
+    @trace_fn
+    async def extracted_table_download_url(
+        thread_id: Annotated[str, "The thread the extraction answered in"],
+        extraction_id: Annotated[str, "The extraction whose whole table to download"],
+    ) -> SignedUrlDto:
+        """A presigned link to the whole table of an extraction in the thread; events only carry a preview.
+
+        The table is looked up in the thread's own events, so access to the thread is access to its tables, and only
+        extraction tables are signed: an event naming any other object is not a table of this thread.
+        """
+        table = await asyncio.to_thread(ThreadService._extracted_table_file, thread_id, extraction_id)
+        if table is None:
+            raise HTTPException(status_code=404, detail="No extracted table with this id in the thread")
+        if not await ExtractionFileStore.exists(table):
+            raise HTTPException(
+                status_code=410,
+                detail="The extracted table is no longer stored: tables are deleted after 7 days. Run the extraction "
+                "again to get a new one.",
+            )
+        return SignedUrlDto(url=ExtractionFileStore.download_url(table))
+
+    @staticmethod
+    def _extracted_table_file(thread_id: str, extraction_id: str) -> ExtractedTableFile | None:
+        """The file of the extraction's latest answer: a sample first, every document once the user confirms."""
+        stored = [
+            entity.event_data["file"]
+            for entity in PersistedAgentEventEntity.display_events_for_thread(
+                thread_id, event_name=RecordsExtractedEvent.__name__
+            )
+            if entity.event_data.get("extraction_id") == extraction_id and entity.event_data.get("file")
+        ]
+        if not stored:
+            return None
+        table = ExtractedTableFile.model_validate(stored[-1])
+        return table if ExtractionFileStore.holds(table) else None
 
     @staticmethod
     @trace_fn

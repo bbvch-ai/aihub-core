@@ -823,6 +823,17 @@ class EventContext:
         source_data = self.state_manager.citations.register(source_data, citation_id)
         await self.emitter({"type": "source", "data": source_data})
 
+    async def attach_file(
+        self, file: Annotated[dict[str, Any], "A file in our storage: bucket, key, filename and content_type"]
+    ) -> None:
+        """Attach a file the agent produced to the answer, so it downloads like an upload."""
+        attached = await self.attachments.attach(file, self.chat_id, self.message_id)
+        self.state_manager.files.register(attached)
+        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
+        # so the new file is persisted on its own and the browser then gets every file of the answer.
+        await self.emitter({"type": "files", "data": {"files": [attached]}})
+        await self.emitter({"type": "chat:message:files", "data": {"files": self.attachments.attached}})
+
 
 class EventHandler(ABC):
     """Abstract base for event handlers in chain of responsibility"""
@@ -1311,11 +1322,13 @@ class AttachedFileEventHandler(EventHandler):
 
 
 class RecordsExtractedEventHandler(EventHandler):
-    """Shows a table a model extracted in a tool loop, since the model itself only reads its summary.
+    """Attaches the whole table of an extraction to the answer, and shows the preview of one a model extracted.
 
-    A blueprint that extracts on its own streams the table as its answer, so only a result answering a tool call is
-    shown here. Open WebUI re-renders the whole message on every event, so the table shown inline is capped; its
-    summary always follows it.
+    The event carries only a preview; every row is in a CSV file in our storage, which becomes a file of the answer.
+    A blueprint that extracts on its own streams the preview as its answer, so the preview is only shown here for a
+    result answering a tool call, whose model reads just the summary. Open WebUI re-renders the whole message on every
+    event, so the preview shown inline is capped by size as well; its summary always follows it. An event from before
+    tables were stored as files holds its whole table and has no file: its table is shown capped the same way.
     """
 
     INLINE_ROWS = 100
@@ -1323,20 +1336,19 @@ class RecordsExtractedEventHandler(EventHandler):
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
-    ) -> Annotated[bool, "True for a table extracted for a tool call"]:
-        return (
-            event.get("_event_name") == "RecordsExtractedEvent"
-            and bool(event.get("tool_call_id"))
-            and bool(event.get("table"))
-        )
+    ) -> Annotated[bool, "True for an extracted table"]:
+        return event.get("_event_name") == "RecordsExtractedEvent"
 
     async def handle(
         self,
         event: Annotated[dict[str, Any], "Records extracted event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        context.state_manager.add_table_block(f"{self._inline(event)}\n\n{event.get('summary', '')}")
-        await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
+        if event.get("file"):
+            await context.attach_file(event["file"])
+        if event.get("tool_call_id") and event.get("table"):
+            context.state_manager.add_table_block(f"{self._inline(event)}\n\n{event.get('summary', '')}")
+            await context.emitter({"type": "replace", "data": {"content": context.state_manager.serialize_to_html()}})
         return True
 
     def _inline(self, event: Annotated[dict[str, Any], "Records extracted event"]) -> Annotated[str, "Table"]:
@@ -1344,6 +1356,19 @@ class RecordsExtractedEventHandler(EventHandler):
         lines = table.split("\n")
         rows = [line for line in lines if line.startswith("|")]
         header, body = rows[:2], rows[2:]
+        kept = self._within_size(header, body)
+        total = max(event.get("total_row_count") or 0, len(body))
+        if len(kept) == total:
+            return table
+        cut = "\n".join([*header, *kept])
+        where = " The whole table is attached as a file." if event.get("file") else ""
+        note = f"_Showing the first {len(kept)} of {total} rows here.{where}_"
+        # The marker keeps the table's real row count: the condensed line later says how many rows were found.
+        return f"{lines[0]}\n\n{cut}\n\n{note}\n\n[/aihub-extracted-table]: #"
+
+    def _within_size(
+        self, header: Annotated[list[str], "Header and separator rows"], body: Annotated[list[str], "Table rows"]
+    ) -> Annotated[list[str], "The leading rows that fit inline"]:
         kept: list[str] = []
         size = sum(len(line) for line in header)
         for row in body[: self.INLINE_ROWS]:
@@ -1351,12 +1376,7 @@ class RecordsExtractedEventHandler(EventHandler):
             if size > self.INLINE_CHARACTERS:
                 break
             kept.append(row)
-        if len(kept) == len(body):
-            return table
-        cut = "\n".join([*header, *kept])
-        note = f"_Showing the first {len(kept)} of {len(body)} rows here._"
-        # The marker keeps the table's real row count: the condensed line later says how many rows were found.
-        return f"{lines[0]}\n\n{cut}\n\n{note}\n\n[/aihub-extracted-table]: #"
+        return kept
 
 
 class SandboxFileDisplayedEventHandler(EventHandler):
@@ -1372,12 +1392,7 @@ class SandboxFileDisplayedEventHandler(EventHandler):
         event: Annotated[dict[str, Any], "Sandbox file displayed event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        attached = await context.attachments.attach(event, context.chat_id, context.message_id)
-        context.state_manager.files.register(attached)
-        # Open WebUI's server appends a `files` event to the message while its browser replaces the list with it,
-        # so the new file is persisted on its own and the browser then gets every file of the answer.
-        await context.emitter({"type": "files", "data": {"files": [attached]}})
-        await context.emitter({"type": "chat:message:files", "data": {"files": context.attachments.attached}})
+        await context.attach_file(event)
         return True
 
 
@@ -2033,7 +2048,7 @@ class AgentFileAttachmentService:
 
     async def attach(
         self,
-        event: Annotated[dict[str, Any], "Sandbox file displayed event"],
+        file: Annotated[dict[str, Any], "A file in our storage: bucket, key, filename and content_type"],
         chat_id: Annotated[Optional[str], "Open WebUI chat id"],
         message_id: Annotated[Optional[str], "Open WebUI message id"],
     ) -> Annotated[dict[str, Any], "The file as a message file entry"]:
@@ -2042,10 +2057,10 @@ class AgentFileAttachmentService:
         from fastapi import UploadFile
         from open_webui.routers.files import upload_file_handler
 
-        content = await asyncio.to_thread(self._read, event["bucket"], event["key"])
+        content = await asyncio.to_thread(self._read, file["bucket"], file["key"])
         user = await Users.get_user_by_id(self._user_id)
         upload = UploadFile(
-            file=io.BytesIO(content), filename=event["filename"], headers={"content-type": event["content_type"]}
+            file=io.BytesIO(content), filename=file["filename"], headers={"content-type": file["content_type"]}
         )
         item = await upload_file_handler(
             self._request,
@@ -2060,8 +2075,8 @@ class AgentFileAttachmentService:
             "type": "file",
             "id": item.id,
             "url": self._request.app.url_path_for("get_file_content_by_id", id=item.id),
-            "name": event["filename"],
-            "content_type": event["content_type"],
+            "name": file["filename"],
+            "content_type": file["content_type"],
             "size": len(content),
         }
         self.attached.append(entry)

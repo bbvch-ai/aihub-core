@@ -36,13 +36,14 @@ class KnowledgeDocumentConfig(Form):
 
     @classmethod
     def as_form(cls) -> Self:
+        """Without `semantic_search`: only a blueprint whose prompt leads the model through the ranking offers it, by
+        adding `semantic_search_input()` to its own form."""
         return cls(
             enabled=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.label"),
                 help=AgentLocaleString.from_i18n_path("agent.knowledge_documents.config.enabled.help"),
             ),
             path_glob=cls.path_glob_input(),
-            semantic_search=cls.semantic_search_input(),
         )
 
     @staticmethod

@@ -6489,15 +6489,15 @@ export type ExtractRecordsEvent = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -6516,6 +6516,12 @@ export type ExtractRecordsEvent = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -6554,6 +6560,53 @@ export type ExtractRecordsEvent = {
    */
   readonly _parent_event_names: Array<string>;
   [key: string]: unknown;
+};
+
+/**
+ * ExtractedTableFile
+ *
+ * Where the whole table of an extraction is stored, as CSV.
+ *
+ * Events carry this reference and a preview, never every row: a table of any size then stays out of the message
+ * broker, the event store and the traces, and clients download it from object storage instead.
+ */
+export type ExtractedTableFile = {
+  /**
+   * Bucket
+   *
+   * The object storage bucket holding the file.
+   */
+  bucket: string;
+  /**
+   * Key
+   *
+   * The object key of the file within the bucket.
+   */
+  key: string;
+  /**
+   * Filename
+   *
+   * The name the file is downloaded under.
+   */
+  filename: string;
+  /**
+   * Size
+   *
+   * The file's size in bytes.
+   */
+  size: number;
+  /**
+   * Row Count
+   *
+   * Rows the file holds, without the header.
+   */
+  row_count: number;
+  /**
+   * Content Type
+   *
+   * The file's media type.
+   */
+  content_type?: string;
 };
 
 /**
@@ -15666,11 +15719,14 @@ export type RecallMemoryEvent = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEvent = {
   /**
@@ -15706,9 +15762,13 @@ export type RecordsExtractedEvent = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -15730,33 +15790,27 @@ export type RecordsExtractedEvent = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -24425,15 +24479,15 @@ export type ExtractRecordsEventWritable = {
    */
   display_description?: LocaleString | null;
   /**
-   * The documents to extract from; none when the request continues a pending extraction.
+   * The documents to extract from; none when the request confirms a sample.
    */
   selection?: KnowledgeDocumentSelection | null;
   /**
-   * Continue Pending
+   * Confirmed
    *
-   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   * Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.
    */
-  continue_pending?: boolean;
+  confirmed?: boolean;
   /**
    * Fields
    *
@@ -24452,6 +24506,12 @@ export type ExtractRecordsEventWritable = {
    * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
    */
   row_terms?: string | null;
+  /**
+   * Document Terms
+   *
+   * Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.
+   */
+  document_terms?: string | null;
   /**
    * Collections
    *
@@ -30151,11 +30211,14 @@ export type RecallMemoryEventWritable = {
 /**
  * RecordsExtractedEvent
  *
- * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ * The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a
+ * file, and its summary.
  *
- * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
- * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
- * a block of the answer, the OpenAI-compatible API as answer text.
+ * The event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size
+ * stays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.
+ * When a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients
+ * show the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients
+ * offer the file for download.
  */
 export type RecordsExtractedEventWritable = {
   /**
@@ -30191,9 +30254,13 @@ export type RecordsExtractedEventWritable = {
   /**
    * Table
    *
-   * The rows as a markdown table, empty when there are none.
+   * The first rows as a markdown table, a preview when `file` holds more; empty without rows.
    */
   table?: string;
+  /**
+   * The whole table as a CSV file; none when there are no rows.
+   */
+  file?: ExtractedTableFile | null;
   /**
    * Summary
    *
@@ -30215,33 +30282,27 @@ export type RecordsExtractedEventWritable = {
   /**
    * Row Count
    *
-   * Rows in the table.
+   * Rows in the preview.
    */
   row_count?: number;
   /**
    * Total Row Count
    *
-   * Rows found, more than the table holds when cut.
+   * Rows found; every one of them is in `file`.
    */
   total_row_count?: number;
   /**
    * Truncated
    *
-   * Whether the result was cut short at a limit.
+   * Whether the search for documents stopped at a limit, so documents may be missing.
    */
   truncated?: boolean;
   /**
-   * Remaining Documents
+   * Awaiting Confirmation
    *
-   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   * Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.
    */
-  remaining_documents?: number;
-  /**
-   * Remaining Rows
-   *
-   * Rows found but not shown yet, shown first when the user continues.
-   */
-  remaining_rows?: number;
+  awaiting_confirmation?: boolean;
   /**
    * Tool Call Id
    *
@@ -35106,6 +35167,56 @@ export type GetOpenChatHitlResponses = {
 
 export type GetOpenChatHitlResponse =
   GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
+
+export type GetExtractedTableDownloadUrlData = {
+  body?: never;
+  path: {
+    /**
+     * Tenant Id
+     *
+     * Tenant identifier: a name, ObjectId, or 'active'
+     */
+    tenant_id: string;
+    /**
+     * Thread ID
+     */
+    thread_id: string;
+    /**
+     * Extraction ID
+     */
+    extraction_id: string;
+  };
+  query?: never;
+  url: "/{tenant_id}/threads/{thread_id}/extracted-tables/{extraction_id}/download-url";
+};
+
+export type GetExtractedTableDownloadUrlErrors = {
+  /**
+   * The thread holds no extracted table with this id
+   */
+  404: unknown;
+  /**
+   * The table was stored, but its retention has passed and it is deleted
+   */
+  410: unknown;
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GetExtractedTableDownloadUrlError =
+  GetExtractedTableDownloadUrlErrors[keyof GetExtractedTableDownloadUrlErrors];
+
+export type GetExtractedTableDownloadUrlResponses = {
+  /**
+   * Successful Response
+   */
+  200: SignedUrlDto;
+};
+
+export type GetExtractedTableDownloadUrlResponse =
+  GetExtractedTableDownloadUrlResponses[keyof GetExtractedTableDownloadUrlResponses];
 
 export type GetAgentClassesData = {
   body?: never;

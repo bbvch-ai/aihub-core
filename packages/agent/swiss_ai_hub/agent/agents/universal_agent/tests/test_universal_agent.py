@@ -161,6 +161,17 @@ def test_a_profile_with_the_document_tools_on_offers_them():
     assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context))
 
 
+def test_the_form_never_offers_ranking_by_meaning():
+    """Only a blueprint whose prompt leads the model through the ranking offers it; this one's prompt does not."""
+    from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
+
+    form = UniversalAgentConfig.as_form()
+    context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
+
+    assert form.knowledge_documents.semantic_search is False
+    assert "rank_knowledge_documents" not in UniversalAgent.tools.function_tools(context)
+
+
 @pytest.mark.asyncio
 async def test_an_earlier_table_reaches_the_loop_as_one_line():
     from swiss_ai_hub.core.generative_ai import ExtractedTableMarkup

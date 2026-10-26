@@ -616,12 +616,18 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
-- **Ranking by meaning.** `KnowledgeSemanticSearch.search(collections, query, path_globs=, offset=, limit=, user=)`
-  ranks the fully ingested documents by their closest chunks (Milvus `group_by_field` on `document_id`, through
-  `PartitionAwareMilvusVectorStore.passages_grouped_by_document`), each database with its own embedding model
-  (`ReferencedKnowledge.embedding_model_of`). The chunk index has no path field, so the globs are resolved through the
-  listing into document ids and the search is filtered to exactly those (`IDS_PER_FILTER` 10,000 per expression; 200,000
-  ids were measured to work on Milvus 2.6). A ranking, not a filter: at most `MAX_RANKED_DOCUMENTS` (1,000).
+- **Ranking by meaning.**
+  `KnowledgeSemanticSearch.rank(collections, query, *, path_globs=, passages_per_document=2, user=, budget=)` returns a
+  `KnowledgeSemanticRanking`: the documents in scope ordered by their closest chunks (Milvus `group_by_field` on
+  `document_id`, `PartitionAwareMilvusVectorStore.passages_grouped_by_document`), with `documents_in_scope`, `unranked`
+  (documents without any indexed passage) and `capped` (more had passages than `MAX_RANKED_DOCUMENTS`, 1,000). The chunk
+  index has no path field, so the globs are resolved through the listing into document ids and each search is filtered
+  to exactly those (`IDS_PER_FILTER` 10,000; 200,000 ids were measured to work on Milvus 2.6). Each database is searched
+  with its own embedding model (`ReferencedKnowledge.embedding_model_of`); raw scores order documents within one model
+  only, and the models' rankings are merged by reciprocal rank fusion (k=60). Stores come from
+  `ExistingMilvusVectorStores.find`, which returns None for a missing collection instead of creating it, and builds each
+  store once per process. Milvus failures raise `KnowledgeSemanticSearchUnavailableError`; the `budget` bounds the
+  listing and every search.
 - **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
   `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
   within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One

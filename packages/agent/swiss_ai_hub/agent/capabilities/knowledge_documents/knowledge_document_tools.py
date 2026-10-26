@@ -4,12 +4,16 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.generative_ai import (
     KnowledgeContentSearch,
     KnowledgeContentSearchLimits,
+    KnowledgeContentSearchTimeoutError,
     KnowledgeDocument,
     KnowledgeDocumentListing,
     KnowledgeDocumentNotFoundError,
     KnowledgeDocumentPendingError,
     KnowledgeDocumentReader,
+    KnowledgeSearchBudget,
+    KnowledgeSemanticRanking,
     KnowledgeSemanticSearch,
+    KnowledgeSemanticSearchUnavailableError,
 )
 
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_fields import KnowledgeDocumentFields
@@ -33,9 +37,10 @@ RANK_KNOWLEDGE_DOCUMENTS_TOOL = "rank_knowledge_documents"
 LISTING_PAGE_SIZE = 60
 SEARCH_PAGE_LIMITS = KnowledgeContentSearchLimits(max_documents=20, max_lines_per_document=2, max_line_chars=160)
 RANKING_PAGE_SIZE = 15
-# Five passages rank a document (one strong passage in a long document is not enough to tell what it is about); two
-# of them are shown, which with the page size keeps a page near 2,500 tokens.
-RANKING_PASSAGES = 5
+# A document ranks by its closest passage, so more passages would not change the order; two are shown per document,
+# which with the page size keeps a page near 2,500 tokens, and fetching only those keeps a whole ranking's text small.
+RANKING_PASSAGES = 2
+RANKING_TIMEOUT_SECONDS = 20.0
 READ_CHARACTERS = 12_000
 _EXAMPLE_PATHS = 3
 
@@ -46,9 +51,10 @@ class KnowledgeDocumentTools(BaseToolSpec):
 
     Vector search returns similar excerpts; these return every match and whole files, which questions about exact
     terms, all documents of a kind, or one document's full content need. The ranking is vector search grouped by
-    document and confined to the same documents, for the documents a request describes in other words. Offered only when the profile switches them
-    on, and only over the collections the asking user may read, cut to the profile's glob before the model sees any.
-    Errors raise, so the loop marks them as failed calls and the model can retry with what the message says.
+    document and confined to the same documents, for the documents a request describes in other words. Offered only
+    when the profile switches them on, and only over the collections the asking user may read, cut to the profile's
+    glob before the model sees any. Errors raise, so the loop marks them as failed calls and the model can retry with
+    what the message says.
     """
 
     spec_functions = [
@@ -137,16 +143,28 @@ class KnowledgeDocumentTools(BaseToolSpec):
         documents are still relevant."""
         scope = await KnowledgeDocumentScope.for_tool(self.context)
         globs = [glob for glob in (scope.restricting_glob, path_glob) if glob]
-        result = await KnowledgeSemanticSearch.search(
-            scope.pairs(),
-            query,
-            path_globs=globs,
-            offset=max(offset, 0),
-            limit=RANKING_PAGE_SIZE,
-            passages_per_document=RANKING_PASSAGES,
-            user=self.context.user,
-        )
-        return KnowledgeDocumentToolOutput.ranking(scope, result, max(offset, 0))
+        ranking = await self._rank(scope, query, globs)
+        return KnowledgeDocumentToolOutput.ranking(scope, ranking, max(offset, 0), RANKING_PAGE_SIZE)
+
+    async def _rank(self, scope: KnowledgeDocumentRunScope, query: str, globs: list[str]) -> KnowledgeSemanticRanking:
+        """The whole ranking, computed again for every page.
+
+        Tools get no per-run store (`ToolContext` carries no `RunContext`), so a page cannot reuse an earlier call's
+        ranking; computing it whole keeps the pages of one query consistent, and costs one listing, one embedding per
+        model and one grouped search per database. When the vector store cannot answer, the call fails with a message
+        that points the model at the keyword tools, which do not need it.
+        """
+        try:
+            return await KnowledgeSemanticSearch.rank(
+                scope.pairs(),
+                query,
+                path_globs=globs,
+                passages_per_document=RANKING_PASSAGES,
+                user=self.context.user,
+                budget=KnowledgeSearchBudget(RANKING_TIMEOUT_SECONDS),
+            )
+        except (KnowledgeSemanticSearchUnavailableError, KnowledgeContentSearchTimeoutError) as unavailable:
+            raise RuntimeError(KnowledgeDocumentToolOutput.ranking_unavailable(unavailable)) from unavailable
 
     @ToolOptions.of(**_options(READ_KNOWLEDGE_DOCUMENT_TOOL))
     async def read_knowledge_document(

@@ -20,23 +20,11 @@ config:
     label: Modèle d'extraction
     help: Le modèle qui lit chaque document et en extrait les lignes. Vide utilise
       le modèle principal.
-  max_files:
-    label: Fichiers par réponse
-    help: Le nombre maximal de documents dont une réponse extrait. S'il y en a plus,
-      l'utilisateur voit un échantillon et peut préciser sa demande ou continuer partie
-      par partie.
-  minutes_per_turn:
-    label: Minutes par réponse
-    help: Durée approximative d'extraction d'une réponse avant que le reste soit proposé
-      en parties suivantes. Elle est estimée d'après la taille des documents.
   max_documents_total:
-    label: Documents correspondants au maximum
-    help: Au-delà, l'utilisateur est seulement invité à préciser sa demande; l'extraction
-      partie par partie n'est pas proposée.
-  max_rows:
-    label: Lignes du tableau
-    help: Le nombre maximal de lignes qu'une réponse affiche. Les autres apparaissent
-      quand l'utilisateur continue; rien n'est perdu.
+    label: Documents au maximum par tableau
+    help: "Au-delà de ce nombre de documents correspondants, rien n'est extrait :\
+      \ l'utilisateur voit un échantillon et est invité à préciser la demande. En\
+      \ deçà, une réponse extrait chaque document."
   max_document_chars:
     label: Document le plus long lu entièrement (caractères)
     help: Les documents plus longs ne sont lus que dans leurs parties pertinentes,
@@ -51,16 +39,16 @@ tools:
     approval: 'Extraire un tableau avec ces colonnes des documents de connaissances
       : {fields}'
     description: Extrait un tableau de nombreux documents de connaissances, une ligne
-      par enregistrement trouvé, chaque ligne nommant son fichier. Utilise-le quand
-      l'utilisateur veut rassembler des enregistrements à travers des documents, comme
-      chaque position matérielle sur les factures 2025 d'un fournisseur ; pas pour
-      une question à laquelle un document ou la recherche de connaissances répond.
-      Trouve d'abord les documents avec les outils de liste et de recherche et vérifie-les
-      avec select_knowledge_documents ; appelle ensuite cet outil avec les mêmes conditions.
-      L'utilisateur voit le tableau directement ; tu reçois son résumé. Si plus de
-      documents correspondent qu'une réponse n'en extrait, l'utilisateur reçoit un
-      échantillon et décide ; ne continue que s'il est d'accord, avec continue_pending
-      à true.
+      par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand
+      l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents,
+      par exemple chaque position de matériel sur les factures 2025 d'un fournisseur
+      ; pas pour une question à laquelle un seul document ou la recherche de connaissances
+      répond. Trouve d'abord les documents avec les outils de liste et de recherche
+      et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes
+      conditions. L'utilisateur voit le tableau directement et peut le télécharger
+      en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une
+      réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide
+      ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true.
   select:
     label: Sélectionner des documents
     approval: 'Sélectionner des documents de connaissances pour un tableau avec ces
@@ -86,39 +74,29 @@ summary:
   sample_counts_ceiling: '**Échantillon :** %{files} de plus de %{total} documents
     correspondants · **Lignes trouvées :** %{rows}'
   criteria: '**Sélection :** %{criteria}'
-  document_rows_cut: '**Lignes omises (trop nombreuses dans un document pour une réponse)
-    :** %{files}'
-  document_rows_entry: '%{file} (%{count} lignes)'
   listed_more: et %{count} autres
   failed_files: "**Fichiers qui n'ont pas pu être extraits :**"
   failed_more: …et %{count} autres fichiers qui n'ont pas pu être extraits.
   no_documents: Aucun document ne correspond à la sélection, rien n'a donc été extrait.
   not_started: "Le tableau n'a pas pu être extrait : %{reason}"
-  too_broad: "**%{total} documents correspondent**, plus qu'une réponse n'en extrait\
-    \ (environ %{minutes} minutes au total)."
+  too_broad: "**%{total} documents correspondent.** Les extraire tous prend environ\
+    \ %{minutes} minutes ; ci-dessus figurent les lignes d'un échantillon d'entre\
+    \ eux."
   too_broad_ceiling: '**Plus de %{total} documents correspondent.**'
-  options_parts: Précisez la demande, par exemple à l'un des dossiers ou l'une des
-    années ci-dessus, ou répondez *continuer* pour extraire les %{total} documents
-    en %{parts} parties d'environ %{minutes} minutes chacune.
   options_narrow: "Veuillez préciser la demande, par exemple à l'un des dossiers ou\
     \ l'une des années ci-dessus : autant de documents ne sont pas extraits partie\
     \ par partie."
-  part: '**Partie %{part} sur %{parts} :** documents %{first}–%{last} sur %{total}.'
-  continue_parts: Répondez *continuer* pour les %{files} documents suivants (environ
-    %{minutes} minutes).
-  rows_follow: '%{count} autres lignes suivent ; répondez *continuer* pour les voir.'
-  more_rows: '**Autres lignes** de la réponse précédente.'
-  done: '**Les %{total} documents sont extraits** en %{parts} parties : %{rows} lignes
-    trouvées, %{files} fichiers en échec.'
-  done_short: '**%{extracted} documents sur %{total} sont extraits** en %{parts} parties
-    : %{rows} lignes trouvées, %{files} fichiers en échec ; les autres ne sont plus
-    disponibles dans cette conversation.'
-  nothing_pending: Il n'y a aucune extraction de tableau à poursuivre dans cette conversation.
-  gone: '%{count} documents ne sont plus disponibles dans cette conversation et ont
-    été omis.'
-  scope_changed: Les collections dont ce tableau a été extrait ne sont plus toutes
-    disponibles dans cette conversation, l’extraction a donc été arrêtée. Demandez
-    à nouveau pour extraire à partir de ce qui est disponible.
+  scope_changed: Les collections d'où provient l'échantillon ne sont plus toutes disponibles
+    dans cette conversation, rien n'a donc été extrait. Redemandez pour extraire de
+    ce qui est disponible maintenant.
+  preview: '**Affiché ici :** les %{shown} premières lignes sur %{rows} ; le fichier
+    les contient toutes.'
+  every_row: chaque ligne
+  interpretation: '**Colonnes :** %{columns} · **Lignes conservées :** %{kept}'
+  options_confirm: Répondez *oui* pour extraire les %{total} documents en une réponse,
+    ou précisez la demande, par exemple à l'un des dossiers ou l'une des années ci-dessus.
+  nothing_awaiting: Il n'y a dans cette conversation aucune extraction de tableau
+    avec échantillon à poursuivre. Veuillez redemander le tableau.
 facets:
   folders: '**Par dossier :** %{entries}'
   years: '**Par année dans le chemin :** %{entries}'
@@ -131,7 +109,8 @@ progress:
     (%{criteria}).
   sample: "%{total} documents correspondent ; extraction d'un échantillon de %{files}\
     \ d'entre eux (%{fields})."
-  part: 'Extraction de la partie %{part} sur %{parts} : %{files} documents, environ
-    %{minutes} minutes (%{fields}).'
   extracted: '%{done} sur %{files} · %{path} : %{rows} lignes'
   failed: '%{done} sur %{files} · %{path} : échec, %{reason}'
+  reading: Lecture de %{path}, un long document.
+  still_reading: Lecture de %{path} en cours (%{minutes} min).
+  extracted_rows: '%{done} sur %{files} · %{path} : %{rows} lignes — %{first}'

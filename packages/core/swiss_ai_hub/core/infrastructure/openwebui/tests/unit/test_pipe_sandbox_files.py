@@ -289,3 +289,25 @@ async def test_an_answer_that_links_every_file_gets_no_download_line(pipe: Any) 
     context.state_manager.start_text_block("Download: [chart.png](sandbox:chart.png)")
 
     assert service.download_links(context.state_manager.serialize_to_html()) == ""
+
+
+@pytest.mark.asyncio
+async def test_an_extracted_table_s_file_is_attached_and_linked_like_a_sandbox_file(pipe: Any) -> None:
+    """The whole table of an extraction is a CSV in the same storage, so it reaches the answer the same way."""
+    upload = _uploaded(pipe)
+    service, s3, _ = _service(pipe)
+    table = {
+        "bucket": "agent-files",
+        "key": "record-extraction/x1/invoices.csv",
+        "filename": "invoices.csv",
+        "size": 4,
+        "row_count": 250,
+        "content_type": "text/csv; charset=utf-8",
+    }
+    extracted = {"_event_name": "RecordsExtractedEvent", "extraction_id": "x1", "summary": "", "file": table}
+
+    await pipe.RecordsExtractedEventHandler().handle(extracted, _context(pipe, service))
+
+    s3.get_object.assert_called_once_with(Bucket="agent-files", Key="record-extraction/x1/invoices.csv")
+    assert upload.await_args.kwargs["file"].filename == "invoices.csv"
+    assert service.download_links("") == "\n\nDownload: [invoices.csv](/api/v1/files/f1/content)"

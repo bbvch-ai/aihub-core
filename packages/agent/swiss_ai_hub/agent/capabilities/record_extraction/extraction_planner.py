@@ -1,5 +1,4 @@
 import asyncio
-from itertools import accumulate
 
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -18,31 +17,30 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extraction_requested_event import (
     DocumentExtractionRequestedEvent,
 )
-from swiss_ai_hub.agent.capabilities.record_extraction.extraction_continuation import ExtractionContinuation
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_estimate import ExtractionEstimate
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_run import ExtractionRun
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_ABOVE_DOCUMENTS, ExtractionSample
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import CRITERIA_CHARACTERS
-from swiss_ai_hub.agent.capabilities.record_extraction.pending_extraction import PendingExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
+from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.record_extraction.selection_facets import SelectionFacets
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 
 # One budget covers listing and searching the collections; a model's tool call already ran the search, and this second
 # run decides what is extracted, so it may take longer rather than fail.
 SELECTION_TIMEOUT_SECONDS = 20.0
-# Documents a too broad selection shows rows from, so the user sees the columns and rows before committing.
-SAMPLE_DOCUMENTS = 3
 _SUMMARY = "agent.record_extraction.summary"
 
 
 class ExtractionPlanner:
     """Turns an extraction request into one request per document, or into its answer when there is nothing to do.
 
-    The selection is resolved here rather than taken from the model: the profile's glob and limits apply whatever the
-    model asked for. A selection one answer can extract is extracted whole. A larger one is never cut: the answer shows
-    a sample, how the documents break down by folder and year, and offers to narrow the request or to continue part by
-    part; above the profile's ceiling only narrowing is offered. Problems the user can act on, such as a bad pattern, a
-    slow search or a schema the model could not design, answer the request instead of failing the run.
+    The selection is resolved here rather than taken from the model: the profile's glob and ceiling apply whatever the
+    model asked for. One answer extracts the whole selection, however long that takes; nothing is cut and nothing is
+    left for later. A selection larger than `SAMPLE_ABOVE_DOCUMENTS` is first sampled, documents likely to hold wanted
+    rows first, and extracted whole once the user confirms; above the profile's ceiling only narrowing is offered.
+    Problems the user can act on, such as a bad pattern, a slow search or a schema the model could not design, answer
+    the request instead of failing the run.
     """
 
     @staticmethod
@@ -54,77 +52,113 @@ class ExtractionPlanner:
         thread: ThreadContext,
         user: UserIdentity | None,
     ) -> list[DocumentExtractionRequestedEvent] | RecordsExtractedEvent:
-        if request.continue_pending or request.selection is None:
-            return await ExtractionContinuation.next(request, config, displayer, t, thread)
-        settings = config.record_extraction
+        schema: RecordSchema | None = None
+        if request.confirmed or request.selection is None:
+            awaiting = await SampleAwaitingConfirmation.take(thread, config.agent_id)
+            if awaiting is None or not awaiting.within(request.collections):
+                reason = "nothing_awaiting" if awaiting is None else "scope_changed"
+                return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.{reason}"))
+            request, schema = awaiting.as_request(request), awaiting.record_schema
+        else:
+            await SampleAwaitingConfirmation.clear(thread, config.agent_id)
         try:
             selected = await KnowledgeDocumentSelector.resolve(
                 request.collections,
                 request.selection,
-                settings.max_documents_total,
+                config.record_extraction.max_documents_total,
                 config.knowledge_documents.path_glob or None,
                 SELECTION_TIMEOUT_SECONDS,
             )
             if not selected.documents:
                 return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.no_documents"))
-            await asyncio.to_thread(config.extraction_llm().get_model_info)
-            async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
-                schema = await RecordSchemaBuilder.build(request.fields, llm, t)
+            schema = schema or await ExtractionPlanner._schema(request, config, displayer, user, t)
         except (ValueError, LookupError, KnowledgeContentSearchTimeoutError) as problem:
             return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.not_started", reason=problem))
-        await PendingExtraction.clear(thread)
-        parts = ExtractionEstimate.batches(
-            selected.documents, settings.max_files, settings.minutes_per_turn, settings.max_parallel_extractions
-        )
-        if len(parts) == 1 and not selected.truncated:
-            run = ExtractionPlanner._run(request, selected.documents, schema)
-            minutes = ExtractionEstimate.minutes(selected.documents, settings.max_parallel_extractions)
-            await displayer.display_thought(
-                t(
-                    "agent.record_extraction.progress.plan",
-                    files=run.file_count,
-                    fields=", ".join(run.field_names),
-                    criteria=run.criteria,
-                    minutes=minutes,
-                )
-            )
-            return ExtractionPlanner.requests(run, selected.documents, schema, request.instructions, request.row_terms)
-        return await ExtractionPlanner._too_broad(request, selected, parts, schema, config, displayer, t, thread)
+        if selected.truncated or (len(selected.documents) > SAMPLE_ABOVE_DOCUMENTS and not request.confirmed):
+            return await ExtractionPlanner._sample(request, selected, schema, config, displayer, t, thread, user)
+        return await ExtractionPlanner._whole(request, selected.documents, schema, config, displayer, t, user)
 
     @staticmethod
-    async def _too_broad(
+    async def _schema(
+        request: ExtractRecordsEvent,
+        config: RecordExtractionFields,
+        displayer: EventDisplayer,
+        user: UserIdentity | None,
+        t: LocaleHandler,
+    ) -> RecordSchema:
+        await asyncio.to_thread(config.extraction_llm().get_model_info)
+        async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
+            return await RecordSchemaBuilder.build(request.fields, llm, t)
+
+    @staticmethod
+    async def _whole(
+        request: ExtractRecordsEvent,
+        documents: list[KnowledgeDocumentSummary],
+        schema: RecordSchema,
+        config: RecordExtractionFields,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        user: UserIdentity | None,
+    ) -> list[DocumentExtractionRequestedEvent]:
+        """Every document in one answer, the likeliest first when the selection is large or the profile ranks by
+        meaning, so early progress shows what the table will hold."""
+        query = ExtractionPlanner._semantic_query(request, config)
+        if len(documents) > SAMPLE_ABOVE_DOCUMENTS or query:
+            documents, _ = await ExtractionSample.ordered(
+                documents,
+                request.collections,
+                request.document_terms,
+                request.row_terms,
+                semantic_query=query,
+                user=user,
+                path_glob=config.knowledge_documents.path_glob or None,
+            )
+        run = ExtractionPlanner._run(request, documents, schema)
+        minutes = ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions)
+        await displayer.display_thought(
+            t(
+                "agent.record_extraction.progress.plan",
+                files=run.file_count,
+                fields=", ".join(run.field_names),
+                criteria=run.criteria,
+                minutes=minutes,
+            )
+        )
+        return ExtractionPlanner.requests(run, documents, schema, request.instructions, request.row_terms)
+
+    @staticmethod
+    async def _sample(
         request: ExtractRecordsEvent,
         selected: KnowledgeDocumentSelectionResult,
-        parts: list[list[KnowledgeDocumentSummary]],
         schema: RecordSchema,
         config: RecordExtractionFields,
         displayer: EventDisplayer,
         t: LocaleHandler,
         thread: ThreadContext,
+        user: UserIdentity | None,
     ) -> list[DocumentExtractionRequestedEvent]:
-        """A sample of the selection, with what the user can do about the rest; the rest waits in the conversation."""
+        """A sample from documents likely to hold wanted rows, what the table will hold and cost, and what the user
+        can do: confirm, or narrow; above the ceiling only narrow."""
         documents = selected.documents
-        parallel = config.record_extraction.max_parallel_extractions
-        if selected.truncated:
-            notices = [t(f"{_SUMMARY}.too_broad_ceiling", total=len(documents))]
-        else:
-            minutes = ExtractionEstimate.minutes(documents, parallel)
-            notices = [t(f"{_SUMMARY}.too_broad", total=len(documents), minutes=minutes)]
-        notices.extend(SelectionFacets.lines(documents, t, counted=not selected.truncated))
-        if selected.truncated:
-            notices.append(t(f"{_SUMMARY}.options_narrow"))
-        else:
-            per_part = max(ExtractionEstimate.minutes(part, parallel) for part in parts)
-            notices.append(t(f"{_SUMMARY}.options_parts", total=len(documents), parts=len(parts), minutes=per_part))
-            await ExtractionPlanner._pending(request, documents, parts, schema).save(thread)
-        sample = SelectionFacets.sample(documents, SAMPLE_DOCUMENTS)
+        ordered, likely = await ExtractionSample.ordered(
+            documents,
+            request.collections,
+            request.document_terms,
+            request.row_terms,
+            semantic_query=ExtractionPlanner._semantic_query(request, config),
+            user=user,
+            path_glob=config.knowledge_documents.path_glob or None,
+        )
+        sample = ExtractionSample.pick(ordered, likely=likely)
+        notices = ExtractionPlanner._sample_notices(request, selected, schema, config, t)
+        if not selected.truncated:
+            await SampleAwaitingConfirmation.of(request, schema, len(documents)).save(thread, config.agent_id)
         run = ExtractionPlanner._run(request, sample, schema).model_copy(
             update={
                 "notices": [*notices, *request.notices],
                 "sample": True,
                 "total_documents": len(documents),
                 "above_ceiling": selected.truncated,
-                "parts": len(parts),
                 "show_collection": ExtractionPlanner._spans_collections(documents),
             }
         )
@@ -139,23 +173,42 @@ class ExtractionPlanner:
         return ExtractionPlanner.requests(run, sample, schema, request.instructions, request.row_terms)
 
     @staticmethod
-    def _pending(
+    def _semantic_query(request: ExtractRecordsEvent, config: RecordExtractionFields) -> str | None:
+        """What the wanted documents are about, when the profile ranks by meaning: the terms that identify them and
+        the condition on their rows, in the user's words."""
+        if config.knowledge_documents.semantic_search is not True:
+            return None
+        return " ".join(part for part in (request.document_terms, request.instructions, request.fields) if part) or None
+
+    @staticmethod
+    def _sample_notices(
         request: ExtractRecordsEvent,
-        documents: list[KnowledgeDocumentSummary],
-        parts: list[list[KnowledgeDocumentSummary]],
+        selected: KnowledgeDocumentSelectionResult,
         schema: RecordSchema,
-    ) -> PendingExtraction:
-        return PendingExtraction(
-            extraction_id=request.event_id,
-            documents=documents,
-            part_starts=[0, *accumulate(len(part) for part in parts[:-1])],
-            record_schema=schema,
-            instructions=request.instructions,
-            row_terms=request.row_terms,
-            criteria=ExtractionPlanner._criteria(request),
-            collections=request.collections,
-            show_collection=ExtractionPlanner._spans_collections(documents),
+        config: RecordExtractionFields,
+        t: LocaleHandler,
+    ) -> list[str]:
+        """How many documents match, what the table would hold, how they break down, and the choice."""
+        documents = selected.documents
+        columns = ", ".join(name.replace("_", " ") for name in schema.field_names)
+        kept = request.instructions or t(f"{_SUMMARY}.every_row")
+        notices = [
+            t(f"{_SUMMARY}.too_broad_ceiling", total=len(documents))
+            if selected.truncated
+            else t(
+                f"{_SUMMARY}.too_broad",
+                total=len(documents),
+                minutes=ExtractionEstimate.minutes(documents, config.record_extraction.max_parallel_extractions),
+            ),
+            t(f"{_SUMMARY}.interpretation", columns=columns, kept=kept),
+            *SelectionFacets.lines(documents, t, counted=not selected.truncated),
+        ]
+        notices.append(
+            t(f"{_SUMMARY}.options_narrow")
+            if selected.truncated
+            else t(f"{_SUMMARY}.options_confirm", total=len(documents))
         )
+        return notices
 
     @staticmethod
     def requests(

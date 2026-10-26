@@ -9454,13 +9454,13 @@ export const ExtractRecordsEventSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -9494,6 +9494,19 @@ export const ExtractRecordsEventSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -9557,6 +9570,50 @@ export const ExtractRecordsEventSchema = {
   title: "ExtractRecordsEvent",
   description:
     "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
+} as const;
+
+export const ExtractedTableFileSchema = {
+  properties: {
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The object storage bucket holding the file.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The object key of the file within the bucket.",
+    },
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description: "The name the file is downloaded under.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Row Count",
+      description: "Rows the file holds, without the header.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's media type.",
+      default: "text/csv; charset=utf-8",
+    },
+  },
+  type: "object",
+  required: ["bucket", "key", "filename", "size", "row_count"],
+  title: "ExtractedTableFile",
+  description:
+    "Where the whole table of an extraction is stored, as CSV.\n\nEvents carry this reference and a preview, never every row: a table of any size then stays out of the message\nbroker, the event store and the traces, and clients download it from object storage instead.",
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -23654,8 +23711,21 @@ export const RecordsExtractedEventSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -23681,37 +23751,29 @@ export const RecordsExtractedEventSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -23749,7 +23811,7 @@ export const RecordsExtractedEventSchema = {
   required: ["extraction_id", "summary", "_event_name", "_parent_event_names"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalReasonSchema = {
@@ -36667,13 +36729,13 @@ export const ExtractRecordsEventWritableSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -36707,6 +36769,19 @@ export const ExtractRecordsEventWritableSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -46126,8 +46201,21 @@ export const RecordsExtractedEventWritableSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -46153,37 +46241,29 @@ export const RecordsExtractedEventWritableSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -46204,7 +46284,7 @@ export const RecordsExtractedEventWritableSchema = {
   required: ["extraction_id", "summary"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalStopEventWritableSchema = {
