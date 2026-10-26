@@ -7,7 +7,8 @@ description: A mailbox agent that reads every unread message, decides which cate
 
 The **Email Processing Agent** turns a shared mailbox into a queue that sorts itself. On each run it reads every unread
 message in the inbox, decides which of your categories it belongs to, and moves it into that category's folder. Anything
-no category fits goes to a fallback folder rather than being guessed into a bucket.
+no category fits goes to a fallback folder, or stays in the inbox if you prefer, rather than being guessed into a
+bucket.
 
 Like the [Email Agent](../11_email_agent/), it has **no chat interface**. You configure it once in the Admin UI and
 trigger it programmatically — by another workflow, or via the API.
@@ -110,11 +111,26 @@ you are unsure, use flat names like `Support` and `Invoices`.
 
 ### Classifier
 
-| Field                     | Default                | Description                                                                                        |
-| ------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
-| **Fallback Folder**       | `Uncategorised`        | Where mail the model is unsure about goes. Never guessed into a category, never left in the inbox. |
-| **Classification Model**  | *(empty)*              | The model that classifies. Leave empty to use the agent's main model.                              |
-| **Classification Prompt** | *(a sensible default)* | Instructions steering how the model chooses.                                                       |
+| Field                                     | Default                | Description                                                                                                                     |
+| ----------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Leave Uncategorised Mail in the Inbox** | Off                    | Keep mail that fits no category unread in the inbox instead of moving it to the fallback folder.                                |
+| **Fallback Folder**                       | `Uncategorised`        | Where mail the model is unsure about goes. Never guessed into a category. Hidden while uncategorised mail is kept in the inbox. |
+| **Classification Model**                  | *(empty)*              | The model that classifies. Leave empty to use the agent's main model.                                                           |
+| **Classification Prompt**                 | *(a sensible default)* | Instructions steering how the model chooses.                                                                                    |
+
+::: details Keeping uncategorised mail in the inbox
+Useful when you start with a single category: its mail moves to its folder, and everything else stays in the inbox,
+unread, exactly where it arrived. Mail the classifier failed on still goes to the failure folder.
+
+Normally, moving a message out of the inbox is what stops the next run from classifying it again. A message left in the
+inbox needs another record, and Microsoft 365 does not accept the custom IMAP keyword that would carry it on the message
+itself. The agent therefore remembers how far into the inbox it has read: each run classifies only unread mail that
+arrived after the last one it classified, oldest arrival first.
+
+- Mail you drag back into the inbox counts as new arrival and is classified again — that is how you retry a message.
+- Marking an old message unread again does not bring it back; it arrived before the agent's mark.
+- If the platform's state store is reset, the next run classifies the unread mail in the inbox once more.
+:::
 
 ::: details How a message ends up in the fallback folder
 The model is given one way out: it can say outright that **none of the categories fit**. When it does, the message goes

@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
     from swiss_ai_hub.agent.imap.imap_client import ImapClient, ImapClientFactory
+    from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
+    from swiss_ai_hub.agent.imap.inbox_watermark import InboxWatermark
     from swiss_ai_hub.agent.imap.mail_store import MailStore
     from swiss_ai_hub.agent.imap.mailbox_run_lease import MailboxRunLease
     from swiss_ai_hub.agent.imap.reply_composer import ReplyComposer
@@ -11,12 +13,15 @@ if TYPE_CHECKING:
         do_file_message,
         do_file_messages,
         do_list_unread,
+        do_list_unread_above,
     )
 
 __all__ = [
     "FetchedMail",
     "ImapClient",
     "ImapClientFactory",
+    "InboxPosition",
+    "InboxWatermark",
     "MailStore",
     "MailboxRunLease",
     "ReplyComposer",
@@ -25,6 +30,7 @@ __all__ = [
     "do_file_message",
     "do_file_messages",
     "do_list_unread",
+    "do_list_unread_above",
 ]
 
 _IMAP_CLIENT_MODULE = "swiss_ai_hub.agent.imap.imap_client"
@@ -34,6 +40,8 @@ _LAZY_IMPORTS = {
     "FetchedMail": "swiss_ai_hub.agent.imap.fetched_mail",
     "ImapClient": _IMAP_CLIENT_MODULE,
     "ImapClientFactory": _IMAP_CLIENT_MODULE,
+    "InboxPosition": "swiss_ai_hub.agent.imap.inbox_position",
+    "InboxWatermark": "swiss_ai_hub.agent.imap.inbox_watermark",
     "MailStore": "swiss_ai_hub.agent.imap.mail_store",
     "MailboxRunLease": "swiss_ai_hub.agent.imap.mailbox_run_lease",
     "ReplyComposer": "swiss_ai_hub.agent.imap.reply_composer",
@@ -41,6 +49,7 @@ _LAZY_IMPORTS = {
     "do_file_message": _STEP_FUNCTIONS_MODULE,
     "do_file_messages": _STEP_FUNCTIONS_MODULE,
     "do_list_unread": _STEP_FUNCTIONS_MODULE,
+    "do_list_unread_above": _STEP_FUNCTIONS_MODULE,
 }
 
 

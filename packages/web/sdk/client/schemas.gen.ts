@@ -17454,7 +17454,8 @@ export const MailClassificationRefSchema = {
     target_folder: {
       type: "string",
       title: "Target Folder",
-      description: "Folder the message was filed into.",
+      description:
+        "Folder the message was filed into, or the inbox when it was kept there.",
     },
     reason: {
       type: "string",
@@ -30806,6 +30807,19 @@ export const UnreadMailListedEventSchema = {
       type: "array",
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
+    },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
     },
     _event_name: {
       type: "string",
@@ -51878,6 +51892,19 @@ export const UnreadMailListedEventWritableSchema = {
       type: "array",
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
+    },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
     },
   },
   additionalProperties: true,
