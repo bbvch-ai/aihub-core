@@ -498,10 +498,13 @@ class MyAgentConfig(AgentConfig):
 - **Configurable fields**: Set to a FormkitElement in `as_form()` — user edits in Admin UI.
 - **Non-configurable fields**: Set to a primitive in `as_form()` — deployment-specific, baked in.
 
-A base field that `AgentConfig.as_form()` deliberately leaves unset is the runner's business, not yours — `cron` is the
-only one today. That is why the override above stays correct without listing it: the runner injects the element for
-schedulable classes via `for_discovery()`, and a field whose value is not a form element is absent from both the
-rendered form and the submission schema.
+A base field that `AgentConfig.as_form()` deliberately leaves unset is the runner's business, not yours — `cron` and
+`anonymise` today. That is why the override above stays correct without listing them: the runner injects the elements
+via `for_discovery()` (`cron` for schedulable classes only, `anonymise` for every class) and puts them after the
+blueprint's own settings, and a field whose value is not a form element is absent from both the rendered form and the
+submission schema. With `anonymise` on, `AgentDispatcher` runs every step inside `GatewayGuardrails.requesting(...)`
+(`RunAnonymisation`), so every LLM call built through `LLMConfig.to_llama_index()` asks the gateway to anonymise; a
+helper that builds its own client must pass `GatewayGuardrails.requested()` itself.
 
 ### FormKit Elements
 

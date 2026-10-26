@@ -99,8 +99,10 @@ literal-number rule.
 `custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
 restores the answer, streamed or not; a local model runs it only when the call sends
 `"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
-rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Tests:
-`uv run --with "litellm==1.83.10" pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_guardrail.py`
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call
+also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
+`OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
+`uv run --with "litellm==1.83.10" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. See ADR
 `docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.

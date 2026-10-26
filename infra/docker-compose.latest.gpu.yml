@@ -1666,6 +1666,7 @@ services:
       - ./configs/litellm/litellm-config.stoney.latest.gpu.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
+      - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:

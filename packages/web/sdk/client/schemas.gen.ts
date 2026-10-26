@@ -27664,6 +27664,13 @@ export const StoreUserMemoryRequestedEventSchema = {
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
     },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -49756,6 +49763,13 @@ export const StoreUserMemoryRequestedEventWritableSchema = {
       title: "Origin Memory Llm",
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
+    },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
     },
   },
   additionalProperties: true,

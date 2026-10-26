@@ -8,6 +8,7 @@ from llama_index.llms.openai_like import OpenAILike
 from openai import BadRequestError
 from pydantic import Field, ValidationError
 
+from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
 from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,12 @@ class ResilientOpenAILike(OpenAILike):
             await self._aclient.close()
         if self._client is not None:
             self._client.close()
+
+    @override
+    def _get_model_kwargs(self, **kwargs: Any) -> dict[str, Any]:
+        """Every request path (chat, stream, complete, tools) builds its kwargs here, so the guardrails a profile
+        requests reach the gateway on every call. Merged last: `additional_kwargs` replace a call's `extra_body`."""
+        return GatewayGuardrails.merged_into(super()._get_model_kwargs(**kwargs))
 
     @override
     async def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseAsyncGen:
