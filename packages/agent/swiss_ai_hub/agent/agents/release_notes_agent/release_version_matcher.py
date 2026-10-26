@@ -12,7 +12,6 @@ from swiss_ai_hub.agent.agents.release_notes_agent.version_match_outcome import 
 
 _QUOTES = str.maketrans({"‘": "'", "’": "'", "‚": "'", "‛": "'", "´": "'", "`": "'", "“": '"', "”": '"', "„": '"'})
 _SPACES = re.compile(r"\s+")
-_VERSION_LIKE = re.compile(r"\S*\d\S*")
 _TOKEN_EDGES = "\"'.,;:!?()[]{}<>«»"
 _SUGGESTIONS = 3
 _RECENT = 5
@@ -72,8 +71,8 @@ class ReleaseVersionMatcher:
     @staticmethod
     def _unmatched(text: str, by_name: dict[str, list[JiraVersion]], recent: list[str]) -> VersionMatch:
         """The first version-like word with a close name is the one asked for; a word close to none still is."""
-        tokens = [token.strip(_TOKEN_EDGES) for token in _VERSION_LIKE.findall(text)]
-        tokens = [token for token in tokens if token]
+        words = [word for word in text.split() if any(character.isdecimal() for character in word)]
+        tokens = [token for token in (word.strip(_TOKEN_EDGES) for word in words) if token]
         if not tokens:
             return VersionMatch(outcome=VersionMatchOutcome.MISSING, recent=recent)
         for token in tokens:

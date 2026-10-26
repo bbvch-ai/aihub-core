@@ -52,8 +52,10 @@ class TestFixVersionClause:
         assert JiraJql.fix_version_clause(versions) == "fixVersion in (10200, 10305)"
 
     def test_an_id_that_is_not_a_number_is_refused(self):
+        versions = [JiraVersion(id="1) OR (project = HR", name="x", project="ENG")]
+
         with pytest.raises(ValueError):
-            JiraJql.fix_version_clause([JiraVersion(id="1) OR (project = HR", name="x", project="ENG")])
+            JiraJql.fix_version_clause(versions)
 
     def test_no_version_is_refused(self):
         with pytest.raises(ValueError, match="at least one version"):

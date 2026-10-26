@@ -107,5 +107,6 @@ def test_the_translation_switch_and_the_renamed_fields_read_plainly():
 
     assert elements["translate_into"].toggle_label is not None
     assert elements["audience"].placeholder is not None
-    assert "link_tickets" in elements and "show_ticket_keys" not in elements
+    assert "link_tickets" in elements
+    assert "show_ticket_keys" not in elements
     assert _stored(language="de", translate_into=["fr"]).languages() == [ReleaseLanguage.DE, ReleaseLanguage.FR]

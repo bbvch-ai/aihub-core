@@ -251,7 +251,8 @@ async def test_a_language_the_message_asks_for_replaces_the_profiles(platform: _
 
     answer = _answer(runner)
     assert answer.startswith("## Notes de version 2.0\n")
-    assert "Versionshinweise" not in answer and "Release notes 2.0" not in answer
+    assert "Versionshinweise" not in answer
+    assert "Release notes 2.0" not in answer
     assert "Writing in Français, as the message asks." in _thoughts(runner)
     assert runner.get_events_of_class(VersionResolvedEvent)[0].languages == [ReleaseLanguage.FR]
 

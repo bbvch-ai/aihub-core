@@ -127,7 +127,7 @@ async def test_wrong_credentials_unknown_project_and_invalid_jql_each_say_what_t
 async def test_the_versions_of_both_projects_are_listed(connection: JiraConnectionConfig):
     versions = await JiraTicketSearch.find_versions(connection, _PROJECTS)
 
-    assert {"ENG", "SD"} == {version.project for version in versions}
+    assert {version.project for version in versions} == {"ENG", "SD"}
     assert {"1.0", "2.0"} <= {version.name for version in versions if version.project == "ENG"}
 
 

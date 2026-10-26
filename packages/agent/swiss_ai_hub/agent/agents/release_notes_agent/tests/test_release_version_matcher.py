@@ -1,3 +1,4 @@
+import time
 from datetime import date
 
 import pytest
@@ -81,6 +82,16 @@ def test_an_unknown_version_suggests_the_closest_names():
     assert match.outcome is VersionMatchOutcome.UNKNOWN
     assert match.requested == "2.4"
     assert match.suggestions[0] == "2.4.0"
+
+
+def test_a_long_word_without_a_digit_does_not_stall_the_reply():
+    """Only a word with a digit can name a version; a pasted run of letters once backtracked quadratically."""
+    started = time.perf_counter()
+
+    match = ReleaseVersionMatcher.match("notes for " + "x" * 200_000, _versions("1.0"))
+
+    assert match.outcome is VersionMatchOutcome.MISSING
+    assert time.perf_counter() - started < 5
 
 
 def test_a_version_is_not_found_inside_a_longer_number():
