@@ -82,6 +82,7 @@ def test_the_blueprint_offers_knowledge_files_memory_web_pages_and_the_sandbox_i
         "list_knowledge_documents",
         "search_knowledge_content",
         "read_knowledge_document",
+        "rank_knowledge_documents",
         "select_knowledge_documents",
     ]
 
@@ -200,6 +201,17 @@ def test_a_profile_with_the_document_tools_on_offers_them():
     context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
 
     assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context))
+
+
+def test_the_form_never_offers_ranking_by_meaning():
+    """Only a blueprint whose prompt leads the model through the ranking offers it; this one's prompt does not."""
+    from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
+
+    form = UniversalAgentConfig.as_form()
+    context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
+
+    assert form.knowledge_documents.semantic_search is False
+    assert "rank_knowledge_documents" not in UniversalAgent.tools.function_tools(context)
 
 
 @pytest.mark.asyncio

@@ -14,6 +14,7 @@ CORPUS = ROOT / "corpus"
 GROUND_TRUTH = ROOT / "ground_truth.json"
 GROUND_TRUTH_CONTRACTS = ROOT / "ground_truth_contracts.json"
 GROUND_TRUTH_SLAS = ROOT / "ground_truth_slas.json"
+GROUND_TRUTH_CATALOGUE = ROOT / "ground_truth_catalogue.json"
 API = os.environ.get("E2E_API_URL", "http://localhost:8000/api/v1") + "/default"
 HEADERS = {"Authorization": f"Bearer {os.environ['SUPERUSER_TOKEN']}"}
 
