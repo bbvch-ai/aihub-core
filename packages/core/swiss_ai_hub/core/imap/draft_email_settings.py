@@ -212,8 +212,8 @@ class DraftEmailSettings(StepConfig):
 
     @property
     def llm(self) -> LLMConfig:
-        """The drafting LLM built from the selected model with default chat parameters (not form-configurable)."""
-        return LLMConfig(model_name=self.model_name)
+        """The drafting LLM built from the selected model at a fixed temperature (not form-configurable)."""
+        return LLMConfig.deterministic(self.model_name)
 
     @model_validator(mode="after")
     def _validate_quote_timezone(self) -> Self:

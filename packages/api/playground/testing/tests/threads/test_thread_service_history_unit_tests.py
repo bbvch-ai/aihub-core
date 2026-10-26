@@ -600,3 +600,41 @@ async def test_thread_service_preserves_optional_primary_identity_contract():
     projector.assert_called_once_with(events, primary_agent_class=None, primary_agent_id=None)
     assert response.messages[0]["role"] == "user"
     assert list(response.messages[0]["content"]) == expected[0]["content"]
+
+
+def test_a_table_extracted_for_a_tool_call_projects_between_the_chunks():
+    from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
+
+    table = RecordsExtractedEvent(
+        extraction_id="x", table="| a.pdf | Rack |", summary="**Files:** 1", tool_call_id="c1"
+    )
+    own_table = RecordsExtractedEvent(extraction_id="y", table="| own |", summary="s")
+    events = [
+        _user("all hardware lines", created_at=1, event_id="u1"),
+        _persisted_event(table, created_at=2, event_id="t1"),
+        _persisted_event(own_table, created_at=3, event_id="t2"),
+        _chunk("The table lists one rack.", created_at=4, event_id="c1"),
+    ]
+
+    assert _project(events) == [
+        _text("user", "all hardware lines"),
+        _text("assistant", "\n\n| a.pdf | Rack |\n\n**Files:** 1\n\nThe table lists one rack."),
+    ]
+
+
+def test_an_answer_the_stream_cut_short_is_completed_even_after_a_table():
+    from swiss_ai_hub.core.events.agent import RecordsExtractedEvent
+
+    table = RecordsExtractedEvent(
+        extraction_id="x", table="| a.pdf | Rack |", summary="**Files:** 1", tool_call_id="c1"
+    )
+    events = [
+        _user("all hardware lines", created_at=1, event_id="u1"),
+        _persisted_event(table, created_at=2, event_id="t1"),
+        _chunk("The table lists", created_at=3, event_id="c1"),
+        _stop("The table lists one rack.", created_at=4, event_id="s1"),
+    ]
+
+    assert _project(events)[-1] == _text(
+        "assistant", "\n\n| a.pdf | Rack |\n\n**Files:** 1\n\nThe table lists one rack."
+    )

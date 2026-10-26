@@ -29,6 +29,10 @@ model_list:
       supports_function_calling: true
       supports_response_schema: true
       supports_vision: true
+      # Sampling defaults from the model's generation_config.json; max_images matches vLLM's --limit-mm-per-prompt.
+      default_temperature: 0.7
+      default_top_p: 0.8
+      max_images: 8
       input_cost_per_token: 0
       output_cost_per_token: 0
 
@@ -47,6 +51,13 @@ model_list:
       max_output_tokens: 8192
       supports_function_calling: false
       supports_vision: true
+      # Sampling defaults from the model's generation_config.json: near-greedy, as OCR should be.
+      default_temperature: 0.01
+      default_top_p: 0.001
+      # No max_images on purpose: probed 2026-10-16 and 2026-10-21 against the OCR endpoint dev uses (stoney), 128
+      # images in one request were all read (prompt tokens grew by 6 per 32x32 image), and mineru-vllm-server sets
+      # no --limit-mm-per-prompt.
+      # What bounds this model is its 8192-token window, which the input-size guard already enforces.
 
   # ===================================================================
   # Embedding Models

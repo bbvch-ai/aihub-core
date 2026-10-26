@@ -1,4 +1,4 @@
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
@@ -8,6 +8,8 @@ from pydantic import Field
 from swiss_ai_hub.core.form.constraints import Ge, Le
 from swiss_ai_hub.core.form.elements.checkbox import Checkbox
 from swiss_ai_hub.core.form.elements.input_number import InputNumber
+from swiss_ai_hub.core.form.elements.model_bound_input_number import ModelBoundInputNumber
+from swiss_ai_hub.core.form.elements.model_gated_checkbox import ModelGatedCheckbox
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
@@ -15,6 +17,10 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base import L
 from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
+
+# What a model without a curated `default_temperature` is sampled at; the value every model used before
+# defaults became per model.
+DEFAULT_TEMPERATURE = 0.0
 
 
 class LLMParameter(Form):
@@ -29,11 +35,27 @@ class LLMParameter(Form):
     """
 
     temperature: Annotated[
-        float | InputNumber,
-        Field(default=0.0, description="The temperature to use during generation."),
+        float | None | InputNumber,
+        Field(
+            default=None,
+            description="The temperature to use during generation. None uses the model's curated default.",
+        ),
         Ge(0.0),
         Le(2.0),
-    ] = 0.0
+    ] = None
+    top_p: Annotated[
+        float | None | InputNumber,
+        Field(
+            default=None,
+            description="The nucleus-sampling probability mass. None uses the model's curated default.",
+        ),
+        Ge(0.0),
+        Le(1.0),
+    ] = None
+    accept_images: Annotated[
+        bool | Checkbox,
+        Field(description="Whether images in the conversation are passed to the model."),
+    ] = True
     logprobs: Annotated[
         bool | None | Checkbox,
         Field(
@@ -57,15 +79,36 @@ class LLMParameter(Form):
     def as_form(cls) -> Self:
         """Factory method to create a form-mode LLMParameter with input elements."""
         return cls(
-            temperature=InputNumber(
+            temperature=ModelBoundInputNumber(
                 label=LocaleString.from_i18n_path("lib.llm.config.temperature.label"),
                 help=LocaleString.from_i18n_path("lib.llm.config.temperature.help"),
+                override_label=LocaleString.from_i18n_path("lib.llm.config.temperature.toggle_label"),
+                model_ref="../model_name",
+                default_from="default_temperature",
+                fallback_default=DEFAULT_TEMPERATURE,
                 min=0.0,
                 max=2.0,
                 step=0.1,
-                value=0.0,
-                min_fraction_digits=0,
-                max_fraction_digits=1,
+                min_fraction_digits=1,
+                max_fraction_digits=2,
+            ),
+            top_p=ModelBoundInputNumber(
+                label=LocaleString.from_i18n_path("lib.llm.config.top_p.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.top_p.help"),
+                override_label=LocaleString.from_i18n_path("lib.llm.config.top_p.toggle_label"),
+                model_ref="../model_name",
+                default_from="default_top_p",
+                min=0.0,
+                max=1.0,
+                step=0.05,
+                min_fraction_digits=1,
+                max_fraction_digits=2,
+            ),
+            accept_images=ModelGatedCheckbox(
+                label=LocaleString.from_i18n_path("lib.llm.config.accept_images.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.accept_images.help"),
+                model_ref="../model_name",
+                requires="supports_vision",
             ),
             logprobs=Checkbox(
                 label=LocaleString.from_i18n_path("lib.llm.config.logprobs.label"),
@@ -123,19 +166,30 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             default_parameter=LLMParameter.as_form() if include_default_parameter else LLMParameter(),
         )
 
+    @classmethod
+    def deterministic(cls, model_name: str) -> Self:
+        """A config pinned to `DEFAULT_TEMPERATURE`, for platform-internal calls (ingestion, translation, drafting)
+        that must not pick up a model's sampling default, which is tuned for chat rather than reproducibility."""
+        return cls(model_name=model_name, default_parameter=LLMParameter(temperature=DEFAULT_TEMPERATURE))
+
     def as_task_llm(self, model_name: str) -> Self:
         """
         A task variant of this config for auxiliary/classification steps.
 
         Those steps reuse the main model's generation parameters and never need log probabilities,
-        so only the model itself is configurable.
+        so only the model itself is configurable. An unset temperature is pinned to `DEFAULT_TEMPERATURE` rather
+        than left to the model's default: these steps classify and condense, which needs reproducible output, while
+        a model's default is tuned for chat.
         """
+        temperature = self.default_parameter.temperature
         return self.model_copy(
             deep=True,
             update={
                 "model_name": model_name,
                 "default_parameter": LLMParameter(
-                    temperature=self.default_parameter.temperature,
+                    temperature=DEFAULT_TEMPERATURE if temperature is None else temperature,
+                    top_p=self.default_parameter.top_p,
+                    accept_images=self.default_parameter.accept_images,
                     timeout=self.default_parameter.timeout,
                     logprobs=False,
                 ),
@@ -151,6 +205,28 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         failing run. `to_llama_index` keeps its own strict lookup, where a missing window is a real defect.
         """
         return self.get_model_info()["model_info"].get("max_input_tokens")
+
+    @property
+    def supports_vision(self) -> bool | None:
+        """Whether the model reads images, or None when LiteLLM leaves the flag unset, as it does for most models."""
+        return self.get_model_info()["model_info"].get("supports_vision")
+
+    @property
+    def max_images(self) -> int | None:
+        """The most images one prompt may carry, as curated in the LiteLLM config, or None when it sets no limit."""
+        return self.get_model_info()["model_info"].get("max_images")
+
+    def resolved_temperature(self, model_info: dict[str, Any]) -> float:
+        """The configured temperature, else the model's curated default, else `DEFAULT_TEMPERATURE`."""
+        if self.default_parameter.temperature is not None:
+            return self.default_parameter.temperature
+        return model_info.get("default_temperature", DEFAULT_TEMPERATURE)
+
+    def resolved_top_p(self, model_info: dict[str, Any]) -> float | None:
+        """The configured top_p, else the model's curated default; None leaves it to the provider."""
+        if self.default_parameter.top_p is not None:
+            return self.default_parameter.top_p
+        return model_info.get("default_top_p")
 
     def to_llama_index(
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
@@ -171,6 +247,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
         is_function_calling_model = model_info["model_info"]["supports_function_calling"]
         max_tokens = model_info["model_info"]["max_output_tokens"]
         supports_response_schema = model_info["model_info"].get("supports_response_schema") or False
+        top_p = self.resolved_top_p(model_info["model_info"])
 
         token_counter = TokenCountingHandler(tokenizer=self.token_counter)
         cost_tracker = LLMCostTracker(
@@ -188,7 +265,8 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             model=self.model_name,
             api_base=config.BASE_URL,
             api_key=api_key or config.API_KEY.get_secret_value(),
-            temperature=self.default_parameter.temperature,
+            temperature=self.resolved_temperature(model_info["model_info"]),
+            additional_kwargs={"top_p": top_p} if top_p is not None else {},
             context_window=context_size,
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,

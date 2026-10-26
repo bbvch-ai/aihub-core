@@ -13,14 +13,15 @@ Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 Die Plattform verwendet sechs isolierte Docker-Netzwerke:
 
-| Netzwerk       | Zweck                                | Externer Zugriff | ICC aktiviert |
-| -------------- | ------------------------------------ | ---------------- | ------------- |
-| `proxy`        | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
-| `backend`      | Interne Anwendungs-Services          | Nein             | Ja            |
-| `data`         | Datenbanken und Message Broker       | Nein             | Ja            |
-| `storage`      | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
-| `egress`       | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
-| `code-sandbox` | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| Netzwerk        | Zweck                                | Externer Zugriff | ICC aktiviert |
+| --------------- | ------------------------------------ | ---------------- | ------------- |
+| `proxy`         | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
+| `backend`       | Interne Anwendungs-Services          | Nein             | Ja            |
+| `data`          | Datenbanken und Message Broker       | Nein             | Ja            |
+| `storage`       | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
+| `egress`        | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
+| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| `pii-detection` | PII-Erkennung + ihre Caller          | Nein             | Ja            |
 
 Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
 Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
@@ -34,6 +35,11 @@ ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der Ausschluss d
 Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`, `speaches` oder `otel-collector` erreichen kann. ICC
 bleibt aktiviert (die Caller müssen `open-terminal:8000` erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt
 der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
+
+Das `pii-detection`-Netzwerk enthält den `presidio-analyzer`, der die Personendaten erhält, die die Plattform
+anonymisiert, plus **genau seine Caller** (`litellm` und `universal-agent`). Seine Modelle sind im Image enthalten und
+der Hugging-Face-Hub ist zur Laufzeit offline, daher verwehrt `internal: true` in Nicht-Dev-Stages den ausgehenden
+Internetzugriff, ohne ihn zu beeinträchtigen. Jede Anfrage ausser dem Health-Check benötigt den API-Key des Analyzers.
 
 ## Service-Netzwerkzuweisungen
 
@@ -57,7 +63,7 @@ Interne Anwendungs- und Verarbeitungs-Services:
 
 - **litellm**: LLM-Gateway und Request-Routing
 - **mineru-api**: Dokumenten-Parsing und -Extraktion
-- **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
+- **presidio-anonymizer**: PII-Anonymisierung
 - **vLLM**: Lokale LLM-Inferenz (Chat, Embedding, Reranking) – nur GPU Deployments
 - **speaches**: Spracherkennung und Text-zu-Sprache
 - **playwright**: Web-Scraping und Automatisierung (auch im `egress` für Internetzugriff)
@@ -139,7 +145,7 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
         playwright[playwright]
@@ -151,6 +157,12 @@ flowchart TB
 
     subgraph egress[EGRESS NETWORK - ICC Disabled]
         playwright_egress[playwright]
+    end
+
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
     end
 
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]

@@ -1,6 +1,16 @@
 import type { OwuiMessage, OwuiSource } from './openwebui-api'
 
-export type ToolName = 'run_command' | 'display_file' | 'read_attached_files' | 'search_knowledge'
+export type ToolName =
+  | 'run_command'
+  | 'display_file'
+  | 'read_attached_files'
+  | 'search_knowledge'
+  | 'list_knowledge_documents'
+  | 'search_knowledge_content'
+  | 'read_knowledge_document'
+  | 'select_knowledge_documents'
+  | 'extract_records'
+  | 'continue_extraction'
 
 /**
  * The pipe names a tool block by the tool's label in the run's locale (`ToolEvent.label`), so a call is recognised
@@ -21,6 +31,32 @@ const TOOL_LABELS: Record<ToolName, string[]> = {
     'Rechercher dans nos connaissances',
     'Cercare nella nostra conoscenza',
   ],
+  list_knowledge_documents: [
+    'List Knowledge Documents',
+    'Wissensdokumente auflisten',
+    'Lister les documents de connaissances',
+    'Elenca documenti di conoscenza',
+  ],
+  search_knowledge_content: [
+    'Search Knowledge Documents',
+    'Wissensdokumente durchsuchen',
+    'Chercher dans les documents de connaissances',
+    'Cerca nei documenti di conoscenza',
+  ],
+  read_knowledge_document: [
+    'Read Knowledge Document',
+    'Wissensdokument lesen',
+    'Lire un document de connaissances',
+    'Leggi documento di conoscenza',
+  ],
+  select_knowledge_documents: [
+    'Select Documents',
+    'Dokumente auswählen',
+    'Sélectionner des documents',
+    'Seleziona documenti',
+  ],
+  extract_records: ['Extract a Table', 'Tabelle extrahieren', 'Extraire un tableau', 'Estrai una tabella'],
+  continue_extraction: ['Continue the Table', 'Tabelle fortsetzen', 'Poursuivre le tableau', 'Continua la tabella'],
 }
 
 export const STOPPED_EARLY_NOTICE = 'I stopped looking into this before I was done'

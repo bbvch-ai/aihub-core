@@ -12,14 +12,15 @@ privilege at the network layer.
 
 The platform uses six isolated Docker networks:
 
-| Network        | Purpose                              | External Access  | ICC Enabled |
-| -------------- | ------------------------------------ | ---------------- | ----------- |
-| `proxy`        | External traffic via Traefik         | Ingress + Egress | Yes         |
-| `backend`      | Internal application services        | No               | Yes         |
-| `data`         | Databases and message broker         | No               | Yes         |
-| `storage`      | SeaweedFS object storage             | No               | Yes         |
-| `egress`       | Outbound internet access only        | Egress only      | No          |
-| `code-sandbox` | Code-execution sandbox + its callers | No               | Yes         |
+| Network         | Purpose                              | External Access  | ICC Enabled |
+| --------------- | ------------------------------------ | ---------------- | ----------- |
+| `proxy`         | External traffic via Traefik         | Ingress + Egress | Yes         |
+| `backend`       | Internal application services        | No               | Yes         |
+| `data`          | Databases and message broker         | No               | Yes         |
+| `storage`       | SeaweedFS object storage             | No               | Yes         |
+| `egress`        | Outbound internet access only        | Egress only      | No          |
+| `code-sandbox`  | Code-execution sandbox + its callers | No               | Yes         |
+| `pii-detection` | PII detection + its callers          | No               | Yes         |
 
 The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable
 from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers
@@ -31,6 +32,11 @@ one AI-Hub agent that runs code, and `api`, which serves each user's own files).
 bidirectional, keeping the sandbox off `backend` is what prevents a sandbox breakout from laterally reaching `litellm`,
 `vLLM`, `mineru`, `presidio`, `speaches`, or `otel-collector`. ICC stays enabled (the callers must reach
 `open-terminal:8000`), and `internal: true` in non-dev stages also denies the sandbox any outbound internet.
+
+The `pii-detection` network holds the `presidio-analyzer`, which receives the personal data the platform anonymises,
+plus **exactly its callers** (`litellm` and `universal-agent`). Its models are baked into the image and the Hugging Face
+hub is offline at run time, so `internal: true` in non-dev stages denies it outbound internet without breaking it, and
+every request except the health probe needs the analyzer's API key.
 
 ## Service Network Assignments
 
@@ -54,7 +60,7 @@ Internal application and processing services:
 
 - **litellm**: LLM gateway and request routing
 - **mineru-api**: Document parsing and extraction
-- **presidio-analyzer/anonymizer**: PII detection and anonymization
+- **presidio-anonymizer**: PII anonymization
 - **vLLM**: Local LLM inference (chat, embedding, reranking) — GPU deployments only
 - **speaches**: Speech-to-text and text-to-speech
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
@@ -139,7 +145,7 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
         playwright[playwright]
@@ -156,6 +162,12 @@ flowchart TB
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]
         open-terminal[open-terminal]
         openwebui_cs[open-webui]
+    end
+
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
     end
 
     subgraph data[DATA NETWORK]
