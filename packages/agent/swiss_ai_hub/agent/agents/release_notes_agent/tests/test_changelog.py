@@ -112,10 +112,13 @@ def test_a_merged_bullet_ends_with_every_ticket_it_covers():
     )
 
 
-@pytest.mark.parametrize(("merge_related_tickets", "bullet"), [
-    (False, "- **[[ENG-12](https://jira.example.com/browse/ENG-12)]** Dark mode.\n"),
-    (True, "- Dark mode. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"),
-])
+@pytest.mark.parametrize(
+    ("merge_related_tickets", "bullet"),
+    [
+        (False, "- **[[ENG-12](https://jira.example.com/browse/ENG-12)]** Dark mode.\n"),
+        (True, "- Dark mode. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"),
+    ],
+)
 @pytest.mark.asyncio
 async def test_the_keys_lead_the_bullets_only_when_tickets_are_not_merged(merge_related_tickets: bool, bullet: str):
     config = ReleaseNotesAgentConfig(
