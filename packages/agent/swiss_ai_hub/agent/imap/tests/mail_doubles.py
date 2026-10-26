@@ -22,7 +22,7 @@ LOADER_FOR_FILE = (
     "swiss_ai_hub.core.generative_ai.document.loaders.document_loader_selector.DocumentLoaderSelector.for_file"
 )
 LLM_STREAM = "swiss_ai_hub.core.displayers.event_displayer.EventDisplayer.display_llm_stream"
-COST_LLM = "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base.LiteLLMBase.cost_reporting_llm"
+COST_LLM = "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config.LLMConfig.cost_reporting_llm"
 
 ATTACHMENT_FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
 MESSAGE_FILE_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"

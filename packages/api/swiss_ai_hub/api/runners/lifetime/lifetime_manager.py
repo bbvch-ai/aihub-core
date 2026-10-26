@@ -39,6 +39,7 @@ from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     finalize_role_setup,
     initialize_knowledge_buckets,
     initialize_startup_tenant,
+    lower_llm_request_timeouts,
     strip_retired_agent_config_keys,
     unset_oversized_input_limits,
     widen_empty_retriever_namespace_scopes,
@@ -274,6 +275,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         strip_retired_agent_config_keys()
         widen_empty_retriever_namespace_scopes()
         carry_over_pre_pair_knowledge_collections()
+        lower_llm_request_timeouts()
         unset_oversized_input_limits()
 
         # Singleton background work, kept correct across N API replicas by a Redis leader lease.

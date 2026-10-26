@@ -7,7 +7,7 @@
 // - Langfuse: web + worker
 // - Pipeline Orchestrator: dagster-webserver + daemon + grpc + Rclone daemon
 // - Backup Service: backup-webserver + daemon + code server
-// - Presidio: analyzer + anonymizer
+// - Presidio: analyzer (GLiNER + Swiss patterns), isolated pii-detection network
 // - OIDC Middleware: 4× oauth2-proxy instances
 // - FerretDB: includes its own backing PostgreSQL instance
 // The raw container topology surfaces in the deployment view (Phase E).
@@ -97,7 +97,7 @@ model {
 
     presidio = container "Presidio" {
       #tier-llm
-      technology "Microsoft Presidio (analyzer + anonymizer)"
+      technology "Microsoft Presidio analyzer (GLiNER + Swiss patterns)"
       icon bootstrap:shield-lock
       style { color secondary }
       description "PII detection and anonymization. Two collapsed processes invoked by LiteLLM before/after external LLM calls."
@@ -370,7 +370,7 @@ model {
     pipeline_orchestrator -> mineru  "Document OCR + parsing"
 
     // LLM internal
-    litellm -> presidio "PII detection + anonymization (opt-in guardrail)"
+    litellm -> presidio "PII detection (pii-anonymisation guardrail, external models)"
     litellm -> postgres "Model config, API keys, cost tracking"
     litellm -> valkey   "Response cache + router state"
     litellm -[async]-> otel_collector "Emits traces (OTLP/gRPC); observability flows to Langfuse via the collector, not directly"
