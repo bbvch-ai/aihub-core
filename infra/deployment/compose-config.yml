@@ -90,6 +90,11 @@ image_tags:
     local: universal_agent:latest
     nightly: universal_agent:nightly
     latest: universal_agent:latest
+  web_fetch_agent:
+    build: localbuild
+    local: web_fetch_agent:latest
+    nightly: web_fetch_agent:nightly
+    latest: web_fetch_agent:latest
   knowledge_extraction_agent:
     build: localbuild
     local: knowledge_extraction_agent:latest

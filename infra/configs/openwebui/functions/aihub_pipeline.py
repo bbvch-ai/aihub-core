@@ -1211,11 +1211,11 @@ class GroundingNodesEventHandler(EventHandler):
         for node in event.get("grounding_nodes") or []:
             documents.setdefault(node.get("citation_id") or node.get("source", ""), []).append(node)
         for citation_id, nodes in documents.items():
-            await context.emit_source(self._build_source_data(nodes), citation_id)
+            await context.emit_source(self.source_data(nodes), citation_id)
         return True
 
     @staticmethod
-    def _build_source_data(
+    def source_data(
         nodes: Annotated[list[dict[str, Any]], "Nodes of one document"],
     ) -> Annotated[dict[str, Any], "Source data structure"]:
         first = nodes[0]
@@ -1307,6 +1307,62 @@ class AttachedFileEventHandler(EventHandler):
             },
             event.get("citation_id"),
         )
+        return True
+
+
+class FetchWebPagesEventHandler(EventHandler):
+    """Shows that the agent is reading the pages the user linked. Every turn asks, so a turn that links nothing
+    stays silent, and so does one whose profile has web fetch off, since its links are left unread."""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if web page fetch request"]:
+        return event.get("_event_name") == "FetchWebPagesEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Web page fetch request"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        if event.get("urls") and event.get("reading", True):
+            description = event.get("display_description", {}).get("en", "Reading the linked web pages")
+            status = {"action": None, "description": description, "done": False}
+            await context.emitter({"type": "status", "data": status})
+        return True
+
+
+class WebPagesFetchedEventHandler(EventHandler):
+    """Lists each page the agent read as a source, by its title and URL, and reports the links it could not read.
+
+    The answer itself explains why a page was not read; the status names the links, so the user sees it even when
+    the answer does not dwell on them.
+    """
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if web pages fetched event"]:
+        return event.get("_event_name") == "WebPagesFetchedEvent"
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Web pages fetched event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        pages = event.get("grounding_nodes") or []
+        failures = event.get("failures") or []
+        for page in pages:
+            await context.emit_source(GroundingNodesEventHandler.source_data([page]), page.get("citation_id"))
+        if pages:
+            description = f"Read {len(pages)} web page" + ("s" if len(pages) != 1 else "")
+            status = {"action": None, "description": description, "done": True}
+            await context.emitter({"type": "status", "data": status})
+        if failures:
+            unread = ", ".join(failure.get("url", "") for failure in failures)
+            await context.emitter(
+                {"type": "status", "data": {"description": f"Could not read: {unread}", "done": True, "error": True}}
+            )
+        if not pages and not failures:
+            await context.emitter({"type": "status", "data": {"action": None, "description": "", "done": True}})
         return True
 
 
@@ -1646,6 +1702,8 @@ class EventProcessorFactory:
             RetrieverEventHandler(),
             GroundingNodesEventHandler(),
             AttachedFileEventHandler(),
+            FetchWebPagesEventHandler(),
+            WebPagesFetchedEventHandler(),
             SandboxFileDisplayedEventHandler(),
             RecordsExtractedEventHandler(),
             RetrieveUserMemoryEventHandler(),
@@ -2115,6 +2173,27 @@ class KnowledgeReferenceService:
             return response.json()
 
 
+class WebReferenceService:
+    """Turns the web pages the user referenced with `#` into links the agent reads itself.
+
+    Open WebUI fetches such a page in the browser as soon as it is picked and sends its text along. The agent reads
+    the page through the platform's own browser instead, so the fetch is traced and checked, and only the URL is
+    forwarded: Open WebUI's copy of the text is dropped.
+    """
+
+    @staticmethod
+    def references_for_event(
+        files: Annotated[Optional[list[dict[str, Any]]], "Files of the current message branch from Open WebUI"],
+    ) -> Annotated[list[str], "The URLs of the referenced pages, once each"]:
+        return list(dict.fromkeys(file["url"] for file in files or [] if WebReferenceService.is_web_reference(file)))
+
+    @staticmethod
+    def is_web_reference(file: Annotated[dict[str, Any], "One file of the branch"]) -> Annotated[bool, "A web page"]:
+        """Attach Webpage sends `type: "text"` with the page's `url` and its text nested under `file.data`; a temporary
+        chat's upload is `type: "text"` too, but carries its text at the top level and no URL."""
+        return file.get("type") == "text" and file.get("content") is None and bool(file.get("url"))
+
+
 class TemporaryUploadScope(BaseModel):
     """Where a temporary chat's uploads are remembered: Open WebUI keeps no file for its attachments, so without this
     each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
@@ -2248,10 +2327,11 @@ class FileProcessingService:
         agent_key: Annotated[str, "Agent class/id the uploads belong to"],
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[list[AgentAttachment], "The turn's files, each with its known upload if any"]:
-        """A knowledge entry stands for one of our collections, which the agent searches itself, so it is no file."""
+        """A knowledge entry stands for one of our collections, which the agent searches itself, and a web page for a
+        link it reads itself, so neither is a file."""
         attachments: list[AgentAttachment] = []
         for file in files or []:
-            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE:
+            if file.get("type") == KNOWLEDGE_COLLECTION_TYPE or WebReferenceService.is_web_reference(file):
                 continue
             try:
                 attachment = await self._resolve(file, agent_key, scope)
@@ -2269,7 +2349,7 @@ class FileProcessingService:
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
-        like any other attachment; a web or YouTube item is of the same type but carries none."""
+        like any other attachment."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
@@ -2925,6 +3005,7 @@ class Pipe:
                 knowledge_references = await self._knowledge_reference_service.references_for_event(
                     __files__, headers
                 )
+                web_references = WebReferenceService.references_for_event(__files__)
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)
@@ -2959,6 +3040,8 @@ class Pipe:
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
                     if knowledge_references:
                         event_payload["knowledge_references"] = knowledge_references
+                    if web_references:
+                        event_payload["web_references"] = web_references
 
                 # Emit initial status
                 await __event_emitter__(

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
+    from swiss_ai_hub.core.infrastructure.playwright.playwright_settings import PlaywrightSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings import RclonePipelineSettings
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
@@ -90,6 +91,7 @@ __all__ = [
     "OpenTerminalError",
     "OpenTerminalSettings",
     "SandboxHomePath",
+    "PlaywrightSettings",
     "MongoConnectionRegistry",
     "MongoSettings",
     "NatsSettings",
@@ -147,6 +149,7 @@ _LAZY_IMPORTS = {
     "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
     "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",
     "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
+    "PlaywrightSettings": "swiss_ai_hub.core.infrastructure.playwright.playwright_settings",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",

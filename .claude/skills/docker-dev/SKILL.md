@@ -145,7 +145,7 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
 ## Network Zones
 
-6 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`, amended for the sandbox):
+7 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`, amended for the sandbox):
 
 | Network        | Purpose                                                        | Key Services                              |
 | -------------- | -------------------------------------------------------------- | ----------------------------------------- |
@@ -155,6 +155,7 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 | `storage`      | SeaweedFS cluster                                              | seaweedfs-\*, etcd                        |
 | `egress`       | Outbound internet (no ICC)                                     | playwright                                |
 | `code-sandbox` | Single-tenant zone for `open-terminal` and exactly its callers | open-terminal, agents/API that run code   |
+| `browser`      | The Playwright browser and exactly its callers                 | playwright, open-webui, web-fetch agents  |
 
 Dev stage has all networks non-internal for localhost access.
 
