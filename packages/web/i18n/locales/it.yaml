@@ -367,9 +367,11 @@ event:
     failedFiles: File non riusciti
     rows: Righe mostrate / trovate
     truncated: Abbreviato
-    continuePending: Continua un'estrazione incompiuta
-    remainingDocuments: Documenti rimanenti
-    remainingRows: Righe ancora da mostrare
+    confirmed: Estrae tutti i documenti confermati dall'utente
+    awaitingConfirmation: Campione in attesa del via libera dell'utente
+    previewRows: '{shown} di {total} righe mostrate'
+    download: Scarica l'intera tabella (CSV)
+    downloadFailed: Non è stato possibile scaricare la tabella
   toolLoop:
     loop: Insieme di strumenti
     mode: Modalità

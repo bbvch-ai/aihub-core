@@ -14,7 +14,7 @@ DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
 SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
 
 # Always create core infrastructure buckets
-BUCKETS="open-webui milvus langfuse backups dagster parse-cache sandbox-files"
+BUCKETS="open-webui milvus langfuse backups dagster parse-cache sandbox-files agent-files"
 
 # Conditionally add knowledge buckets
 if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then
@@ -128,3 +128,24 @@ aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
   --bucket sandbox-files \
   --lifecycle-configuration file:///tmp/lifecycle-sandbox-files.json \
   || echo "Lifecycle configuration failed for sandbox-files bucket (verify SeaweedFS lifecycle support)"
+
+# Expire agent files: uploads to agents, files they produced and the tables of record extractions. A table is a result
+# to download, not a record to keep. The API sets the same rule (AgentFileUploadService) when it creates the bucket
+# itself, which it skips once this script has created it.
+echo "Configuring lifecycle expiration for agent-files bucket..."
+cat > /tmp/lifecycle-agent-files.json <<EOF
+{
+  "Rules": [
+    {
+      "ID": "auto-expire-agent-files",
+      "Status": "Enabled",
+      "Filter": {},
+      "Expiration": { "Days": 7 }
+    }
+  ]
+}
+EOF
+aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
+  --bucket agent-files \
+  --lifecycle-configuration file:///tmp/lifecycle-agent-files.json \
+  || echo "Lifecycle configuration failed for agent-files bucket (verify SeaweedFS lifecycle support)"

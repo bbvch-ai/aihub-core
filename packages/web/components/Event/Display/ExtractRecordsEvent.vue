@@ -28,8 +28,8 @@ const criteria = computed<string[]>(() => (props.event.event.selection?.any_of ?
 
 const facts = computed<EventFact[]>(() => [
   {
-    label: t('event.extraction.continuePending'),
-    value: props.event.event.continue_pending ? t('event.parts.yes') : null,
+    label: t('event.extraction.confirmed'),
+    value: props.event.event.confirmed ? t('event.parts.yes') : null,
   },
   { label: t('event.extraction.fields'), value: props.event.event.fields || null },
   { label: t('event.extraction.instructions'), value: props.event.event.instructions },

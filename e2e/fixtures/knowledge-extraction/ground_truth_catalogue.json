@@ -1,0 +1,1004 @@
+{
+  "legal/catalogues/standard-clauses-2025.md": [
+    {
+      "clause": "CL-001",
+      "topic": "Liability",
+      "characters": 1125
+    },
+    {
+      "clause": "CL-002",
+      "topic": "Termination",
+      "characters": 1103
+    },
+    {
+      "clause": "CL-003",
+      "topic": "Data protection",
+      "characters": 1068
+    },
+    {
+      "clause": "CL-004",
+      "topic": "Payment",
+      "characters": 1031
+    },
+    {
+      "clause": "CL-005",
+      "topic": "Confidentiality",
+      "characters": 1098
+    },
+    {
+      "clause": "CL-006",
+      "topic": "Audit",
+      "characters": 1076
+    },
+    {
+      "clause": "CL-007",
+      "topic": "Liability",
+      "characters": 1139
+    },
+    {
+      "clause": "CL-008",
+      "topic": "Termination",
+      "characters": 1087
+    },
+    {
+      "clause": "CL-009",
+      "topic": "Data protection",
+      "characters": 1062
+    },
+    {
+      "clause": "CL-010",
+      "topic": "Payment",
+      "characters": 1036
+    },
+    {
+      "clause": "CL-011",
+      "topic": "Confidentiality",
+      "characters": 1134
+    },
+    {
+      "clause": "CL-012",
+      "topic": "Audit",
+      "characters": 1116
+    },
+    {
+      "clause": "CL-013",
+      "topic": "Liability",
+      "characters": 1152
+    },
+    {
+      "clause": "CL-014",
+      "topic": "Termination",
+      "characters": 1097
+    },
+    {
+      "clause": "CL-015",
+      "topic": "Data protection",
+      "characters": 1084
+    },
+    {
+      "clause": "CL-016",
+      "topic": "Payment",
+      "characters": 1017
+    },
+    {
+      "clause": "CL-017",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-018",
+      "topic": "Audit",
+      "characters": 1096
+    },
+    {
+      "clause": "CL-019",
+      "topic": "Liability",
+      "characters": 1129
+    },
+    {
+      "clause": "CL-020",
+      "topic": "Termination",
+      "characters": 1109
+    },
+    {
+      "clause": "CL-021",
+      "topic": "Data protection",
+      "characters": 1054
+    },
+    {
+      "clause": "CL-022",
+      "topic": "Payment",
+      "characters": 1053
+    },
+    {
+      "clause": "CL-023",
+      "topic": "Confidentiality",
+      "characters": 1117
+    },
+    {
+      "clause": "CL-024",
+      "topic": "Audit",
+      "characters": 1116
+    },
+    {
+      "clause": "CL-025",
+      "topic": "Liability",
+      "characters": 1152
+    },
+    {
+      "clause": "CL-026",
+      "topic": "Termination",
+      "characters": 1100
+    },
+    {
+      "clause": "CL-027",
+      "topic": "Data protection",
+      "characters": 1086
+    },
+    {
+      "clause": "CL-028",
+      "topic": "Payment",
+      "characters": 1044
+    },
+    {
+      "clause": "CL-029",
+      "topic": "Confidentiality",
+      "characters": 1127
+    },
+    {
+      "clause": "CL-030",
+      "topic": "Audit",
+      "characters": 1070
+    },
+    {
+      "clause": "CL-031",
+      "topic": "Liability",
+      "characters": 1171
+    },
+    {
+      "clause": "CL-032",
+      "topic": "Termination",
+      "characters": 1109
+    },
+    {
+      "clause": "CL-033",
+      "topic": "Data protection",
+      "characters": 1070
+    },
+    {
+      "clause": "CL-034",
+      "topic": "Payment",
+      "characters": 1057
+    },
+    {
+      "clause": "CL-035",
+      "topic": "Confidentiality",
+      "characters": 1125
+    },
+    {
+      "clause": "CL-036",
+      "topic": "Audit",
+      "characters": 1100
+    },
+    {
+      "clause": "CL-037",
+      "topic": "Liability",
+      "characters": 1119
+    },
+    {
+      "clause": "CL-038",
+      "topic": "Termination",
+      "characters": 1088
+    },
+    {
+      "clause": "CL-039",
+      "topic": "Data protection",
+      "characters": 1086
+    },
+    {
+      "clause": "CL-040",
+      "topic": "Payment",
+      "characters": 1003
+    },
+    {
+      "clause": "CL-041",
+      "topic": "Confidentiality",
+      "characters": 1127
+    },
+    {
+      "clause": "CL-042",
+      "topic": "Audit",
+      "characters": 1116
+    },
+    {
+      "clause": "CL-043",
+      "topic": "Liability",
+      "characters": 1146
+    },
+    {
+      "clause": "CL-044",
+      "topic": "Termination",
+      "characters": 1102
+    },
+    {
+      "clause": "CL-045",
+      "topic": "Data protection",
+      "characters": 1062
+    },
+    {
+      "clause": "CL-046",
+      "topic": "Payment",
+      "characters": 1054
+    },
+    {
+      "clause": "CL-047",
+      "topic": "Confidentiality",
+      "characters": 1135
+    },
+    {
+      "clause": "CL-048",
+      "topic": "Audit",
+      "characters": 1100
+    },
+    {
+      "clause": "CL-049",
+      "topic": "Liability",
+      "characters": 1158
+    },
+    {
+      "clause": "CL-050",
+      "topic": "Termination",
+      "characters": 1113
+    },
+    {
+      "clause": "CL-051",
+      "topic": "Data protection",
+      "characters": 1053
+    },
+    {
+      "clause": "CL-052",
+      "topic": "Payment",
+      "characters": 1041
+    },
+    {
+      "clause": "CL-053",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-054",
+      "topic": "Audit",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-055",
+      "topic": "Liability",
+      "characters": 1132
+    },
+    {
+      "clause": "CL-056",
+      "topic": "Termination",
+      "characters": 1136
+    },
+    {
+      "clause": "CL-057",
+      "topic": "Data protection",
+      "characters": 1059
+    },
+    {
+      "clause": "CL-058",
+      "topic": "Payment",
+      "characters": 1042
+    },
+    {
+      "clause": "CL-059",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-060",
+      "topic": "Audit",
+      "characters": 1100
+    },
+    {
+      "clause": "CL-061",
+      "topic": "Liability",
+      "characters": 1165
+    },
+    {
+      "clause": "CL-062",
+      "topic": "Termination",
+      "characters": 1089
+    },
+    {
+      "clause": "CL-063",
+      "topic": "Data protection",
+      "characters": 1099
+    },
+    {
+      "clause": "CL-064",
+      "topic": "Payment",
+      "characters": 1041
+    },
+    {
+      "clause": "CL-065",
+      "topic": "Confidentiality",
+      "characters": 1085
+    },
+    {
+      "clause": "CL-066",
+      "topic": "Audit",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-067",
+      "topic": "Liability",
+      "characters": 1165
+    },
+    {
+      "clause": "CL-068",
+      "topic": "Termination",
+      "characters": 1126
+    },
+    {
+      "clause": "CL-069",
+      "topic": "Data protection",
+      "characters": 1089
+    },
+    {
+      "clause": "CL-070",
+      "topic": "Payment",
+      "characters": 1046
+    },
+    {
+      "clause": "CL-071",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-072",
+      "topic": "Audit",
+      "characters": 1084
+    },
+    {
+      "clause": "CL-073",
+      "topic": "Liability",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-074",
+      "topic": "Termination",
+      "characters": 1095
+    },
+    {
+      "clause": "CL-075",
+      "topic": "Data protection",
+      "characters": 1069
+    },
+    {
+      "clause": "CL-076",
+      "topic": "Payment",
+      "characters": 1028
+    },
+    {
+      "clause": "CL-077",
+      "topic": "Confidentiality",
+      "characters": 1084
+    },
+    {
+      "clause": "CL-078",
+      "topic": "Audit",
+      "characters": 1070
+    },
+    {
+      "clause": "CL-079",
+      "topic": "Liability",
+      "characters": 1121
+    },
+    {
+      "clause": "CL-080",
+      "topic": "Termination",
+      "characters": 1127
+    },
+    {
+      "clause": "CL-081",
+      "topic": "Data protection",
+      "characters": 1065
+    },
+    {
+      "clause": "CL-082",
+      "topic": "Payment",
+      "characters": 1019
+    },
+    {
+      "clause": "CL-083",
+      "topic": "Confidentiality",
+      "characters": 1138
+    },
+    {
+      "clause": "CL-084",
+      "topic": "Audit",
+      "characters": 1105
+    },
+    {
+      "clause": "CL-085",
+      "topic": "Liability",
+      "characters": 1142
+    },
+    {
+      "clause": "CL-086",
+      "topic": "Termination",
+      "characters": 1102
+    },
+    {
+      "clause": "CL-087",
+      "topic": "Data protection",
+      "characters": 1092
+    },
+    {
+      "clause": "CL-088",
+      "topic": "Payment",
+      "characters": 1041
+    },
+    {
+      "clause": "CL-089",
+      "topic": "Confidentiality",
+      "characters": 1102
+    },
+    {
+      "clause": "CL-090",
+      "topic": "Audit",
+      "characters": 1121
+    },
+    {
+      "clause": "CL-091",
+      "topic": "Liability",
+      "characters": 1127
+    },
+    {
+      "clause": "CL-092",
+      "topic": "Termination",
+      "characters": 1100
+    },
+    {
+      "clause": "CL-093",
+      "topic": "Data protection",
+      "characters": 1097
+    },
+    {
+      "clause": "CL-094",
+      "topic": "Payment",
+      "characters": 1024
+    },
+    {
+      "clause": "CL-095",
+      "topic": "Confidentiality",
+      "characters": 1109
+    },
+    {
+      "clause": "CL-096",
+      "topic": "Audit",
+      "characters": 1092
+    },
+    {
+      "clause": "CL-097",
+      "topic": "Liability",
+      "characters": 1116
+    },
+    {
+      "clause": "CL-098",
+      "topic": "Termination",
+      "characters": 1089
+    },
+    {
+      "clause": "CL-099",
+      "topic": "Data protection",
+      "characters": 1069
+    },
+    {
+      "clause": "CL-100",
+      "topic": "Payment",
+      "characters": 1054
+    },
+    {
+      "clause": "CL-101",
+      "topic": "Confidentiality",
+      "characters": 1135
+    },
+    {
+      "clause": "CL-102",
+      "topic": "Audit",
+      "characters": 1090
+    },
+    {
+      "clause": "CL-103",
+      "topic": "Liability",
+      "characters": 1135
+    },
+    {
+      "clause": "CL-104",
+      "topic": "Termination",
+      "characters": 1128
+    },
+    {
+      "clause": "CL-105",
+      "topic": "Data protection",
+      "characters": 1071
+    },
+    {
+      "clause": "CL-106",
+      "topic": "Payment",
+      "characters": 1016
+    },
+    {
+      "clause": "CL-107",
+      "topic": "Confidentiality",
+      "characters": 1099
+    },
+    {
+      "clause": "CL-108",
+      "topic": "Audit",
+      "characters": 1118
+    },
+    {
+      "clause": "CL-109",
+      "topic": "Liability",
+      "characters": 1139
+    },
+    {
+      "clause": "CL-110",
+      "topic": "Termination",
+      "characters": 1107
+    },
+    {
+      "clause": "CL-111",
+      "topic": "Data protection",
+      "characters": 1050
+    },
+    {
+      "clause": "CL-112",
+      "topic": "Payment",
+      "characters": 1044
+    },
+    {
+      "clause": "CL-113",
+      "topic": "Confidentiality",
+      "characters": 1115
+    },
+    {
+      "clause": "CL-114",
+      "topic": "Audit",
+      "characters": 1112
+    },
+    {
+      "clause": "CL-115",
+      "topic": "Liability",
+      "characters": 1161
+    },
+    {
+      "clause": "CL-116",
+      "topic": "Termination",
+      "characters": 1097
+    },
+    {
+      "clause": "CL-117",
+      "topic": "Data protection",
+      "characters": 1050
+    },
+    {
+      "clause": "CL-118",
+      "topic": "Payment",
+      "characters": 1019
+    },
+    {
+      "clause": "CL-119",
+      "topic": "Confidentiality",
+      "characters": 1115
+    },
+    {
+      "clause": "CL-120",
+      "topic": "Audit",
+      "characters": 1085
+    },
+    {
+      "clause": "CL-121",
+      "topic": "Liability",
+      "characters": 1167
+    },
+    {
+      "clause": "CL-122",
+      "topic": "Termination",
+      "characters": 1099
+    },
+    {
+      "clause": "CL-123",
+      "topic": "Data protection",
+      "characters": 1050
+    },
+    {
+      "clause": "CL-124",
+      "topic": "Payment",
+      "characters": 1034
+    },
+    {
+      "clause": "CL-125",
+      "topic": "Confidentiality",
+      "characters": 1140
+    },
+    {
+      "clause": "CL-126",
+      "topic": "Audit",
+      "characters": 1107
+    },
+    {
+      "clause": "CL-127",
+      "topic": "Liability",
+      "characters": 1136
+    },
+    {
+      "clause": "CL-128",
+      "topic": "Termination",
+      "characters": 1119
+    },
+    {
+      "clause": "CL-129",
+      "topic": "Data protection",
+      "characters": 1079
+    },
+    {
+      "clause": "CL-130",
+      "topic": "Payment",
+      "characters": 1046
+    },
+    {
+      "clause": "CL-131",
+      "topic": "Confidentiality",
+      "characters": 1124
+    },
+    {
+      "clause": "CL-132",
+      "topic": "Audit",
+      "characters": 1106
+    },
+    {
+      "clause": "CL-133",
+      "topic": "Liability",
+      "characters": 1167
+    },
+    {
+      "clause": "CL-134",
+      "topic": "Termination",
+      "characters": 1102
+    },
+    {
+      "clause": "CL-135",
+      "topic": "Data protection",
+      "characters": 1066
+    },
+    {
+      "clause": "CL-136",
+      "topic": "Payment",
+      "characters": 1057
+    },
+    {
+      "clause": "CL-137",
+      "topic": "Confidentiality",
+      "characters": 1099
+    },
+    {
+      "clause": "CL-138",
+      "topic": "Audit",
+      "characters": 1080
+    },
+    {
+      "clause": "CL-139",
+      "topic": "Liability",
+      "characters": 1144
+    },
+    {
+      "clause": "CL-140",
+      "topic": "Termination",
+      "characters": 1112
+    },
+    {
+      "clause": "CL-141",
+      "topic": "Data protection",
+      "characters": 1101
+    },
+    {
+      "clause": "CL-142",
+      "topic": "Payment",
+      "characters": 1021
+    },
+    {
+      "clause": "CL-143",
+      "topic": "Confidentiality",
+      "characters": 1120
+    },
+    {
+      "clause": "CL-144",
+      "topic": "Audit",
+      "characters": 1105
+    },
+    {
+      "clause": "CL-145",
+      "topic": "Liability",
+      "characters": 1152
+    },
+    {
+      "clause": "CL-146",
+      "topic": "Termination",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-147",
+      "topic": "Data protection",
+      "characters": 1067
+    },
+    {
+      "clause": "CL-148",
+      "topic": "Payment",
+      "characters": 1019
+    },
+    {
+      "clause": "CL-149",
+      "topic": "Confidentiality",
+      "characters": 1127
+    },
+    {
+      "clause": "CL-150",
+      "topic": "Audit",
+      "characters": 1108
+    },
+    {
+      "clause": "CL-151",
+      "topic": "Liability",
+      "characters": 1156
+    },
+    {
+      "clause": "CL-152",
+      "topic": "Termination",
+      "characters": 1086
+    },
+    {
+      "clause": "CL-153",
+      "topic": "Data protection",
+      "characters": 1054
+    },
+    {
+      "clause": "CL-154",
+      "topic": "Payment",
+      "characters": 1043
+    },
+    {
+      "clause": "CL-155",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-156",
+      "topic": "Audit",
+      "characters": 1120
+    },
+    {
+      "clause": "CL-157",
+      "topic": "Liability",
+      "characters": 1156
+    },
+    {
+      "clause": "CL-158",
+      "topic": "Termination",
+      "characters": 1097
+    },
+    {
+      "clause": "CL-159",
+      "topic": "Data protection",
+      "characters": 1091
+    },
+    {
+      "clause": "CL-160",
+      "topic": "Payment",
+      "characters": 1011
+    },
+    {
+      "clause": "CL-161",
+      "topic": "Confidentiality",
+      "characters": 1124
+    },
+    {
+      "clause": "CL-162",
+      "topic": "Audit",
+      "characters": 1085
+    },
+    {
+      "clause": "CL-163",
+      "topic": "Liability",
+      "characters": 1140
+    },
+    {
+      "clause": "CL-164",
+      "topic": "Termination",
+      "characters": 1098
+    },
+    {
+      "clause": "CL-165",
+      "topic": "Data protection",
+      "characters": 1066
+    },
+    {
+      "clause": "CL-166",
+      "topic": "Payment",
+      "characters": 1057
+    },
+    {
+      "clause": "CL-167",
+      "topic": "Confidentiality",
+      "characters": 1124
+    },
+    {
+      "clause": "CL-168",
+      "topic": "Audit",
+      "characters": 1072
+    },
+    {
+      "clause": "CL-169",
+      "topic": "Liability",
+      "characters": 1152
+    },
+    {
+      "clause": "CL-170",
+      "topic": "Termination",
+      "characters": 1090
+    },
+    {
+      "clause": "CL-171",
+      "topic": "Data protection",
+      "characters": 1088
+    },
+    {
+      "clause": "CL-172",
+      "topic": "Payment",
+      "characters": 1041
+    },
+    {
+      "clause": "CL-173",
+      "topic": "Confidentiality",
+      "characters": 1124
+    },
+    {
+      "clause": "CL-174",
+      "topic": "Audit",
+      "characters": 1085
+    },
+    {
+      "clause": "CL-175",
+      "topic": "Liability",
+      "characters": 1172
+    },
+    {
+      "clause": "CL-176",
+      "topic": "Termination",
+      "characters": 1130
+    },
+    {
+      "clause": "CL-177",
+      "topic": "Data protection",
+      "characters": 1053
+    },
+    {
+      "clause": "CL-178",
+      "topic": "Payment",
+      "characters": 1005
+    },
+    {
+      "clause": "CL-179",
+      "topic": "Confidentiality",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-180",
+      "topic": "Audit",
+      "characters": 1082
+    },
+    {
+      "clause": "CL-181",
+      "topic": "Liability",
+      "characters": 1123
+    },
+    {
+      "clause": "CL-182",
+      "topic": "Termination",
+      "characters": 1138
+    },
+    {
+      "clause": "CL-183",
+      "topic": "Data protection",
+      "characters": 1056
+    },
+    {
+      "clause": "CL-184",
+      "topic": "Payment",
+      "characters": 1022
+    },
+    {
+      "clause": "CL-185",
+      "topic": "Confidentiality",
+      "characters": 1124
+    },
+    {
+      "clause": "CL-186",
+      "topic": "Audit",
+      "characters": 1112
+    },
+    {
+      "clause": "CL-187",
+      "topic": "Liability",
+      "characters": 1169
+    },
+    {
+      "clause": "CL-188",
+      "topic": "Termination",
+      "characters": 1111
+    },
+    {
+      "clause": "CL-189",
+      "topic": "Data protection",
+      "characters": 1055
+    },
+    {
+      "clause": "CL-190",
+      "topic": "Payment",
+      "characters": 1055
+    },
+    {
+      "clause": "CL-191",
+      "topic": "Confidentiality",
+      "characters": 1129
+    },
+    {
+      "clause": "CL-192",
+      "topic": "Audit",
+      "characters": 1087
+    },
+    {
+      "clause": "CL-193",
+      "topic": "Liability",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-194",
+      "topic": "Termination",
+      "characters": 1122
+    },
+    {
+      "clause": "CL-195",
+      "topic": "Data protection",
+      "characters": 1075
+    },
+    {
+      "clause": "CL-196",
+      "topic": "Payment",
+      "characters": 1018
+    },
+    {
+      "clause": "CL-197",
+      "topic": "Confidentiality",
+      "characters": 1108
+    },
+    {
+      "clause": "CL-198",
+      "topic": "Audit",
+      "characters": 1094
+    },
+    {
+      "clause": "CL-199",
+      "topic": "Liability",
+      "characters": 1135
+    },
+    {
+      "clause": "CL-200",
+      "topic": "Termination",
+      "characters": 1127
+    }
+  ]
+}

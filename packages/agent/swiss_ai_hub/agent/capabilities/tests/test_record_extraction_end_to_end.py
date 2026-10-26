@@ -1,14 +1,16 @@
 """
-The record-extraction capability through the real dispatcher (NATS + Valkey), with the documents and every model call
-stubbed.
+The record-extraction capability through the real dispatcher (NATS + Valkey), with the documents, object storage and
+every model call stubbed.
 
 What the step-level tests cannot show: the per-document fan-out and the join really run as separate dispatches, a
-result delivered twice is counted once, two extractions started in one step stay apart, a selection too large for one
-answer leaves its parts in the thread for the next run, and continuing in a later run extracts the next part.
+result delivered twice is counted once, two extractions started in one step stay apart, a selection too large to
+extract unasked leaves its sample awaiting in the thread, a "yes" in a later run extracts every document in one
+answer, and hundreds of documents finish in one answer within a bound.
 Marked self_hosted: needs the dev stack's NATS and Valkey, nothing else.
 """
 
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any, ClassVar
@@ -22,6 +24,8 @@ from swiss_ai_hub.core.events.agent import ExtractRecordsEvent, RecordsExtracted
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     DocumentExtractionResult,
+    ExtractedTableFile,
+    ExtractionFileStore,
     KnowledgeDocument,
     KnowledgeDocumentCriteria,
     KnowledgeDocumentSelection,
@@ -40,6 +44,8 @@ from swiss_ai_hub.core.topic_managers import AgentTopicManager
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
 from swiss_ai_hub.agent.capabilities.record_extraction.document_extracted_event import DocumentExtractedEvent
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_sample import SAMPLE_DOCUMENTS
+from swiss_ai_hub.agent.capabilities.record_extraction.extraction_table import PREVIEW_ROWS
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_config import RecordExtractionConfig
 from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction_fields import RecordExtractionFields
@@ -59,6 +65,9 @@ SCHEMA = RecordSchema(
         RecordField(name="amount", type="number", description="The amount in CHF."),
     ]
 )
+# One answer over 500 stubbed documents: every document is its own dispatch and the join re-checks every result. About
+# 10 s on the development stack; the bound catches a join that grows quadratically or a dispatch that serialises.
+FIVE_HUNDRED_DOCUMENTS_SECONDS = 60
 
 
 def _selection(term: str) -> KnowledgeDocumentSelection:
@@ -76,7 +85,7 @@ class TablesConfig(RecordExtractionFields, AgentConfig):
 
 
 class TablesAgent(Agent):
-    """Calls the extraction the way a blueprint does: "two" starts two at once, "continue" continues."""
+    """Calls the extraction the way a blueprint does: "two" starts two at once, "yes" confirms a sample."""
 
     name: ClassVar[AgentLocaleString] = AgentLocaleString(en="Tables")
     description: ClassVar[AgentLocaleString] = AgentLocaleString(en="Extraction fixture")
@@ -84,14 +93,42 @@ class TablesAgent(Agent):
     @step()
     async def start_step(self, event: UserMessageEvent) -> list[ExtractRecordsEvent]:
         text = event.messages[-1].content
-        if text == "continue":
-            return [RecordExtraction.continue_pending([FINANCE])]
+        if text == "yes":
+            return [RecordExtraction.confirm_sample([FINANCE])]
         terms = ["ACME AG", "Globex"] if text == "two" else [text]
         return [RecordExtraction.extract(_selection(term), "item, amount", [FINANCE]) for term in terms]
 
     @step(precondition=every_table_arrived)
     async def stop_step(self, event: UserMessageEvent, tables: list[RecordsExtractedEvent]) -> StopEvent:
         return StopEvent()
+
+
+class _Store:
+    """`ExtractionFileStore` in memory, shared by every dispatch of the test's process."""
+
+    def __init__(self) -> None:
+        self.stored: dict[str, list[dict[str, Any]]] = {}
+        self.tables: dict[str, list[list[Any]]] = {}
+
+    async def put_rows(self, extraction_id: str, request_id: str, rows: list[dict[str, Any]]) -> str:
+        key = f"record-extraction/{extraction_id}/rows/{request_id}.json"
+        self.stored[key] = rows
+        return key
+
+    async def rows(self, key: str) -> list[dict[str, Any]]:
+        return self.stored[key]
+
+    async def put_table(
+        self, extraction_id: str, filename: str, columns: list[str], rows: list[list[Any]]
+    ) -> ExtractedTableFile:
+        self.tables[extraction_id] = rows
+        return ExtractedTableFile(
+            bucket="agent-files",
+            key=f"record-extraction/{extraction_id}/{filename}",
+            filename=filename,
+            size=len(rows),
+            row_count=len(rows),
+        )
 
 
 def _config(**settings: Any) -> TablesConfig:
@@ -118,7 +155,14 @@ def _document(path: str) -> KnowledgeDocumentSummary:
     )
 
 
-def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeDocumentSummary]], gate=None) -> None:
+def _documents(count: int) -> list[KnowledgeDocumentSummary]:
+    return [_document(f"invoices/{2024 + index % 2}/q{index % 4 + 1}/inv{index:04d}.pdf") for index in range(count)]
+
+
+def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeDocumentSummary]], gate=None) -> _Store:
+    by_id = {document.id: document for documents in selections.values() for document in documents}
+    store = _Store()
+
     async def resolve(collections, selection, limit, restricting_glob=None, timeout_seconds=20.0):
         documents = selections[selection.any_of[0].content_query]
         return KnowledgeDocumentSelectionResult(documents=documents[:limit], truncated=len(documents) > limit)
@@ -127,8 +171,7 @@ def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeD
         return SCHEMA
 
     async def load(collections, document_id, start=None, end=None):
-        summary = _document(document_id.replace("-", "/"))
-        return KnowledgeDocument(summary=summary, text="Rack 310", text_length=8, start=0, end=8)
+        return KnowledgeDocument(summary=by_id[document_id], text="Rack 310", text_length=8, start=0, end=8)
 
     async def extract(schema, document, llm, llm_config, t, instructions=None, **_):
         if gate is not None and document.summary.path.endswith("b.pdf"):
@@ -146,6 +189,10 @@ def _stub(monkeypatch: pytest.MonkeyPatch, selections: dict[str, list[KnowledgeD
     monkeypatch.setattr(f"{EXTRACTION}.RecordExtractor.extract", extract)
     monkeypatch.setattr(LLMConfig, "cost_reporting_llm", cost_reporting)
     monkeypatch.setattr(LLMConfig, "get_model_info", lambda self: {"model_info": {}})
+    monkeypatch.setattr(ExtractionFileStore, "put_rows", store.put_rows)
+    monkeypatch.setattr(ExtractionFileStore, "rows", store.rows)
+    monkeypatch.setattr(ExtractionFileStore, "put_table", store.put_table)
+    return store
 
 
 def _message(text: str) -> UserMessageEvent:
@@ -160,9 +207,16 @@ def _control(runner: AgentTestRunner, event_class: type) -> list:
     ]
 
 
+async def _answer(config: TablesConfig, text: str, thread_id: str, delay: int = 30) -> AgentTestRunner:
+    runner = AgentTestRunner(agent_type=TablesAgent, agent_config=config)
+    async with runner.test_run(delay_before_stop=delay, thread_id=thread_id) as topic:
+        await runner.send_event_from_topic(topic=topic, start_event=_message(text))
+    return runner
+
+
 @async_test
 async def test_every_document_is_extracted_and_joined_into_one_table(monkeypatch):
-    _stub(monkeypatch, {"ACME AG": [_document("invoices/a.pdf"), _document("invoices/b.pdf")]})
+    store = _stub(monkeypatch, {"ACME AG": [_document("invoices/a.pdf"), _document("invoices/b.pdf")]})
     runner = AgentTestRunner(agent_type=TablesAgent, agent_config=_config())
 
     async with runner.test_run(delay_before_stop=30) as topic:
@@ -171,7 +225,10 @@ async def test_every_document_is_extracted_and_joined_into_one_table(monkeypatch
     assert not runner.has_exception_event
     tables = _control(runner, RecordsExtractedEvent)
     assert len(tables) == 1
-    assert (tables[0].file_count, tables[0].row_count) == (2, 2)
+    assert (tables[0].file_count, tables[0].row_count, tables[0].total_row_count) == (2, 2, 2)
+    assert tables[0].file.filename == f"table-{tables[0].extraction_id}.csv"
+    assert len(store.tables[tables[0].extraction_id]) == 2
+    assert all(result.rows_key in store.stored for result in _control(runner, DocumentExtractedEvent))
     assert len(_control(runner, StopEvent)) == 1
 
 
@@ -190,7 +247,7 @@ async def test_a_result_delivered_twice_is_joined_once(monkeypatch):
 
     tables = _control(runner, RecordsExtractedEvent)
     assert len(tables) == 1
-    assert (tables[0].file_count, tables[0].row_count) == (2, 2)
+    assert (tables[0].file_count, tables[0].total_row_count) == (2, 2)
 
 
 @async_test
@@ -208,29 +265,49 @@ async def test_two_extractions_started_at_once_stay_apart(monkeypatch):
         await runner.send_event_from_topic(topic=topic, start_event=_message("two"))
 
     tables = sorted(_control(runner, RecordsExtractedEvent), key=lambda table: table.file_count)
-    assert [(table.file_count, table.row_count) for table in tables] == [(1, 1), (2, 2)]
+    assert [(table.file_count, table.total_row_count) for table in tables] == [(1, 1), (2, 2)]
     assert "invoices/g.pdf" in tables[0].table
     assert "invoices/a.pdf" not in tables[0].table
 
 
 @async_test
-async def test_a_large_selection_shows_a_sample_and_the_next_run_continues_it(monkeypatch):
-    documents = [_document(f"invoices/{year}/inv-{index}.pdf") for year in (2024, 2025) for index in range(5)]
-    _stub(monkeypatch, {"ACME AG": documents})
-    config = _config(max_files=4)
+async def test_a_large_selection_shows_a_sample_and_a_yes_in_the_next_run_extracts_all_of_it(monkeypatch):
+    store = _stub(monkeypatch, {"ACME AG": _documents(150)})
+    config = _config()
     thread_id = str(ObjectId())
 
-    first = AgentTestRunner(agent_type=TablesAgent, agent_config=config)
-    async with first.test_run(delay_before_stop=30, thread_id=thread_id) as topic:
-        await first.send_event_from_topic(topic=topic, start_event=_message("ACME AG"))
-    second = AgentTestRunner(agent_type=TablesAgent, agent_config=config)
-    async with second.test_run(delay_before_stop=30, thread_id=thread_id) as topic:
-        await second.send_event_from_topic(topic=topic, start_event=_message("continue"))
+    first = await _answer(config, "ACME AG", thread_id)
+    second = await _answer(config, "yes", thread_id, delay=90)
+    again = await _answer(config, "yes", thread_id)
 
     sample = _control(first, RecordsExtractedEvent)[0]
-    part = _control(second, RecordsExtractedEvent)[0]
-    assert (sample.file_count, sample.remaining_documents) == (3, 10)
-    assert "10 documents match" in sample.summary
-    assert part.file_count == 4
-    assert "**Part 1 of 3:** documents 1–4 of 10." in part.summary
-    assert part.remaining_documents == 6
+    assert (sample.file_count, sample.awaiting_confirmation) == (SAMPLE_DOCUMENTS, True)
+    assert sample.summary.startswith(f"**Sample:** {SAMPLE_DOCUMENTS} of 150 matching documents")
+    assert "**150 documents match.**" in sample.summary
+    whole = _control(second, RecordsExtractedEvent)[0]
+    assert not second.has_exception_event
+    assert (whole.file_count, whole.total_row_count, whole.awaiting_confirmation) == (150, 150, False)
+    assert whole.row_count == PREVIEW_ROWS
+    assert len(store.tables[whole.extraction_id]) == 150
+    assert len({result.request_event_id for result in _control(second, DocumentExtractedEvent)}) == 150
+    nothing = _control(again, RecordsExtractedEvent)[0]
+    assert nothing.summary.startswith("There is no sampled table extraction to go on with")
+
+
+@async_test
+async def test_five_hundred_documents_are_extracted_in_one_answer_within_a_bound(monkeypatch):
+    store = _stub(monkeypatch, {"ACME AG": _documents(500)})
+    config = _config(max_parallel_extractions=8)
+    thread_id = str(ObjectId())
+    await _answer(config, "ACME AG", thread_id)
+
+    started = time.monotonic()
+    runner = await _answer(config, "yes", thread_id, delay=FIVE_HUNDRED_DOCUMENTS_SECONDS)
+    elapsed = time.monotonic() - started
+
+    assert not runner.has_exception_event
+    tables = _control(runner, RecordsExtractedEvent)
+    assert len(tables) == 1
+    assert (tables[0].file_count, tables[0].total_row_count, tables[0].failed_count) == (500, 500, 0)
+    assert len(store.tables[tables[0].extraction_id]) == 500
+    assert elapsed < FIVE_HUNDRED_DOCUMENTS_SECONDS

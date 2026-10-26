@@ -368,9 +368,11 @@ event:
     failedFiles: Fehlgeschlagene Dateien
     rows: Gezeigte / gefundene Zeilen
     truncated: Gekürzt
-    continuePending: Setzt eine unvollständige Extraktion fort
-    remainingDocuments: Verbleibende Dokumente
-    remainingRows: Noch zu zeigende Zeilen
+    confirmed: Extrahiert alle vom Benutzer bestätigten Dokumente
+    awaitingConfirmation: Stichprobe wartet auf die Freigabe des Benutzers
+    previewRows: '{shown} von {total} Zeilen angezeigt'
+    download: Ganze Tabelle herunterladen (CSV)
+    downloadFailed: Die Tabelle konnte nicht heruntergeladen werden
   toolLoop:
     loop: Werkzeugsatz
     mode: Modus
