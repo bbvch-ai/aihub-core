@@ -11491,7 +11491,7 @@ export type MailClassificationRef = {
   /**
    * Target Folder
    *
-   * Folder the message was filed into.
+   * Folder the message was filed into, or the inbox when it was kept there.
    */
   target_folder: string;
   /**
@@ -20411,6 +20411,12 @@ export type UnreadMailListedEvent = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   /**
    * Event Name
    *
@@ -33618,6 +33624,12 @@ export type UnreadMailListedEventWritable = {
    * Header summaries of the unread messages in the inbox.
    */
   messages?: Array<UnreadMailSummary>;
+  /**
+   * Uid Validity
+   *
+   * The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.
+   */
+  uid_validity?: number | null;
   [key: string]: unknown;
 };
 
