@@ -449,6 +449,12 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -684,6 +690,12 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/LocaleInput",
+              },
+              {
+                $ref: "#/components/schemas/ModelBoundInputNumber",
+              },
+              {
+                $ref: "#/components/schemas/ModelGatedCheckbox",
               },
               {
                 $ref: "#/components/schemas/ModelSelect",
@@ -10162,6 +10174,12 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -10496,6 +10514,12 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -11055,6 +11079,12 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -11208,6 +11238,12 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -12930,6 +12966,12 @@ export const IncidentFormDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -13417,6 +13459,12 @@ export const IngestorDTOSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -18605,6 +18653,446 @@ export const MinimalUserDTOSchema = {
   title: "MinimalUserDTO",
 } as const;
 
+export const ModelBoundInputNumberSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelBoundNumber",
+      title: "Formkit",
+      description: "Model-bound number input.",
+      default: "modelBoundNumber",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    min: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Min",
+      description: "Minimum value",
+    },
+    max: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max",
+      description: "Maximum value",
+    },
+    step: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Step",
+      description: "Step factor for increment/decrement",
+    },
+    useGrouping: {
+      type: "boolean",
+      title: "Usegrouping",
+      description: "Whether to use grouping separators",
+      default: true,
+    },
+    minFractionDigits: {
+      type: "integer",
+      title: "Minfractiondigits",
+      description: "Minimum number of fraction digits",
+      default: 0,
+    },
+    maxFractionDigits: {
+      type: "integer",
+      title: "Maxfractiondigits",
+      description: "Maximum number of fraction digits",
+      default: 6,
+    },
+    locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Locale",
+      description: "Locale to use for number formatting",
+    },
+    mode: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["decimal", "currency"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Mode",
+      description: "Input mode",
+    },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description: "Currency code for currency mode",
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    showButtons: {
+      type: "boolean",
+      title: "Showbuttons",
+      description: "Whether to show increment/decrement buttons",
+      default: false,
+    },
+    buttonLayout: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["stacked", "horizontal"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Buttonlayout",
+      description: "Layout of increment/decrement buttons",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.",
+    },
+    maxFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxfrom",
+      description:
+        "The model_info key supplying the maximum, e.g. 'max_input_tokens'.",
+    },
+    defaultFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultfrom",
+      description:
+        "The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.",
+    },
+    fallbackDefault: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fallbackdefault",
+      description:
+        "What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.",
+    },
+    overrideLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Overridelabel",
+      description:
+        "Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.",
+    },
+    fillFactor: {
+      anyOf: [
+        {
+          type: "number",
+          maximum: 1,
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fillfactor",
+      description:
+        "The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "validation"],
+  title: "ModelBoundInputNumber",
+  description:
+    'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
+} as const;
+
 export const ModelDTOSchema = {
   properties: {
     model_name: {
@@ -18679,6 +19167,307 @@ export const ModelDetailsSchema = {
   type: "object",
   required: ["id"],
   title: "ModelDetails",
+} as const;
+
+export const ModelGatedCheckboxSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelGatedCheckbox",
+      title: "Formkit",
+      description: "Model-gated checkbox.",
+      default: "modelGatedCheckbox",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    binary: {
+      type: "boolean",
+      title: "Binary",
+      description: "Whether the checkbox works in binary mode",
+      default: true,
+    },
+    indeterminate: {
+      type: "boolean",
+      title: "Indeterminate",
+      description: "Whether the checkbox is in indeterminate state",
+      default: false,
+    },
+    trueValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Truevalue",
+      description: "Value to emit when checked",
+      default: true,
+    },
+    falseValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Falsevalue",
+      description: "Value to emit when unchecked",
+      default: false,
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.",
+    },
+    requires: {
+      type: "string",
+      title: "Requires",
+      description:
+        "The model_info capability flag that must not be false, e.g. 'supports_vision'.",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "requires", "validation"],
+  title: "ModelGatedCheckbox",
+  description:
+    "A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.\n\nThe frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets\n`requires` to false; the API rejects a save that enables it for such a model. A model that does not declare\nthe capability at all is not held against it, as LiteLLM leaves most flags unset.",
 } as const;
 
 export const ModelInfoDTOSchema = {
@@ -18947,6 +19736,45 @@ export const ModelInfoDTOSchema = {
       ],
       title: "Supports Vision",
       description: "Whether the model supports vision/image input",
+    },
+    max_images: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Images",
+      description:
+        "Most images one request may carry, curated in the LiteLLM config",
+    },
+    default_temperature: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Default Temperature",
+      description:
+        "Sampling temperature used when a profile sets none, curated per model",
+    },
+    default_top_p: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Default Top P",
+      description:
+        "Nucleus-sampling top_p used when a profile sets none, curated per model",
     },
     supports_function_calling: {
       anyOf: [
@@ -21122,6 +21950,12 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -22920,7 +23754,13 @@ export const RecordsExtractedEventSchema = {
 
 export const RefusalReasonSchema = {
   type: "string",
-  enum: ["condensation_empty", "input_too_large", "out_of_scope"],
+  enum: [
+    "condensation_empty",
+    "images_not_accepted",
+    "input_too_large",
+    "out_of_scope",
+    "too_many_images",
+  ],
   title: "RefusalReason",
   description:
     "Why a conversational turn was refused before any answer was attempted.",
@@ -23424,6 +24264,12 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -26109,6 +26955,12 @@ export const SourcePipelineDTOSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -31486,6 +32338,12 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -31721,6 +32579,12 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/LocaleInputWritable",
+              },
+              {
+                $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+              },
+              {
+                $ref: "#/components/schemas/ModelGatedCheckboxWritable",
               },
               {
                 $ref: "#/components/schemas/ModelSelectWritable",
@@ -36270,6 +37134,12 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -36534,6 +37404,12 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -36844,6 +37720,12 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -36997,6 +37879,12 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -37880,6 +38768,12 @@ export const IncidentFormDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -38359,6 +39253,12 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -42177,6 +43077,441 @@ export const MinimalAgentInstanceDTOWritableSchema = {
     "Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.\nOnly contains minimal information about a specific agent instance.\n\nNOTE: This represents an INSTANCE (with agent_id), not an agent CLASS.\nFor class-level data only, use AgentClassDTO.",
 } as const;
 
+export const ModelBoundInputNumberWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelBoundNumber",
+      title: "Formkit",
+      description: "Model-bound number input.",
+      default: "modelBoundNumber",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    min: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Min",
+      description: "Minimum value",
+    },
+    max: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max",
+      description: "Maximum value",
+    },
+    step: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Step",
+      description: "Step factor for increment/decrement",
+    },
+    useGrouping: {
+      type: "boolean",
+      title: "Usegrouping",
+      description: "Whether to use grouping separators",
+      default: true,
+    },
+    minFractionDigits: {
+      type: "integer",
+      title: "Minfractiondigits",
+      description: "Minimum number of fraction digits",
+      default: 0,
+    },
+    maxFractionDigits: {
+      type: "integer",
+      title: "Maxfractiondigits",
+      description: "Maximum number of fraction digits",
+      default: 6,
+    },
+    locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Locale",
+      description: "Locale to use for number formatting",
+    },
+    mode: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["decimal", "currency"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Mode",
+      description: "Input mode",
+    },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description: "Currency code for currency mode",
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    showButtons: {
+      type: "boolean",
+      title: "Showbuttons",
+      description: "Whether to show increment/decrement buttons",
+      default: false,
+    },
+    buttonLayout: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["stacked", "horizontal"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Buttonlayout",
+      description: "Layout of increment/decrement buttons",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.",
+    },
+    maxFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxfrom",
+      description:
+        "The model_info key supplying the maximum, e.g. 'max_input_tokens'.",
+    },
+    defaultFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultfrom",
+      description:
+        "The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.",
+    },
+    fallbackDefault: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fallbackdefault",
+      description:
+        "What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.",
+    },
+    overrideLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Overridelabel",
+      description:
+        "Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.",
+    },
+    fillFactor: {
+      anyOf: [
+        {
+          type: "number",
+          maximum: 1,
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fillfactor",
+      description:
+        "The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef"],
+  title: "ModelBoundInputNumber",
+  description:
+    'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
+} as const;
+
 export const ModelDTOWritableSchema = {
   properties: {
     model_name: {
@@ -42192,6 +43527,302 @@ export const ModelDTOWritableSchema = {
   type: "object",
   required: ["model_name", "model_info"],
   title: "ModelDTO",
+} as const;
+
+export const ModelGatedCheckboxWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelGatedCheckbox",
+      title: "Formkit",
+      description: "Model-gated checkbox.",
+      default: "modelGatedCheckbox",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    binary: {
+      type: "boolean",
+      title: "Binary",
+      description: "Whether the checkbox works in binary mode",
+      default: true,
+    },
+    indeterminate: {
+      type: "boolean",
+      title: "Indeterminate",
+      description: "Whether the checkbox is in indeterminate state",
+      default: false,
+    },
+    trueValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Truevalue",
+      description: "Value to emit when checked",
+      default: true,
+    },
+    falseValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Falsevalue",
+      description: "Value to emit when unchecked",
+      default: false,
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.",
+    },
+    requires: {
+      type: "string",
+      title: "Requires",
+      description:
+        "The model_info capability flag that must not be false, e.g. 'supports_vision'.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "requires"],
+  title: "ModelGatedCheckbox",
+  description:
+    "A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.\n\nThe frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets\n`requires` to false; the API rejects a save that enables it for such a model. A model that does not declare\nthe capability at all is not held against it, as LiteLLM leaves most flags unset.",
 } as const;
 
 export const ModelSelectWritableSchema = {
@@ -43271,6 +44902,12 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -45051,6 +46688,12 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -47238,6 +48881,12 @@ export const SourcePipelineDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",

@@ -29,6 +29,13 @@ model_list:
       max_output_tokens: 32768
       supports_function_calling: true
       supports_response_schema: true
+      # Probed 2026-10-21: named unguessable colour sequences of image inputs, so Infomaniak serves it with vision
+      # although the model card describes a text model.
+      supports_vision: true
+      # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
+      # Sampling defaults recommended on the model card.
+      default_temperature: 0.8
+      default_top_p: 0.9
       input_cost_per_token: 0.0000007
       output_cost_per_token: 0.0000025
   - model_name: text-generation/gemma-4-31B-it
@@ -45,6 +52,12 @@ model_list:
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
+      # Probed 2026-10-21: images are read (258 prompt tokens each, colours named correctly).
+      supports_vision: true
+      # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
+      # Sampling defaults from the model's generation_config.json.
+      default_temperature: 1.0
+      default_top_p: 0.95
       # CHF 0.25 / 1.00 per MTok, measured via stoney's GET /v1/usage (no published rate card).
       input_cost_per_token: 0.00000025
       output_cost_per_token: 0.000001
@@ -61,6 +74,12 @@ model_list:
       max_output_tokens: 65536
       supports_function_calling: true
       supports_response_schema: true
+      # Probed 2026-10-21: images are read (colours named correctly).
+      supports_vision: true
+      # No max_images: none was hit up to 128 images per request; the input window bounds it instead.
+      # The model card's thinking-mode recommendation, the mode agents call it in.
+      default_temperature: 1.0
+      default_top_p: 0.95
       input_cost_per_token: 0.0000006
       output_cost_per_token: 0.000003
       # Read by the OpenWebUI provisioner: Native lets Open Terminal chain several tool calls per turn.
@@ -82,6 +101,12 @@ model_list:
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
+      # Probed 2026-10-21: images are read (colours named correctly) and Infomaniak's upstream 400 names the limit,
+      # "At most 10 image(s) may be provided in one prompt".
+      supports_vision: true
+      max_images: 10
+      # The model card asks for a temperature below 0.1 in production and sets no top_p.
+      default_temperature: 0.05
       input_cost_per_token: 0.0000003
       output_cost_per_token: 0.0000004
   - model_name: text-generation/Qwen3.5-122B-A10B-FP8
@@ -97,7 +122,13 @@ model_list:
       max_output_tokens: 8192
       supports_function_calling: true
       supports_response_schema: true
-      supports_vision: false
+      # Probed 2026-10-21: images are read (colours named correctly) and Infomaniak's upstream 400 names the limit,
+      # "At most 20 image(s) may be provided in one prompt".
+      supports_vision: true
+      max_images: 20
+      # Sampling defaults from the model's generation_config.json.
+      default_temperature: 0.6
+      default_top_p: 0.95
       input_cost_per_token: 0.0000004
       output_cost_per_token: 0.0000032
 
@@ -117,6 +148,13 @@ model_list:
       max_output_tokens: 8192
       supports_function_calling: false
       supports_vision: true
+      # Sampling defaults from the model's generation_config.json: near-greedy, as OCR should be.
+      default_temperature: 0.01
+      default_top_p: 0.001
+      # No max_images on purpose: probed 2026-10-16 and 2026-10-21 against the OCR endpoint dev uses (stoney), 128
+      # images in one request were all read (prompt tokens grew by 6 per 32x32 image), and mineru-vllm-server sets
+      # no --limit-mm-per-prompt.
+      # What bounds this model is its 8192-token window, which the input-size guard already enforces.
 
   # ===================================================================
   # Embedding Models

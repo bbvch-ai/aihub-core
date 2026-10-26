@@ -67,7 +67,9 @@ config:
     help: Chat model used to draft the reply body.
   draft_prompt:
     label: Draft Prompt
-    help: Instructions steering how the LLM drafts the reply body.
+    help: Instructions steering how the LLM drafts the reply body. The reply may use
+      Markdown (bold, lists); ask for text wrapped in ==double equals== to have it
+      highlighted in yellow in the draft.
   category_name:
     label: Category
     help: Name of the category, e.g. support_request. Must be unique.
@@ -142,3 +144,24 @@ config:
     help: How long a knowledge lookup may take before the message is drafted with
       the failure text instead. Without a deadline, an offline knowledge agent leaves
       the run waiting forever.
+  quote_original:
+    label: Quote Original Message
+    help: When on, the original message is quoted below the reply, with its sender,
+      date, recipients and subject, as a reply in Outlook does. It is added after
+      the reply is written and is never shown to the model.
+  quote_locale:
+    label: Quote Language
+    help: Language of the From/Sent/To/Subject labels and the date above the quoted
+      message. Outlook uses the language of whoever replies, so pick the mailbox owner's
+      language.
+  quote_timezone:
+    label: Quote Time Zone
+    help: Time zone of the Sent date above the quoted message. Outlook shows it in
+      the time zone of whoever replies, so pick the mailbox owner's.
+quote:
+  from: From
+  sent: Sent
+  to: To
+  cc: Cc
+  subject: Subject
+  date_format: '%d %b %Y %H:%M'

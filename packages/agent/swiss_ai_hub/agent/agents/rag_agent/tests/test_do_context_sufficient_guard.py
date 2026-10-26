@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ImageBlock, MessageRole, TextBlock
@@ -101,7 +101,7 @@ _token_counter = get_tokenizer()
 
 def _conversation(input_budget: int) -> MagicMock:
     conversation = MagicMock()
-    conversation.input_budget.return_value = input_budget
+    conversation.input_budget = input_budget
     conversation.llm.token_counter = _token_counter
     return conversation
 
@@ -372,7 +372,7 @@ async def test_guard_keeps_the_attached_file_rag_sized_when_the_documents_fit_th
     documents = _documents(words=budget // 2)
     retrieved_reserve = estimate_prompt_tokens([documents], _token_counter)
 
-    with patch.object(ConversationFields, "input_budget", return_value=budget):
+    with patch.object(ConversationFields, "input_budget", new_callable=PropertyMock, return_value=budget):
         reserve = retrieved_reserve + config.context_sufficient_guard_reserve(locale_handler, query)
         share = AttachedFilesConfig.model_fields["share_of_input_budget"].default
         file_room = int((budget - estimate_prompt_tokens(history, _token_counter) - reserve) * share)

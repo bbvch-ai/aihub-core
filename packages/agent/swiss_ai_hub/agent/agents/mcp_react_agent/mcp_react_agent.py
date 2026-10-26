@@ -80,7 +80,7 @@ class McpReactAgent(Agent):
         config: McpReactAgentConfig,
     ) -> Conversation.ContextualizeRequest:
         """The entry step: the chat message becomes the limited history the conversation picks up from."""
-        limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.number_of_input_tokens)
+        limited = limit_chat_history(chat_history=event.messages, number_of_input_tokens=config.input_budget)
         return Conversation.contextualize(history=limited, message=event)
 
     @step(
@@ -153,7 +153,7 @@ class McpReactAgent(Agent):
 
         limited = limit_chat_history(
             chat_history=merge_consecutive_messages(messages),
-            number_of_input_tokens=config.number_of_input_tokens,
+            number_of_input_tokens=config.input_budget,
         )
 
         return McpReasoningEvent(
