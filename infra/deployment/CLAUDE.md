@@ -94,6 +94,17 @@ literal-number rule.
   rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
   `--limit-mm-per-prompt` in the compose template.
 
+`aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
+`pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
+`custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
+restores the answer, streamed or not; a local model runs it only when the call sends
+`"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Tests:
+`uv run --with "litellm==1.83.10" pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_guardrail.py`
+(unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
+on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. See ADR
+`docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
@@ -248,8 +259,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.

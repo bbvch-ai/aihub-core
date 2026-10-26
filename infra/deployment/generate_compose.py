@@ -38,6 +38,10 @@ LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
 # Keep in sync with AvailableModel.function_calling in packages/core (not importable here, see the note below).
 OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
 OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
+# Where a model runs. The pii-anonymisation guardrail anonymises every call to a model that is not `local`, and treats a
+# model without the key as external, so a typo would silently anonymise a local model; generation rejects it instead.
+HOSTING_LOCATION_KEY = "aihub_hosting_location"
+HOSTING_LOCATIONS = {"local", "swiss_cloud", "eu", "global"}
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
@@ -264,6 +268,7 @@ def generate_config(template, context, output_path):
     rendered = template.render(context)
     if template.name == LITELLM_TEMPLATE:
         _validate_openwebui_function_calling(rendered, output_path)
+        _validate_hosting_locations(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
 
 
@@ -275,6 +280,17 @@ def _validate_openwebui_function_calling(rendered, output_path):
             raise ValueError(
                 f"{entry.get('model_name')}: {OPENWEBUI_FUNCTION_CALLING_KEY} is {mode!r} in {output_path.name}, "
                 f"expected one of {sorted(OPENWEBUI_FUNCTION_CALLING_MODES)}"
+            )
+
+
+def _validate_hosting_locations(rendered, output_path):
+    """Every model declares where it runs, so the anonymisation guardrail knows which calls leave the deployment."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        location = (entry.get("model_info") or {}).get(HOSTING_LOCATION_KEY)
+        if location not in HOSTING_LOCATIONS:
+            raise ValueError(
+                f"{entry.get('model_name')}: {HOSTING_LOCATION_KEY} is {location!r} in {output_path.name}, "
+                f"expected one of {sorted(HOSTING_LOCATIONS)}"
             )
 
 
