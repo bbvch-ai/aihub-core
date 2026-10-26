@@ -1,0 +1,5 @@
+---
+metadata:
+  name: Web Page Assistant
+  description: AI assistant that reads the web pages you link in your message and
+    answers from them, citing each page

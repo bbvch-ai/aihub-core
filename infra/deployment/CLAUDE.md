@@ -94,6 +94,17 @@ literal-number rule.
   rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
   `--limit-mm-per-prompt` in the compose template.
 
+`aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
+`pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
+`custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
+restores the answer, streamed or not; a local model runs it only when the call sends
+`"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Tests:
+`uv run --with "litellm==1.83.10" pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_guardrail.py`
+(unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
+on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. See ADR
+`docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
@@ -235,10 +246,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -248,8 +258,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -279,6 +289,15 @@ routes through Traefik.
 | `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
 | `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)         |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
+| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
 | `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)     |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
@@ -292,6 +311,13 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
+internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
+connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
+callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
+Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
+reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
 
 **`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no

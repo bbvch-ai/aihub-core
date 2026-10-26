@@ -1,0 +1,20 @@
+---
+config:
+  base_url:
+    label: Jira URL
+    help: The address you open Jira at, e.g. https://acme.atlassian.net for Jira Cloud
+      or https://jira.acme.ch/jira for Jira Data Center.
+  deployment:
+    label: Jira edition
+    help: Jira Cloud signs in with an account e-mail and an API token, Jira Data Center
+      with a personal access token.
+    cloud: Jira Cloud
+    data_center: Jira Data Center (11.3)
+  email:
+    label: Account e-mail
+    help: E-mail of the Jira Cloud account the API token belongs to.
+  api_token:
+    label: Token
+    help: A Jira Cloud API token without scopes, or a Jira Data Center personal access
+      token. Everyone who can use this agent reads what this account can read, so
+      use a dedicated read-only account limited to the projects the agent needs.

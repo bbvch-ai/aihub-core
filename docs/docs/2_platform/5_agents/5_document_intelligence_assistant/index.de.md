@@ -237,7 +237,7 @@ und **mindestens eine Wissensquelle** sind erforderlich; alles andere hat sinnvo
 | **Temperatur**                           | Zahl            | `0.0`    | Zufälligkeit. Für fundierte, faktenbasierte Antworten niedrig halten (`0.0`–`0.3`). Bereich 0.0–2.0.                  |
 | **Log-Wahrscheinlichkeiten zurückgeben** | Umschalter      | Aus      | Erweiterte Diagnoseoption für Token-Level-Konfidenz. Deaktiviert lassen, sofern nicht benötigt.                       |
 | **Top Log-Wahrscheinlichkeiten**         | Zahl            | `0`      | Alternative Token pro Position zur Berichterstattung; nur wenn Log-Wahrscheinlichkeiten aktiviert sind. Bereich 0–20. |
-| **Timeout**                              | Zahl (Sekunden) | `600`    | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                 |
+| **Timeout**                              | Zahl (Sekunden) | `300`    | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                 |
 
 ### Wissensquellen (Retriever)
 

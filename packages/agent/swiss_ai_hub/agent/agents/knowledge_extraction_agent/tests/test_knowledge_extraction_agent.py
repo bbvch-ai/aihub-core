@@ -728,6 +728,28 @@ class TestWholeScope:
         assert request.selection is not None
 
 
+@pytest.mark.parametrize(
+    ("message", "globs"),
+    [
+        ("List the requirements in alpha/specs/requirements.md.", ["**/alpha/specs/requirements.md"]),
+        ("Rows of /invoices/x.pdf and (q1/c.pdf), twice: q1/c.pdf", ["**/invoices/x.pdf", "**/q1/c.pdf"]),
+        ("See https://example.com/docs/a.pdf for the format", []),
+        ("and/or the 2025 invoices from v1.2/notes", []),
+        ("x/.pdf and a/b.verylongext", []),
+        ("Columns from [the spec](docs/spec.md) and path=a/b.pdf", ["**/docs/spec.md", "**/a/b.pdf"]),
+    ],
+    ids=["sentence-end", "punctuation-and-duplicates", "url", "no-extension", "no-stem-or-long-extension", "glued"],
+)
+def test_the_paths_a_message_spells_out_are_read_word_by_word(message: str, globs: list[str]):
+    assert [location.path_glob for location in RequestedLocation.written_in(message)] == globs
+
+
+def test_a_message_built_to_make_a_pattern_backtrack_is_read_at_once():
+    message = "a/" * 20_000 + "b" * 20_000 + "!"
+
+    assert RequestedLocation.written_in(message) == []
+
+
 class TestDiscovery:
     @pytest.mark.asyncio
     async def test_with_discovery_a_yes_while_a_sample_awaits_still_confirms_it(self):
