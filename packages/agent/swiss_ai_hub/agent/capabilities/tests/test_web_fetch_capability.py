@@ -147,8 +147,10 @@ class TestFetch:
         assert event.grounding_nodes[0].content.endswith("Its remaining text was not read.]")
 
     async def test_an_unreachable_browser_is_a_platform_fault_not_an_unreadable_page(self):
+        unreachable = ConnectionError("Playwright server unreachable")
+
         with pytest.raises(ConnectionError):
-            await _fetch([ARTICLE], ConnectionError("Playwright server unreachable"))
+            await _fetch([ARTICLE], unreachable)
 
 
 class TestLinksOf:
