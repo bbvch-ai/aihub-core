@@ -266,7 +266,7 @@ class Form(BaseModel):
         - Sets default value from Pydantic field if element has no explicit value
         """
         if isinstance(element, PrimeVueElement):
-            element_copy = element.model_copy()
+            element_copy = element.anchored_at(id_prefix).model_copy()
             element_copy.name = field_name
             if element_copy.ref is None:
                 # Use prefixed path as ID to ensure uniqueness across nested forms
@@ -277,7 +277,7 @@ class Form(BaseModel):
             # Boolean elements (unchecked = false), list-collecting elements (empty list = no selection) and
             # fields whose default is the empty string (blank = not given, e.g. one of two alternative
             # credentials) have a valid "unset" state and are never auto-required.
-            non_required_formkit_types = {"primeCheckbox", "primeToggleSwitch", "chipsInput"}
+            non_required_formkit_types = {"primeCheckbox", "modelGatedCheckbox", "primeToggleSwitch", "chipsInput"}
             is_skip_required = getattr(element_copy, "formkit", None) in non_required_formkit_types
             has_blank_default = field_info.default == ""
             allows_none = self._annotation_allows_none(field_info.annotation)
@@ -285,7 +285,7 @@ class Form(BaseModel):
             # An explicit `required=True` survives a nullable annotation: a field behind its enable toggle is
             # only rendered while switched on, and may then still demand a value.
             element_copy.required = is_required or element.required
-            if allows_none and not is_skip_required:
+            if allows_none and not is_skip_required and not element_copy.renders_own_unset_state():
                 element_copy.nullable = True
                 element_copy.default_enabled = self._default_is_non_null(field_info)
 

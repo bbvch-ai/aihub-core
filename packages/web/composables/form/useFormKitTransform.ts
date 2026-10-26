@@ -442,6 +442,27 @@ function transformChildren(
   return list.flatMap(child => (typeof child === 'string' ? child : transform(child as FormElement))) as FormKitSchemaNode[]
 }
 
+function transformGroupToSchema(
+  element: FormElement,
+  children: FormKitSchemaNode[],
+  label: string | undefined,
+  locale: string,
+  warningNode: FormKitSchemaNode | undefined,
+): FormKitSchemaNode | FormKitSchemaNode[] {
+  const isNullable = element.nullable === true
+  // A group whose fields are all repeaters (rendered on their own) or fixed by the backend
+  // would show only its heading, an empty wizard step. Its values still live in the form
+  // data, which the repeaters write to directly.
+  if (!isNullable && children.length === 0) return []
+  if (!isNullable) return withFieldWarning(createGroupNode(element, children, label), warningNode, false)
+  const toggleId = nullableToggleId(element)
+  const groupNode = createGroupNode(gateElement(element, `$get(${toggleId}).value`), children, label)
+  const toggledNodes = applyNullableToggle(
+    element, groupNode, label, toggleId, locale, getLocalizedString(element.help, locale),
+  )
+  return withFieldWarning(toggledNodes, warningNode, true)
+}
+
 export function transformElementToSchema(
   element: FormElement,
   options: TransformOptions = {},
@@ -468,13 +489,7 @@ export function transformElementToSchema(
   const warningNode = warningText ? buildFieldWarningNode(element, warningText) : undefined
 
   if (formkitType === 'group') {
-    const gatedElement = isNullable ? gateElement(element, toggleCondition!) : element
-    const groupNode = createGroupNode(gatedElement, children, label)
-    if (!isNullable) return withFieldWarning(groupNode, warningNode, false)
-    const toggledNodes = applyNullableToggle(
-      element, groupNode, label, toggleId, locale, getLocalizedString(element.help, locale),
-    )
-    return withFieldWarning(toggledNodes, warningNode, true)
+    return transformGroupToSchema(element, children, label, locale, warningNode)
   }
 
   const cleanNode = buildNodeProperties(element, formkitType, label, locale, optionsResolver)
@@ -961,6 +976,7 @@ export function extractGroupConfigs(
     try {
       const schema = transformElementToSchema(element, { locale })
       const schemaArray = Array.isArray(schema) ? schema : [schema]
+      if (schemaArray.length === 0) continue
 
       groups.push({
         name: element.name as string,

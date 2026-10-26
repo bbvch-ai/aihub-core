@@ -6,6 +6,7 @@ from swiss_ai_hub.core.generative_ai import UserScopedRetrievers
 from swiss_ai_hub.core.persistence import BucketEntity
 
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge_tool_config import KnowledgeToolConfig
+from swiss_ai_hub.agent.capabilities.knowledge.narrowed_knowledge_scope import NarrowedKnowledgeScope
 
 
 class KnowledgeToolScope:
@@ -42,6 +43,25 @@ class KnowledgeToolScope:
             for reference in unique
             if access.has_access_to_knowledge_namespace(reference.database, reference.namespace)
         ]
+
+    @staticmethod
+    def narrowed_collections(
+        config: KnowledgeToolConfig,
+        references: list[KnowledgeReference],
+        access: AccessChecker | None,
+        namespaces_of: Callable[[str], list[str]] | None = None,
+        databases: Callable[[], list[str]] | None = None,
+    ) -> NarrowedKnowledgeScope:
+        """The profile's collections, cut down to the referenced ones when the user referenced any, for blueprints
+        whose profile is the hard boundary of what a run may touch: a reference can pick among the profile's
+        collections but never add one. References that pick nothing are ignored, so a run never ends up with no
+        collection only because the user named one the profile does not list."""
+        configured = KnowledgeToolScope.collections(config, [], access, namespaces_of, databases)
+        picked = [reference for reference in configured if reference in references]
+        return NarrowedKnowledgeScope(
+            collections=picked or configured,
+            ignored=[reference for reference in references if reference not in configured],
+        )
 
     @staticmethod
     def live_databases() -> list[str]:

@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 32 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
 │   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 30 concrete form elements
+│   └── elements/                    # 32 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -222,8 +222,8 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │   │   └── ExceptionEvent
 │   ├── MetaQuestionDetectedEvent / NotAMetaQuestionEvent (meta-question gate) [events/agent/self_awareness/]
 │   └── Capability and tool-loop calls (Contextualize/Compose/Complete Conversation, RecallMemory,
-│       SearchKnowledge, ReadAttachedFiles and their results, RunToolLoop, ToolCallsDecided, ToolCallApproved,
-│       ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
+│       SearchKnowledge, ReadAttachedFiles, ExtractRecords and their results, RunToolLoop, ToolCallsDecided,
+│       ToolCallApproved, ToolLoopIteration, ToolLoopFinished, MemoryStorageRequested)
 │
 ├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
@@ -287,12 +287,31 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 32 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text),
+ModelBoundInputNumber and ModelGatedCheckbox.
+
+**Model-bound elements**:
+
+- **What they do**: `ModelBoundInputNumber` takes its maximum (`max_from`) and its default hint (`default_from`) from
+  the LiteLLM `model_info` of the model picked elsewhere on the form. `ModelGatedCheckbox` can only be switched on while
+  that model does not set `requires` to false.
+- **How the model is referenced**: `model_ref` is written relative to the declaring form, with `../` for a parent.
+  `FormkitElement.anchored_at`, called from `_prepare_formkit_element`, rewrites it to the path from the form root.
+- **Where they are enforced**: the frontend applies them, and `ModelLimitValidator` in `packages/api` enforces them at
+  save time, since the JSON schema cannot carry a bound that depends on another field.
+- **Where they are used**: `LLMParameter` (temperature, top_p, accept_images) and
+  `ConversationFields.number_of_input_tokens`.
+- **Own override instead of the generic toggle**: a nullable `ModelBoundInputNumber` with an `override_label` reports
+  `renders_own_unset_state()`, so `_prepare_formkit_element` does not mark it `nullable` and the frontend renders no
+  "Enable X" toggle. The component shows its own checkbox with the model's default (or `fallback_default`, or "provider
+  default") in the label, keeps the input visible but disabled while unset, and pre-fills the default when ticked. A
+  budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
+  that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
 ### Nested Forms
 
@@ -579,14 +598,17 @@ collection is reported as not found. Pending documents raise `KnowledgeDocumentP
 exist or is being deleted fails the whole call with `KnowledgeCollectionNotFoundError`. `start`/`end` read a character
 range, and `text_length` reports the full length. Nothing here reads agent configuration or checks access: the caller
 passes the agent's configured collections narrowed to those the asking user may read, since a profile is checked only
-against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list.
+against whoever saved it. In the agent package, `KnowledgeToolScope.collections()` computes exactly that list, as
+`KnowledgeReference`s naming each database by its vector collection name; `KnowledgeCollectionResolver.pair_of()` turns
+one into the `BucketNamespacePair` the readers take, since that name can differ from the bucket name.
 
-`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_glob=, offset=, limits=)` finds
-every fully ingested document whose parsed text contains an exact term or matches a regex. Unlike vector or BM25
-retrieval it is exhaustive: pages of `max_documents` (default 20) are walked with `next_offset` until it is None. Each
-`KnowledgeContentMatch` carries the summary, the first `max_lines_per_document` (5) matching lines, located by
-`start`/`end` offsets that `load_document` takes, and the total `matching_line_count`. It has the same trust rule and
-collection errors as the reader. How it works:
+`KnowledgeContentSearch.search(collections, query, is_regex=, case_sensitive=, path_globs=, offset=, limits=)` finds
+every fully ingested document whose parsed text contains an exact term or matches a regex. A document must match every
+glob in `path_globs`, so a caller that restricts a model to part of a collection passes its own glob next to the model's
+and the model can only narrow. Unlike vector or BM25 retrieval it is exhaustive: pages of `max_documents` (default 20)
+are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` carries the summary, the first
+`max_lines_per_document` (5) matching lines, located by `start`/`end` offsets that `load_document` takes, and the total
+`matching_line_count`. It has the same trust rule and collection errors as the reader. How it works:
 
 - **No index.** It scans `__data__.text` in the doc store with `$regex`, bounded by one `timeout_seconds` budget (5 s)
   passed as `maxTimeMS`, so ingested, changed and deleted documents are reflected at once.
@@ -597,6 +619,14 @@ collection errors as the reader. How it works:
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
+- **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
+  `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
+  within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
+  `KnowledgeSearchBudget` covers the listing (`list_documents(..., budget)`) and every content query, and a content
+  query is one id-only scan per collection (`KnowledgeContentSearch.matching_ids`, no text loaded, no per-line check, so
+  it may count a document the line check would drop), with the restricting glob next to the criterion's own, so a
+  model's selection can only narrow the caller's. The record-extraction capability resolves the selection a model wrote
+  this way rather than trusting a list of ids, with its ceiling as `limit`.
 - **Limits.** Case folding is simple, so `ß` never matches `SS`. Decomposed (NFD) text is matched for literal text but
   not by a class such as `[üu]`. `$` does not match before `\r\n`. DocumentDB rejects numbered backreferences (`\1`);
   named ones, `(?P<x>…)(?P=x)`, work. PCRE2 reports hitting its backtracking limit as no match, so ambiguous nested
@@ -609,9 +639,15 @@ read no agent configuration:
 - **`RecordSchemaBuilder.build(description, llm, t)`** returns a validated `RecordSchema`: primitive fields only, at
   most `DEFAULT_MAX_FIELDS`, names normalised to snake_case. It calls a copy of `llm` at temperature zero and raises
   `InvalidRecordSchemaError` (a `ValueError`) rather than degrading, since without a schema there is nothing to extract.
-- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None)`** returns a
-  `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only hardware");
-  filters never become fields. The document must be loaded whole.
+- **`RecordExtractor.extract(schema, document, llm, llm_config, t, instructions=None, *, limiter=None, max_windows=None, row_terms=None)`**
+  returns a `DocumentExtractionResult` whose records carry `RecordProvenance`. `instructions` is the filter ("only
+  hardware"); filters never become fields. The document must be loaded whole. Windows run side by side under the
+  caller's `limiter` (one by one without). With `max_windows` a longer document is read in part: `WindowSelection` keeps
+  the opening and the windows richest in `row_terms` (a pattern from a model, matched with a timeout), spreads the rest,
+  and the result is marked `partial`; `RecordMerger` merges only records of adjacent windows. With `instructions`, the
+  schema gains the reserved field `RecordSchema.MATCH_FIELD` (`record_match`, "yes" or "unsure"), named in the prompt's
+  rules, so borderline records are kept and marked rather than dropped; it is ignored by the empty-record check and the
+  merger's comparison.
 - **Windowing:** a document larger than the budget is split into overlapping windows, sized by the input window *and*
   half the output limit, because the records come back as JSON. Windows break at line ends, so a table row is never cut.
   `RecordMerger` drops overlap copies between adjacent windows only. Every later window is also shown the document's
@@ -619,6 +655,10 @@ read no agent configuration:
   far below the header.
 - **Failure:** malformed output fails that document as a whole with a `failure_reason`, never with a partial list.
   Infrastructure errors still raise.
+
+`ExtractedTableMarkup.wrap(table, rows)` marks a table an agent answered with, and `condensed(text)` replaces every
+marked table with one line. Chat clients send earlier answers back with each message, so the API (`ChatService`), the
+OpenWebUI pipe and the agents condense them before a table of hundreds of rows rides on every later event.
 
 Keep the schema model and the extraction model separate parameters. Each model is consistent with itself across runs,
 but models disagree with each other on names and types, so the schema model decides what a table looks like. `page`

@@ -38,7 +38,9 @@ class ConversationTranscriptBuilder:
             return
         self.messages.append(_ProjectedMessage(role="user", display_id=display_id, content=parts))
 
-    def add_assistant_text(self, display_id: str, text: str) -> None:
+    def add_assistant_text(self, display_id: str, text: str, is_answer: bool = True) -> None:
+        """`is_answer` is false for text the agent's final answer never holds, such as a table shown for a tool call,
+        so it does not count as streamed answer text."""
         if not text:
             raise ValueError("Assistant event has no text")
 
@@ -56,7 +58,8 @@ class ConversationTranscriptBuilder:
                     content=[ChatCompletionContentPartTextParam(type="text", text=text)],
                 )
             )
-        self.assistant_text_by_display[display_id] = self.assistant_text_by_display.get(display_id, "") + text
+        if is_answer:
+            self.assistant_text_by_display[display_id] = self.assistant_text_by_display.get(display_id, "") + text
 
     def start_user_segment(self, display_id: str) -> None:
         self.assistant_text_by_display[display_id] = ""

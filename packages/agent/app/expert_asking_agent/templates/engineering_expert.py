@@ -21,7 +21,7 @@ def build() -> ExpertAskingAgentConfig:
             fr="Escalade les questions techniques vers un canal Microsoft Teams d'experts humains.",
             it="Inoltra le domande tecniche a un canale Microsoft Teams di esperti umani.",
         ),
-        icon="mage:hard-hat",
+        icon="mage:wrench",
         llm=LLMConfig(
             model_name="text-generation/gemma-4-31B-it",
             default_parameter=LLMParameter(temperature=0.2, timeout=60.0),

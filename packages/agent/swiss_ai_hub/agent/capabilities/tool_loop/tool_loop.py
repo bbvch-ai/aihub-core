@@ -153,8 +153,9 @@ class ToolLoop(Capability):
                 mode=request.mode,
                 max_iterations=request.max_iterations,
                 cite_sources=request.cite_sources,
+                hands_back_results=request.hands_back_results,
                 needs_condensing=ToolLoopCondenser.outgrown(
-                    messages, offered, conversation.input_budget(), conversation.llm.token_counter
+                    messages, offered, conversation.input_budget, conversation.llm.token_counter
                 ),
             )
         )
@@ -235,7 +236,7 @@ class ToolLoop(Capability):
         user: UserIdentity | None = None,
     ) -> ToolLoopIterationEvent:
         """Condense the loop's conversation to fit the prompt again before the model decides on it."""
-        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget(), displayer, t, user)
+        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget, displayer, t, user)
         return ToolLoopIterationEvent(state=await condenser.condense(iteration.state))
 
     @staticmethod
@@ -331,7 +332,7 @@ class ToolLoop(Capability):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=runs_in_the_loop,
     )
     async def run_function_step(
@@ -367,6 +368,24 @@ class ToolLoop(Capability):
         )
 
     @staticmethod
+    def _gathered(state: ToolLoopState, answered: list[ToolResultEvent]) -> list[ChatMessage]:
+        """The context a gathering loop hands its blueprint. An answering loop never reads it, and every iteration
+        event carries it, so it is only kept where it is used rather than doubling each result on the wire."""
+        if state.mode != ToolLoopMode.GATHER or not state.hands_back_results:
+            return state.gathered
+        return [
+            *state.gathered,
+            *(
+                message
+                for result in answered
+                if not result.is_error
+                for message in (
+                    result.block or [ChatMessage(role=MessageRole.SYSTEM, content=f"{result.name}: {result.content}")]
+                )
+            ),
+        ]
+
+    @staticmethod
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.join.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.join.description"),
@@ -396,30 +415,18 @@ class ToolLoop(Capability):
             )
             for result in answered
         ]
-        gathered = [
-            *state.gathered,
-            *(
-                message
-                for result in answered
-                if not result.is_error
-                for message in (
-                    result.block or [ChatMessage(role=MessageRole.SYSTEM, content=f"{result.name}: {result.content}")]
-                )
-            ),
-        ]
         messages = [*state.messages, *tool_messages]
+        joined = state.model_copy(
+            update={
+                "messages": messages,
+                "iteration": state.iteration + 1,
+                "tool_calls_made": state.tool_calls_made + len(answered),
+                "gathered": ToolLoop._gathered(state, answered),
+            }
+        )
+        outgrown = ToolLoopCondenser.outgrown(messages, state.tools, conversation.input_budget, counter)
         return ToolLoopIterationEvent(
-            state=state.model_copy(
-                update={
-                    "messages": messages,
-                    "iteration": state.iteration + 1,
-                    "tool_calls_made": state.tool_calls_made + len(answered),
-                    "gathered": gathered,
-                    "needs_condensing": ToolLoopCondenser.outgrown(
-                        messages, state.tools, conversation.input_budget(), counter
-                    ),
-                }
-            )
+            state=joined.model_copy(update={"needs_condensing": outgrown or ToolLoopCondenser.oversized(joined)})
         )
 
     @staticmethod
