@@ -27,6 +27,8 @@ COST_LLM = "swiss_ai_hub.core.generative_ai.resources.models.llm.lite_llm_base.L
 ATTACHMENT_FILE_ID = "0d5f7a1c-3b2e-4c8d-9a6f-1e2d3c4b5a6f"
 MESSAGE_FILE_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
 SENDER = "alice@test"
+# The inbox UIDVALIDITY the client double lists under, so a scenario can seed and assert a watermark in its UID space.
+UID_VALIDITY = 7
 
 
 def summary(uid: str, subject: str | None = None) -> UnreadMailSummary:
@@ -66,6 +68,7 @@ def make_client(
 
     client = AsyncMock()
     client.list_unread = AsyncMock(return_value=unread or [])
+    client.list_unread_above = AsyncMock(return_value=(UID_VALIDITY, unread or []))
     client.move_message = AsyncMock(return_value=folder_created)
     client.relocate_message = AsyncMock(return_value=None)
     client.ensure_folders = AsyncMock(side_effect=ensure_folders)

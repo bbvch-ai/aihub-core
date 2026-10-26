@@ -87,10 +87,16 @@ config:
     help: Descrivi il tipo di posta che appartiene a questa categoria. È su questo
       che il modello classifica, quindi sii concreto sull'intento invece di elencare
       parole chiave.
+  keep_uncategorised_in_inbox:
+    label: Lascia la posta non classificata nella posta in arrivo
+    help: Se attivo, la posta che non rientra in nessuna categoria resta non letta
+      nella posta in arrivo invece di essere spostata nella cartella di riserva, e
+      le esecuzioni successive non la classificano di nuovo. La posta che il classificatore
+      non è riuscito a elaborare va comunque nella cartella degli errori.
   fallback_folder:
     label: Cartella di riserva
     help: Cartella per la posta su cui il modello non è sicuro. Tale posta non viene
-      mai indovinata in una categoria né lasciata nella posta in arrivo.
+      mai indovinata in una categoria.
   failure_folder:
     label: Cartella degli errori
     help: Cartella per la posta che il classificatore non è riuscito a elaborare.
