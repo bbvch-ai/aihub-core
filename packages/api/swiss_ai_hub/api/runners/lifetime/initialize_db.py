@@ -25,6 +25,7 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, In
 from swiss_ai_hub.api.routes.access.default_tenant_access_rules_service import DefaultTenantAccessRulesService
 from swiss_ai_hub.api.runners.lifetime.empty_namespace_scope_migration import EmptyNamespaceScopeMigration
 from swiss_ai_hub.api.runners.lifetime.llm_request_timeout_migration import LLMRequestTimeoutMigration
+from swiss_ai_hub.api.runners.lifetime.oversized_input_limit_migration import OversizedInputLimitMigration
 from swiss_ai_hub.api.runners.lifetime.pre_pair_knowledge_collection_migration import (
     PrePairKnowledgeCollectionMigration,
 )
@@ -360,6 +361,17 @@ def lower_llm_request_timeouts() -> None:
     migrated = LLMRequestTimeoutMigration.run()
     if migrated:
         logger.info(f"Lowered the LLM request timeout from 600 s to 300 s in: {', '.join(migrated)}")
+
+
+# Transitional: the input-token limit was pre-filled with 128,000 for every model, and saves are now rejected above 85%
+# of the model's window, so such a profile on a smaller model could not be saved at all. Unset, the limit fills that
+# share, which is what it ran at already. Delete it and `OversizedInputLimitMigration` once deployments have upgraded
+# past it.
+def unset_oversized_input_limits() -> None:
+    """Unsets every agent profile's input-token limit that lies above what its model allows."""
+    migrated = OversizedInputLimitMigration.run()
+    if migrated:
+        logger.info(f"Unset an input-token limit above what the model allows in: {', '.join(migrated)}")
 
 
 async def _ensure_bucket_exists(bucket_name: str, ingestor: str) -> BucketEntity:

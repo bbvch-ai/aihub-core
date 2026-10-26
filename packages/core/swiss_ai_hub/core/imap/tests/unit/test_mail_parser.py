@@ -2,6 +2,8 @@ import email
 from email.message import EmailMessage
 from email.policy import default as default_policy
 
+import pytest
+
 from swiss_ai_hub.core.imap.mail_parser import MAX_SUBJECT_CHARACTERS, MailParser
 
 _MAX_BODY_BYTES = 1_000_000
@@ -131,3 +133,51 @@ def test_an_enormous_subject_is_capped_at_parse_time():
     parsed = _parse(message)
 
     assert len(parsed.subject) == MAX_SUBJECT_CHARACTERS
+
+
+def test_parse_message_carries_the_recipients_a_quoted_reply_shows():
+    message = EmailMessage()
+    message["From"] = "Alice <alice@example.com>"
+    message["To"] = "support@example.com"
+    message["Cc"] = "Bob <bob@example.com>"
+    message["Subject"] = "Question"
+    message.set_content("body")
+
+    parsed = _parse(_from_bytes(message))
+
+    assert parsed.to == "support@example.com"
+    assert parsed.cc == "Bob <bob@example.com>"
+
+
+def _raw_with_headers(**headers: str) -> EmailMessage:
+    lines = {"From": "a@example.com", "Subject": "s", "Message-ID": "<m@example.com>", **headers}
+    raw = "\r\n".join(f"{name}: {value}" for name, value in lines.items()) + "\r\n\r\nbody\r\n"
+    return email.message_from_bytes(raw.encode(), policy=default_policy)
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    ["=?utf-8?q?x=0D=0ABcc:_attacker@evil.example?=", "=?utf-8?q?x=0Ay?=", "=?utf-8?q?x=0Dy?="],
+    ids=["crlf", "lf", "cr"],
+)
+def test_an_encoded_line_break_in_to_or_cc_leaves_that_header_out_instead_of_failing(encoded: str):
+    parsed = _parse(_raw_with_headers(To=f"{encoded} <t@example.com>", Cc=f"{encoded} <c@example.com>"))
+
+    assert parsed.to is None
+    assert parsed.cc is None
+    assert parsed.sender == "a@example.com"
+    assert parsed.body_text is not None
+
+
+def test_an_unreadable_to_does_not_take_a_readable_cc_with_it():
+    parsed = _parse(_raw_with_headers(To="=?utf-8?q?x=0D=0Ay?= <t@example.com>", Cc="Bob <bob@example.com>"))
+
+    assert parsed.to is None
+    assert parsed.cc == "Bob <bob@example.com>"
+
+
+def test_parse_message_leaves_absent_recipients_empty():
+    parsed = _parse(_build_message())
+
+    assert parsed.to is None
+    assert parsed.cc is None

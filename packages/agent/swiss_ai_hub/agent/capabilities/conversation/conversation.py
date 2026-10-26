@@ -35,6 +35,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.capabilities.capability import Capability
 from swiss_ai_hub.agent.capabilities.conversation.conversation_fields import ConversationFields
+from swiss_ai_hub.agent.capabilities.conversation.image_admission import ImageAdmission
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.conversation_metadata.conversation_metadata_step_functions import (
     generate_follow_up_questions,
@@ -205,24 +206,28 @@ class Conversation(Capability):
         t: LocaleHandler,
         user: UserIdentity | None = None,
     ) -> list[ConversationContextualizedEvent | StandaloneQuestionCondenserEvent] | RefusalStopEvent:
-        """The turn's query, once the message is cleared: the last user message as is, or condensed on request."""
-        last_user_message = request.history[-1]
+        """The turn's query, once the message is cleared: the last user message as is, or condensed on request.
+
+        The history carries on with the images the main model may receive (`ImageAdmission`), so every blueprint's
+        prompt is held to the model's image limit without one of them having to remember it."""
+        history = await ImageAdmission.admit(request.history, conversation.llm, displayer, t)
+        if isinstance(history, RefusalStopEvent):
+            return history
+        last_user_message = history[-1]
         if not conversation.condense_question:
-            return [ConversationContextualizedEvent(history=request.history, query=last_user_message.content or "")]
+            return [ConversationContextualizedEvent(history=history, query=last_user_message.content or "")]
 
         await displayer.display_thought(t("agent.thought.condense_question"))
         async with conversation.task_llm.cost_reporting_llm(displayer, user=user) as llm:
             try:
                 condensed = await condense_standalone_question(
-                    chat_history=request.history, message=last_user_message, t=t, llm=llm
+                    chat_history=history, message=last_user_message, t=t, llm=llm
                 )
             except EmptyCondensationError:
                 return await _refuse_empty_condensation(conversation.task_llm, displayer, t)
         return [
             StandaloneQuestionCondenserEvent(condensed_chat_message=condensed),
-            ConversationContextualizedEvent(
-                history=request.history, query=(condensed.content or "").strip(), condensed=True
-            ),
+            ConversationContextualizedEvent(history=history, query=(condensed.content or "").strip(), condensed=True),
         ]
 
     @staticmethod
@@ -286,7 +291,7 @@ class Conversation(Capability):
         counter = conversation.llm.token_counter
         system_head, turns = _split_system_head(history)
         earlier, question = turns[:-1], turns[-1:]
-        room = conversation.input_budget() - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
+        room = conversation.input_budget - reserve_tokens - estimate_prompt_tokens([*system_head, *question], counter)
         fitted_blocks = _fit_whole_blocks(blocks, room, counter)
         kept = _fit_newest_turns(earlier, room - estimate_prompt_tokens(fitted_blocks, counter), counter)
         return merge_consecutive_messages([*system_head, *fitted_blocks, *kept, *question])

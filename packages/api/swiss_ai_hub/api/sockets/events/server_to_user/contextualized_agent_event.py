@@ -30,6 +30,7 @@ from swiss_ai_hub.core.events.agent import (
     DisplayEvent,
     EmbeddingEvent,
     ExceptionEvent,
+    ExtractRecordsEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
     FollowUpQuestionsEvent,
@@ -62,6 +63,7 @@ from swiss_ai_hub.core.events.agent import (
     RAGSuccessStopEvent,
     ReadAttachedFilesEvent,
     RecallMemoryEvent,
+    RecordsExtractedEvent,
     RefusalStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
@@ -124,6 +126,7 @@ DisplayEvents = (
     | Annotated[MemoryRecalledEvent, Tag("MemoryRecalledEvent")]
     | Annotated[MemoryStorageRequestedEvent, Tag("MemoryStorageRequestedEvent")]
     | Annotated[SearchKnowledgeEvent, Tag("SearchKnowledgeEvent")]
+    | Annotated[ExtractRecordsEvent, Tag("ExtractRecordsEvent")]
     | Annotated[ReadAttachedFilesEvent, Tag("ReadAttachedFilesEvent")]
     | Annotated[AttachedFilesReadEvent, Tag("AttachedFilesReadEvent")]
     | Annotated[RunToolLoopEvent, Tag("RunToolLoopEvent")]
@@ -139,6 +142,7 @@ DisplayEvents = (
     | Annotated[ThoughtEvent, Tag("ThoughtEvent")]
     | Annotated[AttachedFileEvent, Tag("AttachedFileEvent")]
     | Annotated[KnowledgeSearchedEvent, Tag("KnowledgeSearchedEvent")]
+    | Annotated[RecordsExtractedEvent, Tag("RecordsExtractedEvent")]
     | Annotated[ToolResultEvent, Tag("ToolResultEvent")]
     | Annotated[ToolLoopStatusEvent, Tag("ToolLoopStatusEvent")]
     | Annotated[ToolLoopCondensedEvent, Tag("ToolLoopCondensedEvent")]

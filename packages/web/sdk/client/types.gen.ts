@@ -368,6 +368,8 @@ export type AgentClassDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -504,6 +506,8 @@ export type AgentConfigDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -4402,6 +4406,7 @@ export type ContextualizedAgentEvent = {
     | MemoryRecalledEvent
     | MemoryStorageRequestedEvent
     | SearchKnowledgeEvent
+    | ExtractRecordsEvent
     | ReadAttachedFilesEvent
     | AttachedFilesReadEvent
     | RunToolLoopEvent
@@ -4417,6 +4422,7 @@ export type ContextualizedAgentEvent = {
     | ThoughtEvent
     | AttachedFileEvent
     | KnowledgeSearchedEvent
+    | RecordsExtractedEvent
     | ToolResultEvent
     | ToolLoopStatusEvent
     | ToolLoopCondensedEvent
@@ -6455,6 +6461,102 @@ export type ExceptionEvent = {
 };
 
 /**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request continues a pending extraction.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Continue Pending
+   *
+   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   */
+  continue_pending?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * FewShotAcceptEvent
  *
  * Event indicating that the few-shot guard accepted the request.
@@ -6924,6 +7026,8 @@ export type FullProcessInstanceDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7125,6 +7229,8 @@ export type Group = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7495,6 +7601,8 @@ export type HumanInDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -7578,6 +7686,8 @@ export type HumanInSpecs = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -8646,6 +8756,8 @@ export type IncidentFormDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -8924,6 +9036,8 @@ export type IngestorDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -10115,6 +10229,62 @@ export type KnowledgeDatabaseSelector = {
    */
   readonly validation: string;
   [key: string]: unknown;
+};
+
+/**
+ * KnowledgeDocumentCriteria
+ *
+ * One way to pick documents: every condition given must hold, conditions left out do not narrow.
+ */
+export type KnowledgeDocumentCriteria = {
+  /**
+   * Path Glob
+   *
+   * Glob on the path relative to the collection, e.g. 'invoices/2025**'.
+   */
+  path_glob?: string | null;
+  /**
+   * Path Regex
+   *
+   * Regular expression searched anywhere in the path.
+   */
+  path_regex?: string | null;
+  /**
+   * Content Query
+   *
+   * Only documents whose text contains this term, or matches it as a regex. Use terms that identify documents (a supplier, a number, a year, a contract party), never a word describing the records wanted, such as 'hardware': lines rarely contain it, so documents would be missed.
+   */
+  content_query?: string | null;
+  /**
+   * Content Is Regex
+   *
+   * Whether `content_query` is a regular expression.
+   */
+  content_is_regex?: boolean;
+  /**
+   * Document Ids
+   *
+   * Only these documents, by the ids a listing or a search returned.
+   */
+  document_ids?: Array<string>;
+};
+
+/**
+ * KnowledgeDocumentSelection
+ *
+ * The documents a request is about, described rather than listed: a document is selected when it meets any of the
+ * criteria.
+ *
+ * Describing the set keeps a model's tool call short however many files match, and lets the caller apply its own glob
+ * and limits when it resolves the set, so a model can only narrow what it was given.
+ */
+export type KnowledgeDocumentSelection = {
+  /**
+   * Any Of
+   *
+   * A document is selected when it meets every condition of at least one entry.
+   */
+  any_of: Array<KnowledgeDocumentCriteria>;
 };
 
 /**
@@ -12264,6 +12434,261 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelBoundInputNumber
+ *
+ * A number input whose upper bound and default hint come from the model picked elsewhere on the same form.
+ *
+ * A static range cannot be right for every model: an input-token budget a small-context model cannot serve, or
+ * a temperature hint that is only the default of some other model. The frontend reads the selected model's
+ * LiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API
+ * rejects a save above the model's limit, since this bound is not part of the announced JSON schema.
+ *
+ * With an `override_label`, a nullable field gets an override checkbox of its own instead of the form's generic
+ * enable toggle: the input stays in view, disabled and showing the model's default while unset, and is pre-filled
+ * with that default when the admin starts overriding it, so the default is visible before deciding. A budget
+ * such as the input tokens has no curated default: unset, it fills `fill_factor` of the model's `max_from` limit,
+ * which is also the highest value it accepts (`maximum_for`).
+ *
+ * ```python
+ * number_of_input_tokens=ModelBoundInputNumber(
+ * label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024
+ * )
+ * ```
+ */
+export type ModelBoundInputNumber = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-bound number input.
+   */
+  formkit?: "modelBoundNumber";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Min
+   *
+   * Minimum value
+   */
+  min?: number | null;
+  /**
+   * Max
+   *
+   * Maximum value
+   */
+  max?: number | null;
+  /**
+   * Step
+   *
+   * Step factor for increment/decrement
+   */
+  step?: number | null;
+  /**
+   * Usegrouping
+   *
+   * Whether to use grouping separators
+   */
+  useGrouping?: boolean;
+  /**
+   * Minfractiondigits
+   *
+   * Minimum number of fraction digits
+   */
+  minFractionDigits?: number;
+  /**
+   * Maxfractiondigits
+   *
+   * Maximum number of fraction digits
+   */
+  maxFractionDigits?: number;
+  /**
+   * Locale
+   *
+   * Locale to use for number formatting
+   */
+  locale?: string | null;
+  /**
+   * Mode
+   *
+   * Input mode
+   */
+  mode?: "decimal" | "currency" | null;
+  /**
+   * Currency
+   *
+   * Currency code for currency mode
+   */
+  currency?: string | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Showbuttons
+   *
+   * Whether to show increment/decrement buttons
+   */
+  showButtons?: boolean;
+  /**
+   * Buttonlayout
+   *
+   * Layout of increment/decrement buttons
+   */
+  buttonLayout?: "stacked" | "horizontal" | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.
+   */
+  modelRef: string;
+  /**
+   * Maxfrom
+   *
+   * The model_info key supplying the maximum, e.g. 'max_input_tokens'.
+   */
+  maxFrom?: string | null;
+  /**
+   * Defaultfrom
+   *
+   * The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.
+   */
+  defaultFrom?: string | null;
+  /**
+   * Fallbackdefault
+   *
+   * What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.
+   */
+  fallbackDefault?: number | null;
+  /**
+   * Overridelabel
+   *
+   * Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.
+   */
+  overrideLabel?: LocaleString | string | null;
+  /**
+   * Fillfactor
+   *
+   * The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.
+   */
+  fillFactor?: number | null;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
+};
+
+/**
  * ModelDTO
  */
 export type ModelDto = {
@@ -12323,6 +12748,176 @@ export type ModelDetails = {
    * The agent ID of the model.
    */
   agent_id?: string | null;
+};
+
+/**
+ * ModelGatedCheckbox
+ *
+ * A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.
+ *
+ * The frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets
+ * `requires` to false; the API rejects a save that enables it for such a model. A model that does not declare
+ * the capability at all is not held against it, as LiteLLM leaves most flags unset.
+ */
+export type ModelGatedCheckbox = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-gated checkbox.
+   */
+  formkit?: "modelGatedCheckbox";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Binary
+   *
+   * Whether the checkbox works in binary mode
+   */
+  binary?: boolean;
+  /**
+   * Indeterminate
+   *
+   * Whether the checkbox is in indeterminate state
+   */
+  indeterminate?: boolean;
+  /**
+   * Truevalue
+   *
+   * Value to emit when checked
+   */
+  trueValue?: boolean | string | number | null;
+  /**
+   * Falsevalue
+   *
+   * Value to emit when unchecked
+   */
+  falseValue?: boolean | string | number | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.
+   */
+  modelRef: string;
+  /**
+   * Requires
+   *
+   * The model_info capability flag that must not be false, e.g. 'supports_vision'.
+   */
+  requires: string;
+  /**
+   * Validation
+   */
+  readonly validation: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -12459,6 +13054,24 @@ export type ModelInfoDto = {
    * Whether the model supports vision/image input
    */
   supports_vision?: boolean | null;
+  /**
+   * Max Images
+   *
+   * Most images one request may carry, curated in the LiteLLM config
+   */
+  max_images?: number | null;
+  /**
+   * Default Temperature
+   *
+   * Sampling temperature used when a profile sets none, curated per model
+   */
+  default_temperature?: number | null;
+  /**
+   * Default Top P
+   *
+   * Nucleus-sampling top_p used when a profile sets none, curated per model
+   */
+  default_top_p?: number | null;
   /**
    * Supports Function Calling
    *
@@ -13974,6 +14587,8 @@ export type ProcessClassDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -15049,14 +15664,132 @@ export type RecallMemoryEvent = {
 };
 
 /**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ *
+ * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
+ * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
+ * a block of the answer, the OpenAI-compatible API as answer text.
+ */
+export type RecordsExtractedEvent = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The rows as a markdown table, empty when there are none.
+   */
+  table?: string;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the table.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found, more than the table holds when cut.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the result was cut short at a limit.
+   */
+  truncated?: boolean;
+  /**
+   * Remaining Documents
+   *
+   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   */
+  remaining_documents?: number;
+  /**
+   * Remaining Rows
+   *
+   * Rows found but not shown yet, shown first when the user continues.
+   */
+  remaining_rows?: number;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  /**
+   * Event Name
+   *
+   * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+   * Used during deserialization to decide which subclass to instantiate.
+   */
+  readonly _event_name: string;
+  /**
+   * Parent Event Names
+   *
+   * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+   */
+  readonly _parent_event_names: Array<string>;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalReason
  *
  * Why a conversational turn was refused before any answer was attempted.
  */
 export const RefusalReason = {
   CONDENSATION_EMPTY: "condensation_empty",
+  IMAGES_NOT_ACCEPTED: "images_not_accepted",
   INPUT_TOO_LARGE: "input_too_large",
   OUT_OF_SCOPE: "out_of_scope",
+  TOO_MANY_IMAGES: "too_many_images",
 } as const;
 
 /**
@@ -15353,6 +16086,8 @@ export type Repeater = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -15998,6 +16733,12 @@ export type RunToolLoopEvent = {
    * Whether tools tell the model to cite what they return, off where it cannot resolve.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
   /**
    * Files
    *
@@ -17097,6 +17838,8 @@ export type SourcePipelineDto = {
     | Knob
     | Listbox
     | LocaleInput
+    | ModelBoundInputNumber
+    | ModelGatedCheckbox
     | ModelSelect
     | MultiSelect
     | Password
@@ -19296,6 +20039,12 @@ export type ToolLoopState = {
    */
   cite_sources?: boolean;
   /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
+  /**
    * Gathered
    *
    * The tool results as context, for the blueprint's own answer.
@@ -20889,6 +21638,8 @@ export type AgentClassDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -21025,6 +21776,8 @@ export type AgentConfigDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -22892,6 +23645,7 @@ export type ContextualizedAgentEventWritable = {
     | MemoryRecalledEventWritable
     | MemoryStorageRequestedEventWritable
     | SearchKnowledgeEventWritable
+    | ExtractRecordsEventWritable
     | ReadAttachedFilesEventWritable
     | AttachedFilesReadEventWritable
     | RunToolLoopEventWritable
@@ -22907,6 +23661,7 @@ export type ContextualizedAgentEventWritable = {
     | ThoughtEventWritable
     | AttachedFileEventWritable
     | KnowledgeSearchedEventWritable
+    | RecordsExtractedEventWritable
     | ToolResultEventWritable
     | ToolLoopStatusEventWritable
     | ToolLoopCondensedEventWritable
@@ -23642,6 +24397,89 @@ export type ExceptionEventWritable = {
 };
 
 /**
+ * ExtractRecordsEvent
+ *
+ * Asks the record-extraction capability for one table across the selected knowledge documents.
+ *
+ * Built with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose
+ * `extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to
+ * what the asking user may read, never the model's.
+ */
+export type ExtractRecordsEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * The documents to extract from; none when the request continues a pending extraction.
+   */
+  selection?: KnowledgeDocumentSelection | null;
+  /**
+   * Continue Pending
+   *
+   * Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.
+   */
+  continue_pending?: boolean;
+  /**
+   * Fields
+   *
+   * What each row holds, in the user's words, e.g. 'date, item, amount'.
+   */
+  fields: string;
+  /**
+   * Instructions
+   *
+   * Which records to keep, e.g. 'only hardware'; never turned into a column.
+   */
+  instructions?: string | null;
+  /**
+   * Row Terms
+   *
+   * Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.
+   */
+  row_terms?: string | null;
+  /**
+   * Collections
+   *
+   * The collections the documents are selected from.
+   */
+  collections: Array<BucketNamespacePair>;
+  /**
+   * Notices
+   *
+   * What the caller wants said with the table's summary, e.g. ignored references.
+   */
+  notices?: Array<string>;
+  /**
+   * Cut Short
+   *
+   * Whether the caller stopped looking for documents at a limit before it was done.
+   */
+  cut_short?: boolean;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * FewShotAcceptEvent
  *
  * Event indicating that the few-shot guard accepted the request.
@@ -23919,6 +24757,8 @@ export type FullProcessInstanceDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24059,6 +24899,8 @@ export type GroupWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24265,6 +25107,8 @@ export type HumanInDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24348,6 +25192,8 @@ export type HumanInSpecsWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -24877,6 +25723,8 @@ export type IncidentFormDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -25149,6 +25997,8 @@ export type IngestorDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -27473,6 +28323,257 @@ export type MinimalAgentInstanceDtoWritable = {
 };
 
 /**
+ * ModelBoundInputNumber
+ *
+ * A number input whose upper bound and default hint come from the model picked elsewhere on the same form.
+ *
+ * A static range cannot be right for every model: an input-token budget a small-context model cannot serve, or
+ * a temperature hint that is only the default of some other model. The frontend reads the selected model's
+ * LiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API
+ * rejects a save above the model's limit, since this bound is not part of the announced JSON schema.
+ *
+ * With an `override_label`, a nullable field gets an override checkbox of its own instead of the form's generic
+ * enable toggle: the input stays in view, disabled and showing the model's default while unset, and is pre-filled
+ * with that default when the admin starts overriding it, so the default is visible before deciding. A budget
+ * such as the input tokens has no curated default: unset, it fills `fill_factor` of the model's `max_from` limit,
+ * which is also the highest value it accepts (`maximum_for`).
+ *
+ * ```python
+ * number_of_input_tokens=ModelBoundInputNumber(
+ * label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024
+ * )
+ * ```
+ */
+export type ModelBoundInputNumberWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-bound number input.
+   */
+  formkit?: "modelBoundNumber";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Placeholder
+   *
+   * Placeholder text
+   */
+  placeholder?: LocaleString | string | null;
+  /**
+   * Min
+   *
+   * Minimum value
+   */
+  min?: number | null;
+  /**
+   * Max
+   *
+   * Maximum value
+   */
+  max?: number | null;
+  /**
+   * Step
+   *
+   * Step factor for increment/decrement
+   */
+  step?: number | null;
+  /**
+   * Usegrouping
+   *
+   * Whether to use grouping separators
+   */
+  useGrouping?: boolean;
+  /**
+   * Minfractiondigits
+   *
+   * Minimum number of fraction digits
+   */
+  minFractionDigits?: number;
+  /**
+   * Maxfractiondigits
+   *
+   * Maximum number of fraction digits
+   */
+  maxFractionDigits?: number;
+  /**
+   * Locale
+   *
+   * Locale to use for number formatting
+   */
+  locale?: string | null;
+  /**
+   * Mode
+   *
+   * Input mode
+   */
+  mode?: "decimal" | "currency" | null;
+  /**
+   * Currency
+   *
+   * Currency code for currency mode
+   */
+  currency?: string | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Showbuttons
+   *
+   * Whether to show increment/decrement buttons
+   */
+  showButtons?: boolean;
+  /**
+   * Buttonlayout
+   *
+   * Layout of increment/decrement buttons
+   */
+  buttonLayout?: "stacked" | "horizontal" | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.
+   */
+  modelRef: string;
+  /**
+   * Maxfrom
+   *
+   * The model_info key supplying the maximum, e.g. 'max_input_tokens'.
+   */
+  maxFrom?: string | null;
+  /**
+   * Defaultfrom
+   *
+   * The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.
+   */
+  defaultFrom?: string | null;
+  /**
+   * Fallbackdefault
+   *
+   * What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.
+   */
+  fallbackDefault?: number | null;
+  /**
+   * Overridelabel
+   *
+   * Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.
+   */
+  overrideLabel?: LocaleString | string | null;
+  /**
+   * Fillfactor
+   *
+   * The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.
+   */
+  fillFactor?: number | null;
+  [key: string]: unknown;
+};
+
+/**
  * ModelDTO
  */
 export type ModelDtoWritable = {
@@ -27486,6 +28587,172 @@ export type ModelDtoWritable = {
    * Detailed information about the model
    */
   model_info: ModelInfoDto;
+};
+
+/**
+ * ModelGatedCheckbox
+ *
+ * A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.
+ *
+ * The frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets
+ * `requires` to false; the API rejects a save that enables it for such a model. A model that does not declare
+ * the capability at all is not held against it, as LiteLLM leaves most flags unset.
+ */
+export type ModelGatedCheckboxWritable = {
+  /**
+   * Is Formkit Element
+   *
+   * Indicates that this element is a FormKit element
+   */
+  is_formkit_element?: true;
+  /**
+   * If
+   *
+   * Conditional expression to show this element
+   */
+  if?: string | null;
+  /**
+   * Id
+   *
+   * Unique identifier for this element
+   */
+  id?: string | null;
+  /**
+   * Nullable
+   *
+   * Render with a sibling toggle that sets this field to null when off
+   */
+  nullable?: boolean;
+  /**
+   * Defaultenabled
+   *
+   * For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.
+   */
+  defaultEnabled?: boolean | null;
+  /**
+   * Togglelabel
+   *
+   * For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.
+   */
+  toggleLabel?: LocaleString | string | null;
+  /**
+   * Togglehelp
+   *
+   * For a nullable element, the help text shown under its toggle.
+   */
+  toggleHelp?: LocaleString | string | null;
+  /**
+   * Formkit
+   *
+   * Model-gated checkbox.
+   */
+  formkit?: "modelGatedCheckbox";
+  /**
+   * Name
+   *
+   * Name of this field
+   */
+  name?: string | null;
+  /**
+   * Label
+   *
+   * Label of this field
+   */
+  label: LocaleString | string;
+  /**
+   * Help
+   *
+   * Help text of this field
+   */
+  help?: LocaleString | string | null;
+  /**
+   * Value
+   *
+   * Default value for this field
+   */
+  value?:
+    | string
+    | number
+    | number
+    | boolean
+    | Array<string>
+    | {
+        [key: string]: string;
+      }
+    | null;
+  /**
+   * Required
+   *
+   * Whether this field is required
+   */
+  required?: boolean;
+  /**
+   * Additional Validation Rules
+   *
+   * Validation expression
+   */
+  additional_validation_rules?: string | null;
+  /**
+   * Disabled
+   *
+   * Whether the input is disabled
+   */
+  disabled?: boolean;
+  /**
+   * Readonly
+   *
+   * Whether the input is readonly
+   */
+  readonly?: boolean;
+  /**
+   * Binary
+   *
+   * Whether the checkbox works in binary mode
+   */
+  binary?: boolean;
+  /**
+   * Indeterminate
+   *
+   * Whether the checkbox is in indeterminate state
+   */
+  indeterminate?: boolean;
+  /**
+   * Truevalue
+   *
+   * Value to emit when checked
+   */
+  trueValue?: boolean | string | number | null;
+  /**
+   * Falsevalue
+   *
+   * Value to emit when unchecked
+   */
+  falseValue?: boolean | string | number | null;
+  /**
+   * Prefix
+   *
+   * Prefix text
+   */
+  prefix?: LocaleString | string | null;
+  /**
+   * Suffix
+   *
+   * Suffix text
+   */
+  suffix?: LocaleString | string | null;
+  /**
+   * Modelref
+   *
+   * Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.
+   */
+  modelRef: string;
+  /**
+   * Requires
+   *
+   * The model_info capability flag that must not be false, e.g. 'supports_vision'.
+   */
+  requires: string;
+  [key: string]: unknown;
 };
 
 /**
@@ -28185,6 +29452,8 @@ export type ProcessClassDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -28880,6 +30149,109 @@ export type RecallMemoryEventWritable = {
 };
 
 /**
+ * RecordsExtractedEvent
+ *
+ * The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.
+ *
+ * A blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop
+ * (`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as
+ * a block of the answer, the OpenAI-compatible API as answer text.
+ */
+export type RecordsExtractedEventWritable = {
+  /**
+   * Event Id
+   */
+  event_id?: string;
+  /**
+   * Created At
+   *
+   * The time (in ns since epoch) the event was stored in the event store
+   */
+  created_at?: number;
+  /**
+   * Display name for the event
+   */
+  display_name?: LocaleString | null;
+  /**
+   * Display description for the event
+   */
+  display_description?: LocaleString | null;
+  /**
+   * Extraction Id
+   *
+   * The `ExtractRecordsEvent` this answers.
+   */
+  extraction_id: string;
+  /**
+   * Columns
+   *
+   * The table's columns, the source columns first.
+   */
+  columns?: Array<string>;
+  /**
+   * Table
+   *
+   * The rows as a markdown table, empty when there are none.
+   */
+  table?: string;
+  /**
+   * Summary
+   *
+   * Files matched, rows found, files that failed and why, and what was cut short.
+   */
+  summary: string;
+  /**
+   * File Count
+   *
+   * Documents extracted from.
+   */
+  file_count?: number;
+  /**
+   * Failed Count
+   *
+   * Documents that could not be extracted.
+   */
+  failed_count?: number;
+  /**
+   * Row Count
+   *
+   * Rows in the table.
+   */
+  row_count?: number;
+  /**
+   * Total Row Count
+   *
+   * Rows found, more than the table holds when cut.
+   */
+  total_row_count?: number;
+  /**
+   * Truncated
+   *
+   * Whether the result was cut short at a limit.
+   */
+  truncated?: boolean;
+  /**
+   * Remaining Documents
+   *
+   * Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.
+   */
+  remaining_documents?: number;
+  /**
+   * Remaining Rows
+   *
+   * Rows found but not shown yet, shown first when the user continues.
+   */
+  remaining_rows?: number;
+  /**
+   * Tool Call Id
+   *
+   * The tool call this answers when a model chose the extraction in a tool loop; none otherwise.
+   */
+  tool_call_id?: string | null;
+  [key: string]: unknown;
+};
+
+/**
  * RefusalStopEvent
  *
  * Stop event for a turn the blueprint refused because of its input, not because of what it retrieved.
@@ -29153,6 +30525,8 @@ export type RepeaterWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -29589,6 +30963,12 @@ export type RunToolLoopEventWritable = {
    * Whether tools tell the model to cite what they return, off where it cannot resolve.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop hands its tool results back as context; off where the blueprint reads the calls themselves, so the results do not ride on every iteration's event.
+   */
+  hands_back_results?: boolean;
   /**
    * Files
    *
@@ -30496,6 +31876,8 @@ export type SourcePipelineDtoWritable = {
     | KnobWritable
     | ListboxWritable
     | LocaleInputWritable
+    | ModelBoundInputNumberWritable
+    | ModelGatedCheckboxWritable
     | ModelSelectWritable
     | MultiSelectWritable
     | PasswordWritable
@@ -32084,6 +33466,12 @@ export type ToolLoopStateWritable = {
    * Whether tools tell the model to cite what they return.
    */
   cite_sources?: boolean;
+  /**
+   * Hands Back Results
+   *
+   * Whether a gathering loop collects its tool results in `gathered`.
+   */
+  hands_back_results?: boolean;
   /**
    * Gathered
    *

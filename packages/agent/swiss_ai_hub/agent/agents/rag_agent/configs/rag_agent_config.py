@@ -98,7 +98,7 @@ class RAGAgentConfig(MemoryFields, AttachedFilesFields, KnowledgeFields, Convers
         )
         if self.reranking_config is not None:
             nodes = min(nodes, self.reranking_config.reranking_model.top_n)
-        return min(nodes * self.retrieved_tokens_per_node, self.input_budget() // 2)
+        return min(nodes * self.retrieved_tokens_per_node, self.input_budget // 2)
 
     def context_sufficient_guard_reserve(self, t: LocaleHandler, query: str | None) -> int:
         """Tokens the sufficiency guard sends besides the history and the documents: its instructions and the query.

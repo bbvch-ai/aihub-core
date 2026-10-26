@@ -89,8 +89,8 @@ create one or more **profiles** (your configured, named instances). If you are n
 4. **Choose the model.** Pick a chat model from the dropdown. The available options come from your platform's LiteLLM
    configuration. Match the model to the task: a smaller, cheaper model is fine for rewriting and translation; a larger
    one helps for nuanced reasoning.
-5. **Tune the parameters (optional).** Adjust temperature, the input-token budget, and the timeout if the defaults don't
-   suit your use case. The defaults are sensible for most assistants.
+5. **Tune the parameters (optional).** Adjust the model parameters, the input-token budget, and the timeout if the
+   defaults don't suit your use case. The defaults are sensible for most assistants.
 6. **Save.** The profile is available immediately to any user with permission to use it.
 
 ::: tip There is nothing else to set up
@@ -119,16 +119,15 @@ These fields exist on every agent blueprint and define how the profile appears i
 
 These fields control how the assistant treats each conversation.
 
-| Field                    | Type      | Default   | Description                                                                                                                                                                                                                                 |
-| ------------------------ | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **System Prompt**        | Long text | *(empty)* | The plain-text instructions that define the assistant's role, tone, and rules. Inserted at the start of every conversation. This is the single most important setting.                                                                      |
-| **Maximum Input Tokens** | Number    | `100000`  | The size of the input budget. The conversation (system prompt + chat history + new message) is trimmed to fit. Lower values cut cost and keep the model focused on recent turns; higher values preserve more history. Range: 1,000–200,000. |
+| Field                    | Type              | Default            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | ----------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **System Prompt**        | Long text         | *(empty)*          | The plain-text instructions that define the assistant's role, tone, and rules. Inserted at the start of every conversation. This is the single most important setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Maximum Input Tokens** | Number (optional) | Model window (85%) | The size of the input budget. The conversation (system prompt + chat history + new message) is trimmed to fit. Lower values cut cost and keep the model focused on recent turns; higher values preserve more history. Optional. Unticked by default: the agent fills about 85% of the selected chat model's input window, which is shown in the checkbox label and the disabled field (e.g. "(78,050)" for gemma on Infomaniak) and follows the model when you switch models. The 15% margin allows for differences between the token counter and the model's tokenizer. Tick **Set your own input limit** to set a lower limit and cut cost: minimum 1,024, maximum that same 85% figure, which the hint under the field names next to the model's full window; a higher value is blocked in the form and rejected by the API. Profiles that stored a limit above that figure have it unset automatically when the platform is upgraded. |
 
-::: warning Match the input budget to your model
-**Maximum Input Tokens** must stay within the chosen model's actual context window. Setting it higher than the model
-supports won't expand the model — the model will simply reject or truncate the request. The assistant also checks the
-message against the model's real window and answers with a short notice when it cannot fit. When in doubt, leave it at
-the default.
+::: tip The input budget follows your model
+Left unticked, **Maximum Input Tokens** fills 85% of the chosen model's input window and follows it when you switch
+models. A limit of your own is capped at that same figure, shown under the field. The assistant also checks the message
+against the model's real window and answers with a short notice when it cannot fit.
 :::
 
 The form also contains the shared chat sections (memory, attached files, referenced knowledge, task model). See
@@ -138,19 +137,21 @@ The form also contains the shared chat sections (memory, attached files, referen
 
 These settings live under the model section of the form. They select the model and control how it generates text.
 
-| Field                        | Type             | Default | Description                                                                                                                                                                      |
-| ---------------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Model**                    | Model picker     | —       | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                                                                                  |
-| **Temperature**              | Number           | `0.0`   | Controls randomness. `0.0` gives focused, repeatable answers (best for translation, extraction, factual replies). Higher values (up to `2.0`) give more varied, creative output. |
-| **Return Log Probabilities** | Toggle           | Off     | Whether the model returns token-level probabilities. An advanced/diagnostic option; leave off unless you specifically need confidence scores.                                    |
-| **Top Log Probabilities**    | Number           | `0`     | How many of the most likely alternative tokens to return per position. Only applies when log probabilities are enabled. Range: 0–20.                                             |
-| **Timeout**                  | Number (seconds) | `300`   | How long to wait for the model before giving up. Increase only if you use a slow model with very long outputs.                                                                   |
+| Field                              | Type              | Default       | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------- | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Model**                          | Model picker      | —             | Which chat model the assistant runs on. Options come from your LiteLLM configuration. Required.                                                                                                                                                                                                                                                                                                                                                                     |
+| **Temperature**                    | Number (optional) | Model default | Controls randomness. Unticked by default: the model's own recommended default is used and shown in the checkbox label and the disabled field. Tick **Override the model's default temperature** to set `0.0`–`2.0`; `0.0` gives focused, repeatable answers (translation, extraction, factual replies), higher values more varied output. Helper steps (checks, titles, question condensation) use `0.0` while it is unticked; a value you set applies to them too. |
+| **Breadth of word choice (top_p)** | Number (optional) | Model default | How many alternatives the model considers for each next word (0–1), with the same override checkbox.                                                                                                                                                                                                                                                                                                                                                                |
+| **Accept images**                  | Checkbox          | On            | Whether images in the conversation are passed to the model. Disabled for models without image support.                                                                                                                                                                                                                                                                                                                                                              |
+| **Return Log Probabilities**       | Toggle            | Off           | Whether the model returns token-level probabilities. An advanced/diagnostic option; leave off unless you specifically need confidence scores.                                                                                                                                                                                                                                                                                                                       |
+| **Top Log Probabilities**          | Number            | `0`           | How many of the most likely alternative tokens to return per position. Only applies when log probabilities are enabled. Range: 0–20.                                                                                                                                                                                                                                                                                                                                |
+| **Timeout**                        | Number (seconds)  | `300`         | How long to wait for the model before giving up. Increase only if you use a slow model with very long outputs.                                                                                                                                                                                                                                                                                                                                                      |
 
 ::: details How the settings combine at runtime
 When a message arrives, the assistant builds the conversation as
 `[ system messages → your system prompt → chat history → new user message ]`, trims it to **Maximum Input Tokens**, then
-calls the selected **Model** with the configured **Temperature**, **Timeout**, and log-probability options. The reply
-streams straight back to the chat UI.
+calls the selected **Model** with the configured model parameters (**Temperature**, **Breadth of word choice (top_p)**,
+**Timeout**, log-probability options). The reply streams straight back to the chat UI.
 :::
 
 ## Best practices
@@ -160,7 +161,8 @@ staff"), the behaviour ("Answer in short, numbered steps"), and the limits ("If 
 only help with IT topics"). Vague prompts produce vague assistants.
 
 **Start with a low temperature.** `0.0`–`0.3` is right for most business assistants — it makes answers consistent and
-predictable. Only raise it for genuinely creative tasks like brainstorming or copywriting.
+predictable. Switch the temperature override on and set it, since the default now follows the model. Only raise it for
+genuinely creative tasks like brainstorming or copywriting.
 
 **Keep one profile per purpose.** Rather than one "does everything" assistant, create focused profiles ("Email Drafter",
 "German Translator", "IT FAQ Bot"). Each gets a tighter system prompt and is easier for users to choose between.

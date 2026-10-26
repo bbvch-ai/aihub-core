@@ -55,11 +55,13 @@ def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop
         "Knowledge",
         "AttachedFiles",
         "Memory",
+        "RecordExtraction",
     }
     assert UniversalAgent.tools.names() == [
         "search_knowledge",
         "read_attached_files",
         "recall_memory",
+        "extract_records",
         "run_command",
         "get_process_status",
         "send_process_input",
@@ -74,6 +76,10 @@ def test_the_blueprint_offers_knowledge_files_memory_and_the_sandbox_in_one_loop
         "display_file",
         "list_my_files",
         "read_my_file",
+        "list_knowledge_documents",
+        "search_knowledge_content",
+        "read_knowledge_document",
+        "select_knowledge_documents",
     ]
 
 
@@ -118,3 +124,53 @@ async def test_the_reply_completes_the_turn():
     )
 
     assert [type(event) for event in events] == [CompleteConversationEvent]
+
+
+DOCUMENT_TOOLS = {
+    "list_knowledge_documents",
+    "search_knowledge_content",
+    "read_knowledge_document",
+    "select_knowledge_documents",
+}
+
+
+def _tool_context(config: UniversalAgentConfig):
+    from swiss_ai_hub.core.displayers import EventDisplayer
+
+    from swiss_ai_hub.agent.capabilities.tool_loop.tool_context import ToolContext
+
+    return ToolContext(agent_config=config, displayer=MagicMock(spec=EventDisplayer), t=T)
+
+
+def test_a_profile_saved_before_the_document_tools_is_offered_none_of_them():
+    """The document tools and the extraction stay off until a profile switches them on."""
+    from swiss_ai_hub.agent.capabilities.record_extraction.record_extraction import RecordExtraction
+
+    context = _tool_context(_config())
+
+    assert not DOCUMENT_TOOLS & set(UniversalAgent.tools.function_tools(context))
+    assert RecordExtraction.tool_definition(context) is None
+
+
+def test_a_profile_with_the_document_tools_on_offers_them():
+    from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
+
+    context = _tool_context(_config(knowledge_documents=KnowledgeDocumentConfig(enabled=True)))
+
+    assert DOCUMENT_TOOLS <= set(UniversalAgent.tools.function_tools(context))
+
+
+@pytest.mark.asyncio
+async def test_an_earlier_table_reaches_the_loop_as_one_line():
+    from swiss_ai_hub.core.generative_ai import ExtractedTableMarkup
+
+    earlier = f"{ExtractedTableMarkup.wrap('| a |', rows=4)}\n\nSummary"
+    event = _message(
+        ChatMessage(role=MessageRole.USER, content="first"),
+        ChatMessage(role=MessageRole.ASSISTANT, content=earlier),
+        ChatMessage(role=MessageRole.USER, content="next"),
+    )
+
+    request = await UniversalAgent().contextualize_step(event, agent_config=_config(), t=T)
+
+    assert request.history[2].content == "[A table of 4 extracted rows was shown here.]\n\nSummary"

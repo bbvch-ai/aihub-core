@@ -171,8 +171,10 @@ The backend defines form schemas (`FormkitElement[]`), the frontend renders them
 `<FormKitSchema :schema="schema" />` → rendered form.
 
 **Custom FormKit inputs** (registered in `formkit.config.ts`, which `nuxt.config.ts` points `formkit.configFile` at):
-`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`, `modelSelect`,
-`secretFileInput`, `tenantSelect`, `vectorStoreInput`.
+`agentSelector`, `chipsInput`, `cronInput`, `knowledgeDatabaseSelector`, `iconSelector`, `localeInput`,
+`modelBoundNumber`, `modelGatedCheckbox`, `modelSelect`, `secretFileInput`, `tenantSelect`, `vectorStoreInput`.
+`modelBoundNumber` and `modelGatedCheckbox` read the model picked elsewhere on the form through `useReferencedModel`,
+which follows the root node's `commit` the way `KnowledgeCollectionSelector` does.
 
 **Custom validation rules** are registered in the same file under `rules`, with their messages under `messages` (one
 entry per locale). The backend attaches a rule to a field via `PrimeVueElement.additional_validation_rules`, which

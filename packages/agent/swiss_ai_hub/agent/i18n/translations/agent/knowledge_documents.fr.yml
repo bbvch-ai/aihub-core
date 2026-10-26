@@ -1,0 +1,21 @@
+---
+config:
+  enabled:
+    label: Travailler sur des documents entiers
+    help: Le modèle peut lister les documents des collections de connaissances, chercher
+      des termes exacts dans leur texte et les lire en entier.
+  path_glob:
+    label: Filtre des chemins de documents
+    help: Uniquement les documents dont le chemin dans leur collection correspond
+      à ce motif, p. ex. invoices/2025/** ou **/*.pdf. S'applique aux outils de documents
+      seulement, pas à la recherche de connaissances. Laisser vide pour tous les documents.
+tools:
+  list_knowledge_documents:
+    label: Lister les documents de connaissances
+    approval: Lister les documents de connaissances correspondant à {path_glob}
+  search_knowledge_content:
+    label: Chercher dans les documents de connaissances
+    approval: Chercher « {query} » dans les documents de connaissances
+  read_knowledge_document:
+    label: Lire un document de connaissances
+    approval: Lire le document de connaissances {document_id}

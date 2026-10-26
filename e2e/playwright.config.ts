@@ -22,7 +22,11 @@ import { defineConfig, devices } from '@playwright/test'
  */
 
 const DOMAIN = process.env.E2E_DOMAIN ?? '127.0.0.1.nip.io'
-const OPENWEBUI_SPECS = [/agent-terminal-selector\.spec\.ts$/, /universal-agent\/.*\.spec\.ts$/]
+const OPENWEBUI_SPECS = [
+  /agent-terminal-selector\.spec\.ts$/,
+  /universal-agent\/.*\.spec\.ts$/,
+  /knowledge-extraction-agent\/.*\.spec\.ts$/,
+]
 
 export default defineConfig({
   testDir: './tests',
