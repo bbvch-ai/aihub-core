@@ -52,15 +52,10 @@ class ExtractionPlanner:
         thread: ThreadContext,
         user: UserIdentity | None,
     ) -> list[DocumentExtractionRequestedEvent] | RecordsExtractedEvent:
-        schema: RecordSchema | None = None
-        if request.confirmed or request.selection is None:
-            awaiting = await SampleAwaitingConfirmation.take(thread, config.agent_id)
-            if awaiting is None or not awaiting.within(request.collections):
-                reason = "nothing_awaiting" if awaiting is None else "scope_changed"
-                return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.{reason}"))
-            request, schema = awaiting.as_request(request), awaiting.record_schema
-        else:
-            await SampleAwaitingConfirmation.clear(thread, config.agent_id)
+        prepared = await ExtractionPlanner._with_waiting_sample(request, config.agent_id, thread, t)
+        if isinstance(prepared, RecordsExtractedEvent):
+            return prepared
+        request, schema = prepared
         try:
             selected = await KnowledgeDocumentSelector.resolve(
                 request.collections,
@@ -77,6 +72,21 @@ class ExtractionPlanner:
         if selected.truncated or (len(selected.documents) > SAMPLE_ABOVE_DOCUMENTS and not request.confirmed):
             return await ExtractionPlanner._sample(request, selected, schema, config, displayer, t, thread, user)
         return await ExtractionPlanner._whole(request, selected.documents, schema, config, displayer, t, user)
+
+    @staticmethod
+    async def _with_waiting_sample(
+        request: ExtractRecordsEvent, agent_id: str, thread: ThreadContext, t: LocaleHandler
+    ) -> tuple[ExtractRecordsEvent, RecordSchema | None] | RecordsExtractedEvent:
+        """A confirmation takes the waiting sample's selection and columns, or answers that there is none; a new
+        request voids the waiting sample, so a later "yes" never extracts a selection the user moved on from."""
+        if not (request.confirmed or request.selection is None):
+            await SampleAwaitingConfirmation.clear(thread, agent_id)
+            return request, None
+        awaiting = await SampleAwaitingConfirmation.take(thread, agent_id)
+        if awaiting is None or not awaiting.within(request.collections):
+            reason = "nothing_awaiting" if awaiting is None else "scope_changed"
+            return ExtractionPlanner.answer(request, t(f"{_SUMMARY}.{reason}"))
+        return awaiting.as_request(request), awaiting.record_schema
 
     @staticmethod
     async def _schema(

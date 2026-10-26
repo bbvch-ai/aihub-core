@@ -26,7 +26,7 @@ THREAD_ID = str(ObjectId())
 ENDPOINT = f"/api/v1/active/threads/{THREAD_ID}/extracted-tables/x1/download-url"
 URL = "https://s3.example.com/agent-files/record-extraction/x1/invoices.csv?X-Amz-Signature=abc"
 FILE = ExtractedTableFile(
-    bucket=ExtractionFileStore.BUCKET,
+    bucket=ExtractionFileStore.TABLES_BUCKET,
     key="record-extraction/x1/invoices.csv",
     filename="invoices.csv",
     size=9000,

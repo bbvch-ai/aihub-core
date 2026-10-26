@@ -674,9 +674,12 @@ class TestHeartbeat:
     async def test_a_body_that_raises_stops_the_heartbeat(self):
         say = AsyncMock()
 
-        with pytest.raises(RuntimeError):
+        async def read() -> None:
             async with ReadingHeartbeat.around(say, interval_seconds=0.01):
                 raise RuntimeError("model down")
+
+        with pytest.raises(RuntimeError):
+            await read()
         await asyncio.sleep(0.05)
 
         say.assert_not_awaited()

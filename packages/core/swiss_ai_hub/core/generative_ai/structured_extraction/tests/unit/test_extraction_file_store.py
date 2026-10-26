@@ -50,7 +50,7 @@ async def test_rows_round_trip_under_the_extractions_key(s3: _S3):
     key = await ExtractionFileStore.put_rows("x1", "req-1", rows)
 
     assert key == "record-extraction/x1/rows/req-1.json"
-    stored = s3.objects[(ExtractionFileStore.BUCKET, key)]
+    stored = s3.objects[(ExtractionFileStore.TABLES_BUCKET, key)]
     assert stored["ContentType"] == "application/json"
     assert "Gerät ü".encode() in stored["Body"]
     assert json.loads(stored["Body"]) == rows
@@ -65,7 +65,7 @@ async def test_a_table_is_stored_as_csv_with_its_reference(s3: _S3):
 
     body = ExtractedTableCsv.encode(columns, rows)
     assert table == ExtractedTableFile(
-        bucket=ExtractionFileStore.BUCKET,
+        bucket=ExtractionFileStore.TABLES_BUCKET,
         key="record-extraction/x1/table-x1.csv",
         filename="table-x1.csv",
         size=len(body),
@@ -104,9 +104,10 @@ async def test_a_stored_file_exists(s3: _S3):
 @pytest.mark.asyncio
 async def test_any_other_storage_error_is_raised(s3: _S3):
     s3.head_object.side_effect = ClientError({"Error": {"Code": "AccessDenied"}}, "HeadObject")
+    table = _table()
 
     with pytest.raises(ClientError):
-        await ExtractionFileStore.exists(_table())
+        await ExtractionFileStore.exists(table)
 
 
 def test_the_download_link_names_the_file_as_an_attachment():

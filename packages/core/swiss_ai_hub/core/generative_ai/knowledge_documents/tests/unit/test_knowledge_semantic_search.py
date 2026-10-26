@@ -192,9 +192,10 @@ async def test_a_vector_store_failure_is_reported_as_unavailable():
 @pytest.mark.asyncio
 async def test_a_query_the_embedding_model_cannot_embed_is_reported_as_unavailable():
     failure = APIConnectionError(request=httpx.Request("POST", "http://litellm/embeddings"))
+    stores = {"legaldb": _Store({"c1": 0.9})}
 
     with pytest.raises(KnowledgeSemanticSearchUnavailableError, match="Connection error"):
-        await _rank({"legaldb": _Store({"c1": 0.9})}, CONTRACTS, embedding_failure=failure)
+        await _rank(stores, CONTRACTS, embedding_failure=failure)
 
 
 @pytest.mark.asyncio
@@ -203,7 +204,8 @@ async def test_each_search_gets_what_is_left_of_the_budget():
 
     await _rank({"legaldb": store}, CONTRACTS, budget=KnowledgeSearchBudget(20))
 
-    assert store.timeouts and all(0 < timeout <= 20 for timeout in store.timeouts)
+    assert store.timeouts
+    assert all(0 < timeout <= 20 for timeout in store.timeouts)
 
 
 @pytest.mark.asyncio

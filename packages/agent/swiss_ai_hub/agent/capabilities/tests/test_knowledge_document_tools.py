@@ -273,8 +273,10 @@ async def test_an_unavailable_vector_store_fails_the_call_and_points_at_the_keyw
 
 @pytest.mark.asyncio
 async def test_a_ranking_out_of_time_fails_the_call_and_points_at_the_keyword_tools():
+    timeout = KnowledgeContentSearchTimeoutError(20)
+
     with pytest.raises(RuntimeError, match="did not finish within 20 s.*list_knowledge_documents"):
-        await _rank_tool(KnowledgeContentSearchTimeoutError(20))
+        await _rank_tool(timeout)
 
 
 def _document(path: str, start: int, text_length: int) -> KnowledgeDocument:

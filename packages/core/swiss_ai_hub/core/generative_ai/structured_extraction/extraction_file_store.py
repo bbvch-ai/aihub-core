@@ -29,7 +29,7 @@ class ExtractionFileStore:
     rows are one JSON object and the assembled table one CSV, under the extraction's id in the agent-files bucket.
     """
 
-    BUCKET = UserUploadedFile.AGENT_FILES_BUCKET
+    TABLES_BUCKET = UserUploadedFile.AGENT_FILES_BUCKET
 
     @staticmethod
     async def put_rows(
@@ -41,7 +41,7 @@ class ExtractionFileStore:
         body = json.dumps(rows, ensure_ascii=False).encode("utf-8")
         await asyncio.to_thread(
             ExtractionFileStore._client().put_object,
-            Bucket=ExtractionFileStore.BUCKET,
+            Bucket=ExtractionFileStore.TABLES_BUCKET,
             Key=key,
             Body=body,
             ContentType="application/json",
@@ -51,7 +51,7 @@ class ExtractionFileStore:
     @staticmethod
     async def rows(key: Annotated[str, "A key `put_rows` returned"]) -> list[dict[str, RecordValue]]:
         response = await asyncio.to_thread(
-            ExtractionFileStore._client().get_object, Bucket=ExtractionFileStore.BUCKET, Key=key
+            ExtractionFileStore._client().get_object, Bucket=ExtractionFileStore.TABLES_BUCKET, Key=key
         )
         return json.loads(await asyncio.to_thread(response["Body"].read))
 
@@ -65,7 +65,7 @@ class ExtractionFileStore:
         name = filename.translate(_SAFE_FILENAME)
         body = ExtractedTableCsv.encode(columns, rows)
         table = ExtractedTableFile(
-            bucket=ExtractionFileStore.BUCKET,
+            bucket=ExtractionFileStore.TABLES_BUCKET,
             key=f"{_PREFIX}/{extraction_id}/{name}",
             filename=name,
             size=len(body),
@@ -85,7 +85,7 @@ class ExtractionFileStore:
     def holds(table: ExtractedTableFile) -> bool:
         """Whether the file is an extraction's table: the bucket also holds uploads and sandbox files, which a
         reference read from an event must never get a download link to."""
-        return table.bucket == ExtractionFileStore.BUCKET and table.key.startswith(f"{_PREFIX}/")
+        return table.bucket == ExtractionFileStore.TABLES_BUCKET and table.key.startswith(f"{_PREFIX}/")
 
     @staticmethod
     async def exists(table: ExtractedTableFile) -> bool:
