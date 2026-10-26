@@ -268,6 +268,7 @@ These variables have sensible defaults (or are supplied to containers by docker-
 | `BACKUP_VALKEY_PORT` | `BackupSettings.VALKEY_PORT` | `6379` |  |  |
 | `INCIDENT_MAX_ATTACHMENTS` | `IncidentSettings.MAX_ATTACHMENTS` | `5` |  | How many files one report may carry. Attachments are committed to the repository and cannot meaningfully be removed from its history afterwards, which is why this is deliberately small. |
 | `INCIDENT_MAX_ATTACHMENT_BYTES` | `IncidentSettings.MAX_ATTACHMENT_BYTES` | `5242880` |  | Largest single attachment accepted, in bytes. |
+| `JIRA_ALLOWED_PRIVATE_HOSTS` | `JiraSettings.ALLOWED_PRIVATE_HOSTS` | `''` |  | Comma-separated host names an agent's Jira URL may name although they are internal, such as a Jira Data Center reachable only on the company network. Every other internal host is refused. |
 | `KEYCLOAK_API_SERVICE_CLIENT_ID` | `KeycloakSettings.API_SERVICE_CLIENT_ID` | `'aihub-api-service'` |  | Client ID for the API service account |
 | `KEYCLOAK_EXTERNAL_URL` | `KeycloakSettings.EXTERNAL_URL` | `None` | `api`, `bot`, `sysadmin-api` | Keycloak external URL as seen by browsers, used for issuer validation |
 | `KEYCLOAK_REALM` | `KeycloakSettings.REALM` | `'aihub'` | `api`, `bot`, `sysadmin-api` | Keycloak realm name |

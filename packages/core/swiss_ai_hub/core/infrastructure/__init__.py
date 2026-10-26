@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         DocumentIngestionPipelineSettings,
     )
     from swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings import ConfigEncryptionSettings
+    from swiss_ai_hub.core.infrastructure.jira.jira_settings import JiraSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -64,6 +65,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "JiraSettings",
     "SharePointSettings",
     "StructuredPipelineSettings",
     "OpenTelemetrySettings",
@@ -120,6 +122,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "JiraSettings": "swiss_ai_hub.core.infrastructure.jira.jira_settings",
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
     "StructuredPipelineSettings": "swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
