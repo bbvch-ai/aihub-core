@@ -24,11 +24,13 @@ declaring several parameters waits for all of them.
 | `Memory`        | `recall(query)`; `remember(...)` stores in the background | `Memory.Recalled`             | `MemoryFields`        |
 | `AttachedFiles` | `read(files, history, query)`                             | `AttachedFiles.Contents`      | `AttachedFilesFields` |
 | `Knowledge`     | `search(references, query)`                               | `Knowledge.Searched`          | `KnowledgeFields`     |
+| `WebFetch`      | `fetch(WebFetch.links_of(message), config)`               | `WebFetch.Fetched`            | `WebFetchFields`      |
 
 The blueprint's config lists the mixins of the capabilities it calls before `AgentConfig`, and the dispatcher injects
 the run's config into any step parameter annotated with one. The chat blueprints in
 `packages/agent/swiss_ai_hub/agent/agents/llm_wrapping_agent/` are the smallest complete example: one step limits and
-contextualizes, one gathers memory, files and referenced knowledge in parallel, one composes, one answers and completes.
+contextualizes, one gathers memory, files, referenced knowledge and linked pages in parallel, one composes, one answers
+and completes.
 
 What the calls do for you:
 
@@ -39,6 +41,12 @@ What the calls do for you:
 - **`complete`** generates follow-up questions and ends the run with a stop event. A stop event passed to it travels
   inside the request, so declare it in `Agent.completion_stops`, or the REST response model and workflow graph show a
   bare `StopEvent`.
+- **`fetch`** reads the web pages the message links, in its text and as `#` references (`WebFetch.links_of` collects
+  both), through the platform's Playwright server, and returns one block with the pages and a note naming every link
+  that was not read and why. Every request a page makes is checked against internal addresses first. The profile's
+  `web_fetch` section is off by default; while it is off nothing is read, and a message with links gets a note that the
+  assistant cannot open them. Reserve `config.web_fetch_reserve(links)` in `AttachedFiles.read` so the files leave room
+  for the pages. A blueprint whose job is reading links can make the field required, as `WebFetchAgentConfig` does.
 - **Citations.** Documents a capability hands to the model carry a short stable id the model cites as `[s3f9a1c]`; the
   Open WebUI integration turns the ids into numbered source chips.
 
@@ -92,7 +100,11 @@ All look the same to the model.
 - **Capability tools.** A capability that offers itself as a tool, such as `Knowledge` (which searches the collections
   in the profile's `knowledge_tool` settings, or every collection the user can read, plus those referenced on the
   message, limited to what the user may read). A model-chosen call produces the same events and citation chips as an
-  explicit one. The config must also list the capability's tool mixin, `KnowledgeToolFields` for `Knowledge`.
+  explicit one. The config must also list the capability's tool mixin, `KnowledgeToolFields` for `Knowledge`. `WebFetch`
+  is offered only when the profile reads links and the message has some: pass them with
+  `tools.run(history, web_references=WebFetch.links_of(message))`. Its tool reads only those pages and refuses a call
+  naming any other URL, so an instruction hidden in a page or a file cannot make the model send data to an address of
+  its choosing.
 - **LlamaIndex tool specs.** A `BaseToolSpec` subclass whose listed methods are the tools; the schema is read from
   signatures and docstrings, so LlamaHub specs work unchanged. It is built per run with a `ToolContext` (config, user,
   locale, displayer).

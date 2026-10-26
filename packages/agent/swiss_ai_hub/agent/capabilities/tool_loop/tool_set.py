@@ -73,11 +73,12 @@ class ToolSet(BaseModel):
         tools: list[str] | None = None,
         files: list[UserUploadedFile] | None = None,
         knowledge_references: list[KnowledgeReference] | None = None,
+        web_references: list[str] | None = None,
     ) -> RunToolLoopEvent:
         """Let the model decide which of these tools to use; `tools` narrows them for this call.
 
-        Pass the message's `files` and `knowledge_references` for the tools that read attachments or search what
-        the user referenced.
+        Pass the message's `files`, `knowledge_references` and `web_references` (`WebFetch.links_of(message)`) for
+        the tools that read attachments, search what the user referenced or read the pages the message links.
         """
         return RunToolLoopEvent(
             loop=self.name,
@@ -87,6 +88,7 @@ class ToolSet(BaseModel):
             tools=tools,
             files=list(files or []),
             knowledge_references=list(knowledge_references or []),
+            web_references=list(web_references or []),
         )
 
     def route(self, history: list[ChatMessage], cite_sources: bool = True) -> RunToolLoopEvent:

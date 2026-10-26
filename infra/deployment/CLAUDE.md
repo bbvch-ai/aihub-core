@@ -246,10 +246,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -290,6 +289,7 @@ routes through Traefik.
 | `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                 |
 | `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents, release notes agent |
 | `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                      |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)                              |
 | `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)                          |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
@@ -303,6 +303,13 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
+internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
+connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
+callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
+Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
+reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
 
 **`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no
