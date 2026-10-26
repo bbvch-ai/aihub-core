@@ -87,10 +87,11 @@ set -a && source .env && set +a          # S3 + DB credentials, BACKUP_* setting
 dagster dev -m my_backup                 # http://localhost:3000
 ```
 
-From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`, the lz4 rewrite) against a running stack
-without disruption. The **full backup/restore jobs stop and restart containers**, so run those deliberately — and note
-they need access to the Docker socket and to all the stateful services. `dagster definitions validate -m my_backup`
-loads the whole code location without running anything (a fast CI/sanity check).
+From the UI you can materialize the **online-safe maintenance jobs** (cleanup, `pg_repack`, the lz4 rewrite) against a
+running stack without disruption. The **full backup/restore jobs stop and restart containers**, so run those
+deliberately — and note they need access to the Docker socket and to all the stateful services.
+`dagster definitions validate -m my_backup` loads the whole code location without running anything (a fast CI/sanity
+check).
 
 > **Settings are not auto-loaded from the environment.** Connection and `BACKUP_*` settings are read only when
 > constructed, so export them in the process that runs Dagster (`set -a && source .env && set +a`).
