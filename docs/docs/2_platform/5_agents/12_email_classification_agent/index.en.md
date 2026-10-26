@@ -194,16 +194,28 @@ feature: a *complaint* usually deserves a reply, a *thank-you* rarely does, and 
 answering. Mail that fitted no category and went to the fallback folder is never drafted — if the model could not say
 what a message was about, it is in no position to answer it.
 
-| Field                  | Description                                                                                                                         |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Draft Reply**        | The master switch for this section. Off by default.                                                                                 |
-| **Drafts Folder**      | Where drafts are appended. If the name is not found, your server's own Drafts folder is used, and failing that the name is created. |
-| **LLM Model**          | The model that writes the reply. Leave empty to use the agent's main model.                                                         |
-| **Draft Prompt**       | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                               |
-| **Draft Input Tokens** | How much of the message the model may be shown. See *Long mail* below.                                                              |
+| Field                      | Description                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Draft Reply**            | The master switch for this section. Off by default.                                                                                   |
+| **Drafts Folder**          | Where drafts are appended. If the name is not found, your server's own Drafts folder is used, and failing that the name is created.   |
+| **LLM Model**              | The model that writes the reply. Leave empty to use the agent's main model.                                                           |
+| **Draft Prompt**           | Instructions for tone and style. The shipped default is concise, polite, and forbids inventing facts.                                 |
+| **Quote Original Message** | When on, the original email is quoted below the reply, as Outlook does. Off by default.                                               |
+| **Quote Language**         | Language of the quote's From / Sent / To / Subject labels and its date. Pick the mailbox owner's language. German by default.         |
+| **Quote Time Zone**        | Time zone the quote's Sent date is shown in, whatever zone the sender wrote from. Pick the mailbox owner's. Europe/Zurich by default. |
+| **Draft Input Tokens**     | How much of the message the model may be shown. See *Long mail* below.                                                                |
 
 Each draft is threaded to the message it answers — `Re:` subject, correct `In-Reply-To` and `References` headers — so it
 appears inside the original conversation in your mail client rather than as a stray new message.
+
+**Formatting and quoting.** Drafts are HTML with a plain-text alternative. The model writes Markdown, so bold text,
+lists and links come through (a bare `https://…` or `www.…` address becomes clickable), and text it wraps in
+`==double equals==` is highlighted in yellow — ask for it in the **Draft Prompt** (e.g. *"highlight the delivery date
+with ==…=="*). HTML the model writes is shown as text, never rendered, so a placeholder such as `<Your name>` stays in
+the draft and scripts, images and unsafe links never reach the mailbox. With **Quote Original Message** on, the original
+email follows the reply under an Outlook-style From / Sent / To / Cc / Subject block, its own HTML sanitised and its
+images left out. The quote is added after the reply is written, so the model never sees it and the reply does not
+change.
 
 ::: warning A draft is a first pass, not an answer
 Read every draft before sending it. Even a draft grounded in your own documents (below) is only as good as the documents

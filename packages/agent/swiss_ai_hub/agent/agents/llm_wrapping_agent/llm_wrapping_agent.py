@@ -93,9 +93,7 @@ class LLMWrappingAgent(Agent):
 
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            limited = limit_chat_history(
-                chat_history=conversation, number_of_input_tokens=agent_config.number_of_input_tokens
-            )
+            limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_ceiling)
             return Conversation.contextualize(history=[*system_head, *limited], message=event)
 
         # The system prompt and the last turn are what must be sent; everything between them is negotiable. Note
@@ -111,7 +109,7 @@ class LLMWrappingAgent(Agent):
         # Trim only what sits between them, then put both back. Handing the trimmer a list that still holds the
         # last turn charges it twice: no subset containing it fits the reduced limit, so `ChatMemoryBuffer` falls
         # through to its most-recent-message branch and drops the whole earlier conversation.
-        older_limit = min(agent_config.number_of_input_tokens, budget - irreducible_tokens)
+        older_limit = agent_config.held_to_ceiling(budget - irreducible_tokens)
         older = (
             limit_chat_history(chat_history=conversation[:-1], number_of_input_tokens=older_limit)
             if older_limit > 0

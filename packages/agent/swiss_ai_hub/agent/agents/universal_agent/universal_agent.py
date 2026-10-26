@@ -79,9 +79,7 @@ class UniversalAgent(Agent):
             ]
         )
         head, conversation = history[:1], history[1:]
-        limited = limit_chat_history(
-            chat_history=conversation, number_of_input_tokens=agent_config.number_of_input_tokens
-        )
+        limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_budget)
         return Conversation.contextualize(history=[*head, *limited], message=event)
 
     @step(

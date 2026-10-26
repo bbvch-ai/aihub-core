@@ -54,6 +54,17 @@ class FormkitElement(BaseModel, abc.ABC):
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> Self: ...
 
+    def renders_own_unset_state(self) -> bool:
+        """Whether the element itself offers "not set" for a nullable field, so the form must not wrap it in the
+        generic enable toggle, which hides the input while it is off. Override in elements that keep the input in
+        view and show what applies while it is unset."""
+        return False
+
+    def anchored_at(self, id_prefix: str) -> Self:
+        """This element with paths it declares relative to its own form rewritten to the form root, once the form
+        is rendered and `id_prefix` is known. Override in elements that reference another field by path."""
+        return self
+
     def validate_authorization(
         self,
         field_path: str,

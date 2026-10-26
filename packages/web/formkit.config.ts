@@ -5,6 +5,8 @@ import IconSelector from '@core/components/FormKit/IconSelector.vue'
 import KnowledgeCollectionSelector from '@core/components/FormKit/KnowledgeCollectionSelector.vue'
 import KnowledgeDatabaseSelector from '@core/components/FormKit/KnowledgeDatabaseSelector.vue'
 import LocaleInput from '@core/components/FormKit/LocaleInput.vue'
+import ModelBoundNumber from '@core/components/FormKit/ModelBoundNumber.vue'
+import ModelGatedCheckbox from '@core/components/FormKit/ModelGatedCheckbox.vue'
 import ModelSelect from '@core/components/FormKit/ModelSelect.vue'
 import SecretFileInput from '@core/components/FormKit/SecretFileInput.vue'
 import TenantSelect from '@core/components/FormKit/TenantSelect.vue'
@@ -118,6 +120,12 @@ const config: DefaultConfigOptions = {
     }),
     localeInput: createInput(LocaleInput, {
       props: ['inputType', 'rows', 'placeholder', 'allowTranslation'],
+    }),
+    modelBoundNumber: createInput(ModelBoundNumber, {
+      props: ['modelRef', 'maxFrom', 'defaultFrom', 'fallbackDefault', 'overrideLabel', 'fillFactor', 'min', 'max', 'step', 'minFractionDigits', 'maxFractionDigits', 'useGrouping'],
+    }),
+    modelGatedCheckbox: createInput(ModelGatedCheckbox, {
+      props: ['modelRef', 'requires'],
     }),
     modelSelect: createInput(ModelSelect, {
       props: ['mode', 'placeholder', 'filter', 'showClear'],
