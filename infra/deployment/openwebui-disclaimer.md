@@ -112,19 +112,15 @@ v0.11.3 returns the panel to "Listening..." only after it has played every sente
 sentence's speech again every 200 ms until one succeeds. The platform routes no speech model and non-admin users lack
 the TTS permission, so the request never succeeds and the panel shows "Tap to interrupt" forever.
 
-The loader wraps `POST /api/v1/audio/speech`:
-
-- Each sentence gets up to 3 attempts, 15 seconds each, 500 ms apart. A successful response passes through unchanged.
-- After the last failed attempt, the panel receives a silent 0.1-second clip instead of an error, so it moves on and
-  returns to "Listening..." once the answer is complete. Further speech requests in the next 60 seconds get the silent
-  clip at once, so a long answer is not retried sentence by sentence.
-- Below the panel's own status line, the loader shows "Preparing voice reply…", "Voice reply failed, retrying (n/3)…" or
-  "Voice reply unavailable, answer shown as text". The text clears when speech succeeds.
+The loader checks the response of `POST /api/v1/audio/speech`. A successful response passes through unchanged. A failed
+one is replaced by a silent 10 ms clip, so the panel moves on and returns to "Listening..." once the answer is complete,
+and "Voice reply unavailable, answer shown as text" appears below the panel's own status line. The text clears when
+speech succeeds.
 
 The status line is located through the panel's markup, `button.z-10 > div.line-clamp-1.text-sm.font-normal`. Recheck the
 selector and the speech endpoint after OpenWebUI upgrades, and remove this part of the script once OpenWebUI stops
 retrying failed speech without limit.
 
 To check it, set `AUDIO_TTS_ENGINE=openai` with an unreachable `AUDIO_TTS_OPENAI_API_BASE_URL` on a disposable OpenWebUI
-container that mounts the loader. Calling the speech endpoint from the browser console should make three requests,
-return `audio/wav`, and make no request on an immediate second call.
+container that mounts the loader. Calling the speech endpoint from the browser console should make one request and
+return `audio/wav`.
