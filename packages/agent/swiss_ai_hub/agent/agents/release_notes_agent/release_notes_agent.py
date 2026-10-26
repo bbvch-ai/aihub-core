@@ -108,7 +108,7 @@ class ReleaseNotesAgent(Agent):
             return await ReleaseNotesReply.say(reply, ctx.query, displayer, speaker)
         await displayer.display_thought(t(f"{_KEY}.thoughts.tickets_found", count=len(tickets), version=resolved.name))
         language = resolved.writing_language
-        stream = ChangelogStream(displayer, t, config.link_tickets, config.llm.model_name)
+        stream = ChangelogStream.from_config(displayer, t, config)
         await stream.begin(language, resolved.name)
         async with config.llm.cost_reporting_llm(displayer, user=user) as llm:
             entries = await ChangelogWriter.from_config(llm, config, language).write(tickets, stream.add)
@@ -138,7 +138,7 @@ class ReleaseNotesAgent(Agent):
     ) -> Conversation.CompleteRequest:
         """Each further language follows as a block of its own; with none configured the run ends on the changelog
         as written."""
-        stream = ChangelogStream(displayer, t, config.link_tickets, config.llm.model_name, shown=written.shown)
+        stream = ChangelogStream.from_config(displayer, t, config, shown=written.shown)
         targets = resolved.translation_targets
         if targets:
             async with config.llm.cost_reporting_llm(displayer, user=user) as llm:

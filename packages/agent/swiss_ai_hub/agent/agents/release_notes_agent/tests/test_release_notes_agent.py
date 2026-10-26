@@ -222,7 +222,7 @@ async def test_without_merging_every_ticket_keeps_a_bullet_of_its_own(platform: 
 
     answer = _answer(runner)
     for ticket in _TICKETS:
-        assert f"- Note for {ticket.key}. ([{ticket.key}]({ticket.url}))\n" in answer
+        assert f"- **[[{ticket.key}]({ticket.url})]** Note for {ticket.key}.\n" in answer
     assert "Merged" not in answer
     assert "were merged" not in _thoughts(runner)
 

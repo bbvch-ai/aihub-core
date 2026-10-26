@@ -68,8 +68,9 @@ config:
     placeholder: customers using the web app
   link_tickets:
     label: Link to Jira tickets
-    help: End each bullet with links to its tickets in Jira, e.g. (ENG-12). Turn it
-      off for readers who cannot open Jira.
+    help: "Show each bullet's tickets as links to Jira: [ENG-12] in front when every
+      ticket has its own bullet, (ENG-12, ENG-15) at the end when related tickets are
+      merged. Turn it off for readers who cannot open Jira."
   merge_related_tickets:
     label: Merge related tickets
     help: Merge notes on related tickets of one section into one bullet that names

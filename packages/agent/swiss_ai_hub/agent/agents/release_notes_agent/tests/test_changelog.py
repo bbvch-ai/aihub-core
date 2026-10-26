@@ -1,6 +1,9 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.jira import JiraConnectionConfig
 
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_renderer import ChangelogRenderer
@@ -8,6 +11,7 @@ from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import Chan
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_stream import ChangelogStream
 from swiss_ai_hub.agent.agents.release_notes_agent.release_language import ReleaseLanguage
 from swiss_ai_hub.agent.agents.release_notes_agent.release_note import ReleaseNote
+from swiss_ai_hub.agent.agents.release_notes_agent.release_notes_agent_config import ReleaseNotesAgentConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
 _T = AgentLocaleHandler("en")
@@ -84,30 +88,55 @@ def test_every_section_has_a_heading_in_every_language():
         assert not any("release_notes_agent" in heading for heading in headings)
 
 
-def test_a_bullet_ends_with_the_linked_key_only_when_asked_to():
+def test_a_bullet_of_its_own_leads_with_its_linked_key_in_bold_brackets():
     entry = _entry("ENG-12", ChangelogSection.FIXES, "Sign-in works\nagain  after a  timeout.")
 
-    assert ChangelogRenderer.bullet(entry, link_tickets=True) == (
-        "- Sign-in works again after a timeout. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"
+    assert ChangelogRenderer.bullet(entry, link_tickets=True, keys_first=True) == (
+        "- **[[ENG-12](https://jira.example.com/browse/ENG-12)]** Sign-in works again after a timeout.\n"
     )
-    assert ChangelogRenderer.bullet(entry, link_tickets=False) == "- Sign-in works again after a timeout.\n"
+    assert ChangelogRenderer.bullet(entry, link_tickets=False, keys_first=True) == (
+        "- Sign-in works again after a timeout.\n"
+    )
 
 
-def test_a_merged_bullet_names_every_ticket_it_covers():
+def test_a_merged_bullet_ends_with_every_ticket_it_covers():
     notes = [_note(key, ChangelogSection.FEATURES, f"Export of {key}.") for key in ("ENG-1", "SD-4")]
     entry = ChangelogEntry(section=ChangelogSection.FEATURES, text="CSV export for invoices and search.", notes=notes)
 
-    assert ChangelogRenderer.bullet(entry, link_tickets=True) == (
+    assert ChangelogRenderer.bullet(entry, link_tickets=True, keys_first=False) == (
         "- CSV export for invoices and search. "
         "([ENG-1](https://jira.example.com/browse/ENG-1), [SD-4](https://jira.example.com/browse/SD-4))\n"
     )
-    assert ChangelogRenderer.bullet(entry, link_tickets=False) == "- CSV export for invoices and search.\n"
+    assert ChangelogRenderer.bullet(entry, link_tickets=False, keys_first=False) == (
+        "- CSV export for invoices and search.\n"
+    )
+
+
+@pytest.mark.parametrize(("merge_related_tickets", "bullet"), [
+    (False, "- **[[ENG-12](https://jira.example.com/browse/ENG-12)]** Dark mode.\n"),
+    (True, "- Dark mode. ([ENG-12](https://jira.example.com/browse/ENG-12))\n"),
+])
+@pytest.mark.asyncio
+async def test_the_keys_lead_the_bullets_only_when_tickets_are_not_merged(merge_related_tickets: bool, bullet: str):
+    config = ReleaseNotesAgentConfig(
+        agent_id="release-notes",
+        name=LocaleString(en="Release notes"),
+        description=LocaleString(en="Writes release notes."),
+        llm=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
+        jira=JiraConnectionConfig(),
+        merge_related_tickets=merge_related_tickets,
+    )
+    stream = ChangelogStream.from_config(AsyncMock(), _T, config)
+
+    await stream.add([_entry("ENG-12", ChangelogSection.FEATURES, "Dark mode.")])
+
+    assert stream.text == f"\n### New features\n\n{bullet}"
 
 
 @pytest.mark.asyncio
 async def test_the_stream_keeps_exactly_the_text_it_shows():
     displayer = AsyncMock()
-    stream = ChangelogStream(displayer, _T, link_tickets=False, model_name="gemma")
+    stream = ChangelogStream(displayer, _T, link_tickets=False, keys_first=False, model_name="gemma")
 
     await stream.begin(ReleaseLanguage.EN, "2.0")
     await stream.add([_entry("ENG-1", ChangelogSection.FEATURES, "Export to CSV.")])
@@ -132,7 +161,7 @@ async def test_the_stream_keeps_exactly_the_text_it_shows():
 @pytest.mark.asyncio
 async def test_the_stream_shows_nothing_for_an_empty_batch():
     displayer = AsyncMock()
-    stream = ChangelogStream(displayer, _T, link_tickets=True, model_name="gemma")
+    stream = ChangelogStream(displayer, _T, link_tickets=True, keys_first=False, model_name="gemma")
 
     await stream.add([])
 

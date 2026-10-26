@@ -73,7 +73,9 @@ Each ticket goes into a section by its Jira issue type:
 | **Other**        | Everything else: Task, Sub-task, Epic, service requests, your own types             |
 
 Within a section, bullets are ordered by the project and number of their first ticket. With **Link to Jira tickets** on,
-each bullet ends with the keys of its tickets, linked to them in Jira.
+the keys of each bullet's tickets are linked to them in Jira. When every ticket has a bullet of its own, the bullet
+leads with its key, as in **[ENG-12]** Sign-in works again after a timeout. When related tickets are merged, a bullet
+can cover a dozen of them, so it ends with their keys instead: … can be exported as CSV. (ENG-12, ENG-15, ENG-19)
 
 ### When something goes wrong
 
@@ -134,20 +136,20 @@ the agent container needs outbound network access to it.
 
 ## Configuration reference
 
-| Field                              | Default                             | Description                                                                                                  |
-| ---------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Jira URL**                       | —                                   | Jira's base URL. Redirects are not followed, so enter the address Jira answers at.                           |
-| **Jira edition**                   | Jira Cloud                          | Jira Cloud or Jira Data Center.                                                                              |
-| **Account e-mail**                 | —                                   | Jira Cloud only: the e-mail of the account the API token belongs to.                                         |
-| **Token**                          | —                                   | API token without scopes (Cloud) or personal access token (Data Center).                                     |
-| **Jira projects**                  | —                                   | Keys of the projects whose fix versions the release notes cover.                                             |
-| **JQL filter**                     | *(empty)*                           | JQL every ticket must also match.                                                                            |
-| **Language**                       | English                             | The language the notes are written in, unless the message asks for another.                                  |
-| **Translate into other languages** | Off                                 | Switch it on to pick further **Languages**; each gets its own block, translated from the written notes.      |
-| **Audience**                       | *the customers who use the product* | Who reads the release notes, in a few words; each note is worded for them.                                   |
-| **Link to Jira tickets**           | On                                  | End each bullet with links to its tickets, e.g. (ENG-12). Turn it off for readers who cannot open Jira.      |
-| **Merge related tickets**          | On                                  | Merge notes on related tickets of a section into one bullet that names them all. Off: one bullet per ticket. |
-| **Max input tokens**               | `16384`                             | The conversation history kept for each turn. Earlier changelogs are long and only the questions matter.      |
+| Field                              | Default                             | Description                                                                                                                              |
+| ---------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Jira URL**                       | —                                   | Jira's base URL. Redirects are not followed, so enter the address Jira answers at.                                                       |
+| **Jira edition**                   | Jira Cloud                          | Jira Cloud or Jira Data Center.                                                                                                          |
+| **Account e-mail**                 | —                                   | Jira Cloud only: the e-mail of the account the API token belongs to.                                                                     |
+| **Token**                          | —                                   | API token without scopes (Cloud) or personal access token (Data Center).                                                                 |
+| **Jira projects**                  | —                                   | Keys of the projects whose fix versions the release notes cover.                                                                         |
+| **JQL filter**                     | *(empty)*                           | JQL every ticket must also match.                                                                                                        |
+| **Language**                       | English                             | The language the notes are written in, unless the message asks for another.                                                              |
+| **Translate into other languages** | Off                                 | Switch it on to pick further **Languages**; each gets its own block, translated from the written notes.                                  |
+| **Audience**                       | *the customers who use the product* | Who reads the release notes, in a few words; each note is worded for them.                                                               |
+| **Link to Jira tickets**           | On                                  | Link each bullet's tickets: [ENG-12] in front, or (ENG-12, ENG-15) at the end when merged. Turn it off for readers who cannot open Jira. |
+| **Merge related tickets**          | On                                  | Merge notes on related tickets of a section into one bullet that names them all. Off: one bullet per ticket.                             |
+| **Max input tokens**               | `16384`                             | The conversation history kept for each turn. Earlier changelogs are long and only the questions matter.                                  |
 
 The model settings and the **Task LLM** (titles, follow-up questions, the check for questions about the assistant) are
 the same as on the other chat assistants.

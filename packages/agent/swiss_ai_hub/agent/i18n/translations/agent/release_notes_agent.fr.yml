@@ -72,8 +72,9 @@ config:
     placeholder: les clients de l'application web
   link_tickets:
     label: Lier aux tickets Jira
-    help: Terminer chaque point par des liens vers ses tickets dans Jira, p. ex. (ENG-12).
-      À désactiver pour des lecteurs sans accès à Jira.
+    help: "Afficher les tickets de chaque point sous forme de liens vers Jira : [ENG-12]
+      au début quand chaque ticket a son propre point, (ENG-12, ENG-15) à la fin quand
+      les tickets liés sont regroupés. À désactiver pour des lecteurs sans accès à Jira."
   merge_related_tickets:
     label: Regrouper les tickets liés
     help: Regrouper les notes des tickets liés d'une même section en un seul point
