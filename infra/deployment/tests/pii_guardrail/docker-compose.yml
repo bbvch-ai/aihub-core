@@ -1,0 +1,53 @@
+---
+# End-to-end harness for the pii-anonymisation guardrail: the real analyzer image and config, the real LiteLLM image
+# with the generated guardrail module, and an echo model that records what a provider would receive. Started and
+# stopped by test_pii_guardrail_e2e.py, which also writes out/litellm-config.yml from the generated gateway config.
+name: pii-guardrail-e2e
+services:
+  presidio-analyzer:
+    image: ${ANALYZER_IMAGE}
+    environment:
+      ANALYZER_API_KEY: e2e-analyzer-key
+      OMP_NUM_THREADS: '4'
+      MKL_NUM_THREADS: '4'
+    volumes: [../../../configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:3000/health',
+          timeout=5)
+      interval: 5s
+      timeout: 6s
+      start_period: 180s
+      retries: 3
+  echo:
+    image: ${LITELLM_IMAGE}
+    entrypoint: [python, /e2e/echo_llm.py]
+    environment:
+      RECEIVED_LOG: /out/received.jsonl
+    volumes: [./echo_llm.py:/e2e/echo_llm.py:ro, ./out:/out]
+  litellm:
+    image: ${LITELLM_IMAGE}
+    command: [--config, /app/config.yml, --port, '4000']
+    ports: [4199:4000]
+    environment:
+      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
+      PRESIDIO_ANALYZER_API_KEY: e2e-analyzer-key
+    volumes:
+      - ./out/litellm-config.yml:/app/config.yml:ro
+      - ../../../configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')
+      interval: 5s
+      timeout: 5s
+      start_period: 60s
+      retries: 12
+    depends_on:
+      presidio-analyzer: {condition: service_healthy}
+      echo: {condition: service_started}
