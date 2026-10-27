@@ -176,6 +176,27 @@ def test_should_keep_the_word_assistant_when_a_prompt_describes_the_assistant() 
     assert "Anna Muster" not in seen
 
 
+def test_should_keep_salutations_roles_and_room_numbers_around_a_patient_name() -> None:
+    prompt = (
+        "Grüezi mitenand. Sehr geehrte Kollegin, die obgenannte Patientin Anna Muster liegt seit Montag in "
+        "Zimmer 12, ihr Ehemann ist informiert. Madame, Monsieur, la patiente est en chambre 4."
+    )
+
+    chat("echo-external", prompt)
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}")
+    assert "Anna Muster" not in seen
+    for kept in [
+        "Grüezi mitenand.",
+        "Sehr geehrte Kollegin,",
+        "die obgenannte Patientin",
+        "in Zimmer 12, ihr Ehemann ist informiert.",
+        "Madame, Monsieur, la patiente est en chambre 4.",
+    ]:
+        assert kept in seen
+
+
 @pytest.mark.parametrize(
     ("address", "masked"),
     [
