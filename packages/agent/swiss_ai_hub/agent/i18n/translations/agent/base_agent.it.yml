@@ -2,3 +2,6 @@
 metadata:
   name: Agente
   description: ''
+notice:
+  anonymised: I dati personali sono stati sostituiti con segnaposto prima che questa
+    richiesta raggiungesse il modello linguistico.

@@ -94,6 +94,21 @@ literal-number rule.
   rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
   `--limit-mm-per-prompt` in the compose template.
 
+`aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
+`pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
+`custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
+restores the answer, streamed or not; a local model runs it only when the call sends
+`"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call also
+leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
+`OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
+`uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+(unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
+on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
+more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
+`docs/arc42/decisions/2026_10_22_litellm_follows_plain_release_tags.md`. See ADR
+`docs/arc42/decisions/2026_10_21_presidio_streaming_guardrail_for_pii_anonymisation.md`.
+
 `aihub_openwebui_function_calling` (`native` or `legacy`, default `legacy`) is an AI-Hub key in a chat model's
 `model_info`. `OpenWebuiProvisioner` reads it from `/v1/model/info` and enforces it as that model's OpenWebUI Function
 Calling mode on every API start, reverting manual admin-panel edits. Only Kimi-K2.6 sets `native`, for Open Terminal's
@@ -270,15 +285,16 @@ routes through Traefik.
 
 ## Network Isolation (7 Zones)
 
-| Network         | Purpose                           | Internal | ICC | Key Services                                                  |
-| --------------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
-| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel            |
-| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
-| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
-| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents |
-| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up) |
-| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent as callers)     |
+| Network         | Purpose                           | Internal | ICC | Key Services                                                                       |
+| --------------- | --------------------------------- | -------- | --- | ---------------------------------------------------------------------------------- |
+| `proxy`         | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                                        |
+| `backend`       | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), otel                                 |
+| `data`          | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click                             |
+| `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                                                 |
+| `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents, release notes agent |
+| `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)                      |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)                              |
+| `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent)                   |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
 
@@ -291,6 +307,13 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
+internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
+connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
+callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
+Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
+reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
 
 **`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no

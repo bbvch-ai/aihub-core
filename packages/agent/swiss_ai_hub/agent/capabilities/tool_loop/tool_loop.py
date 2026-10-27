@@ -475,6 +475,7 @@ class ToolLoop(Capability):
             access=access,
             files=request.files,
             knowledge_references=request.knowledge_references,
+            web_references=request.web_references,
             topic=topic,
         )
 

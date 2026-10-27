@@ -53,3 +53,7 @@ class RunToolLoopEvent(ControlAndDisplayEvent):
         list[KnowledgeReference],
         Field(description="The collections the user referenced on the message, for tools that search knowledge."),
     ] = []
+    web_references: Annotated[
+        list[str],
+        Field(description="The web pages the message links or references, for tools that read them."),
+    ] = []

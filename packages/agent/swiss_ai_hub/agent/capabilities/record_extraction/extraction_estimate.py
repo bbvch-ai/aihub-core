@@ -16,8 +16,8 @@ SECONDS_PER_WINDOW = 10
 class ExtractionEstimate:
     """How long extracting a set of documents takes, roughly, before any of them is loaded.
 
-    Only the page count is known from a listing, so the estimate is coarse; it decides how many documents one answer
-    takes on and says "about" when it names minutes. Extraction calls run in parallel up to the profile's limit.
+    Only the page count is known from a listing, so the estimate is coarse and the answer says "about" when it names
+    minutes. Extraction calls run in parallel up to the profile's limit.
     """
 
     @staticmethod
@@ -33,26 +33,3 @@ class ExtractionEstimate:
     ) -> int:
         windows = sum(ExtractionEstimate.windows(document) for document in documents)
         return max(1, math.ceil(windows / max(1, parallel) * SECONDS_PER_WINDOW / 60))
-
-    @staticmethod
-    def batches(
-        documents: Annotated[list[KnowledgeDocumentSummary], "Documents to extract, in order"],
-        max_files: Annotated[int, "The most documents one answer extracts from"],
-        minutes_per_turn: Annotated[int, "About how long one answer may extract"],
-        parallel: Annotated[int, "Extraction calls one replica makes at once"],
-    ) -> list[list[KnowledgeDocumentSummary]]:
-        """Consecutive parts that each fit one answer; a single document too large for an answer is a part alone."""
-        budget = minutes_per_turn * 60 / SECONDS_PER_WINDOW * max(1, parallel)
-        parts: list[list[KnowledgeDocumentSummary]] = []
-        current: list[KnowledgeDocumentSummary] = []
-        used = 0
-        for document in documents:
-            windows = ExtractionEstimate.windows(document)
-            if current and (len(current) >= max_files or used + windows > budget):
-                parts.append(current)
-                current, used = [], 0
-            current.append(document)
-            used += windows
-        if current:
-            parts.append(current)
-        return parts

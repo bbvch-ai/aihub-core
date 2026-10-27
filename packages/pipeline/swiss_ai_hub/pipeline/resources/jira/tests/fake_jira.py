@@ -91,7 +91,7 @@ class FakeJira:
         client.session.mount("https://", FakeJiraTransport(self))
         monkeypatch.setattr("swiss_ai_hub.pipeline.resources.jira.jira_client.Client", lambda **_: client)
         monkeypatch.setattr(
-            "swiss_ai_hub.pipeline.resources.structured.source_host_guard.socket.getaddrinfo",
+            "swiss_ai_hub.core.network.source_host_guard.socket.getaddrinfo",
             lambda host, port, **_: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (PUBLIC_ADDRESS, port))],
         )
 
