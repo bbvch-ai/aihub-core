@@ -150,6 +150,11 @@ image_tags:
     local: email_classification_agent:latest
     nightly: email_classification_agent:nightly
     latest: email_classification_agent:latest
+  release_notes_agent:
+    build: localbuild
+    local: release_notes_agent:latest
+    nightly: release_notes_agent:nightly
+    latest: release_notes_agent:latest
   # Frozen: the legacy per-bucket pipelines' code is gone from main, so these images are pinned and are not
   # rebuilt by CI. v0.320.1 is the last release that still contained the code (v0.320.0) plus the knowledge
   # namespace teardown sensor, built once from a branch off that tag — the freeze deliberately took effect

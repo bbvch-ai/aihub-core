@@ -70,3 +70,6 @@ run-imap-agent:
 
 run-email-classification-agent:
 	uv run python app/email_classification_agent/main.py
+
+run-release-notes-agent:
+	uv run python app/release_notes_agent/main.py

@@ -111,6 +111,7 @@ Services that require outbound internet access but no inbound access:
 - **rclone**: The daemon the rclone source pipeline drives (reaches the cloud storage it syncs from)
 - **structured_pipeline**: The structured source pipeline (calls business application APIs such as Jira)
 - **imap_agent**, **email_classification_agent**: Read and file mail on external IMAP servers
+- **release_notes_agent**: Reads the tickets of a fix version from Jira Cloud or an on-premise Jira Data Center
 - **otel-collector**: Exports telemetry to external backends
 
 This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this

@@ -2233,8 +2233,8 @@ services:
     # This collector is dual-homed, so its container name is registered in Docker DNS on
     # both networks — and the egress address is NOT reachable container-to-container,
     # because egress sets enable_icc=false (an iptables DROP, so a client hangs on connect
-    # rather than getting a refusal). Two OTLP clients sit on egress as well (imap_agent,
-    # email_classification_agent), so for them the bare name is ambiguous by construction.
+    # rather than getting a refusal). Three OTLP clients sit on egress as well (imap_agent,
+    # email_classification_agent, release_notes_agent), so for them the bare name is ambiguous by construction.
     # The alias below is registered on backend only and can therefore resolve to nothing
     # but the reachable address; every OTLP client targets it instead of the name.
     networks:
@@ -4590,6 +4590,78 @@ services:
       - data
       - storage
       - egress  # Outbound access to external IMAP servers
+  {%- endif %}
+
+  {%- if image_tags.release_notes_agent[stage] %}
+  {{ service_license('release_notes_agent') }}
+  release_notes_agent:
+    container_name: release-notes-agent
+    restart: always
+    {%- if image_tags.release_notes_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/release_notes_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.release_notes_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (release notes, translations, titles and follow-ups)
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Jira: internal hosts a profile's Jira URL may name (comma-separated); every other internal host is refused
+      JIRA_ALLOWED_PRIVATE_HOSTS: ${JIRA_ALLOWED_PRIVATE_HOSTS}
+
+      # MILVUS (readiness check only)
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mem0 (the agent runtime imports mem0 even without a memory step — keep its telemetry off)
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: release-notes-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('release_notes_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - egress  # Outbound access to Jira Cloud or an on-premise Jira Data Center
   {%- endif %}
 
   {%- if image_tags.default_rag_pipeline[stage] %}

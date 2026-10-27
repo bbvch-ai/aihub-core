@@ -53,6 +53,7 @@ From `packages/pipeline`:
 | `… --env-file ~/.jira-seed/cloud.env seed --projects ENG,SD` | Creates every case in both projects                                                        |
 | `… seed --projects ENG --only delete-me`                     | Creates the named cases only                                                               |
 | `… seed --projects ENG --only plain --bulk 120`              | Adds 120 small issues, so a search spans several pages                                     |
+| `… seed --projects ENG --only plain --release 2.0`           | Adds fix version 2.0 with 120 described bug/story/improvement/task tickets (release notes) |
 | `… list --projects ENG,SD`                                   | Lists the seeded issues with their case and status                                         |
 | `… check --projects ENG,SD`                                  | Read-only: lead, default assignee, and any seeded issue not assigned to or reported by you |
 | `… edit --projects ENG`                                      | Changes the summary of `edit-me` and adds a comment                                        |

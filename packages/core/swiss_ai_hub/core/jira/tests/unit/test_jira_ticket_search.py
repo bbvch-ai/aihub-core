@@ -274,3 +274,64 @@ class TestHostGuard:
         )
 
         assert len(tickets) == 2
+
+
+class TestVersions:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("deployment", _EDITIONS)
+    async def test_the_versions_of_every_project_are_listed_with_their_project(
+        self, monkeypatch: pytest.MonkeyPatch, deployment: str
+    ):
+        jira = _jira(monkeypatch, deployment, ("AAA-1", "BBB-1"))
+        jira.add_version("AAA", "2.4.0", released=True, release_date="2026-10-20")
+        jira.add_version("BBB", "2.4.0")
+
+        versions = await JiraTicketSearch.find_versions(_connection(deployment), ["bbb", "AAA"])
+
+        assert [(version.project, version.name, version.released) for version in versions] == [
+            ("AAA", "2.4.0", True),
+            ("BBB", "2.4.0", False),
+        ]
+        assert versions[0].id != versions[1].id
+
+    @pytest.mark.asyncio
+    async def test_an_unknown_project_is_reported_before_its_versions_are_asked_for(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        jira = _jira(monkeypatch, "cloud")
+        connection = _connection()
+
+        with pytest.raises(JiraProjectNotFoundError, match="ZZZ does not exist"):
+            await JiraTicketSearch.find_versions(connection, ["AAA", "ZZZ"])
+
+        assert not [request for request in jira.requests if request.url.path.endswith("/versions")]
+
+    @pytest.mark.asyncio
+    async def test_missing_configuration_is_named_before_any_request(self, monkeypatch: pytest.MonkeyPatch):
+        jira = _jira(monkeypatch, "cloud")
+        connection = JiraConnectionConfig()
+
+        with pytest.raises(JiraConfigurationError):
+            await JiraTicketSearch.find_versions(connection, ["AAA"])
+
+        assert jira.requests == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("deployment", _EDITIONS)
+    async def test_a_version_shared_by_two_projects_finds_the_tickets_of_both(
+        self, monkeypatch: pytest.MonkeyPatch, deployment: str
+    ):
+        jira = FakeJira(deployment=deployment)
+        in_aaa = jira.add_version("AAA", "2.4.0")
+        in_bbb = jira.add_version("BBB", "2.4.0")
+        jira.add_issue("AAA-1", fixVersions=[in_aaa])
+        jira.add_issue("AAA-2")
+        jira.add_issue("BBB-1", fixVersions=[in_bbb])
+        jira.install(monkeypatch)
+        versions = await JiraTicketSearch.find_versions(_connection(deployment), ["AAA", "BBB"])
+
+        tickets = await JiraTicketSearch.find_tickets(
+            _connection(deployment), ["AAA", "BBB"], [JiraJql.fix_version_clause(versions)]
+        )
+
+        assert [ticket.key for ticket in tickets] == ["AAA-1", "BBB-1"]

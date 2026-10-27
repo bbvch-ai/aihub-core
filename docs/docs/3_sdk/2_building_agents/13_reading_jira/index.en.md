@@ -41,17 +41,21 @@ class ReleaseNotesAgentConfig(AgentConfig):
 class ReleaseNotesAgent(Agent):
     @step()
     async def collect_tickets(self, event: ReleaseRequestedEvent, jira: JiraConnectionConfig) -> TicketsFoundEvent:
+        projects = ["ENG", "SD"]
+        versions = [v for v in await JiraTicketSearch.find_versions(jira, projects) if v.name == event.version]
         tickets = await JiraTicketSearch.find_tickets(
-            jira,
-            project_keys=["ENG", "SD"],
-            clauses=['issuetype != "Sub-task"', f"fixVersion = {JiraJql.string_literal(event.version)}"],
+            jira, projects, clauses=['issuetype != "Sub-task"', JiraJql.fix_version_clause(versions)]
         )
         return TicketsFoundEvent(keys=[ticket.key for ticket in tickets])
 ```
 
+`find_versions` lists every version of the projects (name, released, archived, release date), so the agent can tell a
+version Jira knows from a typo before it searches. A version belongs to one project: two projects can each have a
+"2.4.0". `fix_version_clause` matches the versions by id, which covers both and needs no quoting.
+
 Each clause is put in parentheses and joined with `AND` after the project restriction, so an `OR` inside one cannot
-reach other projects. A value that comes from a chat message, like the version above, must go through
-`JiraJql.string_literal()`. Pasted into the query unquoted, `2.4" OR project = HR` would read another project.
+reach other projects. Any other value that comes from a chat message must go through `JiraJql.string_literal()`. Pasted
+into the query unquoted, `2.4" OR project = HR` would read another project.
 
 A `JiraTicket` carries `key`, `url`, `project`, `issue_type`, `status`, `summary`, `description`, `labels`, `components`
 and `fix_versions`. The description is markdown converted from the HTML Jira renders, so headings, lists, tables and

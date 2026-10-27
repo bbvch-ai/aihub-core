@@ -2,6 +2,7 @@ import pytest
 
 from swiss_ai_hub.core.jira.jira_invalid_query_error import JiraInvalidQueryError
 from swiss_ai_hub.core.jira.jira_jql import JiraJql
+from swiss_ai_hub.core.jira.jira_version import JiraVersion
 
 
 class TestStringLiteral:
@@ -39,3 +40,23 @@ class TestCompose:
     def test_order_by_is_refused_because_the_search_orders_itself(self):
         with pytest.raises(JiraInvalidQueryError, match="must not contain ORDER BY"):
             JiraJql.compose(["ENG"], ["status = Done order  by created"])
+
+
+class TestFixVersionClause:
+    def test_versions_are_matched_by_id(self):
+        versions = [
+            JiraVersion(id="10200", name="2.4.0", project="ENG"),
+            JiraVersion(id="10305", name="2.4.0", project="SD"),
+        ]
+
+        assert JiraJql.fix_version_clause(versions) == "fixVersion in (10200, 10305)"
+
+    def test_an_id_that_is_not_a_number_is_refused(self):
+        versions = [JiraVersion(id="1) OR (project = HR", name="x", project="ENG")]
+
+        with pytest.raises(ValueError):
+            JiraJql.fix_version_clause(versions)
+
+    def test_no_version_is_refused(self):
+        with pytest.raises(ValueError, match="at least one version"):
+            JiraJql.fix_version_clause([])

@@ -698,6 +698,10 @@ agent configuration: the agent embeds the group and passes it in.
   type, status, summary, markdown description, labels, components, fix versions), sorted by project and number. Each
   clause is parenthesised and ANDed after `project in (…)`. A value taken from a chat message goes through
   `JiraJql.string_literal()`, or it can widen the query.
+- **`JiraTicketSearch.find_versions(connection, project_keys)`** lists every `JiraVersion` (id, name, project, released,
+  archived, release date) after the same checks. Versions belong to a project, so one name can be two versions; search a
+  release with `JiraJql.fix_version_clause(versions)`, which matches by id (`fixVersion in (10200, 10305)`), rather than
+  by a quoted name.
 - **Errors are typed and English**, so the agent words them in the user's language. `JiraConfigurationError` (a missing
   value, an internal host, a URL without Jira's REST API behind it), `JiraAuthenticationError`,
   `JiraProjectNotFoundError` (unknown, invisible or renamed), `JiraInvalidQueryError` (Jira's own text, e.g. an unknown
@@ -719,8 +723,8 @@ Rules, each guarding a failure that would otherwise be silent:
 - **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
   (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
 - **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
-  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`). It is not wired into compose yet: the
-  first agent that reads Jira (#1889) adds it with its container.
+  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
+  receives (`.env.dev`: `localhost`, `.env.prod`: empty).
 - **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
   `api.atlassian.com/ex/jira/{cloudId}`, which the ticket links would then point at too.
 

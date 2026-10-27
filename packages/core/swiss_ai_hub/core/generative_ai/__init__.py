@@ -143,6 +143,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
     from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
         combine_nodes_in_order,
         sanitize_metadata_value,
@@ -255,6 +256,7 @@ __all__ = [
     "LLMConfig",
     "LLMParameter",
     "ReasoningFreeChat",
+    "ResilientOpenAILike",
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
     "DEFAULT_METADATA",
@@ -378,6 +380,7 @@ _LAZY_IMPORTS = {
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "ReasoningFreeChat": "swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat",
+    "ResilientOpenAILike": "swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like",
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
