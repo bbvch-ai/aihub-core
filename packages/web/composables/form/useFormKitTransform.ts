@@ -888,6 +888,42 @@ export function seedNullableToggles(
 }
 
 /**
+ * Keeps only the keys the form declares, at every depth — the walk the API's `reject_undeclared_fields` refuses a
+ * submission by. A FormKit form can still hold the values of inputs it no longer renders.
+ */
+export function pickDeclaredFields(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const element of elements) {
+    const name = element.name as string | undefined
+    if (!name || !(name in data)) continue
+
+    const formkitType = getFormkitType(element)
+    const children = (element.children as FormElement[] | undefined) ?? []
+    const value = data[name]
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      result[name] = pickDeclaredFields(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      result[name] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? pickDeclaredFields(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else {
+      result[name] = value
+    }
+  }
+
+  return result
+}
+
+/**
  * Strips FormKit submission artifacts: the `slots` helper key and the repeater validation
  * mirror keys (`__validate__*`) registered by Repeater.vue. Recurses into nested group objects.
  */
