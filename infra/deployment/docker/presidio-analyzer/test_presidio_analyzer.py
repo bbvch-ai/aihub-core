@@ -10,18 +10,22 @@ NOT part of a CI `make test` scope, like the other infra tests: they need the im
     docker exec -i -e PRESIDIO_ANALYZER_URL=http://presidio-analyzer:3000 -e PRESIDIO_ANALYZER_API_KEY=... \
         litellm python - < infra/deployment/docker/presidio-analyzer/test_presidio_analyzer.py
 
-The egress test starts its own container on an internal Docker network, so it needs the docker CLI and the image tag
-pinned in compose-config.yml.
+The egress and request-timeout tests start their own container, so they need the docker CLI and the image tag pinned
+in compose-config.yml. The concurrency tests analyse 20k-token texts side by side and take several minutes; they print
+the latencies documented in infra/deployment/CLAUDE.md.
 """
 
 import json
 import os
 import re
+import statistics
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 URL = os.environ.get("PRESIDIO_ANALYZER_URL", "http://localhost:5002").rstrip("/")
@@ -61,12 +65,13 @@ SAMPLES = {
 LONG_PROMPT_TOKENS = 20_000
 
 
-def request(path: str, body: dict | None = None, api_key: str | None = API_KEY, timeout: float = 60) -> tuple[int, object]:
+def request(path: str, body: dict | None = None, api_key: str | None = API_KEY, timeout: float = 60,
+            url: str = URL) -> tuple[int, object]:
     headers = {"Content-Type": "application/json"}
     if api_key is not None:
         headers["Authorization"] = f"Bearer {api_key}"
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(f"{URL}{path}", data=data, headers=headers, method="POST" if data else "GET")
+    req = urllib.request.Request(f"{url}{path}", data=data, headers=headers, method="POST" if data else "GET")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
             raw = response.read().decode()
@@ -79,8 +84,9 @@ def request(path: str, body: dict | None = None, api_key: str | None = API_KEY, 
         return status, raw
 
 
-def analyze(text: str, timeout: float = 60) -> list[dict]:
-    status, spans = request("/analyze", {"text": text, "language": "de", "entities": ENTITIES}, timeout=timeout)
+def analyze(text: str, timeout: float = 60, url: str = URL, api_key: str = API_KEY) -> list[dict]:
+    status, spans = request("/analyze", {"text": text, "language": "de", "entities": ENTITIES}, api_key=api_key,
+                            timeout=timeout, url=url)
     assert status == 200, (status, spans)
     return spans
 
@@ -291,6 +297,79 @@ def test_should_report_latency_when_prompt_has_20k_tokens() -> None:
     assert spans
 
 
+# What the gateway guardrail and the Docker healthcheck can live with while long texts are analysed. The compose
+# healthcheck gives the probe 6 s; the idle figure is the single-request latency measured before the threaded worker.
+SHORT_REQUEST_UNDER_LOAD_SECONDS = 1.0
+SHORT_REQUEST_IDLE_SECONDS = 0.3
+HEALTH_PROBE_SECONDS = 5
+SHORT_TEXT = SAMPLES["de"][0]
+
+
+def seconds(call: Callable[[], object]) -> float:
+    started = time.perf_counter()
+    call()
+    return time.perf_counter() - started
+
+
+def while_analysing(texts: list[str], probe: Callable[[], object], url: str = URL,
+                    api_key: str = API_KEY) -> tuple[list[float], list[list[dict]]]:
+    """Times the probe once a second for as long as the texts are analysed in parallel, then returns their spans."""
+    with ThreadPoolExecutor(len(texts)) as pool:
+        running = [pool.submit(analyze, text, 900, url, api_key) for text in texts]
+        time.sleep(3)
+        timings = []
+        while not all(analysis.done() for analysis in running):
+            timings.append(seconds(probe))
+            time.sleep(1)
+        results = [analysis.result() for analysis in running]
+    assert timings, "the long analyses finished before the first probe"
+    return timings, results
+
+
+def report(name: str, timings: list[float]) -> None:
+    print(f"\n{name}: {len(timings)} probes, median {statistics.median(timings):.2f} s, max {max(timings):.2f} s")
+
+
+def test_should_answer_a_short_request_within_a_second_while_a_20k_token_text_is_analysed() -> None:
+    timings, _ = while_analysing([long_prompt()], lambda: analyze(SHORT_TEXT))
+
+    report("SHORT REQUEST BESIDE ONE LONG ANALYSIS", timings)
+    assert max(timings) < SHORT_REQUEST_UNDER_LOAD_SECONDS, timings
+
+
+def test_should_answer_the_health_probe_while_long_analyses_run() -> None:
+    def probe() -> None:
+        status, body = request("/health", api_key=None, timeout=HEALTH_PROBE_SECONDS)
+        assert status == 200, (status, body)
+
+    timings, _ = while_analysing([long_prompt()] * 3, probe)
+
+    report("HEALTH PROBE BESIDE THREE LONG ANALYSES", timings)
+
+
+def test_should_answer_a_short_request_on_an_idle_analyzer_as_fast_as_before() -> None:
+    analyze(SHORT_TEXT)
+    timings = [seconds(lambda: analyze(SHORT_TEXT)) for _ in range(10)]
+
+    report("SHORT REQUEST ON AN IDLE ANALYZER", timings)
+    assert statistics.median(timings) < SHORT_REQUEST_IDLE_SECONDS, timings
+
+
+def comparable(spans: list[dict]) -> list[tuple]:
+    return sorted((s["start"], s["end"], s["entity_type"], round(s["score"], 4)) for s in spans)
+
+
+def test_should_detect_the_same_spans_under_concurrent_load_as_one_at_a_time() -> None:
+    texts = [text for text, _ in SAMPLES.values()] + [CHUNKED_PROMPT, NAME_HEAVY_THREAD]
+    one_at_a_time = [comparable(analyze(text)) for text in texts]
+
+    with ThreadPoolExecutor(len(texts) + 1) as pool:
+        pool.submit(analyze, long_prompt(), 900)
+        concurrent = [comparable(spans) for spans in pool.map(analyze, texts * 3)]
+
+    assert concurrent == one_at_a_time * 3
+
+
 def compose_image() -> str:
     tag = re.search(r"^  presidio_analyzer: (\S+)$", (repo_root() / "infra/deployment/compose-config.yml")
                     .read_text(encoding="utf-8"), re.M)
@@ -319,22 +398,51 @@ def in_container(container: str, code: str) -> subprocess.CompletedProcess:
     return docker("exec", container, "python", "-c", code, check=False)
 
 
+def start_analyzer(container: str, key: str, *options: str) -> None:
+    """Runs the pinned image as `container` with the repository's recognizer config and waits for its models."""
+    config = repo_root() / "infra/configs/presidio/analyzer.yaml"
+    docker("rm", "-f", container, check=False)
+    docker("run", "-d", "--name", container, "-e", f"ANALYZER_API_KEY={key}", "-v", f"{config}:/app/analyzer.yaml:ro",
+           *options, compose_image())
+    health = "import urllib.request; print(urllib.request.urlopen('http://localhost:3000/health', timeout=5).read())"
+    deadline = time.time() + 300
+    while in_container(container, health).returncode != 0:
+        assert time.time() < deadline, docker("logs", container, check=False).stdout[-2000:]
+        time.sleep(5)
+
+
+def test_should_keep_serving_other_callers_when_an_analysis_outlives_the_request_timeout() -> None:
+    """The timeout is lowered below one analysis but above the model load, which it also bounds."""
+    container, key, timeout = "presidio-analyzer-timeout-test", "timeout-test-key", 60
+    try:
+        start_analyzer(container, key, "-p", "127.0.0.1::3000", "--cpus", "4", "--memory", "4g",
+                       "-e", f"GUNICORN_TIMEOUT={timeout}")
+        url = f"http://{docker('port', container, '3000').stdout.splitlines()[0]}"
+        started = time.perf_counter()
+
+        timings, [spans] = while_analysing([long_prompt() * 2], lambda: analyze(SHORT_TEXT, url=url, api_key=key),
+                                           url=url, api_key=key)
+
+        took = time.perf_counter() - started
+        logs = docker("logs", container, check=False)
+        report(f"SHORT REQUEST BESIDE A {took:.0f} S ANALYSIS (TIMEOUT {timeout} S)", timings)
+        assert took > timeout
+        assert spans
+        assert "WORKER TIMEOUT" not in logs.stdout + logs.stderr
+        assert analyze(SHORT_TEXT, url=url, api_key=key)
+    finally:
+        docker("rm", "-f", container, check=False)
+
+
 def test_should_start_and_answer_when_egress_is_blocked() -> None:
     """The analyzer runs on an internal network (no route out) and still loads its models and answers."""
     network, container, key = "pii-egress-test", "presidio-analyzer-egress-test", "egress-test-key"
-    config = repo_root() / "infra/configs/presidio/analyzer.yaml"
     docker("rm", "-f", container, check=False)
     docker("network", "rm", network, check=False)
     docker("network", "create", "--internal", network)
     try:
-        docker("run", "-d", "--name", container, "--network", network, "-e", f"ANALYZER_API_KEY={key}",
-               "-v", f"{config}:/app/analyzer.yaml:ro", compose_image())
-        health = "import urllib.request; print(urllib.request.urlopen('http://localhost:3000/health', timeout=5).read())"
-        deadline = time.time() + 300
-        while in_container(container, health).returncode != 0:
-            assert time.time() < deadline, docker("logs", container, check=False).stdout[-2000:]
-            time.sleep(5)
-        post = ("import json, urllib.request; r = urllib.request.Request('http://localhost:3000/analyze', "
+        start_analyzer(container, key, "--network", network)
+        post =("import json, urllib.request; r = urllib.request.Request('http://localhost:3000/analyze', "
                 "data=json.dumps({'text': 'Patient Reto Wyss, AHV 756.1234.5678.97', 'language': 'de'}).encode(), "
                 f"headers={{'Content-Type': 'application/json', 'Authorization': 'Bearer {key}'}}); "
                 "print(sorted({s['entity_type'] for s in json.load(urllib.request.urlopen(r, timeout=60))}))")
