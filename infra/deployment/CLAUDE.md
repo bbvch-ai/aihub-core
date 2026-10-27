@@ -31,6 +31,7 @@ deployment/
 │       ├── init_etcd.sh.j2            # etcd auth setup (idempotent)
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
+│       ├── s3-ttl-init.sh.j2          # Bucket expiry as filer TTL rules (never S3 lifecycle, see ADR 2026_10_27)
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
 │       ├── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 │       └── keycloak/                  # Realm config (standalone JSON templates, see Keycloak section)
@@ -235,10 +236,9 @@ The Presidio analyzer image is project-managed: Presidio 2.2.364 with GLiNER's m
 and Presidio's stock REST server with two changes: every route but `/health` needs
 `Authorization: Bearer <PRESIDIO_ANALYZER_API_KEY>`, and GLiNER reads long texts in chunks that start at a word
 (`word_aligned_text_chunker.py`; Presidio's own chunker starts inside words, and GLiNER tags the tails as names). The
-recognizer config (`templates/configs/presidio-analyzer.yaml`,
-copied to `infra/configs/presidio/analyzer.yaml`) is mounted, not baked in, so pattern changes need only
-`make generate-compose` and a container restart. Every text is analysed under the language code `de`; see the config
-header.
+recognizer config (`templates/configs/presidio-analyzer.yaml`, copied to `infra/configs/presidio/analyzer.yaml`) is
+mounted, not baked in, so pattern changes need only `make generate-compose` and a container restart. Every text is
+analysed under the language code `de`; see the config header.
 
 Publish with the "Build Presidio analyzer image" workflow (`workflow_dispatch`, `build-presidio-analyzer.yml`) or
 `make -C infra/deployment build-and-push-presidio-analyzer-image`. Both push the tag pinned in
@@ -248,8 +248,8 @@ any stage pulls it**: CI's backend tests start `litellm`, which depends on the a
 
 Measured on a laptop CPU with the 4-thread limit: a short request takes about 0.2-0.3 s, a 20k-token prompt (a 59K
 character mail thread with personal data in every message) 46 s, and the container holds 2.8 GiB after it (limit 4G).
-The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must
-allow for.
+The image is 5.5 GB. Long prompts are what the gunicorn worker timeout (300 s) and the guardrail's timeout must allow
+for.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
