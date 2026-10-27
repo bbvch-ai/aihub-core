@@ -196,10 +196,11 @@ async def test_an_infrastructure_error_ends_the_writing_and_cancels_the_other_ca
 
     batches = _Batches()
     llm = _FakeLlm(gateway_down_for_the_first_batch)
+    writer = _writer(llm, tickets_per_batch=1)
     tickets = [_ticket(f"ENG-{number}") for number in range(1, 4)]
 
     with pytest.raises(ConnectionError, match="gateway down"):
-        await _writer(llm, tickets_per_batch=1).write(tickets, batches)
+        await writer.write(tickets, batches)
 
     assert sorted(cancelled) == ["ENG-2", "ENG-3"]
     assert batches.received == []
