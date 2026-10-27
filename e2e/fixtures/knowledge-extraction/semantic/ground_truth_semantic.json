@@ -1,0 +1,25 @@
+{
+  "_about": "Ground truth for the semantic-discovery cases (#2200): collection `semantic` in kxe2e, profile glob `archive/**`. `contracts` are the supplier contracts every 'supplier contract' request must select; `slas` the availability commitments; `drafts/` lies outside the glob. 'key' identifies a document in a table row.",
+  "contracts": {
+    "archive/2024/scan-0103.md": {"key": "brightline", "language": "en", "notice": "6 months", "notice_tokens": ["6", "six"], "cap": "EUR 75,000", "cap_below_100k_eur": true},
+    "archive/2024/scan-0122.md": {"key": "orion", "language": "en", "notice": "90 days", "notice_tokens": ["90"], "cap": "fees paid in the preceding 12 months (relative)", "cap_below_100k_eur": false},
+    "archive/2024/scan-0140.md": {"key": "alpentech", "language": "de", "notice": "3 months to the end of a calendar quarter", "notice_tokens": ["3", "drei", "three"], "cap": "CHF 80,000", "cap_below_100k_eur": true},
+    "archive/2024/scan-0152.md": {"key": "rheinfeld", "language": "de", "notice": "6 months to the end of a calendar year", "notice_tokens": ["6", "sechs", "six"], "cap": "EUR 500,000", "cap_below_100k_eur": false},
+    "archive/2023/scan-0201.md": {"key": "l[ée]manic", "language": "fr", "notice": "2 months to the end of a month", "notice_tokens": ["2", "deux", "two"], "cap": "CHF 30,000", "cap_below_100k_eur": true},
+    "archive/2023/scan-0225.md": {"key": "vantage", "language": "en", "notice": "30 days (licensee, for convenience)", "notice_tokens": ["30"], "cap": "USD 2,000,000", "cap_below_100k_eur": false}
+  },
+  "slas": {
+    "archive/2024/scan-0163.md": {"key": "cirrus", "language": "en", "availability": "99.5% per month"},
+    "archive/2023/scan-0214.md": {"key": "matterhorn", "language": "de", "availability": "99.8% per month"}
+  },
+  "distractors": {
+    "archive/2024/scan-0117.md": {"key": "steering committee|minutes", "why": "minutes naming liability cap, termination notice and EUR 60,000"},
+    "archive/2023/scan-0232.md": {"key": "einkaufsrunde|protokoll", "why": "German minutes naming Haftungsbegrenzung and Kündigungsfrist"},
+    "archive/2024/scan-0171.md": {"key": "policy", "why": "policy on liability caps and termination notice of supplier contracts"},
+    "archive/2023/scan-0207.md": {"key": "angebot|2024-117", "why": "an offer from Alpentech, not a contract"},
+    "archive/2024/scan-0158.md": {"key": "personalhandbuch|probezeit", "why": "employment notice periods"}
+  },
+  "outside_glob": {
+    "drafts/kestrel-consulting-agreement.md": {"key": "kestrel", "notice": "1 month", "cap": "CHF 40,000"}
+  }
+}

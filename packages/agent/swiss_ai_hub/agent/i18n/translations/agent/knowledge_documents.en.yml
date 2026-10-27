@@ -1,0 +1,28 @@
+---
+config:
+  enabled:
+    label: Work on Whole Documents
+    help: Let the model list the documents of the knowledge collections, search their
+      text for exact terms and read them in full.
+  path_glob:
+    label: Document Path Filter
+    help: Only documents whose path in their collection matches this pattern, e.g.
+      invoices/2025/** or **/*.pdf. Applies to the document tools only, not to the
+      knowledge search. Leave empty for every document.
+  semantic_search:
+    label: Rank Documents by Meaning
+    help: Also let the model rank the documents within the path filter by meaning,
+      so it finds documents written in other words or another language than the request.
+tools:
+  rank_knowledge_documents:
+    label: Rank Knowledge Documents
+    approval: Rank the knowledge documents by how closely they match "{query}"
+  list_knowledge_documents:
+    label: List Knowledge Documents
+    approval: List the knowledge documents matching {path_glob}
+  search_knowledge_content:
+    label: Search Knowledge Documents
+    approval: Search the knowledge documents for "{query}"
+  read_knowledge_document:
+    label: Read Knowledge Document
+    approval: Read the knowledge document {document_id}

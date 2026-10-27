@@ -1,0 +1,114 @@
+---
+steps:
+  plan:
+    name: Tabelle planen
+    description: Ermittelt die ausgewählten Dokumente und entwirft die Spalten der
+      Tabelle
+  extract:
+    name: Aus einem Dokument extrahieren
+    description: Liest ein Dokument und extrahiert seine Zeilen
+  assemble:
+    name: Tabelle zusammenstellen
+    description: Fügt die Zeilen aller Dokumente zu einer Tabelle zusammen
+  extract_as_tool:
+    name: Tabelle als Werkzeug extrahieren
+    description: Führt die vom Modell gewählte Tabellenextraktion aus
+  answer_tool_call:
+    name: Tabelle an das Modell zurückgeben
+    description: Gibt die Zusammenfassung der Tabelle an die Werkzeugschleife des
+      Modells zurück
+config:
+  extraction_model_name:
+    label: Extraktionsmodell
+    help: Das Modell, das jedes Dokument liest und seine Zeilen extrahiert. Leer verwendet
+      das Hauptmodell.
+  max_documents_total:
+    label: Höchstens Dokumente pro Tabelle
+    help: 'Passen mehr Dokumente, wird nichts extrahiert: Der Benutzer sieht eine
+      Stichprobe und wird gebeten, die Anfrage einzugrenzen. Darunter extrahiert eine
+      Antwort jedes Dokument.'
+  max_document_chars:
+    label: Längstes vollständig gelesenes Dokument (Zeichen)
+    help: Längere Dokumente werden nur in ihren relevanten Teilen gelesen, und ihre
+      Zeilen werden als teilweise gelesen markiert.
+  max_parallel_extractions:
+    label: Gleichzeitige Modellaufrufe
+    help: Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht. Verringern,
+      wenn das Modell-Gateway ausgelastet ist.
+tools:
+  extract:
+    label: Tabelle extrahieren
+    approval: 'Eine Tabelle mit diesen Spalten aus Wissensdokumenten extrahieren:
+      {fields}'
+    description: Extrahiert eine Tabelle aus vielen Wissensdokumenten, eine Zeile
+      pro gefundenem Eintrag, jede Zeile mit ihrer Datei. Verwende es, wenn der Benutzer
+      Einträge aus mehreren Dokumenten gesammelt haben möchte, etwa jede Hardware-Position
+      auf den Rechnungen 2025 eines Lieferanten; nicht für eine Frage, die ein Dokument
+      oder die Wissenssuche beantwortet. Finde zuerst die Dokumente mit den Listen-
+      und Suchwerkzeugen und prüfe sie mit select_knowledge_documents; rufe dies dann
+      mit denselben Bedingungen auf. Der Benutzer sieht die Tabelle direkt und kann
+      sie ganz herunterladen; du erhältst ihre Zusammenfassung. Passen mehr Dokumente,
+      als eine Antwort ungefragt extrahiert, erhält der Benutzer eine Stichprobe und
+      entscheidet; extrahiere alle nur, wenn er zustimmt, mit confirm_sample auf true.
+  select:
+    label: Dokumente auswählen
+    approval: 'Wissensdokumente für eine Tabelle mit diesen Spalten auswählen: {fields}'
+table:
+  match: Treffer
+  match_yes: ja
+  match_unsure: unsicher, bitte prüfen
+  partly_read: (teilweise gelesen)
+  collection: Sammlung
+  path: Pfad
+  filename: Datei
+summary:
+  no_rows: '**Keine Zeilen aus:** %{files}'
+  unsure: '**Unsicher:** %{count} Zeilen erfüllen die Bedingung vielleicht nicht;
+    sie bleiben erhalten und sind in der Spalte Treffer markiert, damit Sie sie prüfen
+    können.'
+  partly_read: '**Teilweise gelesen (Zeilen können fehlen):** %{files}'
+  counts: '**Dateien:** %{files} · **Gefundene Zeilen:** %{rows} · **Fehlgeschlagene
+    Dateien:** %{failed}'
+  sample_counts: '**Stichprobe:** %{files} von %{total} passenden Dokumenten · **Gefundene
+    Zeilen:** %{rows}'
+  sample_counts_ceiling: '**Stichprobe:** %{files} von mehr als %{total} passenden
+    Dokumenten · **Gefundene Zeilen:** %{rows}'
+  criteria: '**Ausgewählt:** %{criteria}'
+  listed_more: und %{count} weitere
+  failed_files: '**Dateien, die nicht extrahiert werden konnten:**'
+  failed_more: …und %{count} weitere Dateien, die nicht extrahiert werden konnten.
+  no_documents: Kein Dokument entspricht der Auswahl, daher wurde nichts extrahiert.
+  not_started: 'Die Tabelle konnte nicht extrahiert werden: %{reason}'
+  too_broad: '**%{total} Dokumente passen.** Alle zu extrahieren dauert etwa %{minutes}
+    Minuten; oben stehen die Zeilen einer Stichprobe davon.'
+  too_broad_ceiling: '**Mehr als %{total} Dokumente passen.**'
+  options_narrow: 'Bitte grenzen Sie die Anfrage ein, zum Beispiel auf einen der Ordner
+    oder eines der Jahre oben: So viele Dokumente werden nicht Teil für Teil extrahiert.'
+  scope_changed: Die Sammlungen, aus denen die Stichprobe stammt, sind in diesem Gespräch
+    nicht mehr alle verfügbar, daher wurde nichts extrahiert. Fragen Sie erneut, um
+    aus dem jetzt Verfügbaren zu extrahieren.
+  preview: '**Hier gezeigt:** die ersten %{shown} von %{rows} Zeilen; die Datei enthält
+    alle.'
+  every_row: jede Zeile
+  interpretation: '**Spalten:** %{columns} · **Behaltene Zeilen:** %{kept}'
+  options_confirm: Antworten Sie *ja*, um alle %{total} Dokumente in einer Antwort
+    zu extrahieren, oder grenzen Sie die Anfrage ein, zum Beispiel auf einen der Ordner
+    oder eines der Jahre oben.
+  nothing_awaiting: In diesem Gespräch gibt es keine Tabellenextraktion mit Stichprobe,
+    die fortgesetzt werden kann. Bitte fragen Sie erneut nach der Tabelle.
+facets:
+  folders: '**Nach Ordner:** %{entries}'
+  years: '**Nach Jahr im Pfad:** %{entries}'
+  collections: '**Nach Sammlung:** %{entries}'
+  first: Das sind die Ordner und Jahre der ersten %{total} Dokumente nach Pfad; es
+    gibt weitere.
+progress:
+  partial: '%{path} ist lang: es werden nur die relevanten Teile gelesen.'
+  plan: Extrahiere %{fields} aus %{files} Dokumenten, etwa %{minutes} Minuten (%{criteria}).
+  sample: '%{total} Dokumente passen; extrahiere eine Stichprobe aus %{files} davon
+    (%{fields}).'
+  extracted: '%{done} von %{files} · %{path}: %{rows} Zeilen'
+  failed: '%{done} von %{files} · %{path}: fehlgeschlagen, %{reason}'
+  reading: Lese %{path}, ein langes Dokument.
+  still_reading: Lese noch %{path} (%{minutes} Min.).
+  extracted_rows: '%{done} von %{files} · %{path}: %{rows} Zeilen — %{first}'

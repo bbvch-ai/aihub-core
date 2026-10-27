@@ -115,7 +115,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_a_choice_naming_no_attached_file_is_refused_not_widened(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
             Agent(),
@@ -136,7 +136,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_a_choice_naming_only_an_image_is_refused_since_the_tool_never_offered_it(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
             Agent(),
@@ -154,7 +154,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_a_chosen_read_runs_the_regular_read_within_one_results_room(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
             Agent(),
@@ -173,7 +173,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_with_code_on_a_chosen_spreadsheet_is_pointed_to_the_sandbox_not_read(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         result = await AttachedFiles.read_tool_call_step(
             UniversalAgent(),
@@ -193,7 +193,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_with_code_on_a_mixed_choice_reads_the_document_and_keeps_the_spreadsheet(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
             UniversalAgent(),
@@ -212,7 +212,7 @@ class TestAttachedFilesAsATool:
     @pytest.mark.asyncio
     async def test_with_code_off_a_spreadsheet_is_read_like_any_file(self):
         conversation = MagicMock()
-        conversation.input_budget.return_value = 10_000
+        conversation.input_budget = 10_000
 
         read = await AttachedFiles.read_tool_call_step(
             UniversalAgent(),

@@ -2,8 +2,10 @@
 config:
   number_of_input_tokens:
     label: Max input tokens
-    help: Maximum number of tokens allowed in the LLM input. Limits context size to
-      manage costs and avoid exceeding model limits.
+    help: How much conversation history and context the model receives at most. Without
+      a limit of your own, the agent fills the model's input window (less a margin);
+      a lower limit reduces costs.
+    toggle_label: Set your own input limit
   condense_question:
     label: Condense the question
     help: Rewrite the latest message into one standalone question using the conversation
@@ -39,7 +41,16 @@ thoughts:
     from the raw message.
   input_too_large: 'The input does not fit the model context window: about %{tokens}
     tokens against a usable budget of %{budget}. Refusing instead of calling the model.'
+  images_not_accepted: The message carries %{images} images, but this assistant does
+    not pass images to its model %{model}. Refusing instead of calling the model.
+  too_many_images: The message carries %{images} images, more than the %{max_images}
+    its model %{model} accepts in one request. Refusing instead of calling the model.
 messages:
+  images_not_accepted: This assistant cannot look at images. Please describe what
+    the image shows in text, or switch to an assistant that uses a model with image
+    support.
+  too_many_images: You sent %{images} images, but I can look at no more than %{max_images}
+    at once. Please send fewer images per message.
   condensation_empty: I could not work out what to search for from that message. Please
     rephrase your question and try again.
   input_too_large: This file is too large for me to read in one go. Please upload

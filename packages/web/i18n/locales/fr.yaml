@@ -340,6 +340,37 @@ event:
     error: Erreur
     stop: Se termine par
     targetAgent: Rédacteur de mémoire
+    links: Liens
+    webReferences: Pages web référencées
+    pagesRead: Pages lues
+    notRead: Non lues
+    webFetchFailure:
+      malformed_url: Lien mal formé
+      unsupported_url: Lien non pris en charge
+      blocked_host: Adresse bloquée
+      not_found: Introuvable
+      access_denied: Accès refusé
+      http_error: Erreur du serveur
+      timeout: Délai dépassé
+      unsupported_content: Pas une page web
+      empty_content: Aucun contenu lisible
+      url_limit_reached: Au-delà de la limite de liens
+  extraction:
+    fields: Colonnes
+    instructions: Lignes à garder
+    criteria: Documents sélectionnés
+    collections: Collections
+    notices: Remarques
+    documentIds: '{count} documents choisis'
+    files: Fichiers
+    failedFiles: Fichiers en échec
+    rows: Lignes affichées / trouvées
+    truncated: Écourté
+    confirmed: Extrait tous les documents confirmés par l'utilisateur
+    awaitingConfirmation: Échantillon en attente de l'accord de l'utilisateur
+    previewRows: '{shown} lignes affichées sur {total}'
+    download: Télécharger le tableau entier (CSV)
+    downloadFailed: Le tableau n'a pas pu être téléchargé
   toolLoop:
     loop: Ensemble d'outils
     mode: Mode
@@ -973,6 +1004,17 @@ form:
       dans certains cas. Pour éviter tout comportement inattendu, veuillez la désactiver
       temporairement jusqu'à la publication d'un correctif.
 lib:
+  modelBound:
+    providerDefault: valeur par défaut du fournisseur
+    overrideRequired: Saisissez une valeur, ou décochez le remplacement pour utiliser
+      la valeur par défaut.
+    defaultPlaceholder: 'Valeur par défaut du modèle : {value}'
+    maximumHint: Au maximum {maximum} pour {model}.
+    maximumHintWithFill: 'Au maximum {maximum} pour {model} : {percent} des {modelMaximum}
+      tokens du modèle, comme marge pour les écarts de comptage des tokens.'
+    aboveMaximum: Au maximum {maximum} sont autorisés pour {model}.
+  modelGated:
+    unavailable: '{model} ne prend pas cela en charge.'
   cron:
     errors:
       required: Chaque position est requise — une position vide ne constitue pas une
@@ -1004,6 +1046,8 @@ lib:
       ne peut donc être proposée.
     empty: L'agent sélectionné n'est configuré pour interroger aucune collection.
     unavailable: Enregistrée, mais non interrogée par l'agent sélectionné
+  knowledgeDatabases:
+    unavailable: '{name} (supprimée ou non visible pour vous)'
   vectorStore:
     label: Stockage vectoriel
     help: Sélectionner la base de connaissances et les espaces de noms à rechercher
@@ -1104,7 +1148,8 @@ tenant:
   mismatch_warning: Conflit de locataire
   mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
     session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
-  mismatch_switch_action: Changer de locataire
+  mismatch_switch_action: Aller à {tenant}
+  mismatch_use_this_tenant: Discuter dans {tenant}
   administration_title: Administration des tenants
   administration_description: Gérer les tenants sur l'ensemble de la plateforme
 support:

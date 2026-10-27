@@ -12,9 +12,10 @@
 // - FerretDB: includes its own backing PostgreSQL instance
 // The raw container topology surfaces in the deployment view (Phase E).
 //
-// Agent Runtime is one logical container at L2; prod deploys 7 per-class instances
+// Agent Runtime is one logical container at L2; prod deploys one instance per class
 // (llm-wrapping-agent, rag-agent, expert-rag-agent, expert-asking-agent,
-// retrieval-agent, few-shot-agent, namespace-selection-agent) — see deployment view.
+// retrieval-agent, few-shot-agent, namespace-selection-agent, universal-agent,
+// knowledge-extraction-agent, …) — see deployment view.
 //
 // Process Engine lives as a component inside the API container, not a separate box.
 
@@ -286,7 +287,7 @@ model {
       technology "Playwright (Chromium)"
       icon tech:playwright
       style { color gray }
-      description "Headless browser daemon for web automation tools."
+      description "Headless browser server. OpenWebUI's web loader and the agents' web fetch load pages through it. Lives in the dedicated browser network (callers only) plus egress for the internet — no path to backend/data."
     }
 
     attu = container "Attu" {
@@ -440,8 +441,11 @@ model {
 
     // OpenWebUI uses utility tools
     openwebui -> open_terminal "Code execution (plain LLM models via TERMINAL_SERVER_CONNECTIONS; bearer auth)"
-    openwebui -> playwright    "Web automation"
+    openwebui -> playwright    "Web loader (# page attachments)"
     openwebui -> searxng       "Web search"
+
+    // Agents read the web pages a message links through the shared browser (browser network zone)
+    agent_runtime -> playwright "Reads linked web pages (web fetch, ws://playwright:3000)"
 
     // Admin UI embeds OpenWebUI as the primary chat surface (iframe + bidirectional
     // postMessage), not merely a hyperlink.

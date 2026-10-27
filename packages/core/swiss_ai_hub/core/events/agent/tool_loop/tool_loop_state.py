@@ -32,6 +32,9 @@ class ToolLoopState(BaseModel):
     tool_calls_made: Annotated[int, Field(description="How many tool calls ran so far.", ge=0)] = 0
     max_iterations: Annotated[int | None, Field(description="The call's own iteration limit, if any.")] = None
     cite_sources: Annotated[bool, Field(description="Whether tools tell the model to cite what they return.")] = True
+    hands_back_results: Annotated[
+        bool, Field(description="Whether a gathering loop collects its tool results in `gathered`.")
+    ] = True
     gathered: Annotated[
         list[ChatMessage], Field(description="The tool results as context, for the blueprint's own answer.")
     ] = []

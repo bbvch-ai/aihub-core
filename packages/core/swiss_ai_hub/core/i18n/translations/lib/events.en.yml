@@ -9,6 +9,9 @@ attached_file_event:
 knowledge_searched_event:
   name: Knowledge Searched
   description: The agent searched the knowledge collections the user referenced.
+web_pages_fetched_event:
+  name: Web Pages Fetched
+  description: The agent read the web pages the user linked.
 tool_result_event:
   name: Tool Result
   description: What a tool the agent chose returned.
@@ -288,6 +291,9 @@ memory_recalled_event:
 search_knowledge_event:
   name: Search Knowledge
   description: Searching the knowledge collections
+fetch_web_pages_event:
+  name: Fetch Web Pages
+  description: Reading the linked web pages
 read_attached_files_event:
   name: Read Attached Files
   description: Reading the attached files
@@ -318,3 +324,9 @@ memory_storage_requested_event:
 not_a_meta_question_event:
   name: Not a Meta Question
   description: Answering the request
+extract_records_event:
+  name: Extract Records
+  description: Extracting a table from the selected documents
+records_extracted_event:
+  name: Records Extracted
+  description: The table extracted from the selected documents

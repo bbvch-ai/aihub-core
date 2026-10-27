@@ -1,7 +1,7 @@
 ---
 title: Universal Agent
 description: Ein Assistent, der selbst entscheidet, ob er Ihr Wissen durchsucht, angehängte Dateien liest oder sich an Gespeichertes erinnert, und so lange weitermacht, bis er antworten kann.
-source_sha: d1395f6d1f0b8f6cce6a038cab5f974560c4c4cb9fa36bf987920c321e6cafaf
+source_sha: d34251391eee08ea4ede4f40a42847f3fa38e6f315a439f3f07c9e09fbab5709
 ---
 
 # Universal Agent
@@ -48,16 +48,19 @@ drei Suchen braucht, bekommt drei.
 
 ### Die Werkzeuge
 
-| Werkzeug                     | Was es tut                                                                                                                                                                                                                                                                                                                         | Angeboten, wenn                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Unser Wissen durchsuchen** | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf.                                      | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann. |
-| **Angehängte Dateien lesen** | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind.                                                                          | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).             |
-| **Gedächtnis abrufen**       | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                                                                                                          | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                           |
-| **Code-Sandbox**             | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar. | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                          |
-| **Meine Dateien**            | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend.                                                                                                                                           | Der Benutzer hat im Chat **My Files** eingeschaltet.                                      |
+| Werkzeug                      | Was es tut                                                                                                                                                                                                                                                                                                                                                                                                       | Angeboten, wenn                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Unser Wissen durchsuchen**  | Durchsucht die Wissenssammlungen, die das Profil erlaubt, sortiert die Ergebnisse neu und liefert die besten Abschnitte mit zitierbaren IDs. Die eigenen `#`-Verweise des Benutzers werden ebenfalls angeboten. Durchsucht werden immer nur Sammlungen, die der fragende Benutzer lesen darf.                                                                                                                    | Das Profil listet Sammlungen auf oder erlaubt jede Sammlung, die der Benutzer lesen kann.    |
+| **Angehängte Dateien lesen**  | Liest die an die Unterhaltung angehängten Dateien. Das Modell sieht, welche Dateien angehängt sind, und liest die, die es braucht; eine Datei, die zu lang ist, um sie ganz zu lesen, liefert die Abschnitte, die für das Gesuchte am relevantesten sind.                                                                                                                                                        | Der Benutzer hat ein Dokument angehängt (Bilder erreichen das Modell direkt).                |
+| **Gedächtnis abrufen**        | Durchsucht, was über den Benutzer und die Organisation gespeichert ist: Vorlieben, Fakten und Entscheidungen aus früheren Unterhaltungen.                                                                                                                                                                                                                                                                        | Benutzer- oder Organisationsgedächtnis ist im Profil aktiviert.                              |
+| **Code-Sandbox**              | Führt Befehle aus und liest und schreibt Dateien in der eigenen Code-Sandbox des Benutzers, in einem Ordner pro Unterhaltung, der die angehängten Dateien der Unterhaltung enthält. Eine Datei, die der Agent dem Benutzer zeigt, etwa ein Diagramm oder ein Spreadsheet, wird an die Antwort angehängt und bleibt herunterladbar.                                                                               | Der Benutzer hat im Chat den **Code Interpreter** eingeschaltet.                             |
+| **Meine Dateien**             | Listet und liest die eigenen Dateien des Benutzers in [My Files](../../10_chat_ui/14_my_files/): seine Uploads, Chat-Anhänge und Dateien, die Agents für ihn erstellt haben. Nur lesend.                                                                                                                                                                                                                         | Der Benutzer hat im Chat **My Files** eingeschaltet.                                         |
+| **Verlinkte Webseiten lesen** | Liest die Webseiten, die der Benutzer in der Nachricht verlinkt oder mit `#` angehängt hat, und nur diese: Ein Aufruf, der eine andere Adresse nennt, wird abgelehnt, sodass eine in einer Seite oder Datei versteckte Anweisung die Unterhaltung nicht anderswohin lenken kann. Siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/).                                                             | **Read Linked Web Pages** ist im Profil eingeschaltet und die Nachricht verlinkt eine Seite. |
+| **Wissensdokumente**          | Listet die Dokumente der Wissenssammlungen nach Pfad auf, findet jedes Dokument, dessen Text einen exakten Begriff oder ein Muster enthält, und liest ein ganzes Dokument Teil für Teil. Anders als die Wissenssuche findet es jeden Treffer, nicht die ähnlichsten Abschnitte. Es verlässt nie die Sammlungen des Profils oder dessen Filter für Dokumentpfade.                                                 | **Mit ganzen Dokumenten arbeiten** ist im Profil eingeschaltet.                              |
+| **Tabelle extrahieren**       | Sammelt Datensätze aus vielen Dokumenten in einer Tabelle, jede Zeile mit ihrer Datei, wie es der [Wissensextraktions-Agent](../14_knowledge_extraction_agent/) tut. Das Modell prüft zuerst, welche Dokumente eine Auswahl umfasst; der Benutzer sieht die Tabelle direkt, mit ihrer Zusammenfassung, und das Modell beschreibt sie. Fragt standardmässig vor jeder Extraktion nach der Freigabe des Benutzers. | **Mit ganzen Dokumenten arbeiten** ist im Profil eingeschaltet.                              |
 
-Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche, Abruf von Webseiten, Bildgenerierung und der
-eigene Dateibereich des Benutzers fügen diesem Agenten jeweils ihr Werkzeug hinzu.
+Weitere Werkzeuge folgen, sobald die Plattform sie hinzufügt: Websuche und Bildgenerierung fügen diesem Agenten jeweils
+ihr Werkzeug hinzu.
 
 Jeder Werkzeugaufruf ist im Chat sichtbar: Die Wissenssuche und die Dateien erscheinen als Quellen, jeder Aufruf als
 aufklappbarer Block mit dem, was das Werkzeug zurückgegeben hat, und der Agenten-Trace zeichnet jeden Schritt auf.
@@ -67,9 +70,10 @@ aufklappbarer Block mit dem, was das Werkzeug zurückgegeben hat, und der Agente
 Lange Unterhaltungen mit vielen Werkzeugergebnissen können über das hinauswachsen, was das Modell lesen kann. Vor jeder
 Entscheidung prüft der Agent die Grösse und verdichtet bei Bedarf zuerst das älteste Material: Frühere
 Werkzeugergebnisse werden auf das für die Frage Wesentliche zusammengefasst, dann wird die Unterhaltung vor der Frage zu
-einer Zusammenfassung. Der Chat zeigt dabei einen kurzen Status. Die aktuelle Frage wird nie verdichtet, und die
-neuesten Ergebnisse werden nicht zusammengefasst; nur wenn sie allein das Budget übersteigen, werden sie als letztes
-Mittel gekürzt.
+einer Zusammenfassung. Der Chat zeigt dabei einen kurzen Status. Die aktuelle Frage und die neuesten Ergebnisse werden
+nie zusammengefasst; nur wenn die neuesten Ergebnisse allein zu gross sind, werden sie passend gekürzt und als gekürzt
+markiert. Wenn selbst die Frage und die Beschreibungen der Werkzeuge nicht passen, antwortet der Agent ohne seine
+Werkzeuge.
 
 ### Grenzen und Freigaben
 
@@ -136,6 +140,36 @@ ordnet.
 | **Werkzeuge deaktivieren**   | Aus      | Einschalten, um Werkzeuge zurückzuhalten; die Auswahl der deaktivierten Werkzeuge erscheint nur dann.                       |
 | **Deaktivierte Werkzeuge**   | —        | Werkzeuge, die dieses Profil nie anbietet, solange «Werkzeuge deaktivieren» eingeschaltet ist.                              |
 | **Freigaben**                | —        | Werkzeuge, deren Aufrufe der Benutzer zuerst freigeben muss: jeder Aufruf, einmal pro Antwort oder einmal pro Unterhaltung. |
+
+### Wissensdokumente
+
+| Feld                               | Standard | Beschreibung                                                                                                                                        |
+| ---------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mit ganzen Dokumenten arbeiten** | Aus      | Die Dokumentwerkzeuge und die Tabellenextraktion anbieten. Profile, die gespeichert wurden, bevor es diese Werkzeuge gab, lassen sie ausgeschaltet. |
+| **Filter für Dokumentpfade**       | *(leer)* | Nur Dokumente, deren Pfad diesem Muster entspricht, z. B. `invoices/**`. Er begrenzt die Dokumentwerkzeuge, nicht die Suche.                        |
+
+### Tabellenextraktion
+
+| Feld                                        | Standard    | Beschreibung                                                                                      |
+| ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| **Extraktionsmodell**                       | Hauptmodell | Das Modell, das jedes Dokument liest und seine Zeilen extrahiert.                                 |
+| **Höchstens Dokumente pro Tabelle**         | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                                  |
+| **Längstes vollständig gelesenes Dokument** | `500000`    | Längere Dokumente (in Zeichen) werden in ihren relevanten Teilen gelesen und als solche markiert. |
+| **Gleichzeitige Modellaufrufe**             | `4`         | Extraktionsaufrufe, die eine Agenteninstanz gleichzeitig macht.                                   |
+
+Die Extraktion verhält sich wie beim [Wissensextraktions-Agenten](../14_knowledge_extraction_agent/): Eine Antwort
+extrahiert jedes ausgewählte Dokument, der Chat zeigt die ersten 100 Zeilen, und die ganze Tabelle ist eine CSV-Datei,
+die an die Antwort angehängt ist (über die API ein Download-Link). Eine Auswahl von mehr als 100 Dokumenten erhält
+zuerst eine Stichprobe, und das Modell fragt den Benutzer, bevor es alle extrahiert; eine Antwort mit Stichprobe
+extrahiert nichts weiter, sodass der Benutzer immer erst bestätigt, nachdem er sie gesehen hat.
+
+Standardmässig braucht eine Extraktion die Freigabe des Benutzers im Chat. Ein Client, der eine Freigabe nicht
+beantworten kann, etwa die OpenAI-kompatible API oder ein Bot, bleibt dort stehen, deshalb setzen die mitgelieferten
+Vorlagen, die Extraktion anbieten (**Wissensassistent** und **Datenanalyst**), die Freigabe für **Tabelle extrahieren**
+auf *nie*; die oben beschriebene Grössenprüfung fragt den Benutzer trotzdem vor einer grossen Extraktion. Die Vorlage
+**Arbeitsplatz-Assistent** lässt die Dokumentwerkzeuge ausgeschaltet: Sie ist der allgemeine Assistent für den Alltag,
+ihre Benutzer brauchen selten eine Tabelle über viele Dokumente, und weniger Werkzeuge halten ihre Werkzeugwahl
+zuverlässig.
 
 Die Einstellungen für Gedächtnis und angehängte Dateien sind dieselben wie bei den anderen Chat-Agenten; siehe
 [Gedächtnis](../../15_memory/).

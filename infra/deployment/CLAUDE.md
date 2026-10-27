@@ -83,6 +83,17 @@ so LiteLLM fails to start loudly instead of silently falling back.
 inside `model_info`, but the result is a *string* and nothing coerces it — which would break `context_window` arithmetic
 and make `ModelInfoDTO` silently drop the field. Only `api_base`/`api_key` are safe to drive from env.
 
+`default_temperature`, `default_top_p` and `max_images` are AI-Hub keys curated by hand per chat model, under the same
+literal-number rule.
+
+- **`default_temperature` and `default_top_p`** are what an agent samples at when its profile leaves the field unset
+  (`LLMConfig.resolved_temperature` / `resolved_top_p`). Take them from the model's `generation_config.json` on Hugging
+  Face, or from its model card when that file sets none. A model without `default_temperature` is sampled at 0.0;
+  without `default_top_p`, the provider decides.
+- **`max_images`** is the most images one request may carry, so `ImageAdmission` refuses or trims before the provider
+  rejects the call. Set it only where the limit is known: for the local Qwen3-VL it must match vLLM's
+  `--limit-mm-per-prompt` in the compose template.
+
 `aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
 `pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
 `custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
@@ -282,6 +293,7 @@ routes through Traefik.
 | `storage`       | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                               |
 | `egress`        | Outbound internet only            | No       | No  | playwright, searxng, rclone, structured_pipeline, mail agents    |
 | `code-sandbox`  | Code-execution sandbox + callers  | Yes\*    | Yes | open-terminal (+ open-webui as caller; agents as a follow-up)    |
+| `browser`       | Playwright browser + callers      | Yes\*    | Yes | playwright (+ open-webui and the web-fetching agents)            |
 | `pii-detection` | PII detection + callers           | Yes\*    | Yes | presidio-analyzer (+ litellm, universal_agent, anonymiser_agent) |
 
 \*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
@@ -295,6 +307,13 @@ proxy+backend+data+storage+code-sandbox).
 service. Callers (open-webui now, agents later) opt in by adding `code-sandbox` to their own network list; the sandbox
 itself never joins another zone, so it can reach only its callers. `internal: true` in non-dev also denies it outbound
 internet.
+
+**`browser` rationale**: the same pattern for `playwright`, which loads pages users link. The agents' URL guard refuses
+internal hosts, but cannot stop a public name re-resolving to an internal address between the check and the browser's
+connection (DNS rebinding), so the browser must not share `backend`. It sits on `browser` (internal in non-dev) for its
+callers and on `egress` for the internet. Callers (open-webui's web loader; the LLM wrapping, Web Page Assistant, RAG,
+Expert RAG and Universal agents) add `browser` to their network list; a new web-fetching agent must too, or it cannot
+reach `ws://playwright:3000`. In dev, agents and open-webui reach it through `localhost:3036` instead.
 
 **`pii-detection` rationale**: `presidio-analyzer` receives the personal data the platform anonymises, so it lives alone
 in `pii-detection` and only its callers (litellm, agents) join that network. With its models baked in it needs no

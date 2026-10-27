@@ -2050,7 +2050,7 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend  # Internal service communication
+      - browser  # Reached only by its callers, never by the rest of backend
       - egress   # Outbound internet access for web browsing
 
   {{ service_license('searxng') }}
@@ -2593,6 +2593,7 @@ services:
       - data
       - storage
       - code-sandbox  # Caller of the open-terminal sandbox zone
+      - browser  # Caller of the Playwright browser zone (web loader)
     {%- endif %}
 
   {{ service_license('openwebui-init') }}
@@ -3443,6 +3444,9 @@ services:
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
       MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
@@ -3507,6 +3511,105 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
+  {%- endif %}
+  {%- if image_tags.web_fetch_agent[stage] %}
+  {{ service_license('web_fetch_agent') }}
+  web_fetch_agent:
+    container_name: web-fetch-agent
+    restart: always
+    {%- if image_tags.web_fetch_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/web_fetch_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.web_fetch_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
+      MINERU_PAGE_BATCH_SIZE: ${MINERU_PAGE_BATCH_SIZE}
+      MINERU_MAX_CONCURRENT_BATCH_REQUESTS: ${MINERU_MAX_CONCURRENT_BATCH_REQUESTS}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
+      MEM0_TELEMETRY: ${MEM0_TELEMETRY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: web-fetch-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('web_fetch_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.universal_agent[stage] %}
@@ -3563,6 +3666,9 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
 
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
       MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
@@ -3607,7 +3713,81 @@ services:
       - data
       - storage
       - code-sandbox
+      - browser  # Caller of the Playwright browser zone (web fetch)
       - pii-detection  # Caller of the Presidio analyzer
+  {%- endif %}
+
+  {%- if image_tags.knowledge_extraction_agent[stage] %}
+  {{ service_license('knowledge_extraction_agent') }}
+  knowledge_extraction_agent:
+    container_name: knowledge-extraction-agent
+    restart: always
+    {%- if image_tags.knowledge_extraction_agent[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/agent/app/knowledge_extraction_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.knowledge_extraction_agent[stage] }}
+    {%- endif %}
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB (agent configs and the knowledge documents it reads)
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus (the runner's readiness check)
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # S3 (extracted rows and tables in agent-files, presigned CSV download links)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: knowledge-extraction-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('knowledge_extraction_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {%- if image_tags.rag_agent[stage] %}
@@ -3656,6 +3836,9 @@ services:
       # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
       MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
@@ -3703,6 +3886,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.expert_rag_agent[stage] %}
@@ -3751,6 +3935,9 @@ services:
       # them; when false, fall back to public presigned URLs (pre-inlining behaviour)
       RAG_IMAGE_INLINE_ENABLED: ${RAG_IMAGE_INLINE_ENABLED}
 
+      # Playwright (web fetch reads linked pages through it; agents have no internet access of their own)
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+
       # MinerU (document parsing)
       MINERU_API_BASE_URL: {{ MINERU_API_BASE_URL }}
       MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
@@ -3798,6 +3985,7 @@ services:
       - backend
       - data
       - storage
+      - browser  # Caller of the Playwright browser zone (web fetch)
   {%- endif %}
 
   {%- if image_tags.expert_asking_agent[stage] %}
@@ -4856,6 +5044,14 @@ services:
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
+      # S3 credentials — only to sign download links for extracted tables in answers;
+      # the link points at the public endpoint, so the bot needs no storage network.
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
       # Keycloak OIDC config — required because bot imports
       # KeycloakAuthHandler from core.auth, which instantiates
       # KeycloakSettings() at module import time. KEYCLOAK_URL is the
@@ -4911,6 +5107,7 @@ services:
 # - egress:  Outbound internet only, ICC disabled (containers isolated)
 # - code-sandbox:  The open-terminal sandbox plus only its callers
 # - pii-detection: The Presidio analyzer plus only its callers (litellm, agents)
+# - browser:       The Playwright browser plus only its callers (open-webui, the web-fetching agents)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -4946,6 +5143,15 @@ networks:
   # Single-tenant zone: the open-terminal sandbox plus only its callers (open-webui)
   code-sandbox:
     name: code-sandbox
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  # Single-purpose zone: the Playwright browser plus only its callers (open-webui, the web-fetching agents).
+  # Keeps a page the browser loads from reaching the rest of backend, which a URL check alone cannot
+  # guarantee (DNS rebinding). Outbound internet comes from egress.
+  browser:
+    name: browser
     driver: bridge
     {%- if stage != 'dev' %}
     internal: true

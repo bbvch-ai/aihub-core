@@ -1,22 +1,16 @@
 import abc
-from collections.abc import AsyncIterator, Callable
-from contextlib import asynccontextmanager
+from collections.abc import Callable
 from functools import lru_cache
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 
 from llama_index.core.utils import get_tokenizer
 from pydantic import Field
 
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.form.elements.model_select import ModelSelect
 from swiss_ai_hub.core.form.elements.select import Select
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_cost_tracker import LLMCostTracker
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
-from swiss_ai_hub.core.infrastructure.litellm.lite_llm_service import LiteLLMService
-
-if TYPE_CHECKING:
-    from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 
 @lru_cache(maxsize=1)
@@ -43,27 +37,6 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
         self, extra_headers: dict[str, str] | None = None, api_key: str | None = None
     ) -> tuple[OpenAILike, LLMCostTracker]:
         pass
-
-    @asynccontextmanager
-    async def cost_reporting_llm(
-        self,
-        displayer: "EventDisplayer",
-        extra_headers: dict[str, str] | None = None,
-        user: UserIdentity | None = None,
-    ) -> AsyncIterator[OpenAILike]:
-        """
-        Async context manager that yields an LLM configured with merged parameters and a system prompt.
-        After the block, it reports costs to `displayer`.
-        """
-        # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
-        # and activates USER_MAX_BUDGET. Tenant is NOT sent: tenant attribution lives on LLMCostEvent. The
-        # gateway keeps request tags since LiteLLM v1.106.2, so tags and teams are both candidates for a
-        # gateway-side carrier; see ADR 2026_08_06_per_user_litellm_key_as_cost_attribution_carrier.
-        api_key = await LiteLLMService.api_key_for_user(user) if user else None
-
-        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
-        yield llm
-        await displayer.display_llm_costs(self.model_name, cost_tracker, user)
 
     def get_model_info(self) -> dict[str, Any]:
         model_info = _fetch_all_model_info_cached()

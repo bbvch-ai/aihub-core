@@ -221,12 +221,17 @@ class NamespaceSelectionAgent(Agent):
                 logger.warning("Bucket '%s' not found - skipping", bucket_name)
                 continue
 
+            if bucket.deleting:
+                logger.warning("Bucket '%s' is being deleted - skipping", bucket_name)
+                continue
+
             namespaces = await asyncio.to_thread(NamespaceEntity.get_namespaces_by_bucket, str(bucket.id))
-            if not namespaces:
+            namespaces_names = [ns.namespace_name for ns in namespaces if not ns.deleting]
+            if not namespaces_names:
                 logger.warning("No namespaces found in bucket '%s' - skipping", bucket_name)
                 continue
 
-            available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
+            available_namespaces[bucket_name] = namespaces_names
 
         if agent_config.restrict_to_user_access and access is not None and available_namespaces:
             available_namespaces = UserScopedRetrievers.readable_namespaces(access, available_namespaces)

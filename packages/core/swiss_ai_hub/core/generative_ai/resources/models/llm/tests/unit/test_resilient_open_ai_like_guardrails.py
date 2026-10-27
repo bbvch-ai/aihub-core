@@ -33,6 +33,7 @@ def _llm(sent: list[dict]) -> ResilientOpenAILike:
         api_base="http://litellm/v1",
         api_key="test",
         is_chat_model=True,
+        connect_timeout=5.0,
         http_client=httpx.Client(transport=transport),
         async_http_client=httpx.AsyncClient(transport=transport),
     )

@@ -58,7 +58,7 @@ das Modell erreichten. Gedacht für Profile mit sensiblen Daten, etwa im HR, auc
 
 ### Text von Hand anonymisieren
 
-Benutzer können einen Text auch selbst mit dem Agenten [Anonymisierer](../../5_agents/14_anonymiser/) anonymisieren und
+Benutzer können einen Text auch selbst mit dem Agenten [Anonymisierer](../../5_agents/16_anonymiser/) anonymisieren und
 ihn dann in jedem Werkzeug verwenden, innerhalb oder ausserhalb des Hubs. Die Antwort fügen sie in denselben Chat ein
 und erhalten sie mit den Originalwerten zurück. Der Anonymisierer verwendet denselben Analyzer und dieselbe Liste
 dessen, was als Personendaten gilt, und ruft kein Modell auf.

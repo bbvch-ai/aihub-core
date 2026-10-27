@@ -49,6 +49,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── rclone/                        # RcloneClient (RC API; stateless, built per run)
 │   │   ├── structured/                    # Structured sources: markdown dlt destination, per-database dlt state store
 │   │   ├── jira/                          # JiraClient (dlt RESTClient: Cloud + Data Center search, comments, preflight calls)
+│   │   ├── confluence/                    # ConfluenceClient (dlt RESTClient: REST v1 CQL search), next-link paginator, error
 │   │   ├── local_file_system/             # LocalFileSystemResource
 │   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
 │   ├── sensors/
@@ -72,10 +73,12 @@ packages/pipeline/                        # SDK framework
 │   ├── source_pipelines/
 │   │   ├── rclone_sync_config.py          # RcloneSyncConfig: the announced per-database source form (six backends)
 │   │   ├── structured_sync_config.py      # StructuredSyncConfig: source kind + one option group per kind
-│   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file, HTML → markdown
+│   │   ├── jira/                          # The Jira kind: options form, preflight, issue → markdown file
+│   │   ├── confluence/                    # The Confluence kind: options, preflight, page → markdown file, storage → markdown
 │   │   └── abstract_structured_source_adapter.py  # Contract per structured source kind: dlt source, record → file
 │   ├── services/
 │   │   ├── knowledge_teardown_service.py  # Destroys a database/namespace across every store
+│   │   ├── default_partition_repair_service.py # Provisions the collection, moves nodes stranded in `_default`
 │   │   └── orphaned_node_repair_service.py # Deletes vector nodes whose document has no record and no file
 │   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
 │   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
@@ -96,6 +99,7 @@ packages/pipeline/                        # SDK framework
 │   │   ├── structured_source_state.py     # dlt state + scope fingerprint kept per database between syncs
 │   │   ├── structured_sync_outcome.py     # Sync → listing handover: written keys + fingerprint, never secrets
 │   │   ├── structured_listing.py          # Listing → reconcile handover: listed keys + written keys
+│   │   ├── default_partition_repair_report.py # What a `_default` repair moved and deleted
 │   │   └── figure_metadata.py             # Image/figure metadata
 │   ├── util/                              # Utilities
 │   │   ├── document_ingestion_definitions_util.py         # document_ingestion_pipeline_definitions() — Stage 2, route-per-run (CRITICAL)
@@ -155,7 +159,10 @@ Concrete Stage 1 flows:
 **Stage 2 (Data Lake → Vector Store)**: Unified pipeline, source-agnostic. All data lake files flow through the same
 processing chain regardless of origin:
 
-- `observable_data_lake_factory` → monitors S3 for new/changed files
+- `observable_data_lake_factory` → monitors S3 for new/changed files. Before it registers any document partition it runs
+  `DefaultPartitionRepairService`: the database's Milvus collection is created with the embedding model's width if
+  missing, a half-built one gets its missing partitions, and nodes stranded in `_default` move to their namespace
+  partition (#1923). A document partition is what starts an ingestion run, so none meets a half-built collection.
 - `documents_factory` → parse (MinerU) → apply a `.md` file's frontmatter → `RefDocDocument` → MongoDB, flagged
   `is_ingested=False` (see [Markdown Frontmatter](#markdown-frontmatter))
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus, which flips `is_ingested=True`
@@ -418,8 +425,8 @@ defs = structured_pipeline_definitions(
 ```
 
 A pipeline whose config offers no source kind is built but not announced, so the create-database dialog never offers a
-source nothing can be configured for. The shipped pipeline offers one kind, Jira (see
-[The Jira adapter](#the-jira-adapter)).
+source nothing can be configured for. The shipped pipeline offers two kinds, Jira and Confluence (see
+[The Jira adapter](#the-jira-adapter) and [The Confluence adapter](#the-confluence-adapter)).
 
 **Adding a source kind** takes:
 
@@ -431,8 +438,9 @@ source nothing can be configured for. The shipped pipeline offers one kind, Jira
 
 The adapter declares:
 
-- `dlt_source(options)`, incremental on the record's last update. Credentials arrive as arguments, never through dlt's
-  configuration providers, which are shared by the whole process.
+- `dlt_source(options)`, incremental: on the record's last update (Jira), or on a fingerprint per record kept in the
+  resource state when a record can change place without a new update (Confluence). Credentials arrive as arguments,
+  never through dlt's configuration providers, which are shared by the whole process.
 - `to_record_file(record)` → `StructuredRecordFile`: the namespace (first folder), the path segments, frontmatter using
   #1953's reserved keys (`title`, `url`, `created`; the record's `updated` is kept as ordinary metadata) and the body.
   It must be a pure function of the record.
@@ -440,8 +448,8 @@ The adapter declares:
   never through the incremental state. It raises rather than returning a partial set.
 - `layout_version`: raise it when `to_record_file` changes where or how records are written.
 
-`playground/structured_demo/demo_records_adapter.py` is the smallest working example, `source_pipelines/jira/` a
-complete one against a real API.
+`playground/structured_demo/demo_records_adapter.py` is the smallest working example, `source_pipelines/jira/` and
+`source_pipelines/confluence/` complete ones against real APIs.
 
 **One run per database per day.** `per_bucket_observe_schedule(owns=owned_by_source(source))` launches one run per
 database, tagged `aihub/bucket`. The single asset `[{source}_source_to_datalake, records]` chains, inside that run:
@@ -496,10 +504,10 @@ everything, while a rotated credential keeps the cursor.
 9. **Values passed between steps carry no config or secret** (`StructuredSyncOutcome`, `StructuredListing`), because
    step outputs are pickled into the `dagster` bucket.
 
-**Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira) in one
-`dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to check (see its
-README). `make structured-demo` runs the ingestion pipeline and `playground.structured_demo` (token `structured_demo`)
-instead, which needs no external system:
+**Try it locally.** `make structured-pipeline` runs the ingestion pipeline and `app.structured_pipeline` (Jira,
+Confluence) in one `dagster dev`; `playground/jira_seed` fills a Jira Cloud or Data Center test site with the cases to
+check (see its README). `make structured-demo` runs the ingestion pipeline and `playground.structured_demo` (token
+`structured_demo`) instead, which needs no external system:
 
 1. With the dev stack, API and web up, create a database with the "Demo records (JSON file)" source.
 2. Launch `structured_demo_source_sync` with the tag `aihub/bucket=<database>`.
@@ -509,10 +517,10 @@ The demo registers a `structured_demo` row in your dev Mongo's `source_pipelines
 
 ### The Jira adapter
 
-`source_pipelines/jira/` holds the kind: options form, preflight, issue and comment models, HTML → markdown, and JQL
-timestamps. `resources/jira/` holds the HTTP client and its error. One adapter serves Jira Cloud and Jira Data Center
-(the `deployment` option); the differences live in `JiraClient`. Every rule below guards a failure that would otherwise
-be silent:
+`source_pipelines/jira/` holds the kind: options form, preflight, issue and comment models, and JQL timestamps.
+`resources/jira/` holds the HTTP client and its error. One adapter serves Jira Cloud and Jira Data Center (the
+`deployment` option); the differences live in `JiraClient`. Every rule below guards a failure that would otherwise be
+silent:
 
 - **Credentials go through `auth=` only** (`HttpBasicAuth` on Cloud, `BearerTokenAuth` on Data Center), never through
   headers, which dlt logs at DEBUG.
@@ -521,9 +529,10 @@ be silent:
   requests runs the hook before following one, so no answer can send a request on to a host nobody checked.
 - **Only public hosts.** A knowledge administrator sets the URL, and the pipeline sits on the networks of the platform's
   own services. The URL type refuses `?`, `#` and credentials (a `?` would turn the appended API path into a query), and
-  `SourceHostGuard` (`resources/structured/`) refuses, first thing in the preflight, a host without a dot (Docker
-  service names, `localhost`) and one resolving to any non-global address. `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS`
-  exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the check and the request is not covered.
+  `SourceHostGuard` (core `network/`, shared with agents that read Jira) refuses, first thing in the preflight, a host
+  without a dot (Docker service names, `localhost`) and one resolving to any non-global address.
+  `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exempts named hosts (`localhost` in `.env.dev`). DNS rebinding between the
+  check and the request is not covered.
 - **Preflight before the sync and before the listing** (`JiraPreflight`: `/myself`, each project, the JQL clause). Jira
   answers a project the account cannot see, and on Cloud an invalid JQL clause, with zero issues, which the listing
   would take for deleted issues. Cloud's clause is checked with `POST /rest/api/3/jql/parse?validation=strict`; Data
@@ -533,7 +542,10 @@ be silent:
   when many fields are requested, and a partial listing deletes files. Cloud pages `/rest/api/2/search/jql` by
   `nextPageToken`; Data Center pages `/rest/api/2/search` by keyset (`id > N ORDER BY id ASC`), which also avoids the
   10,000-result cap of Data Center 11. A page that repeats an issue fails the search (Cloud's tokens have been reported
-  to loop), and so does a Data Center search returning fewer issues than its first page counted.
+  to loop), and so does a Data Center search returning fewer issues than its first page counted. Known limit: Data
+  Center's `ORDER BY id` sorts by key (checked on 11.3), so the keyset holds only while key order matches id order. An
+  issue moved in from another project keeps its old, lower id under a new, higher number, and that project's sync then
+  fails on the count check. Core's agent client pages Data Center by offset instead (see `packages/core/CLAUDE.md`).
 - **One query per project**: `project = "X" AND (clause)`, with the user's clause in parentheses. An issue of another
   project in the answer is refused (`_own_key`), so no clause can pull in a project the database was not given.
 - **File and listing keys come from Jira's returned key** through `JiraIssue.object_key_for`. The namespace keeps case,
@@ -546,13 +558,59 @@ be silent:
   Service Management internal comments are dropped. Data Center marks an internal comment only with the
   `sd.public.comment` property, which search never returns, so service desk projects always read comments from the
   endpoint with `expand=renderedBody,properties`.
-- **Text is Jira's rendered HTML**, the one format both editions share, converted with markdownify. Images are dropped,
-  mentions keep only the name, links are made absolute against the site (keeping a Data Center context path), and Data
-  Center's `<tt>` becomes code. Plain `_` and `*` stay unescaped, so identifiers are indexed as written. Jira's rendered
-  *dates* ("Today 10:15") are never used.
+- **Text is Jira's rendered HTML**, the one format both editions share, converted with markdownify by core's `JiraHtml`
+  (shared with agents that read Jira). Images are dropped, mentions keep only the name, links are made absolute against
+  the site (keeping a Data Center context path), and Data Center's `<tt>` becomes code. Plain `_` and `*` stay
+  unescaped, so identifiers are indexed as written. Jira's rendered *dates* ("Today 10:15") are never used.
 - **Options validators do not run when the API saves a source.** The URL and the edition therefore use type-level
   constraints (a 400 on save), and cross-field checks run in the adapter (`JiraOptions.problems()`).
   `hide_input_in_errors` keeps pydantic from echoing the decrypted token.
+
+### The Confluence adapter
+
+`source_pipelines/confluence/` holds the kind: options, preflight, page model, and storage format → markdown.
+`resources/confluence/` holds the HTTP client, its error and the next-link paginator. One adapter serves Confluence
+Cloud and Confluence Data Center over REST v1 (`content/search` with CQL); v2 has no CQL search and does not exist on
+Data Center. It keeps the Jira adapter's rules on credentials (`auth=` only), the error hook (`ConfluenceRequestError`,
+an `HTTPError`, so 429 and 5xx are retried), type-level URL constraints and `problems()`. In addition:
+
+- **Only public hosts, as for Jira.** The URL type refuses `?`, `#` and credentials, and `SourceHostGuard` runs first in
+  the preflight with the same `STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS` exemptions. A Confluence next to a developer's
+  pipeline is reached through the dev default `localhost`; an on-premise Data Center on a private address needs an
+  operator to allow its host.
+- **No redirect is followed.** Every request sends `allow_redirects=False`, and the hook raises on a 3xx naming its
+  target, because the guard checked the configured host only.
+- **Next links are joined onto the configured site.** Confluence gives `_links.next` relative to the site (`…/wiki` on
+  Cloud), which dlt's `JSONLinkPaginator` would join onto the host, losing `/wiki`. `ConfluenceNextLinkPaginator`
+  follows only a path below the site, and refuses one that would change the host or port once appended (`@elsewhere/…`,
+  `.elsewhere/…`, `:8443/…`).
+- **Preflight before the sync and before the listing** (`ConfluencePreflight`): the guard, `user/current` (an anonymous
+  answer means the credentials never arrived, and anonymous access reads public pages only), each space, and each parent
+  page, which must lie in a listed space. Confluence answers a search in a space or below a page the account cannot see
+  with zero pages, which the listing would take for deleted pages. Spaces and pages are found through CQL search
+  (`find_space`: `search?cql=type = space and space = "KEY"`; `find_page`: `content/search?cql=id = N`), because Cloud's
+  REST v1 no longer serves `space/{key}` or `content/{id}`; v2 does, but Data Center has no v2. A sync's requests
+  therefore need only `search:confluence`, plus `read:confluence-user` for `user/current`.
+- **Changes are found by `version|path|labels`, not by a cursor.** Renaming or moving a page changes the path of every
+  page below it without changing their versions, and neither a move nor adding or removing a label changes any version.
+  Each run lists every page in scope without its body (`expand=ancestors,version,space,metadata.labels`), compares each
+  page's `version|object key|sorted labels` with the `seen` map in the resource state, and reads bodies only of the
+  pages that differ, 25 IDs per CQL query. A page is recorded only once its body was read, so one that vanished between
+  the two queries is compared again next time. The map grows with the spaces, some tens of bytes per page.
+- **File and listing keys come from `ConfluencePage.path_of`**: the space key, then the titles of the page's ancestors
+  and its own. The sync uses it on a full result and the listing on a summary, so the two cannot drift. A title of dots
+  alone is written as `page {id}`, since it cannot be a folder or file name. Two pages mapping to one key (a `/`
+  sanitised to `_`, the 120-character cut) are logged by the listing, and one of them is kept.
+- **Archived pages are dropped by the adapter** (`status == "current"`) rather than left to CQL, so they are removed
+  like deleted ones.
+- **Frontmatter uses `page_id` and `page_version`**, because #1953 refuses `id` and `version` as platform keys.
+- **Text is the storage format**, the body format both editions share, rewritten by `ConfluenceStorage` before
+  markdownify. Code and noformat macros become fenced blocks with their language; macros with a body keep it under their
+  title; render-only macros (toc, children, jira, include) are dropped; task lists, layouts and ADF fallbacks are kept;
+  page links keep their text; images and attachments are dropped. Tables go through core's `HtmlTableConverter`, which
+  wraps them in `<table>` tags: `RawLoader` ingests markdown as written, and the table refiner and
+  `MarkdownStructuralNodeParser` recognise a table only by that wrapper. An element replaced by an empty string makes
+  markdownify strip the whitespace on both sides, so empty elements are removed instead.
 
 ## Markdown Frontmatter
 
@@ -962,8 +1020,8 @@ nothing can be created on top of them, and rows predating the `ingestor` field r
 
 Run it locally: `make document-ingestion-pipeline`. The rclone source pipeline runs on the host the same way with
 `dagster dev -m app.rclone_pipeline` against the dev stack's daemon (`RCLONE_URL=http://localhost:5572`). The structured
-source pipeline runs with `make structured-pipeline` (Jira), or `make structured-demo` with the playground's demo
-source, each next to the ingestion pipeline as a second code location.
+source pipeline runs with `make structured-pipeline` (Jira, Confluence), or `make structured-demo` with the playground's
+demo source, each next to the ingestion pipeline as a second code location.
 
 ## Testing
 

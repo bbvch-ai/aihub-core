@@ -23,8 +23,8 @@ from swiss_ai_hub.agent.capabilities.attached_files.attached_files import Attach
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
 from swiss_ai_hub.agent.capabilities.conversation.oversized_input_refusal import OversizedInputRefusal
 from swiss_ai_hub.agent.capabilities.knowledge.knowledge import Knowledge
-from swiss_ai_hub.agent.capabilities.knowledge.knowledge_fields import KnowledgeFields
 from swiss_ai_hub.agent.capabilities.memory.memory import Memory
+from swiss_ai_hub.agent.capabilities.web_fetch.web_fetch import WebFetch
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -93,9 +93,7 @@ class LLMWrappingAgent(Agent):
 
         budget = usable_input_budget([agent_config.llm, agent_config.task_llm])
         if budget is None:
-            limited = limit_chat_history(
-                chat_history=conversation, number_of_input_tokens=agent_config.number_of_input_tokens
-            )
+            limited = limit_chat_history(chat_history=conversation, number_of_input_tokens=agent_config.input_ceiling)
             return Conversation.contextualize(history=[*system_head, *limited], message=event)
 
         # The system prompt and the last turn are what must be sent; everything between them is negotiable. Note
@@ -111,7 +109,7 @@ class LLMWrappingAgent(Agent):
         # Trim only what sits between them, then put both back. Handing the trimmer a list that still holds the
         # last turn charges it twice: no subset containing it fits the reduced limit, so `ChatMemoryBuffer` falls
         # through to its most-recent-message branch and drops the whole earlier conversation.
-        older_limit = min(agent_config.number_of_input_tokens, budget - irreducible_tokens)
+        older_limit = agent_config.held_to_ceiling(budget - irreducible_tokens)
         older = (
             limit_chat_history(chat_history=conversation[:-1], number_of_input_tokens=older_limit)
             if older_limit > 0
@@ -125,14 +123,17 @@ class LLMWrappingAgent(Agent):
         icon="mdi:brain",
     )
     async def gather_context_step(
-        self, ctx: Conversation.Contextualized, event: UserMessageEvent, config: KnowledgeFields
-    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest]:
+        self, ctx: Conversation.Contextualized, event: UserMessageEvent, agent_config: LLMWrappingAgentConfig
+    ) -> list[Memory.RecallRequest | AttachedFiles.ReadRequest | Knowledge.SearchRequest | WebFetch.FetchRequest]:
         references = event.knowledge_references
-        reserve = config.knowledge.context_reserve() if references else 0
+        links = WebFetch.links_of(event)
+        reserve = agent_config.knowledge.context_reserve() if references else 0
+        reserve += agent_config.web_fetch_reserve(links)
         return [
             Memory.recall(ctx.query),
             AttachedFiles.read(event.files, ctx.history, ctx.query, reserve_tokens=reserve),
             Knowledge.search(references, ctx.query),
+            WebFetch.fetch(links, agent_config),
         ]
 
     @step(
@@ -146,8 +147,10 @@ class LLMWrappingAgent(Agent):
         memories: Memory.Recalled,
         files: AttachedFiles.Contents,
         knowledge: Knowledge.Searched,
+        pages: WebFetch.Fetched,
     ) -> Conversation.ComposeRequest:
-        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, files.block])
+        """What this turn brought gives way last: the linked pages and attached files come after what is recalled."""
+        return Conversation.compose(ctx.history, blocks=[*memories.blocks, knowledge.block, pages.block, files.block])
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.steps.start.name"),

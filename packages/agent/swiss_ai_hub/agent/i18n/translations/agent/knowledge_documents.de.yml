@@ -1,0 +1,29 @@
+---
+config:
+  enabled:
+    label: Mit ganzen Dokumenten arbeiten
+    help: Das Modell darf die Dokumente der Wissenssammlungen auflisten, ihren Text
+      nach exakten Begriffen durchsuchen und sie vollständig lesen.
+  path_glob:
+    label: Filter für Dokumentpfade
+    help: Nur Dokumente, deren Pfad in ihrer Sammlung diesem Muster entspricht, z.
+      B. invoices/2025/** oder **/*.pdf. Gilt nur für die Dokumentwerkzeuge, nicht
+      für die Wissenssuche. Leer lassen für alle Dokumente.
+  semantic_search:
+    label: Dokumente nach Bedeutung ordnen
+    help: Das Modell darf die Dokumente innerhalb des Pfadfilters zusätzlich nach
+      Bedeutung ordnen und findet so Dokumente, die andere Wörter oder eine andere
+      Sprache als die Anfrage verwenden.
+tools:
+  rank_knowledge_documents:
+    label: Wissensdokumente ordnen
+    approval: Die Wissensdokumente danach ordnen, wie gut sie zu «{query}» passen
+  list_knowledge_documents:
+    label: Wissensdokumente auflisten
+    approval: Die Wissensdokumente auflisten, die {path_glob} entsprechen
+  search_knowledge_content:
+    label: Wissensdokumente durchsuchen
+    approval: Die Wissensdokumente nach «{query}» durchsuchen
+  read_knowledge_document:
+    label: Wissensdokument lesen
+    approval: Das Wissensdokument {document_id} lesen

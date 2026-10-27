@@ -1,0 +1,116 @@
+---
+steps:
+  plan:
+    name: Planifier le tableau
+    description: Détermine les documents sélectionnés et conçoit les colonnes du tableau
+  extract:
+    name: Extraire d'un document
+    description: Lit un document et en extrait les lignes
+  assemble:
+    name: Assembler le tableau
+    description: Réunit les lignes de tous les documents en un seul tableau
+  extract_as_tool:
+    name: Extraire un tableau comme outil
+    description: Exécute l'extraction de tableau choisie par le modèle
+  answer_tool_call:
+    name: Renvoyer le tableau au modèle
+    description: Renvoie le résumé du tableau à la boucle d'outils du modèle
+config:
+  extraction_model_name:
+    label: Modèle d'extraction
+    help: Le modèle qui lit chaque document et en extrait les lignes. Vide utilise
+      le modèle principal.
+  max_documents_total:
+    label: Documents au maximum par tableau
+    help: "Au-delà de ce nombre de documents correspondants, rien n'est extrait :\
+      \ l'utilisateur voit un échantillon et est invité à préciser la demande. En\
+      \ deçà, une réponse extrait chaque document."
+  max_document_chars:
+    label: Document le plus long lu entièrement (caractères)
+    help: Les documents plus longs ne sont lus que dans leurs parties pertinentes,
+      et leurs lignes sont marquées comme partiellement lues.
+  max_parallel_extractions:
+    label: Appels au modèle simultanés
+    help: Combien d'appels d'extraction une instance de l'agent fait en même temps.
+      À réduire quand la passerelle des modèles est chargée.
+tools:
+  extract:
+    label: Extraire un tableau
+    approval: 'Extraire un tableau avec ces colonnes des documents de connaissances
+      : {fields}'
+    description: Extrait un tableau de nombreux documents de connaissances, une ligne
+      par enregistrement trouvé, chaque ligne indiquant son fichier. Utilise-le quand
+      l'utilisateur veut des enregistrements rassemblés à travers plusieurs documents,
+      par exemple chaque position de matériel sur les factures 2025 d'un fournisseur
+      ; pas pour une question à laquelle un seul document ou la recherche de connaissances
+      répond. Trouve d'abord les documents avec les outils de liste et de recherche
+      et vérifie-les avec select_knowledge_documents ; puis appelle-le avec les mêmes
+      conditions. L'utilisateur voit le tableau directement et peut le télécharger
+      en entier ; tu reçois son résumé. Quand plus de documents correspondent qu'une
+      réponse n'en extrait sans demander, l'utilisateur reçoit un échantillon et décide
+      ; extrais-les tous seulement s'il est d'accord, avec confirm_sample à true.
+  select:
+    label: Sélectionner des documents
+    approval: 'Sélectionner des documents de connaissances pour un tableau avec ces
+      colonnes : {fields}'
+table:
+  match: Correspondance
+  match_yes: oui
+  match_unsure: incertain, à vérifier
+  partly_read: (lu en partie)
+  collection: Collection
+  path: Chemin
+  filename: Fichier
+summary:
+  no_rows: '**Aucune ligne de :** %{files}'
+  unsure: '**Incertain :** %{count} lignes ne remplissent peut-être pas la condition
+    ; elles sont gardées et marquées dans la colonne Correspondance pour que vous
+    les vérifiiez.'
+  partly_read: '**Lu en partie (des lignes peuvent manquer) :** %{files}'
+  counts: '**Fichiers :** %{files} · **Lignes trouvées :** %{rows} · **Fichiers en
+    échec :** %{failed}'
+  sample_counts: '**Échantillon :** %{files} des %{total} documents correspondants
+    · **Lignes trouvées :** %{rows}'
+  sample_counts_ceiling: '**Échantillon :** %{files} de plus de %{total} documents
+    correspondants · **Lignes trouvées :** %{rows}'
+  criteria: '**Sélection :** %{criteria}'
+  listed_more: et %{count} autres
+  failed_files: "**Fichiers qui n'ont pas pu être extraits :**"
+  failed_more: …et %{count} autres fichiers qui n'ont pas pu être extraits.
+  no_documents: Aucun document ne correspond à la sélection, rien n'a donc été extrait.
+  not_started: "Le tableau n'a pas pu être extrait : %{reason}"
+  too_broad: "**%{total} documents correspondent.** Les extraire tous prend environ\
+    \ %{minutes} minutes ; ci-dessus figurent les lignes d'un échantillon d'entre\
+    \ eux."
+  too_broad_ceiling: '**Plus de %{total} documents correspondent.**'
+  options_narrow: "Veuillez préciser la demande, par exemple à l'un des dossiers ou\
+    \ l'une des années ci-dessus : autant de documents ne sont pas extraits partie\
+    \ par partie."
+  scope_changed: Les collections d'où provient l'échantillon ne sont plus toutes disponibles
+    dans cette conversation, rien n'a donc été extrait. Redemandez pour extraire de
+    ce qui est disponible maintenant.
+  preview: '**Affiché ici :** les %{shown} premières lignes sur %{rows} ; le fichier
+    les contient toutes.'
+  every_row: chaque ligne
+  interpretation: '**Colonnes :** %{columns} · **Lignes conservées :** %{kept}'
+  options_confirm: Répondez *oui* pour extraire les %{total} documents en une réponse,
+    ou précisez la demande, par exemple à l'un des dossiers ou l'une des années ci-dessus.
+  nothing_awaiting: Il n'y a dans cette conversation aucune extraction de tableau
+    avec échantillon à poursuivre. Veuillez redemander le tableau.
+facets:
+  folders: '**Par dossier :** %{entries}'
+  years: '**Par année dans le chemin :** %{entries}'
+  collections: '**Par collection :** %{entries}'
+  first: Ce sont les dossiers et années des %{total} premiers documents par chemin
+    ; il y en a d’autres.
+progress:
+  partial: '%{path} est long : seules ses parties pertinentes sont lues.'
+  plan: Extraction de %{fields} de %{files} documents, environ %{minutes} minutes
+    (%{criteria}).
+  sample: "%{total} documents correspondent ; extraction d'un échantillon de %{files}\
+    \ d'entre eux (%{fields})."
+  extracted: '%{done} sur %{files} · %{path} : %{rows} lignes'
+  failed: '%{done} sur %{files} · %{path} : échec, %{reason}'
+  reading: Lecture de %{path}, un long document.
+  still_reading: Lecture de %{path} en cours (%{minutes} min).
+  extracted_rows: '%{done} sur %{files} · %{path} : %{rows} lignes — %{first}'

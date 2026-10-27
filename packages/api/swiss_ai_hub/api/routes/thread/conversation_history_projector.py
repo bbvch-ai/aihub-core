@@ -27,6 +27,7 @@ _PROJECTABLE_PARENTS = {
     "ChunkEvent",
     "HumanInTheLoopRequestEvent",
     "StopEvent",
+    "RecordsExtractedEvent",
 }
 
 
@@ -245,6 +246,58 @@ class ConversationHistoryProjector:
         return ChatService.terminal_output_text(output_messages)
 
     @staticmethod
+    def _add_event(
+        transcript: ConversationTranscriptBuilder,
+        event: PersistedAgentEventEntity,
+        primary_agent_class: str | None,
+        primary_agent_id: str | None,
+    ) -> None:
+        """Adds what one event contributes to the transcript: a user turn, answer text, a table or the answer's end."""
+        parents = ConversationHistoryProjector._parent_names(event)
+        if event.agent_class == "UserAgent" and "UserMessageEvent" in parents:
+            transcript.start_user_segment(event.display_id)
+            transcript.add_user_parts(event.display_id, ConversationHistoryProjector._user_content_parts(event))
+        elif event.agent_class == "UserAgent" and "HumanInTheLoopResponseEvent" in parents:
+            transcript.start_user_segment(event.display_id)
+            transcript.add_user_parts(
+                event.display_id,
+                [
+                    ChatCompletionContentPartTextParam(
+                        type="text",
+                        text=ConversationHistoryProjector._hitl_response_text(event),
+                    )
+                ],
+            )
+        elif "ChunkEvent" in parents:
+            transcript.add_assistant_text(
+                event.display_id,
+                ConversationHistoryProjector._required_text(event, "content"),
+            )
+        elif "RecordsExtractedEvent" in parents:
+            table_text = ChatService.extracted_table_text(dict(ConversationHistoryProjector._event_data(event)))
+            if table_text:
+                transcript.add_assistant_text(event.display_id, table_text, is_answer=False)
+        elif "HumanInTheLoopRequestEvent" in parents:
+            transcript.add_assistant_text(
+                event.display_id,
+                ConversationHistoryProjector._required_text(event, "question"),
+            )
+        elif (
+            "StopEvent" in parents
+            and primary_agent_class is not None
+            and primary_agent_id is not None
+            and event.agent_class == primary_agent_class
+            and event.agent_id == primary_agent_id
+        ):
+            full_answer = ConversationHistoryProjector._terminal_output_text(event)
+            suffix = ChatService.missing_suffix(
+                transcript.streamed_assistant_text(event.display_id),
+                full_answer,
+            )
+            if suffix:
+                transcript.add_assistant_text(event.display_id, suffix)
+
+    @staticmethod
     def project(
         events: Iterable[PersistedAgentEventEntity],
         *,
@@ -255,46 +308,8 @@ class ConversationHistoryProjector:
 
         visible_events = ConversationHistoryProjector._visible_projectable_events(events)
         for event in ConversationHistoryProjector._ordered_unique_events(visible_events):
-            parents = ConversationHistoryProjector._parent_names(event)
             try:
-                if event.agent_class == "UserAgent" and "UserMessageEvent" in parents:
-                    transcript.start_user_segment(event.display_id)
-                    transcript.add_user_parts(event.display_id, ConversationHistoryProjector._user_content_parts(event))
-                elif event.agent_class == "UserAgent" and "HumanInTheLoopResponseEvent" in parents:
-                    transcript.start_user_segment(event.display_id)
-                    transcript.add_user_parts(
-                        event.display_id,
-                        [
-                            ChatCompletionContentPartTextParam(
-                                type="text",
-                                text=ConversationHistoryProjector._hitl_response_text(event),
-                            )
-                        ],
-                    )
-                elif "ChunkEvent" in parents:
-                    transcript.add_assistant_text(
-                        event.display_id,
-                        ConversationHistoryProjector._required_text(event, "content"),
-                    )
-                elif "HumanInTheLoopRequestEvent" in parents:
-                    transcript.add_assistant_text(
-                        event.display_id,
-                        ConversationHistoryProjector._required_text(event, "question"),
-                    )
-                elif (
-                    "StopEvent" in parents
-                    and primary_agent_class is not None
-                    and primary_agent_id is not None
-                    and event.agent_class == primary_agent_class
-                    and event.agent_id == primary_agent_id
-                ):
-                    full_answer = ConversationHistoryProjector._terminal_output_text(event)
-                    suffix = ChatService.missing_suffix(
-                        transcript.streamed_assistant_text(event.display_id),
-                        full_answer,
-                    )
-                    if suffix:
-                        transcript.add_assistant_text(event.display_id, suffix)
+                ConversationHistoryProjector._add_event(transcript, event, primary_agent_class, primary_agent_id)
             except (KeyError, TypeError, ValueError, ValidationError) as error:
                 ConversationHistoryProjector._warn_malformed(event, error)
 
