@@ -301,11 +301,12 @@ async def test_a_release_over_the_cap_is_refused_in_plain_words(platform: _Platf
     runner = await _run("notes for 2.0", _config())
 
     assert "This release has more than 300 tickets" in _answer(runner)
-    assert "The search matches 412 tickets, more than the 300 read at once" in _thoughts(runner)
+    assert "The search matches 412 tickets" not in _thoughts(runner)
 
 
 @async_test
-async def test_a_jira_that_refuses_the_token_is_reported_without_its_details_in_the_answer(platform: _Platform):
+async def test_a_jira_that_refuses_the_token_is_reported_without_its_details_in_the_chat(platform: _Platform):
+    """Every chat user can open a run's thoughts, so Jira's own words reach only the agent's log."""
     platform.jira.versions_error = JiraAuthenticationError("https://jira.example.com", 401)
 
     runner = await _run("notes for 2.0", _config())
@@ -313,7 +314,7 @@ async def test_a_jira_that_refuses_the_token_is_reported_without_its_details_in_
     answer = _answer(runner)
     assert "Jira rejected this assistant's credentials" in answer
     assert "jira.example.com" not in answer
-    assert "Jira rejected the credentials for https://jira.example.com (401)" in _thoughts(runner)
+    assert "jira.example.com" not in _thoughts(runner)
     assert platform.jira.searches == []
 
 
