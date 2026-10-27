@@ -391,11 +391,13 @@ services:
     container_name: seaweedfs-init
     image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
     restart: "no"
+    {#- Waits for seaweedfs-ttl-init without requiring it to succeed: ClickHouse waits for this service, and a
+        missing TTL rule must not keep ClickHouse and Langfuse down. A failed run stays visible as Exited (1). #}
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
       seaweedfs-ttl-init:
-        condition: service_completed_successfully
+        condition: service_completed
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}

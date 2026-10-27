@@ -21,7 +21,7 @@ error anywhere. On a fresh install nothing would ever have expired, including us
 - *No new long-running services* to deploy, secure, monitor and replicate in Kubernetes.
 - *Fixed retention*: the data is caches, intermediates, a soft-delete area and temporary uploads; nobody edits the rules
   at run time, and none of these buckets is versioned.
-- *Fail loudly*: a deploy whose rules did not land must not look healthy.
+- *Visible, not blocking*: a deploy whose rules did not land must show it, but must not keep unrelated services down.
 
 ## Decision
 
@@ -29,8 +29,10 @@ error anywhere. On a fresh install nothing would ever have expired, including us
   (without `-collection`, which SeaweedFS rejects for bucket paths). The upstream wiki recommends this for "high-churn,
   non-versioned data with a fixed retention".
 - **A one-shot `seaweedfs-ttl-init` service** (SeaweedFS image, `storage` network) applies the four rules on every run
-  and fails unless `filer.conf` holds each of them afterwards. `seaweedfs-init` depends on it, so every start of the
-  bucket initialisation applies the rules too. A rule is a prefix, so it can be set before its bucket exists.
+  and exits 1 unless `filer.conf` holds each of them afterwards. `seaweedfs-init` waits for it to finish, so every start
+  of the bucket initialisation applies the rules too, but not for it to succeed: ClickHouse waits for `seaweedfs-init`,
+  and a missing TTL rule must not keep ClickHouse and Langfuse down. A failed run shows as `Exited (1)` with the missing
+  rule in its log. A rule is a prefix, so it can be set before its bucket exists.
 - **No S3 lifecycle configuration** on these buckets, neither in `seaweedfs-init` nor in the API. On existing
   deployments the rules 4.01 created are kept: the image change alone does not touch them, and the new init writes the
   same rules instead of re-applying a lifecycle configuration.

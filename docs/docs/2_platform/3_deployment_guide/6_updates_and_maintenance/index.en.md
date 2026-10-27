@@ -140,6 +140,14 @@ every rule it verified:
 docker compose logs seaweedfs-ttl-init
 ```
 
+If a rule could not be written, the service shows as `Exited (1)` and its log names the missing rule. The rest of the
+stack still starts, but objects written until the next successful run never expire. Rerun it once the filer is
+reachable:
+
+```bash
+docker compose up seaweedfs-ttl-init
+```
+
 An object's expiry is fixed when it is written. Changing a rule affects new objects only.
 
 ::: warning

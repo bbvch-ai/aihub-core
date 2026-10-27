@@ -1,6 +1,6 @@
 ---
 title: Updates & Wartung
-source_sha: f0532dad73490d0e926c194619bc6913cc08199310c2a06c40adb40e80028d7c
+source_sha: c9d26af9c23ae818e19f8140ed176a29b3409ac9f57f51ed6db596c939236435
 ---
 
 # Updates und Wartung
@@ -146,6 +146,14 @@ anwendet. Sein Log listet jede Regel auf, die er geprüft hat:
 
 ```bash
 docker compose logs seaweedfs-ttl-init
+```
+
+Konnte eine Regel nicht geschrieben werden, erscheint der Service als `Exited (1)`, und sein Log nennt die fehlende
+Regel. Der Rest des Stacks startet trotzdem, aber Objekte, die bis zum nächsten erfolgreichen Lauf geschrieben werden,
+laufen nie ab. Führen Sie ihn erneut aus, sobald der Filer erreichbar ist:
+
+```bash
+docker compose up seaweedfs-ttl-init
 ```
 
 Der Ablaufzeitpunkt eines Objekts wird beim Schreiben festgelegt. Eine geänderte Regel betrifft nur neue Objekte.
