@@ -200,17 +200,26 @@ def test_should_detect_a_single_surname_after_a_form_label() -> None:
     assert not uncovered(text, "PERSON", ["Brunner", "Lea", "Rochat", "Bernasconi", "Keller"])
 
 
-def test_should_detect_a_surname_after_a_title() -> None:
-    # In a mail thread full of names GLiNER drops a lone surname after a title; this is the thread where it did.
-    text = ("Von: Martina Tschudi <martina.tschudi@spital-seeland.ch>\nGesendet: 24. Oktober 2026\nAn: Andrea Tschudi\n"
-            "Betreff: AW: SR-20241015-0042\n\nTelefonnotiz 08.02.2026: Herr Tschudi ruft an wegen der Rechnung "
-            "2024-28238 über Fr. 85.–. Er bittet um Rückruf auf +41 (0)76 746 18 90. Adresse im System prüfen: "
-            "General-Guisan-Strasse 60b, 9000 St. Gallen.\n\n--------------------\nVon: Andrea Tschudi "
-            "<a.tschudi@sunrise.ch>\nGesendet: 20. Juli 2023\nAn: Martina Tschudi\nBetreff: AW: SR-20241015-0042\n\n"
-            "Spitex-Bericht: Frau Tschudi (Morbus Parkinson) ist stabil. Note téléphonique du 10.02.2025 : M. Jaquet "
-            "appelle. Reminder: your appointment with Dr Gay-Crosier is on 20.11.")
+# In a mail thread full of names GLiNER drops a lone surname after a title; this is the thread where it did.
+NAME_HEAVY_THREAD = (
+    "Von: Martina Tschudi <martina.tschudi@spital-seeland.ch>\nGesendet: 24. Oktober 2026\nAn: Andrea Tschudi\n"
+    "Betreff: AW: SR-20241015-0042\n\nTelefonnotiz 08.02.2026: Herr Tschudi ruft an wegen der Rechnung "
+    "2024-28238 über Fr. 85.–. Er bittet um Rückruf auf +41 (0)76 746 18 90. Adresse im System prüfen: "
+    "General-Guisan-Strasse 60b, 9000 St. Gallen.\n\n--------------------\nVon: Andrea Tschudi "
+    "<a.tschudi@sunrise.ch>\nGesendet: 20. Juli 2023\nAn: Martina Tschudi\nBetreff: AW: SR-20241015-0042\n\n"
+    "Spitex-Bericht: Frau Tschudi (Morbus Parkinson) ist stabil. Note téléphonique du 10.02.2025 : M. Jaquet "
+    "appelle. Reminder: your appointment with Dr Gay-Crosier is on 20.11.")
 
-    assert not uncovered(text, "PERSON", ["Tschudi", "Jaquet", "Gay-Crosier"])
+
+def test_should_detect_a_surname_after_a_title() -> None:
+    assert not uncovered(NAME_HEAVY_THREAD, "PERSON", ["Tschudi", "Jaquet", "Gay-Crosier"])
+
+
+def test_should_detect_a_surname_after_patient_in_a_name_heavy_thread() -> None:
+    # "Patient" is no title pattern, so this relies on GLiNER alone where it drops lone surnames after titles.
+    text = f"{NAME_HEAVY_THREAD}\n\nVisite 21.11.: Patient Tschudi klagt über Schwindel. The patient Jaquet was discharged."
+
+    assert not uncovered(text, "PERSON", ["Tschudi", "Jaquet"])
 
 
 def test_should_detect_a_case_number_after_a_label_and_a_connector_word() -> None:
