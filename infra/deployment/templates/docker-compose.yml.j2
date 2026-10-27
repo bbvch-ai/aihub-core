@@ -46,9 +46,10 @@
     avoid unnecessary environment variable indirection.
     =================================================================== #}
 {%- set SEAWEEDFS_MASTER_ENDPOINT = "seaweedfs-master:9333" %}
-{%- set SEAWEEDFS_FILER_ENDPOINT = "seaweedfs-filer:8888" %}
+{%- set SEAWEEDFS_FILER_HOST = "seaweedfs-filer" %}
+{%- set SEAWEEDFS_FILER_ENDPOINT = SEAWEEDFS_FILER_HOST ~ ":8888" %}
 {%- set SEAWEEDFS_S3_ENDPOINT = "seaweedfs-s3:9000" %}
-{%- set SEAWEEDFS_FILER_URL = "http://seaweedfs-filer:8888" %}
+{%- set SEAWEEDFS_FILER_URL = "http://" ~ SEAWEEDFS_FILER_ENDPOINT %}
 {%- set S3_STORAGE_ENDPOINT = "http://seaweedfs-s3:9000" %}
 {%- set S3_STORAGE_PUBLIC_ENDPOINT = "http://localhost:9000" if stage == 'dev' else "https://s3.${DOMAIN}" %}
 {%- set ETCD_ENDPOINTS = "etcd:2379" %}
@@ -251,10 +252,12 @@ services:
       - "8889:8888"
       - "18888"
     {%- endif %}
+    {#- The S3 gateway takes the filer address from the master, and the filer would otherwise
+        register its `data` network IP, which the gateway (storage/backend only) cannot reach. #}
     command: >
       filer
       -master="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
-      -ip=seaweedfs-filer
+      -ip={{ SEAWEEDFS_FILER_HOST }}
       -ip.bind=0.0.0.0
     environment:
       # Internal JWT Authentication
