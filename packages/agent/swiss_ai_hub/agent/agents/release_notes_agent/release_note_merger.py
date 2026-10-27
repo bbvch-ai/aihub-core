@@ -3,8 +3,8 @@ import re
 from collections.abc import Sequence
 from typing import Annotated, ClassVar
 
-from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
+from swiss_ai_hub.core.generative_ai import ResilientOpenAILike
 
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
 from swiss_ai_hub.agent.agents.release_notes_agent.merged_notes import MergedNotes
@@ -49,7 +49,7 @@ class ReleaseNoteMerger:
 
     def __init__(
         self,
-        llm: Annotated[LLM, "The model merging the notes"],
+        llm: Annotated[ResilientOpenAILike, "The model merging the notes"],
         language: Annotated[ReleaseLanguage, "The language the notes are written in"],
         audience: Annotated[str, "Who reads the release notes"],
     ):
@@ -60,7 +60,8 @@ class ReleaseNoteMerger:
     async def merge(
         self, notes: Annotated[Sequence[ReleaseNote], "Notes of one section, in changelog order"]
     ) -> list[ChangelogEntry]:
-        """The entries in the order of their first ticket, so a merged entry sits where its first ticket would."""
+        """The entries in the order of their first ticket, so a merged entry sits where its first ticket would. The
+        capped copy opens a client of its own that the run's LLM never closes, so it is closed here."""
         if len(notes) < 2:
             return [ChangelogEntry.of_note(note) for note in notes]
         llm = self._llm.model_copy(update={"max_tokens": self.ENTRY_TOKENS * len(notes) + self.CALL_TOKENS})
@@ -75,6 +76,8 @@ class ReleaseNoteMerger:
         except ValueError as malformed:
             logger.warning("Notes from %s were left unmerged: %s", notes[0].key, malformed)
             merged = MergedNotes(entries=[])
+        finally:
+            await llm.aclose()
         return self._entries(notes, merged)
 
     @staticmethod

@@ -3,7 +3,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from openai import AsyncOpenAI
+from swiss_ai_hub.core.generative_ai import LLMConfig, ResilientOpenAILike
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.jira import JiraConnectionConfig, JiraTicket
 
@@ -43,10 +44,14 @@ class _FakeLlm:
         self.calls: list[tuple[str, dict[str, Any]]] = []
         self.running = 0
         self.most_at_once = 0
+        self.closed = 0
 
     def model_copy(self, update: dict[str, Any]) -> "_FakeLlm":
         self.max_tokens.append(update["max_tokens"])
         return self
+
+    async def aclose(self) -> None:
+        self.closed += 1
 
     async def astructured_predict(self, model: type, prompt: Any, **variables: Any) -> Any:
         kind = "merge" if model is MergedNotes else "notes"
@@ -97,6 +102,7 @@ async def test_related_notes_become_one_entry_that_covers_each_of_them():
         ("Note for ENG-2.", ["ENG-2"]),
     ]
     assert llm.max_tokens == [3 * 90 + 64]
+    assert llm.closed == 1
     kind, variables = llm.calls[0]
     assert kind == "merge"
     assert variables["language"] == "German"
@@ -142,9 +148,12 @@ async def test_malformed_output_leaves_every_note_on_its_own():
     async def malformed(variables: dict[str, Any]) -> MergedNotes:
         raise ValueError("unterminated JSON")
 
-    entries = await _merger(_FakeLlm(malformed)).merge([_note("ENG-1"), _note("ENG-2")])
+    llm = _FakeLlm(malformed)
+
+    entries = await _merger(llm).merge([_note("ENG-1"), _note("ENG-2")])
 
     assert [_covered([entry]) for entry in entries] == [["ENG-1"], ["ENG-2"]]
+    assert llm.closed == 1
 
 
 @pytest.mark.asyncio
@@ -223,6 +232,7 @@ async def test_with_merging_on_each_window_is_merged_and_shown_in_changelog_orde
     assert max(len(_covered(window)) for window in windows.received) <= 6
     assert llm.most_at_once <= 4
     assert sum(kind == "merge" for kind, _ in llm.calls) == len(windows.received)
+    assert llm.closed == len(llm.max_tokens)
 
 
 @pytest.mark.asyncio
@@ -238,3 +248,23 @@ async def test_with_merging_off_every_ticket_keeps_its_own_entry():
     assert [len(window) for window in windows.received] == [3, 3, 3, 1]
     assert {kind for kind, _ in llm.calls} == {"notes"}
     assert llm.most_at_once <= 2
+
+
+@pytest.mark.asyncio
+async def test_a_failed_merge_still_closes_the_client_its_copy_opened(monkeypatch: pytest.MonkeyPatch):
+    """The run's LLM never opens a client, so closing it closes none of its copies' (aihub-core-private#349)."""
+    opened: list[AsyncOpenAI] = []
+
+    async def malformed(llm: ResilientOpenAILike, model: type, prompt: Any, **variables: Any) -> MergedNotes:
+        opened.append(llm._get_aclient())
+        raise ValueError("unterminated JSON")
+
+    monkeypatch.setattr(ResilientOpenAILike, "astructured_predict", malformed)
+    llm = ResilientOpenAILike(
+        model="text-generation/test", api_base="http://gateway.invalid/v1", api_key="key", connect_timeout=1, timeout=1
+    )
+
+    await ReleaseNoteMerger(llm, ReleaseLanguage.DE, "customers").merge([_note("ENG-1"), _note("ENG-2")])
+
+    assert len(opened) == 1
+    assert opened[0].is_closed()

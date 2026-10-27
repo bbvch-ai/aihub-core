@@ -4,8 +4,8 @@ import re
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Annotated, Any, ClassVar
 
-from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
+from swiss_ai_hub.core.generative_ai import ResilientOpenAILike
 from swiss_ai_hub.core.jira import JiraTicket
 
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_section import ChangelogSection
@@ -60,7 +60,7 @@ class ReleaseNoteWriter:
 
     def __init__(
         self,
-        llm: Annotated[LLM, "The model writing the notes"],
+        llm: Annotated[ResilientOpenAILike, "The model writing the notes"],
         language: Annotated[ReleaseLanguage, "The language the notes are written in"],
         audience: Annotated[str, "Who reads the release notes, e.g. 'customers using the web app'"],
         tickets_per_batch: Annotated[int, "Tickets sent per model call"],
@@ -92,6 +92,8 @@ class ReleaseNoteWriter:
         return [note for batch in written for note in batch]
 
     async def _write_batch(self, tickets: list[JiraTicket]) -> list[ReleaseNote]:
+        """The copy caps the answer, and opens a client of its own that the run's LLM never closes, so it is closed
+        here."""
         llm = self._llm.model_copy(update={"max_tokens": self.NOTE_TOKENS * len(tickets) + self.BATCH_TOKENS})
         try:
             batch = await llm.astructured_predict(
@@ -104,6 +106,8 @@ class ReleaseNoteWriter:
         except ValueError as malformed:
             logger.warning("Notes for %s fell back to their summaries: %s", tickets[0].key, malformed)
             batch = ReleaseNoteBatch(notes=[])
+        finally:
+            await llm.aclose()
         notes = batch.by_key()
         return [ReleaseNote.from_ticket(ticket, notes.get(ticket.key)) for ticket in tickets]
 

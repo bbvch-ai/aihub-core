@@ -99,6 +99,9 @@ class _FakeNotesLlm:
     def model_copy(self, update: dict[str, Any]) -> "_FakeNotesLlm":
         return self
 
+    async def aclose(self) -> None:
+        pass
+
     async def astructured_predict(self, model: type, prompt: Any, **variables: Any) -> ReleaseNoteBatch | MergedNotes:
         if model is MergedNotes:
             keys = [note["key"] for note in variables["notes"]]

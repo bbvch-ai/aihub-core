@@ -3,6 +3,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
+from openai import AsyncOpenAI
+from swiss_ai_hub.core.generative_ai import ResilientOpenAILike
 from swiss_ai_hub.core.jira import JiraTicket
 
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
@@ -29,7 +31,8 @@ def _ticket(key: str, issue_type: str = "Story", description: str = "") -> JiraT
 
 
 class _FakeLlm:
-    """Answers like a model asked for a `ReleaseNoteBatch`, counting how many calls run at once."""
+    """Answers like a model asked for a `ReleaseNoteBatch`, counting how many calls run at once and how many of its
+    copies were closed."""
 
     def __init__(self, answer: Callable[[dict[str, Any]], Awaitable[ReleaseNoteBatch]]):
         self._answer = answer
@@ -37,10 +40,14 @@ class _FakeLlm:
         self.calls: list[dict[str, Any]] = []
         self.running = 0
         self.most_at_once = 0
+        self.closed = 0
 
     def model_copy(self, update: dict[str, Any]) -> "_FakeLlm":
         self.max_tokens.append(update["max_tokens"])
         return self
+
+    async def aclose(self) -> None:
+        self.closed += 1
 
     async def astructured_predict(self, model: type, prompt: Any, **variables: Any) -> ReleaseNoteBatch:
         assert model is ReleaseNoteBatch
@@ -94,6 +101,7 @@ async def test_every_ticket_gets_a_note_in_changelog_order_a_batch_at_a_time():
     assert [note for batch in batches.received for note in batch] == notes
     assert all(note.note == f"Note for {note.key}." and not note.fallback for note in notes)
     assert llm.max_tokens == [10 * 160 + 64, 10 * 160 + 64, 5 * 160 + 64]
+    assert llm.closed == 3
     assert {call["language"] for call in llm.calls} == {"German"}
     assert {call["audience"] for call in llm.calls} == {"customers"}
 
@@ -160,12 +168,14 @@ async def test_malformed_output_costs_only_its_own_batch():
             raise ValueError("unterminated JSON")
         return await _note_every_ticket(variables)
 
-    notes = await _writer(_FakeLlm(malformed_for_the_second_batch), tickets_per_batch=2).write(
-        [_ticket(f"ENG-{number}") for number in range(1, 6)], _Batches()
-    )
+    llm = _FakeLlm(malformed_for_the_second_batch)
+    tickets = [_ticket(f"ENG-{number}") for number in range(1, 6)]
+
+    notes = await _writer(llm, tickets_per_batch=2).write(tickets, _Batches())
 
     assert [note.fallback for note in notes] == [False, False, True, True, False]
     assert notes[2].note == "Summary of ENG-3"
+    assert llm.closed == 3
 
 
 @pytest.mark.asyncio
@@ -185,14 +195,15 @@ async def test_an_infrastructure_error_ends_the_writing_and_cancels_the_other_ca
         return await _note_every_ticket(variables)
 
     batches = _Batches()
-    writer = _writer(_FakeLlm(gateway_down_for_the_first_batch), tickets_per_batch=1)
+    llm = _FakeLlm(gateway_down_for_the_first_batch)
     tickets = [_ticket(f"ENG-{number}") for number in range(1, 4)]
 
     with pytest.raises(ConnectionError, match="gateway down"):
-        await writer.write(tickets, batches)
+        await _writer(llm, tickets_per_batch=1).write(tickets, batches)
 
     assert sorted(cancelled) == ["ENG-2", "ENG-3"]
     assert batches.received == []
+    assert llm.closed == 3
 
 
 @pytest.mark.asyncio
@@ -228,6 +239,7 @@ async def test_translations_keep_the_order_and_everything_but_the_text():
     ]
     assert [entry for batch in batches.received for entry in batch] == translated
     assert {(call["source"], call["target"]) for call in llm.calls} == {("German", "French")}
+    assert llm.closed == 2
 
 
 @pytest.mark.asyncio
@@ -290,3 +302,36 @@ async def test_an_entry_cannot_close_its_own_tag_in_translation():
 async def _entries(tickets: list[JiraTicket]) -> list[ChangelogEntry]:
     notes = await _writer(_FakeLlm(_note_every_ticket)).write(tickets)
     return [ChangelogEntry.of_note(note) for note in notes]
+
+
+@pytest.fixture
+def opened_clients(monkeypatch: pytest.MonkeyPatch) -> list[AsyncOpenAI]:
+    """Each call opens its LLM's client, as a request to the gateway does, and answers every ticket or note."""
+    clients: list[AsyncOpenAI] = []
+
+    async def astructured_predict(llm: ResilientOpenAILike, model: type, prompt: Any, **variables: Any) -> Any:
+        clients.append(llm._get_aclient())
+        if "tickets" in variables:
+            return await _note_every_ticket(variables)
+        return await _translate_every_note(variables)
+
+    monkeypatch.setattr(ResilientOpenAILike, "astructured_predict", astructured_predict)
+    return clients
+
+
+@pytest.mark.asyncio
+async def test_every_capped_copy_closes_the_client_it_opened(opened_clients: list[AsyncOpenAI]):
+    """The run's LLM never opens a client, so closing it closes none of its copies' (aihub-core-private#349)."""
+    llm = ResilientOpenAILike(
+        model="text-generation/test", api_base="http://gateway.invalid/v1", api_key="key", connect_timeout=1, timeout=1
+    )
+
+    notes = await ReleaseNoteWriter(llm, ReleaseLanguage.DE, "customers", 2, 2, 50).write(
+        [_ticket(f"ENG-{number}") for number in range(1, 6)]
+    )
+    await ReleaseNoteTranslator(llm, ReleaseLanguage.DE, "customers", 2, 2).translate(
+        [ChangelogEntry.of_note(note) for note in notes], ReleaseLanguage.FR, _Batches()
+    )
+
+    assert len({id(client) for client in opened_clients}) == 6
+    assert all(client.is_closed() for client in opened_clients)

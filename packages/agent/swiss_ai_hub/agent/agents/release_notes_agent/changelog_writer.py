@@ -2,7 +2,7 @@ import itertools
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Annotated, Self
 
-from llama_index.core.llms import LLM
+from swiss_ai_hub.core.generative_ai import ResilientOpenAILike
 from swiss_ai_hub.core.jira import JiraTicket
 
 from swiss_ai_hub.agent.agents.release_notes_agent.changelog_entry import ChangelogEntry
@@ -39,7 +39,7 @@ class ChangelogWriter:
     @classmethod
     def from_config(
         cls,
-        llm: Annotated[LLM, "The model writing and merging the notes"],
+        llm: Annotated[ResilientOpenAILike, "The model writing and merging the notes"],
         config: Annotated[ReleaseNotesAgentConfig, "The profile"],
         language: Annotated[ReleaseLanguage, "The language this answer is written in"],
     ) -> Self:
