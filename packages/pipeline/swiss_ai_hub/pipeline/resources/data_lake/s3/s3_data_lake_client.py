@@ -242,7 +242,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 md5_hash_str = base64.b64encode(bytes.fromhex(etag)).decode("utf-8")
             else:
                 # Multipart uploads return "<md5hex>-<parts>". So do single PUTs above 8 MiB written
-                # by SeaweedFS 4.01; 4.50 returns a plain MD5 for those, so rewriting such an object
+                # by SeaweedFS 4.01; 4.50+ returns a plain MD5 for those, so rewriting such an object
                 # after the upgrade changes its hash once. Kept verbatim: deterministic and
                 # content-derived, so it still works as a change-detection token. Do NOT unify
                 # with the base64 branch above.

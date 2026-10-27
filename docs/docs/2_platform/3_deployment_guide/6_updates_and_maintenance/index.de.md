@@ -1,6 +1,6 @@
 ---
 title: Updates & Wartung
-source_sha: b734d133a640fe74a2daff07691d6d1cbd8644b4a6502e81cfb95dd37ddeaa84
+source_sha: f0532dad73490d0e926c194619bc6913cc08199310c2a06c40adb40e80028d7c
 ---
 
 # Updates und Wartung
@@ -112,6 +112,65 @@ Kundenseitiger Code läuft unverändert weiter.
 Major Core-Updates mit Breaking Changes erfordern koordinierte Updates. Kundenseitiger Code muss aktualisiert werden, um
 mit der neuen Core-Version zu funktionieren. Sowohl Core- als auch kundenseitiger Code werden während eines
 Wartungsfensters gemeinsam aktualisiert.
+
+### Neue Speicher-Buckets
+
+`seaweedfs-init` legt bei jedem Lauf alle fehlenden SeaweedFS-Buckets an, und `docker compose up -d` startet es bei
+jedem Aufruf erneut. Das obige Update legt deshalb die Buckets an, die ein Release hinzufügt. Nur ein Update, das
+ausgewählte Services startet, etwa `docker compose up -d <service>` oder `--no-deps`, überspringt es. Führen Sie es dann
+selbst aus:
+
+```bash
+docker compose up seaweedfs-init
+```
+
+Ein fehlender Bucket scheitert zur Laufzeit, nicht beim Start. Ohne den Bucket `parse-cache` scheitert jedes
+MinerU-Parsing eines Dokuments mit `NoSuchBucket`. Office-Dokumente werden weiterhin geparst, nur ohne Cache, sodass
+jeder Lesevorgang sie erneut konvertiert und eine Warnung protokolliert. Der Bucket speichert geparste Dokumente nach
+Inhalts-Hash zwischen, und Einträge laufen nach 7 Tagen ab. Ein abgelaufener Eintrag wird erneut geparst, daher braucht
+nichts davon ein Backup.
+
+Der Bucket `sandbox-files` enthält den Einweg-Spiegel des Code-Sandbox-Home-Verzeichnisses jedes Benutzers (die Dateien
+hinter **Meine Dateien**). Er wird auf die gleiche Weise angelegt und benötigt `SANDBOX_MIRROR_S3_ACCESS_KEY`,
+`SANDBOX_MIRROR_S3_SECRET_KEY` und `SANDBOX_MIRROR_INTERVAL_SECONDS` in Ihrer `.env` (der Prüfschritt oben zeigt sie
+an). Der Spiegel verwendet eine auf diesen Bucket beschränkte S3-Identität, erstellen Sie `seaweedfs-s3` daher neu,
+damit die Identität wirksam wird. In der Sandbox gelöschte oder überschriebene Dateien werden 7 Tage lang unter
+`.deleted/` aufbewahrt.
+
+### Ablauf von Bucket-Inhalten
+
+Vier Bereiche laufen von selbst ab: `dagster` nach 1 Tag sowie `parse-cache`, `sandbox-files/.deleted/` und
+`agent-files` nach 7 Tagen. Der einmalig laufende Service `seaweedfs-ttl-init` schreibt diese bei jedem Lauf als
+TTL-Regeln des SeaweedFS-Filers, und `seaweedfs-init` wartet auf ihn, sodass auch `docker compose up seaweedfs-init` sie
+anwendet. Sein Log listet jede Regel auf, die er geprüft hat:
+
+```bash
+docker compose logs seaweedfs-ttl-init
+```
+
+Der Ablaufzeitpunkt eines Objekts wird beim Schreiben festgelegt. Eine geänderte Regel betrifft nur neue Objekte.
+
+::: warning
+Wenden Sie auf diese Buckets niemals eine S3-Lifecycle-Konfiguration (`put-bucket-lifecycle-configuration`) an. Seit
+SeaweedFS 4.32 lassen Lifecycle-Konfigurationen Objekte nur über einen Admin- und Worker-Service ablaufen, den die
+Plattform nicht betreibt, und das Anwenden einer solchen Konfiguration löscht die TTL-Regel, die SeaweedFS 4.01 für
+diesen Bucket angelegt hat, sodass nichts mehr abläuft, was danach geschrieben wird. Siehe ADR
+`2026_10_27_bucket_expiry_via_filer_ttl`.
+:::
+
+### Zustand des SeaweedFS-Masters
+
+Der Master speichert die Identität des Clusters in seinem Datenverzeichnis. Geht dieses Verzeichnis verloren oder wird
+es aus einem anderen Zeitpunkt als die Volume-Daten wiederhergestellt, legt der Master keine Volumes mehr an, sobald ein
+Volume-Server die ihm bekannte Identität meldet, und Schreibvorgänge scheitern, sobald die vorhandenen Volumes voll
+sind. Nachdem Sie geprüft haben, dass keine Daten fehlen, nehmen Sie das Anlegen von Volumes wieder auf:
+
+```bash
+docker compose exec seaweedfs-master sh -c 'echo volume.growth.resume | weed shell -master=localhost:9333'
+```
+
+Erstellen Sie vor einem SeaweedFS-Upgrade einen gemeinsamen Snapshot aller `seaweedfs-*`-Volumes und von etcd, und
+stellen Sie sie gemeinsam wieder her.
 
 ### Kundenseitige Code-Updates
 

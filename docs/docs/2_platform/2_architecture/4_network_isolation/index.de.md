@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 7ccf65ab2f223f315771514b5d2ae26cfc6fa77da7034b741eb1cd3325423ba1
+source_sha: 1b1fc567ed554fbad9eaeda8c22ab714353b7cf144b2357194595921580b0a7c
 ---
 
 # Docker-Netzwerkisolation
@@ -236,6 +236,8 @@ flowchart TB
 - Datenbank-Services können Speicheroperationen nicht beeinträchtigen
 - Der Filer hängt an `storage` und `data` (für etcd) und meldet dem Master deshalb seinen Service-Namen
   (`-ip=seaweedfs-filer`). Das S3-Gateway findet den Filer über den Master und erreicht keine Adresse im `data`-Netz.
+- Auch das S3-Gateway registriert sich beim Master und hängt an `storage` und `backend`, daher meldet es auf die gleiche
+  Weise seinen Service-Namen (`-ip=seaweedfs-s3`).
 
 ### Service-Sichtbarkeitsmatrix
 
