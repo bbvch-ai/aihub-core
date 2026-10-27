@@ -220,6 +220,32 @@ def test_should_detect_a_case_number_after_a_label_and_a_connector_word() -> Non
     assert not uncovered(text, "CH_MRN", ["5495489", "4471128", "77120934", "3381204", "2209183"])
 
 
+def masked(text: str, entity_type: str) -> list[str]:
+    return [text[s["start"]:s["end"]] for s in analyze(text) if s["entity_type"] == entity_type]
+
+
+def test_should_not_take_a_value_after_a_non_person_name_label_for_a_name() -> None:
+    text = "Company name: Swisscom\nProject name: Phoenix\nFile name: Report.pdf"
+
+    assert not masked(text, "PERSON")
+
+
+def test_should_not_take_a_title_or_a_heading_word_after_a_title_for_a_name() -> None:
+    text = "Frau Dr. Meier. Herr Prof. Dr. Müller. Patient Information. Patient Summary. Seen the patient Monday."
+
+    spans = masked(text, "PERSON")
+
+    assert not uncovered(text, "PERSON", ["Meier", "Müller"])
+    assert not [s for s in spans if s.rstrip(".") in {"Dr", "Prof"} or {"Information", "Summary", "Monday"} & set(s.split())]
+
+
+def test_should_detect_a_case_number_after_patient_nr() -> None:
+    text = "Patient Nr. 4471128. Patient-Nr. 5495489."
+
+    assert not masked(text, "PERSON")
+    assert not uncovered(text, "CH_MRN", ["4471128", "5495489"])
+
+
 def test_should_not_take_an_invoice_number_for_an_insurance_card() -> None:
     text = "Rechnung Nr. 9434765919 vom 3. März, zahlbar innert 30 Tagen."
 
