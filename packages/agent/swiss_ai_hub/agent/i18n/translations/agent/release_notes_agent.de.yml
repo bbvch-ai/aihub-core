@@ -99,7 +99,6 @@ steps:
     name: Versionshinweise übersetzen
     description: Übersetzt die Hinweise in jede weitere konfigurierte Sprache.
 thoughts:
-  jira_detail: 'Jira meldete: %{detail}'
   version_found: Lösungsversion %{version} in %{projects} gefunden.
   tickets_found: '%{count} Tickets der Lösungsversion %{version} aus Jira gelesen.'
   notes_summarized: '%{count} von %{total} Hinweisen konnten nicht geschrieben werden

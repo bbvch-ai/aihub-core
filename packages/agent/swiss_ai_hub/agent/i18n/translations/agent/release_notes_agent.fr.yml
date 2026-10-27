@@ -98,7 +98,6 @@ steps:
     name: Traduire les notes de version
     description: Traduit les notes dans chaque langue supplémentaire configurée.
 thoughts:
-  jira_detail: 'Jira a signalé : %{detail}'
   version_found: Version corrigée %{version} trouvée dans %{projects}.
   tickets_found: '%{count} tickets de la version corrigée %{version} lus dans Jira.'
   notes_summarized: "%{count} notes sur %{total} n'ont pas pu être rédigées et affichent\

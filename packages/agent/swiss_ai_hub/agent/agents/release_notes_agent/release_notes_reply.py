@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from swiss_ai_hub.core.displayers import EventDisplayer
@@ -7,6 +8,8 @@ from swiss_ai_hub.core.jira import JiraError
 
 from swiss_ai_hub.agent.agents.release_notes_agent.jira_error_reply import JiraErrorReply
 from swiss_ai_hub.agent.capabilities.conversation.conversation import Conversation
+
+logger = logging.getLogger(__name__)
 
 
 class ReleaseNotesReply:
@@ -58,8 +61,8 @@ class ReleaseNotesReply:
         t: Annotated[LocaleHandler, "Translations in the run's language"],
         model_name: Annotated[str, "Model the answer is attributed to"],
     ) -> Conversation.CompleteRequest:
-        """Jira's own words go into a thought, for the administrator who opens the run; the user reads who can fix
-        it."""
+        """The user reads who can fix it. Jira's own words go to the log only: every chat user can open a run's
+        thoughts, and those words can name an internal address, the account and the profile's JQL filter."""
         reply = JiraErrorReply.from_error(error, t)
-        await displayer.display_thought(t("agent.release_notes_agent.thoughts.jira_detail", detail=reply.detail))
+        logger.warning("The Jira read failed: %s", reply.detail)
         return await cls.say(reply.message, question, displayer, model_name)

@@ -93,7 +93,6 @@ steps:
     name: Translate the release notes
     description: Translates the notes into each further configured language.
 thoughts:
-  jira_detail: 'Jira reported: %{detail}'
   version_found: Fix version %{version} found in %{projects}.
   tickets_found: Read %{count} tickets of fix version %{version} from Jira.
   notes_summarized: '%{count} of %{total} notes could not be written and show the

@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import AsyncMock
 
 import pytest
@@ -120,3 +121,20 @@ async def test_a_sentence_is_streamed_before_the_run_ends_on_it():
     displayer.display_chunk.assert_awaited_once_with("Which release?", model_name="ReleaseNotesAgent")
     assert request.answer.output_messages[0].content == "Which release?"
     assert request.stop.output_messages[0].content == "Which release?"
+
+
+@pytest.mark.asyncio
+async def test_jiras_own_words_reach_the_log_and_never_the_chat(caplog: pytest.LogCaptureFixture):
+    """Every chat user can open a run's thoughts, and Jira's words can name an internal address."""
+    displayer = AsyncMock()
+    error = JiraConfigurationError(["jira.corp is refused, which resolves to the internal address 10.1.2.3"])
+
+    with caplog.at_level(logging.WARNING):
+        request = await ReleaseNotesReply.jira_failure(error, "release notes for 2.0", displayer, _T, "Agent")
+
+    displayer.display_thought.assert_not_awaited()
+    (chunk,), _ = displayer.display_chunk.await_args
+    assert "Jira connection is not set up correctly" in chunk
+    assert "10.1.2.3" not in chunk
+    assert request.stop.output_messages[0].content == chunk
+    assert "10.1.2.3" in caplog.text

@@ -18,7 +18,7 @@ class JiraErrorReply(BaseModel):
     """A failed Jira read in the user's words, and in Jira's.
 
     The user reads one sentence in their language saying who can fix it; Jira's English detail, which names hosts,
-    statuses and query problems, goes into a thought for the administrator who looks at the run.
+    internal addresses, the account and the profile's JQL filter, goes to the agent's log for the administrator.
     """
 
     message: Annotated[str, Field(description="What the user reads, in the run's language.")]
