@@ -94,6 +94,36 @@ def test_a_long_word_without_a_digit_does_not_stall_the_reply():
     assert time.perf_counter() - started < 5
 
 
+def test_a_long_paste_after_the_request_does_not_stall_the_reply():
+    """Matched in full, a pasted changelog naming many known versions took seconds on the event loop."""
+    names = [f"{number // 100}.{(number // 10) % 10}.{number % 10}" for number in range(500)]
+    paste = "\n".join(f"- fixed in {name}" for name in names * 24)
+    message = f"Release notes for 4.9.9, the old changelog is below\n{paste}"
+    started = time.perf_counter()
+
+    match = ReleaseVersionMatcher.match(message, _versions(*names))
+
+    assert time.perf_counter() - started < 1
+    assert match.outcome is VersionMatchOutcome.SEVERAL
+    assert match.names[0] == "4.9.9"
+
+
+def test_a_version_named_only_after_the_start_of_a_long_message_is_not_found():
+    filler = "x " * (ReleaseVersionMatcher.SEARCHED_CHARS // 2)
+
+    match = ReleaseVersionMatcher.match(f"{filler}notes for 1.0", _versions("1.0"))
+
+    assert match.outcome is VersionMatchOutcome.MISSING
+
+
+def test_a_version_cut_at_the_limit_is_not_read_as_a_shorter_one():
+    message = "x" * (ReleaseVersionMatcher.SEARCHED_CHARS - 4) + " 2.4.0 please"
+
+    match = ReleaseVersionMatcher.match(message, _versions("2.4", "2.4.0"))
+
+    assert match.outcome is VersionMatchOutcome.MISSING
+
+
 def test_a_version_is_not_found_inside_a_longer_number():
     match = ReleaseVersionMatcher.match("notes for 11.0", _versions("1.0"))
 

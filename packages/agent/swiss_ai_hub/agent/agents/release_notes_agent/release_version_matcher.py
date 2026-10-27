@@ -3,7 +3,7 @@ import re
 import unicodedata
 from collections.abc import Sequence
 from datetime import date
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from swiss_ai_hub.core.jira import JiraVersion
 
@@ -12,6 +12,7 @@ from swiss_ai_hub.agent.agents.release_notes_agent.version_match_outcome import 
 
 _QUOTES = str.maketrans({"‘": "'", "’": "'", "‚": "'", "‛": "'", "´": "'", "`": "'", "“": '"', "”": '"', "„": '"'})
 _SPACES = re.compile(r"\s+")
+_UP_TO_LAST_SPACE = re.compile(r".*\s", re.DOTALL)
 _TOKEN_EDGES = "\"'.,;:!?()[]{}<>«»"
 _SUGGESTIONS = 3
 _RECENT = 5
@@ -25,13 +26,15 @@ class ReleaseVersionMatcher:
     curly ones, so quotes are compared straightened.
     """
 
+    SEARCHED_CHARS: ClassVar[int] = 2_000
+
     @classmethod
     def match(
         cls,
         message: Annotated[str, "What the user asked, e.g. 'release notes for 2.4.0'"],
         versions: Annotated[Sequence[JiraVersion], "Every version of the configured projects, in Jira's order"],
     ) -> VersionMatch:
-        text = cls.normalized(message)
+        text = cls.normalized(cls._searched(message))
         by_name: dict[str, list[JiraVersion]] = {}
         for version in versions:
             if cls.normalized(version.name):
@@ -42,6 +45,16 @@ class ReleaseVersionMatcher:
         if found:
             return VersionMatch(outcome=VersionMatchOutcome.SEVERAL, names=[by_name[name][0].name for name in found])
         return cls._unmatched(text, by_name, cls._recent(versions))
+
+    @classmethod
+    def _searched(cls, message: str) -> str:
+        """A request names its version near the start; matching a long paste after it (an old changelog, a log) took
+        seconds on the event loop, stalling every run of the agent. A word cut at the limit is dropped, so "2.4.0" is
+        never read as "2.4"."""
+        if len(message) <= cls.SEARCHED_CHARS:
+            return message
+        whole_words = _UP_TO_LAST_SPACE.match(message[: cls.SEARCHED_CHARS + 1])
+        return whole_words.group() if whole_words else ""
 
     @staticmethod
     def normalized(text: Annotated[str, "A message or a version name"]) -> str:
