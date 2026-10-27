@@ -216,10 +216,9 @@ class LLMConfig(LiteLLMBase[ResilientOpenAILike]):
         are spent all the same — and closes the LLM's clients (see `ResilientOpenAILike.aclose`).
         """
         # The per-user key is the only carrier that reaches LiteLLM: it sets `user` on every spend log row
-        # and activates USER_MAX_BUDGET. Tenant is NOT sent — custom request tags (`x-litellm-tags` and
-        # `metadata.tags`) are an enterprise feature and this deployment silently drops them, verified with
-        # a 200 response and no tag in /spend/logs. Tenant attribution lives on LLMCostEvent instead; see
-        # #786 before adding a gateway-side carrier (LiteLLM teams put tenant on `team_id` natively).
+        # and activates USER_MAX_BUDGET. Tenant is NOT sent: tenant attribution lives on LLMCostEvent. The
+        # gateway keeps request tags since LiteLLM v1.106.2, so tags and teams are both candidates for a
+        # gateway-side carrier; see ADR 2026_08_06_per_user_litellm_key_as_cost_attribution_carrier.
         api_key = await LiteLLMService.api_key_for_user(user) if user else None
 
         llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers, api_key=api_key)
