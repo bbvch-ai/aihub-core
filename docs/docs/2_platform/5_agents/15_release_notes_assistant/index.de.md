@@ -1,7 +1,7 @@
 ---
 title: Versionshinweis-Assistent
 description: Ein Chat-Assistent, der die Versionshinweise einer Jira-Lösungsversion schreibt — ein Hinweis pro Ticket, nach Typ gruppiert, in jeder konfigurierten Sprache.
-source_sha: a768161e2ef20a275c377580af374a44acc20585546f8187594cf1d7a10ce45b
+source_sha: 6dfff8f7a734f70dc5a60fb4bb6f8126c35bb2e55a0768046f984f02cb472525
 ---
 
 # Versionshinweis-Assistent
@@ -21,7 +21,9 @@ Der Assistent sucht in Ihrer Nachricht nach einem der Lösungsversionsnamen der 
 eine, die Jira nicht kennt, antwortet er mit den Versionen, die er kennt, statt zu raten.
 
 Auch eine Sprache lässt sich nennen: *„Versionshinweise für 2.4.0 auf Französisch"* (oder *„in French"*, *„en
-français"*, *„in francese"*) liefert diese Antwort auf Französisch statt in den Sprachen des Profils.
+français"*, *„in francese"*) liefert diese Antwort auf Französisch statt in den Sprachen des Profils. Die Sprache zählt
+nur nach einem Wort, das nach ihr fragt, etwa *in*, *into*, *auf* oder *en*; ein Land oder eine Firma, wie in *„für
+Kunden in Italien"* oder *„for Deutsche Bahn"*, ändert sie nicht.
 :::
 
 ## Was er tut
@@ -96,8 +98,8 @@ dann mit ihren Schlüsseln: … lassen sich als CSV exportieren. (ENG-12, ENG-15
   nennt, wie viele es waren.
 - **Ein Jira-Problem** — abgelehnte Zugangsdaten, ein Projekt, das nicht existiert oder das das Konto nicht sehen kann,
   ein ungültiger JQL-Filter, ein nicht erreichbares Jira — wird mit einem Satz in der Sprache des Benutzers beantwortet,
-  der sagt, wer es beheben kann. Die englische Meldung von Jira selbst steht in einem aufklappbaren Gedanken für die
-  Administration.
+  der sagt, wer es beheben kann. Die englische Meldung von Jira selbst landet im Log des Assistenten für die
+  Administration; der Chat zeigt sie nicht, da jeder Benutzer die Gedanken eines Laufs öffnen kann.
 - **Eine Version mit mehr als 300 Tickets** wird abgelehnt statt gekürzt; eine Administratorin oder ein Administrator
   kann sie mit dem JQL-Filter eingrenzen.
 

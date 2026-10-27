@@ -18,7 +18,9 @@ The assistant looks for one of the projects' own fix version names in your messa
 have, it answers with the versions it does know instead of guessing.
 
 Naming a language works too: *"Release notes for 2.4.0 in French"* (or *"auf Französisch"*, *"en français"*, *"in
-francese"*) gives that answer in French instead of the profile's languages.
+francese"*) gives that answer in French instead of the profile's languages. The language counts only after a word that
+asks for it, such as *in*, *into*, *auf* or *en*; a country or a company, as in *"für Kunden in Italien"* or *"for
+Deutsche Bahn"*, does not switch it.
 :::
 
 ## What it does
@@ -84,7 +86,8 @@ can cover a dozen of them, so it ends with their keys instead: … can be export
 - **A note that could not be translated** stays in the writing language, again with a thought saying how many.
 - **A Jira problem** — rejected credentials, a project that does not exist or that the account cannot see, an invalid
   JQL filter, an unreachable Jira — is answered with one sentence in the user's language that says who can fix it.
-  Jira's own English message goes into a collapsible thought for the administrator.
+  Jira's own English message is written to the assistant's log for the administrator; the chat does not show it, since
+  every user can open a run's thoughts.
 - **A release with more than 300 tickets** is refused rather than cut short; an administrator can narrow it with the JQL
   filter.
 
