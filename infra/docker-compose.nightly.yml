@@ -1406,13 +1406,16 @@ services:
   # its callers, and needs no outbound internet (models baked in, hub offline).
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-2
+    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.364-swiss-3
     restart: always
     environment:
       ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
-      # Without these torch oversubscribes the CPU and a short request takes seconds instead of ~250 ms
-      OMP_NUM_THREADS: '4'
-      MKL_NUM_THREADS: '4'
+      # Each request thread runs its own torch threads, so 4 x 2 oversubscribes the 4 CPUs at most twice when all are
+      # busy; torch's default oversubscribes far more and a short request takes seconds. 4 request threads let a short
+      # request and the health probe through beside long analyses.
+      GUNICORN_THREADS: '4'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
     volumes: [./configs/presidio/analyzer.yaml:/app/analyzer.yaml:ro]
     healthcheck:
       test:
