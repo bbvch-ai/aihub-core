@@ -111,10 +111,10 @@ recognizer_registry:
       supported_entity: CH_MRN
       patterns:
         - name: labelled_patient_or_case_number
-          regex: (?<=\b(?:PID|FID|IPP|MRN|Patienten-?(?:nummer|nr\.?|id)|Patienten
-            ?nr\.?|Fall-?(?:nummer|nr\.?)|Fall|KG-?Nr\.?|Patient ?ID|case|N° ?(?:patient|de
-            séjour|dossier|IPP)|N\. ?(?:paziente|caso)|numero ?(?:paziente|caso))[
-            ]?[:#]?[ ]?)\d{6,11}\b
+          regex: (?<=\b(?:PID|FID|IPP|MRN|Patient(?:en)?[- ]?(?:nummer|nr\.?|id)|Fall-?(?:nummer|nr\.?)|Fall|KG-?Nr\.?|case
+            (?:number|no\.?)|numéro de séjour|numero (?:di )?caso|case|N° ?(?:patient|de
+            séjour|dossier|IPP)|N\. ?(?:paziente|caso)|numero ?(?:paziente|caso))(?:[
+            ](?:is|isch|ist|est|è))?[ ]?[:#]?[ ]?)\d{6,11}\b
           score: 0.85
         - name: labelled_record_id
           regex: '(?<=\b(?:MRN|medical record (?:number|no\.?)|patient (?:id|number|no\.?)|hospital
@@ -122,6 +122,26 @@ recognizer_registry:
             clinica(?: n\.?)?|N\. nosologico|nosologico|codice paziente|Patientennummer|Fall-?Nr\.?|Fallnummer)(?:[
             ]is)?[ ]?[:#\-]?[ ]?)(?:(?-i:[A-Z]{1,3})-?)?(?:\d{4}[-/])?\d{4,11}\b'
           score: 0.85
+      supported_languages: [de]
+    # GLiNER misses a single surname after a form label or a title ("Name: Meier", "Frau Brunner"). Both patterns ask
+    # for a capitalised word, so "Name: unbekannt" stays untouched. A label word after another word ("Company name:",
+    # "File name:") names a thing, not a person. A title followed by another title ("Frau Dr. Meier") masks only the
+    # surname. "Patient" is no title: English headings ("Patient Information") follow it, and GLiNER finds the name
+    # in "Patient Meier" on its own.
+    - name: SwissLabelledNameRecognizer
+      supported_entity: PERSON
+      patterns:
+        - name: form_label_name
+          regex: (?<=\b(?<![\p{L}][ \-])(?:name|vorname|nachname|familienname|nom|prénom|nom
+            de famille|cognome|nome|surname|first name|last name|given name|family
+            name|full name|patient name)[ ]?:[ ]?)(?-i:\p{Lu}\p{Ll}[\p{L}'’\-]*(?:[
+            ]\p{Lu}\p{Ll}[\p{L}'’\-]*)?)
+          score: 0.7
+        - name: titled_name
+          regex: (?<=\b(?-i:Herr|Frau|Hr\.|Fr\.|Dr\.|Dr|Prof\.|M\.|Mme|Mlle|Monsieur|Madame|Signor|Signora|Sig\.|Sig\.ra|Dott\.|Dott\.ssa|Mr\.?|Mrs\.?|Ms\.?|Patientin|patiente|paziente)[
+            ])(?!(?:Dr|Prof|Dipl|Ing|Med|Sc|Nr)\b)(?-i:\p{Lu}\p{Ll}[\p{L}'’\-]*(?:[
+            ]\p{Lu}\p{Ll}[\p{L}'’\-]*)?)
+          score: 0.6
       supported_languages: [de]
     - name: HealthInsuranceNumberRecognizer
       supported_entity: CH_INSURANCE_CARD
@@ -137,11 +157,6 @@ recognizer_registry:
       supported_languages:
         - {language: de, context: [versichertenkarte, krankenkassenkarte, versicherungskarte,
             assuré, assicurato, cassa malati, insurance card, nhs, member id]}
-    - name: NhsRecognizer
-      type: predefined
-      supported_entity: CH_INSURANCE_CARD
-      supported_languages:
-        - {language: de, context: [nhs, nhs number]}
     - name: DeHealthInsuranceRecognizer
       type: predefined
       supported_entity: CH_INSURANCE_CARD

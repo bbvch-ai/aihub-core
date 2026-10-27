@@ -10,3 +10,4 @@ authorization:
   no_access_section: Non hai accesso alla sezione '%{section}'.
   no_access_organization_memory: Non hai accesso alla memoria dell'organizzazione.
   config_unauthorized: La configurazione fa riferimento a risorse a cui non hai accesso.
+extracted_table_download: 'Scarica la tabella completa (%{rows} righe): [%{name}](%{url})'

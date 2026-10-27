@@ -187,6 +187,80 @@ def test_should_end_postcode_and_city_at_the_sentence_end() -> None:
     assert [value for value in covered if "9000 St. Gallen" in value]
 
 
+def uncovered(text: str, entity_type: str, values: list[str]) -> list[str]:
+    """Every occurrence of each value not fully covered by a span of the type."""
+    spans = [s for s in analyze(text) if s["entity_type"] == entity_type]
+    return [f"{value}@{match.start()}" for value in values for match in re.finditer(re.escape(value), text)
+            if not any(s["start"] <= match.start() and s["end"] >= match.end() for s in spans)]
+
+
+def test_should_detect_a_single_surname_after_a_form_label() -> None:
+    text = "Nachname: Brunner\nVorname: Lea\nNom: Rochat\nCognome: Bernasconi\nLast name: Keller"
+
+    assert not uncovered(text, "PERSON", ["Brunner", "Lea", "Rochat", "Bernasconi", "Keller"])
+
+
+# In a mail thread full of names GLiNER drops a lone surname after a title; this is the thread where it did.
+NAME_HEAVY_THREAD = (
+    "Von: Martina Tschudi <martina.tschudi@spital-seeland.ch>\nGesendet: 24. Oktober 2026\nAn: Andrea Tschudi\n"
+    "Betreff: AW: SR-20241015-0042\n\nTelefonnotiz 08.02.2026: Herr Tschudi ruft an wegen der Rechnung "
+    "2024-28238 über Fr. 85.–. Er bittet um Rückruf auf +41 (0)76 746 18 90. Adresse im System prüfen: "
+    "General-Guisan-Strasse 60b, 9000 St. Gallen.\n\n--------------------\nVon: Andrea Tschudi "
+    "<a.tschudi@sunrise.ch>\nGesendet: 20. Juli 2023\nAn: Martina Tschudi\nBetreff: AW: SR-20241015-0042\n\n"
+    "Spitex-Bericht: Frau Tschudi (Morbus Parkinson) ist stabil. Note téléphonique du 10.02.2025 : M. Jaquet "
+    "appelle. Reminder: your appointment with Dr Gay-Crosier is on 20.11.")
+
+
+def test_should_detect_a_surname_after_a_title() -> None:
+    assert not uncovered(NAME_HEAVY_THREAD, "PERSON", ["Tschudi", "Jaquet", "Gay-Crosier"])
+
+
+def test_should_detect_a_surname_after_patient_in_a_name_heavy_thread() -> None:
+    # "Patient" is no title pattern, so this relies on GLiNER alone where it drops lone surnames after titles.
+    text = f"{NAME_HEAVY_THREAD}\n\nVisite 21.11.: Patient Tschudi klagt über Schwindel. The patient Jaquet was discharged."
+
+    assert not uncovered(text, "PERSON", ["Tschudi", "Jaquet"])
+
+
+def test_should_detect_a_case_number_after_a_label_and_a_connector_word() -> None:
+    text = ("PID isch 5495489. The case number is 4471128. Numéro de séjour 77120934. Numero di caso 3381204. "
+            "Fallnummer ist 2209183.")
+
+    assert not uncovered(text, "CH_MRN", ["5495489", "4471128", "77120934", "3381204", "2209183"])
+
+
+def masked(text: str, entity_type: str) -> list[str]:
+    return [text[s["start"]:s["end"]] for s in analyze(text) if s["entity_type"] == entity_type]
+
+
+def test_should_not_take_a_value_after_a_non_person_name_label_for_a_name() -> None:
+    text = "Company name: Swisscom\nProject name: Phoenix\nFile name: Report.pdf"
+
+    assert not masked(text, "PERSON")
+
+
+def test_should_not_take_a_title_or_a_heading_word_after_a_title_for_a_name() -> None:
+    text = "Frau Dr. Meier. Herr Prof. Dr. Müller. Patient Information. Patient Summary. Seen the patient Monday."
+
+    spans = masked(text, "PERSON")
+
+    assert not uncovered(text, "PERSON", ["Meier", "Müller"])
+    assert not [s for s in spans if s.rstrip(".") in {"Dr", "Prof"} or {"Information", "Summary", "Monday"} & set(s.split())]
+
+
+def test_should_detect_a_case_number_after_patient_nr() -> None:
+    text = "Patient Nr. 4471128. Patient-Nr. 5495489."
+
+    assert not masked(text, "PERSON")
+    assert not uncovered(text, "CH_MRN", ["4471128", "5495489"])
+
+
+def test_should_not_take_an_invoice_number_for_an_insurance_card() -> None:
+    text = "Rechnung Nr. 9434765919 vom 3. März, zahlbar innert 30 Tagen."
+
+    assert not [s for s in analyze(text) if s["entity_type"] == "CH_INSURANCE_CARD"]
+
+
 def long_prompt() -> str:
     """A mail thread of about LONG_PROMPT_TOKENS tokens (cl100k), with personal data in every message."""
     import tiktoken

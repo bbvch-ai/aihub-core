@@ -20,7 +20,8 @@ SEAWEEDFS_FILER=${SEAWEEDFS_FILER:?SEAWEEDFS_FILER must name the filer as host:p
 #   An expired entry is simply parsed again, so expiry bounds storage without losing anything.
 # - sandbox-files/.deleted/: the sandbox mirror copies each user's sandbox home one way into sandbox-files and keeps a
 #   file deleted or overwritten in the sandbox under .deleted/ for this grace period.
-# - agent-files: files uploaded to agents, created by the API on startup (AgentFileUploadService).
+# - agent-files: uploads to agents, files they produced and the tables of record extractions. A table is a result to
+#   download, not a record to keep.
 #
 # A rule is a path prefix, so it applies before its bucket exists. Without -collection: SeaweedFS rejects it for
 # bucket paths.

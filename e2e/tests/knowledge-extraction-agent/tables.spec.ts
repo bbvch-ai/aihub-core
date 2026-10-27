@@ -24,7 +24,7 @@ test.describe('Knowledge Extraction Agent over seeded invoices', () => {
     const answer = await chat.ask(REQUEST)
 
     await expect(page.getByText('aihub-extracted-table'), 'the table markers stay hidden').toHaveCount(0)
-    expect(answer.callsOf('select_knowledge_documents').length, 'the model settled the documents').toBeGreaterThan(0)
+    expect(answer.callsOf('select_knowledge_documents').length, 'the whole scope is read, no search decides').toBe(0)
     const rows = DocumentProfile.tableRows(answer.answer)
     expect(rows.length).toBeGreaterThan(0)
     expect(rows.every((row) => row.includes('invoices/')), 'every row names its path').toBe(true)
@@ -41,19 +41,19 @@ test.describe('Knowledge Extraction Agent over seeded invoices', () => {
     expect(listed).not.toContain('contracts/')
   })
 
-  test('K3 @llm a request too large for one answer shows a sample and continues in parts', async ({ chat }) => {
+  test('K3 @llm a request too large for one answer shows a sample, and a yes extracts every document at once', async ({ chat }) => {
     await chat.open(profile().modelId)
 
     const broad = await chat.ask(`Find all hardware positions on the bills from ${DOCUMENT_BULK_SUPPLIER}. Columns: invoice number, item, amount.`)
 
     expect(broad.answer, 'a sample, not a cut table').toMatch(/Sample:\*\* \d+ of \d+ matching documents/)
     expect(broad.answer, 'how the documents break down').toContain('By folder:')
-    expect(broad.answer, 'the offer to go on').toContain('continue')
+    expect(broad.answer, 'the offer to extract them all').toMatch(/Reply \*yes\*/)
 
-    const part = await chat.ask('continue')
+    const whole = await chat.ask('yes')
 
-    expect(part.callsOf('continue_extraction').length, 'the model continued the pending extraction').toBeGreaterThan(0)
-    expect(part.answer).toMatch(/Part 1 of \d+:\*\* documents 1–\d+ of \d+/)
-    expect(DocumentProfile.tableRows(part.answer).length).toBeGreaterThan(0)
+    expect(whole.answer, 'one answer, no parts').not.toMatch(/Part \d+ of \d+/)
+    expect(DocumentProfile.tableRows(whole.answer).length, 'more rows than the sample showed')
+      .toBeGreaterThan(DocumentProfile.tableRows(broad.answer).length)
   })
 })

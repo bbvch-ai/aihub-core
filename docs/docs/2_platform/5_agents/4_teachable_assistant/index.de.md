@@ -147,7 +147,7 @@ Jedes Beispiel ist ein Paar:
 | **Temperatur**                           | Zahl            | `0.0`        | Zufälligkeit. Halten Sie sie niedrig (`0.0`–`0.3`) für Klassifizierung und strenge Formatierung; erhöhen Sie sie nur für kreative Aufgaben. Bereich 0.0–2.0. |
 | **Log-Wahrscheinlichkeiten zurückgeben** | Umschalter      | Aus          | Erweiterte/diagnostische Option für Token-Level-Konfidenzwerte. Deaktiviert lassen, es sei denn, erforderlich.                                               |
 | **Top Log-Wahrscheinlichkeiten**         | Zahl            | `0`          | Wie viele alternative Tokens pro Position gemeldet werden sollen; gilt nur, wenn Log-Wahrscheinlichkeiten aktiviert sind. Bereich 0–20.                      |
-| **Timeout**                              | Zahl (Sekunden) | `600`        | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                                                        |
+| **Timeout**                              | Zahl (Sekunden) | `300`        | Wie lange auf das Modell gewartet werden soll, bevor aufgegeben wird.                                                                                        |
 
 ::: details Wie sich die Einstellungen zur Laufzeit kombinieren
 Eine Nachricht wird auf **Max Input Tokens** gekürzt, vom Eignungsschutz anhand der **Beschreibung** geprüft und (falls

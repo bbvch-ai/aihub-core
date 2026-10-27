@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         DocumentIngestionPipelineSettings,
     )
     from swiss_ai_hub.core.infrastructure.encryption.config_encryption_settings import ConfigEncryptionSettings
+    from swiss_ai_hub.core.infrastructure.jira.jira_settings import JiraSettings
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import LangfuseProvisioner
     from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
     from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings
@@ -47,6 +48,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
+    from swiss_ai_hub.core.infrastructure.playwright.playwright_settings import PlaywrightSettings
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.analyzer_span import AnalyzerSpan
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_client import PresidioAnalyzerClient
+    from swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_settings import PresidioAnalyzerSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_pipeline_settings import RclonePipelineSettings
     from swiss_ai_hub.core.infrastructure.redis.redis_settings import RedisSettings
     from swiss_ai_hub.core.infrastructure.redis.use_redis import use_redis
@@ -64,6 +69,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "JiraSettings",
     "SharePointSettings",
     "StructuredPipelineSettings",
     "OpenTelemetrySettings",
@@ -87,7 +93,11 @@ __all__ = [
     "OpenTerminalClient",
     "OpenTerminalError",
     "OpenTerminalSettings",
+    "AnalyzerSpan",
+    "PresidioAnalyzerClient",
+    "PresidioAnalyzerSettings",
     "SandboxHomePath",
+    "PlaywrightSettings",
     "MongoConnectionRegistry",
     "MongoSettings",
     "NatsSettings",
@@ -120,6 +130,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "JiraSettings": "swiss_ai_hub.core.infrastructure.jira.jira_settings",
     "SharePointSettings": "swiss_ai_hub.core.infrastructure.sharepoint.share_point_settings",
     "StructuredPipelineSettings": "swiss_ai_hub.core.infrastructure.structured_pipeline.structured_pipeline_settings",
     "OpenTelemetrySettings": "swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings",
@@ -143,7 +154,11 @@ _LAZY_IMPORTS = {
     "OpenTerminalClient": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_client",
     "OpenTerminalError": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_error",
     "OpenTerminalSettings": "swiss_ai_hub.core.infrastructure.open_terminal.open_terminal_settings",
+    "AnalyzerSpan": "swiss_ai_hub.core.infrastructure.presidio_analyzer.analyzer_span",
+    "PresidioAnalyzerClient": "swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_client",
+    "PresidioAnalyzerSettings": "swiss_ai_hub.core.infrastructure.presidio_analyzer.presidio_analyzer_settings",
     "SandboxHomePath": "swiss_ai_hub.core.infrastructure.open_terminal.sandbox_home_path",
+    "PlaywrightSettings": "swiss_ai_hub.core.infrastructure.playwright.playwright_settings",
     "MongoConnectionRegistry": "swiss_ai_hub.core.infrastructure.mongo.mongo_connection_registry",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",

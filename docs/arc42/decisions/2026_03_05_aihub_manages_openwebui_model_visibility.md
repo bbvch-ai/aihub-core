@@ -94,8 +94,8 @@ The provisioner runs on six triggers — all changes propagate immediately:
 
 - Adds dependency on OpenWebUI SCIM token and JWT secret key configuration (`OPENWEBUI_SCIM_TOKEN`,
   `OPENWEBUI_SECRET_KEY`)
-- Email-based user mapping required users to have logged into both systems — resolved by provisioning OpenWebUI
-  accounts over SCIM (ADR `2026_09_29_openwebui_accounts_provisioned_over_scim`)
+- Email-based user mapping required users to have logged into both systems — resolved by provisioning OpenWebUI accounts
+  over SCIM (ADR `2026_09_29_openwebui_accounts_provisioned_over_scim`)
 
 ### Risks
 

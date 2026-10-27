@@ -187,6 +187,10 @@ brings the same building blocks, each with its own section in the form:
   change.
 - **Knowledge Search**: the reranking model used when a user points the chat at a collection with `#`, or when the model
   chooses to search one itself. It is preset to `reranker/bge`. Only collections the user may read are searched.
+- **Read Linked Web Pages**: off by default. Turned on, the agent reads the web pages a message links or attaches with
+  `#` and answers from them; its limits are links per message (5), seconds per page (15) and characters per page
+  (20,000). Offered on the Instructed, Document Intelligence, Company Knowledge and Universal agents; the Web Page
+  Assistant always reads links. See [Linked web pages](../../10_chat_ui/15_linked_web_pages/).
 - **Condense question** and **Task LLM**: described above.
 
 All of them cite what they read as sources in the chat. If a message alone, such as a very long pasted text, is larger
