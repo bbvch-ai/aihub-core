@@ -234,6 +234,8 @@ flowchart TB
 
 - Die interne Cluster-Kommunikation von SeaweedFS ist isoliert
 - Datenbank-Services können Speicheroperationen nicht beeinträchtigen
+- Der Filer hängt an `storage` und `data` (für etcd) und meldet dem Master deshalb seinen Service-Namen
+  (`-ip=seaweedfs-filer`). Das S3-Gateway findet den Filer über den Master und erreicht keine Adresse im `data`-Netz.
 
 ### Service-Sichtbarkeitsmatrix
 

@@ -234,6 +234,8 @@ flowchart TB
 
 - SeaweedFS internal cluster communication is isolated
 - Database services cannot interfere with storage operations
+- The filer sits on both `storage` and `data` (for etcd), so it advertises its service name (`-ip=seaweedfs-filer`)
+  to the master. The S3 gateway looks up the filer through the master and cannot reach a `data` network address.
 
 ### Service Visibility Matrix
 
