@@ -1,6 +1,6 @@
 ---
 title: Updates & Wartung
-source_sha: c9d26af9c23ae818e19f8140ed176a29b3409ac9f57f51ed6db596c939236435
+source_sha: e366e7cd7e78cf732584e18817e183bce03251701532995223b38918a63a2cba
 ---
 
 # Updates und Wartung
@@ -141,8 +141,8 @@ damit die Identität wirksam wird. In der Sandbox gelöschte oder überschrieben
 
 Vier Bereiche laufen von selbst ab: `dagster` nach 1 Tag sowie `parse-cache`, `sandbox-files/.deleted/` und
 `agent-files` nach 7 Tagen. Der einmalig laufende Service `seaweedfs-ttl-init` schreibt diese bei jedem Lauf als
-TTL-Regeln des SeaweedFS-Filers, und `seaweedfs-init` wartet auf ihn, sodass auch `docker compose up seaweedfs-init` sie
-anwendet. Sein Log listet jede Regel auf, die er geprüft hat:
+TTL-Regeln des SeaweedFS-Filers, und ein Start von `seaweedfs-init` startet ihn mit, sodass auch
+`docker compose up seaweedfs-init` sie anwendet. Sein Log listet jede Regel auf, die er geprüft hat:
 
 ```bash
 docker compose logs seaweedfs-ttl-init

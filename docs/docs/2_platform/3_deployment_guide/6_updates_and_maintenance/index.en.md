@@ -133,8 +133,8 @@ sandbox are kept under `.deleted/` for 7 days.
 
 Four locations expire on their own: `dagster` after 1 day, and `parse-cache`, `sandbox-files/.deleted/` and
 `agent-files` after 7 days. The one-shot `seaweedfs-ttl-init` service writes these as SeaweedFS filer TTL rules each
-time it runs, and `seaweedfs-init` waits for it, so `docker compose up seaweedfs-init` applies them too. Its log lists
-every rule it verified:
+time it runs, and starting `seaweedfs-init` starts it too, so `docker compose up seaweedfs-init` applies them as well.
+Its log lists every rule it verified:
 
 ```bash
 docker compose logs seaweedfs-ttl-init

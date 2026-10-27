@@ -366,8 +366,8 @@ services:
     container_name: seaweedfs-ttl-init
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: "no"
-    {#- Bucket expiry as filer TTL rules, see ADR 2026_10_27_bucket_expiry_via_filer_ttl. seaweedfs-init waits
-        for it, so every `up ... seaweedfs-init` also (re)applies the rules. #}
+    {#- Bucket expiry as filer TTL rules, see ADR 2026_10_27_bucket_expiry_via_filer_ttl. seaweedfs-init depends
+        on it, so every `up ... seaweedfs-init` also (re)applies the rules. #}
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -390,13 +390,14 @@ services:
     container_name: seaweedfs-init
     image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
     restart: "no"
-    {#- Waits for seaweedfs-ttl-init without requiring it to succeed: ClickHouse waits for this service, and a
-        missing TTL rule must not keep ClickHouse and Langfuse down. A failed run stays visible as Exited (1). #}
+    {#- Only started alongside seaweedfs-ttl-init, not after it succeeded: ClickHouse waits for this service, and a
+        missing TTL rule must not keep ClickHouse and Langfuse down. Compose has no "completed, any exit code"
+        condition. Rules are path prefixes, so the order does not matter; a failed run stays visible as Exited (1). #}
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
       seaweedfs-ttl-init:
-        condition: service_completed
+        condition: service_started
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}

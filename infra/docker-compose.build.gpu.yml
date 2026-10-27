@@ -295,7 +295,7 @@ services:
       seaweedfs-s3:
         condition: service_healthy
       seaweedfs-ttl-init:
-        condition: service_completed
+        condition: service_started
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}

@@ -63,5 +63,5 @@ done
 echo "Bucket initialization and CORS configuration complete!"
 
 # Expiry for dagster, parse-cache, sandbox-files/.deleted/ and agent-files is a filer TTL rule that
-# seaweedfs-ttl-init applies before this script runs (see ttl-init.sh). Do not add S3 lifecycle configurations here:
+# seaweedfs-ttl-init applies alongside this script (see ttl-init.sh). Do not add S3 lifecycle configurations here:
 # on SeaweedFS >= 4.32 a lifecycle PUT deletes those rules and nothing would expire.

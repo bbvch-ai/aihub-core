@@ -29,10 +29,12 @@ error anywhere. On a fresh install nothing would ever have expired, including us
   (without `-collection`, which SeaweedFS rejects for bucket paths). The upstream wiki recommends this for "high-churn,
   non-versioned data with a fixed retention".
 - **A one-shot `seaweedfs-ttl-init` service** (SeaweedFS image, `storage` network) applies the four rules on every run
-  and exits 1 unless `filer.conf` holds each of them afterwards. `seaweedfs-init` waits for it to finish, so every start
-  of the bucket initialisation applies the rules too, but not for it to succeed: ClickHouse waits for `seaweedfs-init`,
-  and a missing TTL rule must not keep ClickHouse and Langfuse down. A failed run shows as `Exited (1)` with the missing
-  rule in its log. A rule is a prefix, so it can be set before its bucket exists.
+  and exits 1 unless `filer.conf` holds each of them afterwards. `seaweedfs-init` depends on it with `service_started`,
+  so every start of the bucket initialisation applies the rules too, without waiting for them to succeed: ClickHouse
+  waits for `seaweedfs-init`, and a missing TTL rule must not keep ClickHouse and Langfuse down (Compose has no
+  condition for "completed with any exit code"). The two run side by side, which is safe because a rule is a path prefix
+  and needs no bucket. A failed run shows as `Exited (1)` with the missing rule in its log. A rule is a prefix, so it
+  can be set before its bucket exists.
 - **No S3 lifecycle configuration** on these buckets, neither in `seaweedfs-init` nor in the API. On existing
   deployments the rules 4.01 created are kept: the image change alone does not touch them, and the new init writes the
   same rules instead of re-applying a lifecycle configuration.
