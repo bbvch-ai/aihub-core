@@ -8,8 +8,8 @@ source_sha: 661c201d93603d36256edfddbd5a39071a91ca22e5efb08b7f795bf3ada40a23
 
 Der **E-Mail-Verarbeitungsagent** macht aus einem gemeinsamen Postfach eine Warteschlange, die sich selbst sortiert. Bei
 jedem Lauf liest er jede ungelesene Nachricht im Posteingang, entscheidet, zu welcher Ihrer Kategorien sie gehört, und
-verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner, statt
-in eine Kategorie geraten zu werden.
+verschiebt sie in den Ordner dieser Kategorie. Alles, wozu keine Kategorie passt, landet in einem Ausweichordner oder
+bleibt auf Wunsch im Posteingang, statt in eine Kategorie geraten zu werden.
 
 Wie der [E-Mail-Agent](../11_email_agent/) hat er **keine Chat-Oberfläche**. Sie konfigurieren ihn einmal im Admin UI
 und lösen ihn programmatisch aus — durch einen anderen Workflow oder über die API.
@@ -119,11 +119,30 @@ erhalten Sie aber nur mit dem passenden Trennzeichen. Im Zweifel verwenden Sie f
 
 ### Klassifizierer
 
-| Feld                        | Standard                | Beschreibung                                                                                                        |
-| --------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Ausweichordner**          | `Uncategorised`         | Wohin E-Mails gehen, bei denen das Modell unsicher ist. Nie in eine Kategorie geraten, nie im Posteingang belassen. |
-| **Klassifizierungsmodell**  | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agents zu verwenden.                               |
-| **Klassifizierungs-Prompt** | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                                               |
+| Feld                                                   | Standard                | Beschreibung                                                                                                                                                      |
+| ------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nicht kategorisierte E-Mails im Posteingang lassen** | Aus                     | E-Mails, die zu keiner Kategorie passen, ungelesen im Posteingang lassen statt in den Ausweichordner zu verschieben.                                              |
+| **Ausweichordner**                                     | `Uncategorised`         | Wohin E-Mails gehen, bei denen das Modell unsicher ist. Nie in eine Kategorie geraten. Ausgeblendet, solange nicht kategorisierte E-Mails im Posteingang bleiben. |
+| **Klassifizierungsmodell**                             | *(leer)*                | Das klassifizierende Modell. Leer lassen, um das Hauptmodell des Agents zu verwenden.                                                                             |
+| **Klassifizierungs-Prompt**                            | *(sinnvoller Standard)* | Anweisungen, wie das Modell auswählt.                                                                                                                             |
+
+::: details Nicht kategorisierte E-Mails im Posteingang lassen
+Nützlich, wenn Sie mit einer einzigen Kategorie beginnen: Deren E-Mails wandern in ihren Ordner, alles andere bleibt
+ungelesen im Posteingang, genau dort, wo es angekommen ist. E-Mails, bei denen die Klassifizierung fehlschlug, kommen
+weiterhin in den Fehlerordner.
+
+Normalerweise verhindert das Verschieben aus dem Posteingang, dass der nächste Lauf eine Nachricht erneut klassifiziert.
+Eine im Posteingang belassene Nachricht braucht einen anderen Vermerk, und Microsoft 365 nimmt das eigene IMAP-Stichwort
+nicht an, das ihn an der Nachricht selbst tragen würde. Der Agent merkt sich deshalb, wie weit er den Posteingang
+gelesen hat: Jeder Lauf klassifiziert nur ungelesene E-Mails, die nach der zuletzt klassifizierten angekommen sind, die
+zuerst angekommene zuerst.
+
+- E-Mails, die Sie in den Posteingang zurückziehen, gelten als neu angekommen und werden erneut klassifiziert — so
+  wiederholen Sie eine Nachricht.
+- Eine alte Nachricht wieder als ungelesen zu markieren, holt sie nicht zurück; sie kam vor der Marke des Agents an.
+- Wird der Zustandsspeicher der Plattform zurückgesetzt, klassifiziert der nächste Lauf die ungelesenen E-Mails im
+  Posteingang noch einmal.
+:::
 
 ::: details Wie eine Nachricht im Ausweichordner landet
 Das Modell hat genau einen Ausweg: Es kann ausdrücklich sagen, dass **keine der Kategorien passt**. Dann geht die

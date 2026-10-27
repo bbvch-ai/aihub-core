@@ -143,18 +143,15 @@ finds.
 | Field                           | Default    | Description                                                                        |
 | ------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
 | **Extraction Model**            | main model | The model that reads each document and extracts its rows.                          |
-| **Files per Answer**            | `100`      | The most documents one extraction answer reads.                                    |
-| **Minutes per Answer**          | `5`        | About how long one answer may extract before the rest is offered in parts.         |
-| **Most Matching Documents**     | `1000`     | Above it, the user is only asked to narrow the request.                            |
-| **Rows in the Table**           | `500`      | The most rows one answer shows; in a chat, at most 100, the rest on *continue*.    |
+| **Most Documents per Table**    | `1000`     | Above it, the user is only asked to narrow the request.                            |
 | **Longest Fully Read Document** | `500000`   | Longer documents (in characters) are read in their relevant parts, marked as such. |
 | **Model Calls at Once**         | `4`        | Extraction calls one agent instance makes at the same time.                        |
 
-Extraction behaves as in the [Knowledge Extraction Agent](../14_knowledge_extraction_agent/): a selection too large for
-one answer gets a sample and the offer to narrow it or to continue in parts, and the model asks the user before it
-continues. One answer continues at most one part, even when the user agreed to all of them, and an answer that showed a
-sample continues none, so every answer stays within **Minutes per Answer** and the user confirms after seeing the
-sample.
+Extraction behaves as in the [Knowledge Extraction Agent](../14_knowledge_extraction_agent/): one answer extracts every
+selected document, the chat shows the first 100 rows and the whole table is a CSV file attached to the answer (a
+download link through the API). A selection of more than 100 documents first gets a sample, and the model asks the user
+before it extracts them all; an answer that showed a sample extracts nothing more, so the user always confirms after
+seeing it.
 
 By default an extraction needs the user's approval in the chat. A client that cannot answer an approval, such as the
 OpenAI-compatible API or a bot, stops there, so the shipped templates that offer extraction (**Knowledge Assistant** and

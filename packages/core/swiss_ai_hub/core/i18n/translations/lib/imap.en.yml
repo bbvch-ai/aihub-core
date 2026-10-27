@@ -81,10 +81,15 @@ config:
     label: What Belongs Here
     help: Describe the kind of mail that belongs in this category. This is what the
       model classifies on, so be concrete about intent rather than listing keywords.
+  keep_uncategorised_in_inbox:
+    label: Leave Uncategorised Mail in the Inbox
+    help: When on, mail that fits no category stays unread in the inbox instead of
+      moving to the fallback folder, and later runs do not classify it again. Mail
+      the classifier failed on still goes to the failure folder.
   fallback_folder:
     label: Fallback Folder
     help: Folder for mail the model is not confident about. Such mail is never guessed
-      into a category and never left in the inbox.
+      into a category.
   failure_folder:
     label: Failure Folder
     help: Folder for mail the classifier could not process at all. Such mail still

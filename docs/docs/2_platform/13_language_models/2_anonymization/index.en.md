@@ -45,6 +45,20 @@ inside the deployment are not anonymised, unless the call asks for it:
 
 Only chat requests are anonymised. Embeddings, reranking, transcription and image generation are not.
 
+### Anonymising an agent profile
+
+Every agent profile has an **Anonymise personal data** checkbox at the end of its configuration form, whatever the
+blueprint. When it is on, every LLM call of the profile's runs asks for the guardrail, also for models inside the
+deployment: the answer, the meta-question check, the title, the follow-ups, the memory extraction, and the runs the
+profile delegates to. The answer starts with a short note that personal data was replaced before it reached the model.
+Use it for profiles that handle sensitive data, such as HR, even when their models run on premises.
+
+### Anonymising text by hand
+
+Users can also anonymise a text themselves with the [Anonymiser](../../5_agents/16_anonymiser/) agent, then use it in
+any tool, inside the Hub or outside it. They paste the answer back into the same chat to get the original values
+restored. The Anonymiser uses the same analyzer and the same list of what counts as personal data, and calls no model.
+
 ## What is detected
 
 The analyzer runs Presidio with GLiNER's multilingual PII model and patterns for Swiss and international formats, in
@@ -61,9 +75,22 @@ German, French, Italian and English:
 Other dates, company names and descriptions that identify a person only through context (a job title together with a
 company) are not masked.
 
-Pronouns, roles and field labels ("Sie", "vous", "Benutzer", "Adresse", "IBAN") are never masked, in German,
-French, Italian or English, also with a short number ("Position 2", "Art. 5"): the detection model tags them as names or as the type they name, and masking them would
-garble the request. The list is `pii_allow_list` in the gateway configuration.
+Pronouns, roles and field labels ("Sie", "vous", "Benutzer", "Adresse", "IBAN") are never masked, in German, French,
+Italian or English, also with a short number ("Position 2", "Art. 5"): the detection model tags them as names or as the
+type they name, and masking them would garble the request. The list is `pii_allow_list` in the gateway configuration.
+
+## Checking it in Langfuse
+
+Every call the gateway anonymises leaves a `pii-anonymisation` observation in Langfuse. In an agent run it sits in the
+run's trace, next to the step that made the call: its input is the request exactly as the provider received it, with
+placeholders, its output says how many values of which type were replaced, and its metadata names the model and why the
+call was anonymised (a model outside the deployment, or requested by the call, as with a profile's checkbox). To see
+every anonymised call, open Tracing → Observations and search for `pii-anonymisation`. Calls outside an agent run, such
+as plain chats, are listed with their counts only. A call refused because the analyzer was unavailable shows as an
+error.
+
+The run's other observations are recorded by the agent before the call reaches the gateway, so they show the original
+text; Langfuse runs inside the deployment.
 
 ## Configuration
 

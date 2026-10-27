@@ -18,8 +18,12 @@ long documents numbered labels too ("Position 2"). Masking them garbles the prom
 and hides line numbers from extraction, so a detection is never masked when it is exactly a word from
 `pii_allow_list`, in any case, optionally followed by a short number.
 
+Every handled call leaves a `pii-anonymisation` span (pii_anonymisation_audit.py): an admin sees in Langfuse what the
+provider received, which the Hub's own traces, written before the gateway, cannot show.
+
 The module is bind-mounted into the upstream LiteLLM image like custom_callbacks.py, so it may only depend on the
-stdlib, httpx and LiteLLM. The analyzer URL and key come from PRESIDIO_ANALYZER_API_BASE and PRESIDIO_ANALYZER_API_KEY.
+stdlib, httpx, LiteLLM and the audit module mounted next to it. The analyzer URL and key come from
+PRESIDIO_ANALYZER_API_BASE and PRESIDIO_ANALYZER_API_KEY.
 """
 
 import copy
@@ -33,6 +37,7 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
+from pii_anonymisation_audit import AnonymisationAudit
 
 try:
     from litellm.integrations.custom_guardrail import CustomGuardrail
@@ -152,6 +157,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         self.client = httpx.AsyncClient(timeout=ANALYZER_TIMEOUT_SECONDS)
         self._maps: dict[str, tuple[float, dict[str, str], bool]] = {}
         self._external: dict[str, bool] = {}
+        self.audit = AnonymisationAudit()
         super().__init__(**kwargs)
 
     # ------------------------------------------------------------------ which calls
@@ -220,11 +226,18 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
     async def async_pre_call_hook(self, user_api_key_dict: Any, cache: Any, data: dict, call_type: str) -> dict:
         if call_type not in CHAT_CALL_TYPES:
             return data
+        started_ns = time.time_ns()
+        reason = "model outside the deployment" if self.is_external(data.get("model")) else "requested by the call"
         messages = data.get("messages") or []
         reserved = {token for message in messages for text in self.texts_of(message) for token in TOKEN.findall(text)}
         masker = PlaceholderMasker(reserved)
-        for message in messages:
-            await self.mask_message(message, masker)
+        try:
+            for message in messages:
+                await self.mask_message(message, masker)
+        except AnonymisationUnavailableError as refusal:
+            self.audit.record(data, {}, reason, started_ns, error=str(refusal))
+            raise
+        self.audit.record(data, masker.tokens, reason, started_ns)
         response_format = data.get("response_format") or {}
         json_output = isinstance(response_format, dict) and response_format.get("type") in JSON_RESPONSE_FORMATS
         self._sweep()
@@ -270,7 +283,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         self._maps.pop(request_data.get("litellm_call_id"), None)
 
     async def async_post_call_streaming_iterator_hook(self, user_api_key_dict: Any, response: Any,
-                                                      request_data: dict) -> AsyncGenerator[Any, None]:
+                                                      request_data: dict) -> AsyncGenerator[Any]:
         entry = self._maps.get(request_data.get("litellm_call_id"))
         if entry is None:
             async for chunk in response:

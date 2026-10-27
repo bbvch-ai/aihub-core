@@ -4,11 +4,16 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from swiss_ai_hub.core.generative_ai import (
     KnowledgeContentSearch,
     KnowledgeContentSearchLimits,
+    KnowledgeContentSearchTimeoutError,
     KnowledgeDocument,
     KnowledgeDocumentListing,
     KnowledgeDocumentNotFoundError,
     KnowledgeDocumentPendingError,
     KnowledgeDocumentReader,
+    KnowledgeSearchBudget,
+    KnowledgeSemanticRanking,
+    KnowledgeSemanticSearch,
+    KnowledgeSemanticSearchUnavailableError,
 )
 
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_fields import KnowledgeDocumentFields
@@ -26,30 +31,46 @@ from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 LIST_KNOWLEDGE_DOCUMENTS_TOOL = "list_knowledge_documents"
 SEARCH_KNOWLEDGE_CONTENT_TOOL = "search_knowledge_content"
 READ_KNOWLEDGE_DOCUMENT_TOOL = "read_knowledge_document"
+RANK_KNOWLEDGE_DOCUMENTS_TOOL = "rank_knowledge_documents"
 
 # Sized so a page stays well inside the loop's default result room (4,000 tokens): a cut page loses its last entries.
 LISTING_PAGE_SIZE = 60
 SEARCH_PAGE_LIMITS = KnowledgeContentSearchLimits(max_documents=20, max_lines_per_document=2, max_line_chars=160)
+RANKING_PAGE_SIZE = 15
+# A document ranks by its closest passage, so more passages would not change the order; two are shown per document,
+# which with the page size keeps a page near 2,500 tokens, and fetching only those keeps a whole ranking's text small.
+RANKING_PASSAGES = 2
+RANKING_TIMEOUT_SECONDS = 20.0
 READ_CHARACTERS = 12_000
 _EXAMPLE_PATHS = 3
 
 
 class KnowledgeDocumentTools(BaseToolSpec):
-    """Whole knowledge documents for the model: list and match their paths, search their text, read them.
+    """Whole knowledge documents for the model: list and match their paths, search their text, read them, and, when
+    the profile enables it, rank them by meaning.
 
     Vector search returns similar excerpts; these return every match and whole files, which questions about exact
-    terms, all documents of a kind, or one document's full content need. Offered only when the profile switches them
-    on, and only over the collections the asking user may read, cut to the profile's glob before the model sees any.
-    Errors raise, so the loop marks them as failed calls and the model can retry with what the message says.
+    terms, all documents of a kind, or one document's full content need. The ranking is vector search grouped by
+    document and confined to the same documents, for the documents a request describes in other words. Offered only
+    when the profile switches them on, and only over the collections the asking user may read, cut to the profile's
+    glob before the model sees any. Errors raise, so the loop marks them as failed calls and the model can retry with
+    what the message says.
     """
 
-    spec_functions = [LIST_KNOWLEDGE_DOCUMENTS_TOOL, SEARCH_KNOWLEDGE_CONTENT_TOOL, READ_KNOWLEDGE_DOCUMENT_TOOL]
+    spec_functions = [
+        LIST_KNOWLEDGE_DOCUMENTS_TOOL,
+        SEARCH_KNOWLEDGE_CONTENT_TOOL,
+        READ_KNOWLEDGE_DOCUMENT_TOOL,
+        RANK_KNOWLEDGE_DOCUMENTS_TOOL,
+    ]
 
     def __init__(self, context: ToolContext) -> None:
         self.context = context
         config = context.agent_config
         if not isinstance(config, KnowledgeDocumentFields) or not config.knowledge_documents.enabled:
             self.spec_functions = []
+        elif not config.knowledge_documents.semantic_search:
+            self.spec_functions = [name for name in self.spec_functions if name != RANK_KNOWLEDGE_DOCUMENTS_TOOL]
 
     @staticmethod
     def _options(tool: str) -> dict[str, Any]:
@@ -103,6 +124,47 @@ class KnowledgeDocumentTools(BaseToolSpec):
             limits=SEARCH_PAGE_LIMITS,
         )
         return KnowledgeDocumentToolOutput.search(scope, result, offset)
+
+    @ToolOptions.of(**_options(RANK_KNOWLEDGE_DOCUMENTS_TOOL))
+    async def rank_knowledge_documents(
+        self,
+        query: Annotated[
+            str,
+            "What the wanted documents are about, in a few words, e.g. 'supplier contract liability termination'; "
+            "no amounts, dates or thresholds.",
+        ],
+        path_glob: Annotated[str | None, "Only documents whose path matches this glob."] = None,
+        offset: Annotated[int, "Where the page starts, from a previous result's 'more with offset='."] = 0,
+    ) -> str:
+        """Ranks every knowledge document by how closely its passages match the meaning of the query, most similar
+        first, with ids and its closest passages. It finds documents written in other words or another language than
+        the query, such as a German 'Haftungsbeschränkung' for 'liability cap'. A ranking is not a filter: every
+        document has a place in it, so judge each one by its path and passages, and read the next page while the last
+        documents are still relevant."""
+        scope = await KnowledgeDocumentScope.for_tool(self.context)
+        globs = [glob for glob in (scope.restricting_glob, path_glob) if glob]
+        ranking = await self._rank(scope, query, globs)
+        return KnowledgeDocumentToolOutput.ranking(scope, ranking, max(offset, 0), RANKING_PAGE_SIZE)
+
+    async def _rank(self, scope: KnowledgeDocumentRunScope, query: str, globs: list[str]) -> KnowledgeSemanticRanking:
+        """The whole ranking, computed again for every page.
+
+        Tools get no per-run store (`ToolContext` carries no `RunContext`), so a page cannot reuse an earlier call's
+        ranking; computing it whole keeps the pages of one query consistent, and costs one listing, one embedding per
+        model and one grouped search per database. When the vector store cannot answer, the call fails with a message
+        that points the model at the keyword tools, which do not need it.
+        """
+        try:
+            return await KnowledgeSemanticSearch.rank(
+                scope.pairs(),
+                query,
+                path_globs=globs,
+                passages_per_document=RANKING_PASSAGES,
+                user=self.context.user,
+                budget=KnowledgeSearchBudget(RANKING_TIMEOUT_SECONDS),
+            )
+        except (KnowledgeSemanticSearchUnavailableError, KnowledgeContentSearchTimeoutError) as unavailable:
+            raise RuntimeError(KnowledgeDocumentToolOutput.ranking_unavailable(unavailable)) from unavailable
 
     @ToolOptions.of(**_options(READ_KNOWLEDGE_DOCUMENT_TOOL))
     async def read_knowledge_document(

@@ -1,5 +1,7 @@
-"""The Knowledge Extraction Agent lets the model find the documents, extracts from the ones it settled on within the
-profile's limits, and answers with the table; whatever goes wrong before a table exists ends in a clear answer."""
+"""The Knowledge Extraction Agent reads every document in the profile's scope by default, narrowed only by the places
+the user names, or, with discovery, lets the model find the documents; it extracts within the profile's limits, a "yes"
+to a sample extracts the whole selection, and it answers with the table; whatever goes wrong before a table exists
+ends in a clear answer."""
 
 import json
 from datetime import UTC, datetime
@@ -24,22 +26,32 @@ from swiss_ai_hub.core.events.agent import (
     ToolResultEvent,
     UserMessageEvent,
 )
+from swiss_ai_hub.core.form import Checkbox
 from swiss_ai_hub.core.generative_ai import (
     BucketNamespacePair,
     ExtractedTableMarkup,
     KnowledgeDocumentCriteria,
+    KnowledgeDocumentListing,
+    KnowledgeDocumentSelection,
     KnowledgeDocumentSummary,
     LLMConfig,
+    RecordField,
+    RecordSchema,
 )
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 
-from swiss_ai_hub.agent.agents.knowledge_extraction_agent.continuation_tools import CONTINUE_EXTRACTION_TOOL
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_answer import ROWS_PER_CHUNK
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_answer import ExtractionRequestAnswer
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_plain_answer import (
+    ExtractionRequestPlainAnswer,
+)
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_request_reading import ExtractionRequestReading
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent import KnowledgeExtractionAgent
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extraction_agent_config import (
     KnowledgeExtractionAgentConfig,
 )
+from swiss_ai_hub.agent.agents.knowledge_extraction_agent.requested_location import RequestedLocation
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.selection_call import SelectionCall
 from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_collection import (
     KnowledgeDocumentCollection,
@@ -48,7 +60,7 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
     KnowledgeDocumentRunScope,
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.extract_records_arguments import ExtractRecordsArguments
-from swiss_ai_hub.agent.capabilities.record_extraction.pending_extraction import PendingExtraction
+from swiss_ai_hub.agent.capabilities.record_extraction.sample_awaiting_confirmation import SampleAwaitingConfirmation
 from swiss_ai_hub.agent.capabilities.tool_loop.tool_loop_config import ToolLoopConfig
 from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
 
@@ -57,6 +69,7 @@ SCOPE_OF = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.knowledge_extra
 FINANCE = BucketNamespacePair(bucket_name="finance-db", namespace_name="invoices")
 CONTRACTS = KnowledgeReference(database="legal", namespace="contracts")
 SELECT = "select_knowledge_documents"
+WHOLE = "swiss_ai_hub.agent.agents.knowledge_extraction_agent.whole_scope_request"
 
 
 def _config(**fields: Any) -> KnowledgeExtractionAgentConfig:
@@ -101,12 +114,6 @@ def _select(call_id: str, path_glob: str) -> ToolCallApprovedEvent:
     )
 
 
-def _continue(call_id: str, user_agreed: bool = True) -> ToolCallApprovedEvent:
-    return ToolCallApprovedEvent(
-        tool_call_id=call_id, name=CONTINUE_EXTRACTION_TOOL, arguments={"user_agreed": user_agreed}, kind="function"
-    )
-
-
 def _result(call_id: str, is_error: bool = False, name: str = SELECT) -> ToolResultEvent:
     return ToolResultEvent(tool_call_id=call_id, name=name, content="Selected documents: 2.", is_error=is_error)
 
@@ -138,6 +145,15 @@ class _Thread:
     async def delete(self, key: str) -> None:
         self.values.pop(key, None)
 
+    async def pop(self, key: str, default: Any = None) -> Any:
+        return self.values.pop(key, default)
+
+    async def set_if_absent(self, key: str, value: Any) -> bool:
+        if key in self.values:
+            return False
+        self.values[key] = value
+        return True
+
 
 def _decided(iteration: int, *call_ids: str) -> ToolCallsDecidedEvent:
     state = ToolLoopState(messages=[], mode=ToolLoopMode.GATHER, iteration=iteration)
@@ -151,9 +167,10 @@ def test_the_blueprint_validates_and_offers_the_document_tools_and_the_selection
         "list_knowledge_documents",
         "search_knowledge_content",
         "read_knowledge_document",
+        "rank_knowledge_documents",
         SELECT,
-        CONTINUE_EXTRACTION_TOOL,
     ]
+    assert "continue_extraction" not in KnowledgeExtractionAgent.tools.names()
 
 
 def test_the_profile_form_fixes_the_document_tools_on_and_narrowing():
@@ -162,6 +179,8 @@ def test_the_profile_form_fixes_the_document_tools_on_and_narrowing():
     assert form.knowledge_documents.enabled is True
     assert form.knowledge_documents.narrow_references is True
     assert form.knowledge_tool.every_readable_collection is False
+    assert isinstance(form.discovery, Checkbox)
+    assert _config().discovery is False
 
 
 @pytest.mark.asyncio
@@ -175,14 +194,49 @@ async def test_the_instructions_name_the_scope_ahead_of_the_clients_prompt_and_e
     )
 
     with patch(SCOPE_OF, return_value=_scope()):
-        request = await KnowledgeExtractionAgent().contextualize_step(
-            event, agent_config=_config(), t=T, thread=_Thread()
-        )
+        request = await KnowledgeExtractionAgent().contextualize_step(event, agent_config=_config(), t=T)
 
     head = request.history[0].content
     assert "finance/invoices (Finance); only paths matching 'invoices/**'" in head
     assert head.index("select_knowledge_documents") < head.index("Client prompt.")
     assert request.history[2].content == "[A table of 7 extracted rows was shown here.]\n\nSummary"
+
+
+@pytest.mark.asyncio
+async def test_a_follow_up_keeps_the_request_it_refers_to_behind_a_long_answer_when_no_input_limit_is_set():
+    long_answer = "| item | amount |\n" + "| Laptop X1 Carbon with docking station | 1900.00 |\n" * 400
+    event = _event(
+        ChatMessage(role=MessageRole.USER, content="Hardware lines on the 2025 Acme bills: item, amount."),
+        ChatMessage(role=MessageRole.ASSISTANT, content=long_answer),
+        ChatMessage(role=MessageRole.USER, content="Now the same for 2024."),
+    )
+
+    with patch(SCOPE_OF, return_value=_scope()):
+        request = await KnowledgeExtractionAgent().contextualize_step(event, agent_config=_config(), t=T)
+
+    assert [message.content for message in request.history[1:]] == [
+        "Hardware lines on the 2025 Acme bills: item, amount.",
+        long_answer,
+        "Now the same for 2024.",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_with_semantic_search_the_model_is_told_to_rank_first_and_judge_documents_not_rows():
+    from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_config import KnowledgeDocumentConfig
+
+    config = _config(knowledge_documents=KnowledgeDocumentConfig(enabled=True, semantic_search=True))
+    with patch(SCOPE_OF, return_value=_scope()):
+        request = await KnowledgeExtractionAgent().contextualize_step(
+            _event(ChatMessage(role=MessageRole.USER, content="Liability caps")),
+            agent_config=config,
+            t=T,
+        )
+
+    head = request.history[0].content
+    assert head.index("rank_knowledge_documents") < head.index("select_knowledge_documents")
+    assert "Relevance is about the document, never about its rows" in head
+    assert "only paths matching 'invoices/**'" in head
 
 
 @pytest.mark.asyncio
@@ -197,71 +251,21 @@ async def test_without_a_readable_collection_the_agent_says_so_instead_of_loopin
 
 
 @pytest.mark.asyncio
-async def test_the_discovery_loop_gathers_with_the_messages_references():
-    with patch(SCOPE_OF, return_value=_scope()):
+async def test_with_discovery_the_loop_gathers_with_the_messages_references_without_reading_the_request():
+    ask, listing = AsyncMock(), AsyncMock()
+    with (
+        patch(SCOPE_OF, return_value=_scope()),
+        patch(f"{WHOLE}.ExtractionRequestReading.ask", ask),
+        patch(f"{WHOLE}.KnowledgeDocumentReader.list_documents", listing),
+    ):
         request = await KnowledgeExtractionAgent().discover_step(
-            _ctx(), _event(), agent_config=_config(), displayer=_displayer(), t=T, thread=_Thread()
+            _ctx(), _event(), agent_config=_config(discovery=True), displayer=_displayer(), t=T, thread=_Thread()
         )
 
     assert (request.mode, request.knowledge_references) == (ToolLoopMode.GATHER, [CONTRACTS])
-    assert CONTINUE_EXTRACTION_TOOL not in request.tools
-
-
-@pytest.mark.asyncio
-async def test_an_unfinished_extraction_is_named_and_can_be_continued():
-    thread = _Thread()
-    await PendingExtraction(
-        extraction_id="x1",
-        documents=[_document(f"invoices/2025/{index}.pdf") for index in range(6)],
-        part_starts=[0, 3],
-        next_part=1,
-        finished_parts=[0],
-        criteria="path matches `invoices/2025/**`",
-    ).save(thread)
-
-    with patch(SCOPE_OF, return_value=_scope()):
-        context = await KnowledgeExtractionAgent().contextualize_step(
-            _event(ChatMessage(role=MessageRole.USER, content="weiter")), agent_config=_config(), t=T, thread=thread
-        )
-        loop = await KnowledgeExtractionAgent().discover_step(
-            _ctx(), _event(), agent_config=_config(), displayer=_displayer(), t=T, thread=thread
-        )
-
-    assert "3 documents are still to extract" in context.history[0].content
-    assert loop.tools is None
-
-
-@pytest.mark.asyncio
-async def test_continuing_extracts_the_next_part_instead_of_a_selection():
-    decided = [_decided(0, "s1"), _decided(1, "c1")]
-    calls = [_select("s1", "invoices/**"), _continue("c1")]
-    results = [_result("s1"), _result("c1", name=CONTINUE_EXTRACTION_TOOL)]
-    finished = ToolLoopFinishedEvent(loop="tools", block=[], stopped_early=False)
-
-    with patch(SCOPE_OF, return_value=_scope()):
-        request = await KnowledgeExtractionAgent().plan_step(
-            finished,
-            _ctx(),
-            _event(),
-            agent_config=_config(),
-            displayer=_displayer(),
-            t=T,
-            decided=decided,
-            calls=calls,
-            results=results,
-        )
-
-    assert request.continue_pending is True
-    assert request.selection is None
-
-
-def test_a_continuation_the_user_did_not_agree_to_continues_nothing():
-    decided = [_decided(0, "s1"), _decided(1, "c1")]
-    calls = [_select("s1", "invoices/**"), _continue("c1", user_agreed=False)]
-    results = [_result("s1"), _result("c1", name=CONTINUE_EXTRACTION_TOOL)]
-
-    assert not SelectionCall.continued(decided, calls, results)
-    assert SelectionCall.continued(decided, [_select("s1", "invoices/**"), _continue("c1")], results)
+    assert request.hands_back_results is False
+    ask.assert_not_awaited()
+    listing.assert_not_awaited()
 
 
 def test_the_last_successful_selection_wins_by_the_loops_own_order():
@@ -530,3 +534,344 @@ def test_the_fallback_prompt_asks_for_folders_only_after_a_stopped_search():
     assert "Select by folder and path only" in rendered[True]
     assert "Select by folder and path only" not in rendered[False]
     assert "document_ids" not in rendered[True]
+
+
+def _reading(
+    *locations: RequestedLocation, is_table_request: bool = True, confirms_sample: bool = False
+) -> ExtractionRequestAnswer:
+    return ExtractionRequestAnswer(
+        is_table_request=is_table_request,
+        confirms_sample=confirms_sample,
+        locations=list(locations),
+        fields="item, amount",
+        instructions="only Hooli hardware",
+        row_terms="Laptop|Server",
+        document_terms="Hooli",
+    )
+
+
+def _listing(*paths: str) -> KnowledgeDocumentListing:
+    documents = [
+        _document(path).model_copy(update={"collection": FINANCE})
+        for path in paths
+        or ("invoices/2024/q1/a.pdf", "invoices/2024/q2/b.pdf", "invoices/2025/q1/c.pdf", "other/2026/d.pdf")
+    ]
+    return KnowledgeDocumentListing.from_summaries(documents)
+
+
+async def _awaiting(thread: _Thread) -> None:
+    request = ExtractRecordsEvent(
+        selection=KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()]),
+        fields="item, amount",
+        collections=[FINANCE],
+    )
+    schema = RecordSchema(fields=[RecordField(name="item", type="string", description="The billed item.")])
+    await SampleAwaitingConfirmation.of(request, schema, 150).save(thread, "extraction-test")
+
+
+async def _discover(
+    reading: ExtractionRequestAnswer | None,
+    *,
+    discovery: bool = False,
+    thread: _Thread | None = None,
+    listing: KnowledgeDocumentListing | None = None,
+    scope: KnowledgeDocumentRunScope | None = None,
+    message: str = "Hooli hardware",
+) -> tuple[Any, AsyncMock, AsyncMock]:
+    ask = AsyncMock(return_value=reading)
+    list_documents = AsyncMock(return_value=listing or _listing())
+    with (
+        patch(SCOPE_OF, return_value=scope or _scope()),
+        patch(f"{WHOLE}.ExtractionRequestReading.ask", ask),
+        patch(f"{WHOLE}.KnowledgeDocumentReader.list_documents", list_documents),
+    ):
+        answer = await KnowledgeExtractionAgent().discover_step(
+            ConversationContextualizedEvent(
+                history=[ChatMessage(role=MessageRole.USER, content=message)], query=message
+            ),
+            _event(),
+            agent_config=_config(discovery=discovery),
+            displayer=_displayer(),
+            t=T,
+            thread=thread or _Thread(),
+        )
+    return answer, ask, list_documents
+
+
+class TestWholeScope:
+    @pytest.mark.asyncio
+    async def test_without_discovery_every_document_in_scope_is_extracted_with_the_requests_reading(self):
+        request, ask, list_documents = await _discover(_reading(), scope=_scope(ignored=[CONTRACTS]))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection == KnowledgeDocumentSelection(any_of=[KnowledgeDocumentCriteria()])
+        assert (request.fields, request.instructions, request.row_terms, request.document_terms) == (
+            "item, amount",
+            "only Hooli hardware",
+            "Laptop|Server",
+            "Hooli",
+        )
+        assert (request.collections, request.confirmed, request.cut_short) == ([FINANCE], False, False)
+        assert any("legal/contracts" in notice for notice in request.notices)
+        assert list_documents.await_args.args[0] == [FINANCE]
+        assert ask.await_args.args[4] is False
+        assert any(line.startswith("**By folder:**") for line in ask.await_args.args[2])
+
+    @pytest.mark.asyncio
+    async def test_a_named_place_narrows_the_scope_by_path(self):
+        location = RequestedLocation(path_glob="invoices/2025/**", path_regex=None)
+
+        request, _, _ = await _discover(_reading(location))
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="invoices/2025/**")]
+
+    @pytest.mark.asyncio
+    async def test_several_named_places_select_any_of_them(self):
+        locations = [
+            RequestedLocation(path_glob="invoices/2025/**", path_regex=None),
+            RequestedLocation(path_glob=None, path_regex="2024"),
+        ]
+
+        request, _, _ = await _discover(_reading(*locations))
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob="invoices/2025/**"),
+            KnowledgeDocumentCriteria(path_regex="2024"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_named_place_without_documents_answers_with_the_scopes_folders(self):
+        location = RequestedLocation(path_glob="invoices/2026/**", path_regex=None)
+
+        answer, _, _ = await _discover(_reading(location))
+
+        assert isinstance(answer, CompleteConversationEvent)
+        text = answer.stop.output_messages[-1].content
+        assert text.startswith("No document in this agent's scope is at `invoices/2026/**`, so nothing was extracted.")
+        assert "**By folder:** invoices/2024/q1 (1), invoices/2024/q2 (1), invoices/2025/q1 (1)" in text
+
+    @pytest.mark.asyncio
+    async def test_a_file_path_the_model_read_as_a_topic_is_still_where_the_rows_come_from(self):
+        message = "List the requirements in invoices/2025/q1/c.pdf. Columns: id, requirement."
+
+        request, _, _ = await _discover(_reading(), message=message)
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="**/invoices/2025/q1/c.pdf")]
+
+    @pytest.mark.asyncio
+    async def test_the_last_folders_of_a_path_find_the_document_they_end(self):
+        request, _, _ = await _discover(_reading(), message="Requirements in /q1/c.pdf, please.")
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="**/q1/c.pdf")]
+
+    @pytest.mark.asyncio
+    async def test_a_written_file_path_outside_the_scope_is_reported_not_replaced_by_one_of_the_same_name(self):
+        message = "List the requirements in alpha/2025/q1/c.pdf. Columns: id, requirement."
+
+        answer, _, _ = await _discover(_reading(), message=message)
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert "is at `**/alpha/2025/q1/c.pdf`" in answer.stop.output_messages[-1].content
+
+    @pytest.mark.asyncio
+    async def test_a_place_outside_the_profiles_glob_holds_nothing(self):
+        location = RequestedLocation(path_glob="other/**", path_regex=None)
+
+        answer, _, _ = await _discover(_reading(location))
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert "is at `other/**`" in answer.stop.output_messages[-1].content
+        assert "other/2026" not in answer.stop.output_messages[-1].content
+
+    @pytest.mark.asyncio
+    async def test_an_invalid_path_pattern_is_left_to_the_extraction_to_report(self):
+        location = RequestedLocation(path_glob=None, path_regex="(unclosed")
+
+        request, _, _ = await _discover(_reading(location))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_regex="(unclosed")]
+
+    @pytest.mark.asyncio
+    async def test_a_message_that_asks_for_no_table_is_told_what_the_agent_does(self):
+        answer, _, _ = await _discover(_reading(is_table_request=False))
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert answer.stop.output_messages[-1].content == T(
+            "agent.knowledge_extraction_agent.messages.not_a_table_request"
+        )
+
+    @pytest.mark.asyncio
+    async def test_a_model_that_read_no_usable_request_asks_for_one(self):
+        answer, _, _ = await _discover(None)
+
+        assert isinstance(answer, CompleteConversationEvent)
+        assert answer.stop.output_messages[-1].content == T("agent.knowledge_extraction_agent.messages.no_request")
+
+    @pytest.mark.asyncio
+    async def test_a_yes_while_a_sample_awaits_confirms_it(self):
+        thread = _Thread()
+        await _awaiting(thread)
+
+        request, ask, _ = await _discover(_reading(confirms_sample=True), thread=thread)
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert (request.confirmed, request.selection, request.collections) == (True, None, [FINANCE])
+        assert ask.await_args.args[4] is True
+
+    @pytest.mark.asyncio
+    async def test_a_confirmation_without_a_sample_is_read_as_a_new_request(self):
+        request, _, _ = await _discover(_reading(confirms_sample=True))
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.confirmed is False
+        assert request.selection is not None
+
+
+@pytest.mark.parametrize(
+    ("message", "globs"),
+    [
+        ("List the requirements in alpha/specs/requirements.md.", ["**/alpha/specs/requirements.md"]),
+        ("Rows of /invoices/x.pdf and (q1/c.pdf), twice: q1/c.pdf", ["**/invoices/x.pdf", "**/q1/c.pdf"]),
+        ("See https://example.com/docs/a.pdf for the format", []),
+        ("and/or the 2025 invoices from v1.2/notes", []),
+        ("x/.pdf and a/b.verylongext", []),
+        ("Columns from [the spec](docs/spec.md) and path=a/b.pdf", ["**/docs/spec.md", "**/a/b.pdf"]),
+    ],
+    ids=["sentence-end", "punctuation-and-duplicates", "url", "no-extension", "no-stem-or-long-extension", "glued"],
+)
+def test_the_paths_a_message_spells_out_are_read_word_by_word(message: str, globs: list[str]):
+    assert [location.path_glob for location in RequestedLocation.written_in(message)] == globs
+
+
+def test_a_message_built_to_make_a_pattern_backtrack_is_read_at_once():
+    message = "a/" * 20_000 + "b" * 20_000 + "!"
+
+    assert RequestedLocation.written_in(message) == []
+
+
+class TestDiscovery:
+    @pytest.mark.asyncio
+    async def test_with_discovery_a_yes_while_a_sample_awaits_still_confirms_it(self):
+        thread = _Thread()
+        await _awaiting(thread)
+
+        request, ask, _ = await _discover(_reading(confirms_sample=True), discovery=True, thread=thread)
+
+        assert isinstance(request, ExtractRecordsEvent)
+        assert request.confirmed is True
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_with_discovery_a_new_request_while_a_sample_awaits_runs_the_loop(self):
+        thread = _Thread()
+        await _awaiting(thread)
+
+        loop, ask, _ = await _discover(_reading(), discovery=True, thread=thread)
+
+        assert loop.mode == ToolLoopMode.GATHER
+        ask.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_with_discovery_an_unreadable_message_while_a_sample_awaits_runs_the_loop(self):
+        thread = _Thread()
+        await _awaiting(thread)
+
+        loop, _, _ = await _discover(None, discovery=True, thread=thread)
+
+        assert loop.mode == ToolLoopMode.GATHER
+
+
+class TestRequestReading:
+    @staticmethod
+    def _llm_config(predict: AsyncMock) -> MagicMock:
+        llm = MagicMock()
+        llm.model_copy.return_value.astructured_predict = predict
+        llm_config = MagicMock()
+        llm_config.cost_reporting_llm.return_value.__aenter__ = AsyncMock(return_value=llm)
+        llm_config.cost_reporting_llm.return_value.__aexit__ = AsyncMock(return_value=None)
+        return llm_config
+
+    @pytest.mark.asyncio
+    async def test_the_request_is_read_deterministically_with_the_conversation_before_it(self):
+        predict = AsyncMock(return_value=_reading())
+        llm_config = self._llm_config(predict)
+        history = [
+            ChatMessage(role=MessageRole.SYSTEM, content="Instructions."),
+            ChatMessage(role=MessageRole.USER, content="Hardware on the 2025 invoices"),
+            ChatMessage(role=MessageRole.ASSISTANT, content="Here is the sample."),
+            ChatMessage(role=MessageRole.USER, content="yes"),
+        ]
+
+        reading = await ExtractionRequestReading.ask(
+            history, _scope(), ["**By folder:** a (1)"], "Profile rule.", True, llm_config, _displayer(), None, T
+        )
+
+        assert reading == _reading()
+        llm = llm_config.cost_reporting_llm.return_value.__aenter__.return_value
+        assert llm.model_copy.call_args.kwargs["update"]["temperature"] == 0.0
+        kwargs = predict.await_args.kwargs
+        assert kwargs["request"] == "yes"
+        assert kwargs["awaiting_sample"] is True
+        assert kwargs["profile_instructions"] == "Profile rule."
+        assert kwargs["facets"] == "**By folder:** a (1)"
+        assert kwargs["conversation"] == "user: Hardware on the 2025 invoices\n\nassistant: Here is the sample."
+
+    @pytest.mark.asyncio
+    async def test_an_unusable_answer_is_none(self):
+        llm_config = self._llm_config(AsyncMock(side_effect=ValueError("unterminated JSON")))
+
+        reading = await ExtractionRequestReading.ask(
+            [ChatMessage(role=MessageRole.USER, content="x")],
+            _scope(),
+            [],
+            None,
+            False,
+            llm_config,
+            _displayer(),
+            None,
+            T,
+        )
+
+        assert reading is None
+
+    @pytest.mark.asyncio
+    async def test_an_answer_cut_off_in_its_term_list_is_read_again_without_the_terms(self):
+        plain = ExtractionRequestPlainAnswer(
+            is_table_request=True, confirms_sample=False, locations=[], fields="item, amount", instructions="hardware"
+        )
+        predict = AsyncMock(side_effect=[ValueError("EOF while parsing 'Drain|Sewer|Pipe|Tube|H"), plain])
+
+        reading = await ExtractionRequestReading.ask(
+            [ChatMessage(role=MessageRole.USER, content="Hardware lines")],
+            _scope(),
+            [],
+            None,
+            False,
+            self._llm_config(predict),
+            _displayer(),
+            None,
+            T,
+        )
+
+        assert [call.args[0] for call in predict.await_args_list] == [
+            ExtractionRequestAnswer,
+            ExtractionRequestPlainAnswer,
+        ]
+        assert reading == ExtractionRequestAnswer(
+            is_table_request=True,
+            confirms_sample=False,
+            locations=[],
+            fields="item, amount",
+            instructions="hardware",
+            row_terms=None,
+            document_terms=None,
+        )
+
+    def test_the_prompt_names_every_field_of_the_answer(self):
+        prompt = T("agent.knowledge_extraction_agent.prompt.read_request")
+
+        for field in ExtractionRequestAnswer.model_fields:
+            assert field in prompt
+        for field in RequestedLocation.model_fields:
+            assert field in prompt

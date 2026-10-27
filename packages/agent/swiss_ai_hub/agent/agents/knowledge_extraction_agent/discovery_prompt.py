@@ -6,7 +6,6 @@ from swiss_ai_hub.agent.capabilities.knowledge_documents.knowledge_document_run_
     KnowledgeDocumentRunScope,
 )
 from swiss_ai_hub.agent.capabilities.record_extraction.extraction_history import ExtractionHistory
-from swiss_ai_hub.agent.capabilities.record_extraction.pending_extraction import PendingExtraction
 
 
 class DiscoveryPrompt:
@@ -14,7 +13,9 @@ class DiscoveryPrompt:
     run's scope, ahead of the client's own, and earlier tables replaced by a line.
 
     The scope is spelled out because tool descriptions cannot change per run; a model that does not know the glob
-    guesses paths outside it and reads the empty results as "no such document".
+    guesses paths outside it and reads the empty results as "no such document". With semantic search the model is told
+    to rank first and judge documents, not rows: lexical searches cannot settle a condition on the rows, and models
+    that tried spent the whole loop on it.
     """
 
     @staticmethod
@@ -22,13 +23,15 @@ class DiscoveryPrompt:
         messages: list[ChatMessage],
         scope: KnowledgeDocumentRunScope,
         profile_instructions: str | None,
-        number_of_input_tokens: int,
+        input_budget: int,
         t: LocaleHandler,
-        pending: PendingExtraction | None = None,
+        semantic: bool = False,
     ) -> list[ChatMessage]:
+        """The instructions, then the conversation within the input budget. The budget is the profile's own, never
+        an unset limit: llama-index fills that with about 3,000 tokens and drops the turn a follow-up refers to."""
+        key = "instructions_semantic" if semantic else "instructions"
         instructions = [
-            t("agent.knowledge_extraction_agent.prompt.instructions", scope=scope.describe()),
-            *([DiscoveryPrompt._pending(pending, t)] if pending else []),
+            t(f"agent.knowledge_extraction_agent.prompt.{key}", scope=scope.describe()),
             *([profile_instructions] if profile_instructions else []),
         ]
         merged = merge_consecutive_messages(
@@ -39,14 +42,4 @@ class DiscoveryPrompt:
             ]
         )
         head, conversation = merged[:1], merged[1:]
-        return [*head, *limit_chat_history(chat_history=conversation, number_of_input_tokens=number_of_input_tokens)]
-
-    @staticmethod
-    def _pending(pending: PendingExtraction, t: LocaleHandler) -> str:
-        """What an earlier answer left unfinished, so the model can tell "continue" from a new request."""
-        key = "agent.knowledge_extraction_agent.prompt"
-        if pending.overflow_rows:
-            left = t(f"{key}.pending_rows", count=len(pending.overflow_rows))
-        else:
-            left = t(f"{key}.pending_documents", count=pending.remaining_documents)
-        return t(f"{key}.pending", criteria=pending.criteria, left=left)
+        return [*head, *limit_chat_history(chat_history=conversation, number_of_input_tokens=input_budget)]

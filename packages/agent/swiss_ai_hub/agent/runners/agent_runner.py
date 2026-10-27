@@ -7,7 +7,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from pymilvus import MilvusClient
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents import CRON_CONFIG_KEY, AgentConfig
+from swiss_ai_hub.core.agents import ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY, AgentConfig
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import (
     AgentClassDiscoveryResponseEvent,
@@ -114,17 +114,18 @@ class AgentRunner(HealthCheckProvider):
         )
 
     def _published_form(self) -> list[FormkitElement]:
-        """The published form, with the platform's schedule control after the blueprint's own settings.
+        """The published form, with the platform's controls (anonymisation, schedule) after the blueprint's own.
 
-        `cron` lives on `AgentConfig` and Pydantic orders base fields before subclass ones, so left where
-        it falls it would sit between the identity fields and a blueprint's first real setting — above
-        `system_prompt` on every schedulable agent. It is platform-injected rather than part of what the
-        blueprint asks an admin to configure, so it goes last.
+        `anonymise` and `cron` live on `AgentConfig` and Pydantic orders base fields before subclass ones, so left
+        where they fall they would sit between the identity fields and a blueprint's first real setting, above
+        `system_prompt`. They are platform-injected rather than part of what the blueprint asks an admin to
+        configure, so they go last.
         """
+        platform_keys = (ANONYMISE_CONFIG_KEY, CRON_CONFIG_KEY)
         elements = self.published_config.to_formkit_form()
-        blueprint_elements = [element for element in elements if element.name != CRON_CONFIG_KEY]
-        cron_elements = [element for element in elements if element.name == CRON_CONFIG_KEY]
-        return blueprint_elements + cron_elements
+        blueprint_elements = [element for element in elements if element.name not in platform_keys]
+        platform_elements = [element for key in platform_keys for element in elements if element.name == key]
+        return blueprint_elements + platform_elements
 
     @property
     def entity_name(self) -> str:

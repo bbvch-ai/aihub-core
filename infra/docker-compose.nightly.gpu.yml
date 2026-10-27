@@ -1666,6 +1666,7 @@ services:
       - ./configs/litellm/litellm-config.stoney.nightly.gpu.yml:/app/config.stoney.yml
       - ./configs/litellm/custom_callbacks.py:/app/custom_callbacks.py:ro
       - ./configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
+      - ./configs/litellm/pii_anonymisation_audit.py:/app/pii_anonymisation_audit.py:ro
     command: --config /app/config.${LITELLM_CONFIG_VARIANT}.yml
     depends_on:
       otel-collector:
@@ -3270,6 +3271,13 @@ services:
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
+      # S3 (extracted rows and tables in agent-files, presigned CSV download links)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
@@ -3291,6 +3299,7 @@ services:
     networks:
       - backend
       - data
+      - storage
   # License: Apache-2.0 — own image (see LICENSES.md)
   rag_agent:
     container_name: rag-agent
@@ -3805,6 +3814,66 @@ services:
     networks:
       - backend
       - data
+  # License: Apache-2.0 — own image (see LICENSES.md)
+  # Users anonymise text by hand here and restore the answer. It calls no model, so it gets no LiteLLM access at all:
+  # the chat content reaches only the analyzer, in `pii-detection`.
+  anonymiser_agent:
+    container_name: anonymiser-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/anonymiser_agent:nightly
+    depends_on:
+      otel-collector:
+        condition: service_started
+      presidio-analyzer:
+        condition: service_healthy
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_VERSION: ${AIHUB_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # Presidio analyzer
+      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
+      PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
+
+      # Milvus (the runner's readiness report only)
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-backend:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: anonymiser-agent
+      OTEL_RESOURCE_SERVICE_VERSION: nightly
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8090/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+      - pii-detection  # Caller of the Presidio analyzer
   # License: Apache-2.0 — own image (see LICENSES.md)
   imap_agent:
     container_name: imap-agent
@@ -4451,6 +4520,14 @@ services:
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # S3 credentials — only to sign download links for extracted tables in answers;
+      # the link points at the public endpoint, so the bot needs no storage network.
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
 
       # Keycloak OIDC config — required because bot imports
       # KeycloakAuthHandler from core.auth, which instantiates
