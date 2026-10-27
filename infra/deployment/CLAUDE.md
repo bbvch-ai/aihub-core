@@ -217,6 +217,20 @@ After publishing, all stages pull the new image automatically via `docker compos
 > tag; if it is not yet published, `open-webui` fails its `depends_on: open-terminal (service_healthy)` gate and the
 > stack will not come up. Run `make -C infra/deployment build-and-push-open-terminal-image` first.
 
+### Images rebuilt for a current CA bundle
+
+Upstream images freeze their CA bundles at build time. After the eMudhra intermediate CA compromise (2026-10), releases
+built earlier still trust `emSign ECC Root CA - G3`, so three images refresh their bundles in our own Dockerfile:
+
+- `docker/rclone/` (`rclone:1.71.2-1`, `make -C infra/deployment build-and-push-rclone-image`): Alpine
+  `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
+- `docker/playwright/` (`playwright:v1.60.0-jammy-1`, `build-and-push-playwright-image`): Ubuntu `ca-certificates` and
+  `libnss3`. Chromium and Firefox compile their own root stores in, which change only with a Playwright release.
+- `docker/open-webui/` (`open-webui:v0.11.3-1`, `build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`,
+  and `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
+
+Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
+
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
 
