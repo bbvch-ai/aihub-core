@@ -241,9 +241,11 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 # Changing it forces a full re-parse and re-embed of every existing corpus.
                 md5_hash_str = base64.b64encode(bytes.fromhex(etag)).decode("utf-8")
             else:
-                # SeaweedFS >=4.01 chunks objects above 8 MiB and returns "<md5hex>-<chunks>".
-                # Kept verbatim: deterministic and content-derived, so it still works as a
-                # change-detection token. Do NOT unify with the base64 branch above.
+                # Multipart uploads return "<md5hex>-<parts>". So do single PUTs above 8 MiB written
+                # by SeaweedFS 4.01; 4.50 returns a plain MD5 for those, so rewriting such an object
+                # after the upgrade changes its hash once. Kept verbatim: deterministic and
+                # content-derived, so it still works as a change-detection token. Do NOT unify
+                # with the base64 branch above.
                 md5_hash_str = etag
 
         last_modified_timestamp = int(last_modified.timestamp()) if last_modified else int(datetime.now().timestamp())
