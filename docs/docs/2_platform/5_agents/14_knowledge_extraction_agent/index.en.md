@@ -33,9 +33,10 @@ flowchart LR
 1. **Read the request.** One model call reads the message: the columns the user asks for, which rows to keep, and any
    folder, file or year the user names. A follow-up such as *"the same for 2024"* is read with the conversation.
 2. **Take every document in scope.** Every document in the profile's collections and path filter is read, narrowed only
-   by the folders, files or years the user named. No search decides which documents count, so a document is never missed
-   because it words things differently from the request. A supplier or a topic is a condition on the rows, not a place:
-   *"from Acme"* keeps Acme's rows, it does not pick documents.
+   by the folders, files or years the user named. A file the user names, by its path or only by its name, with or
+   without the extension, means that file alone, not the folder it is in. No search decides which documents count, so a
+   document is never missed because it words things differently from the request. A supplier or a topic is a condition
+   on the rows, not a place: *"from Acme"* keeps Acme's rows, it does not pick documents.
 3. **Design the columns.** The columns are designed from the user's words, such as *date, item, amount, currency*. A
    condition like *"only hardware"* decides which rows are kept and never becomes a column.
 4. **Extract.** Every document is read and its matching records are extracted, many documents at the same time.

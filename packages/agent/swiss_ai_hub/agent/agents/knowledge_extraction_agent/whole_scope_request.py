@@ -2,7 +2,12 @@ from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import ExtractRecordsEvent
-from swiss_ai_hub.core.generative_ai import InvalidPathPatternError, KnowledgeDocumentListing, KnowledgeDocumentReader
+from swiss_ai_hub.core.generative_ai import (
+    InvalidPathPatternError,
+    KnowledgeDocumentListing,
+    KnowledgeDocumentReader,
+    KnowledgeDocumentSummary,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.agents.knowledge_extraction_agent.extraction_notices import ExtractionNotices
@@ -57,9 +62,9 @@ class WholeScopeRequest:
             return t(f"{_MESSAGES}.no_request")
         if not reading.is_table_request:
             return t(f"{_MESSAGES}.not_a_table_request")
-        if not reading.locations:
-            written = RequestedLocation.written_in(ExtractionRequestReading.last_request(history))
-            reading = reading.model_copy(update={"locations": written})
+        named = WholeScopeRequest._named_files(ExtractionRequestReading.last_request(history), listing)
+        if named:
+            reading = reading.model_copy(update={"locations": WholeScopeRequest._narrowed(reading, named, listing)})
         if reading.locations and not WholeScopeRequest._anything_at(listing, reading):
             places = ", ".join(f"`{location.describe()}`" for location in reading.locations)
             return "\n\n".join([t(f"{_MESSAGES}.nothing_at_location", locations=places), *facets])
@@ -79,14 +84,41 @@ class WholeScopeRequest:
         return listing.matching_glob(scope.restricting_glob) if scope.restricting_glob else listing
 
     @staticmethod
+    def _named_files(message: str, listing: KnowledgeDocumentListing) -> list[RequestedLocation]:
+        """The files the message names, as written paths or by their names in scope."""
+        named = RequestedLocation.written_in(message)
+        named += RequestedLocation.named_in(message, [document.path for document in listing.documents])
+        return list({location.path_glob: location for location in named}.values())
+
+    @staticmethod
+    def _narrowed(
+        reading: ExtractionRequestAnswer, named: list[RequestedLocation], listing: KnowledgeDocumentListing
+    ) -> list[RequestedLocation]:
+        """The named files win over the places the reading made of them: a model reads `a/b/x.pdf` as `a/b/**` and
+        extracts the whole folder. A place that holds none of the named files is another place the user asked for."""
+        files = set().union(*(WholeScopeRequest._ids_at(listing, location) for location in named))
+        others = [
+            location
+            for location in reading.locations
+            if location not in named and not files & WholeScopeRequest._ids_at(listing, location)
+        ]
+        return [*named, *others]
+
+    @staticmethod
     def _anything_at(listing: KnowledgeDocumentListing, reading: ExtractionRequestAnswer) -> bool:
         """Whether a named place holds a document in scope; an invalid pattern is left to the extraction to report."""
-        for location in reading.locations:
-            try:
-                matched = listing.matching_glob(location.path_glob) if location.path_glob else listing
-                matched = matched.matching_regex(location.path_regex) if location.path_regex else matched
-            except InvalidPathPatternError:
-                return True
-            if matched.documents:
-                return True
-        return False
+        return any(WholeScopeRequest._at(listing, location) != [] for location in reading.locations)
+
+    @staticmethod
+    def _at(listing: KnowledgeDocumentListing, location: RequestedLocation) -> list[KnowledgeDocumentSummary] | None:
+        """The documents in scope at a place; None for an invalid pattern."""
+        try:
+            matched = listing.matching_glob(location.path_glob) if location.path_glob else listing
+            matched = matched.matching_regex(location.path_regex) if location.path_regex else matched
+        except InvalidPathPatternError:
+            return None
+        return matched.documents
+
+    @staticmethod
+    def _ids_at(listing: KnowledgeDocumentListing, location: RequestedLocation) -> set[str]:
+        return {document.id for document in WholeScopeRequest._at(listing, location) or []}

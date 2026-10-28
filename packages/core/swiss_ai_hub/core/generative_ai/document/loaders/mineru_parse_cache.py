@@ -66,13 +66,14 @@ class MineruParseCache:
 
     def settings_fingerprint(self) -> str:
         """Only what changes the output: the service URLs do not, the page batching does, and so does the output
-        format, whose version retires entries written before a change to it (2: page breaks)."""
+        format, whose version retires entries written before a change to it (2: page breaks, 3: page headers and
+        footers)."""
         relevant = {
             "vlm_name": self._settings.VLM_NAME,
             "formula_enable": self._settings.FORMULA_ENABLE,
             "table_enable": self._settings.TABLE_ENABLE,
             "page_batch_size": self._settings.PAGE_BATCH_SIZE,
-            "output_format": 2,
+            "output_format": 3,
         }
         return hashlib.sha256(json.dumps(relevant, sort_keys=True).encode()).hexdigest()[:16]
 
