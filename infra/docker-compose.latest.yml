@@ -85,7 +85,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     command: >
       master
@@ -120,11 +120,11 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
       -max=500
@@ -151,11 +151,12 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     command: >
       filer
       -master="seaweedfs-master:9333"
+      -ip=seaweedfs-filer
       -ip.bind=0.0.0.0
     environment:
       # Internal JWT Authentication
@@ -202,7 +203,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.01
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
@@ -221,7 +222,9 @@ services:
       S3_PORT: '9000'
       S3_FILER: seaweedfs-filer:8888
       S3_BIND_IP: 0.0.0.0
-      S3_ALLOW_EMPTY_FOLDER: true
+      # The gateway registers with the master like the filer does; on two networks it would otherwise
+      # advertise whichever address it detects first.
+      S3_ADVERTISED_IP: seaweedfs-s3
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -257,6 +260,27 @@ services:
       - proxy  # External S3 API access via Traefik
 
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
+  seaweedfs-ttl-init:
+    container_name: seaweedfs-ttl-init
+    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
+    restart: 'no'
+    depends_on:
+      seaweedfs-filer:
+        condition: service_healthy
+    environment:
+      SEAWEEDFS_MASTER: seaweedfs-master:9333
+      SEAWEEDFS_FILER: seaweedfs-filer:8888
+    volumes: [./configs/seaweedfs/ttl-init.sh:/usr/local/bin/ttl-init.sh:ro]
+    entrypoint: [/bin/sh, /usr/local/bin/ttl-init.sh]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - storage
+
+  # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   seaweedfs-init:
     container_name: seaweedfs-init
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
@@ -264,6 +288,8 @@ services:
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
+      seaweedfs-ttl-init:
+        condition: service_started
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
