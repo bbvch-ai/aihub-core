@@ -168,6 +168,18 @@ Italian, up to 100 characters each, and follows the user's language; a tenant wi
 default. Open WebUI has no setting for this, so the platform shows the text through a small script Open WebUI loads. The
 deployment details are in `infra/deployment/openwebui-disclaimer.md`.
 
+## Streaming indicator
+
+While an answer is still streaming, the chat shows three pulsing dots after it. While a thought or tool call shows its
+own progress, the dots are hidden, so an agent that works for minutes before it answers shows only that progress row.
+Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking..." row for that whole time and read as
+a stray `|`. The platform restyles it through the stylesheet Open WebUI loads from `/static/custom.css`.
+
+Edit `infra/deployment/templates/openwebui-style/custom.css` and run `make generate-compose`. Compose mounts the
+generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.3
+markup. When an upgrade changes that markup they stop matching and Open WebUI's own bar returns, so check the indicator
+after every Open WebUI upgrade.
+
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the

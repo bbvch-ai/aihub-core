@@ -1486,6 +1486,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
       - ./configs/openwebui/disclaimer/loader.js:/app/build/static/loader.js:ro
+      - ./configs/openwebui/style/custom.css:/app/build/static/custom.css:ro
     configs:
       - source: openwebui-disclaimer
         target: /app/build/static/aihub-disclaimer.json
