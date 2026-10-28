@@ -46,7 +46,7 @@ gebunden werden (Realm-Schlüssel `"browserFlow": "browser-aihub"`). Genau das s
 
 | Flow                            | Rolle                                                                          |
 | ------------------------------- | ------------------------------------------------------------------------------ |
-| `browser-aihub`                 | Oberste Ebene: `[REQUIRED authenticate] → [CONDITIONAL langfuse-gate-browser]` |
+| `browser-aihub`                 | Oberste Ebene: `[REQUIRED authenticate] → [CONDITIONAL aihub-access-gate-browser] → [CONDITIONAL langfuse-gate-browser]` |
 | `browser-aihub-authenticate`    | Die eingebauten Alternativen: Cookie-SSO, IdP-Redirector, Formulare            |
 | `browser-aihub-forms`           | Benutzername/Passwort-Formular (Replikat des eingebauten `forms`)              |
 | `browser-aihub-conditional-2fa` | Bedingtes OTP (Replikat des eingebauten `Browser - Conditional 2FA`)           |

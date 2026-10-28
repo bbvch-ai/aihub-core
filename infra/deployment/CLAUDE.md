@@ -366,6 +366,11 @@ query-groups, view-groups, view-realm, view-clients
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
 
+**AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
+`browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
+`AIHubAccess`) right after the REQUIRED authenticate wrapper and before the Langfuse gate. It is the only `AIHubAccess`
+check for local realm users (username/password and their SSO-cookie sessions). Both gates use the same deny message.
+
 **Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
 scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom
 `browser-aihub` flow (bound as the realm browser flow) and in the `Post Broker Login - AIHubAccess Check` flow. The
