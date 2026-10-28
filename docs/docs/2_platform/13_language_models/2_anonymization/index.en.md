@@ -4,9 +4,9 @@ title: Data anonymization
 
 # Data anonymization
 
-The Swiss AI Hub replaces personal data in requests to language models hosted outside your deployment with placeholders,
-and puts the original values back into the answer before the user sees it. The external model never sees a name, an
-address or an AHV number; the user reads a normal answer.
+The Swiss AI Hub can replace personal data in requests to language models with placeholders, and put the original values
+back into the answer before the user sees it. The model never sees a name, an address or an AHV number; the user reads a
+normal answer. A deployment turns it on for every model hosted outside it, an agent profile for its own calls.
 
 ## What users see
 
@@ -34,16 +34,35 @@ If the analyzer cannot be reached, the request is refused with an error instead 
 
 ## Which calls are anonymised
 
-Every model in the gateway configuration declares where it runs (`model_info.aihub_hosting_location`). Calls to every
-model that is not `local` (the Swiss cloud providers and any other external provider) are always anonymised, for every
-caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots. Calls to models running
-inside the deployment are not anonymised, unless the call asks for it:
+Three switches decide, and any one of them is enough:
+
+| Switch | Who sets it | What it anonymises |
+| --- | --- | --- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true` | The operator, per deployment (off by default) | Every call to a model hosted outside the deployment, for every caller: plain chats, agents (including titles, follow-ups and memory extraction) and bots |
+| **Anonymise personal data** on an agent profile | The profile's admin | Every call of that profile's runs, whatever the model |
+| The [Anonymiser](../../5_agents/14_anonymiser/) agent | Each user, by hand | The text the user sends it |
+
+Every model in the gateway configuration declares where it runs (`model_info.aihub_hosting_location`); every model that
+is not `local` (the Swiss cloud providers and any other external provider) counts as outside the deployment. Turn the
+deployment switch on when external models may receive personal data that must not leave the organisation. With it off,
+plain chats with an external model send their text as it is, and only profiles with the checkbox anonymise. The switch
+is read when the gateway starts: change the environment variable and restart `litellm`. A value other than `true` or
+`false` counts as `true`, and the gateway logs an error.
+
+A call can also ask for the guardrail itself:
 
 ```json
 {"model": "text-generation/Qwen3-VL-30B-A3B-Instruct-FP8", "guardrails": ["pii-anonymisation"], "messages": []}
 ```
 
 Only chat requests are anonymised. Embeddings, reranking, transcription and image generation are not.
+
+::: warning Answers can get worse
+The model reasons over placeholders, not values. It cannot tell that two spellings of one value are the same ("Herr
+Meier" in the question, "Hans-Peter Meier" in a document, or "Genf" and "Genève" get different placeholders), compute an
+age from a masked birth date, or use what it knows about a masked city. Knowledge agents then answer that the
+documents hold no answer. Anonymise where the data requires it, not by default.
+:::
 
 ### Anonymising an agent profile
 

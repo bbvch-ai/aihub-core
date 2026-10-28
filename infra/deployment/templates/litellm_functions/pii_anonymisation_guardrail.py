@@ -7,8 +7,10 @@ restored in the answer text, the reasoning text and the tool-call arguments, str
 possible placeholder prefix (a few characters) is held back, so the answer keeps streaming. LiteLLM's built-in Presidio
 guardrail cannot do this: it buffers a streamed answer and numbers overlapping spans separately.
 
-It runs on every call to a model whose `model_info.aihub_hosting_location` is not `local` (a model without the field
-counts as external), and on a local model when the call requests it by name. Placeholders already in the input (text a
+It runs on every call that requests it by name (an agent profile with "Anonymise personal data" on), whatever the
+model. With PII_ANONYMISE_EXTERNAL_MODELS=true it also runs on every call to a model whose
+`model_info.aihub_hosting_location` is not `local` (a model without the field counts as external); the switch is off by
+default, because most deployments serve their models locally. Placeholders already in the input (text a
 user anonymised by hand) are passed through, never re-detected and never reused for a new value. The placeholder map
 is PII, so it lives only in this process, keyed by the request's litellm_call_id, and is never written into request
 metadata, which LiteLLM forwards to spend logs and callbacks. A failed or timed-out analysis fails the call.
@@ -52,6 +54,7 @@ logger = logging.getLogger(__name__)
 TOKEN = re.compile(r"<[A-Z][A-Z_]*_\d+>")
 PARTIAL_TOKEN = re.compile(r"<[A-Z_]*\d*\Z")
 LOCAL_HOSTING = "local"
+EXTERNAL_MODELS_SWITCH = "PII_ANONYMISE_EXTERNAL_MODELS"
 CHAT_CALL_TYPES = {"completion", "acompletion"}
 JSON_RESPONSE_FORMATS = {"json_object", "json_schema"}
 # A 20k-token prompt takes about 50 s on the analyzer's 4 CPU threads; past this the call fails instead of hanging.
@@ -154,6 +157,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         self.language = presidio_language or "de"
         self.entities = [str(getattr(key, "value", key)) for key in (pii_entities_config or {})]
         self.allow_list = self.allow_list_pattern(pii_allow_list or [])
+        self.anonymise_external_models = self.switch(os.environ.get(EXTERNAL_MODELS_SWITCH, ""))
         self.client = httpx.AsyncClient(timeout=ANALYZER_TIMEOUT_SECONDS)
         self._maps: dict[str, tuple[float, dict[str, str], bool]] = {}
         self._external: dict[str, bool] = {}
@@ -162,12 +166,26 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
 
     # ------------------------------------------------------------------ which calls
 
+    @staticmethod
+    def switch(value: str) -> bool:
+        """Off when unset or false. Any other value counts as on and is logged, never raised: LiteLLM starts without a
+        guardrail whose constructor raises, which would also drop the anonymisation profiles request."""
+        normalised = value.strip().lower()
+        if normalised in ("", "false"):
+            return False
+        if normalised != "true":
+            logger.error("%s must be true or false, got %r: anonymising external models", EXTERNAL_MODELS_SWITCH, value)
+        return True
+
     def should_run_guardrail(self, data: Any, event_type: Any) -> bool:
         if not isinstance(data, dict) or "messages" not in data:
             return False
         if super().should_run_guardrail(data, event_type):
             return True
-        return self._event_hook_is_event_type(event_type) and self.is_external(data.get("model"))
+        return self.anonymises_by_location(data.get("model")) and self._event_hook_is_event_type(event_type)
+
+    def anonymises_by_location(self, model: str | None) -> bool:
+        return self.anonymise_external_models and self.is_external(model)
 
     def is_external(self, model: str | None) -> bool:
         """True unless every deployment of the model group says it is hosted inside the deployment."""
@@ -227,7 +245,7 @@ class PiiAnonymisationGuardrail(CustomGuardrail):
         if call_type not in CHAT_CALL_TYPES:
             return data
         started_ns = time.time_ns()
-        reason = "model outside the deployment" if self.is_external(data.get("model")) else "requested by the call"
+        reason = "model outside the deployment" if self.anonymises_by_location(data.get("model")) else "requested by the call"
         messages = data.get("messages") or []
         reserved = {token for message in messages for text in self.texts_of(message) for token in TOKEN.findall(text)}
         masker = PlaceholderMasker(reserved)

@@ -5,9 +5,10 @@ source_sha: 5c0f6cb342daadcee64f8580f7a698776141658fa18c494dad63d1c22732f2e1
 
 # Datenanonymisierung
 
-Der Swiss AI Hub ersetzt Personendaten in Anfragen an Sprachmodelle, die ausserhalb Ihres Deployments gehostet werden,
-durch Platzhalter und setzt die ursprünglichen Werte in die Antwort ein, bevor der Benutzer sie sieht. Das externe
-Modell sieht nie einen Namen, eine Adresse oder eine AHV-Nummer; der Benutzer liest eine normale Antwort.
+Der Swiss AI Hub kann Personendaten in Anfragen an Sprachmodelle durch Platzhalter ersetzen und die ursprünglichen Werte
+in die Antwort einsetzen, bevor der Benutzer sie sieht. Das Modell sieht nie einen Namen, eine Adresse oder eine
+AHV-Nummer; der Benutzer liest eine normale Antwort. Ein Deployment schaltet es für jedes ausserhalb gehostete Modell
+ein, ein Agentenprofil für seine eigenen Aufrufe.
 
 ## Was Benutzer sehen
 
@@ -37,16 +38,36 @@ Ist der Analyzer nicht erreichbar, wird die Anfrage mit einer Fehlermeldung abge
 
 ## Welche Aufrufe anonymisiert werden
 
-Jedes Modell in der Gateway-Konfiguration gibt an, wo es läuft (`model_info.aihub_hosting_location`). Aufrufe an jedes
-Modell, das nicht `local` ist (die Schweizer Cloud-Anbieter und jeder andere externe Anbieter), werden immer
-anonymisiert, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots. Aufrufe
-an Modelle innerhalb des Deployments werden nicht anonymisiert, ausser der Aufruf verlangt es:
+Drei Schalter entscheiden, und jeder einzelne genügt:
+
+| Schalter | Wer setzt ihn | Was er anonymisiert |
+| --- | --- | --- |
+| `PII_ANONYMISE_EXTERNAL_MODELS=true` | Der Betreiber, pro Deployment (standardmässig aus) | Jeden Aufruf an ein ausserhalb des Deployments gehostetes Modell, für jeden Aufrufer: Chats, Agenten (inklusive Titel, Follow-ups und Memory-Extraktion) und Bots |
+| **Personendaten anonymisieren** in einem Agentenprofil | Der Admin des Profils | Jeden Aufruf der Läufe dieses Profils, unabhängig vom Modell |
+| Der [Anonymisierer](../../5_agents/14_anonymiser/)-Agent | Jeder Benutzer, von Hand | Den Text, den der Benutzer ihm sendet |
+
+Jedes Modell in der Gateway-Konfiguration gibt an, wo es läuft (`model_info.aihub_hosting_location`); jedes Modell, das
+nicht `local` ist (die Schweizer Cloud-Anbieter und jeder andere externe Anbieter), gilt als ausserhalb des Deployments.
+Schalten Sie den Deployment-Schalter ein, wenn externe Modelle Personendaten erhalten könnten, die die Organisation nicht
+verlassen dürfen. Ist er aus, senden Chats mit einem externen Modell ihren Text unverändert, und nur Profile mit der
+Checkbox anonymisieren. Der Schalter wird beim Start des Gateways gelesen: Umgebungsvariable ändern und `litellm` neu
+starten. Ein anderer Wert als `true` oder `false` gilt als `true`, und das Gateway protokolliert einen Fehler.
+
+Ein Aufruf kann den Guardrail auch selbst verlangen:
 
 ```json
 {"model": "text-generation/Qwen3-VL-30B-A3B-Instruct-FP8", "guardrails": ["pii-anonymisation"], "messages": []}
 ```
 
 Nur Chat-Anfragen werden anonymisiert. Embeddings, Reranking, Transkription und Bildgenerierung nicht.
+
+::: warning Antworten können schlechter werden
+Das Modell arbeitet mit Platzhaltern, nicht mit Werten. Es erkennt nicht, dass zwei Schreibweisen desselben Werts
+zusammengehören («Herr Meier» in der Frage, «Hans-Peter Meier» in einem Dokument, oder «Genf» und «Genève» erhalten
+verschiedene Platzhalter), kann aus einem maskierten Geburtsdatum kein Alter berechnen und nutzt sein Wissen über eine
+maskierte Stadt nicht. Wissensagenten antworten dann, die Dokumente enthielten keine Antwort. Anonymisieren Sie dort, wo
+die Daten es verlangen, nicht standardmässig.
+:::
 
 ### Ein Agentenprofil anonymisieren
 

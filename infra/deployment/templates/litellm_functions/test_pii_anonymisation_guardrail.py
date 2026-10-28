@@ -59,13 +59,15 @@ def bare_guardrail(**settings):
     guardrail = guardrail_module.PiiAnonymisationGuardrail(
         guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False, **settings)
     guardrail._external["external-model"] = True
+    guardrail.anonymise_external_models = True
     return guardrail
 
 
-def make_guardrail(external: dict[str, bool] | None = None):
+def make_guardrail(external: dict[str, bool] | None = None, anonymise_external_models: bool = True):
     guardrail = guardrail_module.PiiAnonymisationGuardrail(
         guardrail_name="pii-anonymisation", event_hook=["pre_call", "post_call"], default_on=False,
         presidio_language="de", pii_entities_config={"PERSON": "MASK", "NATIONAL_ID": "MASK"})
+    guardrail.anonymise_external_models = anonymise_external_models
     guardrail.analyzed: list[dict] = []
 
     async def analyze(text: str) -> list[dict]:
@@ -286,6 +288,56 @@ def test_should_run_when_local_model_requests_the_guardrail_by_name() -> None:
     data = {**request("x"), "model": "local-model", "guardrails": ["pii-anonymisation"]}
 
     assert make_guardrail().should_run_guardrail(data, guardrail_module.GuardrailEventHooks.pre_call)
+
+
+def test_should_not_run_on_an_external_model_when_the_switch_is_off() -> None:
+    guardrail = make_guardrail(anonymise_external_models=False)
+
+    assert not guardrail.should_run_guardrail(request("x"), guardrail_module.GuardrailEventHooks.pre_call)
+
+
+def test_should_run_on_an_external_model_requesting_it_by_name_when_the_switch_is_off() -> None:
+    data = {**request("x"), "guardrails": ["pii-anonymisation"]}
+
+    guardrail = make_guardrail(anonymise_external_models=False)
+
+    assert guardrail.should_run_guardrail(data, guardrail_module.GuardrailEventHooks.pre_call)
+
+
+@pytest.mark.parametrize(("switch", "reason"), [(True, "model outside the deployment"),
+                                                (False, "requested by the call")])
+def test_should_record_why_an_external_model_call_was_anonymised(switch: bool, reason: str) -> None:
+    guardrail = make_guardrail(anonymise_external_models=switch)
+    recorded = []
+    guardrail.audit.record = lambda data, tokens, why, started_ns, error=None: recorded.append(why)
+
+    run(mask(guardrail, request("Brief an Reto Wyss", guardrails=["pii-anonymisation"])))
+
+    assert recorded == [reason]
+
+
+@pytest.mark.parametrize(("value", "on"), [(None, False), ("", False), ("false", False), ("true", True),
+                                           (" TRUE ", True), ("False", False)])
+def test_should_read_the_switch_from_the_environment(monkeypatch, value: str | None, on: bool) -> None:
+    if value is None:
+        monkeypatch.delenv("PII_ANONYMISE_EXTERNAL_MODELS", raising=False)
+    else:
+        monkeypatch.setenv("PII_ANONYMISE_EXTERNAL_MODELS", value)
+
+    guardrail = guardrail_module.PiiAnonymisationGuardrail(guardrail_name="pii-anonymisation")
+
+    assert guardrail.anonymise_external_models is on
+
+
+@pytest.mark.parametrize("value", ["ture", "yes", "1", "off"])
+def test_should_anonymise_external_models_when_the_switch_is_neither_true_nor_false(monkeypatch, caplog,
+                                                                                  value: str) -> None:
+    monkeypatch.setenv("PII_ANONYMISE_EXTERNAL_MODELS", value)
+
+    guardrail = guardrail_module.PiiAnonymisationGuardrail(guardrail_name="pii-anonymisation")
+
+    assert guardrail.anonymise_external_models is True
+    assert "PII_ANONYMISE_EXTERNAL_MODELS must be true or false" in caplog.text
 
 
 def test_should_not_run_when_call_is_not_a_chat() -> None:
