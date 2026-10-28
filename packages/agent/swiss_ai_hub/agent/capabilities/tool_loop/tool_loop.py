@@ -155,7 +155,7 @@ class ToolLoop(Capability):
                 cite_sources=request.cite_sources,
                 hands_back_results=request.hands_back_results,
                 needs_condensing=ToolLoopCondenser.outgrown(
-                    messages, offered, conversation.input_budget(), conversation.llm.token_counter
+                    messages, offered, conversation.input_budget, conversation.llm.token_counter
                 ),
             )
         )
@@ -236,7 +236,7 @@ class ToolLoop(Capability):
         user: UserIdentity | None = None,
     ) -> ToolLoopIterationEvent:
         """Condense the loop's conversation to fit the prompt again before the model decides on it."""
-        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget(), displayer, t, user)
+        condenser = ToolLoopCondenser(conversation.task_llm, conversation.input_budget, displayer, t, user)
         return ToolLoopIterationEvent(state=await condenser.condense(iteration.state))
 
     @staticmethod
@@ -332,7 +332,7 @@ class ToolLoop(Capability):
     @step(
         name=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.name"),
         description=AgentLocaleString.from_i18n_path("agent.tool_loop.steps.run_function.description"),
-        icon="mage:wand",
+        icon="mage:stars-c",
         precondition=runs_in_the_loop,
     )
     async def run_function_step(
@@ -424,7 +424,7 @@ class ToolLoop(Capability):
                 "gathered": ToolLoop._gathered(state, answered),
             }
         )
-        outgrown = ToolLoopCondenser.outgrown(messages, state.tools, conversation.input_budget(), counter)
+        outgrown = ToolLoopCondenser.outgrown(messages, state.tools, conversation.input_budget, counter)
         return ToolLoopIterationEvent(
             state=joined.model_copy(update={"needs_condensing": outgrown or ToolLoopCondenser.oversized(joined)})
         )
@@ -475,6 +475,7 @@ class ToolLoop(Capability):
             access=access,
             files=request.files,
             knowledge_references=request.knowledge_references,
+            web_references=request.web_references,
             topic=topic,
         )
 

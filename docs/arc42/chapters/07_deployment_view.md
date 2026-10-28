@@ -10,7 +10,7 @@ development and production deployments.
 
 ### Network topology
 
-The following diagram shows the production deployment topology with all six network zones and the services assigned to
+The following diagram shows the production deployment topology with all eight network zones and the services assigned to
 each. Services that span multiple zones appear at the boundary. The API is the most connected service, attaching to four
 networks.
 
@@ -34,7 +34,6 @@ graph TB
             vLLMRerank["vLLM BGE-Reranker :8184 (GPU only)"]
             Speech["Speaches :8185 (GPU only)"]
             MinerU2["MinerU :8002 (GPU only)"]
-            Pres["Presidio :3001"]
             OTELc["OTEL Collector"]
             AgentC["Agent containers"]
             PipeC["Pipeline workers"]
@@ -60,11 +59,19 @@ graph TB
         end
 
         subgraph egress["egress  · outbound only, ICC disabled"]
+            SearX["SearXNG :8881"]
+        end
+
+        subgraph browser["browser  · browser + callers only"]
             PW["Playwright :3036"]
         end
 
         subgraph codesandbox["code-sandbox  · sandbox + callers only"]
             OpenTerm["Open Terminal :8200 (dev)"]
+        end
+
+        subgraph piidetection["pii-detection  · analyzer + callers only"]
+            Pres["Presidio analyzer :3000"]
         end
     end
 
@@ -74,6 +81,8 @@ graph TB
     Traefik --> LfWeb
 
     OWUI --- OpenTerm
+    OWUI --- PW
+    AgentC --- PW
 
     API --- NATS2
     API --- FDB
@@ -104,7 +113,8 @@ graph TB
     LfWeb --- CH2
     LiteLLM --- PG
 
-    PW -->|"outbound only"| Internet
+    PW -->|"outbound via egress"| Internet
+    SearX -->|"outbound only"| Internet
 
     style proxy fill:#fef3c7,stroke:#d97706
     style backend fill:#dbeafe,stroke:#2563eb
@@ -112,10 +122,12 @@ graph TB
     style storage fill:#ede9fe,stroke:#7c3aed
     style egress fill:#fee2e2,stroke:#dc2626
     style codesandbox fill:#ffe4e6,stroke:#e11d48
+    style browser fill:#ffedd5,stroke:#ea580c
+    style piidetection fill:#fce7f3,stroke:#db2777
     style host fill:#f8fafc,stroke:#64748b
 ```
 
-Five Docker networks isolate services by role. Each service connects only to the networks it requires.
+Eight Docker networks isolate services by role. Each service connects only to the networks it requires.
 
 The **proxy** network carries external ingress traffic. In non-dev stages, Traefik listens on ports 80 and 443 and
 routes requests to backend services. Services that need to be directly reachable from outside (API, OpenWebUI, Langfuse
@@ -136,9 +148,9 @@ uploads). etcd attaches to storage because SeaweedFS filer uses it for directory
 The **egress** network provides outbound internet access with inter-container communication disabled
 (`com.docker.network.bridge.enable_icc: "false"`). Only services that call the internet themselves attach to it:
 Playwright and SearXNG (web pages and search engines), the rclone daemon (cloud storage), the structured source pipeline
-(business application APIs such as Jira and Confluence), the IMAP and e-mail classification agents (mail servers), and
-the OTEL Collector (external telemetry backends). A compromised container can reach the internet through it but no other
-container; each reaches its peers only over its other networks.
+(business application APIs such as Jira and Confluence), the IMAP and e-mail classification agents (mail servers), the
+release notes agent (Jira), and the OTEL Collector (external telemetry backends). A compromised container can reach the
+internet through it but no other container; each reaches its peers only over its other networks.
 
 The **code-sandbox** network is a single-tenant zone for Open Terminal, the code-execution sandbox for OpenWebUI, which
 runs arbitrary user-submitted code. Its only resident is the sandbox; its callers join in addition to their own networks
@@ -147,10 +159,20 @@ what prevents a breakout from laterally reaching LiteLLM, vLLM, MinerU, Presidio
 the sandbox can reach only its callers. `internal: true` in non-dev stages additionally denies it outbound internet. See
 ADR `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`.
 
+The **browser** network applies the same pattern to Playwright, which loads the web pages users link. Its only resident
+is the browser; its callers, OpenWebUI's web loader and the agents that read linked pages, join in addition to their own
+networks. The agents check each URL before the browser loads it, but the browser resolves the name again, so a name
+re-pointed to an internal address in between (DNS rebinding) would pass the check. Off `backend`, such a page load has
+no path to LiteLLM, Langfuse, MinerU or the Docker socket proxy. See ADR
+`docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`.
+
+The **pii-detection** network holds the Presidio analyzer, which receives the personal data the platform anonymises,
+plus only its callers (LiteLLM and the Universal Agent). Its models are baked into the image, so `internal: true` in
+non-dev stages denies it outbound internet without breaking it.
+
 The API service is the most connected, attaching to four networks (proxy, backend, data, storage) because it must accept
 external requests, communicate with application services, query databases, and access file storage. A database like
-PostgreSQL attaches only to data. Playwright attaches to backend (for agent communication) and egress (for internet
-access).
+PostgreSQL attaches only to data. Playwright attaches to browser (for its callers) and egress (for internet access).
 
 ## Infrastructure level 2
 

@@ -38,6 +38,10 @@ LITELLM_TEMPLATE = "templates/configs/litellm-config.yml.j2"
 # Keep in sync with AvailableModel.function_calling in packages/core (not importable here, see the note below).
 OPENWEBUI_FUNCTION_CALLING_KEY = "aihub_openwebui_function_calling"
 OPENWEBUI_FUNCTION_CALLING_MODES = {"native", "legacy"}
+# Where a model runs. The pii-anonymisation guardrail anonymises every call to a model that is not `local`, and treats a
+# model without the key as external, so a typo would silently anonymise a local model; generation rejects it instead.
+HOSTING_LOCATION_KEY = "aihub_hosting_location"
+HOSTING_LOCATIONS = {"local", "swiss_cloud", "eu", "global"}
 
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
@@ -135,6 +139,7 @@ STATIC_COPY_DIRS = [
 # (source relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR, output_name)
 STATIC_COPY_FILES = [
     ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
+    ("templates/configs/presidio-analyzer.yaml", "configs/presidio", "analyzer.yaml"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
@@ -168,8 +173,10 @@ OWN_IMAGE_LICENSES = {
     "sysadmin-web": "AGPL-3.0-or-later",
     "imap_agent": "Apache-2.0",
     "email_classification_agent": "Apache-2.0",
+    "release_notes_agent": "Apache-2.0",
     "llm_wrapping_agent": "Apache-2.0",
     "universal_agent": "Apache-2.0",
+    "web_fetch_agent": "Apache-2.0",
     "knowledge_extraction_agent": "Apache-2.0",
     "few_shot_agent": "Apache-2.0",
     "rag_agent": "Apache-2.0",
@@ -177,6 +184,7 @@ OWN_IMAGE_LICENSES = {
     "expert_asking_agent": "Apache-2.0",
     "namespace_selection_agent": "Apache-2.0",
     "memory_writer_agent": "Apache-2.0",
+    "anonymiser_agent": "Apache-2.0",
     "retrieval_agent": "Apache-2.0",
     "default_rag_pipeline": "Apache-2.0",
     "shared_rag_pipeline": "Apache-2.0",
@@ -262,6 +270,7 @@ def generate_config(template, context, output_path):
     rendered = template.render(context)
     if template.name == LITELLM_TEMPLATE:
         _validate_openwebui_function_calling(rendered, output_path)
+        _validate_hosting_locations(rendered, output_path)
     output_path.write_text(rendered, encoding="utf-8")
 
 
@@ -273,6 +282,17 @@ def _validate_openwebui_function_calling(rendered, output_path):
             raise ValueError(
                 f"{entry.get('model_name')}: {OPENWEBUI_FUNCTION_CALLING_KEY} is {mode!r} in {output_path.name}, "
                 f"expected one of {sorted(OPENWEBUI_FUNCTION_CALLING_MODES)}"
+            )
+
+
+def _validate_hosting_locations(rendered, output_path):
+    """Every model declares where it runs, so the anonymisation guardrail knows which calls leave the deployment."""
+    for entry in yaml.safe_load(rendered).get("model_list") or []:
+        location = (entry.get("model_info") or {}).get(HOSTING_LOCATION_KEY)
+        if location not in HOSTING_LOCATIONS:
+            raise ValueError(
+                f"{entry.get('model_name')}: {HOSTING_LOCATION_KEY} is {location!r} in {output_path.name}, "
+                f"expected one of {sorted(HOSTING_LOCATIONS)}"
             )
 
 

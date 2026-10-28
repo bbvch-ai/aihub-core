@@ -6,7 +6,7 @@ stop-gate itself is the spine's post-answer barrier, covered in `capabilities/te
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.generative_ai import GatewayGuardrails, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -77,3 +77,36 @@ def test_build_memory_storage_request_carries_the_origin_memory_model():
     )
 
     assert event.start_event.origin_memory_llm == "text-generation/memory-model"
+
+
+def _storage_request_from_this_task():
+    topic = AgentInstanceTopic(
+        agent_class="RAGAgent",
+        agent_id="hr",
+        thread_id="t1",
+        display_id="d1",
+        run_id="r1",
+        event_type="control_event",
+        event_name="X",
+        event_id="e1",
+    )
+    config = AgentConfig(agent_id="hr", name=LocaleString(en="HR"), description=LocaleString(en="HR agent"))
+    return build_memory_storage_request(
+        user=fake_user(),
+        messages=[ChatMessage(role=MessageRole.USER, content="hi")],
+        topic=topic,
+        agent_config=config,
+        locale="en",
+    )
+
+
+def test_build_memory_storage_request_marks_a_write_from_an_anonymised_run():
+    """The write's extraction calls are calls of the originating run, so they must be anonymised as well."""
+    with GatewayGuardrails.requesting(GatewayGuardrails.PII_ANONYMISATION):
+        event = _storage_request_from_this_task()
+
+    assert event.start_event.origin_anonymise is True
+
+
+def test_build_memory_storage_request_leaves_other_writes_as_they_are():
+    assert _storage_request_from_this_task().start_event.origin_anonymise is False

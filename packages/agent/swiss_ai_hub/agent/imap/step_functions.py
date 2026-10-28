@@ -14,6 +14,7 @@ from swiss_ai_hub.core.imap import ImapClientConfig
 from swiss_ai_hub.agent.imap.composed_reply import ComposedReply
 from swiss_ai_hub.agent.imap.fetched_mail import FetchedMail
 from swiss_ai_hub.agent.imap.imap_client import ImapClientFactory
+from swiss_ai_hub.agent.imap.inbox_position import InboxPosition
 from swiss_ai_hub.agent.imap.mail_store import MailStore
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
 
@@ -32,6 +33,21 @@ async def do_list_unread(imap_config: ImapClientConfig) -> list[UnreadMailSummar
         summaries = await client.list_unread()
     logger.info("[imap] do_list_unread: found %d unread message(s): %s", len(summaries), [s.subject for s in summaries])
     return summaries
+
+
+async def do_list_unread_above(
+    imap_config: ImapClientConfig, position: InboxPosition | None
+) -> tuple[int, list[UnreadMailSummary]]:
+    """Open the inbox and return its UIDVALIDITY and the lowest-UID unread messages above ``position``."""
+    async with ImapClientFactory.create(imap_config) as client:
+        uid_validity, summaries = await client.list_unread_above(position)
+    logger.info(
+        "[imap] do_list_unread_above: found %d unread message(s) above %s in %s",
+        len(summaries),
+        position,
+        imap_config.inbox_folder,
+    )
+    return uid_validity, summaries
 
 
 async def do_fetch_and_archive(

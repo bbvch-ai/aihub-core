@@ -449,6 +449,12 @@ export const AgentClassDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -684,6 +690,12 @@ export const AgentConfigDTOSchema = {
               },
               {
                 $ref: "#/components/schemas/LocaleInput",
+              },
+              {
+                $ref: "#/components/schemas/ModelBoundInputNumber",
+              },
+              {
+                $ref: "#/components/schemas/ModelGatedCheckbox",
               },
               {
                 $ref: "#/components/schemas/ModelSelect",
@@ -6493,6 +6505,9 @@ export const ContextualizedAgentEventSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEvent",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEvent",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEvent",
         },
         {
@@ -6539,6 +6554,9 @@ export const ContextualizedAgentEventSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEvent",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEvent",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEvent",
@@ -9449,13 +9467,13 @@ export const ExtractRecordsEventSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -9489,6 +9507,19 @@ export const ExtractRecordsEventSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -9552,6 +9583,146 @@ export const ExtractRecordsEventSchema = {
   title: "ExtractRecordsEvent",
   description:
     "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
+} as const;
+
+export const ExtractedTableFileSchema = {
+  properties: {
+    bucket: {
+      type: "string",
+      title: "Bucket",
+      description: "The object storage bucket holding the file.",
+    },
+    key: {
+      type: "string",
+      title: "Key",
+      description: "The object key of the file within the bucket.",
+    },
+    filename: {
+      type: "string",
+      pattern: "^[^/\\\\]+$",
+      title: "Filename",
+      description: "The name the file is downloaded under.",
+    },
+    size: {
+      type: "integer",
+      minimum: 0,
+      title: "Size",
+      description: "The file's size in bytes.",
+    },
+    row_count: {
+      type: "integer",
+      minimum: 0,
+      title: "Row Count",
+      description: "Rows the file holds, without the header.",
+    },
+    content_type: {
+      type: "string",
+      title: "Content Type",
+      description: "The file's media type.",
+      default: "text/csv; charset=utf-8",
+    },
+  },
+  type: "object",
+  required: ["bucket", "key", "filename", "size", "row_count"],
+  title: "ExtractedTableFile",
+  description:
+    "Where the whole table of an extraction is stored, as CSV.\n\nEvents carry this reference and a preview, never every row: a table of any size then stays out of the message\nbroker, the event store and the traces, and clients download it from object storage instead.",
+} as const;
+
+export const FetchWebPagesEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -10169,6 +10340,12 @@ export const FullProcessInstanceDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -10503,6 +10680,12 @@ export const GroupSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -11062,6 +11245,12 @@ export const HumanInDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -11215,6 +11404,12 @@ export const HumanInSpecsSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -12937,6 +13132,12 @@ export const IncidentFormDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -13424,6 +13625,12 @@ export const IngestorDTOSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -17337,7 +17544,8 @@ export const MailClassificationRefSchema = {
     target_folder: {
       type: "string",
       title: "Target Folder",
-      description: "Folder the message was filed into.",
+      description:
+        "Folder the message was filed into, or the inbox when it was kept there.",
     },
     reason: {
       type: "string",
@@ -18638,6 +18846,446 @@ export const MinimalUserDTOSchema = {
   title: "MinimalUserDTO",
 } as const;
 
+export const ModelBoundInputNumberSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelBoundNumber",
+      title: "Formkit",
+      description: "Model-bound number input.",
+      default: "modelBoundNumber",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    min: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Min",
+      description: "Minimum value",
+    },
+    max: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max",
+      description: "Maximum value",
+    },
+    step: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Step",
+      description: "Step factor for increment/decrement",
+    },
+    useGrouping: {
+      type: "boolean",
+      title: "Usegrouping",
+      description: "Whether to use grouping separators",
+      default: true,
+    },
+    minFractionDigits: {
+      type: "integer",
+      title: "Minfractiondigits",
+      description: "Minimum number of fraction digits",
+      default: 0,
+    },
+    maxFractionDigits: {
+      type: "integer",
+      title: "Maxfractiondigits",
+      description: "Maximum number of fraction digits",
+      default: 6,
+    },
+    locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Locale",
+      description: "Locale to use for number formatting",
+    },
+    mode: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["decimal", "currency"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Mode",
+      description: "Input mode",
+    },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description: "Currency code for currency mode",
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    showButtons: {
+      type: "boolean",
+      title: "Showbuttons",
+      description: "Whether to show increment/decrement buttons",
+      default: false,
+    },
+    buttonLayout: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["stacked", "horizontal"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Buttonlayout",
+      description: "Layout of increment/decrement buttons",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.",
+    },
+    maxFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxfrom",
+      description:
+        "The model_info key supplying the maximum, e.g. 'max_input_tokens'.",
+    },
+    defaultFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultfrom",
+      description:
+        "The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.",
+    },
+    fallbackDefault: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fallbackdefault",
+      description:
+        "What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.",
+    },
+    overrideLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Overridelabel",
+      description:
+        "Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.",
+    },
+    fillFactor: {
+      anyOf: [
+        {
+          type: "number",
+          maximum: 1,
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fillfactor",
+      description:
+        "The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "validation"],
+  title: "ModelBoundInputNumber",
+  description:
+    'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
+} as const;
+
 export const ModelDTOSchema = {
   properties: {
     model_name: {
@@ -18712,6 +19360,307 @@ export const ModelDetailsSchema = {
   type: "object",
   required: ["id"],
   title: "ModelDetails",
+} as const;
+
+export const ModelGatedCheckboxSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelGatedCheckbox",
+      title: "Formkit",
+      description: "Model-gated checkbox.",
+      default: "modelGatedCheckbox",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    binary: {
+      type: "boolean",
+      title: "Binary",
+      description: "Whether the checkbox works in binary mode",
+      default: true,
+    },
+    indeterminate: {
+      type: "boolean",
+      title: "Indeterminate",
+      description: "Whether the checkbox is in indeterminate state",
+      default: false,
+    },
+    trueValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Truevalue",
+      description: "Value to emit when checked",
+      default: true,
+    },
+    falseValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Falsevalue",
+      description: "Value to emit when unchecked",
+      default: false,
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.",
+    },
+    requires: {
+      type: "string",
+      title: "Requires",
+      description:
+        "The model_info capability flag that must not be false, e.g. 'supports_vision'.",
+    },
+    validation: {
+      type: "string",
+      title: "Validation",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "requires", "validation"],
+  title: "ModelGatedCheckbox",
+  description:
+    "A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.\n\nThe frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets\n`requires` to false; the API rejects a save that enables it for such a model. A model that does not declare\nthe capability at all is not held against it, as LiteLLM leaves most flags unset.",
 } as const;
 
 export const ModelInfoDTOSchema = {
@@ -18980,6 +19929,45 @@ export const ModelInfoDTOSchema = {
       ],
       title: "Supports Vision",
       description: "Whether the model supports vision/image input",
+    },
+    max_images: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max Images",
+      description:
+        "Most images one request may carry, curated in the LiteLLM config",
+    },
+    default_temperature: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Default Temperature",
+      description:
+        "Sampling temperature used when a profile sets none, curated per model",
+    },
+    default_top_p: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Default Top P",
+      description:
+        "Nucleus-sampling top_p used when a profile sets none, curated per model",
     },
     supports_function_calling: {
       anyOf: [
@@ -21155,6 +22143,12 @@ export const ProcessClassDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -22853,8 +23847,21 @@ export const RecordsExtractedEventSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -22880,37 +23887,29 @@ export const RecordsExtractedEventSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -22948,12 +23947,18 @@ export const RecordsExtractedEventSchema = {
   required: ["extraction_id", "summary", "_event_name", "_parent_event_names"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalReasonSchema = {
   type: "string",
-  enum: ["condensation_empty", "input_too_large", "out_of_scope"],
+  enum: [
+    "condensation_empty",
+    "images_not_accepted",
+    "input_too_large",
+    "out_of_scope",
+    "too_many_images",
+  ],
   title: "RefusalReason",
   description:
     "Why a conversational turn was refused before any answer was attempted.",
@@ -23457,6 +24462,12 @@ export const RepeaterSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInput",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
           },
           {
             $ref: "#/components/schemas/ModelSelect",
@@ -24409,6 +25420,16 @@ export const RunToolLoopEventSchema = {
       title: "Knowledge References",
       description:
         "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
       default: [],
     },
     _event_name: {
@@ -26144,6 +27165,12 @@ export const SourcePipelineDTOSchema = {
             $ref: "#/components/schemas/LocaleInput",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumber",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckbox",
+          },
+          {
             $ref: "#/components/schemas/ModelSelect",
           },
           {
@@ -26731,6 +27758,13 @@ export const StoreUserMemoryRequestedEventSchema = {
       title: "Origin Memory Llm",
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
+    },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
     },
     _event_name: {
       type: "string",
@@ -29889,6 +30923,19 @@ export const UnreadMailListedEventSchema = {
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
     },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -30582,6 +31629,16 @@ export const UserMessageEventSchema = {
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
       default: [],
     },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
+      default: [],
+    },
     _event_name: {
       type: "string",
       title: "Event Name",
@@ -31115,6 +32172,147 @@ export const VoiceIDSchema = {
   description: "Custom voice reference.",
 } as const;
 
+export const WebFetchFailureSchema = {
+  properties: {
+    url: {
+      type: "string",
+      title: "Url",
+      description: "The URL as the user sent it.",
+    },
+    reason: {
+      $ref: "#/components/schemas/WebFetchFailureReason",
+      description: "Why the page could not be read.",
+    },
+  },
+  type: "object",
+  required: ["url", "reason"],
+  title: "WebFetchFailure",
+  description:
+    "A linked page the agent could not read, with the reason the answer reports to the user.",
+} as const;
+
+export const WebFetchFailureReasonSchema = {
+  type: "string",
+  enum: [
+    "malformed_url",
+    "unsupported_url",
+    "blocked_host",
+    "not_found",
+    "access_denied",
+    "http_error",
+    "timeout",
+    "unsupported_content",
+    "empty_content",
+    "url_limit_reached",
+  ],
+  title: "WebFetchFailureReason",
+  description:
+    "Why a linked page could not be read, so the answer can tell the user instead of inventing the page.",
+} as const;
+
+export const WebPagesFetchedEventSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNode",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+    _event_name: {
+      type: "string",
+      title: "Event Name",
+      description:
+        "The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.",
+      readOnly: true,
+    },
+    _parent_event_names: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Parent Event Names",
+      description:
+        "Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.",
+      readOnly: true,
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["_event_name", "_parent_event_names"],
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
+} as const;
+
 export const WebhookResponseSchema = {
   properties: {
     status: {
@@ -31536,6 +32734,12 @@ export const AgentClassDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -31771,6 +32975,12 @@ export const AgentConfigDTOWritableSchema = {
               },
               {
                 $ref: "#/components/schemas/LocaleInputWritable",
+              },
+              {
+                $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+              },
+              {
+                $ref: "#/components/schemas/ModelGatedCheckboxWritable",
               },
               {
                 $ref: "#/components/schemas/ModelSelectWritable",
@@ -34622,6 +35832,9 @@ export const ContextualizedAgentEventWritableSchema = {
           $ref: "#/components/schemas/SearchKnowledgeEventWritable",
         },
         {
+          $ref: "#/components/schemas/FetchWebPagesEventWritable",
+        },
+        {
           $ref: "#/components/schemas/ExtractRecordsEventWritable",
         },
         {
@@ -34668,6 +35881,9 @@ export const ContextualizedAgentEventWritableSchema = {
         },
         {
           $ref: "#/components/schemas/KnowledgeSearchedEventWritable",
+        },
+        {
+          $ref: "#/components/schemas/WebPagesFetchedEventWritable",
         },
         {
           $ref: "#/components/schemas/RecordsExtractedEventWritable",
@@ -35853,13 +37069,13 @@ export const ExtractRecordsEventWritableSchema = {
         },
       ],
       description:
-        "The documents to extract from; none when the request continues a pending extraction.",
+        "The documents to extract from; none when the request confirms a sample.",
     },
-    continue_pending: {
+    confirmed: {
       type: "boolean",
-      title: "Continue Pending",
+      title: "Confirmed",
       description:
-        "Whether to extract the next part of the extraction this conversation left pending, with its documents and columns, instead of a new selection.",
+        "Whether the user confirmed extracting every document of the selection this conversation showed a sample of, with its columns, instead of a new selection.",
       default: false,
     },
     fields: {
@@ -35893,6 +37109,19 @@ export const ExtractRecordsEventWritableSchema = {
       title: "Row Terms",
       description:
         "Words or a regular expression the lines holding wanted records usually contain; used only to find the right parts of a long document, never to choose documents.",
+    },
+    document_terms: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Document Terms",
+      description:
+        "Words or a regular expression the documents holding wanted records likely contain, such as a supplier's name; used only to choose which documents are sampled and read first, never to leave one out.",
     },
     collections: {
       items: {
@@ -35939,6 +37168,84 @@ export const ExtractRecordsEventWritableSchema = {
   title: "ExtractRecordsEvent",
   description:
     "Asks the record-extraction capability for one table across the selected knowledge documents.\n\nBuilt with `RecordExtraction.extract(...)`, or by the capability's tool adapter when a model chose\n`extract_records`; answered with `RecordsExtractedEvent`. The collections are the caller's, already narrowed to\nwhat the asking user may read, never the model's.",
+} as const;
+
+export const FetchWebPagesEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    urls: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Urls",
+      description: "The links to read, in the order the user gave them.",
+      default: [],
+    },
+    reading: {
+      type: "boolean",
+      title: "Reading",
+      description:
+        "Whether the pages are read: false while the profile has web fetch off, so a chat client shows no reading progress for links that are left unread.",
+      default: true,
+    },
+    cite_sources: {
+      type: "boolean",
+      title: "Cite Sources",
+      description:
+        "Whether the model is told to cite the pages by id, off where citations cannot resolve.",
+      default: true,
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "FetchWebPagesEvent",
+  description:
+    "Asks the web fetch capability to read the pages the user linked, pasted in the message or referenced with `#`.\n\nBuilt with `WebFetch.fetch(...)`; answered with `WebPagesFetchedEvent`, empty when fetching is off for the\nprofile. The URLs are passed as the user sent them, so a malformed one is reported back rather than dropped.",
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -36320,6 +37627,12 @@ export const FullProcessInstanceDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -36584,6 +37897,12 @@ export const GroupWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -36894,6 +38213,12 @@ export const HumanInDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -37047,6 +38372,12 @@ export const HumanInSpecsWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -37930,6 +39261,12 @@ export const IncidentFormDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -38409,6 +39746,12 @@ export const IngestorDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -42253,6 +43596,441 @@ export const MinimalAgentInstanceDTOWritableSchema = {
     "Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.\nOnly contains minimal information about a specific agent instance.\n\nNOTE: This represents an INSTANCE (with agent_id), not an agent CLASS.\nFor class-level data only, use AgentClassDTO.",
 } as const;
 
+export const ModelBoundInputNumberWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelBoundNumber",
+      title: "Formkit",
+      description: "Model-bound number input.",
+      default: "modelBoundNumber",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    placeholder: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Placeholder",
+      description: "Placeholder text",
+    },
+    min: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Min",
+      description: "Minimum value",
+    },
+    max: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Max",
+      description: "Maximum value",
+    },
+    step: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Step",
+      description: "Step factor for increment/decrement",
+    },
+    useGrouping: {
+      type: "boolean",
+      title: "Usegrouping",
+      description: "Whether to use grouping separators",
+      default: true,
+    },
+    minFractionDigits: {
+      type: "integer",
+      title: "Minfractiondigits",
+      description: "Minimum number of fraction digits",
+      default: 0,
+    },
+    maxFractionDigits: {
+      type: "integer",
+      title: "Maxfractiondigits",
+      description: "Maximum number of fraction digits",
+      default: 6,
+    },
+    locale: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Locale",
+      description: "Locale to use for number formatting",
+    },
+    mode: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["decimal", "currency"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Mode",
+      description: "Input mode",
+    },
+    currency: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Currency",
+      description: "Currency code for currency mode",
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    showButtons: {
+      type: "boolean",
+      title: "Showbuttons",
+      description: "Whether to show increment/decrement buttons",
+      default: false,
+    },
+    buttonLayout: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["stacked", "horizontal"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Buttonlayout",
+      description: "Layout of increment/decrement buttons",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered. Never prefix it with '$': FormKit compiles such schema strings as expressions.",
+    },
+    maxFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxfrom",
+      description:
+        "The model_info key supplying the maximum, e.g. 'max_input_tokens'.",
+    },
+    defaultFrom: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultfrom",
+      description:
+        "The model_info key shown as the default the model uses when the field is left empty, e.g. 'default_temperature'.",
+    },
+    fallbackDefault: {
+      anyOf: [
+        {
+          type: "number",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fallbackdefault",
+      description:
+        "What applies when the model curates no `default_from` value, shown in its place; unset means the provider decides and the label says so.",
+    },
+    overrideLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Overridelabel",
+      description:
+        "Label of the element's own override checkbox, followed by the model's default. Set it on a nullable field whose unset value means 'use the model's default'.",
+    },
+    fillFactor: {
+      anyOf: [
+        {
+          type: "number",
+          maximum: 1,
+          exclusiveMinimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Fillfactor",
+      description:
+        "The share of the `max_from` limit the runtime actually fills, when it keeps a margin below it. It is the field's bound, so a value never promises more than a run uses, and without a `default_from` also what an unset field applies, as a budget left to the model fills its window.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef"],
+  title: "ModelBoundInputNumber",
+  description:
+    'A number input whose upper bound and default hint come from the model picked elsewhere on the same form.\n\nA static range cannot be right for every model: an input-token budget a small-context model cannot serve, or\na temperature hint that is only the default of some other model. The frontend reads the selected model\'s\nLiteLLM `model_info` and applies `max_from` as the maximum and `default_from` as the placeholder; the API\nrejects a save above the model\'s limit, since this bound is not part of the announced JSON schema.\n\nWith an `override_label`, a nullable field gets an override checkbox of its own instead of the form\'s generic\nenable toggle: the input stays in view, disabled and showing the model\'s default while unset, and is pre-filled\nwith that default when the admin starts overriding it, so the default is visible before deciding. A budget\nsuch as the input tokens has no curated default: unset, it fills `fill_factor` of the model\'s `max_from` limit,\nwhich is also the highest value it accepts (`maximum_for`).\n\n```python\nnumber_of_input_tokens=ModelBoundInputNumber(\n    label=LocaleString(en="Input tokens"), model_ref="llm.model_name", max_from="max_input_tokens", min=1024\n)\n```',
+} as const;
+
 export const ModelDTOWritableSchema = {
   properties: {
     model_name: {
@@ -42268,6 +44046,302 @@ export const ModelDTOWritableSchema = {
   type: "object",
   required: ["model_name", "model_info"],
   title: "ModelDTO",
+} as const;
+
+export const ModelGatedCheckboxWritableSchema = {
+  properties: {
+    is_formkit_element: {
+      type: "boolean",
+      const: true,
+      title: "Is Formkit Element",
+      description: "Indicates that this element is a FormKit element",
+      default: true,
+    },
+    if: {
+      anyOf: [
+        {
+          type: "string",
+          pattern: "^\\$.+",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "If",
+      description: "Conditional expression to show this element",
+    },
+    id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Id",
+      description: "Unique identifier for this element",
+    },
+    nullable: {
+      type: "boolean",
+      title: "Nullable",
+      description:
+        "Render with a sibling toggle that sets this field to null when off",
+      default: false,
+    },
+    defaultEnabled: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Defaultenabled",
+      description:
+        "For a nullable element, whether its toggle should start enabled on a fresh form (i.e. the field's data default is non-null). Ignored for non-nullable elements.",
+    },
+    toggleLabel: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglelabel",
+      description:
+        "For a nullable element, the label of its toggle. Unset, the toggle reads 'Enable <label>', which misleads when switching it off does not mean 'without this' but 'without narrowing'.",
+    },
+    toggleHelp: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Togglehelp",
+      description:
+        "For a nullable element, the help text shown under its toggle.",
+    },
+    formkit: {
+      type: "string",
+      const: "modelGatedCheckbox",
+      title: "Formkit",
+      description: "Model-gated checkbox.",
+      default: "modelGatedCheckbox",
+    },
+    name: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+      description: "Name of this field",
+    },
+    label: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+      ],
+      title: "Label",
+      description: "Label of this field",
+    },
+    help: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Help",
+      description: "Help text of this field",
+    },
+    value: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "number",
+        },
+        {
+          type: "boolean",
+        },
+        {
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        {
+          additionalProperties: {
+            type: "string",
+          },
+          type: "object",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Value",
+      description: "Default value for this field",
+    },
+    required: {
+      type: "boolean",
+      title: "Required",
+      description: "Whether this field is required",
+      default: false,
+    },
+    additional_validation_rules: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Additional Validation Rules",
+      description: "Validation expression",
+    },
+    disabled: {
+      type: "boolean",
+      title: "Disabled",
+      description: "Whether the input is disabled",
+      default: false,
+    },
+    readonly: {
+      type: "boolean",
+      title: "Readonly",
+      description: "Whether the input is readonly",
+      default: false,
+    },
+    binary: {
+      type: "boolean",
+      title: "Binary",
+      description: "Whether the checkbox works in binary mode",
+      default: true,
+    },
+    indeterminate: {
+      type: "boolean",
+      title: "Indeterminate",
+      description: "Whether the checkbox is in indeterminate state",
+      default: false,
+    },
+    trueValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Truevalue",
+      description: "Value to emit when checked",
+      default: true,
+    },
+    falseValue: {
+      anyOf: [
+        {
+          type: "boolean",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Falsevalue",
+      description: "Value to emit when unchecked",
+      default: false,
+    },
+    prefix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Prefix",
+      description: "Prefix text",
+    },
+    suffix: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Suffix",
+      description: "Suffix text",
+    },
+    modelRef: {
+      type: "string",
+      title: "Modelref",
+      description:
+        "Dotted path of the model picker, relative to the declaring form; a leading '../' steps up one form. Rewritten to the path from the form root when the form is rendered.",
+    },
+    requires: {
+      type: "string",
+      title: "Requires",
+      description:
+        "The model_info capability flag that must not be false, e.g. 'supports_vision'.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  required: ["label", "modelRef", "requires"],
+  title: "ModelGatedCheckbox",
+  description:
+    "A checkbox that can only be switched on while the model picked elsewhere on the same form has a capability.\n\nThe frontend disables it and shows it unchecked while the selected model's LiteLLM `model_info` sets\n`requires` to false; the API rejects a save that enables it for such a model. A model that does not declare\nthe capability at all is not held against it, as LiteLLM leaves most flags unset.",
 } as const;
 
 export const ModelSelectWritableSchema = {
@@ -43347,6 +45421,12 @@ export const ProcessClassDTOWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -44565,8 +46645,21 @@ export const RecordsExtractedEventWritableSchema = {
     table: {
       type: "string",
       title: "Table",
-      description: "The rows as a markdown table, empty when there are none.",
+      description:
+        "The first rows as a markdown table, a preview when `file` holds more; empty without rows.",
       default: "",
+    },
+    file: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/ExtractedTableFile",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description:
+        "The whole table as a CSV file; none when there are no rows.",
     },
     summary: {
       type: "string",
@@ -44592,37 +46685,29 @@ export const RecordsExtractedEventWritableSchema = {
       type: "integer",
       minimum: 0,
       title: "Row Count",
-      description: "Rows in the table.",
+      description: "Rows in the preview.",
       default: 0,
     },
     total_row_count: {
       type: "integer",
       minimum: 0,
       title: "Total Row Count",
-      description: "Rows found, more than the table holds when cut.",
+      description: "Rows found; every one of them is in `file`.",
       default: 0,
     },
     truncated: {
       type: "boolean",
       title: "Truncated",
-      description: "Whether the result was cut short at a limit.",
+      description:
+        "Whether the search for documents stopped at a limit, so documents may be missing.",
       default: false,
     },
-    remaining_documents: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Documents",
+    awaiting_confirmation: {
+      type: "boolean",
+      title: "Awaiting Confirmation",
       description:
-        "Documents of this extraction not extracted yet, left for the user to continue with; more matched than one answer can extract.",
-      default: 0,
-    },
-    remaining_rows: {
-      type: "integer",
-      minimum: 0,
-      title: "Remaining Rows",
-      description:
-        "Rows found but not shown yet, shown first when the user continues.",
-      default: 0,
+        "Whether this is a sample of a selection too large to extract unasked; every document is extracted once the user confirms.",
+      default: false,
     },
     tool_call_id: {
       anyOf: [
@@ -44643,7 +46728,7 @@ export const RecordsExtractedEventWritableSchema = {
   required: ["extraction_id", "summary"],
   title: "RecordsExtractedEvent",
   description:
-    "The answer to `ExtractRecordsEvent`: one markdown table naming the source of every row, and its summary.\n\nA blueprint that called the extraction itself shows the table as its answer. When a model chose it in a tool loop\n(`tool_call_id` is set), the model only reads the summary, so chat clients show the table themselves: OpenWebUI as\na block of the answer, the OpenAI-compatible API as answer text.",
+    "The answer to `ExtractRecordsEvent`: a preview of the table naming the source of every row, the whole table as a\nfile, and its summary.\n\nThe event carries only the first rows; every row is in `file`, a CSV in object storage, so a table of any size\nstays out of the message broker. A blueprint that called the extraction itself shows the preview as its answer.\nWhen a model chose it in a tool loop (`tool_call_id` is set), the model only reads the summary, so chat clients\nshow the preview themselves: OpenWebUI as a block of the answer, the OpenAI-compatible API as answer text. Clients\noffer the file for download.",
 } as const;
 
 export const RefusalStopEventWritableSchema = {
@@ -45127,6 +47212,12 @@ export const RepeaterWritableSchema = {
           },
           {
             $ref: "#/components/schemas/LocaleInputWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
           },
           {
             $ref: "#/components/schemas/ModelSelectWritable",
@@ -45828,6 +47919,16 @@ export const RunToolLoopEventWritableSchema = {
       title: "Knowledge References",
       description:
         "The collections the user referenced on the message, for tools that search knowledge.",
+      default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "The web pages the message links or references, for tools that read them.",
       default: [],
     },
   },
@@ -47316,6 +49417,12 @@ export const SourcePipelineDTOWritableSchema = {
             $ref: "#/components/schemas/LocaleInputWritable",
           },
           {
+            $ref: "#/components/schemas/ModelBoundInputNumberWritable",
+          },
+          {
+            $ref: "#/components/schemas/ModelGatedCheckboxWritable",
+          },
+          {
             $ref: "#/components/schemas/ModelSelectWritable",
           },
           {
@@ -47812,6 +49919,13 @@ export const StoreUserMemoryRequestedEventWritableSchema = {
       title: "Origin Memory Llm",
       description:
         "Originating agent's memory model (issue #1590) — the writer extracts on the model that profile configured. None means the platform default.",
+    },
+    origin_anonymise: {
+      type: "boolean",
+      title: "Origin Anonymise",
+      description:
+        "Whether the originating run anonymised its LLM calls. The write's extraction calls are calls of that run, so the writer anonymises them too.",
+      default: false,
     },
   },
   additionalProperties: true,
@@ -49962,6 +52076,19 @@ export const UnreadMailListedEventWritableSchema = {
       title: "Messages",
       description: "Header summaries of the unread messages in the inbox.",
     },
+    uid_validity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Uid Validity",
+      description:
+        "The inbox's UIDVALIDITY when the listing only took mail above the inbox watermark, so the run can advance the watermark in the same UID space it listed from. None for a plain unread listing.",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -50059,6 +52186,16 @@ export const UserMessageEventWritableSchema = {
       title: "Knowledge References",
       description:
         "Knowledge collections the user referenced on this message, e.g. with `#` in a chat client. The agent adds what it finds there to its context, searching only those the user may read.",
+      default: [],
+    },
+    web_references: {
+      items: {
+        type: "string",
+      },
+      type: "array",
+      title: "Web References",
+      description:
+        "Web pages the user referenced on this message, e.g. with `#` in a chat client, which keeps them out of the message text. Sent as given, so a malformed link reaches the agent and is reported rather than rejected with the message. An agent with web fetch on reads them along with the links in the message.",
       default: [],
     },
   },
@@ -50312,4 +52449,89 @@ export const VectorStoreInputWritableSchema = {
   title: "VectorStoreInput",
   description:
     'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. "All namespaces" switch, or a namespace multi-select populated from the selected database\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "all_namespaces": bool,\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```',
+} as const;
+
+export const WebPagesFetchedEventWritableSchema = {
+  properties: {
+    event_id: {
+      type: "string",
+      title: "Event Id",
+    },
+    created_at: {
+      type: "integer",
+      title: "Created At",
+      description:
+        "The time (in ns since epoch) the event was stored in the event store",
+    },
+    display_name: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display name for the event",
+    },
+    display_description: {
+      anyOf: [
+        {
+          $ref: "#/components/schemas/LocaleString",
+        },
+        {
+          type: "null",
+        },
+      ],
+      description: "Display description for the event",
+    },
+    block: {
+      items: {
+        $ref: "#/components/schemas/ChatMessage",
+      },
+      type: "array",
+      title: "Block",
+      description:
+        "System messages carrying the pages read and the links that failed.",
+      default: [],
+    },
+    grounding_nodes: {
+      items: {
+        $ref: "#/components/schemas/IngestedNodeWritable",
+      },
+      type: "array",
+      title: "Grounding Nodes",
+      description:
+        "The pages the block holds, one per page, for listing as sources.",
+      default: [],
+    },
+    failures: {
+      items: {
+        $ref: "#/components/schemas/WebFetchFailure",
+      },
+      type: "array",
+      title: "Failures",
+      description:
+        "The links that could not be read, with the reason for each.",
+      default: [],
+    },
+    tool_call_id: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Tool Call Id",
+      description:
+        "The tool call this answers when the model chose the fetch in a tool loop; none otherwise.",
+    },
+  },
+  additionalProperties: true,
+  type: "object",
+  title: "WebPagesFetchedEvent",
+  description:
+    "The answer to `FetchWebPagesEvent`: one context block with the pages that were read, and the links that were not.\n\nDisplayed because `grounding_nodes` are the pages the model is handed, so a chat client lists exactly the sources\nthe answer can cite, by title and URL. A semantic event, so the fetch step shows in the trace as a retrieval of\nthose pages, with the failures beside them.",
 } as const;

@@ -74,7 +74,8 @@ runner.mount(
     .remove_agent_from_thread()
     .add_user_to_thread()
     .remove_user_from_thread()
-    .get_open_chat_hitl(),
+    .get_open_chat_hitl()
+    .get_extracted_table_download_url(),
     AgentController(auth=auth)
     .get_agent_classes()
     .get_agent_class()
@@ -116,7 +117,7 @@ runner.mount(
     DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
-        translation_llm_config=LLMConfig(model_name="text-generation/gemma-4-31B-it"),
+        translation_llm_config=LLMConfig.deterministic("text-generation/gemma-4-31B-it"),
     )
     .get_ingestors()
     .get_source_pipelines()

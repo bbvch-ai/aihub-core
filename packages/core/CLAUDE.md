@@ -55,12 +55,12 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
-├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 30 elements)
+├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 32 elements)
 │   ├── form.py                      # Form base class with duality pattern
 │   ├── config_specs.py              # ConfigSpecs: announced JSON schema of a Form (agents, processes, ingestors)
 │   ├── secret_field_walker.py       # SecretFieldWalker: dotted paths of Password/SecretFileInput fields in an announced form
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
-│   └── elements/                    # 30 concrete form elements
+│   └── elements/                    # 32 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension + input-size guard
 │   ├── document/                    # Loaders (MinerU, MarkItDown, Eml, DocumentIntelligence), extraction,
@@ -92,7 +92,9 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── imap/                            # Mail config + MIME parsing (MailParser, ParsedMessage, ImapClientConfig)
+├── jira/                            # Read-only Jira for agents: JiraConnectionConfig, JiraTicketSearch, JiraHtml (shared with the pipeline)
 ├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
+├── network/                         # SourceHostGuard: refuses admin-set URLs that point inside the platform (SSRF)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)
@@ -285,12 +287,31 @@ class MyConfig(Form):
 
 ### Element Hierarchy
 
-`FormkitElement` → `PrimeVueElement` → 30 concrete elements:
+`FormkitElement` → `PrimeVueElement` → 32 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
 Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
 forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
-VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text).
+VectorStoreInput, IconSelector, CronInput, SecretFileInput (a secret picked as a file, submitted as its text),
+ModelBoundInputNumber and ModelGatedCheckbox.
+
+**Model-bound elements**:
+
+- **What they do**: `ModelBoundInputNumber` takes its maximum (`max_from`) and its default hint (`default_from`) from
+  the LiteLLM `model_info` of the model picked elsewhere on the form. `ModelGatedCheckbox` can only be switched on while
+  that model does not set `requires` to false.
+- **How the model is referenced**: `model_ref` is written relative to the declaring form, with `../` for a parent.
+  `FormkitElement.anchored_at`, called from `_prepare_formkit_element`, rewrites it to the path from the form root.
+- **Where they are enforced**: the frontend applies them, and `ModelLimitValidator` in `packages/api` enforces them at
+  save time, since the JSON schema cannot carry a bound that depends on another field.
+- **Where they are used**: `LLMParameter` (temperature, top_p, accept_images) and
+  `ConversationFields.number_of_input_tokens`.
+- **Own override instead of the generic toggle**: a nullable `ModelBoundInputNumber` with an `override_label` reports
+  `renders_own_unset_state()`, so `_prepare_formkit_element` does not mark it `nullable` and the frontend renders no
+  "Enable X" toggle. The component shows its own checkbox with the model's default (or `fallback_default`, or "provider
+  default") in the label, keeps the input visible but disabled while unset, and pre-fills the default when ticked. A
+  budget without a `default_from` (the input tokens) shows `fill_factor` of its `max_from` limit as what applies, and
+  that share is also its bound (`maximum_for`), used by the form, the API and the startup migration alike.
 
 ### Nested Forms
 
@@ -529,6 +550,7 @@ must be loaded explicitly when constructing settings instances.
 | `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`  |
 | `MineruSettings`       | Document parsing       | `MINERU_`   |
 | `RcloneSettings`       | Cloud sync             | `RCLONE_`   |
+| `JiraSettings`         | Jira read by agents    | `JIRA_`     |
 
 OpenTelemetry: `SmartTracer` for span creation, `@trace_fn` decorator for automatic function tracing.
 
@@ -597,6 +619,18 @@ are walked with `next_offset` until it is None. Each `KnowledgeContentMatch` car
   sort. The regex is listed first and candidates are ids only (sorted by `_id`; the source only for a glob); metadata
   and text are read for one page. Measured at 5,000 × 100k characters: about 1 s per search on lz4-compressed rows, 2.5
   s on PostgreSQL's default pglz (#1024).
+- **Ranking by meaning.**
+  `KnowledgeSemanticSearch.rank(collections, query, *, path_globs=, passages_per_document=2, user=, budget=)` returns a
+  `KnowledgeSemanticRanking`: the documents in scope ordered by their closest chunks (Milvus `group_by_field` on
+  `document_id`, `PartitionAwareMilvusVectorStore.passages_grouped_by_document`), with `documents_in_scope`, `unranked`
+  (documents without any indexed passage) and `capped` (more had passages than `MAX_RANKED_DOCUMENTS`, 1,000). The chunk
+  index has no path field, so the globs are resolved through the listing into document ids and each search is filtered
+  to exactly those (`IDS_PER_FILTER` 10,000; 200,000 ids were measured to work on Milvus 2.6). Each database is searched
+  with its own embedding model (`ReferencedKnowledge.embedding_model_of`); raw scores order documents within one model
+  only, and the models' rankings are merged by reciprocal rank fusion (k=60). Stores come from
+  `ExistingMilvusVectorStores.find`, which returns None for a missing collection instead of creating it, and builds each
+  store once per process. Milvus failures raise `KnowledgeSemanticSearchUnavailableError`; the `budget` bounds the
+  listing and every search.
 - **Selections.** `KnowledgeDocumentSelector.resolve(collections, selection, limit, restricting_glob)` turns a
   `KnowledgeDocumentSelection` (`any_of` `KnowledgeDocumentCriteria`: path glob, path regex, content query, ids; AND
   within one, OR across) into the documents it describes, sorted and cut at `limit` with `truncated`. One
@@ -649,6 +683,54 @@ on the config: an unconfigured profile reports `None` and `Mem0Settings.get_conf
 a blueprint offering a picker overrides it. Embedding and reranking stay global: memories written with one embedding
 model cannot be searched with another. Only inferring writes run a model, so `MemoryAdded.llm_model_name` and the store
 events report `None` for organization memory, which stores its text verbatim.
+
+## Jira (`jira/`)
+
+Read-only Jira access for agents (#1951), Jira Cloud and Jira Data Center alike. Like `imap/` and `mcp/`, it reads no
+agent configuration: the agent embeds the group and passes it in.
+
+- **`JiraConnectionConfig`** is a `StepConfig` with `base_url`, `deployment` (`cloud` | `data_center`), `email` (Cloud
+  only) and `api_token` (a `Password`, so #1587 will encrypt it with every other secret field). A step receives it by
+  its exact type, so a profile holds one Jira group. `page_size`, `request_timeout_seconds` and `max_tickets` are
+  deployment-fixed: absent from the form, but bounded in the schema because a direct API save can set them. Cross-field
+  rules (Cloud needs an e-mail) are `problems()`, checked when a search starts, never a validator.
+- **`JiraTicketSearch.find_tickets(connection, project_keys, clauses)`** returns every matching `JiraTicket` (key, url,
+  type, status, summary, markdown description, labels, components, fix versions), sorted by project and number. Each
+  clause is parenthesised and ANDed after `project in (…)`. A value taken from a chat message goes through
+  `JiraJql.string_literal()`, or it can widen the query.
+- **`JiraTicketSearch.find_versions(connection, project_keys)`** lists every `JiraVersion` (id, name, project, released,
+  archived, release date) after the same checks. Versions belong to a project, so one name can be two versions; search a
+  release with `JiraJql.fix_version_clause(versions)`, which matches by id (`fixVersion in (10200, 10305)`), rather than
+  by a quoted name.
+- **Errors are typed and English**, so the agent words them in the user's language. `JiraConfigurationError` (a missing
+  value, an internal host, a URL without Jira's REST API behind it), `JiraAuthenticationError`,
+  `JiraProjectNotFoundError` (unknown, invisible or renamed), `JiraInvalidQueryError` (Jira's own text, e.g. an unknown
+  fix version), `JiraTooManyTicketsError` and `JiraRequestError` all derive from `JiraError`. None of their messages
+  carries the token or the query string. The checks run in that order (configuration, host, `/myself`, each project, the
+  query), so each mistake surfaces as itself.
+
+Rules, each guarding a failure that would otherwise be silent:
+
+- **REST v2 only**, with `expand=renderedFields`; descriptions are converted by `JiraHtml`, which the pipeline shares.
+  v3 returns rich text as JSON (ADF).
+- **Cloud answers an invalid query with zero tickets**, so it is checked first with
+  `POST /rest/api/3/jql/parse?validation=strict`; Data Center's search answers 400 itself.
+- **Data Center pages by offset, not by `id > N`.** Its `ORDER BY id` sorts by key, so a keyset skips the tickets of
+  every project but the first (found live on 11.3: 149 counted, 134 returned). Offsets past 10,000 fail with OpenSearch,
+  and `max_tickets` (≤ 10,000) keeps a read below that. Cloud pages by `nextPageToken`. Both stop only on an empty page
+  or Jira's end marker, never on a short page. A repeated issue, or Data Center returning fewer than it counted, fails
+  the search.
+- **Retries are bounded**: 429, 502, 503, 504 and refused connections, at most four attempts, honouring `Retry-After`
+  (seconds or a date). A wait over 30 s fails at once instead of stalling the chat; read timeouts are not retried.
+- **No redirects, and only public hosts.** `SourceHostGuard` (`network/`) runs before the first request; an operator
+  allows an internal Jira with `JIRA_ALLOWED_PRIVATE_HOSTS` (`JiraSettings`), which the `release_notes_agent` container
+  receives (`.env.dev`: `localhost`, `.env.prod`: empty).
+- **Classic API tokens only on Cloud.** Scoped tokens and service accounts answer only at
+  `api.atlassian.com/ex/jira/{cloudId}`, which the ticket links would then point at too.
+
+Tests: `tests/unit/fake_jira.py` serves both editions through `httpx.MockTransport`; `tests/unit/recorded/` holds real
+search hits from Cloud and Data Center 11.3 (site names replaced). `tests/integration/test_jira_live.py` checks the
+acceptance criteria against sites seeded with `packages/pipeline/playground/jira_seed` (`JIRA_LIVE_ENV_FILES`).
 
 ## FastAPI Controllers
 

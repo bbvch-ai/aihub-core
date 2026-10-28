@@ -61,7 +61,7 @@ def build() -> UniversalAgentConfig:
                 "e cita ciò che ha usato."
             ),
         ),
-        icon="mage:book-open",
+        icon="mage:book",
         instructions=LocaleString(
             en=(
                 "Answer only from what your tools return. Look into our knowledge before every answer: search it, "

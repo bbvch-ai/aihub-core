@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: c54681805fefe2d5dd12d7529e434198ab6923e81fbe565545e050d9c26ae8e9
+source_sha: 17e338f61b0febe54a7d73c3ec8f3ee0d7384def79712de1d70c4703bd1afe4f
 ---
 
 # Wissensextraktions-Agent
@@ -10,7 +10,8 @@ Der **Wissensextraktions-Agent** beantwortet Anfragen, die jede passende Zeile a
 wenigen ähnlichsten Abschnitte, die eine Wissenssuche liefert. Ein Benutzer fragt in einer Chat-Nachricht, zum Beispiel
 *«Finde alle Rechnungspositionen zu Hardware auf den Rechnungen 2025 von Acme»*, und erhält eine Tabelle zurück: eine
 Zeile pro gefundenem Datensatz, jede Zeile mit Pfad und Datei, aus der sie stammt, dazu eine Zusammenfassung, wie viele
-Dateien gelesen und wie viele Zeilen gefunden wurden und welche Dateien nicht gelesen werden konnten.
+Dateien gelesen und wie viele Zeilen gefunden wurden und welche Dateien nicht gelesen werden konnten. Die ganze Tabelle
+steht zudem als CSV-Datei zum Herunterladen bereit.
 
 ::: tip Wann Sie diesen Agenten einsetzen
 Setzen Sie ihn ein, wenn die Antwort eine Liste von Datensätzen ist, die über Dokumente hinweg gesammelt werden:
@@ -24,60 +25,89 @@ Dokumentwerkzeuge einschaltet.
 
 ```mermaid
 flowchart LR
-    A[Benutzernachricht] --> B[Dokumente finden]
-    B --> C[Auswählen]
+    A[Benutzernachricht] --> B[Anfrage lesen]
+    B --> C[Jedes Dokument<br/>im Bereich]
     C --> D[Spalten entwerfen]
     D --> E[Aus jedem Dokument<br/>parallel extrahieren]
-    E --> F[Eine Tabelle<br/>mit Zusammenfassung]
+    E --> F[Tabellenvorschau,<br/>Zusammenfassung und CSV]
 ```
 
-1. **Dokumente finden.** Das Modell arbeitet sich mit drei Werkzeugen durch die Dokumente der Sammlungen des Profils: Es
-   listet ihre Pfade auf, durchsucht ihren Text nach exakten Begriffen wie einem Lieferantennamen oder einer Jahreszahl
-   und liest ein Dokument, wenn es unsicher ist. Dabei bleibt es jederzeit innerhalb der Sammlungen und des Pfadfilters
-   des Profils.
-2. **Auswählen.** Sobald das Modell die Dokumente kennt, beschreibt es sie, zum Beispiel *«Rechnungen aus 2025, die Acme
-   erwähnen»*, zusammen mit den gewünschten Spalten und den zu behaltenden Zeilen. Es sieht, wie viele Dokumente das
-   sind, und passt die Beschreibung an, wenn die Anzahl oder die Beispiele nicht stimmen.
+1. **Anfrage lesen.** Ein Modellaufruf liest die Nachricht: die Spalten, nach denen der Benutzer fragt, welche Zeilen
+   behalten werden, und jeden Ordner, jede Datei oder jedes Jahr, die der Benutzer nennt. Eine Folgefrage wie *«dasselbe
+   für 2024»* wird zusammen mit der Unterhaltung gelesen.
+2. **Jedes Dokument im Bereich nehmen.** Jedes Dokument in den Sammlungen und im Pfadfilter des Profils wird gelesen,
+   eingegrenzt nur durch die Ordner, Dateien oder Jahre, die der Benutzer genannt hat. Eine Datei, die der Benutzer
+   nennt, mit ihrem Pfad oder nur mit ihrem Namen, mit oder ohne Endung, meint nur diese Datei, nicht ihren Ordner.
+   Keine Suche entscheidet, welche Dokumente zählen, sodass ein Dokument nie übersehen wird, weil es Dinge anders
+   formuliert als die Anfrage. Ein Lieferant oder ein Thema ist eine Bedingung an die Zeilen, kein Ort: *«von Acme»*
+   behält die Zeilen von Acme, es wählt keine Dokumente aus.
 3. **Spalten entwerfen.** Die Spalten werden aus den Worten des Benutzers entworfen, etwa *Datum, Position, Betrag,
    Währung*. Eine Bedingung wie *«nur Hardware»* entscheidet, welche Zeilen behalten werden, und wird nie zur Spalte.
-4. **Extrahieren.** Jedes ausgewählte Dokument wird gelesen und seine passenden Datensätze werden extrahiert, viele
-   Dokumente gleichzeitig. Dokumente werden in überlappenden Teilen gelesen, sodass eine Zeile auf der letzten Seite
-   gefunden und eine Zeile an der Grenze zwischen zwei Teilen nicht doppelt gezählt wird. Eine Zeile, die die Bedingung
-   vielleicht nicht erfüllt, bleibt erhalten und wird in einer Spalte **Treffer** als *unsicher* markiert, sodass eine
-   Person sie prüfen kann, statt dass sie verworfen wird.
-5. **Antworten.** Die Tabelle erscheint im Chat, gefolgt von der Zusammenfassung. Ein Dokument, das nicht gelesen werden
-   konnte, wird mit dem Grund unter der Tabelle aufgeführt; die Zeilen der anderen Dokumente sind davon nicht betroffen.
-   Dokumente, die gelesen wurden, aber keine Zeilen ergaben, stehen unter «Keine Zeilen aus», damit ein leeres Ergebnis
-   nie wie eine fehlende Klausel aussieht.
+4. **Extrahieren.** Jedes Dokument wird gelesen und seine passenden Datensätze werden extrahiert, viele Dokumente
+   gleichzeitig. Dokumente werden in überlappenden Teilen gelesen, sodass eine Zeile auf der letzten Seite gefunden und
+   eine Zeile an der Grenze zwischen zwei Teilen nicht doppelt gezählt wird. Eine Zeile, die die Bedingung vielleicht
+   nicht erfüllt, bleibt erhalten und wird in einer Spalte **Treffer** als *unsicher* markiert, sodass eine Person sie
+   prüfen kann, statt dass sie verworfen wird. Eine Bedingung an das ganze Dokument, etwa sein Lieferant, eine
+   Vertragspartei oder ein Jahr, gilt für jede seiner Zeilen: Ein Dokument, das sie eindeutig nicht erfüllt, liefert
+   keine Zeilen und wird unter „Keine Zeilen aus“ aufgeführt.
+5. **Antworten.** Die Antwort zeigt die ersten Zeilen der Tabelle (bis zu 100), gefolgt von der Zusammenfassung, und die
+   ganze Tabelle als CSV-Datei: im Chat an die Antwort angehängt, über die API als Download-Link. Ein Dokument, das
+   nicht gelesen werden konnte, wird mit dem Grund unter der Tabelle aufgeführt; die Zeilen der anderen Dokumente sind
+   davon nicht betroffen. Dokumente, die gelesen wurden, aber keine Zeilen ergaben, stehen unter «Keine Zeilen aus»,
+   damit ein leeres Ergebnis nie wie eine fehlende Klausel aussieht.
 
-Der Chat zeigt jeden Schritt, während er geschieht: die Werkzeuge, die das Modell bei der Suche nach Dokumenten aufruft,
-eine Zeile dazu, wie viele Dokumente gelesen werden, welche Spalten die Tabelle hat und wie lange es ungefähr dauert,
-und eine Zeile pro Dokument, sobald es extrahiert ist («12 von 25 · invoice.pdf: 3 Zeilen»).
+Der Chat zeigt jeden Schritt, während er geschieht: eine Zeile dazu, wie viele Dokumente gelesen werden, welche Spalten
+die Tabelle hat und wie lange es ungefähr dauert; eine Zeile, wenn ein langes Dokument beginnt; eine Zeile pro Dokument,
+sobald es extrahiert ist, mit seinen ersten Zeilen («12 von 150 · invoice.pdf: 3 Zeilen — Laptop X1, 1,200; Dock D2,
+180»); und, solange ein Dokument länger als eine Minute braucht, eine Zeile, dass es noch gelesen wird. Eine Antwort
+kann viele Minuten dauern, wenn viele Dokumente gelesen werden; der Fortschritt zeigt, dass sie noch läuft.
 
-### Wenn mehr Dokumente passen, als eine Antwort extrahiert
+### Wenn mehr als 100 Dokumente gelesen würden
 
-Nichts wird stillschweigend gekürzt. Wenn das Extrahieren der Dokumente länger als etwa fünf Minuten dauern würde
-(**Minuten pro Antwort**) oder es mehr als **Dateien pro Antwort** sind, extrahiert der Agent sie nicht alle auf einmal.
-Die Antwort zeigt:
+Jedes Dokument eines grossen Bereichs zu lesen dauert lange, daher fragt der Agent ab 100 Dokumenten zuerst nach. Die
+Antwort zeigt:
 
-- wie viele Dokumente passen und wie lange es ungefähr dauern würde, sie alle zu extrahieren;
-- wie sie sich **nach Ordner**, **nach Jahr im Pfad** und **nach Sammlung** aufteilen;
-- eine **Stichprobe** als Tabelle aus drei von ihnen, sodass Sie die Spalten und Zeilen sehen, bevor Sie sich festlegen;
-- was Sie tun können: die Anfrage eingrenzen, zum Beispiel auf einen Ordner oder ein Jahr, oder mit *weiter* antworten,
-  um alle in Teilen zu extrahieren.
+- wie viele Dokumente gelesen würden und wie lange das ungefähr dauert;
+- was die Tabelle enthalten würde: ihre Spalten und welche Zeilen behalten werden;
+- eine **Stichprobe** als Tabelle aus fünf der Dokumente, jenen, die am ehesten enthalten, wonach gefragt wurde:
+  Dokumente, deren Text nennt, was sie kennzeichnet (einen Lieferanten, eine Nummer), danach jene, die typische Wörter
+  der gesuchten Zeilen enthalten;
+- wie sich die Dokumente **nach Ordner**, **nach Jahr im Pfad** und **nach Sammlung** aufteilen;
+- was Sie tun können: mit *ja* antworten, um alle in einer Antwort zu lesen, oder die Anfrage eingrenzen, zum Beispiel
+  auf einen Ordner oder ein Jahr.
 
-Jedes *weiter* extrahiert den nächsten Teil und antwortet mit dessen Tabelle, seiner Position («Teil 2 von 4: Dokumente
-26–50 von 98») und dem Hinweis, wie es weitergeht; der letzte Teil nennt die Gesamtzahlen. Die Teile behalten die
-Spalten des ersten. Fragen Sie stattdessen etwas Neues, ersetzt das die unvollständige Extraktion. Über **Höchstens
-passende Dokumente** (standardmässig 1000) wird nur das Eingrenzen angeboten; die Antwort nennt dann «mehr als 1000» und
-listet die Ordner und Jahre der ersten 1000 Dokumente nach Pfad ohne Anzahlen auf, da der Rest nicht angesehen wurde.
+Die Stichprobe kann keine Zeile enthalten, zum Beispiel wenn die gesuchten Datensätze selten sind; die Antwort sagt das
+dann und zeigt trotzdem, was die Tabelle enthalten würde. Fragen Sie statt *ja* etwas Neues, ersetzt das die wartende
+Anfrage. Bestätigen setzt dieselbe Unterhaltung voraus, daher übergibt ein Client der OpenAI-kompatiblen API bei jeder
+Nachricht die `thread_id` der Unterhaltung in `metadata`, wie es die Chat-Oberfläche tut.
 
-Fortfahren setzt dieselbe Unterhaltung voraus: Die unvollständige Extraktion wird mit dem Chat gespeichert, daher
-übergibt ein Client der OpenAI-kompatiblen API bei jeder Nachricht die `thread_id` der Unterhaltung in `metadata`, wie
-es die Chat-Oberfläche tut.
+Über **Höchstens Dokumente pro Tabelle** (standardmässig 1000) wird nichts gelesen: Die Antwort zeigt eine Stichprobe,
+bittet darum, die Anfrage einzugrenzen, und listet die Ordner und Jahre der ersten 1000 Dokumente nach Pfad ohne
+Anzahlen auf, da der Rest nicht angesehen wurde.
 
-Dasselbe gilt für Zeilen: Findet eine Antwort mehr Zeilen als **Zeilen in der Tabelle**, werden die übrigen zuerst
-gezeigt, wenn Sie mit *weiter* antworten.
+### Zuerst nach den Dokumenten suchen
+
+Ein Profil kann **Zuerst nach den Dokumenten suchen** einschalten. Das Modell arbeitet sich dann mit drei Werkzeugen
+durch die Dokumente (es listet ihre Pfade auf, durchsucht ihren Text nach exakten Begriffen wie einem Lieferantennamen
+und liest ein Dokument, wenn es unsicher ist) und wählt die zu lesenden Dokumente aus; nur diese werden extrahiert. Das
+ist bei grossen Sammlungen schneller, aber ein Dokument, das die Suche nicht findet, fehlt in der Tabelle. Die Suche ist
+durch **Maximale Entscheidungen** und **Maximale Werkzeugaufrufe** begrenzt; an der Grenze wählt der Agent nach Ordner
+aus und prüft die Bedingungen der Anfrage in jedem Dokument, und die Antwort sagt es.
+
+Mit **Dokumente nach Bedeutung ordnen** ordnet die Suche die Dokumente zusätzlich nach Bedeutung und findet so
+Dokumente, die andere Wörter oder eine andere Sprache als die Anfrage verwenden. Im Standardmodus entscheidet dieselbe
+Rangfolge nur, welche Dokumente in die Stichprobe kommen und zuerst gelesen werden; kein Dokument wird je wegen seines
+Rangs weggelassen.
+
+::: tip Welcher Modus für welches Profil
+Jedes Dokument zu lesen ist der sichere Standard: Nichts wird übersehen, aber die Zeilen jedes Dokuments beurteilt das
+Extraktionsmodell für sich allein. Nennt eine Anfrage einen Lieferanten oder eine Vertragspartei unter vielen in
+denselben Ordnern (*"die Hardware von Acme 2025"* über die Rechnungen aller Lieferanten), behält diese Beurteilung ab
+und zu eine Zeile aus dem Dokument eines anderen Lieferanten, und jedes Dokument kostet einen Modellaufruf. Für Profile,
+die für solche genauen, engen Anfragen über grosse gemischte Sammlungen genutzt werden, schalten Sie **Zuerst nach den
+Dokumenten suchen** ein: Nur die Dokumente, die die Suche auswählt, werden gelesen, was schneller und günstiger ist, mit
+dem Risiko, dass ein Dokument fehlt, das die Suche nicht findet.
+:::
 
 ### Lange Dokumente
 
@@ -92,35 +122,29 @@ weil eine Zeile in einem nicht gelesenen Teil nicht gefunden wird. Siehe ADR
 
 - **Er vergleicht oder gleicht keine Dokumente ab.** Eine Rechnungsposition ihrer Vertragsposition zuzuordnen oder
   Abweichungen zu markieren ist eine andere Aufgabe.
-- **Er fragt vor dem Extrahieren nicht nach einer Freigabe.** Die Extraktion beginnt, sobald die Dokumente ausgewählt
-  sind.
-- **Er liefert die Tabelle nicht als Datei.** Die Tabelle ist Teil der Antwort; kopieren Sie sie oder stellen Sie eine
-  Folgefrage.
+- **Er bewahrt die Datei nicht für immer auf.** Die CSV-Datei wird sieben Tage aufbewahrt; die an einen Chat angehängte
+  Kopie bleibt beim Chat.
 - **Er liest nie ausserhalb seines Bereichs.** Es werden nur die Sammlungen des Profils verwendet, eingegrenzt auf
   diejenigen, die der anfragende Benutzer lesen darf, und auf den Pfadfilter des Profils. Eine Anfrage nach anderen
   Dokumenten oder eine `#`-Referenz auf eine Sammlung, die das Profil nicht enthält, wird weggelassen, und die Antwort
-  sagt es.
+  sagt es; eine Datei, die der Benutzer ausserhalb des Bereichs nennt, wird als nicht gefunden gemeldet und nie durch
+  eine ähnliche ersetzt.
 
 ## Grenzen
 
 Jede Anfrage ist begrenzt, und nichts wird gekürzt, ohne dass die Antwort es sagt:
 
-| Grenze                                      | Was an der Grenze geschieht                                                                                                                                                                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Maximale Entscheidungen**                 | Die Suche nach Dokumenten bricht ab. Hatte der Agent noch keine Dokumente gewählt, wählt er sie nach Ordner aus und prüft die Bedingungen der Anfrage in jedem; hatte er schon gewählt, können Dokumente fehlen. Die Antwort sagt, was zutrifft. |
-| **Maximale Werkzeugaufrufe**                | Wie oben.                                                                                                                                                                                                                                        |
-| **Minuten pro Antwort**                     | Grössere Auswahlen erhalten eine Stichprobe und das Angebot, sie einzugrenzen oder in Teilen fortzufahren.                                                                                                                                       |
-| **Dateien pro Antwort**                     | Wie oben, für die Anzahl der Dokumente.                                                                                                                                                                                                          |
-| **Höchstens passende Dokumente**            | Darüber wird nur das Eingrenzen angeboten.                                                                                                                                                                                                       |
-| **Zeilen in der Tabelle**                   | Die übrigen Zeilen folgen, wenn Sie mit *weiter* antworten.                                                                                                                                                                                      |
-| **Längstes vollständig gelesenes Dokument** | Ein längeres Dokument wird in seinen relevanten Teilen gelesen, und seine Zeilen werden als *teilweise gelesen* markiert.                                                                                                                        |
-| **Gleichzeitige Modellaufrufe**             | Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht; begrenzt die Last.                                                                                                                                                          |
+| Grenze                                        | Was an der Grenze geschieht                                                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Höchstens Dokumente pro Tabelle**           | Darüber wird nichts gelesen; die Antwort zeigt eine Stichprobe und bittet darum, die Anfrage einzugrenzen.                |
+| **Mehr als 100 Dokumente**                    | Zuerst eine Stichprobe; alles wird gelesen, sobald der Benutzer bestätigt.                                                |
+| **Längstes vollständig gelesenes Dokument**   | Ein längeres Dokument wird in seinen relevanten Teilen gelesen, und seine Zeilen werden als *teilweise gelesen* markiert. |
+| **Gleichzeitige Modellaufrufe**               | Wie viele Extraktionsaufrufe eine Agenteninstanz gleichzeitig macht; begrenzt die Last und wie lange es dauert.           |
+| **Maximale Entscheidungen / Werkzeugaufrufe** | Nur mit **Zuerst nach den Dokumenten suchen**: Die Suche bricht ab, und der Agent wählt nach Ordner aus.                  |
+| **In der Antwort gezeigte Zeilen**            | Die ersten 100 Zeilen (weniger, wenn sie sehr lang sind); die CSV-Datei enthält jede Zeile, mit jeder Zelle vollständig.  |
 
-Zusätzlich gilt eine feste Grenze: Die Zeilen eines Dokuments werden in einer Nachricht übertragen, daher behält ein
-Dokument mit sehr vielen langen Zeilen (rund 40 Zeilen mit vollständigen Vertragsklauseln) die ersten, und die
-Zusammenfassung nennt das Dokument und wie viele Zeilen ausgelassen wurden. Ist eine Sammlung, aus der die Extraktion
-gelesen hat, beim Fortfahren nicht mehr verfügbar, endet die Extraktion mit einem Hinweis; fragen Sie erneut, um aus dem
-Verfügbaren zu extrahieren.
+Ist eine Sammlung, aus der die Stichprobe stammt, beim Bestätigen nicht mehr verfügbar, wird nichts gelesen, und die
+Antwort sagt es; fragen Sie erneut, um aus dem Verfügbaren zu extrahieren.
 
 ## Einrichtung
 
@@ -130,24 +154,24 @@ Verfügbaren zu extrahieren.
    Sie auf **Create Profile**, oder starten Sie mit der Vorlage **Dokumenttabellen**.
 3. **Sammlungen wählen.** Listen Sie unter **Knowledge Tool** die Datenbanken und Sammlungen auf, mit denen der Agent
    arbeitet. Beim Speichern wird geprüft, ob Sie sie lesen dürfen.
-4. **Pfadfilter setzen** (optional). Unter **Knowledge Documents** beschränkt ein Muster wie `invoices/**` den Agenten
-   auf passende Dokumente; er kann nie ausserhalb davon suchen.
-5. **Modelle wählen.** Das Hauptmodell sucht die Dokumente und entwirft die Spalten; wählen Sie eines, das zuverlässig
-   Werkzeuge aufruft. Das **Extraktionsmodell** liest jedes Dokument; ein kleineres, günstigeres Modell genügt.
+4. **Pfadfilter setzen** (empfohlen). Unter **Knowledge Documents** beschränkt ein Muster wie `invoices/**` den Agenten
+   auf passende Dokumente; er kann nie ausserhalb davon suchen. Jede Anfrage liest jedes Dokument in diesem Bereich,
+   daher hält ein enger Bereich die Antworten schnell.
+5. **Modelle wählen.** Das Hauptmodell liest die Anfrage und entwirft die Spalten. Das **Extraktionsmodell** liest jedes
+   Dokument; ein kleineres, günstigeres Modell genügt.
 6. **Grenzen prüfen** und speichern.
 
 ## Konfigurationsreferenz
 
-| Feld                                                           | Standard    | Beschreibung                                                                     |
-| -------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------- |
-| **Anweisungen**                                                | *(leer)*    | Nach den eingebauten Anweisungen angefügt, z. B. wie Dokumente benannt sind.     |
-| **Knowledge Tool > Sammlungen**                                | —           | Die Datenbanken und Sammlungen, mit denen der Agent arbeitet.                    |
-| **Knowledge Documents > Filter für Dokumentpfade**             | *(leer)*    | Nur Dokumente, deren Pfad diesem Muster entspricht, z. B. `invoices/2025/**`.    |
-| **Table Extraction > Extraktionsmodell**                       | Hauptmodell | Das Modell, das jedes Dokument liest und seine Zeilen extrahiert.                |
-| **Table Extraction > Dateien pro Antwort**                     | `100`       | Die meisten Dokumente, aus denen eine Antwort extrahiert.                        |
-| **Table Extraction > Minuten pro Antwort**                     | `5`         | Wie lange eine Antwort ungefähr extrahieren darf, bevor der Rest angeboten wird. |
-| **Table Extraction > Höchstens passende Dokumente**            | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                 |
-| **Table Extraction > Zeilen in der Tabelle**                   | `500`       | Die meisten Zeilen, die eine Antwort zeigt; der Rest folgt bei *weiter*.         |
-| **Table Extraction > Längstes vollständig gelesenes Dokument** | `500000`    | Längere Dokumente (in Zeichen) werden in ihren relevanten Teilen gelesen.        |
-| **Table Extraction > Gleichzeitige Modellaufrufe**             | `4`         | Extraktionsaufrufe, die eine Agenteninstanz gleichzeitig macht.                  |
-| **Tools > Maximale Entscheidungen / Maximale Werkzeugaufrufe** | `10` / `20` | Wie lange das Modell nach Dokumenten suchen darf.                                |
+| Feld                                                           | Standard    | Beschreibung                                                                               |
+| -------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
+| **Anweisungen**                                                | *(leer)*    | Werden den Anweisungen des Agenten angefügt, z. B. wie Dokumente benannt sind.             |
+| **Zuerst nach den Dokumenten suchen**                          | aus         | Das Modell sucht nach den Dokumenten und liest nur die ausgewählten.                       |
+| **Knowledge Tool > Sammlungen**                                | —           | Die Datenbanken und Sammlungen, mit denen der Agent arbeitet.                              |
+| **Knowledge Documents > Filter für Dokumentpfade**             | *(leer)*    | Nur Dokumente, deren Pfad diesem Muster entspricht, z. B. `invoices/2025/**`.              |
+| **Knowledge Documents > Dokumente nach Bedeutung ordnen**      | aus         | Dokumente nach Bedeutung ordnen: in der Suche und um festzulegen, was zuerst gelesen wird. |
+| **Table Extraction > Extraktionsmodell**                       | Hauptmodell | Das Modell, das jedes Dokument liest und seine Zeilen extrahiert.                          |
+| **Table Extraction > Höchstens Dokumente pro Tabelle**         | `1000`      | Darüber wird der Benutzer nur gebeten, die Anfrage einzugrenzen.                           |
+| **Table Extraction > Längstes vollständig gelesenes Dokument** | `500000`    | Längere Dokumente (in Zeichen) werden in ihren relevanten Teilen gelesen.                  |
+| **Table Extraction > Gleichzeitige Modellaufrufe**             | `4`         | Extraktionsaufrufe, die eine Agenteninstanz gleichzeitig macht.                            |
+| **Tools > Maximale Entscheidungen / Maximale Werkzeugaufrufe** | `15` / `30` | Wie lange das Modell suchen darf, mit **Zuerst nach den Dokumenten suchen**.               |

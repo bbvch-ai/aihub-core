@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.generative_ai.anonymisation.anonymisation_vocabulary import AnonymisationVocabulary
+    from swiss_ai_hub.core.generative_ai.anonymisation.placeholder_map import PlaceholderMap
     from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
         extend_chat_history_with_organization_memory,
     )
@@ -9,6 +11,7 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.generative_ai.chat_history.format_chat_history import format_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation import format_expert_conversation
+    from swiss_ai_hub.core.generative_ai.chat_history.image_budget import ImageBudget
     from swiss_ai_hub.core.generative_ai.chat_history.input_size_guard import (
         estimate_prompt_tokens,
         usable_input_budget,
@@ -105,6 +108,18 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_document_summary import (
         KnowledgeDocumentSummary,
     )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_search_budget import KnowledgeSearchBudget
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_match import KnowledgeSemanticMatch
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_passage import (
+        KnowledgeSemanticPassage,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_ranking import (
+        KnowledgeSemanticRanking,
+    )
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search import KnowledgeSemanticSearch
+    from swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error import (
+        KnowledgeSemanticSearchUnavailableError,
+    )
     from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
     from swiss_ai_hub.core.generative_ai.memory.memory_settings import MemorySettings
     from swiss_ai_hub.core.generative_ai.memory.org_memory_namespace_resolver import OrgMemoryNamespaceResolver
@@ -120,6 +135,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.rerank.rerank_nodes import rerank_nodes
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
     from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_query_clamp import EmbeddingQueryClamp
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails import GatewayGuardrails
     from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import (
         LLMConfig,
         LLMParameter,
@@ -127,6 +143,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat import ReasoningFreeChat
     from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
     from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import (
         combine_nodes_in_order,
         sanitize_metadata_value,
@@ -148,8 +165,11 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result import (
         DocumentExtractionResult,
     )
-    from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import ExtractedRecord
+    from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record import ExtractedRecord, RecordValue
+    from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_csv import ExtractedTableCsv
+    from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_file import ExtractedTableFile
     from swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_markup import ExtractedTableMarkup
+    from swiss_ai_hub.core.generative_ai.structured_extraction.extraction_file_store import ExtractionFileStore
     from swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error import (
         InvalidRecordSchemaError,
     )
@@ -170,6 +190,8 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AnonymisationVocabulary",
+    "PlaceholderMap",
     "AgentMemory",
     "BucketMetadataFilters",
     "BucketNamespacePair",
@@ -193,12 +215,22 @@ __all__ = [
     "KnowledgeContentSearchLimits",
     "KnowledgeContentSearchResult",
     "KnowledgeContentSearchTimeoutError",
+    "KnowledgeSearchBudget",
+    "KnowledgeSemanticMatch",
+    "KnowledgeSemanticPassage",
+    "KnowledgeSemanticSearch",
+    "KnowledgeSemanticRanking",
+    "KnowledgeSemanticSearchUnavailableError",
     "DocumentExtractionResult",
     "ExtractedRecord",
+    "RecordValue",
     "InvalidRecordSchemaError",
     "RecordExtractor",
     "RecordField",
+    "ExtractedTableCsv",
+    "ExtractedTableFile",
     "ExtractedTableMarkup",
+    "ExtractionFileStore",
     "RecordProvenance",
     "RecordSchema",
     "RecordSchemaBuilder",
@@ -215,6 +247,7 @@ __all__ = [
     "FewShotExample",
     "FewShotGuardExample",
     "FileTypeConfig",
+    "GatewayGuardrails",
     "HtmlTableConverter",
     "ImageLoader",
     "IngestedDocument",
@@ -223,6 +256,7 @@ __all__ = [
     "LLMConfig",
     "LLMParameter",
     "ReasoningFreeChat",
+    "ResilientOpenAILike",
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
     "DEFAULT_METADATA",
@@ -262,6 +296,7 @@ __all__ = [
     "few_shot_guard",
     "narrow_retrievers",
     "estimate_prompt_tokens",
+    "ImageBudget",
     "usable_input_budget",
     "format_chat_history",
     "format_expert_conversation",
@@ -278,6 +313,8 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "AnonymisationVocabulary": "swiss_ai_hub.core.generative_ai.anonymisation.anonymisation_vocabulary",
+    "PlaceholderMap": "swiss_ai_hub.core.generative_ai.anonymisation.placeholder_map",
     "AgentMemory": "swiss_ai_hub.core.generative_ai.memory.agent_memory",
     "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
@@ -318,20 +355,32 @@ _LAZY_IMPORTS = {
     "KnowledgeContentSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search",
     "KnowledgeContentSearchLimits": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_limits",
     "KnowledgeContentSearchResult": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_result",
+    "KnowledgeSearchBudget": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_search_budget",
     "KnowledgeContentSearchTimeoutError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_content_search_timeout_error",
+    "KnowledgeSemanticMatch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_match",
+    "KnowledgeSemanticPassage": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_passage",
+    "KnowledgeSemanticSearch": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search",
+    "KnowledgeSemanticRanking": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_ranking",
+    "KnowledgeSemanticSearchUnavailableError": "swiss_ai_hub.core.generative_ai.knowledge_documents.knowledge_semantic_search_unavailable_error",
     "DocumentExtractionResult": "swiss_ai_hub.core.generative_ai.structured_extraction.document_extraction_result",
     "ExtractedRecord": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
+    "RecordValue": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_record",
     "InvalidRecordSchemaError": "swiss_ai_hub.core.generative_ai.structured_extraction.invalid_record_schema_error",
     "RecordExtractor": "swiss_ai_hub.core.generative_ai.structured_extraction.record_extractor",
     "RecordField": "swiss_ai_hub.core.generative_ai.structured_extraction.record_field",
+    "ExtractedTableCsv": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_csv",
+    "ExtractedTableFile": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_file",
     "ExtractedTableMarkup": "swiss_ai_hub.core.generative_ai.structured_extraction.extracted_table_markup",
+    "ExtractionFileStore": "swiss_ai_hub.core.generative_ai.structured_extraction.extraction_file_store",
     "RecordProvenance": "swiss_ai_hub.core.generative_ai.structured_extraction.record_provenance",
     "RecordSchema": "swiss_ai_hub.core.generative_ai.structured_extraction.record_schema",
     "RecordSchemaBuilder": "swiss_ai_hub.core.generative_ai.structured_extraction.record_schema_builder",
     "KnowledgeRetrieverConfig": "swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config",
+    "GatewayGuardrails": "swiss_ai_hub.core.generative_ai.resources.models.llm.gateway_guardrails",
     "LLMConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "LLMParameter": "swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config",
     "ReasoningFreeChat": "swiss_ai_hub.core.generative_ai.resources.models.llm.reasoning_free_chat",
+    "ResilientOpenAILike": "swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like",
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "DEFAULT_METADATA": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
@@ -377,6 +426,7 @@ _LAZY_IMPORTS = {
     "refine_document_tables_with_metadata": "swiss_ai_hub.core.generative_ai.document.refinement",
     "replace_s3_paths_with_signed_urls": "swiss_ai_hub.core.generative_ai.utils.image_processor",
     "estimate_prompt_tokens": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
+    "ImageBudget": "swiss_ai_hub.core.generative_ai.chat_history.image_budget",
     "usable_input_budget": "swiss_ai_hub.core.generative_ai.chat_history.input_size_guard",
     "rerank_nodes": "swiss_ai_hub.core.generative_ai.rerank.rerank_nodes",
     "retrieve_from_all_sources": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources",

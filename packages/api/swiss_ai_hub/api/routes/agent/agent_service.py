@@ -42,6 +42,7 @@ from swiss_ai_hub.api.services.model_creation_service import ModelCreationServic
 from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 from swiss_ai_hub.api.util.instance_dto_builder import InstanceDtoBuilder
+from swiss_ai_hub.api.util.model_limit_validator import ModelLimitValidator
 
 logger = logging.getLogger(__name__)
 
@@ -379,6 +380,7 @@ class AgentService:
             configuration, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, configuration, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, configuration, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,
@@ -471,6 +473,7 @@ class AgentService:
             config, config_model, AgentInstanceRef(agent_class=agent_class, agent_id=request.agent_id)
         )
         InstanceConfigHelper.reject_invalid_values(class_entity.form_elements, config, t)
+        await ModelLimitValidator.reject_values_beyond_model_limits(class_entity.form_elements, config, user, t)
 
         await ConfigAuthorizationService.validate_for_user_or_raise(
             form_elements=class_entity.form,

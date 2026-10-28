@@ -25,15 +25,12 @@ class ExtractionRun(BaseModel):
     tool_call_id: Annotated[str | None, Field(description="The tool call the extraction answers, if any.")] = None
     collections: Annotated[
         list[BucketNamespacePair],
-        Field(description="The collections the run may read, so rows it leaves for later are checked against them."),
+        Field(description="The collections the run may read, so a confirmed sample is checked against them."),
     ] = []
     sample: Annotated[
-        bool, Field(description="Whether these documents are a sample of a selection too large for one answer.")
+        bool, Field(description="Whether these documents are a sample of a selection too large to extract unasked.")
     ] = False
     total_documents: Annotated[int, Field(description="Documents the whole selection holds.", ge=0)] = 0
     above_ceiling: Annotated[
         bool, Field(description="Whether more documents match than the profile resolves, so the total is a floor.")
     ] = False
-    part: Annotated[int, Field(description="Which part of a pending extraction this is, from 1; 0 when whole.")] = 0
-    parts: Annotated[int, Field(description="How many parts the pending extraction has.", ge=0)] = 0
-    first_document: Annotated[int, Field(description="Position of the part's first document, from 1.", ge=0)] = 0

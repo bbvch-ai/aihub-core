@@ -9,7 +9,7 @@ The **Knowledge Extraction Agent** answers requests that need every matching lin
 similar passages a knowledge search returns. A user asks in one chat message, for example *"Find all billing positions
 regarding hardware on the 2025 bills from Acme"*, and gets back one table: one row per record found, each row naming the
 path and file it came from, with a summary of how many files were read, how many rows were found and which files could
-not be read.
+not be read. The whole table is also a CSV file to download.
 
 ::: tip When to reach for this agent
 Use it when the answer is a list of records collected across documents: invoice lines, contract parties, service levels,
@@ -23,55 +23,81 @@ document tools on.
 
 ```mermaid
 flowchart LR
-    A[User message] --> B[Find the documents]
-    B --> C[Select them]
+    A[User message] --> B[Read the request]
+    B --> C[Every document<br/>in scope]
     C --> D[Design the columns]
     D --> E[Extract from every<br/>document in parallel]
-    E --> F[One table<br/>with its summary]
+    E --> F[Table preview,<br/>summary and CSV]
 ```
 
-1. **Find the documents.** The model works through the documents of the profile's collections with three tools: it lists
-   their paths, searches their text for exact terms such as a supplier name or a year, and reads a document when it is
-   unsure. It stays within the profile's collections and path filter at all times.
-2. **Select them.** When it knows the documents, the model describes them, for example *"invoices from 2025 that mention
-   Acme"*, together with the columns the user asked for and the rows to keep. It sees how many documents that is and
-   adjusts the description when the count or the examples are wrong.
+1. **Read the request.** One model call reads the message: the columns the user asks for, which rows to keep, and any
+   folder, file or year the user names. A follow-up such as *"the same for 2024"* is read with the conversation.
+2. **Take every document in scope.** Every document in the profile's collections and path filter is read, narrowed only
+   by the folders, files or years the user named. A file the user names, by its path or only by its name, with or
+   without the extension, means that file alone, not the folder it is in. No search decides which documents count, so a
+   document is never missed because it words things differently from the request. A supplier or a topic is a condition
+   on the rows, not a place: *"from Acme"* keeps Acme's rows, it does not pick documents.
 3. **Design the columns.** The columns are designed from the user's words, such as *date, item, amount, currency*. A
    condition like *"only hardware"* decides which rows are kept and never becomes a column.
-4. **Extract.** Every selected document is read and its matching records are extracted, many documents at the same time.
+4. **Extract.** Every document is read and its matching records are extracted, many documents at the same time.
    Documents are read in overlapping parts, so a line on the last page is found and a line at the boundary between parts
    is not counted twice. A row that may not meet the condition is kept and marked *unsure* in a **Match** column, so a
-   person can check it instead of it being dropped.
-5. **Answer.** The table streams into the chat, followed by the summary. A document that could not be read is listed
-   under the table with the reason; the other documents' rows are unaffected. Documents that were read but gave no rows
-   are named under "No rows from", so an empty result never looks like a missing clause.
+   person can check it instead of it being dropped. A condition on the whole document, such as its supplier, party or
+   year, applies to every row in it: a document that clearly does not meet it gives no rows and is listed under "No rows
+   from".
+5. **Answer.** The answer shows the first rows of the table (up to 100), followed by the summary, and the whole table as
+   a CSV file: attached to the answer in the chat, a download link through the API. A document that could not be read is
+   listed under the table with the reason; the other documents' rows are unaffected. Documents that were read but gave
+   no rows are named under "No rows from", so an empty result never looks like a missing clause.
 
-The chat shows each step as it happens: the tools the model calls while it looks for documents, a line saying how many
-documents will be read, which columns the table has and about how long it takes, and one line per document as it is
-extracted ("12 of 25 · invoice.pdf: 3 rows").
+The chat shows each step as it happens: a line saying how many documents will be read, which columns the table has and
+about how long it takes; a line when a long document starts; one line per document as it is extracted, with its first
+rows ("12 of 150 · invoice.pdf: 3 rows — Laptop X1, 1,200; Dock D2, 180"); and, while a document takes more than a
+minute, a line saying it is still being read. An answer can take many minutes when many documents are read; the progress
+shows it is alive.
 
-### When more documents match than one answer extracts
+### When more than 100 documents would be read
 
-Nothing is cut silently. When the documents would take longer than about five minutes to extract (**Minutes per
-Answer**), or are more than **Files per Answer**, the agent does not extract them all at once. The answer shows:
+Reading every document of a large scope takes long, so above 100 documents the agent first asks. The answer shows:
 
-- how many documents match and how long extracting them all would take, about;
-- how they break down **by folder**, **by year in the path** and **by collection**;
-- a **sample** table from three of them, so you see the columns and rows before committing;
-- what you can do: narrow the request, for example to one folder or year, or reply *continue* to extract all of them in
-  parts.
+- how many documents would be read and about how long that takes;
+- what the table would hold: its columns and which rows are kept;
+- a **sample** table from five of the documents, those most likely to hold what was asked for: documents whose text
+  names what identifies them (a supplier, a number), then those containing typical words of the wanted lines;
+- how the documents break down **by folder**, **by year in the path** and **by collection**;
+- what you can do: reply *yes* to read all of them in one answer, or narrow the request, for example to one folder or
+  year.
 
-Each *continue* extracts the next part and answers with its table, its place ("Part 2 of 4: documents 26–50 of 98") and
-how to go on; the last part gives the totals. The parts keep the columns of the first. Asking something new instead
-replaces the unfinished extraction. Above **Most Matching Documents** (1000 by default) only narrowing is offered; the
-answer then says "more than 1000" and lists the folders and years of the first 1000 documents by path without counts,
-since the rest were not looked at.
+The sample can hold no row, for example when the wanted records are rare; the answer then says so and still shows what
+the table would hold. Asking something new instead of *yes* replaces the waiting request. Confirming needs the same
+conversation, so a client of the OpenAI-compatible API passes the conversation's `thread_id` in `metadata` with every
+message, as the chat UI does.
 
-Continuing needs the same conversation: the unfinished extraction is kept with the chat, so a client of the
-OpenAI-compatible API passes the conversation's `thread_id` in `metadata` with every message, as the chat UI does.
+Above **Most Documents per Table** (1000 by default) nothing is read: the answer shows a sample and asks to narrow the
+request, and lists the folders and years of the first 1000 documents by path without counts, since the rest were not
+looked at.
 
-The same holds for rows: when one answer finds more rows than **Rows in the Table**, the rest are shown first when you
-reply *continue*.
+### Searching for the documents first
+
+A profile can switch on **Search for the Documents First**. The model then works through the documents with three tools
+(it lists their paths, searches their text for exact terms such as a supplier name, and reads a document when unsure)
+and selects the documents to read; only those are extracted. This is faster on large collections, but a document the
+search does not find is missing from the table. The search is bounded by **Maximum Decisions** and **Maximum Tool
+Calls**; at the limit the agent selects by folder and checks the request's conditions in each document, and the answer
+says so.
+
+With **Rank Documents by Meaning**, the search also ranks the documents by meaning, which finds documents written in
+other words or another language than the request. In the default mode the same ranking only decides which documents are
+sampled and read first; no document is ever left out because of its rank.
+
+::: tip Which mode for which profile
+Reading every document is the safe default: nothing is missed, but each document's rows are judged by the extraction
+model on its own. When a request names one supplier or party among many in the same folders (*"Acme's 2025 hardware"*
+over every supplier's invoices), that judgement now and then keeps a row from another supplier's document, and every
+document costs a model call. For profiles used for such exact, narrow requests over large mixed collections, switch on
+**Search for the Documents First**: only the documents the search selects are read, which is faster and cheaper, at the
+risk that a document the search does not find is missing.
+:::
 
 ### Long documents
 
@@ -85,31 +111,28 @@ be missing)", because a line in a part that was not read is not found. See the A
 
 - **It does not compare or reconcile documents.** Matching an invoice line to its contract line, or flagging deviations,
   is a different task.
-- **It does not ask for approval before extracting.** The extraction starts as soon as the documents are selected.
-- **It does not deliver the table as a file.** The table is part of the answer; copy it or ask a follow-up question.
+- **It does not keep the file forever.** The CSV file is kept for seven days; the copy attached to a chat stays with the
+  chat.
 - **It never reads outside its scope.** Only the profile's collections are used, narrowed to those the asking user may
   read and to the profile's path filter. A request for other documents, or a `#` reference to a collection the profile
-  does not list, is left out and the answer says so.
+  does not list, is left out and the answer says so; a file the user names outside the scope is reported as not found,
+  never replaced by a similar one.
 
 ## Limits
 
 Every request is bounded, and nothing is cut without the answer saying so:
 
-| Limit                           | What happens at the limit                                                                                                                                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Maximum Decisions**           | The search for documents stops. If the agent had not chosen documents yet, it selects them by folder and checks the request's conditions in each; if it had, documents may be missing. The answer says which. |
-| **Maximum Tool Calls**          | As above.                                                                                                                                                                                                     |
-| **Minutes per Answer**          | Larger selections get a sample and the offer to narrow or to continue in parts.                                                                                                                               |
-| **Files per Answer**            | As above, for the number of documents.                                                                                                                                                                        |
-| **Most Matching Documents**     | Above it, only narrowing is offered.                                                                                                                                                                          |
-| **Rows in the Table**           | The other rows follow when you reply *continue*.                                                                                                                                                              |
-| **Longest Fully Read Document** | A longer document is read in its relevant parts and its rows are marked *partly read*.                                                                                                                        |
-| **Model Calls at Once**         | How many extraction calls one agent instance makes at the same time; bounds the load.                                                                                                                         |
+| Limit                           | What happens at the limit                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Most Documents per Table**    | Above it nothing is read; the answer shows a sample and asks to narrow the request.                         |
+| **More than 100 documents**     | A sample first; everything is read once the user confirms.                                                  |
+| **Longest Fully Read Document** | A longer document is read in its relevant parts and its rows are marked *partly read*.                      |
+| **Model Calls at Once**         | How many extraction calls one agent instance makes at the same time; bounds the load and how long it takes. |
+| **Maximum Decisions / Calls**   | Only with **Search for the Documents First**: the search stops and the agent selects by folder.             |
+| **Rows shown in the answer**    | The first 100 rows (fewer when they are very long); the CSV file holds every row, with every cell complete. |
 
-One fixed limit applies as well: the rows of one document travel in one message, so a document with very many long rows
-(around 40 rows of full contract clauses) keeps the first ones, and the summary names the document and how many rows
-were left out. If a collection the extraction read from is no longer available when you continue, the extraction ends
-with a notice; ask again to extract from what is available.
+If a collection the sample was taken from is no longer available when you confirm, nothing is read and the answer says
+so; ask again to extract from what is available.
 
 ## Setting it up
 
@@ -119,24 +142,24 @@ with a notice; ask again to extract from what is available.
    Profile**, or start from the **Document Tables** template.
 3. **Choose the collections.** Under **Knowledge Tool**, list the databases and collections the agent works on. Saving
    checks that you may read them.
-4. **Set a path filter** (optional). Under **Knowledge Documents**, a pattern such as `invoices/**` limits the agent to
-   matching documents; it can never look outside it.
-5. **Choose the models.** The main model looks for the documents and designs the columns; pick one that is reliable at
-   tool calls. The **Extraction Model** reads each document; a smaller, cheaper model works well.
+4. **Set a path filter** (recommended). Under **Knowledge Documents**, a pattern such as `invoices/**` limits the agent
+   to matching documents; it can never look outside it. Every request reads every document in this scope, so a narrow
+   scope keeps answers fast.
+5. **Choose the models.** The main model reads the request and designs the columns. The **Extraction Model** reads each
+   document; a smaller, cheaper model works well.
 6. **Review the limits** and save.
 
 ## Configuration reference
 
-| Field                                              | Default     | Description                                                              |
-| -------------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
-| **Instructions**                                   | *(empty)*   | Added after the built-in instructions, e.g. how documents are named.     |
-| **Knowledge Tool > Collections**                   | —           | The databases and collections the agent works on.                        |
-| **Knowledge Documents > Document Path Filter**     | *(empty)*   | Only documents whose path matches this pattern, e.g. `invoices/2025/**`. |
-| **Table Extraction > Extraction Model**            | main model  | The model that reads each document and extracts its rows.                |
-| **Table Extraction > Files per Answer**            | `100`       | The most documents one answer extracts from.                             |
-| **Table Extraction > Minutes per Answer**          | `5`         | About how long one answer may extract before the rest is offered.        |
-| **Table Extraction > Most Matching Documents**     | `1000`      | Above it, the user is only asked to narrow the request.                  |
-| **Table Extraction > Rows in the Table**           | `500`       | The most rows one answer shows; the rest follow on *continue*.           |
-| **Table Extraction > Longest Fully Read Document** | `500000`    | Longer documents (in characters) are read in their relevant parts.       |
-| **Table Extraction > Model Calls at Once**         | `4`         | Extraction calls one agent instance makes at the same time.              |
-| **Tools > Maximum Decisions / Maximum Tool Calls** | `10` / `20` | How long the model may look for documents.                               |
+| Field                                               | Default     | Description                                                                 |
+| --------------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
+| **Instructions**                                    | *(empty)*   | Added to the agent's instructions, e.g. how documents are named.            |
+| **Search for the Documents First**                  | off         | Let the model search for the documents and read only those it selects.      |
+| **Knowledge Tool > Collections**                    | —           | The databases and collections the agent works on.                           |
+| **Knowledge Documents > Document Path Filter**      | *(empty)*   | Only documents whose path matches this pattern, e.g. `invoices/2025/**`.    |
+| **Knowledge Documents > Rank Documents by Meaning** | off         | Rank documents by meaning: in the search, and to choose what is read first. |
+| **Table Extraction > Extraction Model**             | main model  | The model that reads each document and extracts its rows.                   |
+| **Table Extraction > Most Documents per Table**     | `1000`      | Above it, the user is only asked to narrow the request.                     |
+| **Table Extraction > Longest Fully Read Document**  | `500000`    | Longer documents (in characters) are read in their relevant parts.          |
+| **Table Extraction > Model Calls at Once**          | `4`         | Extraction calls one agent instance makes at the same time.                 |
+| **Tools > Maximum Decisions / Maximum Tool Calls**  | `15` / `30` | How long the model may search, with **Search for the Documents First**.     |

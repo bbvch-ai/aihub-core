@@ -1,13 +1,14 @@
 from typing import Annotated, Any
 
 from swiss_ai_hub.core.infrastructure import StructuredPipelineSettings
+from swiss_ai_hub.core.network import SourceHostGuard
 
 from swiss_ai_hub.pipeline.resources.confluence.confluence_client import ConfluenceClient
 from swiss_ai_hub.pipeline.resources.confluence.confluence_request_error import ConfluenceRequestError
-from swiss_ai_hub.pipeline.resources.structured.source_host_guard import SourceHostGuard
 from swiss_ai_hub.pipeline.source_pipelines.confluence.confluence_options import ConfluenceOptions
 
 _REFUSED_SIGN_IN = (401, 403)
+_ALLOW_LIST_VARIABLE = "STRUCTURED_PIPELINE_ALLOWED_PRIVATE_HOSTS"
 
 
 class ConfluencePreflight:
@@ -27,7 +28,11 @@ class ConfluencePreflight:
         client: Annotated[ConfluenceClient, "Client built from the configuration being checked"],
         options: Annotated[ConfluenceOptions, "The configuration, already checked for missing values"],
     ) -> None:
-        SourceHostGuard.require_public(options.base_url, StructuredPipelineSettings().private_host_allow_list())
+        SourceHostGuard.require_public(
+            options.base_url,
+            StructuredPipelineSettings().private_host_allow_list(),
+            _ALLOW_LIST_VARIABLE,
+        )
         account = cls._signed_in_account(client, options.base_url)
         name = account.get("displayName") or account.get("publicName") or "this account"
         for space in options.spaces():

@@ -9,7 +9,16 @@ config:
     help: Uniquement les documents dont le chemin dans leur collection correspond
       à ce motif, p. ex. invoices/2025/** ou **/*.pdf. S'applique aux outils de documents
       seulement, pas à la recherche de connaissances. Laisser vide pour tous les documents.
+  semantic_search:
+    label: Classer les documents par sens
+    help: Le modèle peut aussi classer par sens les documents du filtre de chemins,
+      et trouve ainsi des documents rédigés avec d'autres mots ou dans une autre langue
+      que la demande.
 tools:
+  rank_knowledge_documents:
+    label: Classer les documents de connaissances
+    approval: Classer les documents de connaissances selon leur proximité avec « {query}
+      »
   list_knowledge_documents:
     label: Lister les documents de connaissances
     approval: Lister les documents de connaissances correspondant à {path_glob}

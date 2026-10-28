@@ -1,8 +1,10 @@
+import email
 from contextlib import ExitStack
+from email.policy import default as default_policy
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from swiss_ai_hub.core.imap import ImapClientConfig
+from swiss_ai_hub.core.imap import ImapClientConfig, MailParser
 from swiss_ai_hub.core.testing import async_test
 
 from swiss_ai_hub.agent.imap.message_vanished_error import MessageVanishedError
@@ -142,6 +144,39 @@ async def test_a_vanished_message_is_skipped_rather_than_failing_the_batch():
         fetched = await do_fetch_and_archive(_config(), ["11", "12", "13"], _AGENT_CLASS, _AGENT_ID, skip_vanished=True)
 
     assert [f.parsed.message_id for f in fetched] == ["11", "13"]
+
+
+def _raw_mail(to: str) -> bytes:
+    return f"From: a@example.com\r\nTo: {to}\r\nCc: {to}\r\nSubject: s\r\nMessage-ID: <m@x>\r\n\r\nbody\r\n".encode()
+
+
+@async_test
+async def test_a_message_with_unreadable_recipients_is_fetched_rather_than_failing_the_batch():
+    """An encoded line break in To/Cc is sender-controlled, and a batch that failed on it would fail on every run."""
+    raws = {
+        "11": _raw_mail("t@example.com"),
+        "12": _raw_mail("=?utf-8?q?x=0D=0ABcc:_attacker@evil.example?= <t@example.com>"),
+        "13": _raw_mail("t@example.com"),
+    }
+    client = make_client()
+    client.fetch_message = AsyncMock(
+        side_effect=lambda message_id, **_: MailParser.parse_message(
+            message_id,
+            email.message_from_bytes(raws[message_id], policy=default_policy),
+            10**6,
+            10**6,
+            raws[message_id],
+        )
+    )
+
+    with ExitStack() as stack:
+        for patcher in _store_patches(client):
+            stack.enter_context(patcher)
+        fetched = await do_fetch_and_archive(_config(), ["11", "12", "13"], _AGENT_CLASS, _AGENT_ID)
+
+    assert [f.parsed.message_id for f in fetched] == ["11", "12", "13"]
+    assert (fetched[1].parsed.to, fetched[1].parsed.cc) == (None, None)
+    assert fetched[0].parsed.to == "t@example.com"
 
 
 @async_test

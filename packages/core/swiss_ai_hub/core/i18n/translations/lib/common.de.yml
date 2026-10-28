@@ -13,3 +13,4 @@ authorization:
   no_access_organization_memory: Sie haben keinen Zugriff auf den Organisationsspeicher.
   config_unauthorized: Die Konfiguration referenziert Ressourcen, auf die Sie keinen
     Zugriff haben.
+extracted_table_download: 'Ganze Tabelle herunterladen (%{rows} Zeilen): [%{name}](%{url})'

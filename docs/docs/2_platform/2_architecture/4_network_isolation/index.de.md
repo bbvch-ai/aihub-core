@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 7ccf65ab2f223f315771514b5d2ae26cfc6fa77da7034b741eb1cd3325423ba1
+source_sha: 7dce5b3e84336c4ff6c9107bcc25b7825ddc27049919938c08b46188cb21ed87
 ---
 
 # Docker-Netzwerkisolation
@@ -11,16 +11,18 @@ Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 ## Netzwerkzonen
 
-Die Plattform verwendet sechs isolierte Docker-Netzwerke:
+Die Plattform verwendet sieben isolierte Docker-Netzwerke:
 
-| Netzwerk       | Zweck                                | Externer Zugriff | ICC aktiviert |
-| -------------- | ------------------------------------ | ---------------- | ------------- |
-| `proxy`        | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
-| `backend`      | Interne Anwendungs-Services          | Nein             | Ja            |
-| `data`         | Datenbanken und Message Broker       | Nein             | Ja            |
-| `storage`      | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
-| `egress`       | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
-| `code-sandbox` | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| Netzwerk        | Zweck                                | Externer Zugriff | ICC aktiviert |
+| --------------- | ------------------------------------ | ---------------- | ------------- |
+| `proxy`         | Externer Traffic über Traefik        | Ingress + Egress | Ja            |
+| `backend`       | Interne Anwendungs-Services          | Nein             | Ja            |
+| `data`          | Datenbanken und Message Broker       | Nein             | Ja            |
+| `storage`       | SeaweedFS Objekt-Speicher            | Nein             | Ja            |
+| `egress`        | Nur ausgehender Internetzugriff      | Nur Egress       | Nein          |
+| `code-sandbox`  | Code-Execution-Sandbox + ihre Caller | Nein             | Ja            |
+| `browser`       | Playwright-Browser + seine Caller    | Nein             | Ja            |
+| `pii-detection` | PII-Erkennung + ihre Caller          | Nein             | Ja            |
 
 Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
 Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
@@ -30,10 +32,23 @@ nur für den ausgehenden Internetzugriff nutzen.
 Das `code-sandbox`-Netzwerk ist eine Single-Tenant-Zone für die `open-terminal` Code-Execution-Sandbox, die beliebigen,
 von Benutzern übermittelten Code ausführt. Ihre Mitglieder sind die Sandbox plus **genau ihre Caller** (`open-webui`,
 `universal-agent`, der einzige AI-Hub Agent, der Code ausführt, und `api`, das die eigenen Dateien jedes Benutzers
-ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der
-Ausschluss der Sandbox aus `backend`, dass ein Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`,
-`speaches` oder `otel-collector` erreichen kann. ICC bleibt aktiviert (die Caller müssen `open-terminal:8000`
-erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
+ausliefert). Da Docker-Netzwerke bidirektional sind, verhindert der Ausschluss der Sandbox aus `backend`, dass ein
+Sandbox-Breakout lateral `litellm`, `vLLM`, `mineru`, `presidio`, `speaches` oder `otel-collector` erreichen kann. ICC
+bleibt aktiviert (die Caller müssen `open-terminal:8000` erreichen), und `internal: true` in Nicht-Dev-Stages verwehrt
+der Sandbox zusätzlich jeden ausgehenden Internetzugriff.
+
+Das `browser`-Netzwerk wendet dasselbe Muster auf `playwright` an, den Headless-Browser, der die von Benutzern
+verlinkten Webseiten lädt (siehe [Verlinkte Webseiten](../../10_chat_ui/15_linked_web_pages/)). Seine Mitglieder sind
+der Browser plus **genau seine Caller**: `open-webui` (dessen Web Loader) und die Agents, die verlinkte Seiten lesen.
+Die Agents prüfen jede URL, bevor der Browser sie lädt, aber der Browser löst den Namen erneut auf, sodass ein Name, der
+zuerst mit einer öffentlichen und dann mit einer internen Adresse antwortet (DNS-Rebinding), durchrutschen würde. Durch
+den Ausschluss des Browsers aus `backend` hat das Laden einer solchen Seite keinen Netzwerkpfad zu `litellm`,
+`langfuse`, `mineru` oder dem Docker-Socket-Proxy. Der Browser erreicht das Internet über `egress`.
+
+Das `pii-detection`-Netzwerk enthält den `presidio-analyzer`, der die Personendaten erhält, die die Plattform
+anonymisiert, plus **genau seine Caller** (`litellm` und `universal-agent`). Seine Modelle sind im Image enthalten und
+der Hugging-Face-Hub ist zur Laufzeit offline, daher verwehrt `internal: true` in Nicht-Dev-Stages den ausgehenden
+Internetzugriff, ohne ihn zu beeinträchtigen. Jede Anfrage ausser dem Health-Check benötigt den API-Key des Analyzers.
 
 ## Service-Netzwerkzuweisungen
 
@@ -57,10 +72,9 @@ Interne Anwendungs- und Verarbeitungs-Services:
 
 - **litellm**: LLM-Gateway und Request-Routing
 - **mineru-api**: Dokumenten-Parsing und -Extraktion
-- **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
+- **presidio-anonymizer**: PII-Anonymisierung
 - **vLLM**: Lokale LLM-Inferenz (Chat, Embedding, Reranking) – nur GPU Deployments
 - **speaches**: Spracherkennung und Text-zu-Sprache
-- **playwright**: Web-Scraping und Automatisierung (auch im `egress` für Internetzugriff)
 - **agents**: Alle Agent Workers (RAG, Expert, Wrapping)
 - **pipelines**: Datenverarbeitungs-Pipelines
 - **dagster-**\*: Pipeline-Orchestrierung
@@ -95,11 +109,17 @@ Verteilter Objektspeicher-Cluster:
 
 Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benötigen:
 
-- **playwright**: Web-Scraping und Browser-Automatisierung (muss Webseiten abrufen)
+- **playwright**: Headless-Browser, der die von Benutzern verlinkten Webseiten lädt (muss Webseiten abrufen)
+- **searxng**: Websuche (fragt externe Suchmaschinen ab)
+- **rclone**: Der Daemon, den die rclone-Source-Pipeline steuert (erreicht den Cloud-Speicher, aus dem sie
+  synchronisiert)
+- **structured_pipeline**: Die Structured-Source-Pipeline (ruft APIs von Geschäftsanwendungen wie Jira auf)
+- **imap_agent**, **email_classification_agent**: Lesen E-Mails auf externen IMAP-Servern und legen sie ab
+- **otel-collector**: Exportiert Telemetrie an externe Backends
 
 Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern
 in diesem Netzwerk verhindert. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen
-andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
+andere Netzwerke (z.B. `browser` für `playwright`) für die Inter-Service-Kommunikation verwenden.
 
 ### Code-Sandbox-Netzwerk-Services
 
@@ -109,14 +129,27 @@ Die Single-Tenant-Zone für die Code-Execution-Sandbox:
   `docs/arc42/decisions/2026_06_22_openwebui_code_execution_open_terminal.md`)
 
 Die Sandbox ist der **einzige** Bewohner; ihre Caller treten diesem Netzwerk zusätzlich zu ihren eigenen bei.
-`open-webui` ist an `code-sandbox` angebunden (neben `proxy`/`backend`/`data`/`storage`), damit es
-`open-terminal:8000` erreichen kann, und `universal-agent` tritt ihm bei (neben `backend`/`data`/`storage`), um Code im
-Sandbox-Home des anfragenden Benutzers auszuführen, und `api` tritt ihm bei, um die eigenen Dateien jedes Benutzers von
-dort auszuliefern. Der `sandbox-mirror`-Sidecar, der die Homes nach S3 kopiert, liest das Homes-Volume und befindet sich
+`open-webui` ist an `code-sandbox` angebunden (neben `proxy`/`backend`/`data`/`storage`), damit es `open-terminal:8000`
+erreichen kann, und `universal-agent` tritt ihm bei (neben `backend`/`data`/`storage`), um Code im Sandbox-Home des
+anfragenden Benutzers auszuführen, und `api` tritt ihm bei, um die eigenen Dateien jedes Benutzers von dort
+auszuliefern. Der `sandbox-mirror`-Sidecar, der die Homes nach S3 kopiert, liest das Homes-Volume und befindet sich
 ausschließlich in `backend`, nie in `code-sandbox`. Da die Sandbox ein Netzwerk nur mit ihren Callern teilt, hat ein
 Breakout keinen Netzwerkpfad zu den `backend`- oder `data`-Tiers. Im Dev-Stage verwendet `open-webui`
 `network_mode: host` und die Agents laufen lokal außerhalb von Docker, sodass beide die Sandbox stattdessen über den
 veröffentlichten Port `localhost:8200` erreichen.
+
+### Browser-Netzwerk-Services
+
+Die Zone für den Headless-Browser:
+
+- **playwright**: Lädt die von Benutzern verlinkten Webseiten für den Web Loader von Open WebUI und den Webseitenabruf
+  der Agents (siehe ADR `docs/arc42/decisions/2026_10_20_agents_read_linked_web_pages_through_playwright.md`)
+
+Der Browser ist der **einzige** Bewohner; für das Internet befindet er sich außerdem in `egress`. Seine Caller treten
+`browser` zusätzlich zu ihren eigenen Netzwerken bei: `open-webui` und die Agents, die verlinkte Seiten lesen
+(`llm-wrapping-agent`, `web-fetch-agent`, `rag-agent`, `expert-rag-agent` und `universal-agent`). Ein neuer Agent, der
+Webseiten liest, muss ebenfalls beitreten, sonst kann er `ws://playwright:3000` nicht erreichen. Im Dev-Stage erreichen
+Open WebUI und die Agents den Browser stattdessen über den veröffentlichten Port `localhost:3036`.
 
 ## Netzwerk-Topologie
 
@@ -139,10 +172,9 @@ flowchart TB
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
         mineru-api[mineru-api]
-        presidio[presidio]
+        presidio[presidio-anonymizer]
         vllm[vLLM]
         agents[agents]
-        playwright[playwright]
         dagster[dagster-*]
         pipelines[pipelines]
         langfuse[langfuse]
@@ -153,9 +185,21 @@ flowchart TB
         playwright_egress[playwright]
     end
 
+    subgraph pii-detection[PII-DETECTION NETWORK - analyzer + callers only]
+        presidio_analyzer[presidio-analyzer]
+        litellm_pii[litellm]
+        agents_pii[universal-agent]
+    end
+
     subgraph code-sandbox[CODE-SANDBOX NETWORK - sandbox + callers only]
         open-terminal[open-terminal]
         openwebui_cs[open-webui]
+    end
+
+    subgraph browser[BROWSER NETWORK - browser + callers only]
+        playwright[playwright]
+        openwebui_br[open-webui]
+        agents_br[web-fetching agents]
     end
 
     subgraph data[DATA NETWORK]
@@ -185,7 +229,8 @@ flowchart TB
     api --> agents
     openwebui --> litellm
     openwebui_cs --> open-terminal
-    openwebui --> playwright
+    openwebui_br --> playwright
+    agents_br --> playwright
     agents --> nats
     agents --> milvus
     agents --> neo4j
@@ -225,23 +270,28 @@ flowchart TB
 
 ### Service-Sichtbarkeitsmatrix
 
-| Von \\ Nach  | proxy | backend | data | storage | egress | code-sandbox | Internet |
-| ------------ | ----- | ------- | ---- | ------- | ------ | ------------ | -------- |
-| External     | ✓     | ✗       | ✗    | ✗       | ✗      | ✗            | -        |
-| proxy        | ✓     | ✓       | ✗    | ✗       | ✗      | ✗            | ✓        |
-| backend      | ✗     | ✓       | ✓    | ✓       | ✗      | ✗            | ✗        |
-| data         | ✗     | ✗       | ✓    | ✓       | ✗      | ✗            | ✗        |
-| storage      | ✗     | ✗       | ✗    | ✓       | ✗      | ✗            | ✗        |
-| egress       | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✗            | ✓        |
-| code-sandbox | ✗     | ✗       | ✗    | ✗       | ✗      | ✓\*\*        | ✗\*\*\*  |
+| Von \\ Nach  | proxy | backend | data | storage | egress | code-sandbox | browser   | Internet |
+| ------------ | ----- | ------- | ---- | ------- | ------ | ------------ | --------- | -------- |
+| External     | ✓     | ✗       | ✗    | ✗       | ✗      | ✗            | ✗         | -        |
+| proxy        | ✓     | ✓       | ✗    | ✗       | ✗      | ✗            | ✗         | ✓        |
+| backend      | ✗     | ✓       | ✓    | ✓       | ✗      | ✗            | ✗         | ✗        |
+| data         | ✗     | ✗       | ✓    | ✓       | ✗      | ✗            | ✗         | ✗        |
+| storage      | ✗     | ✗       | ✗    | ✓       | ✗      | ✗            | ✗         | ✗        |
+| egress       | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✗            | ✗         | ✓        |
+| code-sandbox | ✗     | ✗       | ✗    | ✗       | ✗      | ✓\*\*        | ✗         | ✗\*\*\*  |
+| browser      | ✗     | ✗       | ✗    | ✗       | ✗      | ✗            | ✓\*\*\*\* | ✗\*\*\*  |
 
 \*ICC im Egress-Netzwerk deaktiviert – Container können über dieses Netzwerk nicht miteinander kommunizieren.
 
-\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`, `api`) befinden sich in `code-sandbox`, sodass die
-Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
+\*\*Nur `open-terminal` und seine Caller (`open-webui`, `universal-agent`, `api`) befinden sich in `code-sandbox`,
+sodass die Sandbox ihre Caller, aber keinen anderen Tier erreichen kann.
 
-\*\*\*`internal: true` in Nicht-Dev-Stages blockiert ausgehenden Internetzugriff aus der Sandbox; im `dev`-Stage ist das
-Netzwerk nicht-internal (localhost-Zugriff), sodass diese Garantie nur für `local`/`build`/`nightly`/`latest` gilt.
+\*\*\*`internal: true` in Nicht-Dev-Stages blockiert ausgehenden Internetzugriff über dieses Netzwerk; im `dev`-Stage
+ist das Netzwerk nicht-internal (localhost-Zugriff), sodass diese Garantie nur für `local`/`build`/`nightly`/`latest`
+gilt. `playwright` erreicht das Internet stattdessen über `egress`.
+
+\*\*\*\*Nur `playwright` und seine Caller (`open-webui` und die Agents, die verlinkte Seiten lesen) befinden sich in
+`browser`, sodass der Browser seine Caller, aber keinen anderen Tier erreichen kann.
 
 ## Betriebliche Überlegungen
 
@@ -254,6 +304,8 @@ Wenn Sie einen neuen Service hinzufügen, bestimmen Sie, welche Netzwerke dieser
 3. **Benötigt Datenbankzugriff?** → Zum `data` hinzufügen
 4. **Benötigt Objektspeicher?** → Zum `storage` hinzufügen
 5. **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Zum `egress` hinzufügen
+6. **Ruft die Code-Sandbox oder den Browser auf?** → Den Caller zu `code-sandbox` bzw. `browser` hinzufügen; die Sandbox
+   und der Browser treten nie den anderen Zonen des Callers bei
 
 Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht
 von außen erreichbar sein sollten. Es hat ICC deaktiviert, sodass Services auf `egress` nicht miteinander kommunizieren

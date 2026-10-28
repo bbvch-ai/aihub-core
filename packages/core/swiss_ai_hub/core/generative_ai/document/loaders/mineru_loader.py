@@ -25,6 +25,7 @@ from tenacity import (
 from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import PAGE_BREAK
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_file_result import MineruFileResult
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_page_breaks import MineruPageBreaks
+from swiss_ai_hub.core.generative_ai.document.loaders.mineru_page_margins import MineruPageMargins
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_parse_cache import MineruParseCache
 from swiss_ai_hub.core.generative_ai.document.tables.html_table_converter import HtmlTableConverter
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import wrap_markdown_tables
@@ -416,7 +417,9 @@ class MineruLoader(BaseReader):
         return MineruFileResult(
             backend=response.backend,
             version=response.version,
-            md_content=MineruPageBreaks.insert(md_content or "", content_list, num_pages),
+            md_content=MineruPageMargins.restore(
+                MineruPageBreaks.insert(md_content or "", content_list, num_pages), content_list
+            ),
             num_pages=num_pages,
             images=file_result.get("images", {}),
         )
