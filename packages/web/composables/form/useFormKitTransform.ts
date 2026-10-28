@@ -250,6 +250,7 @@ function buildLocaleInputProperties(
   const inputType = element.inputType || element.input_type
   if (inputType) cleanNode.inputType = inputType
   if (element.rows !== undefined) cleanNode.rows = element.rows
+  if (element.maxLength) cleanNode.maxLength = element.maxLength
 
   if (element.validation) cleanNode.validation = element.validation
 

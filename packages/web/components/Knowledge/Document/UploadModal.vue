@@ -35,9 +35,12 @@
             :key="index"
             class="flex items-center justify-between rounded bg-surface-100 p-2 dark:bg-surface-700"
           >
-            <div class="flex items-center gap-2">
-              <i class="pi pi-file text-surface-400" />
-              <span class="text-sm">{{ file.name }}</span>
+            <div class="flex min-w-0 items-center gap-2">
+              <i class="pi pi-file shrink-0 text-surface-400" />
+              <span
+                v-tooltip.top="file.name"
+                class="truncate text-sm"
+              >{{ file.name }}</span>
             </div>
             <Button
               icon="pi pi-times"
@@ -59,22 +62,28 @@
           {{ t('knowledge.documents.upload.target_location.label') }}
         </p>
         <div
-          class="flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800"
+          class="flex min-w-0 items-center gap-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-800"
         >
           <i
-            class="pi pi-database text-surface-400"
+            class="pi pi-database shrink-0 text-surface-400"
             style="font-size: 1rem"
           />
-          <span class="text-sm text-surface-600 dark:text-surface-300">{{ databaseDisplayName }}</span>
+          <span
+            v-tooltip.top="databaseDisplayName"
+            class="max-w-[40%] shrink-0 truncate text-sm text-surface-600 dark:text-surface-300"
+          >{{ databaseDisplayName }}</span>
           <i
-            class="pi pi-angle-right text-surface-400"
+            class="pi pi-angle-right shrink-0 text-surface-400"
             style="font-size: 0.8rem"
           />
           <i
-            class="pi pi-folder text-primary-500"
+            class="pi pi-folder shrink-0 text-primary-500"
             style="font-size: 1rem"
           />
-          <span class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ namespaceDisplayName }}</span>
+          <span
+            v-tooltip.top="namespaceDisplayName"
+            class="min-w-0 truncate text-sm font-medium text-surface-800 dark:text-surface-100"
+          >{{ namespaceDisplayName }}</span>
         </div>
         <small class="text-surface-500 dark:text-surface-400">
           {{ t('knowledge.documents.upload.target_location.help') }}
