@@ -12,6 +12,10 @@
 # Stage: latest
 # Hardware: GPU
 # Cluster ID: swiss-ai-hub-latest-gpu
+#
+# Based on upstream configs/milvus.yaml of Milvus v2.6.25, with our overrides on top. On a Milvus upgrade, three-way
+# merge upstream's milvus.yaml from this version to the new one into this file, then update the version here: the image
+# tag alone does not tell which upstream file this was synced from.
 # ===================================================================
 # Licensed to the LF AI & Data foundation under one
 # or more contributor license agreements. See the NOTICE file
