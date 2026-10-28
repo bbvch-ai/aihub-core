@@ -90,9 +90,11 @@ services:
     expose:
       - '9333'   # Master HTTP port
       - '19333'  # Master gRPC port
+    # Since 4.41 the master reports cluster statistics to telemetry.seaweedfs.com unless -telemetry=false.
     command: >
       master
       -ip=seaweedfs-master
+      -telemetry=false
       -ip.bind=0.0.0.0
       -defaultReplication=000
       -volumeSizeLimitMB=1024
@@ -476,7 +478,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.6.5
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
     restart: always
     depends_on: [milvus-standalone]
     ports: [3003:3000]

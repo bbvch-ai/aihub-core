@@ -87,9 +87,11 @@ services:
     container_name: seaweedfs-master
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:4.51
     restart: always
+    # Since 4.41 the master reports cluster statistics to telemetry.seaweedfs.com unless -telemetry=false.
     command: >
       master
       -ip=seaweedfs-master
+      -telemetry=false
       -ip.bind=0.0.0.0
       -defaultReplication=000
       -volumeSizeLimitMB=29000
@@ -469,7 +471,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.6.5
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
     restart: always
     depends_on: [milvus-standalone]
     environment:

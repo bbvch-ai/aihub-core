@@ -24,7 +24,7 @@ image_tags:
   aws_cli: aws-cli-alpine:3.22.1
   etcd: etcd:v3.5.35
   milvus: milvus:v2.6.25
-  attu: attu:v2.6.5
+  attu: attu:v2.5.12
   postgres: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
   langfuse_web: langfuse/langfuse:3.225.14

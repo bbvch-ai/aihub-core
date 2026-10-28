@@ -1,6 +1,6 @@
 ---
 title: Updates & Wartung
-source_sha: e366e7cd7e78cf732584e18817e183bce03251701532995223b38918a63a2cba
+source_sha: 02f6fd684c5ab37728988726923cd26c57e8dfe41db7e5fbb57ae0665f585d37
 ---
 
 # Updates und Wartung
@@ -161,8 +161,8 @@ Der Ablaufzeitpunkt eines Objekts wird beim Schreiben festgelegt. Eine geändert
 ::: warning
 Wenden Sie auf diese Buckets niemals eine S3-Lifecycle-Konfiguration (`put-bucket-lifecycle-configuration`) an. Seit
 SeaweedFS 4.32 lassen Lifecycle-Konfigurationen Objekte nur über einen Admin- und Worker-Service ablaufen, den die
-Plattform nicht betreibt, und das Anwenden einer solchen Konfiguration löscht die TTL-Regel, die SeaweedFS 4.01 für
-diesen Bucket angelegt hat, sodass nichts mehr abläuft, was danach geschrieben wird. Siehe ADR
+Plattform nicht betreibt, und seit 4.24 löscht das Anwenden einer solchen Konfiguration die TTL-Regel, die SeaweedFS
+4.01 für diesen Bucket angelegt hat, sodass nichts mehr abläuft, was danach geschrieben wird. Siehe ADR
 `2026_10_27_bucket_expiry_via_filer_ttl`.
 :::
 

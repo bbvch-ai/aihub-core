@@ -152,8 +152,8 @@ An object's expiry is fixed when it is written. Changing a rule affects new obje
 
 ::: warning
 Never apply an S3 lifecycle configuration (`put-bucket-lifecycle-configuration`) to these buckets. Since SeaweedFS 4.32,
-lifecycle configurations expire objects only through an admin and worker service the platform does not run, and applying
-one deletes the TTL rule SeaweedFS 4.01 created for that bucket, so nothing written afterwards expires. See ADR
+lifecycle configurations expire objects only through an admin and worker service the platform does not run, and since
+4.24 applying one deletes the TTL rule SeaweedFS 4.01 created for that bucket, so nothing written afterwards expires. See ADR
 `2026_10_27_bucket_expiry_via_filer_ttl`.
 :::
 

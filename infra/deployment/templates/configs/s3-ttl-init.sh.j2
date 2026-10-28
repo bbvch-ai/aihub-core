@@ -10,8 +10,8 @@ SEAWEEDFS_FILER=${SEAWEEDFS_FILER:?SEAWEEDFS_FILER must name the filer as host:p
 
 # Bucket expiry is a filer TTL rule per path prefix, stamped on every object when it is written and enforced by
 # dropping whole TTL volumes. It is deliberately not an S3 lifecycle configuration: since SeaweedFS 4.32 lifecycle
-# rules only expire through an admin + worker pair we do not run, and a lifecycle PUT or DELETE on a bucket deletes
-# the day-TTL rules SeaweedFS 4.01 created for it. Never apply a lifecycle configuration to these buckets. See ADR
+# rules only expire through an admin + worker pair we do not run, and since 4.24 a lifecycle PUT or DELETE on a bucket
+# deletes the day-TTL rules SeaweedFS 4.01 created for it. Never apply a lifecycle configuration to these buckets. See ADR
 # docs/arc42/decisions/2026_10_27_bucket_expiry_via_filer_ttl.md.
 #
 # - dagster: op-internal handoff data written by Dagster's default S3PickleIOManager. Asset finals route to domain

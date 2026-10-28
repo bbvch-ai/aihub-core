@@ -40,7 +40,7 @@ class AgentFileUploadService:
         """Idempotent creation of the shared agent-files bucket. Call once at API startup.
 
         Files expire through the filer TTL rule ``seaweedfs-ttl-init`` applies, never an S3 lifecycle configuration:
-        on SeaweedFS 4.32+ a lifecycle PUT deletes that rule and nothing runs the lifecycle itself.
+        since SeaweedFS 4.24 a lifecycle PUT deletes that rule, and since 4.32 nothing runs the lifecycle itself.
         """
         try:
             self._s3_client.head_bucket(Bucket=self.BUCKET_NAME)
