@@ -1,7 +1,7 @@
 ---
 title: Wissensextraktions-Agent
 description: Sammelt Datensätze aus vielen Wissensdokumenten in einer Tabelle, etwa jede Hardware-Position auf den Rechnungen 2025 eines Lieferanten, jede Zeile mit der Datei, aus der sie stammt.
-source_sha: cd0075646e7cacd4922a69ea6dcdf07c481c859e52499106a4fe05a4e83b0e4d
+source_sha: 17e338f61b0febe54a7d73c3ec8f3ee0d7384def79712de1d70c4703bd1afe4f
 ---
 
 # Wissensextraktions-Agent
@@ -36,10 +36,11 @@ flowchart LR
    behalten werden, und jeden Ordner, jede Datei oder jedes Jahr, die der Benutzer nennt. Eine Folgefrage wie *«dasselbe
    für 2024»* wird zusammen mit der Unterhaltung gelesen.
 2. **Jedes Dokument im Bereich nehmen.** Jedes Dokument in den Sammlungen und im Pfadfilter des Profils wird gelesen,
-   eingegrenzt nur durch die Ordner, Dateien oder Jahre, die der Benutzer genannt hat. Keine Suche entscheidet, welche
-   Dokumente zählen, sodass ein Dokument nie übersehen wird, weil es Dinge anders formuliert als die Anfrage. Ein
-   Lieferant oder ein Thema ist eine Bedingung an die Zeilen, kein Ort: *«von Acme»* behält die Zeilen von Acme, es
-   wählt keine Dokumente aus.
+   eingegrenzt nur durch die Ordner, Dateien oder Jahre, die der Benutzer genannt hat. Eine Datei, die der Benutzer
+   nennt, mit ihrem Pfad oder nur mit ihrem Namen, mit oder ohne Endung, meint nur diese Datei, nicht ihren Ordner.
+   Keine Suche entscheidet, welche Dokumente zählen, sodass ein Dokument nie übersehen wird, weil es Dinge anders
+   formuliert als die Anfrage. Ein Lieferant oder ein Thema ist eine Bedingung an die Zeilen, kein Ort: *«von Acme»*
+   behält die Zeilen von Acme, es wählt keine Dokumente aus.
 3. **Spalten entwerfen.** Die Spalten werden aus den Worten des Benutzers entworfen, etwa *Datum, Position, Betrag,
    Währung*. Eine Bedingung wie *«nur Hardware»* entscheidet, welche Zeilen behalten werden, und wird nie zur Spalte.
 4. **Extrahieren.** Jedes Dokument wird gelesen und seine passenden Datensätze werden extrahiert, viele Dokumente

@@ -550,6 +550,16 @@ def _reading(
     )
 
 
+FOLDER = "invoices/einvoices/zugferd"
+NAMED = "zugferd_2p0_EXTENDED_Warenrechnung.pdf"
+NAMED_FILES = (
+    f"{FOLDER}/{NAMED}",
+    f"{FOLDER}/EN16931_Einfach.pdf",
+    "invoices/acme/acme invoice 42.pdf",
+    "invoices/Rechnung.pdf",
+)
+
+
 def _listing(*paths: str) -> KnowledgeDocumentListing:
     documents = [
         _document(path).model_copy(update={"collection": FINANCE})
@@ -659,6 +669,68 @@ class TestWholeScope:
         assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="**/invoices/2025/q1/c.pdf")]
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("message", "folder", "glob"),
+        [
+            (f"Line items of {FOLDER}/{NAMED}?", FOLDER, f"**/{FOLDER}/{NAMED}"),
+            (f"Line items of {NAMED}?", FOLDER, f"**/{NAMED}"),
+            ("Line items of zugferd_2p0_EXTENDED_Warenrechnung, please.", FOLDER, f"**/{NAMED}"),
+            ("Line items of ZUGFERD_2p0_extended_warenrechnung.PDF", FOLDER, f"**/{NAMED}"),
+            ("Line items of acme invoice 42.pdf.", "invoices/acme", "**/acme invoice 42.pdf"),
+        ],
+        ids=["full-path", "name", "name-without-extension", "other-case", "name-with-spaces"],
+    )
+    async def test_a_named_file_wins_over_the_folder_the_reading_made_of_it(self, message: str, folder: str, glob: str):
+        """Real invoices: Kimi read `einvoices/zugferd/x.pdf` as `einvoices/zugferd/**` and 81 rows came back for 6."""
+        reading = _reading(RequestedLocation(path_glob=f"{folder}/**", path_regex=None))
+
+        request, _, _ = await _discover(reading, message=message, listing=_listing(*NAMED_FILES))
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob=glob)]
+
+    @pytest.mark.asyncio
+    async def test_another_place_the_user_named_next_to_the_file_is_kept(self):
+        reading = _reading(
+            RequestedLocation(path_glob=f"{FOLDER}/**", path_regex=None),
+            RequestedLocation(path_glob="invoices/acme/**", path_regex=None),
+        )
+
+        request, _, _ = await _discover(reading, message=f"{NAMED} and the acme folder", listing=_listing(*NAMED_FILES))
+
+        assert request.selection.any_of == [
+            KnowledgeDocumentCriteria(path_glob=f"**/{NAMED}"),
+            KnowledgeDocumentCriteria(path_glob="invoices/acme/**"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_a_reading_of_the_exact_file_is_not_doubled(self):
+        reading = _reading(RequestedLocation(path_glob=f"**/{NAMED}", path_regex=None))
+
+        request, _, _ = await _discover(reading, message=f"Items of {NAMED}", listing=_listing(*NAMED_FILES))
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob=f"**/{NAMED}")]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "message",
+        ["List all Rechnung totals.", "Items of unknown_2024.pdf"],
+        ids=["plain-word-stem", "name-of-no-document"],
+    )
+    async def test_a_word_that_names_no_file_in_scope_leaves_the_whole_scope(self, message: str):
+        request, _, _ = await _discover(_reading(), message=message, listing=_listing(*NAMED_FILES))
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria()]
+
+    @pytest.mark.asyncio
+    async def test_a_name_shared_by_two_folders_reads_both_files(self):
+        listing = _listing("invoices/a/x-1.pdf", "invoices/b/x-1.pdf", "invoices/b/y.pdf")
+
+        request, _, _ = await _discover(_reading(), message="Rows of x-1.pdf", listing=listing)
+
+        assert request.selection.any_of == [KnowledgeDocumentCriteria(path_glob="**/x-1.pdf")]
+        assert len(listing.matching_glob("**/x-1.pdf").documents) == 2
+
+    @pytest.mark.asyncio
     async def test_the_last_folders_of_a_path_find_the_document_they_end(self):
         request, _, _ = await _discover(_reading(), message="Requirements in /q1/c.pdf, please.")
 
@@ -742,6 +814,26 @@ class TestWholeScope:
 )
 def test_the_paths_a_message_spells_out_are_read_word_by_word(message: str, globs: list[str]):
     assert [location.path_glob for location in RequestedLocation.written_in(message)] == globs
+
+
+@pytest.mark.parametrize(
+    ("message", "paths", "globs"),
+    [
+        ("Rows of report-2024.pdf", ["a/report-2024.pdf", "a/report-2024.docx"], ["**/report-2024.pdf"]),
+        ("Rows of inv-12.pdf", ["a/inv-1.pdf"], []),
+        ("Rows of a/inv-1.pdf", ["a/inv-1.pdf"], []),
+        ("Rows of report [draft].pdf", ["a/report [draft].pdf"], ["**/report [[]draft].pdf"]),
+        ("Rows of Rechnung", ["a/Rechnung.pdf"], []),
+    ],
+    ids=["other-extension", "longer-name", "written-path", "glob-characters", "plain-word"],
+)
+def test_the_names_a_message_holds_are_the_names_of_documents_in_scope(
+    message: str, paths: list[str], globs: list[str]
+):
+    named = RequestedLocation.named_in(message, paths)
+
+    assert [location.path_glob for location in named] == globs
+    assert all(_listing(*paths).matching_glob(glob).documents for glob in globs)
 
 
 def test_a_message_built_to_make_a_pattern_backtrack_is_read_at_once():
