@@ -42,20 +42,10 @@ class TestEnsureBucketExists:
 
         s3_client.create_bucket.assert_called_once_with(Bucket="agent-files")
 
-    def test_sets_lifecycle_on_new_bucket(self, service, s3_client):
+    def test_new_bucket_gets_no_lifecycle_configuration(self, service, s3_client):
+        """A lifecycle PUT would delete the filer TTL rule that expires agent files on SeaweedFS 4.32+."""
         error_response = {"Error": {"Code": "404"}}
         s3_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
-
-        service.ensure_bucket_exists()
-
-        s3_client.put_bucket_lifecycle_configuration.assert_called_once()
-        lifecycle = s3_client.put_bucket_lifecycle_configuration.call_args[1]["LifecycleConfiguration"]
-        rule = lifecycle["Rules"][0]
-        assert rule["Status"] == "Enabled"
-        assert rule["Expiration"]["Days"] == 7
-
-    def test_skips_lifecycle_when_bucket_exists(self, service, s3_client):
-        s3_client.head_bucket.return_value = {}
 
         service.ensure_bucket_exists()
 

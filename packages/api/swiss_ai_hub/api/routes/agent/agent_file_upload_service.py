@@ -27,7 +27,6 @@ class AgentFileUploadService:
 
     BUCKET_NAME = UserUploadedFile.AGENT_FILES_BUCKET
     UPLOAD_URL_LIFETIME_SECONDS = 3600  # 1 hour
-    FILE_EXPIRATION_DAYS = 7
 
     def __init__(
         self,
@@ -38,7 +37,11 @@ class AgentFileUploadService:
         self._s3_public_client = s3_public_client
 
     def ensure_bucket_exists(self) -> None:
-        """Idempotent creation of the shared agent-files bucket. Call once at API startup."""
+        """Idempotent creation of the shared agent-files bucket. Call once at API startup.
+
+        Files expire through the filer TTL rule ``seaweedfs-ttl-init`` applies, never an S3 lifecycle configuration:
+        on SeaweedFS 4.32+ a lifecycle PUT deletes that rule and nothing runs the lifecycle itself.
+        """
         try:
             self._s3_client.head_bucket(Bucket=self.BUCKET_NAME)
             return
@@ -49,18 +52,6 @@ class AgentFileUploadService:
 
         logger.info(f"Creating agent upload bucket: {self.BUCKET_NAME}")
         self._s3_client.create_bucket(Bucket=self.BUCKET_NAME)
-        self._s3_client.put_bucket_lifecycle_configuration(
-            Bucket=self.BUCKET_NAME,
-            LifecycleConfiguration={
-                "Rules": [
-                    {
-                        "ID": "auto-expire-agent-files",
-                        "Status": "Enabled",
-                        "Expiration": {"Days": self.FILE_EXPIRATION_DAYS},
-                    }
-                ]
-            },
-        )
 
     @staticmethod
     def s3_key(agent_class: str, agent_id: str, file_id: str, filename: str) -> str:
