@@ -176,7 +176,7 @@ Open WebUI's own marker is a thin pulsing bar that would sit under the "Thinking
 a stray `|`. The platform restyles it through the stylesheet Open WebUI loads from `/static/custom.css`.
 
 Edit `infra/deployment/templates/openwebui-style/custom.css` and run `make generate-compose`. Compose mounts the
-generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.3
+generated copy at `/app/build/static/custom.css`; recreate `open-webui` to apply it. The rules target Open WebUI v0.11.4
 markup. When an upgrade changes that markup they stop matching and Open WebUI's own bar returns, so check the indicator
 after every Open WebUI upgrade.
 
