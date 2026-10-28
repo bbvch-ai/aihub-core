@@ -10,7 +10,6 @@ import logging
 import os
 from typing import Annotated, Any
 
-from bson import ObjectId
 from open_webui.models.models import Models
 from pydantic import BaseModel, Field
 
@@ -48,7 +47,7 @@ class Filter:
         if not message_id:
             return ""
         hashed = hashlib.md5(f":{message_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     async def _resolve_base_id(self, model_id: Annotated[str, "Model id from the request"]) -> str:
         """Workspace models wrap another id, and only the wrapped one says whether this is an agent."""

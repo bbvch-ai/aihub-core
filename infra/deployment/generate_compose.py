@@ -92,6 +92,7 @@ CONFIG_SPECS = [
     ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
+    ("templates/configs/s3-ttl-init.sh.j2", "configs/seaweedfs", "ttl-init.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-openwebui.sh.j2", "configs/openwebui", "init-openwebui.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
@@ -129,6 +130,7 @@ STATIC_COPY_DIRS = [
     ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
+    ("templates/oauth2-proxy", "configs/oauth2-proxy"),
 ]
 
 # Static files copied verbatim (no Jinja2 rendering).
