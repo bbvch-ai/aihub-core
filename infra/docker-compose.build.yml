@@ -3711,8 +3711,9 @@ services:
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANALYZER_API_KEY: ${PRESIDIO_ANALYZER_API_KEY}
 
-      # Milvus (the runner's readiness report only)
+      # Milvus (the runner's readiness report only, but AgentRunner builds MilvusSettings, which requires all three)
       MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # NATs
