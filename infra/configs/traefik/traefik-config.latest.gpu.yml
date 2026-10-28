@@ -5,17 +5,26 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/traefik.yml.j2 (for changing structure and logic)
+
 # ===================================================================
 # Traefik Static Configuration
 # ===================================================================
 # This file contains the static configuration for Traefik reverse proxy.
 # It defines entry points, providers, API settings, and certificate resolvers.
 # ===================================================================
+# aliasHeadersStrategy: Go treats X-Auth-User, X_Auth_User and X.Auth.User as three headers, while backends that map
+# header names to variables read them as one, so a client could spoof a header a middleware sets. Dropping every header
+# name with a character other than a letter, digit or dash closes that; Traefik 3.7.12+ warns for each entry point
+# without it.
 entryPoints:
   web:
     address: :80
+    http:
+      aliasHeadersStrategy: delete
   websecure:
     address: :443
+    http:
+      aliasHeadersStrategy: delete
 providers:
   file:
     directory: /etc/traefik/dynamic

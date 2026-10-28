@@ -422,11 +422,14 @@ services:
   {{ service_license('oauth2proxy-seaweed') }}
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ SEAWEEDFS_FILER_URL }}
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
@@ -629,11 +632,14 @@ services:
   {{ service_license('oauth2proxy-attu') }}
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
@@ -1106,6 +1112,19 @@ services:
       {%- else %}
       - "traefik.http.routers.langfuse.tls=true"
       {%- endif %}
+      # Next.js's image optimizer carries the Next.js advisories Langfuse 3.x still bundles (fixed only in Langfuse v4).
+      # The UI does not request it, so the route answers 403 to everyone.
+      - "traefik.http.routers.langfuse-next-image.rule=Host(`langfuse.${DOMAIN}`) && PathPrefix(`/_next/image`)"
+      - "traefik.http.routers.langfuse-next-image.priority=4100"
+      - "traefik.http.routers.langfuse-next-image.entrypoints=websecure"
+      - "traefik.http.routers.langfuse-next-image.service=langfuse"
+      - "traefik.http.routers.langfuse-next-image.middlewares=langfuse-next-image-deny"
+      - "traefik.http.middlewares.langfuse-next-image-deny.ipallowlist.sourcerange=127.0.0.1/32"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.langfuse-next-image.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.langfuse-next-image.tls=true"
+      {%- endif %}
     {%- endif %}
     networks:
       - backend
@@ -1535,11 +1554,14 @@ services:
   {{ service_license('oauth2proxy-backup') }}
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ BACKUP_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
@@ -2661,11 +2683,14 @@ services:
   {{ service_license('oauth2proxy-dagster') }}
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: {{ image_tags.oauth2proxy }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
+    volumes:
+      - ./configs/oauth2-proxy:/templates:ro
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: {{ DAGSTER_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
@@ -2895,7 +2920,7 @@ services:
       - "traefik.http.routers.acme-challenge.entrypoints=web"
       - "traefik.http.routers.acme-challenge.priority=9000"
       {%- endif %}
-      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      - "traefik.http.routers.http-catch.rule=HostRegexp(`.+`) && !PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.priority=10"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"

@@ -318,11 +318,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
@@ -372,7 +374,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.35
     restart: always
     command:
       - etcd
@@ -434,7 +436,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.25
     restart: always
     command: [milvus, run, standalone]
     security_opt: [seccomp:unconfined]
@@ -474,7 +476,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.6.5
     restart: always
     depends_on: [milvus-standalone]
     ports: [3003:3000]
@@ -496,11 +498,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
@@ -685,7 +689,7 @@ services:
   # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
-    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.32-community-trixie
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs
@@ -762,7 +766,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -828,7 +832,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -927,6 +931,16 @@ services:
       - traefik.http.routers.langfuse.middlewares=security-headers@file
       - traefik.http.services.langfuse.loadbalancer.server.port=3000
       - traefik.http.routers.langfuse.tls=true
+      # Next.js's image optimizer carries the Next.js advisories Langfuse 3.x still bundles (fixed only in Langfuse v4).
+      # The UI does not request it, so the route answers 403 to everyone.
+      - traefik.http.routers.langfuse-next-image.rule=Host(`langfuse.${DOMAIN}`) &&
+        PathPrefix(`/_next/image`)
+      - traefik.http.routers.langfuse-next-image.priority=4100
+      - traefik.http.routers.langfuse-next-image.entrypoints=websecure
+      - traefik.http.routers.langfuse-next-image.service=langfuse
+      - traefik.http.routers.langfuse-next-image.middlewares=langfuse-next-image-deny
+      - traefik.http.middlewares.langfuse-next-image-deny.ipallowlist.sourcerange=127.0.0.1/32
+      - traefik.http.routers.langfuse-next-image.tls=true
     networks:
       - backend
       - data  # For PostgreSQL access
@@ -1332,11 +1346,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://backup-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
@@ -2140,11 +2156,13 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.15.5
     restart: always
+    volumes: [./configs/oauth2-proxy:/templates:ro]
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_COOKIE_SECURE: 'true'
+      OAUTH2_PROXY_CUSTOM_TEMPLATES_DIR: /templates
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
@@ -2319,7 +2337,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   traefik:
     container_name: traefik
-    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2
+    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.7.16
     restart: always
     depends_on:
       docker-socket-proxy:
@@ -2339,7 +2357,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
-      - traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)
+      - traefik.http.routers.http-catch.rule=HostRegexp(`.+`) && !PathPrefix(`/.well-known/acme-challenge/`)
       - traefik.http.routers.http-catch.entrypoints=web
       - traefik.http.routers.http-catch.priority=10
       - traefik.http.routers.http-catch.middlewares=https-redirect

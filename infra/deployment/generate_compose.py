@@ -130,6 +130,7 @@ STATIC_COPY_DIRS = [
     ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
+    ("templates/oauth2-proxy", "configs/oauth2-proxy"),
 ]
 
 # Static files copied verbatim (no Jinja2 rendering).

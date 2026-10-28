@@ -260,7 +260,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.35
     restart: always
     command:
       - etcd
@@ -322,7 +322,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.25
     restart: always
     command: [milvus, run, standalone]
     security_opt: [seccomp:unconfined]
@@ -362,7 +362,7 @@ services:
   # License: Apache-2.0 — third-party (see LICENSE_REPORT.md)
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
+    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.6.5
     restart: always
     depends_on: [milvus-standalone]
     ports: [3003:3000]
@@ -477,7 +477,7 @@ services:
   # License: GPL-3.0 — third-party (see LICENSE_REPORT.md)
   neo4j:
     container_name: neo4j
-    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.32-community-trixie
     restart: always
     ports: [7474:7474, 7687:7687]
     volumes:
@@ -555,7 +555,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3.225.14
     restart: always
     depends_on:
       postgres:
@@ -625,7 +625,7 @@ services:
   # License: MIT — third-party (see LICENSE_REPORT.md)
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.8
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3.225.14
     restart: always
     depends_on:
       postgres:
