@@ -2,7 +2,7 @@
 
 NOT part of a CI `make test` scope (see test_custom_callbacks.py). Run them with the LiteLLM version the gateway runs:
 
-    uv run --with "litellm==1.106.2" pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_guardrail.py
+    uv run --with "litellm==1.106.4" pytest infra/deployment/templates/litellm_functions/test_pii_anonymisation_guardrail.py
 
 The live end-to-end tests through a LiteLLM proxy are in infra/deployment/tests/pii_guardrail_e2e/.
 """

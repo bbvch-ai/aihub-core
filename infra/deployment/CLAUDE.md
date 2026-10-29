@@ -101,11 +101,11 @@ literal-number rule.
 when the call sends `"guardrails": ["pii-anonymisation"]` (profiles with the checkbox do), and, only where
 `PII_ANONYMISE_EXTERNAL_MODELS=true` (off in `.env.dev` and `.env.prod`), on every call to a model that is not `local`.
 Any other value of the switch counts as `true`: never make the guardrail's constructor raise, because LiteLLM v1.106.2
-then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the
-key as external; `generate_compose.py` rejects a missing or unknown location anyway, so a typo cannot silently anonymise
-a local model. Each handled call also leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`,
-mounted next to the guardrail, sent to `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
-`uv run --with "litellm==1.106.2" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
+then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the key as external; `generate_compose.py`
+rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call also
+leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
+`OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
+`uv run --with "litellm==1.106.4" --with opentelemetry-exporter-otlp-proto-grpc pytest infra/deployment/templates/litellm_functions/`
 (unit) and `uv run pytest infra/deployment/tests/pii_guardrail/` (live, through a real proxy and analyzer). Re-run both
 on a LiteLLM upgrade: the guardrail relies on its custom-guardrail interface. LiteLLM follows its plain release tags (no
 more `-stable` tags after `v1.83.14-stable`); the upgrade checks and the rollback path are in ADR
@@ -277,10 +277,25 @@ with every change to that folder. Three settings look optional and are not (each
 `CONNECT` is allowed to every `Safe_ports` port, because `route.fetch` tunnels plain `http://` with `CONNECT` too; the
 error pages stay empty, or about half the refusals reach the agent as `Route.fetch: aborted` instead of a 403 with
 `X-Squid-Error`; and `::ffff:0:0/96` stays out of `not_public`, because Squid stores IPv4 in that form and the range
-would refuse all of IPv4.
+would refuse all of IPv4. It needs no refreshed CA bundle (see below): it tunnels TLS without terminating it, so
+the browser checks the certificates.
 
 > **Deployment checklist:** publish `browser-proxy:6.12-1` to ghcr **before any non-dev stage pulls it**. Without it the
 > pull fails and with it the whole `docker compose up`.
+
+### Images rebuilt for a current CA bundle
+
+Upstream images freeze their CA bundles at build time. After the eMudhra intermediate CA compromise (2026-10), releases
+built earlier still trust `emSign ECC Root CA - G3`, so three images refresh their bundles in our own Dockerfile:
+
+- `docker/rclone/` (`rclone:1.71.2-1`, `make -C infra/deployment build-and-push-rclone-image`): Alpine
+  `ca-certificates`. Drop it for the plain mirror once an upstream rclone release ships a clean bundle.
+- `docker/playwright/` (`build-and-push-playwright-image`): Ubuntu `ca-certificates` and `libnss3`. Chromium and Firefox
+  compile their own root stores in, which change only with a Playwright release.
+- `docker/open-webui/` (`build-and-push-openwebui-image`): Debian `ca-certificates`, `certifi`, and
+  `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` pointing gRPC at the system bundle instead of its bundled root list.
+
+Keep these lines when bumping the base tag, and publish the new tag **before** pinning it in `compose-config.yml`.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.
@@ -374,7 +389,9 @@ Rules when editing:
   managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
   reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
 - The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
-  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
+  Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
+  an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
