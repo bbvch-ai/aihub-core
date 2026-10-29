@@ -61,12 +61,19 @@ else
 
     # Natural-language, grouped body via the LLM: system prompt from the file, the
     # diff piped as the user turn. Degrades gracefully if `llm` is unavailable or
-    # the call fails, so a release is never blocked on note prose.
+    # the call fails, so a release is never blocked on note prose. The failure is
+    # still raised as a workflow warning: a silent placeholder went unnoticed for weeks.
     body=""
     if [ -n "$diff_output" ] && command -v llm >/dev/null 2>&1; then
+        llm_error_file="$(mktemp)"
         body="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
             "$FROM" "$TO" "$diff_note" "$diff_output" \
-            | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>/dev/null || true)"
+            | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>"$llm_error_file" || true)"
+        if [ -z "$body" ]; then
+            printf '::warning::Release notes LLM call with %s failed: %s\n' \
+                "$MODEL" "$(tr '\n' ' ' < "$llm_error_file")" >&2
+        fi
+        rm -f "$llm_error_file"
     fi
     [ -n "$body" ] || body="_No summarised changes for this range._"
 fi
