@@ -583,6 +583,15 @@ Real-time event emission for streaming LLM output to the UI:
 | `routing/`               | LLM-based event routing                   | `route_to_event_using_llm()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `structured_extraction/` | Records from one document, runtime schema | `RecordSchemaBuilder.build()`, `RecordExtractor.extract()`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
+`retrieval/combine_nodes_in_order()` renders retrieved nodes as `<REFERENCE_DOCUMENT …>` blocks, one per document. The
+header carries the document's id, source, title, version and timestamps, then the fields of the record it was synced
+from (`IngestedNode.record_fields`: a Jira issue's status, a Confluence page's space), each cut at
+`MAX_RECORD_FIELD_CHARACTERS`. `IngestedNode.from_llama_index_node` fills `record_fields` from the keys the pipeline's
+frontmatter step listed in `excluded_embed_metadata_keys`, the one marker that tells them apart from platform metadata
+(aihub-core-private#362). A round trip through a llama-index node drops that list, so code holding `IngestedNode`s keeps
+them (`rerank_nodes` returns the nodes it was given, re-scored) instead of converting back. `language` is not in the
+header: ingestion detects none.
+
 `knowledge_documents/` gives agents whole-file access to knowledge collections next to vector search.
 `KnowledgeDocumentReader.list_documents(collections)` returns a `KnowledgeDocumentListing` of fully ingested documents
 (id, path relative to the collection's **folder**, filename, title, type), loaded without their text and sorted by

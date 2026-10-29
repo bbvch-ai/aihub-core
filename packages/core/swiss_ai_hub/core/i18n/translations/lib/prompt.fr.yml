@@ -27,8 +27,11 @@ rag:
     Des informations contextuelles supplémentaires vous sont fournies sous la forme de documents structurés. Chaque document suit 
     un format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant par `</REFERENCE_DOCUMENT>`. Ces documents contiennent des 
     détails essentiels qui doivent être utilisés pour comprendre et répondre avec précision à la requête de l’utilisateur.
-    Chaque document comprend des métadonnées telles que la source, l’espace de noms, le type, la langue, la version et les 
-    horodatages. Le contenu de ces documents fournit des informations précieuses pertinentes pour le contexte donné.
+    Les métadonnées de chaque document indiquent sa source, son titre, sa version et ses horodatages : created_at est
+    la date de création de l’enregistrement ou du fichier, updated_at et inserted_at celles de son dernier traitement
+    par la plateforme. Un document synchronisé depuis une application métier, comme un ticket Jira ou une page
+    Confluence, porte aussi les champs propres à cet enregistrement, par exemple status, priority, issue_type, project,
+    labels ou space, ainsi que sa propre date updated. Le contenu de ces documents fournit des informations précieuses pertinentes pour le contexte donné.
     Voici les documents pertinents :
     <context_documents>
     {% for block in context_blocks %}

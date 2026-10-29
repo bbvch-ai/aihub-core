@@ -17,7 +17,8 @@ async def rerank_nodes(
     Rerank a list of nodes using a reranking service via LiteLLM.
 
     The query is clamped here, not by the callers, so a chat message that inlines an attached document cannot reach
-    the reranker past its window: it rejects the pair with a 400 instead of truncating it.
+    the reranker past its window: it rejects the pair with a 400 instead of truncating it. The reranker only orders
+    and scores: each result is the node that went in, so nothing a llama-index node cannot carry is lost on the way.
     """
     if not nodes:
         return []
@@ -33,5 +34,5 @@ async def rerank_nodes(
     )
     # slicing the reranked nodes manually, as the endpoint returns all nodes regardless of top_n
     reranked_nodes = reranked[: reranking_model.top_n]
-    result_nodes = [IngestedNode.from_llama_index_node_with_score(node) for node in reranked_nodes]
-    return result_nodes
+    by_id = {node.id: node for node in nodes}
+    return [by_id[ranked.node.node_id].model_copy(update={"score": ranked.score}) for ranked in reranked_nodes]

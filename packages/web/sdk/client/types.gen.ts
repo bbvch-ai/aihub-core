@@ -9098,6 +9098,14 @@ export type IngestedNode = {
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
   /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
+  /**
    * Score
    *
    * Score representing the relevance of the document.
@@ -26281,6 +26289,14 @@ export type IngestedNodeWritable = {
    * Heading level of the node in document
    */
   heading_level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | null;
+  /**
+   * Record Fields
+   *
+   * Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.
+   */
+  record_fields?: {
+    [key: string]: string | number | number | Array<string>;
+  };
   /**
    * Score
    *

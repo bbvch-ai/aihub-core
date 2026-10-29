@@ -13497,6 +13497,32 @@ export const IngestedNodeSchema = {
       title: "Heading Level",
       description: "Heading level of the node in document",
     },
+    record_fields: {
+      additionalProperties: {
+        anyOf: [
+          {
+            type: "string",
+          },
+          {
+            type: "integer",
+          },
+          {
+            type: "number",
+          },
+          {
+            items: {
+              type: "string",
+            },
+            type: "array",
+          },
+        ],
+      },
+      type: "object",
+      title: "Record Fields",
+      description:
+        "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
+    },
     score: {
       anyOf: [
         {
@@ -39625,6 +39651,32 @@ export const IngestedNodeWritableSchema = {
       ],
       title: "Heading Level",
       description: "Heading level of the node in document",
+    },
+    record_fields: {
+      additionalProperties: {
+        anyOf: [
+          {
+            type: "string",
+          },
+          {
+            type: "integer",
+          },
+          {
+            type: "number",
+          },
+          {
+            items: {
+              type: "string",
+            },
+            type: "array",
+          },
+        ],
+      },
+      type: "object",
+      title: "Record Fields",
+      description:
+        "Fields of the record the document was synced from, e.g. a Jira issue's status, as its markdown frontmatter carried them.",
+      default: {},
     },
     score: {
       anyOf: [

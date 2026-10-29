@@ -214,9 +214,7 @@ async def do_retrieve(
         query = event.condensed_question
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t, user)
-    nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
-    return RetrieverEvent.from_nodes(nodes_with_score)
+    return RetrieverEvent(nodes=await retrieve_from_all_sources(query, runtime_configs, t, user))
 
 
 async def do_rerank_nodes(

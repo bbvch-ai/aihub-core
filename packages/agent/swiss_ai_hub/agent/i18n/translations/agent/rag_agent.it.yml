@@ -37,8 +37,13 @@ config:
       formato coerente, che inizia con `<REFERENCE_DOCUMENT [metadata]>` e termina\
       \ con `</REFERENCE_DOCUMENT>`. Questi documenti contengono\ndettagli essenziali\
       \ che dovrebbero essere utilizzati per comprendere e rispondere accuratamente\
-      \ alla richiesta dell'utente.\n\nOgni documento include metadati come fonte,\
-      \ namespace, tipo, lingua, versione e timestamp. Il contenuto\ndi questi documenti\
+      \ alla richiesta dell'utente.\n\nI metadati di ogni documento indicano fonte,\
+      \ titolo, versione e timestamp: created_at è il momento in cui il record o\n\
+      il file è stato creato, updated_at e inserted_at quello in cui la piattaforma\
+      \ lo ha elaborato per l'ultima volta. Un\ndocumento sincronizzato da un'applicazione\
+      \ aziendale, come un ticket Jira o una pagina Confluence, riporta anche i\n\
+      campi propri di quel record, ad esempio status, priority, issue_type, project,\
+      \ labels o space, e il suo momento\nupdated. Il contenuto\ndi questi documenti\
       \ fornisce informazioni cruciali rilevanti per il contesto dato.\n\nDi seguito\
       \ sono riportati i documenti pertinenti:\n\n<context_documents>\n{% for block\
       \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
