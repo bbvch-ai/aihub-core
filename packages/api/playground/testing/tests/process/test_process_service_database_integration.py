@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -14,6 +15,13 @@ from swiss_ai_hub.api.routes.process.process_service import ProcessService
 enable_logging()
 
 
+@pytest.fixture(autouse=True)
+def online_threshold():
+    """The threshold is read from completed discovery rounds in Mongo; these tests run without one."""
+    with patch.object(ProcessClassEntity, "online_threshold", return_value=datetime(2026, 1, 1)) as threshold:
+        yield threshold
+
+
 @pytest.fixture
 def mock_locale_handler():
     """Create a mock LocaleHandler."""
@@ -25,7 +33,7 @@ def mock_class_entity():
     """Create a mock ProcessClassEntity."""
     entity = Mock(spec=ProcessClassEntity)
     entity.process_class = "TestProcess"
-    entity.is_online = True
+    entity.is_online_since.return_value = True
     entity.icon = "test-icon"
     return entity
 
@@ -129,7 +137,9 @@ class TestProcessServiceDatabaseIntegration:
 
                     mock_get_class.assert_called_once_with("TestProcess")
                     mock_find.assert_called_once_with("TestProcess", "test_process_1")
-                    mock_from.assert_called_once_with(mock_class_entity, mock_config_entity, mock_locale_handler)
+                    mock_from.assert_called_once_with(
+                        mock_class_entity, mock_config_entity, mock_locale_handler, is_online=True
+                    )
                     assert result == expected_dto
 
     @pytest.mark.asyncio
@@ -164,11 +174,11 @@ class TestProcessServiceDatabaseIntegration:
         """Test that get_all_process_instances returns instances from all classes."""
         class_entity_1 = Mock(spec=ProcessClassEntity)
         class_entity_1.process_class = "ProcessA"
-        class_entity_1.is_online = True
+        class_entity_1.is_online_since.return_value = True
 
         class_entity_2 = Mock(spec=ProcessClassEntity)
         class_entity_2.process_class = "ProcessB"
-        class_entity_2.is_online = True
+        class_entity_2.is_online_since.return_value = True
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [class_entity_1, class_entity_2]
@@ -191,11 +201,11 @@ class TestProcessServiceDatabaseIntegration:
         """Test that get_all_process_instances filters by online status."""
         online_class = Mock(spec=ProcessClassEntity)
         online_class.process_class = "OnlineProcess"
-        online_class.is_online = True
+        online_class.is_online_since.return_value = True
 
         offline_class = Mock(spec=ProcessClassEntity)
         offline_class.process_class = "OfflineProcess"
-        offline_class.is_online = False
+        offline_class.is_online_since.return_value = False
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [online_class, offline_class]
@@ -288,9 +298,9 @@ class TestProcessServiceDatabaseIntegration:
     async def test_get_process_classes_returns_all(self, mock_locale_handler):
         """Test that get_process_classes returns all classes from DB."""
         entity1 = Mock(spec=ProcessClassEntity)
-        entity1.is_online = True
+        entity1.is_online_since.return_value = True
         entity2 = Mock(spec=ProcessClassEntity)
-        entity2.is_online = False
+        entity2.is_online_since.return_value = False
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [entity1, entity2]
@@ -309,9 +319,9 @@ class TestProcessServiceDatabaseIntegration:
     async def test_get_process_classes_filters_online(self, mock_locale_handler):
         """Test that get_process_classes filters by online status."""
         online = Mock(spec=ProcessClassEntity)
-        online.is_online = True
+        online.is_online_since.return_value = True
         offline = Mock(spec=ProcessClassEntity)
-        offline.is_online = False
+        offline.is_online_since.return_value = False
 
         with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
             mock_get_all.return_value = [online, offline]
@@ -323,4 +333,4 @@ class TestProcessServiceDatabaseIntegration:
                 result = await ProcessService.get_process_classes(mock_locale_handler, online=True)
 
                 assert len(result) == 1
-                mock_from.assert_called_once_with(online, mock_locale_handler)
+                mock_from.assert_called_once_with(online, mock_locale_handler, is_online=True)

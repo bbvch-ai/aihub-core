@@ -8,6 +8,7 @@ from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor, use_external_process_event_distributor
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.events.process import HumanInSpecs, ProcessClassDiscoveryResponseEvent, ProgramInSpecs
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 _PROCESS_NAME_I18N_PATH = "api.controllers.process.name"
 
 
-class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
+class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService[ProcessClassDTO]):
     """
     This service ensures that new processes in the system are automatically registered.
     This ensures that the API and the Processes are decoupled.
@@ -46,55 +47,39 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
     Endpoints use {process_id} as a FastAPI path parameter, with instance validation at request time.
     """
 
+    discovery_kind = DiscoveryKind.PROCESS
+
     def __init__(
         self,
         nc: NATS,
         api_app: FastAPI,
         controller: ProcessController,
         locale_handler: LocaleHandler,
-        discovery_interval: int = 60,
+        settings: DiscoverySettings | None = None,
     ):
-        super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
+        super().__init__(nc, api_app, controller, locale_handler, settings)
         self.controller: ProcessController = controller
         self.topic_manager: ProcessTopicManager = ProcessTopicManager()
 
     @override
-    async def _discover_and_register(self):
-        """
-        Discovers process classes via NATS broadcast and registers class-level endpoints.
+    def _class_name_of(self, dto: ProcessClassDTO) -> str:
+        return dto.process_class
 
-        This method:
-        1. Broadcasts a NATS discovery request to all running processes
-        2. Collects responses and updates last_discovered timestamps in database
-        3. Registers/deregisters dynamic API endpoints at the CLASS level (not instance level)
+    @override
+    def _register_discovered_class(self, dto: ProcessClassDTO) -> None:
+        self._register_class_endpoints(dto)
 
-        Endpoints use {process_id} as a FastAPI path parameter, with instance validation at request time.
-        """
-        # Step 1: Discover which process classes are online via NATS broadcast
-        discovered_classes: list[ProcessClassDTO] = await self._broadcast_discovery()
+    @override
+    def _online_class_names(self) -> set[str]:
+        return ProcessClassEntity.get_online_class_names()
 
-        online_class_names = {dto.process_class for dto in discovered_classes}
-
-        # Step 2: Deregister endpoints for classes no longer online
-        for process_class in list(self.registered_classes):
-            if process_class not in online_class_names:
-                self._deregister_endpoints_for_class(process_class)
-
-        self.app.openapi_schema = None
-
-        # Step 3: Register endpoints for newly discovered classes
-        for process_class_dto in discovered_classes:
-            if process_class_dto.process_class not in self.registered_classes:
-                self._register_class_endpoints(process_class_dto)
-                self.registered_classes.add(process_class_dto.process_class)
-                logger.info(f"Registered class-level endpoints for process class: {process_class_dto.process_class}")
-
+    @override
     async def _broadcast_discovery(self) -> list[ProcessClassDTO]:
         """
         Broadcasts a NATS discovery request to all processes and collects responses.
         Updates the last_discovered timestamp for responding process classes.
 
-        Returns a list of ProcessClassDTO for all online process classes.
+        Returns a list of ProcessClassDTO for the process classes that answered this round.
         """
         call_id = str(ObjectId())
         discovery_responses: list[ProcessClassDiscoveryResponseEvent] = []
@@ -118,8 +103,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             subject=self.topic_manager.get_process_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait briefly for responses
-        await sleep(10)
+        await sleep(self.settings.RESPONSE_WAIT_SECONDS)
         await nc_subscriber.stop()
 
         unique_classes_dict: dict[str, ProcessClassDTO] = {}
@@ -131,10 +115,8 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_class_dto = ProcessClassDTO.from_discovery_event(response)
                 unique_classes_dict[unique_key] = process_class_dto
 
-                # Persist the process class entity in database (updates last_discovered timestamp).
-                # Off the loop for the same reason as the agent discovery round: `ProcessClassEntity`
-                # carries the identical 5-minute `last_discovered` window, so a stalled round here
-                # marks every process class offline at once.
+                # Persist the process class entity in database (updates last_discovered timestamp), off the
+                # loop for the same reason as the agent discovery round.
                 await to_thread(
                     ProcessClassEntity.create_or_update,
                     process_class=process_class_dto.process_class,
@@ -165,6 +147,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         """Returns the base path for class-level endpoints with dynamic {process_id} path parameter."""
         return f"{self._route_prefix}/classes/{process_class}/instances/{{process_id}}"
 
+    @override
     def _deregister_endpoints_for_class(self, process_class: str):
         """Deregister all endpoints for a process class (class-level endpoints with dynamic {process_id})."""
         self._deregister_routes_under(self._get_endpoint_base_path_for_process_class(process_class))

@@ -213,13 +213,27 @@ them to the main API.
 The API doesn't hardcode agent or process endpoints. Discovery services dynamically register/deregister FastAPI routes
 based on what's available on NATS.
 
-**`AgentEndpointsDiscoveryService`**: Every 60 seconds, broadcasts `ClassDiscoveryRequestEvent` via NATS. Online agents
-respond with metadata (start/stop/HITL event specs, config schema, form definition). The service creates FastAPI
-endpoints for each agent class's events — both regular and streaming variants. When agents go offline, their endpoints
-are removed and the OpenAPI schema is invalidated.
+**`AgentEndpointsDiscoveryService`**: Every `DISCOVERY_INTERVAL_SECONDS` (60), broadcasts `ClassDiscoveryRequestEvent`
+via NATS. Online agents respond with metadata (start/stop/HITL event specs, config schema, form definition). The service
+creates FastAPI endpoints for each agent class's events — both regular and streaming variants. When agents go offline,
+their endpoints are removed and the OpenAPI schema is invalidated.
 
 **`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
 steps and data POST endpoints for programmatic input.
+
+**Online status counts completed rounds, not the clock** (#1970). The shared round lives in `EndpointsDiscoveryService`;
+the subclasses only broadcast, name and register classes.
+
+- **Rule**: a class is online while its `last_discovered` is at or after the *start* of the round
+  `DISCOVERY_MISSED_ROUNDS_BEFORE_OFFLINE` (3) completed rounds back (`DiscoveryRoundEntity.online_threshold`). The
+  start, not the end, because answers are stamped after the response wait.
+- **What completes a round**: NATS connected before the broadcast and after the wait, every answer stamped, and all of
+  it inside `DISCOVERY_ROUND_TIMEOUT_SECONDS`. Anything else is logged as an error and not recorded, so it moves no
+  class towards offline. The NATS check matters because nats-py buffers a publish while reconnecting instead of raising.
+- **One rule everywhere**: `is_online_since(threshold)`, the scheduler, `get_online_conversational` and endpoint removal
+  all use it. Services read the threshold once per request and pass `is_online` into the DTO factories.
+- **Cold start**: until that many rounds exist, the wall-clock window they would span stands in.
+- **After the round**: the agent service's Langfuse/OpenWebUI syncs run in `_after_round`, outside the timeout.
 
 **`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
 runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,

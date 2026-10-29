@@ -96,6 +96,6 @@ async def test_agent_class_persistence_leaves_the_event_loop_free() -> None:
     minimum = MINIMUM_EXPECTED_TICKS * len(responses)
     assert ticker.ticks >= minimum, (
         f"The event loop was starved: {ticker.ticks} ticks during {len(responses)} blocking writes, "
-        f"expected at least {minimum}. A stalled discovery round marks every agent class offline at "
-        f"once, because AgentClassEntity.is_online is only a 5-minute window on last_discovered."
+        f"expected at least {minimum}. Blocking writes starve every request this process serves and "
+        f"can push the discovery round past DISCOVERY_ROUND_TIMEOUT_SECONDS."
     )

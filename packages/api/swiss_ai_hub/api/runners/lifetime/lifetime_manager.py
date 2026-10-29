@@ -8,6 +8,7 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.discovery import DiscoverySettings
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.incident import IncidentSettings
 from swiss_ai_hub.core.infrastructure import (
@@ -241,6 +242,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         langfuse_provisioner = LangfuseProvisioner()
         openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
+        discovery_settings = DiscoverySettings()
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -248,7 +251,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
-                discovery_interval=60,  # Check for new agents every 60 seconds
+                settings=discovery_settings,
             )
             await agent_discovery_service.start()
             app.state.agent_discovery_service = agent_discovery_service
@@ -261,7 +264,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 api_app=api_app,
                 controller=api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,  # Check for new process every 60 seconds
+                settings=discovery_settings,
             )
             await process_discovery_service.start()
             app.state.process_discovery_service = process_discovery_service

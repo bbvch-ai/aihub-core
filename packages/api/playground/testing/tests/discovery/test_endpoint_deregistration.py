@@ -3,6 +3,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
+from swiss_ai_hub.core.discovery import DiscoveryKind
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import Controller
 from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
@@ -11,9 +13,20 @@ from swiss_ai_hub.api.services.endpoints_discovery_service import EndpointsDisco
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
 
 
-class DiscoveryServiceForTests(EndpointsDiscoveryService):
-    async def _discover_and_register(self):
+class DiscoveryServiceForTests(EndpointsDiscoveryService[BaseModel]):
+    discovery_kind = DiscoveryKind.AGENT
+
+    async def _broadcast_discovery(self) -> list[BaseModel]:
+        return []
+
+    def _class_name_of(self, dto: BaseModel) -> str:
+        return ""
+
+    def _register_discovered_class(self, dto: BaseModel) -> None:
         pass
+
+    def _online_class_names(self) -> set[str]:
+        return set()
 
 
 @pytest.mark.parametrize("tenant_scoped", [False, True])

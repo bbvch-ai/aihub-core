@@ -242,7 +242,6 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.process_controller,
                 locale_handler=ApiLocaleHandler(),
-                discovery_interval=60,
             )
             process_class_dto = ProcessClassDTO(
                 process_class=self.process_class,

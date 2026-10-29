@@ -1,21 +1,33 @@
 import abc
 import asyncio
 import logging
+from datetime import datetime
+from typing import ClassVar
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from nats.aio.client import Client as NATS
+from pydantic import BaseModel
+from swiss_ai_hub.core.discovery import DiscoveryKind, DiscoverySettings
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.persistence import DiscoveryRoundEntity
 from swiss_ai_hub.core.routes import Controller
 
 logger = logging.getLogger(__name__)
 
 
-class EndpointsDiscoveryService(abc.ABC):
+class EndpointsDiscoveryService[TClassDTO: BaseModel](abc.ABC):
     """
     The endpoint discovery service is responsible for periodically discovering the presence of some entity in
     NATs and register dynamic fastapi endpoints accordingly.
+
+    A class is online while it has answered one of the last `MISSED_ROUNDS_BEFORE_OFFLINE` *completed* rounds.
+    Only a round that broadcast and collected answers with NATS connected, stamped every answer and finished
+    within its timeout is recorded, so a broken round — the event loop starved, NATS reconnecting — changes no
+    class's status instead of taking every class offline at once.
     """
+
+    discovery_kind: ClassVar[DiscoveryKind]
 
     def __init__(
         self,
@@ -23,13 +35,13 @@ class EndpointsDiscoveryService(abc.ABC):
         api_app: FastAPI,
         controller: Controller,
         locale_handler: LocaleHandler,
-        discovery_interval: int = 60,
+        settings: DiscoverySettings | None = None,
     ):
         self.nc: NATS = nc
         self.app: FastAPI = api_app
         self.controller: Controller = controller
         self.locale_handler: LocaleHandler = locale_handler
-        self.discovery_interval: int = discovery_interval
+        self.settings: DiscoverySettings = settings or DiscoverySettings()
         # For instance-based tracking (used by ProcessEndpointsDiscoveryService)
         self.registered_entities: set[tuple[str, str]] = set()
         # For class-based tracking (used by AgentEndpointsDiscoveryService)
@@ -61,21 +73,93 @@ class EndpointsDiscoveryService(abc.ABC):
         logger.info("Endpoint discovery service stopped")
         return True
 
-    async def _discovery_loop(self):
+    async def _discovery_loop(self) -> None:
         """Periodically discover and register endpoints."""
         while self.running:
-            try:
-                logger.debug("Starting endpoint discovery")
-                await self._discover_and_register()
-            except Exception as e:
-                logger.exception(f"Error in endpoint discovery: {e}")
+            if await self._run_round():
+                await self._run_after_round()
+            await asyncio.sleep(self.settings.INTERVAL_SECONDS)
 
-            await asyncio.sleep(self.discovery_interval)
+    async def _run_round(self) -> bool:
+        """Runs one round under its timeout; a round that fails in any way is logged and reported incomplete."""
+        logger.debug(f"Starting {self.discovery_kind} discovery round")
+        try:
+            async with asyncio.timeout(self.settings.ROUND_TIMEOUT_SECONDS):
+                return await self._discover_and_register()
+        except TimeoutError:
+            logger.error(
+                f"{self.discovery_kind.capitalize()} discovery round stalled for more than "
+                f"{self.settings.ROUND_TIMEOUT_SECONDS}s and was abandoned; no class status changed."
+            )
+        except Exception as e:
+            logger.exception(f"{self.discovery_kind.capitalize()} discovery round failed; no class status changed: {e}")
+        return False
+
+    async def _run_after_round(self) -> None:
+        """Outside the round's timeout, so a slow downstream sync is not mistaken for a stalled round."""
+        try:
+            await self._after_round()
+        except Exception as e:
+            logger.exception(f"Work after the {self.discovery_kind} discovery round failed: {e}")
+
+    async def _discover_and_register(self) -> bool:
+        """Broadcasts one round, records it if it completed, and reconciles the dynamic endpoints."""
+        started_at = datetime.now()
+        if not self._nats_connected("before broadcasting"):
+            return False
+
+        discovered = await self._broadcast_discovery()
+
+        # nats-py does not raise while it reconnects: the request is buffered and no answer arrives. Counting
+        # that round would mark every class as having missed it.
+        if not self._nats_connected("while collecting answers"):
+            return False
+
+        await asyncio.to_thread(DiscoveryRoundEntity.record_completed, self.discovery_kind, started_at, self.settings)
+        discovered_names = {self._class_name_of(dto) for dto in discovered}
+        online_class_names = await asyncio.to_thread(self._online_class_names) | discovered_names
+
+        for entity_class in list(self.registered_classes):
+            if entity_class not in online_class_names:
+                self._deregister_endpoints_for_class(entity_class)
+
+        self.app.openapi_schema = None
+
+        for dto in discovered:
+            entity_class = self._class_name_of(dto)
+            if entity_class not in self.registered_classes:
+                self._register_discovered_class(dto)
+                self.registered_classes.add(entity_class)
+                logger.info(f"Registered class-level endpoints for {self.discovery_kind} class: {entity_class}")
+        return True
+
+    def _nats_connected(self, moment: str) -> bool:
+        if self.nc.is_connected:
+            return True
+        logger.error(
+            f"NATS was not connected {moment} in the {self.discovery_kind} discovery round; "
+            "the round is not counted and no class status changed."
+        )
+        return False
 
     @abc.abstractmethod
-    async def _discover_and_register(self):
-        """Register endpoints for discovered entities."""
+    async def _broadcast_discovery(self) -> list[TClassDTO]:
+        """Broadcasts the discovery request, waits for answers and stamps `last_discovered` for each class."""
         ...
+
+    @abc.abstractmethod
+    def _class_name_of(self, dto: TClassDTO) -> str: ...
+
+    @abc.abstractmethod
+    def _register_discovered_class(self, dto: TClassDTO) -> None: ...
+
+    @abc.abstractmethod
+    def _online_class_names(self) -> set[str]:
+        """Classes online under the completed-rounds rule. Synchronous — runs in a thread."""
+        ...
+
+    async def _after_round(self) -> None:
+        """Work that needs the round's outcome but must not count against its timeout."""
 
     @property
     def _route_prefix(self) -> str:
