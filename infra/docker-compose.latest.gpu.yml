@@ -2808,7 +2808,7 @@ services:
         || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))
       - traefik.http.routers.web-auth.priority=750
       - traefik.http.routers.web-auth.entrypoints=websecure
-      - traefik.http.routers.web-auth.middlewares=web-standard-middleware
+      - traefik.http.routers.web-auth.middlewares=auth-route-security-headers@file
       - traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`)
         || Path(`/config.js`))
       - traefik.http.routers.web-index.priority=400
@@ -2986,7 +2986,7 @@ services:
         || PathPrefix(`/it/auth`))
       - traefik.http.routers.sysadmin-web-auth.priority=750
       - traefik.http.routers.sysadmin-web-auth.entrypoints=websecure
-      - traefik.http.routers.sysadmin-web-auth.middlewares=sysadmin-web-standard-middleware
+      - traefik.http.routers.sysadmin-web-auth.middlewares=auth-route-security-headers@file
       - traefik.http.routers.sysadmin-web-index.rule=Host(`sysadmin.${DOMAIN}`) &&
         (Path(`/`) || Path(`/index.html`) || Path(`/config.js`))
       - traefik.http.routers.sysadmin-web-index.priority=400
