@@ -12,8 +12,8 @@ from typing import Optional, Annotated
 
 import hashlib
 import logging
+import secrets
 
-from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +37,9 @@ class Action:
         `display_id` matches the persisted events the AI-Hub frontend resolves the thread from.
         """
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f":{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     async def action(
         self,

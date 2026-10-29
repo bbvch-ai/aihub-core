@@ -71,14 +71,14 @@ build-and-push-playwright-image:
 # Keep OpenWebUI's Python client compatible with the project-managed browser server.
 # Publish both images before deploying their matching tags from compose-config.yml.
 build-and-push-openwebui-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0-1..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1..."
 	@docker login ghcr.io
 	@docker build --platform linux/amd64 \
-		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0-1 \
+		-t ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1 \
 		-f docker/open-webui/Dockerfile \
 		docker/open-webui
-	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3-playwright1.63.0-1
-	@echo "Successfully published open-webui:v0.11.3-playwright1.63.0-1"
+	@docker push ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4-playwright1.63.0-1
+	@echo "Successfully published open-webui:v0.11.4-playwright1.63.0-1"
 
 # Build the project-managed rclone image (upstream rclone + a refreshed CA bundle) and push to ghcr.
 # The Dockerfile lives at `infra/deployment/docker/rclone/Dockerfile`. Re-run this whenever the base rclone tag changes.

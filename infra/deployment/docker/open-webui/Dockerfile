@@ -1,5 +1,5 @@
 # Keep the deployed OpenWebUI release and align its client with the browser server.
-FROM ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.3
+FROM ghcr.io/bbvch-ai/aihub-core/open-webui:v0.11.4
 
 # The release predates the eMudhra intermediate CA compromise (2026-10): its system bundle and certifi still trust
 # emSign ECC Root CA - G3, and gRPC ships its own root list. Refresh both bundles and point gRPC at the system one.
