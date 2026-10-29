@@ -96,9 +96,11 @@ literal-number rule.
 
 `aihub_hosting_location` (`local`, `swiss_cloud`, `eu`, `global`) is required on **every** model. The
 `pii-anonymisation` guardrail (`templates/litellm_functions/pii_anonymisation_guardrail.py`, mounted into litellm like
-`custom_callbacks.py`) anonymises every chat call to a model that is not `local` through the Presidio analyzer and
-restores the answer, streamed or not; a local model runs it only when the call sends
-`"guardrails": ["pii-anonymisation"]`. The guardrail treats a model without the key as external; `generate_compose.py`
+`custom_callbacks.py`) anonymises a chat call through the Presidio analyzer and restores the answer, streamed or not,
+when the call sends `"guardrails": ["pii-anonymisation"]` (profiles with the checkbox do), and, only where
+`PII_ANONYMISE_EXTERNAL_MODELS=true` (off in `.env.dev` and `.env.prod`), on every call to a model that is not `local`.
+Any other value of the switch counts as `true`: never make the guardrail's constructor raise, because LiteLLM v1.106.2
+then starts without the guardrail and drops the requested anonymisation too. The guardrail treats a model without the key as external; `generate_compose.py`
 rejects a missing or unknown location anyway, so a typo cannot silently anonymise a local model. Each handled call also
 leaves a `pii-anonymisation` span for Langfuse (`pii_anonymisation_audit.py`, mounted next to the guardrail, sent to
 `OTEL_EXPORTER_OTLP_ENDPOINT`). Tests:
@@ -366,7 +368,9 @@ Rules when editing:
   managed into `aihub-realm.{stage}.json` for `--import-realm` (fresh boots come up complete without waiting for the
   reconciler). Run `make generate-compose` after any edit and commit the regenerated files.
 - The `keycloak-config-cli` image tag in `compose-config.yml` must be bumped together with the Keycloak image (tag
-  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`).
+  scheme `{cli-version}-{keycloak-version}`, mirrored via `make mirror-image`). When upstream has no build for the new
+  Keycloak version yet, keep the newest release and check on the dev stack that `keycloak-config` still exits 0 against
+  an upgraded realm and a fresh `--import-realm` (Keycloak 26.8.1 currently runs with `6.5.1-26.5.5`).
 
 The `aihub-api-service` service account (`managed/60-service-accounts.json.j2`) carries a fixed set of
 `realm-management` client roles. The current minimum required for the API to function correctly is:
@@ -379,6 +383,11 @@ query-groups, view-groups, view-realm, view-clients
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status. Role changes here now reach running
 deployments on the next start.
+
+**AIHubAccess gate**: `Post Broker Login - AIHubAccess Check` only runs for users brokered through an external IdP, so
+`browser-aihub` carries its own CONDITIONAL `aihub-access-gate-browser` sub-flow (deny unless the user has
+`AIHubAccess`) right after the REQUIRED authenticate wrapper and before the Langfuse gate. It is the only `AIHubAccess`
+check for local realm users (username/password and their SSO-cookie sessions). Both gates use the same deny message.
 
 **Langfuse sysadmin gate**: the `langfuse` client carries the marker client scope `langfuse-sysadmin-gate` (default
 scope, no mappers). It activates a conditional deny sub-flow — deny unless the user has `AIHubSysAdmin` — in the custom

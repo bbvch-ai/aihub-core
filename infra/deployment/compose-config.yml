@@ -41,7 +41,7 @@ image_tags:
   traefik: traefik:v3.6.2
   docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
-  presidio_analyzer: presidio-analyzer:2.2.364-swiss-2
+  presidio_analyzer: presidio-analyzer:2.2.364-swiss-3
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.11.3-playwright1.63.0-1
   open_webui_init: postgres:17
@@ -50,7 +50,7 @@ image_tags:
   speaches: speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: rclone:1.71.2-1
-  keycloak: keycloak:26.5.5
+  keycloak: keycloak:26.8.1
   keycloak_config_cli: keycloak-config-cli:6.5.1-26.5.5
   searxng: searxng:2026.10.27-cb74e7f81
 

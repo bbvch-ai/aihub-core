@@ -66,8 +66,8 @@ KNOWLEDGE_COLLECTION_TYPE = "collection"
 # a file forwarded again on a later turn is not copied into the agent bucket a second time.
 AGENT_UPLOADS_FILE_META_KEY = "aihub_agent_uploads"
 
-# A temporary chat stores no file in Open WebUI, so the pipe remembers the agent's upload of each attached text item,
-# by the id the browser gave it, in Open WebUI's Redis; for as long as the agent-files bucket keeps the upload.
+# A temporary chat's text item and a note have no file in Open WebUI, so the pipe remembers the agent's upload of each,
+# by the item's id (a note's with its version), in Open WebUI's Redis; for as long as the agent-files bucket keeps it.
 # A temporary chat's id comes from the browser, so the key also names the user the upload belongs to.
 AIHUB_TEMPORARY_UPLOAD_REDIS_KEY = "aihub:temp-upload:{user_id}:{thread_id}:{item_id}"
 AIHUB_TEMPORARY_UPLOAD_REDIS_TTL_SECONDS = 7 * 24 * 60 * 60
@@ -2210,8 +2210,8 @@ class WebReferenceService:
 
 
 class TemporaryUploadScope(BaseModel):
-    """Where a temporary chat's uploads are remembered: Open WebUI keeps no file for its attachments, so without this
-    each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
+    """Where uploads of items without an Open WebUI file are remembered, a temporary chat's text and notes: without
+    this each turn would upload them again. Redis only saves that copy, so a Redis error never costs the turn its file."""
 
     user_id: str
     thread_id: str
@@ -2243,18 +2243,18 @@ class TemporaryUploadScope(BaseModel):
 
 
 class AgentAttachment(BaseModel):
-    """One file of the turn on its way into the agent's bucket, with the upload it has there once known."""
+    """One file of the turn on its way into the agent's bucket, with the upload it has there once known.
+
+    An item Open WebUI keeps no file for, a temporary chat's text or a note, carries its `text` instead, and its upload
+    is remembered in Redis under `upload_key`."""
 
     source: dict[str, Any]
     filename: str
     content_type: str
     file_id: str | None = None
     owui_file: Any = None
-
-    @property
-    def is_temporary_text(self) -> bool:
-        """A temporary chat stores nothing in Open WebUI and sends the browser-extracted text instead."""
-        return self.owui_file is None
+    text: str | None = None
+    upload_key: str | None = None
 
     @property
     def owui_file_id(self) -> str | None:
@@ -2364,7 +2364,7 @@ class FileProcessingService:
         scope: Annotated[TemporaryUploadScope, "Where a temporary chat's uploads are remembered"],
     ) -> Annotated[AgentAttachment | None, "The file with its known upload, or None when Open WebUI lacks it"]:
         """A temporary chat's text, which only carries content, is uploaded as a plain-text file for the agent to read
-        like any other attachment."""
+        like any other attachment, and a note as a markdown file."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
         if file.get("type") == "text" and file.get("content") is not None:
             name = file.get("name") or "attachment"
@@ -2373,7 +2373,11 @@ class FileProcessingService:
                 filename=name if name.lower().endswith(".txt") else f"{name}.txt",
                 content_type="text/plain",
                 file_id=await scope.recall(file.get("id")),
+                text=file["content"],
+                upload_key=file.get("id"),
             )
+        if file.get("type") == "note":
+            return await self._resolve_note(file, scope)
 
         file_obj = await Files.get_file_by_id(file.get("id", ""))
         if not file_obj:
@@ -2386,6 +2390,36 @@ class FileProcessingService:
             content_type=file_meta.get("content_type", "application/octet-stream"),
             file_id=(file_meta.get(AGENT_UPLOADS_FILE_META_KEY) or {}).get(agent_key),
             owui_file=file_obj,
+        )
+
+    @staticmethod
+    async def _resolve_note(
+        file: Annotated[dict[str, Any], "A note the user attached"],
+        scope: Annotated[TemporaryUploadScope, "Where the note's upload is remembered, for the user it belongs to"],
+    ) -> Annotated[AgentAttachment | None, "The note as markdown, or None when it is gone or the user may not read it"]:
+        """The pipe reads Open WebUI's database with its own rights, so it repeats Open WebUI's read check: only the
+        note's owner or a user it was shared with gets it. The upload is remembered per version of the note, so an edit
+        reaches the agent and an unchanged note is not copied again."""
+        from open_webui.models.access_grants import AccessGrants
+        from open_webui.models.notes import Notes
+
+        note = await Notes.get_note_by_id(file.get("id", ""))
+        if not note:
+            logger.warning(f"Could not retrieve note with ID: {file.get('id', '')}")
+            return None
+        if note.user_id != scope.user_id and not await AccessGrants.has_access(
+            user_id=scope.user_id, resource_type="note", resource_id=note.id, permission="read"
+        ):
+            logger.warning(f"User {scope.user_id} may not read note {note.id}")
+            return None
+        upload_key = f"note:{note.id}:{note.updated_at}"
+        return AgentAttachment(
+            source=file,
+            filename=f"{note.title or 'note'}.md",
+            content_type="text/markdown",
+            file_id=await scope.recall(upload_key),
+            text=((note.data or {}).get("content") or {}).get("md") or "",
+            upload_key=upload_key,
         )
 
     async def _upload_all(
@@ -2433,14 +2467,14 @@ class FileProcessingService:
         """Remembered so a later turn validates the upload instead of copying the file again; forgetting only costs
         that copy, so it never fails the turn."""
         try:
-            if not attachment.is_temporary_text:
+            if attachment.owui_file is not None:
                 known_uploads = (attachment.owui_file.meta or {}).get(AGENT_UPLOADS_FILE_META_KEY) or {}
                 await Files.update_file_metadata_by_id(
                     attachment.source.get("id", ""),
                     {AGENT_UPLOADS_FILE_META_KEY: {**known_uploads, agent_key: attachment.file_id}},
                 )
             elif attachment.file_id:
-                await scope.remember(attachment.source.get("id"), attachment.file_id)
+                await scope.remember(attachment.upload_key, attachment.file_id)
         except Exception as e:
             logger.warning(f"Could not remember the upload of {attachment.filename}: {e}")
 
@@ -2482,8 +2516,8 @@ class FileProcessingService:
         agent_id: Annotated[str, "Target agent instance ID"],
         headers: Annotated[dict[str, str], "Auth headers"],
     ) -> Annotated[str, "The agent file id of the upload"]:
-        if attachment.is_temporary_text:
-            content = attachment.source["content"].encode()
+        if attachment.text is not None:
+            content = attachment.text.encode()
         else:
             content = await asyncio.to_thread(self._read_file_content, attachment.owui_file)
         async with httpx.AsyncClient(timeout=30.0) as client:

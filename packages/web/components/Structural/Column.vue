@@ -19,22 +19,24 @@
         v-if="loading === undefined || loading === false"
         class="p-6"
       >
-        <div class="flex items-center justify-between font-bold">
+        <div class="flex items-center justify-between gap-4 font-bold">
           <h2
             v-if="!childColumn"
-            class="text-2xl"
+            v-tooltip.top="title"
+            class="min-w-0 truncate text-2xl"
           >
             {{ title }}
           </h2>
           <h3
             v-else
-            class="text-xl"
+            v-tooltip.top="title"
+            class="min-w-0 truncate text-xl"
           >
             {{ title }}
           </h3>
           <i
             v-if="closeRoute"
-            class="pi pi-times cursor-pointer text-xl"
+            class="pi pi-times shrink-0 cursor-pointer text-xl"
             @click="close"
           />
         </div>

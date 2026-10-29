@@ -104,3 +104,23 @@ In a full deployment:
 5. Leave chat open for over 30 seconds. Check that only the existing active-tenant poll recurs, without disclaimer
    requests.
 6. After recreating OpenWebUI, reload a browser that accessed it before the upgrade and check that the footer appears.
+
+## Voice call speech
+
+The same `loader.js` also keeps OpenWebUI's voice call panel from hanging when text-to-speech fails. Stock OpenWebUI
+v0.11.3 returns the panel to "Listening..." only after it has played every sentence of the answer, and it requests a
+sentence's speech again every 200 ms until one succeeds. The platform routes no speech model and non-admin users lack
+the TTS permission, so the request never succeeds and the panel shows "Tap to interrupt" forever.
+
+The loader checks the response of `POST /api/v1/audio/speech`. A successful response passes through unchanged. A failed
+one is replaced by a silent 10 ms clip, so the panel moves on and returns to "Listening..." once the answer is complete,
+and "Voice reply unavailable, answer shown as text" appears below the panel's own status line. The text clears when
+speech succeeds.
+
+The status line is located through the panel's markup, `button.z-10 > div.line-clamp-1.text-sm.font-normal`. Recheck the
+selector and the speech endpoint after OpenWebUI upgrades, and remove this part of the script once OpenWebUI stops
+retrying failed speech without limit.
+
+To check it, set `AUDIO_TTS_ENGINE=openai` with an unreachable `AUDIO_TTS_OPENAI_API_BASE_URL` on a disposable OpenWebUI
+container that mounts the loader. Calling the speech endpoint from the browser console should make one request and
+return `audio/wav`.

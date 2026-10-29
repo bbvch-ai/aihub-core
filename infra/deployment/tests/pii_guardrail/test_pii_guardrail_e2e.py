@@ -24,6 +24,8 @@ REPO = HERE.parents[3]
 OUT = HERE / "out"
 RECEIVED = OUT / "received.jsonl"
 PROXY = "http://localhost:4199"
+# The same gateway with PII_ANONYMISE_EXTERNAL_MODELS=false.
+SWITCH_OFF_PROXY = "http://localhost:4198"
 MASTER_KEY = "sk-e2e"
 PII = ["Reto Wyss", "756.1234.5678.97", "CH93 0076 2011 6238 5295 7", "Seefeldstrasse 18, 8008 Zürich"]
 PROMPT = (
@@ -87,10 +89,10 @@ def received() -> list[list[dict]]:
     return [json.loads(line)["messages"] for line in RECEIVED.read_text(encoding="utf-8").splitlines() if line]
 
 
-def chat(model: str, content: str, **extra) -> httpx.Response:
+def chat(model: str, content: str, proxy: str = PROXY, **extra) -> httpx.Response:
     body = {"model": model, "messages": [{"role": "user", "content": content}], **extra}
     return httpx.post(
-        f"{PROXY}/v1/chat/completions", json=body, headers={"Authorization": f"Bearer {MASTER_KEY}"}, timeout=300
+        f"{proxy}/v1/chat/completions", json=body, headers={"Authorization": f"Bearer {MASTER_KEY}"}, timeout=300
     )
 
 
@@ -301,6 +303,31 @@ def test_should_anonymise_a_local_model_call_from_an_anonymising_profile() -> No
     assert not [value for value in PII if value in seen]
     assert answer == PROMPT
 
+
+
+def test_should_send_values_to_an_external_model_when_the_switch_is_off() -> None:
+    answer = chat("echo-external", PROMPT, proxy=SWITCH_OFF_PROXY).json()["choices"][0]["message"]["content"]
+
+    assert last_prompt_seen() == PROMPT
+    assert answer == PROMPT
+
+
+def test_should_anonymise_an_external_model_call_from_an_anonymising_profile_when_the_switch_is_off() -> None:
+    from llama_index.core.base.llms.types import ChatMessage, MessageRole
+    from swiss_ai_hub.core.generative_ai import GatewayGuardrails
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.resilient_open_ai_like import ResilientOpenAILike
+
+    llm = ResilientOpenAILike(
+        model="echo-external", api_base=f"{SWITCH_OFF_PROXY}/v1", api_key=MASTER_KEY, is_chat_model=True,
+        connect_timeout=5.0
+    )
+    with GatewayGuardrails.requesting(GatewayGuardrails.PII_ANONYMISATION):
+        answer = llm.chat([ChatMessage(role=MessageRole.USER, content=PROMPT)]).message.content
+
+    seen = last_prompt_seen()
+    print(f"\nPROVIDER RECEIVED: {seen}\nUSER GOT:          {answer}")
+    assert not [value for value in PII if value in seen]
+    assert answer == PROMPT
 
 def test_should_keep_hand_made_placeholder_when_a_new_person_is_detected() -> None:
     prompt = "Brief an <PERSON_1>, Kopie an Reto Wyss"

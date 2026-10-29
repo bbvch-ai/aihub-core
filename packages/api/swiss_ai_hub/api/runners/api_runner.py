@@ -5,7 +5,7 @@ from typing import Self, override
 
 from fastapi import FastAPI
 from fastmcp import FastMCP
-from fastmcp.server.openapi import MCPType, RouteMap
+from fastmcp.server.providers.openapi import MCPType, RouteMap
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.metrics import NoOpMeterProvider
 from starlette.applications import Starlette

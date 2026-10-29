@@ -28,13 +28,14 @@ services:
     environment:
       RECEIVED_LOG: /out/received.jsonl
     volumes: [./echo_llm.py:/e2e/echo_llm.py:ro, ./out:/out]
-  litellm:
+  litellm: &litellm
     image: ${LITELLM_IMAGE}
     command: [--config, /app/config.yml, --port, '4000']
     ports: [4199:4000]
     environment:
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
       PRESIDIO_ANALYZER_API_KEY: e2e-analyzer-key
+      PII_ANONYMISE_EXTERNAL_MODELS: 'true'
     volumes:
       - ./out/litellm-config.yml:/app/config.yml:ro
       - ../../../configs/litellm/pii_anonymisation_guardrail.py:/app/pii_anonymisation_guardrail.py:ro
@@ -52,3 +53,11 @@ services:
     depends_on:
       presidio-analyzer: {condition: service_healthy}
       echo: {condition: service_started}
+  # The same gateway with the deployment switch off: only calls that request the guardrail are anonymised.
+  litellm-switch-off:
+    <<: *litellm
+    ports: [4198:4000]
+    environment:
+      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
+      PRESIDIO_ANALYZER_API_KEY: e2e-analyzer-key
+      PII_ANONYMISE_EXTERNAL_MODELS: 'false'

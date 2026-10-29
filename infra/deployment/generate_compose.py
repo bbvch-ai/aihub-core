@@ -131,6 +131,7 @@ KEYCLOAK_MANAGED_TEMPLATES = [
 # (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
 STATIC_COPY_DIRS = [
     ("templates/openwebui-disclaimer", "configs/openwebui/disclaimer"),
+    ("templates/openwebui-style", "configs/openwebui/style"),
     ("templates/openwebui_functions", "configs/openwebui/functions"),
     ("templates/litellm_functions", "configs/litellm"),
 ]

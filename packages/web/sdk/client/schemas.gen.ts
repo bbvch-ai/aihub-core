@@ -6997,6 +6997,7 @@ export const CreateNamespaceRequestSchema = {
   properties: {
     folder_name: {
       type: "string",
+      maxLength: 100,
       title: "Folder Name",
       description: "The name of the folder to which the namespace belongs.",
     },
@@ -7004,6 +7005,7 @@ export const CreateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -7016,6 +7018,7 @@ export const CreateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -7060,11 +7063,13 @@ export const CreateRoleRequestSchema = {
   properties: {
     name: {
       type: "string",
+      maxLength: 120,
       title: "Name",
       description: "The unique name of the role.",
     },
     description: {
       type: "string",
+      maxLength: 500,
       title: "Description",
       description: "A short description of the role's purpose.",
     },
@@ -7898,6 +7903,7 @@ export const DatasetCreateSchema = {
   properties: {
     dataset_name: {
       type: "string",
+      maxLength: 120,
       minLength: 1,
       title: "Dataset Name",
       description: "The name for the new dataset.",
@@ -7914,6 +7920,7 @@ export const DatasetCreateSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -14854,6 +14861,19 @@ export const InputTextSchema = {
       title: "Iconsuffix",
       description: "Icon suffix",
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -17081,6 +17101,19 @@ export const LocaleInputSchema = {
       ],
       title: "Placeholder",
       description: "Placeholder text for each language",
+    },
+    maxLength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters per language",
     },
     validation: {
       type: "string",
@@ -28470,6 +28503,19 @@ export const TextareaSchema = {
       description: "Whether to automatically resize based on content",
       default: false,
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
     validation: {
       type: "string",
       title: "Validation",
@@ -31054,6 +31100,7 @@ export const UpdateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -31066,6 +31113,7 @@ export const UpdateNamespaceRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -31133,6 +31181,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 120,
         },
         {
           type: "null",
@@ -31145,6 +31194,7 @@ export const UpdateRoleRequestSchema = {
       anyOf: [
         {
           type: "string",
+          maxLength: 500,
         },
         {
           type: "null",
@@ -40899,6 +40949,19 @@ export const InputTextWritableSchema = {
       title: "Iconsuffix",
       description: "Icon suffix",
     },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
+    },
   },
   additionalProperties: true,
   type: "object",
@@ -42808,6 +42871,19 @@ export const LocaleInputWritableSchema = {
       ],
       title: "Placeholder",
       description: "Placeholder text for each language",
+    },
+    maxLength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters per language",
     },
   },
   additionalProperties: true,
@@ -50310,6 +50386,19 @@ export const TextareaWritableSchema = {
       title: "Autoresize",
       description: "Whether to automatically resize based on content",
       default: false,
+    },
+    maxlength: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Maxlength",
+      description: "Maximum number of characters",
     },
   },
   additionalProperties: true,

@@ -3,26 +3,29 @@
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     @click="emit('click')"
   >
-    <div class="flex items-center gap-2">
+    <div class="flex min-w-0 items-center gap-2">
       <div
-        class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+        class="flex shrink-0 items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
       >
         <Icon
           :name="templateIcon"
           size="1.5em"
         />
       </div>
-      <div>
-        <h3 class="font-semibold opacity-80">
+      <div class="min-w-0">
+        <h3
+          v-tooltip.top="templateName"
+          class="truncate font-semibold opacity-80"
+        >
           {{ templateName }}
         </h3>
-        <p class="text-xs font-light opacity-70">
+        <p class="truncate text-xs font-light opacity-70">
           {{ agentClassName }}
         </p>
       </div>
     </div>
     <div>
-      <span class="text-xs">
+      <span class="line-clamp-3 text-xs [overflow-wrap:anywhere]">
         {{ templateDescription }}
       </span>
     </div>
