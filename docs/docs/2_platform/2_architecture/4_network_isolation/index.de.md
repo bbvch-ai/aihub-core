@@ -1,6 +1,6 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: 7dce5b3e84336c4ff6c9107bcc25b7825ddc27049919938c08b46188cb21ed87
+source_sha: 7da34c45a037796a2c11a06ffe647e2e0139ef81e3ba32196e280a05302a6003
 ---
 
 # Docker-Netzwerkisolation
@@ -115,6 +115,7 @@ Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benö
   synchronisiert)
 - **structured_pipeline**: Die Structured-Source-Pipeline (ruft APIs von Geschäftsanwendungen wie Jira auf)
 - **imap_agent**, **email_classification_agent**: Lesen E-Mails auf externen IMAP-Servern und legen sie ab
+- **release_notes_agent**: Liest die Tickets einer Fix-Version aus Jira Cloud oder einem On-Premise-Jira-Data-Center
 - **otel-collector**: Exportiert Telemetrie an externe Backends
 
 Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern
@@ -267,6 +268,10 @@ flowchart TB
 
 - Die interne Cluster-Kommunikation von SeaweedFS ist isoliert
 - Datenbank-Services können Speicheroperationen nicht beeinträchtigen
+- Der Filer hängt an `storage` und `data` (für etcd) und meldet dem Master deshalb seinen Service-Namen
+  (`-ip=seaweedfs-filer`). Das S3-Gateway findet den Filer über den Master und erreicht keine Adresse im `data`-Netz.
+- Auch das S3-Gateway registriert sich beim Master und hängt an `storage` und `backend`, daher meldet es auf die gleiche
+  Weise seinen Service-Namen (`-ip=seaweedfs-s3`).
 
 ### Service-Sichtbarkeitsmatrix
 

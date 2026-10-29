@@ -1,4 +1,4 @@
-// Temporary adapter for stock OpenWebUI v0.11.3. See infra/deployment/openwebui-disclaimer.md.
+// Temporary adapter for stock OpenWebUI v0.11.4. See infra/deployment/openwebui-disclaimer.md.
 
 // The voice call overlay requests a sentence's speech again until it succeeds, so a failing TTS keeps it from ever
 // returning to listening. A failed speech request is answered with a silent clip instead, and the overlay says so.

@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import time
 import urllib.parse
 from abc import ABC, abstractmethod
@@ -38,7 +39,6 @@ from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, Field
-from bson import ObjectId
 from open_webui.models.chats import Chats
 from open_webui.models.files import Files
 from open_webui.models.users import Users
@@ -2697,9 +2697,9 @@ class ResponseMergeService:
         salt: Annotated[str, "Salt mixed into the hash"] = "",
     ) -> Annotated[str, "ObjectId string"]:
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     @staticmethod
     def _error_message(body_bytes: Annotated[bytes, "Error response body"]) -> Annotated[str, "Human-readable cause"]:
@@ -2727,7 +2727,7 @@ class ResponseMergeService:
         reads the delta.
         """
         chunk = {
-            "id": str(ObjectId()),
+            "id": secrets.token_hex(12),
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": self._model_name or "unknown",
@@ -2909,9 +2909,9 @@ class Pipe:
     ) -> Annotated[str, "ObjectId string"]:
         """Convert string to ObjectId format"""
         if not context_id:
-            return str(ObjectId())
+            return secrets.token_hex(12)
         hashed = hashlib.md5(f"{salt}:{context_id}".encode()).digest()[:12]
-        return str(ObjectId(hashed)).lower()
+        return hashed.hex()
 
     @staticmethod
     async def _merge_agent_class_tag(
