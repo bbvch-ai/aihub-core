@@ -1,4 +1,4 @@
-.PHONY: mirror-image build-and-push-postgres-image build-and-push-presidio-analyzer-image build-and-push-playwright-image build-and-push-open-terminal-image build-and-push-openwebui-image
+.PHONY: mirror-image build-and-push-postgres-image build-and-push-presidio-analyzer-image build-and-push-playwright-image build-and-push-browser-proxy-image build-and-push-open-terminal-image build-and-push-openwebui-image
 
 # Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
 #
@@ -67,6 +67,21 @@ build-and-push-playwright-image:
 		docker/playwright
 	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.63.0-jammy
 	@echo "Successfully published playwright:v1.63.0-jammy"
+
+# Build the project-managed browser-proxy image (Squid with our squid.conf and empty
+# error pages) and push to ghcr. It is the Playwright browser's only way out of the
+# platform and refuses every address that is not public. Re-run whenever the
+# Dockerfile, squid.conf or the alpine base changes, bumping the -N suffix here and
+# in compose-config.yml.
+build-and-push-browser-proxy-image:
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1..."
+	@docker login ghcr.io
+	@docker build --platform linux/amd64 \
+		-t ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1 \
+		-f docker/browser-proxy/Dockerfile \
+		docker/browser-proxy
+	@docker push ghcr.io/bbvch-ai/aihub-core/browser-proxy:6.12-1
+	@echo "Successfully published browser-proxy:6.12-1"
 
 # Keep OpenWebUI's Python client compatible with the project-managed browser server.
 # Publish both images before deploying their matching tags from compose-config.yml.

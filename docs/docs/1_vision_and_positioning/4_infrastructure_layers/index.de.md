@@ -1,6 +1,6 @@
 ---
 title: Die Infrastruktur-Ebenen
-source_sha: 45dbc23827cafde186ef852718b589877ba515bd33fb02b51781c7620b2d9279
+source_sha: 6303ce297ebd28f3908227aa78420274d16cf4078044896bb59b8d79847e133e
 ---
 
 # Die Infrastruktur-Ebenen
@@ -69,7 +69,8 @@ Dokumentbibliotheken ausgeführt wird; erzeugte Dateien (Berichte, Tabellen, Dia
 **SearXNG** bietet Web-Suchfunktionen, wenn Benutzer aktuelle Informationen benötigen, indem es Ergebnisse von mehreren
 Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt. **Playwright** lädt Webseiten: die Seiten, die
 Benutzer verlinken, damit ein Agent sie liest, und den vollständigen Text von Suchergebnissen, wenn Snippets nicht
-ausreichen. **MinerU** parst Dokumente, die Benutzer in den Chat hochladen, und extrahiert Text und Struktur aus PDFs,
+ausreichen. Es erreicht das Internet nur über einen filternden Proxy, der private und interne Adressen ablehnt.
+**MinerU** parst Dokumente, die Benutzer in den Chat hochladen, und extrahiert Text und Struktur aus PDFs,
 Word-Dokumenten und Präsentationen, wobei Tabellen und Formatierungen erhalten bleiben, die für eine präzise
 Beantwortung von Fragen erforderlich sind.
 

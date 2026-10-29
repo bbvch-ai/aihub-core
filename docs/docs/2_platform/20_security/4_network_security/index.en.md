@@ -73,10 +73,12 @@ they require:
 
 - **Internal networks** (`backend`, `data`, `storage`) have no external internet access
 - **Egress network** allows outbound internet access only, with Inter-Container Communication (ICC) disabled
-- Services needing to browse external websites (e.g., playwright) use the `egress` network without exposing ingress
+- Services needing to reach external websites (e.g., searxng) use the `egress` network without exposing ingress. The
+  headless browser has no `egress` of its own: its only way out is `browser-proxy`, which refuses every non-public
+  destination
 - **Caller-only zones** hold one risky service each, shared only with the services that call it: `code-sandbox` for the
-  code-execution sandbox, `browser` for the headless browser that loads the web pages users link. Neither can reach
-  `backend`, `data` or `storage`
+  code-execution sandbox, `browser` for the headless browser that loads the web pages users link (plus its filtering
+  proxy). Neither can reach `backend`, `data` or `storage`
 
 See [Network Isolation](../../2_architecture/4_network_isolation/) for detailed network topology and service
 assignments.
