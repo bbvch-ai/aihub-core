@@ -11,7 +11,8 @@
 #
 # Usage:  generate-release-notes.sh <from_ref> <to_ref>
 # Env:    GH_REPO (owner/repo, required), GH_SERVER_URL (default github.com),
-#         RELEASE_NOTES_MODEL (default gemini-2.5-flash)
+#         RELEASE_NOTES_MODEL (default gemini-2.5-flash),
+#         RELEASE_NOTES_FALLBACK_MODEL (tried when the first model returns nothing; empty = none)
 # Output: the notes markdown on stdout.
 
 set -euo pipefail
@@ -21,6 +22,7 @@ TO="${2:?to_ref required}"
 GH_REPO="${GH_REPO:?GH_REPO required (owner/repo)}"
 SERVER="${GH_SERVER_URL:-https://github.com}"
 MODEL="${RELEASE_NOTES_MODEL:-gemini-2.5-flash}"
+FALLBACK_MODEL="${RELEASE_NOTES_FALLBACK_MODEL:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPT_FILE="${SCRIPT_DIR}/release-notes-prompt.md"
@@ -61,19 +63,28 @@ else
 
     # Natural-language, grouped body via the LLM: system prompt from the file, the
     # diff piped as the user turn. Degrades gracefully if `llm` is unavailable or
-    # the call fails, so a release is never blocked on note prose. The failure is
+    # the call fails, so a release is never blocked on note prose. Each failure is
     # still raised as a workflow warning: a silent placeholder went unnoticed for weeks.
+    summarise_with() {
+        local model="$1" error_file summary
+        error_file="$(mktemp)"
+        summary="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
+            "$FROM" "$TO" "$diff_note" "$diff_output" \
+            | llm --no-stream -m "$model" --system "$(cat "$PROMPT_FILE")" 2>"$error_file" || true)"
+        if [ -z "$summary" ]; then
+            printf '::warning::Release notes LLM call with %s failed: %s\n' \
+                "$model" "$(tr '\n' ' ' < "$error_file")" >&2
+        fi
+        rm -f "$error_file"
+        printf '%s' "$summary"
+    }
+
     body=""
     if [ -n "$diff_output" ] && command -v llm >/dev/null 2>&1; then
-        llm_error_file="$(mktemp)"
-        body="$(printf 'Here is the git diff from %s to %s%s. Generate the grouped release notes.\n\n%s\n' \
-            "$FROM" "$TO" "$diff_note" "$diff_output" \
-            | llm --no-stream -m "$MODEL" --system "$(cat "$PROMPT_FILE")" 2>"$llm_error_file" || true)"
-        if [ -z "$body" ]; then
-            printf '::warning::Release notes LLM call with %s failed: %s\n' \
-                "$MODEL" "$(tr '\n' ' ' < "$llm_error_file")" >&2
+        body="$(summarise_with "$MODEL")"
+        if [ -z "$body" ] && [ -n "$FALLBACK_MODEL" ]; then
+            body="$(summarise_with "$FALLBACK_MODEL")"
         fi
-        rm -f "$llm_error_file"
     fi
     [ -n "$body" ] || body="_No summarised changes for this range._"
 fi
